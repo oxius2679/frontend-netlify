@@ -1,0 +1,114 @@
+// === SOLUCIÓN DEFINITIVA BOTÓN MENÚ - PEGAR AL FINAL DEL ARCHIVO ===
+function replaceMenuButtonCode() {
+    console.group('🎯 REEMPLAZANDO CÓDIGO DEL BOTÓN MENÚ');
+    
+    // Buscar y eliminar cualquier código existente del botón menú
+    const menuBtn = document.getElementById('toggleSidebarBtn');
+    if (!menuBtn) {
+        console.error('❌ Botón menú no encontrado');
+        return;
+    }
+    
+    // Reemplazar completamente el botón
+    const newMenuBtn = document.createElement('button');
+    newMenuBtn.id = 'toggleSidebarBtn';
+    newMenuBtn.className = 'blue-btn';
+    newMenuBtn.innerHTML = '☰ Menú';
+    newMenuBtn.title = 'Mostrar/Ocultar menú lateral';
+    
+    // Reemplazar en el DOM
+    menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+    
+    // CONEXIÓN INDESTRUCTIBLE
+    const finalMenuBtn = document.getElementById('toggleSidebarBtn');
+    const sidebar = document.querySelector('aside');
+    
+    // Listener principal con múltiples protecciones
+    finalMenuBtn.addEventListener('click', function menuClickHandler() {
+        console.log('🎯 Botón menú clickeado - Versión indestructible');
+        
+        if (!sidebar) {
+            console.error('❌ Sidebar no encontrado');
+            return;
+        }
+        
+        // 1. Alternar visibilidad
+        const isHidden = sidebar.classList.contains('hidden');
+        sidebar.classList.toggle('hidden');
+        console.log(`📋 Sidebar ${isHidden ? 'mostrado' : 'ocultado'}`);
+        
+        // 2. Sincronizar elementos dependientes
+        setTimeout(() => {
+            // Sincronizar líneas
+            if (typeof syncLinesWithSidebar === 'function') {
+                syncLinesWithSidebar();
+            }
+            
+            // Re-renderizar Gantt si es necesario
+            if (!ganttView.classList.contains('hidden') && typeof renderGanttChart === 'function') {
+                const ganttTasks = projects[currentProjectIndex]?.tasks || [];
+                renderGanttChart(ganttTasks);
+            }
+            
+            // Forzar reflow para asegurar actualización
+            sidebar.offsetHeight;
+        }, 150);
+        
+        // 3. Verificar que el listener sigue activo
+        setTimeout(() => {
+            const currentListeners = getEventListeners(finalMenuBtn)?.click?.length || 0;
+            if (currentListeners === 0) {
+                console.warn('⚠️ Listener perdido, reconectando...');
+                finalMenuBtn.addEventListener('click', menuClickHandler);
+            }
+        }, 500);
+    });
+    
+    // PROTECCIÓN EXTRA - Reconexión automática
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                // Si el botón cambia, reconectar
+                setTimeout(() => {
+                    if (!getEventListeners(finalMenuBtn)?.click?.length) {
+                        console.log('🔄 Reconectando botón menú después de cambio...');
+                        finalMenuBtn.addEventListener('click', menuClickHandler);
+                    }
+                }, 100);
+            }
+        });
+    });
+    
+    observer.observe(finalMenuBtn, { attributes: true });
+    
+    console.log('✅ Botón menú reemplazado con protección máxima');
+    console.log('   - Listener principal conectado');
+    console.log('   - Observer de cambios activado');
+    console.log('   - Autoreparación configurada');
+    console.groupEnd();
+}
+
+// === EJECUCIÓN AUTOMÁTICA AL CARGAR ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que todo cargue y luego activar el botón menú
+    setTimeout(() => {
+        console.log('🚀 Activando botón menú indestructible...');
+        replaceMenuButtonCode();
+    }, 2000);
+});
+
+// === TAMBIÉN ACTIVAR DESPUÉS DE CIERTOS EVENTOS ===
+// Activar después de cambios importantes en la interfaz
+['load', 'resize', 'popstate'].forEach(event => {
+    window.addEventListener(event, function() {
+        setTimeout(replaceMenuButtonCode, 1000);
+    });
+});
+
+// Función global para reactivar manualmente si es necesario
+window.fixMenuButton = function() {
+    console.log('🔧 Reactivando botón menú manualmente...');
+    replaceMenuButtonCode();
+};
+
+// También puedes llamarlo desde consola en cualquier momento: fixMenuButton()

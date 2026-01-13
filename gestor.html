@@ -1,0 +1,261 @@
+// dependency-manager.js
+// Gestor externo de dependencias para proyectos
+
+class DependencyManager {
+    constructor() {
+        this.projects = [];
+        this.currentProjectIndex = 0;
+        this.currentTaskIndex = 0;
+        this.init();
+    }
+    
+    init() {
+        console.log("🔗 DependencyManager inicializado");
+        this.loadProjects();
+        this.setupEventListeners();
+        this.render();
+    }
+    
+    loadProjects() {
+        try {
+            const projectsData = localStorage.getItem('projects');
+            this.projects = projectsData ? JSON.parse(projectsData) : [];
+            console.log(`📊 ${this.projects.length} proyectos cargados`);
+        } catch (error) {
+            console.error("❌ Error cargando proyectos:", error);
+            this.projects = [];
+        }
+    }
+    
+    saveProjects() {
+        try {
+            localStorage.setItem('projects', JSON.stringify(this.projects));
+            // Sincronizar con window.projects si existe
+            if (typeof window !== 'undefined' && window.projects) {
+                window.projects = this.projects;
+            }
+            return true;
+        } catch (error) {
+            console.error("❌ Error guardando proyectos:", error);
+            return false;
+        }
+    }
+    
+    getProjectDependencies(projectIndex) {
+        if (!this.projects[projectIndex]) return [];
+        
+        const project = this.projects[projectIndex];
+        const tasks = project.tasks || [];
+        const dependencies = [];
+        
+        tasks.forEach((task, taskIndex) => {
+            if (task.dependencies && task.dependencies.length > 0) {
+                task.dependencies.forEach(depIndex => {
+                    const depTask = tasks[depIndex];
+                    if (depTask) {
+                        dependencies.push({
+                            from: depTask.name,
+                            fromIndex: depIndex,
+                            to: task.name,
+                            toIndex: taskIndex,
+                            project: project.name
+                        });
+                    }
+                });
+            }
+        });
+        
+        return dependencies;
+    }
+    
+    getAllDependencies() {
+        const allDeps = [];
+        
+        this.projects.forEach((project, projectIndex) => {
+            const deps = this.getProjectDependencies(projectIndex);
+            allDeps.push(...deps);
+        });
+        
+        return allDeps;
+    }
+    
+    addDependency(projectIndex, taskIndex, dependencyIndex) {
+        if (!this.projects[projectIndex]) return false;
+        
+        const project = this.projects[projectIndex];
+        const tasks = project.tasks || [];
+        
+        if (!tasks[taskIndex] || !tasks[dependencyIndex]) return false;
+        
+        if (!tasks[taskIndex].dependencies) {
+            tasks[taskIndex].dependencies = [];
+        }
+        
+        // Evitar duplicados y dependencias circulares
+        if (!tasks[taskIndex].dependencies.includes(dependencyIndex) && 
+            taskIndex !== dependencyIndex) {
+            
+            // Verificar dependencia circular básica
+            if (this.checkCircularDependency(projectIndex, taskIndex, dependencyIndex)) {
+                console.warn("⚠️ Dependencia circular detectada");
+                return false;
+            }
+            
+            tasks[taskIndex].dependencies.push(dependencyIndex);
+            this.projects[projectIndex] = project;
+            this.saveProjects();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    removeDependency(projectIndex, taskIndex, dependencyIndex) {
+        if (!this.projects[projectIndex]) return false;
+        
+        const project = this.projects[projectIndex];
+        const tasks = project.tasks || [];
+        
+        if (!tasks[taskIndex] || !tasks[taskIndex].dependencies) return false;
+        
+        const depIndex = tasks[taskIndex].dependencies.indexOf(dependencyIndex);
+        if (depIndex !== -1) {
+            tasks[taskIndex].dependencies.splice(depIndex, 1);
+            this.projects[projectIndex] = project;
+            this.saveProjects();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    checkCircularDependency(projectIndex, fromTask, toTask, visited = new Set()) {
+        if (fromTask === toTask) return true;
+        
+        visited.add(fromTask);
+        
+        const project = this.projects[projectIndex];
+        const tasks = project.tasks || [];
+        const task = tasks[fromTask];
+        
+        if (task && task.dependencies) {
+            for (const dep of task.dependencies) {
+                if (!visited.has(dep) && this.checkCircularDependency(projectIndex, dep, toTask, new Set(visited))) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    getDependencyStats() {
+        let totalTasks = 0;
+        let totalDependencies = 0;
+        let tasksWithDeps = 0;
+        let projectsWithDeps = 0;
+        
+        this.projects.forEach(project => {
+            const tasks = project.tasks || [];
+            totalTasks += tasks.length;
+            
+            let projectDeps = 0;
+            let projectTasksWithDeps = 0;
+            
+            tasks.forEach(task => {
+                const deps = task.dependencies ? task.dependencies.length : 0;
+                projectDeps += deps;
+                if (deps > 0) projectTasksWithDeps++;
+            });
+            
+            totalDependencies += projectDeps;
+            tasksWithDeps += projectTasksWithDeps;
+            if (projectDeps > 0) projectsWithDeps++;
+        });
+        
+        return {
+            totalProjects: this.projects.length,
+            totalTasks,
+            totalDependencies,
+            tasksWithDeps,
+            projectsWithDeps,
+            avgDepsPerTask: totalTasks > 0 ? (totalDependencies / totalTasks).toFixed(2) : 0,
+            percentageTasksWithDeps: totalTasks > 0 ? ((tasksWithDeps / totalTasks) * 100).toFixed(1) : 0
+        };
+    }
+    
+    exportToJSON() {
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            version: '1.0',
+            stats: this.getDependencyStats(),
+            projects: this.projects.map(project => {
+                const tasks = project.tasks || [];
+                return {
+                    name: project.name,
+                    tasks: tasks.map(task => ({
+                        name: task.name,
+                        dependencies: task.dependencies ? task.dependencies.length : 0,
+                        dependsOn: task.dependencies ? task.dependencies.map(depIndex => {
+                            const depTask = tasks[depIndex];
+                            return depTask ? depTask.name : `Task ${depIndex}`;
+                        }) : []
+                    }))
+                };
+            }),
+            allDependencies: this.getAllDependencies()
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+    
+    importFromJSON(jsonData) {
+        try {
+            const data = JSON.parse(jsonData);
+            // Aquí puedes implementar la lógica de importación
+            console.log("📥 Datos importados:", data);
+            return true;
+        } catch (error) {
+            console.error("❌ Error importando datos:", error);
+            return false;
+        }
+    }
+    
+    setupEventListeners() {
+        // Esta función se puede extender para manejar eventos del UI
+    }
+    
+    render() {
+        // Esta función se puede extender para renderizar la UI
+        console.log("🎨 DependencyManager listo para renderizar");
+    }
+    
+    // Métodos estáticos para uso rápido
+    static openManager() {
+        if (typeof window !== 'undefined') {
+            window.open('dependency-manager.html', '_blank', 
+                'width=1200,height=800,menubar=no,toolbar=no,location=no');
+        }
+    }
+    
+    static getQuickStats() {
+        const manager = new DependencyManager();
+        return manager.getDependencyStats();
+    }
+}
+
+// Hacer disponible globalmente
+if (typeof window !== 'undefined') {
+    window.DependencyManager = DependencyManager;
+    console.log("✅ DependencyManager cargado globalmente");
+    
+    // Atajo de teclado: Ctrl+Shift+M para abrir el gestor
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.shiftKey && event.key === 'M') {
+            event.preventDefault();
+            DependencyManager.openManager();
+        }
+    });
+}
+
+export default DependencyManager;
