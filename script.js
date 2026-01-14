@@ -1369,7 +1369,6 @@ window.methodologyManager = new MethodologyManager();
 
 
 
-// ========== SISTEMA DE LICENCIAS ==========
 // ========== SISTEMA DE LICENCIAS ACTUALIZADO ==========
 class LicenseManager {
   constructor() {
@@ -1378,30 +1377,35 @@ class LicenseManager {
   }
 
   async getLicense() {
-    const user = getCurrentUser();
-    if (!user) {
-      return 'free'; // Sin usuario autenticado = plan gratuito
-    }
-    
-    try {
-      // Verificar licencia en el backend
-      const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
-      const data = await response.json();
-      
-      if (data.success && data.valid) {
-        this.license = data.plan;
-        localStorage.setItem('userLicense', data.plan);
-        return data.plan;
-      } else {
-        this.license = 'free';
-        localStorage.setItem('userLicense', 'free');
-        return 'free';
-      }
-    } catch (error) {
-      console.error('Error al verificar licencia:', error);
-      // Si hay error de red, usar licencia guardada localmente
-      return this.license;
-    }
+    return new Promise((resolve) => {
+      const unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+        unsubscribe(); // Detener el listener después de la primera verificación
+        
+        if (!user) {
+          this.license = 'free';
+          resolve('free');
+          return;
+        }
+        
+        try {
+          const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+          const data = await response.json();
+          
+          if (data.success && data.valid) {
+            this.license = data.plan;
+            localStorage.setItem('userLicense', data.plan);
+            resolve(data.plan);
+          } else {
+            this.license = 'free';
+            localStorage.setItem('userLicense', 'free');
+            resolve('free');
+          }
+        } catch (error) {
+          console.error('Error al verificar licencia:', error);
+          resolve(this.license);
+        }
+      });
+    });
   }
 
   async setLicense(license) {
@@ -1437,6 +1441,10 @@ class LicenseManager {
 
 // Instancia global
 window.licenseManager = new LicenseManager();
+
+
+
+
 
 // ========== PROTECCIÓN POR MODO DE TRABAJO ==========
 function requireModeAccess(view, callback) {
@@ -39038,4 +39046,57 @@ console.log('✅ Login corregido al final del script');
 
 
 
+// === CARGAR PROYECTOS AL INICIAR ===
+async function initializeApplication() {
+  try {
+    // Verificar si hay usuario autenticado
+    const user = getCurrentUser();
+    if (user) {
+      console.log('👤 Usuario autenticado:', user.email);
+      
+      // Cargar proyectos del backend
+      const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects');
+      const projects = await response.json();
+      
+      if (projects && projects.length > 0) {
+        window.projects = projects;
+        window.currentProjectIndex = 0;
+        console.log('✅ Proyectos cargados:', projects.length);
+      } else {
+        console.log('⚠️ No hay proyectos, creando proyecto predeterminado');
+        createDefaultProject();
+      }
+    } else {
+      console.log('ℹ️ Sin usuario autenticado, usando modo demo');
+      createDefaultProject();
+    }
+  } catch (error) {
+    console.error('❌ Error al inicializar:', error);
+    createDefaultProject();
+  }
+}
 
+function createDefaultProject() {
+  window.projects = [{
+    _id: 'default-project',
+    name: 'Proyecto Demo',
+    description: 'Proyecto de demostración',
+    tasks: [
+      {
+        id: 'task-1',
+        name: 'Configuración inicial',
+        start: new Date().toISOString(),
+        end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        progress: 100,
+        status: 'completed'
+      }
+    ]
+  }];
+  window.currentProjectIndex = 0;
+}
+
+// Inicializar cuando la página esté lista
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Inicializando aplicación...');
+  initializeApplication();
+});
