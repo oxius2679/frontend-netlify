@@ -1,3 +1,68 @@
+// === CONFIGURACIÓN DE FIREBASE ===
+const firebaseConfig = {
+  apiKey: "AIzaSyBoywVxsuIsQVaBQIn-gzhIxj3etDOnIzs",
+  authDomain: "jackson-hseyol.firebaseapp.com",
+  projectId: "jackson-hseyol",
+  storageBucket: "jackson-hseyol.firebasestorage.app",
+  messagingSenderId: "724208145421",
+  appId: "1:724208145421:web:781ea481297e0999b5b144"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+console.log('✅ Firebase inicializado');
+
+// === FUNCIONES DE AUTENTICACIÓN ===
+
+// Registrar nuevo usuario
+async function registerUser(email, password) {
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    console.log('✅ Usuario registrado:', userCredential.user.email);
+    showNotification('✅ Registro exitoso. Bienvenido!');
+    return userCredential.user;
+  } catch (error) {
+    console.error('❌ Error al registrar:', error.message);
+    showNotification('❌ ' + error.message);
+    throw error;
+  }
+}
+
+// Iniciar sesión existente
+async function loginUser(email, password) {
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    console.log('✅ Sesión iniciada:', userCredential.user.email);
+    showNotification('✅ Bienvenido de nuevo!');
+    return userCredential.user;
+  } catch (error) {
+    console.error('❌ Error al iniciar sesión:', error.message);
+    showNotification('❌ ' + error.message);
+    throw error;
+  }
+}
+
+// Obtener usuario actual
+function getCurrentUser() {
+  return firebase.auth().currentUser;
+}
+
+// Cerrar sesión
+async function logoutUser() {
+  try {
+    await firebase.auth().signOut();
+    console.log('✅ Sesión cerrada');
+    showNotification('✅ Sesión cerrada');
+    // Recargar la página para limpiar estado
+    location.reload();
+  } catch (error) {
+    console.error('❌ Error al cerrar sesión:', error);
+    showNotification('❌ Error al cerrar sesión');
+  }
+}
+
+
+
 
 
 
