@@ -19561,61 +19561,54 @@ document.addEventListener('DOMContentLoaded', function () {
   /**************************************
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
-  window.showExecutiveGantt = async function() {
-  // 🔒 PROTECCIÓN POR LICENCIA: verificar licencia REAL con el backend
-  const currentLicense = await window.licenseManager.getLicense();
-  if (!['professional', 'premium'].includes(currentLicense)) {
-    showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+ window.showExecutiveGantt = async function() {
+  // 🔒 VERIFICACIÓN REAL CON BACKEND (no solo con localStorage)
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
     return;
   }
 
+  try {
+    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+    const data = await response.json();
+    
+    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
+      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+      return;
+    }
+  } catch (error) {
+    console.error('Error verificando licencia:', error);
+    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
+    return;
+  }
+
+  // ✅ USUARIO AUTORIZADO - mostrar Gantt
   console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
-  // 1. Ocultar todas las otras vistas (busca los ID de tus vistas)
+  // Ocultar otras vistas
   const viewsToHide = [
     'kanban-container', 'list-view', 'calendar-view',
     'dashboard', 'projects-container', 'tasks-container'
   ];
-
-  // Primero intentar por ID
   viewsToHide.forEach(viewId => {
     const view = document.getElementById(viewId);
-    if (view) {
-      view.style.display = 'none';
-      console.log(`👁️ Ocultando vista: ${viewId}`);
-    }
+    if (view) view.style.display = 'none';
   });
 
-  // 2. También ocultar por clases comunes
-  document.querySelectorAll('.kanban-container, .list-container, .calendar-container, .dashboard-container').forEach(view => {
-    if (view) {
-      view.style.display = 'none';
-    }
-  });
-
-  // 3. Eliminar cualquier Gantt anterior
+  // Eliminar Gantt anterior
   const oldGantt = document.getElementById('premiumExecutiveGantt');
-  if (oldGantt) {
-    oldGantt.remove();
-    console.log('🗑️ Gantt anterior removido');
-  }
+  if (oldGantt) oldGantt.remove();
 
-  // 4. Eliminar cualquier overlay/backdrop
-  const overlays = document.querySelectorAll('.executive-overlay');
-  overlays.forEach(overlay => {
-    overlay.remove();
-  });
+  // Eliminar overlays
+  document.querySelectorAll('.executive-overlay').forEach(el => el.remove());
 
-  // 5. Asegurar que body tenga espacio para el Gantt
-  document.body.style.overflow = 'hidden';
-
-  // 6. Crear el Gantt ejecutivo
+  // Crear nuevo Gantt
   if (typeof createCompleteGanttForCurrentProject === 'function') {
     createCompleteGanttForCurrentProject();
     console.log('✅ Gantt Ejecutivo creado como vista principal');
   } else {
-    console.error('❌ Error: No se encontró la función createCompleteGanttForCurrentProject');
-    alert('Error al cargar el Gantt Ejecutivo. Recarga la página e intenta de nuevo.');
+    alert('Error al cargar el Gantt Ejecutivo.');
   }
 };
 
