@@ -19562,7 +19562,7 @@ document.addEventListener('DOMContentLoaded', function () {
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
  window.showExecutiveGantt = async function() {
-  // 🔒 VERIFICACIÓN REAL CON BACKEND (no solo con localStorage)
+  // 🔒 VERIFICACIÓN REAL CON BACKEND
   const user = firebase.auth().currentUser;
   if (!user) {
     showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
