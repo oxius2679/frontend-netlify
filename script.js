@@ -1370,17 +1370,41 @@ window.methodologyManager = new MethodologyManager();
 
 
 // ========== SISTEMA DE LICENCIAS ==========
+// ========== SISTEMA DE LICENCIAS ACTUALIZADO ==========
 class LicenseManager {
   constructor() {
-    // Cambia a 'free' si estás probando la versión gratuita
-    this.license = localStorage.getItem('userLicense') || 'professional';
+    this.license = 'free';
+    this.loadLicense();
   }
 
-  getLicense() {
-    return this.license;
+  async getLicense() {
+    const user = getCurrentUser();
+    if (!user) {
+      return 'free'; // Sin usuario autenticado = plan gratuito
+    }
+    
+    try {
+      // Verificar licencia en el backend
+      const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+      const data = await response.json();
+      
+      if (data.success && data.valid) {
+        this.license = data.plan;
+        localStorage.setItem('userLicense', data.plan);
+        return data.plan;
+      } else {
+        this.license = 'free';
+        localStorage.setItem('userLicense', 'free');
+        return 'free';
+      }
+    } catch (error) {
+      console.error('Error al verificar licencia:', error);
+      // Si hay error de red, usar licencia guardada localmente
+      return this.license;
+    }
   }
 
-  setLicense(license) {
+  async setLicense(license) {
     const valid = ['free', 'professional', 'premium'];
     if (valid.includes(license)) {
       this.license = license;
@@ -1402,11 +1426,17 @@ class LicenseManager {
     };
     return rules[feature] ? rules[feature].includes(this.license) : true;
   }
+  
+  loadLicense() {
+    const savedLicense = localStorage.getItem('userLicense');
+    if (savedLicense) {
+      this.license = savedLicense;
+    }
+  }
 }
 
 // Instancia global
 window.licenseManager = new LicenseManager();
-
 
 // ========== PROTECCIÓN POR MODO DE TRABAJO ==========
 function requireModeAccess(view, callback) {
@@ -19523,65 +19553,66 @@ document.addEventListener('DOMContentLoaded', function () {
   /**************************************
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
-  window.showExecutiveGantt = function() {
-    // 🔒 PROTECCIÓN POR LICENCIA: solo Profesional/Premium pueden usar el Gantt Ejecutivo
-    if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      return;
+  window.showExecutiveGantt = async function() {
+  // 🔒 PROTECCIÓN POR LICENCIA: verificar licencia REAL con el backend
+  const currentLicense = await window.licenseManager.getLicense();
+  if (!['professional', 'premium'].includes(currentLicense)) {
+    showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+    return;
+  }
+
+  console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
+
+  // 1. Ocultar todas las otras vistas (busca los ID de tus vistas)
+  const viewsToHide = [
+    'kanban-container', 'list-view', 'calendar-view',
+    'dashboard', 'projects-container', 'tasks-container'
+  ];
+
+  // Primero intentar por ID
+  viewsToHide.forEach(viewId => {
+    const view = document.getElementById(viewId);
+    if (view) {
+      view.style.display = 'none';
+      console.log(`👁️ Ocultando vista: ${viewId}`);
     }
+  });
 
-    console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
-
-    // 1. Ocultar todas las otras vistas (busca los ID de tus vistas)
-    const viewsToHide = [
-      'kanban-container', 'list-view', 'calendar-view',
-      'dashboard', 'projects-container', 'tasks-container'
-    ];
-
-    // Primero intentar por ID
-    viewsToHide.forEach(viewId => {
-      const view = document.getElementById(viewId);
-      if (view) {
-        view.style.display = 'none';
-        console.log(`👁️ Ocultando vista: ${viewId}`);
-      }
-    });
-
-    // 2. También ocultar por clases comunes
-    document.querySelectorAll('.kanban-container, .list-container, .calendar-container, .dashboard-container').forEach(view => {
-      if (view) {
-        view.style.display = 'none';
-      }
-    });
-
-    // 3. Eliminar cualquier Gantt anterior
-    const oldGantt = document.getElementById('premiumExecutiveGantt');
-    if (oldGantt) {
-      oldGantt.remove();
-      console.log('🗑️ Gantt anterior removido');
+  // 2. También ocultar por clases comunes
+  document.querySelectorAll('.kanban-container, .list-container, .calendar-container, .dashboard-container').forEach(view => {
+    if (view) {
+      view.style.display = 'none';
     }
+  });
 
-    // 4. Eliminar cualquier overlay/backdrop
-    const overlays = document.querySelectorAll('.executive-overlay');
-    overlays.forEach(overlay => {
-      overlay.remove();
-    });
+  // 3. Eliminar cualquier Gantt anterior
+  const oldGantt = document.getElementById('premiumExecutiveGantt');
+  if (oldGantt) {
+    oldGantt.remove();
+    console.log('🗑️ Gantt anterior removido');
+  }
 
-    // 5. Asegurar que body tenga espacio para el Gantt
-    document.body.style.overflow = 'hidden';
+  // 4. Eliminar cualquier overlay/backdrop
+  const overlays = document.querySelectorAll('.executive-overlay');
+  overlays.forEach(overlay => {
+    overlay.remove();
+  });
 
-    // 6. Crear el Gantt ejecutivo
-    if (typeof createCompleteGanttForCurrentProject === 'function') {
-      createCompleteGanttForCurrentProject();
-      console.log('✅ Gantt Ejecutivo creado como vista principal');
-    } else {
-      console.error('❌ Error: No se encontró la función createCompleteGanttForCurrentProject');
-      alert('Error al cargar el Gantt Ejecutivo. Recarga la página e intenta de nuevo.');
-    }
-  };
+  // 5. Asegurar que body tenga espacio para el Gantt
+  document.body.style.overflow = 'hidden';
 
-  // Hacer la función disponible globalmente
-  console.log('✅ Función showExecutiveGantt() cargada. Usa: showExecutiveGantt()');
+  // 6. Crear el Gantt ejecutivo
+  if (typeof createCompleteGanttForCurrentProject === 'function') {
+    createCompleteGanttForCurrentProject();
+    console.log('✅ Gantt Ejecutivo creado como vista principal');
+  } else {
+    console.error('❌ Error: No se encontró la función createCompleteGanttForCurrentProject');
+    alert('Error al cargar el Gantt Ejecutivo. Recarga la página e intenta de nuevo.');
+  }
+};
+
+// Hacer la función disponible globalmente
+console.log('✅ Función showExecutiveGantt() cargada. Usa: showExecutiveGantt()');
 
   // === AQUÍ VA EL EVENTO DEL SELECTOR ===
   const selector = document.getElementById('methodologySelector');
