@@ -39008,23 +39008,3 @@ console.log('✅ Login corregido al final del script');
 
 
 
-// === PRUEBA TEMPORAL DE FIREBASE AUTH ===
-window.testFirebaseAuth = async function() {
-  console.log('🧪 Probando Firebase Auth desde script.js...');
-  
-  if (typeof firebase === 'undefined') {
-    console.error('❌ Firebase NO está cargado');
-    return;
-  }
-  
-  try {
-    const userCredential = await firebase.auth().createUserWithEmailAndPassword(
-      'test-real-' + Date.now() + '@example.com',
-      'password123'
-    );
-    console.log('✅ Usuario creado desde script.js:', userCredential.user.email);
-    console.log('🆔 UID:', userCredential.user.uid);
-  } catch (error) {
-    console.error('❌ Error en prueba:', error.message);
-  }
-};
