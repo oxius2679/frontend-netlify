@@ -39151,4 +39151,25 @@ console.log('✅ Login corregido al final del script');
 
 
 
-
+// Verificar licencia al cargar la página
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = firebase.auth().currentUser;
+  
+  if (user) {
+    try {
+      const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+      const licenseData = await response.json();
+      
+      if (licenseData.valid && (licenseData.plan === 'professional' || licenseData.plan === 'premium')) {
+        // Mostrar botones de funciones premium
+        const ganttBtn = document.getElementById('ganttBtn');
+        const dashboard4dBtn = document.getElementById('dashboard4dBtn');
+        
+        if (ganttBtn) ganttBtn.style.display = 'block';
+        if (dashboard4dBtn) dashboard4dBtn.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error verificando licencia:', error);
+    }
+  }
+});
