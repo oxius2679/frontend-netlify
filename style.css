@@ -13486,39 +13486,38 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
 
 <style>
   .logo {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 1.9rem;
-    background: linear-gradient(45deg, 
-      #ffffff 0%,
-      #f1c6ff 25%,
-      #9b59b6 50%,
-      #6c3483 75%,
-      #ffffff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 2px 8px rgba(155, 89, 182, 0.4);
-    letter-spacing: 1.2px;
-    padding: 5px 15px;
-    border-radius: 8px;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
     position: relative;
-    display: inline-block;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, 
+      rgba(155, 89, 182, 0.9) 0%, 
+      rgba(142, 68, 173, 0.9) 100%);
+    border-radius: 12px;
+    box-shadow: 
+      0 4px 15px rgba(155, 89, 182, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 0 20px rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Efecto brillo sutil */
-  .logo::after {
+  .logo::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, 
-      transparent, 
-      rgba(255, 255, 255, 0.1), 
-      transparent);
-    border-radius: 8px;
-    pointer-events: none;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+      #ff00ff, #00ffff, #ffff00, #ff00ff);
+    border-radius: 14px;
+    z-index: -1;
+    opacity: 0.3;
+    filter: blur(10px);
   }
 </style>
