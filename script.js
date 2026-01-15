@@ -681,7 +681,13 @@ function showLicensesView_activatePlan(plan) {
     localStorage.setItem('userLicense', 'free');
     localStorage.setItem('licenseExpiresAt', expiresAt.getTime());
     
-    showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
+    // Mostrar notificación con duración extendida (5 segundos)
+const notification = showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
+setTimeout(() => {
+  if (notification && notification.parentNode) {
+    notification.parentNode.removeChild(notification);
+  }
+}, 5000); // 5 segundos
     document.getElementById('licensesModal')?.remove();
     location.reload();
     
