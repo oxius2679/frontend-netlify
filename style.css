@@ -13481,3 +13481,44 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
   right: 150px !important; /* Ajusta este valor si necesitas más/menos espacio */
   z-index: 9999 !important;
 }
+
+
+
+<style>
+  .logo {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.9rem;
+    background: linear-gradient(45deg, 
+      #ffffff 0%,
+      #f1c6ff 25%,
+      #9b59b6 50%,
+      #6c3483 75%,
+      #ffffff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 8px rgba(155, 89, 182, 0.4);
+    letter-spacing: 1.2px;
+    padding: 5px 15px;
+    border-radius: 8px;
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Efecto brillo sutil */
+  .logo::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.1), 
+      transparent);
+    border-radius: 8px;
+    pointer-events: none;
+  }
+</style>
