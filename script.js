@@ -644,18 +644,26 @@ function showLicensesView() {
 
 // Función para activar plan
 function showLicensesView_activatePlan(plan) {
+  const user = firebase.auth().currentUser;
+  
   if (plan === 'free') {
-    window.licenseManager.setLicense('free');
-    showNotification('✅ Cambiado a plan FREE');
+    // Establecer plan FREE con expiración de 20 días
+    const expiresAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
+    
+    // Guardar en localStorage con fecha de expiración
+    localStorage.setItem('userLicense', 'free');
+    localStorage.setItem('licenseExpiresAt', expiresAt.getTime());
+    
+    showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
     document.getElementById('licensesModal')?.remove();
     location.reload();
+    
   } else if (plan === 'professional') {
     showNotification('💡 Para actualizar a PROFESSIONAL, contacta al administrador');
   } else if (plan === 'premium') {
     showNotification('🏢 Para actualizar a PREMIUM (empresas), contacta a ventas@tudominio.com');
   }
 }
-
 // Función para activar código
 function showLicensesView_activateCode() {
   const code = document.getElementById('licenseCodeInput').value.trim();
