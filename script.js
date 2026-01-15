@@ -514,7 +514,8 @@ function showSystemConfiguration() {
   
   document.body.appendChild(modal);
 }
-// Gestión de Licencias
+
+
 // Gestión de Licencias
 function showLicensesView() {
   console.log('🔐 Abriendo Gestión de Licencias...');
@@ -563,7 +564,7 @@ function showLicensesView() {
         <!-- Plan FREE -->
         <div style="background: ${currentLicense === 'free' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'free' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px;">
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'free' ? '#4CAF50' : '#ffffff'};">FREE</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">$0</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€0</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Tablero Kanban</li>
             <li style="margin: 5px 0;">✓ Lista de tareas</li>
@@ -587,7 +588,7 @@ function showLicensesView() {
             POPULAR
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">$24/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€9.99/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
             <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
@@ -609,7 +610,7 @@ function showLicensesView() {
             EMPRESAS
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">$59/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€19.99/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
             <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
@@ -642,7 +643,7 @@ function showLicensesView() {
   
   document.body.appendChild(modal);
   
-  // 👇 EVENTOS CORREGIDOS (esto es lo importante)
+  // EVENTOS CORREGIDOS
   document.getElementById('closeLicensesModal').onclick = () => {
     modal.remove();
   };
@@ -669,6 +670,7 @@ function showLicensesView() {
     showLicensesView_activateCode();
   };
 }
+
 // Función para activar plan
 function showLicensesView_activatePlan(plan) {
   const user = firebase.auth().currentUser;
