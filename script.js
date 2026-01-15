@@ -672,34 +672,60 @@ function showLicensesView() {
 }
 
 // Función para activar plan
-function showLicensesView_activatePlan(plan) {
+async function showLicensesView_activatePlan(plan) {
   const user = firebase.auth().currentUser;
-  
+  if (!user) {
+    showNotification('🔒 Debes iniciar sesión para actualizar tu plan.');
+    return;
+  }
+
   if (plan === 'free') {
-    // Establecer plan FREE con expiración de 20 días
     const expiresAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
-    
-    // Guardar en localStorage con fecha de expiración
     localStorage.setItem('userLicense', 'free');
     localStorage.setItem('licenseExpiresAt', expiresAt.getTime());
     
-    // Mostrar notificación con duración extendida (5 segundos)
-const notification = showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
-setTimeout(() => {
-  if (notification && notification.parentNode) {
-    notification.parentNode.removeChild(notification);
-  }
-}, 5000); // 5 segundos
+    const notification = showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
+    setTimeout(() => {
+      if (notification && notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 5000);
+    
     document.getElementById('licensesModal')?.remove();
     location.reload();
     
-  } else if (plan === 'professional') {
-    showNotification('💡 Para actualizar a PROFESSIONAL, contacta al administrador');
-  } else if (plan === 'premium') {
-    showNotification('🏢 Para actualizar a PREMIUM (empresas), contacta a ventas@tudominio.com');
+  } else if (plan === 'professional' || plan === 'premium') {
+    try {
+      showNotification('🚀 Redirigiendo a Stripe para pago seguro...', 3000);
+      
+      const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          email: user.email,
+          plan: plan,
+          successUrl: window.location.origin + '/?payment=success',
+          cancelUrl: window.location.origin + '/?payment=cancelled'
+        })
+      });
+      
+      const session = await response.json();
+      
+      if (session.id) {
+        window.location.href = session.url;
+      } else {
+        throw new Error('No se pudo crear la sesión de pago');
+      }
+      
+    } catch (error) {
+      console.error('Error al crear sesión de pago:', error);
+      showNotification('❌ Error al procesar el pago. Intenta de nuevo.', 5000);
+    }
   }
-}
-// Función para activar código
+}// Función para activar código
 function showLicensesView_activateCode() {
   const code = document.getElementById('licenseCodeInput').value.trim();
   if (!code) {
