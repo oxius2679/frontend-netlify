@@ -515,6 +515,7 @@ function showSystemConfiguration() {
   document.body.appendChild(modal);
 }
 // Gestión de Licencias
+// Gestión de Licencias
 function showLicensesView() {
   console.log('🔐 Abriendo Gestión de Licencias...');
   
@@ -546,7 +547,7 @@ function showLicensesView() {
     <div style="background: #1a1a1a; padding: 30px; border-radius: 15px; max-width: 1200px; width: 95%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
         <h2 style="margin: 0; color: #4CAF50; font-size: 28px;">🔐 Gestión de Licencias</h2>
-        <button onclick="document.getElementById('licensesModal').remove()" 
+        <button id="closeLicensesModal" 
                 style="background: #ff4444; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 16px;">
           ✕
         </button>
@@ -573,7 +574,7 @@ function showLicensesView() {
             <li style="margin: 5px 0; color: #666666;">✗ Reportes EVM</li>
             <li style="margin: 5px 0; color: #666666;">✗ Exportación PDF</li>
           </ul>
-          <button onclick="showLicensesView_activatePlan('free')" 
+          <button id="selectFreePlan" 
                   style="width: 100%; padding: 10px; background: ${currentLicense === 'free' ? '#4CAF50' : '#666666'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'free' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'free' ? '0.7' : '1'};"
                   ${currentLicense === 'free' ? 'disabled' : ''}>
             ${currentLicense === 'free' ? 'Plan actual' : 'Seleccionar'}
@@ -596,7 +597,7 @@ function showLicensesView() {
             <li style="margin: 5px 0;">✓ Seguimiento de tiempo avanzado</li>
             <li style="margin: 5px 0;">✓ Proyectos ilimitados</li>
           </ul>
-          <button onclick="showLicensesView_activatePlan('professional')" 
+          <button id="selectProfessionalPlan" 
                   style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
             ${currentLicense === 'professional' ? 'Plan actual' : 'Actualizar'}
           </button>
@@ -618,7 +619,7 @@ function showLicensesView() {
             <li style="margin: 5px 0;">✓ Plantillas profesionales</li>
             <li style="margin: 5px 0;">✓ Auditoría de cambios</li>
           </ul>
-          <button onclick="showLicensesView_activatePlan('premium')" 
+          <button id="selectPremiumPlan" 
                   style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
             ${currentLicense === 'premium' ? 'Plan actual' : 'Actualizar'}
           </button>
@@ -630,7 +631,7 @@ function showLicensesView() {
         <div style="display: flex; gap: 10px;">
           <input type="text" id="licenseCodeInput" placeholder="Ingresa tu código de licencia" 
                  style="flex: 1; padding: 10px; border: 1px solid #444; background: #333; color: white; border-radius: 5px;">
-          <button onclick="showLicensesView_activateCode()" 
+          <button id="activateLicenseCode" 
                   style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
             Activar
           </button>
@@ -640,8 +641,34 @@ function showLicensesView() {
   `;
   
   document.body.appendChild(modal);
+  
+  // 👇 EVENTOS CORREGIDOS (esto es lo importante)
+  document.getElementById('closeLicensesModal').onclick = () => {
+    modal.remove();
+  };
+  
+  document.getElementById('selectFreePlan').onclick = () => {
+    if (currentLicense !== 'free') {
+      showLicensesView_activatePlan('free');
+    }
+  };
+  
+  document.getElementById('selectProfessionalPlan').onclick = () => {
+    if (currentLicense !== 'professional') {
+      showLicensesView_activatePlan('professional');
+    }
+  };
+  
+  document.getElementById('selectPremiumPlan').onclick = () => {
+    if (currentLicense !== 'premium') {
+      showLicensesView_activatePlan('premium');
+    }
+  };
+  
+  document.getElementById('activateLicenseCode').onclick = () => {
+    showLicensesView_activateCode();
+  };
 }
-
 // Función para activar plan
 function showLicensesView_activatePlan(plan) {
   const user = firebase.auth().currentUser;
