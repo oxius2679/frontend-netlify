@@ -3848,7 +3848,29 @@ function createSampleProjects() {
 
 
 // ========== GANTT EJECUTIVO COMPLETO CON TODAS LAS MEJORAS ==========
-function createPremiumGanttWithYourData() {
+async function createPremiumGanttWithYourData() {
+  // 🔒 VERIFICACIÓN DE LICENCIA
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+    const data = await response.json();
+    
+    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
+      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+      return;
+    }
+  } catch (error) {
+    console.error('Error verificando licencia:', error);
+    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
+    return;
+  }
+
+  // ✅ USUARIO AUTORIZADO
   console.log('🚀 Creando Gantt ejecutivo premium completo...');
   
   if (typeof projects === 'undefined' || !projects || projects.length === 0) {
@@ -3859,7 +3881,6 @@ function createPremiumGanttWithYourData() {
   
   createProjectSelector();
 }
-
 // ========== SELECTOR DE PROYECTOS ==========
 function createProjectSelector() {
   const selectorContainer = document.createElement('div');
@@ -3968,11 +3989,35 @@ function closeProjectSelector() {
   if (selector) selector.remove();
 }
 
-function createGanttWithSelectedProject() {
+async function createGanttWithSelectedProject() {
+  // 🔒 VERIFICACIÓN DE LICENCIA
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
+    closeProjectSelector();
+    return;
+  }
+
+  try {
+    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
+    const data = await response.json();
+    
+    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
+      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+      closeProjectSelector();
+      return;
+    }
+  } catch (error) {
+    console.error('Error verificando licencia:', error);
+    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
+    closeProjectSelector();
+    return;
+  }
+
+  // ✅ USUARIO AUTORIZADO
   closeProjectSelector();
   createCompleteGanttForCurrentProject();
 }
-
 // ========== FUNCIONES AUXILIARES NECESARIAS ==========
 
 // ================================================
