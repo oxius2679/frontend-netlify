@@ -237,14 +237,16 @@ window.authToken = localStorage.getItem("authToken") || "";
 console.log("🔐 Token cargado:", window.authToken ? "✅ Presente" : "❌ Ausente");
 
 // Mostrar pantalla de login si NO hay token
-if (!window.authToken || window.authToken.length < 10) {
-    console.log("⚠️ No hay sesión activa válida. Mostrando pantalla de login.");
+// CAMBIO: Solo verificar si existe el token, no su longitud
+if (!window.authToken) {
+    console.log("⚠️ No hay sesión activa. Mostrando pantalla de login.");
     document.addEventListener("DOMContentLoaded", () => {
         showLoginScreen();
     });
 } else {
-    console.log("✅ Sesión activa detectada, token:", window.authToken.substring(0, 30) + "...");
+    console.log("✅ Sesión activa detectada, token presente");
 }
+
 // 🟡 Si NO hay token → mostrar pantalla de login y DETENER todo lo demás
 // ✅ VERSIÓN CORREGIDA:
 if (!window.authToken) {
