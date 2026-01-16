@@ -20612,6 +20612,10 @@ document.getElementById('restoreFromLocal')?.addEventListener('click', function 
                 // Actualizar la variable global
                 window.projects = data.projects;
 
+                                        // 🔥 Sincronizar proyecto activo para Dashboard y Gantt
+               window.currentProjectIndex = data.currentProjectIndex ?? 0;
+
+
                 // Mostrar mensaje
                 document.getElementById('backupStatus').textContent = '✅ Datos cargados';
                 setTimeout(() => document.getElementById('backupStatus').textContent = '', 3000);
