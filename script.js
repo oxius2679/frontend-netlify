@@ -39171,4 +39171,23 @@ setTimeout(() => {
   // 3. Forzar inicialización segura
   if (window.authToken && (!window.projects || window.projects.length === 0)) {
     console.log('🔄 Inicialización segura de proyectos...');
-   }
+    
+       
+    if (!window.projects) window.projects = [];
+    if (window.projects.length === 0) {
+      window.projects.push(safeProject);
+      window.currentProjectIndex = 0;
+      
+      // Guardar en localStorage
+      localStorage.setItem('projects', JSON.stringify(window.projects));
+      localStorage.setItem('currentProjectIndex', '0');
+      
+      // Renderizar si existe la función
+      if (typeof renderProjects === 'function') {
+        setTimeout(() => renderProjects(), 500);
+      }
+    }
+  }
+  
+  console.log('✅ Correcciones de duplicados aplicadas');
+}, 3000);
