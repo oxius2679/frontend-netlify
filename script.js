@@ -218,11 +218,7 @@ console.log("🔥 SCRIPT CORRECTO CARGADO v1");
 
 // ===== CONFIGURACIÓN GLOBAL MEJORADA =====
 window.API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
-
-
-
-
-
+window.authMode = 'backend'; // 👈👈👈 AÑADE ESTA LÍNEA AQUÍ
 const API_URL = window.API_URL;
 console.log("🌐 API_URL cargado:", API_URL);
 
