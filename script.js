@@ -1224,33 +1224,31 @@ async function checkBackendStatus() {
   return false;
 }
 
-// 🔁 Revisar cada 60 segundos automáticamente (reducido de 15)
-// Solo si realmente necesitamos verificar el backend
-if (window.checkBackendOnStartup !== false) {
-  setTimeout(() => {
-    checkBackendStatus();
-  }, 5000); // Esperar 5 segundos antes del primer check
-  setInterval(checkBackendStatus, 60000); // Cada 60 segundos, no 15
-}
+// 🔁 Revisar cada 15 segundos automáticamente
+setInterval(checkBackendStatus, 15000);
+checkBackendStatus(); // ejecutar inmediatamente al iniciar
+
 
 
 
 
 // Función para verificar estado del backend
 async function checkBackendStatus() {
-  // SIEMPRE usar localStorage si hay problemas persistentes
-  if (window.backendPermanentlyDisabled) {
-    console.log('ℹ️ Backend deshabilitado permanentemente - Modo localStorage');
+  try {
+    console.log('🔄 Verificando conexión con backend...');
+    const response = await fetch(`${API_URL}/api/health`);
+    if (response.ok) {
+      console.log('✅ Backend disponible');
+      useBackend = true;
+      return true;
+    }
+  } catch (error) {
+    console.warn('⚠️ Backend no disponible - Modo localStorage');
     useBackend = false;
-    return false;
   }
-  
-  // Limitar intentos para no saturar
-  if (window.backendCheckAttempts && window.backendCheckAttempts > 3) {
-    console.log('ℹ️ Múltiples fallos en backend - Usando localStorage');
-    useBackend = false;
-    return false;
-  }
+  return false;
+}
+
 // Función de respaldo para guardar
 async function safeSave() {
   console.group('📤 Guardando datos en backend o localStorage');
@@ -1369,47 +1367,22 @@ async function safeLoad() {
     }
   }
 
-  
-  // 🔥 NUEVO: Crear proyecto inicial si no hay datos
-if ((!loadedData || !loadedData.projects || loadedData.projects.length === 0) && window.authToken) {
-  console.log('📝 Creando proyecto inicial para nuevo usuario...');
-  
-  const initialProject = {
-    id: 'initial_' + Date.now(),
-    name: "Mi Primer Proyecto",
-    description: "Proyecto creado automáticamente para empezar",
-    tasks: [
-      {
-        id: 1,
-        name: "¡Bienvenido! Haz clic aquí para editar",
-        description: "Esta es tu primera tarea",
-        status: "pending",
-        priority: "media",
-        assignee: firebase.auth().currentUser?.displayName || firebase.auth().currentUser?.email || "Tú",
-        startDate: new Date().toISOString().split('T')[0],
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        estimatedTime: 8,
-        timeLogged: 0,
-        progress: 0,
-        storyPoints: 3,
-        createdAt: new Date().toISOString()
+  // ❌ Si no se pudo cargar desde backend, usar localStorage
+  if (!loadedData || !loadedData.projects) {
+    console.log('🔄 Usando datos de localStorage...');
+    const savedProjects = localStorage.getItem('projects');
+    if (savedProjects) {
+      try {
+        loadedData = {
+          projects: JSON.parse(savedProjects),
+          currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
+        };
+        console.log('✅ Datos cargados desde localStorage');
+      } catch (error) {
+        console.error('❌ Error parseando localStorage:', error);
       }
-    ],
-    createdAt: new Date().toISOString(),
-    createdBy: firebase.auth().currentUser?.uid || 'system'
-  };
-  
-  loadedData = {
-    projects: [initialProject],
-    currentProjectIndex: 0
-  };
-  
-  // Guardar inmediatamente en localStorage
-  localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-  localStorage.setItem('currentProjectIndex', '0');
-  
-  console.log('✅ Proyecto inicial creado:', initialProject.name);
-}
+    }
+  }
 
   // Inicializar datos si no hay nada
   if (loadedData && loadedData.projects) {
