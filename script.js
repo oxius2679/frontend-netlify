@@ -3830,50 +3830,24 @@ function addPremiumStyles() {
   document.head.appendChild(styles);
 }
 
-// 11. Crear proyectos de ejemplo (VERSIÓN SIMPLIFICADA)
-function createSampleProjects() {
-  if (typeof projects === 'undefined') {
-    window.projects = [];
-    window.currentProjectIndex = 0;
-  }
+// function createSampleProjects() {
+//   if (typeof projects === 'undefined') {
+//     window.projects = [];
+//     window.currentProjectIndex = 0;
+//   }
   
-  if (projects.length === 0) {
-    projects.push({
-      name: "Proyecto Demo",
-      tasks: [
-        {
-          id: 1,
-          name: "Tarea de ejemplo 1",
-          startDate: new Date().toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "inProgress",
-          priority: "media",
-          estimatedTime: 8,
-          timeLogged: 4,
-          assignee: "Usuario 1",
-          dependencies: []
-        },
-        {
-          id: 2,
-          name: "Tarea de ejemplo 2",
-          startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "pending",
-          priority: "alta",
-          estimatedTime: 16,
-          timeLogged: 0,
-          assignee: "Usuario 2",
-          dependencies: []
-        }
-      ]
-    });
-    currentProjectIndex = 0;
-  }
+//   if (projects.length === 0) {
+//     projects.push({
+//       name: "Proyecto Demo",
+//       tasks: [ ... ]
+//     });
+//     currentProjectIndex = 0;
+//   }
   
-  setTimeout(() => {
-    createPremiumGanttWithYourData();
-  }, 100);
-}
+//   setTimeout(() => {
+//     createPremiumGanttWithYourData();
+//   }, 100);
+// }
 
 // ========== FUNCIÓN PRINCIPAL DE GANTT ==========
 // [Aquí va el código completo que te envié anteriormente]
@@ -3916,7 +3890,6 @@ async function createPremiumGanttWithYourData() {
   
   if (typeof projects === 'undefined' || !projects || projects.length === 0) {
     alert('❌ No hay proyectos cargados. Primero crea o importa proyectos.');
-    createSampleProjects();
     return;
   }
   
@@ -20609,6 +20582,15 @@ window.projects = data.projects;
 
 // 🔥 Proyecto activo
 window.currentProjectIndex = data.currentProjectIndex ?? 0;
+
+
+console.log("✅ Projects cargados:", window.projects);
+console.log("✅ Tasks:", window.projects[window.currentProjectIndex]?.tasks);
+
+loadDashboardProjectData();
+renderDashboard?.();
+renderGantt?.();
+
 
 // Mostrar mensaje
 document.getElementById('backupStatus').textContent = '✅ Datos cargados';
@@ -39189,31 +39171,4 @@ setTimeout(() => {
   // 3. Forzar inicialización segura
   if (window.authToken && (!window.projects || window.projects.length === 0)) {
     console.log('🔄 Inicialización segura de proyectos...');
-    
-   // ✅ SOLO crear proyecto seguro SI NO EXISTEN proyectos reales
-if (!Array.isArray(window.projects) || window.projects.length === 0) {
-  window.projects = [{
-    name: "Proyecto Principal",
-    tasks: []
-  }];
-}
-
-    
-    if (!window.projects) window.projects = [];
-    if (window.projects.length === 0) {
-      window.projects.push(safeProject);
-      window.currentProjectIndex = 0;
-      
-      // Guardar en localStorage
-      localStorage.setItem('projects', JSON.stringify(window.projects));
-      localStorage.setItem('currentProjectIndex', '0');
-      
-      // Renderizar si existe la función
-      if (typeof renderProjects === 'function') {
-        setTimeout(() => renderProjects(), 500);
-      }
-    }
-  }
-  
-  console.log('✅ Correcciones de duplicados aplicadas');
-}, 3000);
+   }
