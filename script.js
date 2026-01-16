@@ -15,26 +15,11 @@ console.log('✅ Firebase inicializado');
 // === FUNCIONES DE AUTENTICACIÓN ===
 
 // Registrar nuevo usuario
-// Registrar nuevo usuario - VERSIÓN CORREGIDA
 async function registerUser(email, password) {
   try {
     const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    console.log('✅ Usuario registrado en Firebase:', userCredential.user.email);
-    
-    // 🔥 GENERAR TOKEN PARA NUEVO USUARIO
-    const newToken = `jwt_${Date.now()}_${userCredential.user.uid}`;
-    window.authToken = newToken;
-    localStorage.setItem('authToken', newToken);
-    
-    console.log('🆕 Token generado para nuevo usuario');
-    
-    showNotification('✅ Registro exitoso. Bienvenido! Redirigiendo...');
-    
-    // 🔄 Recargar para continuar
-    setTimeout(() => {
-        location.reload();
-    }, 1000);
-    
+    console.log('✅ Usuario registrado:', userCredential.user.email);
+    showNotification('✅ Registro exitoso. Bienvenido!');
     return userCredential.user;
   } catch (error) {
     console.error('❌ Error al registrar:', error.message);
@@ -42,30 +27,27 @@ async function registerUser(email, password) {
     throw error;
   }
 }
+
 // Iniciar sesión existente
-// Iniciar sesión existente - VERSIÓN CORREGIDA
 async function loginUser(email, password) {
   try {
-    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-    console.log('✅ Sesión iniciada con Firebase:', userCredential.user.email);
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
     
-    // 🔥 GENERAR NUEVO TOKEN PERSONALIZADO DESPUÉS DEL LOGIN
-    const newToken = `jwt_${Date.now()}_${userCredential.user.uid}`;
-    window.authToken = newToken;
-    localStorage.setItem('authToken', newToken);
+    const data = await response.json();
     
-    console.log('🆕 Token generado:', newToken.substring(0, 30) + '...');
-    
-    showNotification('✅ Bienvenido de nuevo! Redirigiendo...');
-    
-    // 🔄 Recargar para continuar con el token válido
-    setTimeout(() => {
-        location.reload();
-    }, 1000);
-    
-    return userCredential.user;
+    if (data.success) {
+      localStorage.setItem('authToken', data.token);
+      window.authToken = data.token;
+      showNotification('✅ Bienvenido!');
+      return data.user;
+    } else {
+      throw new Error(data.error);
+    }
   } catch (error) {
-    console.error('❌ Error al iniciar sesión:', error.message);
     showNotification('❌ ' + error.message);
     throw error;
   }
@@ -265,53 +247,16 @@ if (!window.authToken || window.authToken.length < 10) {
 }
 // 🟡 Si NO hay token → mostrar pantalla de login y DETENER todo lo demás
 // ✅ VERSIÓN CORREGIDA:
-// 🔐 VERIFICACIÓN HÍBRIDA CORREGIDA - Firebase + Token personalizado
-firebase.auth().onAuthStateChanged((user) => {
-    console.log("🔐 Estado de Firebase:", user ? `Usuario: ${user.email}` : "No autenticado");
-    
-    if (user) {
-        // ✅ Hay sesión Firebase activa
-        console.log("✅ Sesión Firebase activa detectada");
-        
-        // Si no hay token personalizado, generar uno temporal basado en Firebase
-        if (!window.authToken || window.authToken.length < 10) {
-            window.authToken = `firebase_${user.uid}_${Date.now()}`;
-            localStorage.setItem('authToken', window.authToken);
-            console.log("🆕 Token temporal generado desde Firebase");
-        }
-        
-        // Continuar con la aplicación
-        console.log("✅ Sesión activa detectada, continuando inicialización...");
-        initApplication();
-        
-    } else if (window.authToken && window.authToken.length > 20) {
-        // ✅ Hay token personalizado válido (aunque no Firebase)
-        console.log("✅ Token personalizado válido detectado");
-        initApplication();
-        
-    } else {
-        // ❌ No hay ninguna sesión
-        console.log("⚠️ No hay sesión activa. Mostrando pantalla de login.");
-        document.addEventListener('DOMContentLoaded', showLoginScreen);
-    }
-});
-
-// Función para inicializar la aplicación cuando hay sesión válida
-function initApplication() {
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🎯 Iniciando aplicación con validación...');
-        const dataLoaded = safeLoad();
-        if (!dataLoaded || projects.length === 0) {
-            console.log('📝 No hay datos, creando proyecto inicial...');
-        } else {
-            console.log('✅ Datos cargados correctamente');
-            renderProjects();
-            selectProject(currentProjectIndex);
-            checkOverdueTasks();
-        }
-        setupEventListeners();
+if (!window.authToken) {
+    console.log("⚠️ No hay sesión activa. Mostrando pantalla de login.");
+    document.addEventListener("DOMContentLoaded", () => {
+        showLoginScreen();
     });
+    // NO usar return - dejar que el script continúe cargando
+} else {
+    console.log("✅ Sesión activa detectada, continuando inicialización...");
 }
+
 
 
 
