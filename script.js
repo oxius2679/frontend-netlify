@@ -1353,14 +1353,21 @@ async function safeLoad() {
             localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
             console.log('📦 Datos guardados en localStorage como respaldo');
           }
-        } else if (response.status === 401) {
-          console.error('❌ Token inválido o expirado');
-          localStorage.removeItem('authToken');
-          window.authToken = "";
-          showNotification('Sesión expirada. Por favor, inicia sesión nuevamente.');
-          showLoginScreen();
-          return false;
-        }
+       } else if (response.status === 401) {
+  console.warn('⚠️ Backend respondió 401. Continuando en modo local.');
+  
+  // ⚠️ NO borrar token
+  // ⚠️ NO cerrar sesión
+  // ⚠️ NO redirigir al login
+
+  showNotification(
+    'No se pudo sincronizar con el servidor. Trabajando en modo local.',
+    'warning'
+  );
+
+  return []; // Continuar sin proyectos desde backend
+}
+
       } catch (error) {
         console.warn('⚠️ Error cargando desde backend:', error.message);
       }
