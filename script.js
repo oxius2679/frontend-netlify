@@ -20607,22 +20607,21 @@ document.getElementById('restoreFromLocal')?.addEventListener('click', function 
                 }
 
                 // Guardar en localStorage
-                localStorage.setItem('projects', JSON.stringify(data.projects));
+localStorage.setItem('projects', JSON.stringify(data.projects));
 
-                // Actualizar la variable global
-                window.projects = data.projects;
+// Actualizar la variable global
+window.projects = data.projects;
 
-                                        // 🔥 Sincronizar proyecto activo para Dashboard y Gantt
-               window.currentProjectIndex = data.currentProjectIndex ?? 0;
+// 🔥 Proyecto activo
+window.currentProjectIndex = data.currentProjectIndex ?? 0;
 
+// Mostrar mensaje
+document.getElementById('backupStatus').textContent = '✅ Datos cargados';
+setTimeout(() => document.getElementById('backupStatus').textContent = '', 3000);
+showNotification(`✅ ${data.projects.length} proyectos cargados`);
 
-                // Mostrar mensaje
-                document.getElementById('backupStatus').textContent = '✅ Datos cargados';
-                setTimeout(() => document.getElementById('backupStatus').textContent = '', 3000);
-                showNotification(`✅ ${data.projects.length} proyectos cargados`);
+// ❌ NO location.reload()
 
-                // Recargar la vista actual
-                location.reload();
 
             } catch (err) {
                 console.error('Error al cargar archivo:', err);
