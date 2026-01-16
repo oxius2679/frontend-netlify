@@ -13340,11 +13340,6 @@ loadDashboardProjectData();
 });
 
 
-
-
-
-
-
   // Actualizar estado del proyecto
   updateProjectHealthStatus();
 
@@ -39195,18 +39190,14 @@ setTimeout(() => {
   if (window.authToken && (!window.projects || window.projects.length === 0)) {
     console.log('🔄 Inicialización segura de proyectos...');
     
-    // Crear proyecto mínimo seguro
-    const safeProject = {
-      name: "Proyecto Principal",
-      tasks: [
-        {
-          id: 1,
-          name: "Primera tarea",
-          status: "pending",
-          assignee: "Usuario"
-        }
-      ]
-    };
+   // ✅ SOLO crear proyecto seguro SI NO EXISTEN proyectos reales
+if (!Array.isArray(window.projects) || window.projects.length === 0) {
+  window.projects = [{
+    name: "Proyecto Principal",
+    tasks: []
+  }];
+}
+
     
     if (!window.projects) window.projects = [];
     if (window.projects.length === 0) {
