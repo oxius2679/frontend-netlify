@@ -1451,73 +1451,32 @@ window.methodologyManager = new MethodologyManager();
 
 
 
-// ========== SISTEMA DE LICENCIAS ACTUALIZADO ==========
+// ========== SISTEMA DE LICENCIAS FORZADO A PREMIUM ==========
 class LicenseManager {
   constructor() {
-    this.license = 'free';
-    this.loadLicense();
+    this.license = 'premium';
+    localStorage.setItem('userLicense', 'premium');
   }
 
   async getLicense() {
-    return new Promise((resolve) => {
-      const unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-        unsubscribe(); // Detener el listener después de la primera verificación
-        
-        if (!user) {
-          this.license = 'free';
-          resolve('free');
-          return;
-        }
-        
-        try {
-          const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
-          const data = await response.json();
-          
-          if (data.success && data.valid) {
-            this.license = data.plan;
-            localStorage.setItem('userLicense', data.plan);
-            resolve(data.plan);
-          } else {
-            this.license = 'free';
-            localStorage.setItem('userLicense', 'free');
-            resolve('free');
-          }
-        } catch (error) {
-          console.error('Error al verificar licencia:', error);
-          resolve(this.license);
-        }
-      });
-    });
+    this.license = 'premium';
+    localStorage.setItem('userLicense', 'premium');
+    return 'premium';
   }
 
-  async setLicense(license) {
-    const valid = ['free', 'professional', 'premium'];
-    if (valid.includes(license)) {
-      this.license = license;
-      localStorage.setItem('userLicense', license);
-    }
+  async setLicense() {
+    this.license = 'premium';
+    localStorage.setItem('userLicense', 'premium');
   }
 
   canAccess(feature) {
-    const rules = {
-      'premiumExecutiveGantt': ['professional', 'premium'],
-      'reports': ['professional', 'premium'],
-      'profitability': ['professional', 'premium'],
-      'gantt': ['professional', 'premium'],
-      'board': ['free', 'professional', 'premium'],
-      'calendar': ['free', 'professional', 'premium'],
-      'list': ['free', 'professional', 'premium'],
-      'timeAllocation': ['free', 'professional', 'premium'],
-      'changeMethodology': ['professional', 'premium'],
-    };
-    return rules[feature] ? rules[feature].includes(this.license) : true;
+    // PREMIUM TOTAL: acceso a todo
+    return true;
   }
-  
+
   loadLicense() {
-    const savedLicense = localStorage.getItem('userLicense');
-    if (savedLicense) {
-      this.license = savedLicense;
-    }
+    this.license = 'premium';
+    localStorage.setItem('userLicense', 'premium');
   }
 }
 
