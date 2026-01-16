@@ -1096,188 +1096,32 @@ function logout() {
 // Reemplazar el evento DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // 🔥 NUEVO: Inicializar variables de control primero
-  window.backendCheckAttempts = 0;
-  window.allowBackendChecks = false; // Desactivar checks automáticos al inicio
-  window.backendPermanentlyDisabled = false;
-
-  // 🔥 NUEVO: Configurar listener de Firebase inmediatamente
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-      console.log('👤 Usuario Firebase autenticado:', user.email);
-      // Si no hay token JWT, crear uno simple basado en Firebase
-      if (!window.authToken || window.authToken.length < 10) {
-        const firebaseToken = btoa(JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          source: 'firebase_fallback',
-          timestamp: Date.now()
-        }));
-        localStorage.setItem('authToken', firebaseToken);
-        window.authToken = firebaseToken;
-        console.log('🔄 Token generado desde Firebase');
-      }
-    }
-  });
 
   // 🔐 Cargar token aquí, SOLO aquí
   window.authToken = localStorage.getItem("authToken") || "";
-  
   // ✅ Verificar autenticación ANTES de cargar la app
   const token = localStorage.getItem('authToken');
   if (!token) {
-    console.log('🔐 No hay token, mostrando pantalla de login');
     showLoginScreen();
     return; // ⬅️ Detener aquí si no hay token
   }
 
-  console.log('✅ Token encontrado, verificando Firebase...');
-
-  // 🔥 NUEVO: Esperar un momento para que Firebase se inicialice
-  setTimeout(async () => {
-    // 👇 Solo si hay token, continuar con la app
-    console.log('🎯 Iniciando aplicación con validación...');
-    
-    // 🔥 NUEVO: Intentar cargar datos con manejo de errores robusto
-    try {
-      const dataLoaded = await safeLoad();
-      
-      // 🔥 NUEVO: Crear proyecto inicial SIEMPRE si no hay datos
-      if (!dataLoaded || !projects || projects.length === 0) {
-        console.log('📝 No hay datos, creando proyecto inicial...');
-        
-        // Obtener usuario actual
-        const user = firebase.auth().currentUser;
-        const userName = user ? (user.displayName || user.email || "Tú") : "Usuario";
-        
-        const initialProject = {
-          id: 'initial_' + Date.now(),
-          name: `Proyecto de ${userName.split('@')[0]}`,
-          description: "Proyecto creado automáticamente",
-          tasks: [
-            {
-              id: 1,
-              name: "¡Bienvenido! Haz clic para editar",
-              description: "Tu primera tarea. Haz doble clic para editarla.",
-              status: "pending",
-              priority: "media",
-              assignee: userName,
-              startDate: new Date().toISOString().split('T')[0],
-              deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              estimatedTime: 4,
-              timeLogged: 0,
-              progress: 0,
-              storyPoints: 1,
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 2,
-              name: "Tarea en progreso",
-              description: "Una tarea que ya estás trabajando",
-              status: "inProgress",
-              priority: "alta",
-              assignee: userName,
-              startDate: new Date().toISOString().split('T')[0],
-              deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              estimatedTime: 8,
-              timeLogged: 3,
-              progress: 37,
-              storyPoints: 3,
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 3,
-              name: "Tarea completada",
-              description: "Una tarea ya finalizada",
-              status: "completed",
-              priority: "baja",
-              assignee: userName,
-              startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              deadline: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              estimatedTime: 12,
-              timeLogged: 12,
-              progress: 100,
-              storyPoints: 5,
-              createdAt: new Date().toISOString()
-            }
-          ],
-          createdAt: new Date().toISOString(),
-          createdBy: user ? user.uid : 'system'
-        };
-        
-        // Inicializar proyectos
-        projects = [initialProject];
-        currentProjectIndex = 0;
-        
-        // Guardar inmediatamente
-        localStorage.setItem('projects', JSON.stringify(projects));
-        localStorage.setItem('currentProjectIndex', '0');
-        
-        console.log('✅ Proyecto inicial creado con 3 tareas de ejemplo');
-        
-        // Renderizar inmediatamente
-        renderProjects();
-        selectProject(currentProjectIndex);
-        
-      } else {
-        console.log('✅ Datos cargados correctamente');
-        renderProjects();
-        selectProject(currentProjectIndex);
-        
-        // 🔥 NUEVO: Verificar tareas vencidas de forma segura
-        try {
-          checkOverdueTasks();
-        } catch (error) {
-          console.warn('⚠️ Error en checkOverdueTasks:', error.message);
-          // No romper la aplicación
-        }
-      }
-      
-      setupEventListeners();
-      
-      // 🔥 NUEVO: Habilitar checks de backend solo después de que todo cargue
-      setTimeout(() => {
-        window.allowBackendChecks = true;
-        console.log('🔄 Checks de backend habilitados');
-      }, 10000); // Esperar 10 segundos
-      
-      // 🔥 NUEVO: Mostrar mensaje de bienvenida
-      if (typeof showNotification === 'function') {
-        const user = firebase.auth().currentUser;
-        if (user) {
-          showNotification(`👋 ¡Bienvenido ${user.email}! Sistema cargado correctamente.`);
-        }
-      }
-      
-      console.log('🚀 Aplicación completamente cargada y lista');
-      
-    } catch (error) {
-      console.error('❌ Error crítico al cargar la aplicación:', error);
-      
-      // 🔥 NUEVO: Modo de recuperación de emergencia
-      console.log('🆘 Activando modo de recuperación...');
-      
-      // Crear proyecto mínimo
-      const emergencyProject = {
-        name: "Proyecto de Recuperación",
-        tasks: [
-          { id: 1, name: "Sistema recuperado", status: "pending" }
-        ]
-      };
-      
-      localStorage.setItem('projects', JSON.stringify([emergencyProject]));
-      localStorage.setItem('currentProjectIndex', '0');
-      
-      // Forzar recarga
-      setTimeout(() => {
-        location.reload();
-      }, 2000);
-    }
-    
-  }, 500); // Esperar 500ms para que Firebase se inicialice
-  
+  // 👇 Solo si hay token, continuar con la app
+  console.log('🎯 Iniciando aplicación con validación...');
+  const dataLoaded = safeLoad();
+  if (!dataLoaded || projects.length === 0) {
+    console.log('📝 No hay datos, creando proyecto inicial...');
+   
+  } else {
+    console.log('✅ Datos cargados correctamente');
+    renderProjects();
+    selectProject(currentProjectIndex);
+    checkOverdueTasks();
+  }
+  setupEventListeners();
   // ... resto de tu inicialización
 });
+
 
 /**************************************
  * SISTEMA DE VALIDACIÓN Y RESPALDO *
@@ -39362,112 +39206,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
-
-
-
-
-// ====================================================
-// 🔧 PARCHES PERMANENTES PARA ESTABILIDAD
-// ====================================================
-
-// Evitar loops infinitos de verificación
-setTimeout(() => {
-  if (typeof checkBackendStatus === 'function') {
-    // Limitar a 3 intentos máximo
-    let attempts = 0;
-    const originalCheck = checkBackendStatus;
-    window.checkBackendStatus = async function() {
-      if (attempts >= 3) {
-        console.log('ℹ️ Backend deshabilitado después de 3 intentos fallidos');
-        return false;
-      }
-      attempts++;
-      return originalCheck();
-    };
-  }
-}, 3000);
-
-// Asegurar que siempre haya un proyecto al iniciar
-setTimeout(() => {
-  if (window.authToken && (!window.projects || window.projects.length === 0)) {
-    console.log('🔍 Verificando proyectos al inicio...');
-    
-    // Esperar a que Firebase se inicialice
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user && (!localStorage.getItem('projects') || localStorage.getItem('projects') === '[]')) {
-        console.log('📝 Creando proyecto inicial automático...');
-        
-        const autoProject = {
-          id: 'auto_' + Date.now(),
-          name: "Proyecto Personal",
-          tasks: [
-            {
-              id: 1,
-              name: "Comienza aquí",
-              status: "pending",
-              assignee: user.email || "Tú"
-            }
-          ]
-        };
-        
-        localStorage.setItem('projects', JSON.stringify([autoProject]));
-        localStorage.setItem('currentProjectIndex', '0');
-        
-        // Recargar la vista si es necesario
-        if (typeof renderProjects === 'function') {
-          setTimeout(() => renderProjects(), 500);
-        }
-      }
-    });
-  }
-}, 2000);
-
-// Parche permanente para checkOverdueTasks
-if (typeof checkOverdueTasks === 'function') {
-  const originalCheckOverdue = checkOverdueTasks;
-  window.checkOverdueTasks = function() {
-    try {
-      // Verificar que haya datos válidos
-      if (!window.projects || window.projects.length === 0) return;
-      if (window.currentProjectIndex >= window.projects.length) return;
-      if (!window.projects[window.currentProjectIndex]) return;
-      
-      return originalCheckOverdue();
-    } catch (error) {
-      console.warn('⚠️ checkOverdueTasks seguro:', error.message);
-      // No hacer nada, no romper la app
-    }
-  };
-  console.log('✅ checkOverdueTasks parcheada permanentemente');
-}
-
-console.log('🛡️ Parches de estabilidad aplicados permanentemente');
-
-
-
-
-
-
-
-
-
-// Comando para verificar el estado del sistema
-window.checkSystemStatus = function() {
-  console.log('🔍 DIAGNÓSTICO DEL SISTEMA:');
-  console.log('📦 localStorage projects:', localStorage.getItem('projects') ? '✅ Presente' : '❌ Ausente');
-  console.log('🔐 authToken:', localStorage.getItem('authToken') ? '✅ Presente' : '❌ Ausente');
-  console.log('👤 Firebase user:', firebase.auth().currentUser ? '✅ ' + firebase.auth().currentUser.email : '❌ No autenticado');
-  console.log('🔄 Backend checks:', window.backendCheckAttempts || 0, 'intentos');
-  console.log('📊 Proyectos en memoria:', window.projects ? window.projects.length : 0);
-  
-  if (!localStorage.getItem('projects') || localStorage.getItem('projects') === '[]') {
-    console.log('⚠️  No hay proyectos. Usa: createSampleProject()');
-  }
-};
-
-// Verificar al cargar
-setTimeout(() => {
-  if (window.authToken) {
-    console.log('✅ Sistema listo - Usa checkSystemStatus() para diagnóstico');
-  }
-}, 3000);
