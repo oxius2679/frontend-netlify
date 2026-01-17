@@ -1,14 +1,4 @@
-console.log('🔍 DIAGNÓSTICO PROJECTS:');
-console.log('window.projects:', window.projects);
-console.log('window.projects.length:', window.projects?.length);
-console.log('local projects:', typeof projects !== 'undefined' ? projects : 'NO DEFINIDA');
 
-// Si ambos existen, compara
-if (window.projects && typeof projects !== 'undefined') {
-  console.log('¿Son el mismo array?', window.projects === projects);
-  console.log('window.projects[0]?.tasks:', window.projects[0]?.tasks?.length);
-  console.log('projects[0]?.tasks:', projects[0]?.tasks?.length);
-}
 
 
 
@@ -1412,7 +1402,7 @@ async function safeLoad() {
 
   // Inicializar datos si no hay nada
   if (loadedData && loadedData.projects) {
-    window.projects = loadedData.projects;
+    projects = loadedData.projects;
     currentProjectIndex = loadedData.currentProjectIndex || 0;
     console.log(`✅ ${projects.length} proyectos cargados`);
   } else {
