@@ -1484,48 +1484,17 @@ async function safeLoad() {
   }
 
   // Inicializar datos si no hay nada
-if (loadedData && loadedData.projects) {
-  // 🔥 CORRECCIÓN CRÍTICA: Asignar a window.projects PRIMERO
-  window.projects = loadedData.projects;
-  window.currentProjectIndex = loadedData.currentProjectIndex || 0;
-  
-  // 🔥 SINCRONIZAR variables locales con window
-  projects = window.projects;
-  currentProjectIndex = window.currentProjectIndex;
-  
-  console.log(`✅ ${window.projects.length} proyectos cargados en window.projects`);
-  console.log(`📝 ${window.projects[0]?.tasks?.length || 0} tareas en proyecto 0`);
-  console.log('🔗 projects === window.projects:', projects === window.projects);
-  
-  // 🔍 VERIFICACIÓN EXTRA: Comparar con localStorage
-  const localStorageProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-  console.log('📦 localStorage tiene:', localStorageProjects[0]?.tasks?.length || 0, 'tareas');
-  
-  // Si hay discrepancia, forzar corrección
-  if (localStorageProjects[0]?.tasks?.length === 4 && 
-      window.projects[0]?.tasks?.length === 1) {
-    console.warn('🚨 DISCREPANCIA DETECTADA: localStorage tiene 4, window.projects tiene 1');
-    console.warn('🔄 Forzando corrección desde localStorage...');
-    
-    window.projects = localStorageProjects;
-    projects = window.projects;
-    console.log('✅ Corregido: Ahora window.projects tiene', window.projects[0]?.tasks?.length, 'tareas');
+  if (loadedData && loadedData.projects) {
+    window.projects = loadedData.projects;
+    currentProjectIndex = loadedData.currentProjectIndex || 0;
+    console.log(`✅ ${projects.length} proyectos cargados`);
+  } else {
+    console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
   }
-  
-} else {
-  console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
-  
-  // Inicializar arrays vacíos PERO SIN DATOS DEMO
-  window.projects = [];
-  projects = window.projects;
-  window.currentProjectIndex = 0;
-  currentProjectIndex = 0;
-  
-  console.log('⚠️ Arrays inicializados vacíos, NO crear proyecto demo automático');
-}
 
-console.groupEnd();
-return !!loadedData;
+  console.groupEnd();
+  return !!loadedData;
+}
 
 
 
