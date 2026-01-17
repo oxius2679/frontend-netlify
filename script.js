@@ -1086,94 +1086,21 @@ function saveSystemConfiguration() {
 
 
 // === MODIFICAR INICIALIZACIÓN PRINCIPAL ===
-const originalDOMContentLoaded = async () => {
+const originalDOMContentLoaded = () => {
   console.log('🎯 Iniciando aplicación con validación...');
-  
-  // 🔍 DEBUG CRÍTICO - Verificar qué hay antes de cargar
-  console.log('🔍 PRE-CARGA: window.projects existe?', typeof window.projects !== 'undefined');
-  console.log('🔍 PRE-CARGA: projects variable existe?', typeof projects !== 'undefined');
-  
-  // Cargar datos de forma segura
-  const dataLoaded = await safeLoad();
-  
-  // 🔍 DEBUG CRÍTICO - Verificar qué se cargó
-  console.log('📊 POST-CARGA:');
-  console.log('  - dataLoaded:', dataLoaded);
-  console.log('  - window.projects:', window.projects);
-  console.log('  - window.projects?.length:', window.projects?.length);
-  
-  if (window.projects && window.projects.length > 0) {
-    console.log('✅ Datos cargados correctamente desde backend/localStorage');
-    console.log(`📋 Proyecto: "${window.projects[0]?.name || 'Sin nombre'}"`);
-    console.log(`📝 Tareas: ${window.projects[0]?.tasks?.length || 0}`);
-    
-    // 🔥 FORZAR ACTUALIZACIÓN DE VARIABLE LOCAL
-    if (typeof projects !== 'undefined' && projects !== window.projects) {
-      console.log('⚠️ ADVERTENCIA: projects !== window.projects, sincronizando...');
-      // Asegurar que ambas variables apuntan al mismo array
-      projects = window.projects;
-    }
-    
+  const dataLoaded = safeLoad();
+  if (!dataLoaded || projects.length === 0) {
+    console.log('📝 No hay datos, creando proyecto inicial...');
+     } else {
+    console.log('✅ Datos cargados correctamente');
     renderProjects();
     selectProject(currentProjectIndex);
     checkOverdueTasks();
-    
-    // 🔍 VERIFICACIÓN EXTRA
-    console.log('🔍 VERIFICACIÓN FINAL DE TAREAS:');
-    const taskCount = window.projects[0]?.tasks?.length || 0;
-    console.log(`   Tareas en window.projects[0]: ${taskCount}`);
-    
-    if (taskCount === 0) {
-      console.warn('⚠️  ¡CUIDADO! Se cargaron 0 tareas aunque deberían haber 4');
-      console.log('   Contenido del proyecto:', window.projects[0]);
-    }
-    
-  } else {
-    console.log('📝 No hay datos, PERO NO CREAR PROYECTO INICIAL');
-    console.log('   (Esto evita sobrescribir datos reales del backend)');
-    
-    // Solo crear si realmente está vacío TODO (ni localStorage ni backend)
-    const hasAnyData = localStorage.getItem('projects') || 
-                      (window.projects && window.projects.length > 0);
-    
-    if (!hasAnyData) {
-      console.log('   ⚠️ Sistema completamente vacío, creando demo básico...');
-      // Solo crear un proyecto DEMO, no inicial
-      window.projects = [{
-        name: "Proyecto Demo",
-        tasks: [
-          {
-            id: Date.now(),
-            name: "Tarea demo 1",
-            status: "pending",
-            priority: "media"
-          }
-        ]
-      }];
-      projects = window.projects;
-      currentProjectIndex = 0;
-    }
   }
-  
   setupEventListeners();
-  
-  // 🔍 DIAGNÓSTICO FINAL
-  setTimeout(() => {
-    console.log('🔍 DIAGNÓSTICO COMPLETO 2s DESPUÉS:');
-    console.log('   window.projects[0]?.tasks?.length:', window.projects[0]?.tasks?.length);
-    console.log('   projects[0]?.tasks?.length:', projects[0]?.tasks?.length);
-    
-    // Si sigue mostrando 1 en lugar de 4, forzar desde localStorage
-    const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    if (savedProjects[0]?.tasks?.length === 4 && 
-        window.projects[0]?.tasks?.length === 1) {
-      console.log('🚨 CRÍTICO: Hay discrepancia, corrigiendo...');
-      window.projects = savedProjects;
-      projects = window.projects;
-      console.log('✅ Corregido: Ahora deberían ser 4 tareas');
-    }
-  }, 2000);
+  // ... resto de tu inicialización
 };
+
 
 // === CERRAR SESIÓN ===
 function logout() {
