@@ -1187,6 +1187,8 @@ function logout() {
 
 // Reemplazar el evento DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
+
+
   // 🔐 Cargar token aquí, SOLO aquí
   window.authToken = localStorage.getItem("authToken") || "";
   // ✅ Verificar autenticación ANTES de cargar la app
@@ -1340,16 +1342,13 @@ async function checkBackendStatus() {
 }
 
 // Función de respaldo para guardar
-// En safeSave() (línea ~1035):
 async function safeSave() {
   console.group('📤 Guardando datos en backend o localStorage');
-  
-  // 🔥 USAR window.projects, no solo projects
-  localStorage.setItem('projects', JSON.stringify(window.projects));
-  console.log('📦 Datos guardados en localStorage desde window.projects');
-  
-  // ... resto del código
-}
+
+  // Siempre guardar en localStorage
+  localStorage.setItem('projects', JSON.stringify(projects));
+  console.log('📦 Datos guardados en localStorage');
+
   // Verificar backend al momento de guardar
 if (await checkBackendStatus()) {
   console.log("➡️ Intentando guardar en backend...");
