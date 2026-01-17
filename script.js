@@ -1613,23 +1613,8 @@ function requirePremiumAccess(featureName, callback) {
 /**************************************
  * VARIABLES GLOBALES Y ELEMENTOS DOM *
  **************************************/
-// === CON ESTO ===
-// 1. Asegurar que window.projects existe (global)
-window.projects = window.projects || [];
-window.currentProjectIndex = window.currentProjectIndex || 0;
-
-// 2. Crear alias locales para compatibilidad
-let projects = window.projects;
-let currentProjectIndex = window.currentProjectIndex;
-
-// 3. DEBUG: Verificar sincronización
-console.log('🔗 Sincronización variables:', {
-  'window.projects === projects': window.projects === projects,
-  'window.projects.length': window.projects.length,
-  'projects.length': projects.length,
-  'window.currentProjectIndex': window.currentProjectIndex,
-  'currentProjectIndex': currentProjectIndex
-});
+let projects = [];
+let currentProjectIndex = 0;
 
 
 // ========== FUNCIONES AUXILIARES BÁSICAS ==========
