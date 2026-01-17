@@ -5052,6 +5052,84 @@ function addPremiumStyles() {
   document.head.appendChild(styles);
 }
 
+function createSampleProjects() {
+  if (typeof projects === 'undefined') {
+    window.projects = [];
+    window.currentProjectIndex = 0;
+  }
+  
+  const sampleProjects = [
+    {
+      name: "Proyecto Alpha",
+      description: "Desarrollo de sistema principal",
+      tasks: [
+        {
+          id: 1,
+          name: "Análisis de requisitos",
+          startDate: new Date().toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "completed",
+          priority: "alta",
+          estimatedTime: 40,
+          timeLogged: 40,
+          assignee: "Ana García",
+          dependencies: []
+        },
+        {
+          id: 2,
+          name: "Diseño de arquitectura",
+          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "inProgress",
+          priority: "alta",
+          estimatedTime: 60,
+          timeLogged: 30,
+          assignee: "Carlos López",
+          dependencies: [1]
+        }
+      ]
+    },
+    {
+      name: "Proyecto Beta",
+      description: "Sitio web corporativo",
+      tasks: [
+        {
+          id: 3,
+          name: "Diseño UI/UX",
+          startDate: new Date().toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "inProgress",
+          priority: "media",
+          estimatedTime: 30,
+          timeLogged: 15,
+          assignee: "María Rodríguez",
+          dependencies: []
+        },
+        {
+          id: 4,
+          name: "Desarrollo Frontend",
+          startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "pending",
+          priority: "alta",
+          estimatedTime: 50,
+          timeLogged: 0,
+          assignee: "Pedro Martínez",
+          dependencies: [3]
+        }
+      ]
+    }
+  ];
+  
+  if (projects.length === 0) {
+    projects.push(...sampleProjects);
+    currentProjectIndex = 0;
+  }
+  
+  setTimeout(() => {
+    createPremiumGanttWithYourData();
+  }, 100);
+}
 
 
 function createCompleteGanttForCurrentProject() {
@@ -38091,12 +38169,9 @@ window.showView = showView;
 // Con gráficos Chart.js para progreso acumulado, estado de tareas y tareas críticas
 // ================================================
 
-function showDashboard4DView(tasks = null) {
-    console.log('📊 showDashboard4DView - Iniciando...');
-    
-    // Usar tareas proporcionadas o tomar de window.projects
-    const realTasks = tasks || window.projects[0]?.tasks || [];
-    console.log(`📋 Mostrando ${realTasks.length} tareas en dashboard`);
+window.showDashboard4DView = function () {
+
+
 // 🔒 PROTECCIÓN POR LICENCIA
   if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
     showNotification('🔒 El Dashboard 4D está disponible en los planes Profesional o Premium.');
@@ -39176,40 +39251,8 @@ if (titleElement) {
 };
 
 // Alias para compatibilidad
-function createGlobalDashboard4D(tasks) {
-    console.log('🎯 createGlobalDashboard4D CORREGIDA - Usando datos reales');
-    
-    // Usar tareas proporcionadas o tomar de window.projects
-    const realTasks = tasks || window.projects[0]?.tasks || [];
-    console.log(`📊 Dashboard 4D con ${realTasks.length} tareas reales`);
-    
-    // Llamar a showDashboard4DView con datos reales
-    if (typeof window.showDashboard4DView === 'function') {
-        window.showDashboard4DView(realTasks);
-    } else {
-        console.error('❌ showDashboard4DView no encontrada');
-        // Fallback: crear dashboard básico
-        createBasicDashboard4D(realTasks);
-    }
-}
-
-// Función de respaldo
-function createBasicDashboard4D(tasks) {
-    const taskCount = tasks.length;
-    const completed = tasks.filter(t => t.status === 'completed').length;
-    
-    const html = `
-        <div id="dashboard4dview" style="padding: 20px;">
-            <h2>📊 Dashboard 4D</h2>
-            <p><strong>Tareas totales:</strong> ${taskCount}</p>
-            <p><strong>Completadas:</strong> ${completed}</p>
-            <p><strong>En progreso:</strong> ${tasks.filter(t => t.status === 'inProgress').length}</p>
-            <p><strong>Pendientes:</strong> ${tasks.filter(t => t.status === 'pending').length}</p>
-        </div>
-    `;
-    
-    const container = document.querySelector('main') || document.body;
-    container.innerHTML = html;
+function createGlobalDashboard4D() {
+    window.showDashboard4DView();
 }
 
 
