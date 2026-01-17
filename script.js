@@ -38097,8 +38097,6 @@ function showDashboard4DView(tasks = null) {
     // Usar tareas proporcionadas o tomar de window.projects
     const realTasks = tasks || window.projects[0]?.tasks || [];
     console.log(`📋 Mostrando ${realTasks.length} tareas en dashboard`);
-
-
 // 🔒 PROTECCIÓN POR LICENCIA
   if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
     showNotification('🔒 El Dashboard 4D está disponible en los planes Profesional o Premium.');
