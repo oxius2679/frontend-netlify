@@ -4028,6 +4028,54 @@ function addPremiumStyles() {
   document.head.appendChild(styles);
 }
 
+// 11. Crear proyectos de ejemplo (VERSIÓN SIMPLIFICADA)
+function createSampleProjects() {
+  if (typeof projects === 'undefined') {
+    window.projects = [];
+    window.currentProjectIndex = 0;
+  }
+  
+  if (projects.length === 0) {
+    projects.push({
+      name: "Proyecto Demo",
+      tasks: [
+        {
+          id: 1,
+          name: "Tarea de ejemplo 1",
+          startDate: new Date().toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "inProgress",
+          priority: "media",
+          estimatedTime: 8,
+          timeLogged: 4,
+          assignee: "Usuario 1",
+          dependencies: []
+        },
+        {
+          id: 2,
+          name: "Tarea de ejemplo 2",
+          startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "pending",
+          priority: "alta",
+          estimatedTime: 16,
+          timeLogged: 0,
+          assignee: "Usuario 2",
+          dependencies: []
+        }
+      ]
+    });
+    currentProjectIndex = 0;
+  }
+  
+  setTimeout(() => {
+    createPremiumGanttWithYourData();
+  }, 100);
+}
+
+// ========== FUNCIÓN PRINCIPAL DE GANTT ==========
+// [Aquí va el código completo que te envié anteriormente]
+// Busca la función createPremiumGanttWithYourData() y pégala aquí
 
 
 
