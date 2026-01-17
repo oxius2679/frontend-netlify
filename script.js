@@ -1187,7 +1187,6 @@ function logout() {
 
 // Reemplazar el evento DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
-
   // 🔐 Cargar token aquí, SOLO aquí
   window.authToken = localStorage.getItem("authToken") || "";
   // ✅ Verificar autenticación ANTES de cargar la app
@@ -1211,45 +1210,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   setupEventListeners();
   // ... resto de tu inicialización
-  
-  // 🔥🔥🔥 PARCHE DE EMERGENCIA - EJECUTAR 2s DESPUÉS
-  setTimeout(() => {
-    console.log('🔍 EJECUTANDO PARCHE DE SINCRONIZACIÓN...');
-    
-    // Verificar discrepancia entre localStorage y window.projects
-    const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    const savedTasks = savedProjects[0]?.tasks?.length || 0;
-    const currentTasks = window.projects[0]?.tasks?.length || 0;
-    
-    if (savedTasks === 4 && currentTasks === 1) {
-      console.log('🚨 CRÍTICO: localStorage tiene 4 tareas, pero window.projects tiene 1');
-      console.log('🔄 Forzando corrección...');
-      
-      // 1. Corregir window.projects
-      window.projects = savedProjects;
-      
-      // 2. Corregir variable local projects
-      projects = window.projects;
-      
-      // 3. Forzar actualización de UI
-      if (typeof renderProjects === 'function') {
-        renderProjects();
-      }
-      if (typeof selectProject === 'function') {
-        selectProject(window.currentProjectIndex);
-      }
-      
-      console.log('✅ Corregido: window.projects ahora tiene', window.projects[0]?.tasks?.length, 'tareas');
-    }
-    
-    // Verificación final
-    console.log('📊 ESTADO FINAL:');
-    console.log('   - localStorage:', savedTasks, 'tareas');
-    console.log('   - window.projects:', window.projects[0]?.tasks?.length, 'tareas');
-    console.log('   - projects === window.projects:', projects === window.projects);
-  }, 2000);
-  
 });
+
 
 /**************************************
  * SISTEMA DE VALIDACIÓN Y RESPALDO *
@@ -18026,10 +17988,6 @@ function getCompletadasColorFromSystem() {
  * INICIALIZACIÓN *
  ***********************/
 document.addEventListener('DOMContentLoaded', async () => {
-
-
-
-
   console.log('🚀 Iniciando aplicación...');
   
   // 🔐 Verificar autenticación ANTES de cargar la app
