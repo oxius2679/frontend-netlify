@@ -1529,39 +1529,18 @@ class MethodologyManager {
     // Añade esta línea para ver el cambio visual
     document.body.setAttribute('data-mode', this.currentMode);
 
+
+}
+
+    getCurrentMode() {
+        return this.currentMode;
     }
 }
 
 // Inicializar solo una instancia
 window.methodologyManager = new MethodologyManager(); 
 
-// ========== VARIABLES GLOBALES SINCRONIZADAS ==========
-// Verificar si ya existen en window, si no, crearlas
-if (typeof window.projects === 'undefined') {
-  window.projects = [];
-}
-if (typeof window.currentProjectIndex === 'undefined') {
-  window.currentProjectIndex = 0;
-}
 
-// Crear referencias locales que siempre apunten a window
-let projects = window.projects;
-let currentProjectIndex = window.currentProjectIndex;
-
-// Función para sincronizar si se desincronizan
-function syncProjectVariables() {
-  if (projects !== window.projects) {
-    console.warn('⚠️ projects !== window.projects, resincronizando...');
-    projects = window.projects;
-  }
-  if (currentProjectIndex !== window.currentProjectIndex) {
-    console.warn('⚠️ currentProjectIndex desincronizado, resincronizando...');
-    currentProjectIndex = window.currentProjectIndex;
-  }
-}
-
-// Verificar periódicamente
-setInterval(syncProjectVariables, 5000);
 
 
 // ========== SISTEMA DE LICENCIAS FORZADO A PREMIUM ==========
