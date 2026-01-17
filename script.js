@@ -26945,7 +26945,7 @@ function initSyncSystem() {
     
     // Sincronización automática cada 5 segundos
     setInterval(() => {
-        localStorage.setItem('projects', JSON.stringify(window.projects));
+        localStorage.setItem('projects', JSON.stringify(projects));
         localStorage.setItem('lastSync', Date.now().toString());
     }, 5000);
     
