@@ -18026,39 +18026,7 @@ function getCompletadasColorFromSystem() {
  * INICIALIZACIÓN *
  ***********************/
 document.addEventListener('DOMContentLoaded', async () => {
- // ============================================
-  // 🔥🔥🔥 REPARACIÓN PERMANENTE - PRIMERAS LÍNEAS
-  // ============================================
-  console.log('🛡️ INICIANDO REPARACIÓN PERMANENTE...');
-  
-  // 1. CARGAR DATOS REALES DE localStorage PRIMERO
-  const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-  const savedTasksCount = savedProjects[0]?.tasks?.length || 0;
-  
-  console.log('📦 localStorage tiene:', savedTasksCount, 'tareas');
-  
-  // 2. SI localStorage tiene 4 tareas, USAR ESOS DATOS
-  if (savedTasksCount === 4) {
-    console.log('🚨 CRÍTICO: localStorage tiene 4 tareas pero window.projects probablemente tiene 1');
-    console.log('🔄 Forzando corrección PERMANENTE...');
-    
-    // A. Corregir window.projects
-    window.projects = savedProjects;
-    
-    // B. Corregir variable local projects (si existe)
-    if (typeof projects !== 'undefined') {
-      projects = window.projects;
-    }
-    
-    // C. Forzar guardado para que persista
-    localStorage.setItem('projects', JSON.stringify(window.projects));
-    
-    console.log('✅ window.projects corregido a 4 tareas PERMANENTEMENTE');
-  }
-  
-  // 3. PREVENIR CREACIÓN DE PROYECTOS DEMO
-  window.__PREVENT_DEMO_PROJECTS = true;
-  console.log('🛡️ Prevención de proyectos demo ACTIVADA');
+
 
 
 
