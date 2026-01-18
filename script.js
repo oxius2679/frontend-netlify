@@ -3881,32 +3881,7 @@ function createSampleProjects() {
 
 // ========== GANTT EJECUTIVO COMPLETO CON TODAS LAS MEJORAS ==========
 async function createPremiumGanttWithYourData() {
-  // 🔒 VERIFICACIÓN DE LICENCIA
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
-    return;
-  }
-
-  try {
-    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
-    const data = await response.json();
-    
-    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      return;
-    }
-  } catch (error) {
-    console.error('Error verificando licencia:', error);
-    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
-    return;
-  }
-
-
-
-
-
-  // ✅ USUARIO AUTORIZADO
+   // ✅ USUARIO AUTORIZADO
   console.log('🚀 Creando Gantt ejecutivo premium completo...');
   
   if (typeof projects === 'undefined' || !projects || projects.length === 0) {
@@ -38073,25 +38048,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
-window.showDashboard4DView = function () {
+indow.showDashboard4DView = function () {
+  // ⛔ Si ya existe, eliminarlo para evitar duplicados
+  const existingContainer = document.getElementById('mainAppContainer');
+  if (existingContainer) {
+    existingContainer.remove();
+    console.log('✅ Container anterior eliminado');
+  }
 
-    // ⛔ Si ya existe, eliminarlo para evitar duplicados
-    const existingContainer = document.getElementById('mainAppContainer');
-    if (existingContainer) {
-        existingContainer.remove();
-        console.log('✅ Container anterior eliminado');
-    }
+  // 🔒 Verificar licencia desde localStorage (NO licenseManager)
+  const userPlan = localStorage.getItem('userPlan');
+  if (userPlan !== 'professional' && userPlan !== 'premium') {
+    showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
+    return;
+  }
 
-    // 🔒 Verificar licencia y modo
-    if (!window.licenseManager?.canAccess('premiumExecutiveGantt')) {
-        showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
-        return;
-    }
-    const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
-    if (currentMode !== 'hybrid') {
-        showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
-        return;
-    }
+  // 🔄 Verificar modo híbrido
+  const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
+  if (currentMode !== 'hybrid') {
+    showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
+    return;
+  }
 
     // ✅ Crear nuevo contenedor
     const container = document.createElement('div');
