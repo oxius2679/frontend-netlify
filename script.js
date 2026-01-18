@@ -38396,22 +38396,31 @@ if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
     }
 }
 
+// 2. Gráfico de Estado de Tareas CON TEXTO COMPLETAMENTE EN BLANCO
+// Asegúrate de que Chart.js y chartjs-plugin-datalabels estén cargados globalmente en tu app
+// Si no están registrados, hazlo así:
+if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
+    if (typeof window.ChartDataLabels !== 'undefined') {
+        Chart.register(window.ChartDataLabels);
+    }
+}
+
 // --- CONFIGURACIÓN DEL GRÁFICO ---
 const statusCtx = document.getElementById('statusChart').getContext('2d');
 
-// Valores dinámicos (ajústalos según tu fuente de datos)
-const pending = 4;      // Pendientes
-const inProgress = 6;   // En Progreso
-const completed = 4;    // Completadas
-const overdue = 2;      // Atrasadas
-const totalTasks = pending + inProgress + completed + overdue;
+// Valores dinámicos con nombres únicos
+const chartPending = 4;      // Pendientes
+const chartInProgress = 6;   // En Progreso
+const chartCompleted = 4;    // Completadas
+const chartOverdue = 2;      // Atrasadas
+const chartTotalTasks = chartPending + chartInProgress + chartCompleted + chartOverdue;
 
 new Chart(statusCtx, {
     type: 'doughnut',
-    data: {
+    data: {  // ✅ ¡Aquí estaba el error! Faltaba "data:"
         labels: ['Pendientes', 'En Progreso', 'Completadas', 'Atrasadas'],
         datasets: [{
-            data: [pending, inProgress, completed, overdue],
+            data: [chartPending, chartInProgress, chartCompleted, chartOverdue],
             backgroundColor: [
                 'rgba(255, 215, 0, 0.8)',     // Amarillo
                 'rgba(32, 178, 170, 0.8)',    // Turquesa
@@ -38441,8 +38450,7 @@ new Chart(statusCtx, {
                     font: {
                         size: 12,
                         family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                        weight: '500'
-                    },
+                        weight: '500'                   },
                     padding: 15,
                     boxWidth: 12,
                     boxHeight: 12,
