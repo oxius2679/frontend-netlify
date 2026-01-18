@@ -17826,11 +17826,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('payment') === 'success') {
     showNotification('✅ ¡Pago exitoso! Bienvenido a tu nuevo plan.');
-    // Forzar recarga de licencia
-    window.licenseManager = new LicenseManager(); // Reiniciar
-    localStorage.removeItem('userLicense'); // Forzar refetch
-    setTimeout(() => location.reload(), 2000);
-    return; // Salir temprano
+    // Guardar licencia directamente
+    localStorage.setItem('userPlan', 'professional');
+    // Eliminar parámetro sin recargar
+    window.history.replaceState({}, document.title, window.location.pathname);
+    console.log('✅ Licencia actualizada a professional');
+    // Continuar con la inicialización normal (no return)
   }
   // 👆👆👆 HASTA AQUÍ 👆👆👆
   console.log('🚀 Iniciando aplicación...');
@@ -17846,8 +17847,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('✅ Token válido detectado');
   
   // 👇 Solo si hay token, continuar con la app
-  try {
-    const dataLoaded = await safeLoad();
+  try {    const dataLoaded = await safeLoad();
     console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
     
     if (!dataLoaded || projects.length === 0) {
