@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 // === CONFIGURACIÓN DE FIREBASE ===
 const firebaseConfig = {
   apiKey: "AIzaSyBoywVxsuIsQVaBQIn-gzhIxj3etDOnIzs",
@@ -81,17 +72,7 @@ async function logoutUser() {
 }
 
 
-
-
-
-
-
-
-
 console.log('🟢 SCRIPT EMPIEZA');
-
-
-
 
 // 🔧 FUNCIÓN DE DIAGNÓSTICO EN TIEMPO REAL
 window.debugBurndownUpdate = function() {
@@ -1460,38 +1441,39 @@ window.methodologyManager = new MethodologyManager();
 
 
 
-// ========== SISTEMA DE LICENCIAS FORZADO A PREMIUM ==========
+// ✅ NUEVA CLASE DE LICENCIA REALISTA
 class LicenseManager {
   constructor() {
-    this.license = 'premium';
-    localStorage.setItem('userLicense', 'premium');
+    this.license = localStorage.getItem('userLicense') || 'free';
   }
 
   async getLicense() {
-    this.license = 'premium';
-    localStorage.setItem('userLicense', 'premium');
-    return 'premium';
-  }
+    const user = firebase.auth().currentUser;
+    if (!user) return 'free';
 
-  async setLicense() {
-    this.license = 'premium';
-    localStorage.setItem('userLicense', 'premium');
+    try {
+      const res = await fetch(`${API_URL}/api/license/check/${user.uid}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      const data = await res.json();
+      if (data.valid && data.plan) {
+        this.license = data.plan;
+        localStorage.setItem('userLicense', data.plan);
+        return data.plan;
+      }
+    } catch (err) {
+      console.warn('No se pudo verificar licencia:', err);
+    }
+    return this.license;
   }
 
   canAccess(feature) {
-    // PREMIUM TOTAL: acceso a todo
-    return true;
-  }
-
-  loadLicense() {
-    this.license = 'premium';
-    localStorage.setItem('userLicense', 'premium');
+    const allowedPlans = {
+      'premiumExecutiveGantt': ['professional', 'premium']
+    };
+    return allowedPlans[feature]?.includes(this.license) || this.license === 'premium';
   }
 }
-
-// Instancia global
-window.licenseManager = new LicenseManager();
-
 
 
 
@@ -3919,6 +3901,10 @@ async function createPremiumGanttWithYourData() {
     showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
     return;
   }
+
+
+
+
 
   // ✅ USUARIO AUTORIZADO
   console.log('🚀 Creando Gantt ejecutivo premium completo...');
@@ -14336,9 +14322,6 @@ console.warn("⛔ renderGanttChart() desactivado.");
 return;  // ← Detiene todo el contenido REAL, sin borrar nada
   try {
 
-
-
-
 // === Protección contra datos inválidos ===
     if (!Array.isArray(tasks)) {
       if (tasks && typeof tasks === 'object' && Array.isArray(tasks.tasks)) {
@@ -17837,6 +17820,19 @@ function getCompletadasColorFromSystem() {
  * INICIALIZACIÓN *
  ***********************/
 document.addEventListener('DOMContentLoaded', async () => {
+
+// 👇👇👇 VERIFICACIÓN DE STRIPE - COLOCA ESTO PRIMERO 👇👇👇
+  // Verificar si venimos de Stripe con éxito
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('payment') === 'success') {
+    showNotification('✅ ¡Pago exitoso! Bienvenido a tu nuevo plan.');
+    // Forzar recarga de licencia
+    window.licenseManager = new LicenseManager(); // Reiniciar
+    localStorage.removeItem('userLicense'); // Forzar refetch
+    setTimeout(() => location.reload(), 2000);
+    return; // Salir temprano
+  }
+  // 👆👆👆 HASTA AQUÍ 👆👆👆
   console.log('🚀 Iniciando aplicación...');
   
   // 🔐 Verificar autenticación ANTES de cargar la app
@@ -37987,1091 +37983,6 @@ window.showView = showView;
 
 
 
-// ================================================
-// 🌐 DASHBOARD 4D GLOBAL – Diseño original, datos reales
-// Con gráficos Chart.js para progreso acumulado, estado de tareas y tareas críticas
-// ================================================
-
-window.showDashboard4DView = function () {
-
-
-// 🔒 PROTECCIÓN POR LICENCIA
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    showNotification('🔒 El Dashboard 4D está disponible en los planes Profesional o Premium.');
-    return;
-  }
-  
-  // 🧭 PROTECCIÓN POR MODO
-  const currentMode = window.methodologyManager.getCurrentMode();
-  if (currentMode !== 'hybrid') {
-    showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
-    return;
-  }
-
-
-    console.log('🚀 Ejecutando Dashboard 4D GLOBAL con diseño original...');
-
-    if (typeof closeAllModals === 'function') closeAllModals();
-    if (typeof hideAllViewsAndModals === 'function') hideAllViewsAndModals();
-
-    let container = document.getElementById('mainAppContainer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'mainAppContainer';
-        document.body.appendChild(container);
-    }
-
-    container.style.cssText = `
-        width: 100%;
-        height: 100vh;
-        position: fixed;
-        top: 0;
-        left: 0;
-        background: #0a0a1a;
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    `;
-
-    // 🔑 Obtener datos reales (tu estructura)
-    const allProjects = Array.isArray(window.projects) ? window.projects :
-                       (typeof projects !== 'undefined' && Array.isArray(projects) ? projects : []);
-
-    console.log('📊 Proyectos cargados:', allProjects.length, allProjects);
-
-    const allTasks = [];
-    allProjects.forEach(project => {
-        const tasks = project.tasks || [];
-        tasks.forEach(task => {
-            allTasks.push({ 
-                ...task, 
-                projectName: project.name || 'Proyecto' 
-            });
-        });
-    });
-
-    console.log('📝 Tareas totales:', allTasks.length);
-
-    const totalProjects = allProjects.length;
-    const totalTasks = allTasks.length;
-    const completed = allTasks.filter(t => t.status === 'completed').length;
-    const inProgress = allTasks.filter(t => t.status === 'inProgress').length;
-    const pending = allTasks.filter(t => t.status === 'pending').length;
-    const critical = allTasks.filter(t => t.critical || t.priority === 'alta').length;
-    const overdue = allTasks.filter(t => {
-        if (!t.deadline || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-    }).length;
-    const progressPct = totalTasks > 0 ? Math.round(((completed + inProgress * 0.5) / totalTasks) * 100) : 0;
-
-    console.log('📈 Métricas calculadas:', {
-        totalProjects, totalTasks, completed, inProgress, pending, critical, overdue, progressPct
-    });
-
-    // 📊 Calcular métricas
-    const efficiency = totalTasks ? Math.round((completed / totalTasks) * 100) : 0;
-    const riskLevel = (() => {
-        const total = allTasks.length;
-        if (overdue === 0 && critical === 0) return '<span style="color:#2ecc71">BAJO</span>';
-        if (overdue > total * 0.1 || critical > total * 0.2) return '<span style="color:#e74c3c">ALTO</span>';
-        return '<span style="color:#f39c12">MEDIO</span>';
-    })();
-
-    // ✅ Generar widgets directamente
-    const projectsListHTML = (() => {
-        const totalProjectsCount = allProjects.length;
-        
-        if (totalProjectsCount === 0) {
-            return `<div style="text-align:center;color:#95a5a6;padding:30px;">
-                        📭 No hay proyectos activos
-                    </div>`;
-        }
-        
-        // Ordenar proyectos por progreso (mayor a menor)
-        const sortedProjects = [...allProjects].sort((a, b) => {
-            const aTasks = a.tasks || [];
-            const bTasks = b.tasks || [];
-            const aComp = aTasks.filter(t => t.status === 'completed').length;
-            const bComp = bTasks.filter(t => t.status === 'completed').length;
-            const aTotal = aTasks.length;
-            const bTotal = bTasks.length;
-            const aPct = aTotal ? (aComp / aTotal) * 100 : 0;
-            const bPct = bTotal ? (bComp / bTotal) * 100 : 0;
-            return bPct - aPct;
-        });
-        
-        // Mostrar hasta 8 proyectos con scroll
-        const projectsToShow = sortedProjects.slice(0, 8);
-        const remaining = totalProjectsCount > 8 ? totalProjectsCount - 8 : 0;
-        
-        return `
-            <div style="color:#3498db;font-size:12px;margin-bottom:10px;padding:0 5px;display:flex;justify-content:space-between;">
-                <span>📊 Total: ${totalProjectsCount} proyectos</span>
-                ${remaining > 0 ? 
-                    `<span style="background:rgba(52,152,219,0.2);color:#3498db;padding:2px 8px;border-radius:10px;font-size:11px;">
-                        +${remaining} más
-                    </span>` : ''}
-            </div>
-            <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
-                ${projectsToShow.map(p => {
-                    const tasks = p.tasks || [];
-                    const completed = tasks.filter(t => t.status === 'completed').length;
-                    const total = tasks.length;
-                    const progress = total ? Math.round((completed / total) * 100) : 0;
-                    const color = progress >= 75 ? '#2ecc71' : progress >= 50 ? '#f39c12' : '#e74c3c';
-                    const overdueTasks = tasks.filter(t => 
-                        t.deadline && t.status !== 'completed' && new Date(t.deadline) < new Date()
-                    ).length;
-                    
-                    return `
-                        <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid ${color};">
-                            <div style="flex:1;">
-                                <div style="color:white;font-weight:500;font-size:14px;margin-bottom:4px;">
-                                    ${p.name.substring(0,25)}${p.name.length > 25 ? '...' : ''}
-                                </div>
-                                <div style="display:flex;gap:15px;font-size:11px;">
-                                    <span style="color:#95a5a6;">📝 ${total} tareas</span>
-                                    <span style="color:#${overdueTasks > 0 ? 'e74c3c' : '95a5a6'};">⏱️ ${overdueTasks} atrasadas</span>
-                                </div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="color:${color};font-weight:bold;font-size:16px;">${progress}%</div>
-                                <div style="width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;">
-                                    <div style="width:${progress}%;height:100%;background:${color};border-radius:2px;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            ${remaining > 0 ? `
-                <div style="text-align:center;color:#3498db;font-size:12px;padding:10px;border-top:1px solid rgba(52,152,219,0.2);margin-top:5px;">
-                    ⬇️ Desplázate para ver ${remaining} proyectos más
-                </div>
-            ` : ''}
-        `;
-    })();
-
-    const overdueTasksHTML = (() => {
-        const overdueTasks = allTasks.filter(t => {
-            if (!t.deadline || t.status === 'completed') return false;
-            return new Date(t.deadline) < new Date();
-        });
-        
-        const totalOverdue = overdueTasks.length;
-        
-        if (totalOverdue === 0) {
-            return `<div style="text-align:center;color:#2ecc71;padding:20px;">✅ Sin tareas atrasadas</div>`;
-        }
-        
-        // Mostrar hasta 10 tareas con scroll
-        const tasksToShow = overdueTasks.slice(0, 10);
-        const remaining = totalOverdue > 10 ? totalOverdue - 10 : 0;
-        
-        return `
-            <div style="color:#f39c12;font-size:12px;margin-bottom:10px;padding:0 5px;">
-                <span>📋 Total: ${totalOverdue} tareas</span>
-                ${remaining > 0 ? 
-                    `<span style="float:right;background:rgba(243,156,18,0.2);padding:2px 8px;border-radius:10px;">
-                        +${remaining} más
-                    </span>` : ''}
-            </div>
-            <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
-                ${tasksToShow.map(t => `
-                    <div style="background:rgba(243,156,18,0.1);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #f39c12;">
-                        <div style="color:white;font-weight:bold;margin-bottom:5px;">
-                            ${t.name.substring(0,40)}${t.name.length > 40 ? '...' : ''}
-                        </div>
-                        <div style="color:#f39c12;display:flex;justify-content:space-between;font-size:12px;">
-                            <span>📂 ${t.projectName.substring(0,20)}${t.projectName.length > 20 ? '...' : ''}</span>
-                            <span style="background:rgba(243,156,18,0.3);padding:2px 6px;border-radius:4px;font-size:11px;">
-                                ${new Date(t.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                            </span>
-                        </div>
-                        ${t.assignee ? `
-                            <div style="color:#95a5a6;font-size:11px;margin-top:5px;">
-                                👤 ${t.assignee}
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
-            </div>
-            ${remaining > 0 ? `
-                <div style="text-align:center;color:#f39c12;font-size:12px;padding:10px;border-top:1px solid rgba(243,156,18,0.2);">
-                    ⬇️ Desplázate para ver ${remaining} tareas más
-                </div>
-            ` : ''}
-        `;
-    })();
-
-    const alertCount = (() => {
-        let count = 0;
-        if (totalProjects === 0) count++;
-        if (allTasks.filter(t => !t.assignee || t.assignee === 'Sin asignar').length > 0) count++;
-        if (allTasks.filter(t => t.deadline && t.status !== 'completed' && new Date(t.deadline) < new Date()).length > 0) count++;
-        return count;
-    })();
-
-    const alertCardsHTML = (() => {
-        const alerts = [];
-        if (totalProjects === 0) {
-            alerts.push(`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:12px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
-                    <div style="width:50px;height:50px;background:rgba(231,76,60,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#e74c3c;">📂</div>
-                    <div><div style="color:white;font-weight:bold;font-size:16px;">Sin proyectos</div></div>
-                </div>
-            </div>`);
-        }
-        const unassigned = allTasks.filter(t => !t.assignee || t.assignee === 'Sin asignar').length;
-        if (unassigned > 0) {
-            alerts.push(`<div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:12px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
-                    <div style="width:50px;height:50px;background:rgba(243,156,18,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#f39c12;">👤</div>
-                    <div><div style="color:white;font-weight:bold;font-size:16px;">Tareas sin asignar</div><div style="color:#f39c12;font-size:32px;font-weight:bold;">${unassigned}</div></div>
-                </div>
-            </div>`);
-        }
-        if (overdue > 0) {
-            alerts.push(`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:12px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
-                    <div style="width:50px;height:50px;background:rgba(231,76,60,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#e74c3c;">⏱️</div>
-                    <div><div style="color:white;font-weight:bold;font-size:16px;">Tareas atrasadas</div><div style="color:#e74c3c;font-size:32px;font-weight:bold;">${overdue}</div></div>
-                </div>
-            </div>`);
-        }
-        if (alerts.length === 0) {
-            alerts.push(`<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:40px;text-align:center;grid-column:1/-1;">
-                <div style="font-size:48px;color:#2ecc71;margin-bottom:20px;">✅</div>
-                <h3 style="color:white;margin:0 0 15px 0;font-size:22px;">Sistema en estado óptimo</h3>
-                <p style="color:#95a5a6;font-size:16px;max-width:600px;margin:0 auto;">
-                    Todos los proyectos están bajo control. ¡Excelente trabajo!
-                </p>
-            </div>`);
-        }
-        return alerts.join('');
-    })();
-
-    container.innerHTML = `
-        <!-- HEADER -->
-        <div style="
-            background: linear-gradient(90deg, #0a0a1a, #1a1a3a);
-            padding: 20px 30px;
-            border-bottom: 1px solid rgba(155, 89, 182, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        ">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="
-                    background: linear-gradient(45deg, #9b59b6, #8e44ad);
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 24px;
-                    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
-                ">🌐</div>
-                <div>
-                    <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;">
-                        <span style="font-weight: 700; color: #9b59b6;">Dashboard 4D Ejecutivo</span>
-                        <span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">• Todos los Proyectos</span>
-                    </h2>
-                    <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;">
-                        <span style="color: #3498db;">📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span> • 
-                        📂 ${totalProjects} proyectos • 🔥 ${critical} críticas • ✅ ${progressPct}% progreso promedio
-                    </p>
-                </div>
-            </div>
-            <div style="display: flex; gap: 12px;">
-                <button onclick="refreshDashboard4D()" style="
-                    background: linear-gradient(45deg, #3498db, #2980b9);
-                    border: none;
-                    color: white;
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                ">🔄 Actualizar</button>
-                <button onclick="exportDashboard4DReport()" style="
-                    background: linear-gradient(45deg, #2ecc71, #27ae60);
-                    border: none;
-                    color: white;
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 14px;
-                ">📥 Exportar PDF</button>
-                <button onclick="closeDashboard4D()" style="
-                    background: rgba(231, 76, 60, 0.2);
-                    border: 1px solid #e74c3c;
-                    color: #e74c3c;
-                    padding: 12px 20px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    font-size: 14px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                ">✕ Volver al Sistema</button>
-            </div>
-        </div>
-
-        <!-- CONTENIDO PRINCIPAL -->
-        <div style="
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-            background: linear-gradient(180deg, rgba(10,10,26,0.95), rgba(18,18,48,1));
-        ">
-            <!-- SIDEBAR -->
-            <div style="
-                width: 280px;
-                background: linear-gradient(180deg, #0a0a1a, #121230);
-                border-right: 1px solid rgba(255,255,255,0.1);
-                padding: 25px;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 25px;
-                flex-shrink: 0;
-            ">
-                <!-- KPIs -->
-                <div>
-                    <h3 style="color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #3498db; font-size: 20px;">📊</span> KPIs Globales
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
-                        <div style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3); border-radius: 12px; padding: 20px; text-align: center;">
-                            <div style="color: white; font-size: 32px; font-weight: bold;">${totalProjects}</div>
-                            <div style="color: #d8b4fe; font-size: 14px; margin-top: 8px;">PROYECTOS</div>
-                        </div>
-                        <div style="background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3); border-radius: 12px; padding: 20px; text-align: center;">
-                            <div style="color: white; font-size: 32px; font-weight: bold;">${totalTasks}</div>
-                            <div style="color: #93c5fd; font-size: 14px; margin-top: 8px;">TAREAS TOTALES</div>
-                        </div>
-                        <div style="background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); border-radius: 12px; padding: 20px; text-align: center;">
-                            <div style="color: white; font-size: 32px; font-weight: bold;">${completed}</div>
-                            <div style="color: #a7f3d0; font-size: 14px; margin-top: 8px;">COMPLETADAS</div>
-                        </div>
-                        <div style="background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3); border-radius: 12px; padding: 20px; text-align: center;">
-                            <div style="color: white; font-size: 32px; font-weight: bold;">${overdue}</div>
-                            <div style="color: #fecaca; font-size: 14px; margin-top: 8px;">ATRASADAS</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Riesgo y Eficiencia -->
-                <div>
-                    <h3 style="color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #f39c12; font-size: 20px;">⚠️</span> Estado General
-                    </h3>
-                    <div style="color: #95a5a6; font-size: 14px;">
-                        <p>🎯 <strong>Progreso promedio:</strong> ${progressPct}%</p>
-                        <p>🚨 <strong>Riesgo:</strong> ${riskLevel}</p>
-                        <p>⚡ <strong>Eficiencia:</strong> ${efficiency}%</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ÁREA PRINCIPAL -->
-            <div style="
-                flex: 1;
-                padding: 25px;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 25px;
-            ">
-                <!-- FILA 1: Gráficos -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                    <!-- Progreso Acumulado - Gráfico de Líneas -->
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #9b59b6;">📈</span> Progreso Acumulado
-                        </h3>
-                        <div style="height: 180px; position: relative;">
-                            <canvas id="progressChart" style="width: 100%; height: 100%;"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Estado de Tareas - Gráfico de Dona -->
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #3498db;">📊</span> Estado de Tareas
-                        </h3>
-                        <div style="height: 180px; position: relative;">
-                            <canvas id="statusChart" style="width: 100%; height: 100%;"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gestión de Tareas Críticas - Burndown Chart -->
-<div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-        <span style="color: #e74c3c;">📊</span> Burndown Chart
-        <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(231,76,60,0.1); padding: 2px 8px; border-radius: 10px; margin-left: auto;">
-            <span style="color: #e74c3c;">🔥</span>
-            <span style="color: #e74c3c;">Tareas Críticas</span>
-        </div>
-    </h3>
-    <div style="height: 180px; position: relative;">
-        <canvas id="criticalChart" style="width: 100%; height: 100%;"></canvas>
-    </div>
-</div>
-                </div>
-
-                <!-- FILA 2: Proyectos y Atrasadas -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #2ecc71;">📂</span> Proyectos Activos
-                        </h3>
-                        <div style="max-height: 250px; overflow-y: auto;">${projectsListHTML}</div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #f39c12;">⏱️</span> Tareas Atrasadas
-                            <span style="background: rgba(243,156,18,0.2); color: #f39c12; padding: 2px 10px; border-radius: 20px; font-size: 12px;">${overdue}</span>
-                        </h3>
-                        <div style="max-height: 250px; overflow-y: auto;">${overdueTasksHTML}</div>
-                    </div>
-                </div>
-
-                <!-- FILA 3: Alertas -->
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px;">
-                    <h3 style="color: white; margin: 0 0 20px 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #f39c12;">🚨</span> Alertas del Sistema
-                        <span style="background: rgba(243,156,18,0.2); color: #f39c12; padding: 4px 12px; border-radius: 20px; font-size: 14px;">${alertCount} alertas</span>
-                    </h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                        ${alertCardsHTML}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div style="
-            background: rgba(255,255,255,0.05);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #95a5a6;
-            font-size: 13px;
-            flex-shrink: 0;
-        ">
-            <div>🌐 Dashboard 4D Ejecutivo – Sistema de Gestión de Proyectos</div>
-            <div id="dashboardTimestamp">🕐 Actualizado: ${new Date().toLocaleTimeString()}</div>
-        </div>
-    `;
-
-    // 🔄 Definir funciones si no existen
-    if (typeof window.refreshDashboard4D !== 'function') {
-        window.refreshDashboard4D = function () {
-            document.getElementById('dashboardTimestamp').innerHTML = '🔄 Actualizando...';
-            setTimeout(() => createGlobalDashboard4D(), 500);
-        };
-    }
-
-    // ✅ FUNCIÓN DE EXPORTACIÓN PDF
-    window.exportDashboard4DReport = function() {
-        console.log('📤 Exportando PDF ejecutivo...');
-        
-        // Usar las variables locales que YA calculamos
-        const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Reporte Ejecutivo Dashboard 4D</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; }
-                    .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #9b59b6; padding-bottom: 20px; }
-                    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 30px 0; }
-                    .kpi-card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; text-align: center; }
-                    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-                    th { background: #9b59b6; color: white; }
-                    .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; }
-                    @media print {
-                        .no-print { display: none; }
-                        body { margin: 20px; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1 style="color: #9b59b6;">Reporte Ejecutivo Dashboard 4D</h1>
-                    <p>Fecha: ${new Date().toLocaleDateString('es-ES', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}</p>
-                    <p>Generado automáticamente por el sistema de gestión</p>
-                </div>
-                
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <h3>${totalProjects}</h3>
-                        <p>Proyectos Activos</p>
-                    </div>
-                    <div class="kpi-card">
-                        <h3>${totalTasks}</h3>
-                        <p>Tareas Totales</p>
-                    </div>
-                    <div class="kpi-card">
-                        <h3>${progressPct}%</h3>
-                        <p>Progreso Global</p>
-                    </div>
-                    <div class="kpi-card">
-                        <h3>${overdue}</h3>
-                        <p>Tareas Atrasadas</p>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h2>📊 Estado de Tareas</h2>
-                    <table>
-                        <tr>
-                            <th>Estado</th>
-                            <th>Cantidad</th>
-                            <th>Porcentaje</th>
-                        </tr>
-                        <tr>
-                            <td>✅ Completadas</td>
-                            <td>${completed}</td>
-                            <td>${totalTasks > 0 ? Math.round((completed/totalTasks)*100) : 0}%</td>
-                        </tr>
-                        <tr>
-                            <td>🔄 En Progreso</td>
-                            <td>${inProgress}</td>
-                            <td>${totalTasks > 0 ? Math.round((inProgress/totalTasks)*100) : 0}%</td>
-                        </tr>
-                        <tr>
-                            <td>⏳ Pendientes</td>
-                            <td>${pending}</td>
-                            <td>${totalTasks > 0 ? Math.round((pending/totalTasks)*100) : 0}%</td>
-                        </tr>
-                        <tr>
-                            <td>⚠️ Atrasadas</td>
-                            <td>${overdue}</td>
-                            <td>${totalTasks > 0 ? Math.round((overdue/totalTasks)*100) : 0}%</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div class="section">
-                    <h2>📋 Resumen Ejecutivo</h2>
-                    <p>El sistema actual presenta un progreso global del <strong>${progressPct}%</strong>.</p>
-                    <p>${overdue > 0 ? 
-                        `⚠️ Se requiere atención en ${overdue} tareas atrasadas.` : 
-                        '✅ Todas las tareas están al día.'}</p>
-                    <p>${progressPct >= 80 ? 
-                        '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
-                        progressPct >= 60 ?
-                        '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
-                        '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
-                </div>
-                
-                <div class="footer">
-                    <p>Reporte generado por Dashboard 4D Ejecutivo</p>
-                    <p>Documento para uso interno - ${new Date().getFullYear()}</p>
-                </div>
-                
-                <div class="no-print" style="margin-top: 30px; text-align: center;">
-                    <button onclick="window.print()" style="
-                        background: #9b59b6;
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-size: 16px;
-                    ">
-                        🖨️ Imprimir Reporte
-                    </button>
-                    <button onclick="window.close()" style="
-                        background: #95a5a6;
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-size: 16px;
-                        margin-left: 10px;
-                    ">
-                        ✕ Cerrar
-                    </button>
-                </div>
-                
-                <script>
-                    // Abrir diálogo de impresión automáticamente
-                    setTimeout(() => {
-                        window.print();
-                    }, 500);
-                </script>
-            </body>
-            </html>
-        `;
-        
-        // Abrir ventana de impresión
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-    };
-
-    if (typeof window.closeDashboard4D !== 'function') {
-        window.closeDashboard4D = function () {
-            console.log('🔙 Cerrando dashboard...');
-            
-            // Buscar el contenedor por su ID
-            const container = document.getElementById('mainAppContainer');
-            
-            if (container) {
-                container.remove();
-                console.log('✅ Dashboard eliminado');
-            } else {
-                console.log('⚠️ Contenedor no encontrado, buscando alternativas...');
-                // Buscar por otros selectores si el ID no funciona
-                const dashboardElements = document.querySelectorAll('div[style*="0a0a1a"], div[style*="dashboard"]');
-                dashboardElements.forEach(el => el.remove());
-            }
-            
-            // Restaurar la vista de proyectos
-            if (typeof renderProjects === 'function') {
-                setTimeout(() => {
-                    renderProjects();
-                }, 100); // Pequeño delay para asegurar que el DOM se actualice
-            }
-        };
-    }
-
-    // 📊 INICIALIZAR GRÁFICOS
-    setTimeout(() => {
-        console.log('🎨 Inicializando gráficos...');
-        console.log('Total proyectos:', allProjects.length);
-        console.log('Total tareas:', allTasks.length);
-        
-        if (typeof Chart === 'undefined') {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-            script.onload = initCharts;
-            document.head.appendChild(script);
-        } else {
-            initCharts();
-        }
-
-        function initCharts() {
-            console.log('🔄 Creando gráficos con Chart.js...');
-            
-            // 1. GRÁFICO DE PROGRESO ACUMULADO - BASADO EN DATOS REALES
-            function generateProgressData() {
-                const now = new Date();
-                const statusCounts = {
-                    completed: allTasks.filter(t => t.status === 'completed').length,
-                    inProgress: allTasks.filter(t => t.status === 'inProgress').length,
-                    pending: allTasks.filter(t => t.status === 'pending').length,
-                    overdue: allTasks.filter(t => {
-                        if (!t.deadline || t.status === 'completed') return false;
-                        return new Date(t.deadline) < now;
-                    }).length
-                };
-                
-                const total = allTasks.length;
-                const actualProgress = total > 0 ? 
-                    Math.round(((statusCounts.completed + statusCounts.inProgress * 0.5) / total) * 100) : 0;
-                
-                // Días de la semana
-                const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-                
-                // Progreso estimado semanal (basado en el actual)
-                const progressValues = [];
-                const startValue = Math.max(10, actualProgress - 35);
-                
-                for (let i = 0; i < 7; i++) {
-                    // Incremento progresivo
-                    const increment = (actualProgress - startValue) / 6;
-                    const dayValue = Math.min(actualProgress, Math.round(startValue + (increment * i)));
-                    progressValues.push(dayValue);
-                }
-                
-                return {
-                    labels: days,
-                    values: progressValues,
-                    actualProgress: actualProgress,
-                    totalTasks: total,
-                    status: statusCounts
-                };
-            }
-            
-            const progressData = generateProgressData();
-            const progressCtx = document.getElementById('progressChart').getContext('2d');
-            new Chart(progressCtx, {
-                type: 'line',
-                data: {
-                    labels: progressData.labels,
-                    datasets: [{
-                        label: 'Progreso Acumulado',
-                        data: progressData.values,
-                        borderColor: '#9b59b6',
-                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#9b59b6',
-                        pointRadius: 5,
-                        pointHoverRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                color: '#95a5a6',
-                                font: { size: 12 }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return `Día: ${context[0].label}`;
-                                },
-                                label: function(context) {
-                                    return `Progreso: ${context.parsed.y}%`;
-                                },
-                                afterLabel: function(context) {
-                                    const index = context.dataIndex;
-                                    if (index === 6) { // Último día (hoy)
-                                        return [
-                                            `---`,
-                                            `📊 Progreso Actual: ${progressData.actualProgress}%`,
-                                            `✅ Completadas: ${progressData.status.completed}`,
-                                            `🔄 En Progreso: ${progressData.status.inProgress}`,
-                                            `⏳ Pendientes: ${progressData.status.pending}`,
-                                            `📝 Total: ${progressData.totalTasks} tareas`
-                                        ];
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                color: '#95a5a6',
-                                callback: value => value + '%'
-                            },
-                            grid: { color: 'rgba(255,255,255,0.1)' },
-                            title: {
-                                display: true,
-                                text: 'Porcentaje de Progreso',
-                                color: '#95a5a6',
-                                font: { size: 12 }
-                            }
-                        },
-                        x: {
-                            ticks: { 
-                                color: '#95a5a6',
-                                font: { size: 11 }
-                            },
-                            grid: { color: 'rgba(255,255,255,0.05)' }
-                        }
-                    }
-                }
-            });
-
-            // 2. Gráfico de Dona - Estado de Tareas
-            const statusCtx = document.getElementById('statusChart').getContext('2d');
-            new Chart(statusCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Pendientes', 'En Progreso', 'Completadas', 'Retrazadas'],
-                    datasets: [{
-                        data: [pending, inProgress, completed, overdue],
-                        backgroundColor: [
-                            '#FFD700', // Amarillo - Pendientes
-                            '#20B2AA', // Verde azulado - En Progreso
-                            '#90EE90', // Verde claro - Completadas
-                            '#FF6B6B'  // Rojo - Retrazadas
-                        ],
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.1)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: '#95a5a6',
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label;
-                                    const value = context.raw;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 3. SISTEMA DE GESTIÓN DE TAREAS CRÍTICAS - Burndown
-            function createCriticalCharts() {
-                console.log('🔥 Creando gráficos de tareas críticas...');
-                
-                const criticalTasks = allTasks.filter(t => t.critical || t.priority === 'alta');
-                const totalCritical = criticalTasks.length;
-                const completedCritical = criticalTasks.filter(t => t.status === 'completed').length;
-                const pendingCritical = totalCritical - completedCritical;
-                
-                // Obtener el contexto del canvas
-                const criticalCtx = document.getElementById('criticalChart').getContext('2d');
-                
-                if (totalCritical === 0) {
-                    // Mostrar gráfico simple si no hay críticas
-                    new Chart(criticalCtx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Sin tareas críticas'],
-                            datasets: [{
-                                data: [1],
-                                backgroundColor: ['rgba(46, 204, 113, 0.7)'],
-                                borderColor: ['rgba(46, 204, 113, 1)'],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '70%',
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            }
-                        }
-                    });
-                    
-                    // Actualizar título
-                   // Actualizar título
-const titleElement = document.querySelector('#criticalChart').closest('div').querySelector('h3');
-if (titleElement) {
-    const spanElement = titleElement.querySelector('span');
-    if (spanElement) {
-        spanElement.style.color = '#2ecc71';
-        spanElement.textContent = '✅';
-    }
-    // Cambiar el texto principal también
-    const titleText = titleElement.querySelector('span:nth-child(2)');
-    if (titleText) {
-        titleText.textContent = ' Sin Tareas Críticas';
-    }
-}
-                    return;
-                }
-                
-                // 3.1 CALCULAR DATOS PARA BURNDOWN
-                const completionRate = totalCritical > 0 ? Math.round((completedCritical / totalCritical) * 100) : 0;
-                const dailyRate = Math.round((completedCritical / 7) * 10) / 10;
-                
-                // Datos para burndown
-                const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-                const idealBurnDown = [];
-                const actualBurnDown = [];
-                
-                // Línea ideal
-                const dailyIdeal = totalCritical / 6;
-                for (let i = 0; i < 7; i++) {
-                    idealBurnDown.push(Math.max(0, Math.round(totalCritical - (dailyIdeal * i))));
-                }
-                
-                // Línea real
-                const dailyActual = completedCritical / 7;
-                for (let i = 0; i < 7; i++) {
-                    const remaining = Math.max(0, Math.round(totalCritical - (dailyActual * i)));
-                    actualBurnDown.push(remaining);
-                }
-                
-                // 3.2 CREAR GRÁFICO COMBINADO (Burndown como gráfico principal)
-                new Chart(criticalCtx, {
-                    type: 'line',
-                    data: {
-                        labels: days,
-                        datasets: [
-                            {
-                                label: 'Plan Ideal',
-                                data: idealBurnDown,
-                                borderColor: 'rgba(255, 255, 255, 0.3)',
-                                backgroundColor: 'transparent',
-                                borderWidth: 1,
-                                borderDash: [5, 5],
-                                fill: false,
-                                tension: 0,
-                                pointRadius: 0
-                            },
-                            {
-                                label: 'Progreso Real',
-                                data: actualBurnDown,
-                                borderColor: '#e74c3c',
-                                backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.3,
-                                pointBackgroundColor: '#e74c3c',
-                                pointRadius: 3,
-                                pointHoverRadius: 5
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    color: '#95a5a6',
-                                    font: { size: 10 },
-                                    usePointStyle: true,
-                                    padding: 5
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                titleColor: '#fff',
-                                bodyColor: '#fff',
-                                callbacks: {
-                                    title: function(context) {
-                                        return `Día: ${context[0].label}`;
-                                    },
-                                    label: function(context) {
-                                        const label = context.dataset.label;
-                                        const value = context.parsed.y;
-                                        return `${label}: ${value} tareas`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    color: '#95a5a6',
-                                    font: { size: 9 }
-                                },
-                                grid: { 
-                                    color: 'rgba(255,255,255,0.05)'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Tareas Pendientes',
-                                    color: '#95a5a6',
-                                    font: { size: 10 }
-                                }
-                            },
-                            x: {
-                                ticks: { 
-                                    color: '#95a5a6',
-                                    font: { size: 9 }
-                                },
-                                grid: { 
-                                    color: 'rgba(255,255,255,0.05)'
-                                }
-                            }
-                        }
-                    }
-                });
-                
-                // 3.3 AGREGAR INFO ADICIONAL AL TÍTULO
-                const titleElement = document.querySelector('#criticalChart').closest('div').querySelector('h3');
-                if (titleElement) {
-                    // Agregar badge con conteo
-                    const existingBadge = titleElement.querySelector('.critical-badge');
-                    if (!existingBadge) {
-                        const badge = document.createElement('span');
-                        badge.className = 'critical-badge';
-                        badge.style.cssText = `
-                            background: rgba(231,76,60,0.2); 
-                            color: #e74c3c; 
-                            padding: 2px 8px; 
-                            border-radius: 20px; 
-                            font-size: 12px;
-                            margin-left: 8px;
-                        `;
-                        badge.textContent = `${completedCritical}/${totalCritical}`;
-                        titleElement.appendChild(badge);
-                    }
-                    
-                    // Agregar mini indicadores debajo del título
-                    const container = document.querySelector('#criticalChart').closest('div');
-                    const existingMetrics = container.querySelector('.critical-metrics');
-                    if (!existingMetrics) {
-                        const metricsHTML = `
-                            <div class="critical-metrics" style="
-                                display: grid;
-                                grid-template-columns: repeat(2, 1fr);
-                                gap: 8px;
-                                margin-top: 10px;
-                                padding-top: 10px;
-                                border-top: 1px solid rgba(255,255,255,0.1);
-                            ">
-                                <div style="text-align: center;">
-                                    <div style="color: #2ecc71; font-size: 14px; font-weight: bold;">${completionRate}%</div>
-                                    <div style="color: #95a5a6; font-size: 9px;">Completado</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="color: #f39c12; font-size: 14px; font-weight: bold;">${dailyRate}</div>
-                                    <div style="color: #95a5a6; font-size: 9px;">/día</div>
-                                </div>
-                            </div>
-                        `;
-                        container.insertAdjacentHTML('beforeend', metricsHTML);
-                    }
-                }
-            }
-            
-            // EJECUTAR LA FUNCIÓN
-            createCriticalCharts();
-            
-            console.log('✅ Todos los gráficos creados exitosamente');
-        }
-    }, 100);
-
-    console.log('✅ Dashboard 4D GLOBAL creado exitosamente');
-};
 
 // Alias para compatibilidad
 function createGlobalDashboard4D() {
@@ -39154,6 +38065,1205 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+
+
+
+
+
+
+// ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
+window.showDashboard4DView = function () {
+
+    // ⛔ Si ya existe, eliminarlo para evitar duplicados
+    const existingContainer = document.getElementById('mainAppContainer');
+    if (existingContainer) {
+        existingContainer.remove();
+        console.log('✅ Container anterior eliminado');
+    }
+
+    // 🔒 Verificar licencia y modo
+    if (!window.licenseManager?.canAccess('premiumExecutiveGantt')) {
+        showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
+        return;
+    }
+    const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
+    if (currentMode !== 'hybrid') {
+        showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
+        return;
+    }
+
+    // ✅ Crear nuevo contenedor
+    const container = document.createElement('div');
+    container.id = 'mainAppContainer';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #0a0a1a;
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    `;
+    document.body.appendChild(container);
+
+    // 🚫 Asegurar que otras vistas estén ocultas
+    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+    document.querySelector('#dashboardView')?.classList.add('active');
+
+    // 💡 Generar contenido HTML del dashboard
+    const content = generateDashboard4DHTML();
+    container.innerHTML = content;
+
+    // 📊 Inicializar gráficos después de que el DOM esté listo
+    setTimeout(() => {
+        initDashboard4DCharts();
+    }, 500);
+};
+
+function generateDashboard4DHTML() {
+    return `
+        <!-- HEADER -->
+        <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(155, 89, 182, 0.3); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);">🌐</div>
+                <div>
+                    <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;"><span style="font-weight: 700; color: #9b59b6;">Dashboard 4D Ejecutivo</span><span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">• Todos los Proyectos</span></h2>
+                    <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;"><span style="color: #3498db;">📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span> • 📂 ${projects.length} proyectos • 🔥 ${getCriticalTasksCount()} críticas • ✅ ${getOverallProgress()}% progreso promedio</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="refreshDashboard4D()" style="background: linear-gradient(45deg, #3498db, #2980b9); border: none; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 14px;">🔄 Actualizar</button>
+                <button onclick="exportDashboard4DReport()" style="background: linear-gradient(45deg, #2ecc71, #27ae60); border: none; color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 14px;">📥 Exportar PDF</button>
+                <button onclick="closeDashboard4D()" style="background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;">✕ Volver al Sistema</button>
+            </div>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div style="flex: 1; display: flex; overflow: hidden; background: linear-gradient(180deg, rgba(10,10,26,0.95), rgba(18,18,48,1));">
+            <!-- SIDEBAR -->
+            <div style="width: 280px; background: linear-gradient(180deg, #0a0a1a, #121230); border-right: 1px solid rgba(255,255,255,0.1); padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; flex-shrink: 0;">
+                <!-- KPIs Globales -->
+                <div>
+                    <h3 style="color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;"><span style="color: #3498db; font-size: 20px;">📊</span> KPIs Globales</h3>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+                            <div style="color: white; font-size: 32px; font-weight: bold;">${projects.length}</div>
+                            <div style="color: #d8b4fe; font-size: 14px; margin-top: 8px;">PROYECTOS</div>
+                        </div>
+                        <div style="background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+                            <div style="color: white; font-size: 32px; font-weight: bold;">${getTotalTasks()}</div>
+                            <div style="color: #93c5fd; font-size: 14px; margin-top: 8px;">TAREAS TOTALES</div>
+                        </div>
+                        <div style="background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+                            <div style="color: white; font-size: 32px; font-weight: bold;">${getCompletedTasks()}</div>
+                            <div style="color: #a7f3d0; font-size: 14px; margin-top: 8px;">COMPLETADAS</div>
+                        </div>
+                        <div style="background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+                            <div style="color: white; font-size: 32px; font-weight: bold;">${getOverdueTasks()}</div>
+                            <div style="color: #fecaca; font-size: 14px; margin-top: 8px;">ATRASADAS</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Estado General -->
+                <div>
+                    <h3 style="color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;"><span style="color: #f39c12; font-size: 20px;">⚠️</span> Estado General</h3>
+                    <div style="color: #95a5a6; font-size: 14px;">
+                        <p>🎯 <strong>Progreso promedio:</strong> ${getOverallProgress()}%</p>
+                        <p>🚨 <strong>Riesgo:</strong> ${getRiskLevel()}</p>
+                        <p>⚡ <strong>Eficiencia:</strong> ${getEfficiency()}%</p>
+                    </div>
+                </div>
+            </div>
+            <!-- ÁREA PRINCIPAL -->
+            <div style="flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px;">
+                <!-- FILA 1: Gráficos - CONTENEDORES AGRANDADOS -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 25px;">
+                    <!-- Progreso Acumulado -->
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
+                        <div style="margin-bottom: 15px;">
+                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #9b59b6; font-size: 22px;">📈</span> Progreso Acumulado
+                                <span style="margin-left: auto; font-size: 12px; color: #95a5a6; background: rgba(155,89,182,0.1); padding: 4px 10px; border-radius: 12px;">
+                                    Últimos 7 días
+                                </span>
+                            </h3>
+                        </div>
+                        <div style="flex: 1; position: relative; min-height: 0;">
+                            <canvas id="progressChart" style="width: 100% !important; height: 100% !important;"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado de Tareas -->
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
+                        <div style="margin-bottom: 15px;">
+                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #3498db; font-size: 22px;">📊</span> Estado de Tareas
+                                <span style="margin-left: auto; font-size: 12px; color: #95a5a6; background: rgba(52,152,219,0.1); padding: 4px 10px; border-radius: 12px;">
+                                    Total: ${getTotalTasks()}
+                                </span>
+                            </h3>
+                        </div>
+                        <div style="flex: 1; position: relative; min-height: 0;">
+                            <canvas id="statusChart" style="width: 100% !important; height: 100% !important;"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Burndown Chart -->
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
+                        <div style="margin-bottom: 15px;">
+                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                <span style="color: #e74c3c; font-size: 22px;">📊</span> Burndown Chart
+                                <div style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12px; background: rgba(231,76,60,0.1); padding: 4px 12px; border-radius: 12px;">
+                                    <span style="color: #e74c3c;">🔥</span>
+                                    <span style="color: #e74c3c;" id="criticalTasksCount">${getCriticalTasksCount()} Críticas</span>
+                                </div>
+                            </h3>
+                        </div>
+                        <div style="flex: 1; position: relative; min-height: 0;">
+                            <canvas id="criticalChart" style="width: 100% !important; height: 100% !important;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- FILA 2: Proyectos y Atrasadas -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #2ecc71;">📂</span> Proyectos Activos</h3>
+                        <div style="max-height: 250px; overflow-y: auto;">${getProjectsListHTML()}</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #f39c12;">⏱️</span> Tareas Atrasadas<span style="background: rgba(243,156,18,0.2); color: #f39c12; padding: 2px 10px; border-radius: 20px; font-size: 12px;">${getOverdueTasks()}</span></h3>
+                        <div style="max-height: 250px; overflow-y: auto;">${getOverdueTasksHTML()}</div>
+                    </div>
+                </div>
+                <!-- FILA 3: Alertas -->
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px;">
+                    <h3 style="color: white; margin: 0 0 20px 0; font-size: 18px; display: flex; align-items: center; gap: 10px;"><span style="color: #f39c12;">🚨</span> Alertas del Sistema<span style="background: rgba(243,156,18,0.2); color: #f39c12; padding: 4px 12px; border-radius: 20px; font-size: 14px;">${getAlertCount()} alertas</span></h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">${getAlertCardsHTML()}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.1); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: #95a5a6; font-size: 13px; flex-shrink: 0;">
+            <div>🌐 Dashboard 4D Ejecutivo – Sistema de Gestión de Proyectos</div>
+            <div id="dashboardTimestamp">🕐 Actualizado: ${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+}
+
+function initDashboard4DCharts() {
+    // Destruir instancias anteriores si existen
+    ['progressChart', 'statusChart', 'criticalChart'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas && window.Chart) {
+            const chart = Chart.getChart(canvas);
+            if (chart) chart.destroy();
+        }
+    });
+
+    // Datos generales
+    const allTasks = getAllTasks();
+    const totalTasks = allTasks.length;
+    const completed = allTasks.filter(t => t.status === 'completed').length;
+    const inProgress = allTasks.filter(t => t.status === 'inProgress').length;
+    const pending = allTasks.filter(t => t.status === 'pending').length;
+    const overdue = allTasks.filter(t => t.status === 'overdue').length;
+
+    // 1. Gráfico de Progreso Acumulado
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+
+    function calculateHistoricalProgress() {
+        const allTasks = getAllTasks();
+        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+        const totalTasks = allTasks.length;
+        const progressPct = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        
+        const last7Days = [];
+        
+        for (let i = 6; i >= 0; i--) {
+            const dayRatio = (7 - i) / 7;
+            let dayProgress;
+            if (progressPct > 0) {
+                dayProgress = Math.min(progressPct * dayRatio, progressPct);
+            } else {
+                dayProgress = 0;
+            }
+            
+            dayProgress = Math.min(dayProgress, progressPct);
+            last7Days.push(Math.round(dayProgress));
+        }
+        
+        return last7Days;
+    }
+
+    function getLast7Days() {
+        const days = [];
+        const today = new Date();
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            days.push(dayNames[date.getDay()]);
+        }
+        return days;
+    }
+
+    // Crear gráfico con datos reales
+    new Chart(progressCtx, {
+        type: 'line',
+        data: {
+            labels: getLast7Days(),
+            datasets: [{
+                label: 'Progreso Acumulado Real',
+                data: calculateHistoricalProgress(),
+                borderColor: '#9b59b6',
+                backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#9b59b6',
+                pointRadius: 5,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        title: ctx => `Día: ${ctx[0].label}`,
+                        label: ctx => `Progreso: ${ctx.parsed.y}%`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Progreso (%)',
+                        color: '#95a5a6',
+                        font: {
+                            size: 12
+                        }
+                    },
+                    ticks: { 
+                        color: '#95a5a6',
+                        callback: value => value + '%' 
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.05)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Últimos 7 días',
+                        color: '#95a5a6',
+                        font: {
+                            size: 12
+                        }
+                    },
+                    ticks: {
+                        color: '#95a5a6'
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.05)'
+                    }
+                }
+            }
+        }
+    });
+
+ 
+// 2. Gráfico de Estado de Tareas CON TEXTO COMPLETAMENTE EN BLANCO
+// Asegúrate de que Chart.js y chartjs-plugin-datalabels estén cargados globalmente en tu app
+// Si no están registrados, hazlo así:
+if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
+    if (typeof window.ChartDataLabels !== 'undefined') {
+        Chart.register(window.ChartDataLabels);
+    }
+}
+
+// --- CONFIGURACIÓN DEL GRÁFICO ---
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+
+// Valores dinámicos (ajústalos según tu fuente de datos)
+const pending = 4;      // Pendientes
+const inProgress = 6;   // En Progreso
+const completed = 4;    // Completadas
+const overdue = 2;      // Atrasadas
+const totalTasks = pending + inProgress + completed + overdue;
+
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Pendientes', 'En Progreso', 'Completadas', 'Atrasadas'],
+        datasets: [{
+            data: [pending, inProgress, completed, overdue],
+            backgroundColor: [
+                'rgba(255, 215, 0, 0.8)',     // Amarillo
+                'rgba(32, 178, 170, 0.8)',    // Turquesa
+                'rgba(144, 238, 144, 0.8)',   // Verde claro
+                'rgba(255, 107, 107, 0.8)'    // Rojo claro
+            ],
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.2)',
+            hoverBorderWidth: 2,
+            hoverBorderColor: 'rgba(255,255,255,0.5)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        layout: {
+            padding: { bottom: 25, top: 10 }
+        },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                align: 'center',
+                display: true,
+                labels: {
+                    color: '#FFFFFF',
+                    font: {
+                        size: 12,
+                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                        weight: '500'
+                    },
+                    padding: 15,
+                    boxWidth: 12,
+                    boxHeight: 12,
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    generateLabels: function(chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
+                                const percentage = totalTasks > 0 ? Math.round((value / totalTasks) * 100) : 0;
+                                return {
+                                    text: `${label}: ${value} (${percentage}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    strokeStyle: data.datasets[0].borderColor[i],
+                                    lineWidth: 1,
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#FFFFFF',
+                bodyColor: '#FFFFFF',
+                callbacks: {
+                    label: ctx => {
+                        const value = ctx.raw;
+                        const percentage = totalTasks > 0 ? Math.round((value / totalTasks) * 100) : 0;
+                        return `${ctx.label}: ${value} tareas (${percentage}%)`;
+                    }
+                }
+            },
+            // ✅ DATALABELS: MUESTRA VALORES EN LOS SEGMENTOS (como en la imagen)
+            datalabels: {
+                display: true,
+                color: '#FFFFFF',
+                font: {
+                    family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                    size: 12,
+                    weight: 'bold'
+                },
+                formatter: (value, ctx) => {
+                    const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    return `${value}\n(${percentage}%)`;
+                },
+                anchor: 'center',
+                align: 'center',
+                offset: 0
+            }
+        }
+    },
+    // PLUGIN PERSONALIZADO: TEXTO CENTRAL (TOTAL DE TAREAS)
+    plugins: [{
+        id: 'centerText',
+        afterDraw: function(chart) {
+            const { ctx, chartArea } = chart;
+            const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+            // Total grande
+            ctx.font = 'bold 24px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(total.toString(), centerX, centerY - 10);
+
+            // Etiqueta "Tareas"
+            ctx.font = '14px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#95a5a6';
+            ctx.fillText('Tareas', centerX, centerY + 15);
+
+            ctx.restore();
+        }
+    }]
+});
+
+  // 3. Gráfico de Burndown (Críticas) - VERSIÓN COMPLETAMENTE CORREGIDA
+    const criticalCtx = document.getElementById('criticalChart').getContext('2d');
+
+    // OBTENER DATOS REALES DE TAREAS CRÍTICAS
+    function getCriticalTasksData() {
+        // Obtener todas las tareas críticas
+        const criticalTasks = getAllTasks().filter(t => 
+            t.critical || 
+            t.priority === 'alta' || 
+            t.status === 'overdue' ||
+            (t.deadline && new Date(t.deadline) < new Date())
+        );
+        
+        // Obtener tareas críticas completadas
+        const completedCritical = criticalTasks.filter(t => t.status === 'completed');
+        
+        // Calcular el total REAL de tareas críticas
+        const totalCritical = criticalTasks.length;
+        
+        console.log('📊 Datos críticos reales:', {
+            totalCritical: totalCritical,
+            completedCritical: completedCritical.length,
+            allCriticalTasks: criticalTasks.map(t => ({name: t.name, status: t.status}))
+        });
+        
+        return {
+            total: totalCritical,
+            completed: completedCritical.length,
+            tasks: criticalTasks
+        };
+    }
+
+    // CALCULAR SEMANAS DEL PROYECTO BASADO EN FECHAS REALES
+    function calculateProjectTimeline() {
+        const allTasks = getAllTasks();
+        const dates = [];
+        
+        // Recopilar todas las fechas relevantes
+        allTasks.forEach(task => {
+            if (task.createdAt) {
+                dates.push(new Date(task.createdAt));
+            }
+            if (task.deadline) {
+                dates.push(new Date(task.deadline));
+            }
+            if (task.startDate) {
+                dates.push(new Date(task.startDate));
+            }
+        });
+        
+        // Si no hay fechas, usar 4 semanas por defecto
+        if (dates.length === 0) {
+            return {
+                weeks: 4,
+                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+            };
+        }
+        
+        // Encontrar la fecha más temprana y más tardía
+        const validDates = dates.filter(d => !isNaN(d.getTime()));
+        if (validDates.length === 0) {
+            return {
+                weeks: 4,
+                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+            };
+        }
+        
+        const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
+        const maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+        
+        // Calcular diferencia en semanas
+        const diffTime = Math.abs(maxDate - minDate);
+        const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+        
+        // Asegurar entre 4 y 8 semanas
+        const weeks = Math.min(Math.max(diffWeeks, 4), 8);
+        
+        // Generar etiquetas
+        const labels = [];
+        for (let i = 1; i <= weeks; i++) {
+            labels.push(`Sem ${i}`);
+        }
+        
+        return {
+            weeks: weeks,
+            labels: labels,
+            startDate: minDate,
+            endDate: maxDate
+        };
+    }
+
+    // CALCULAR BURNDOWN REAL
+    function calculateRealBurndown() {
+        const criticalData = getCriticalTasksData();
+        const timeline = calculateProjectTimeline();
+        
+        const totalCritical = criticalData.total;
+        const completedCritical = criticalData.completed;
+        
+        // Si no hay tareas críticas, mostrar línea en cero
+        if (totalCritical === 0) {
+            return Array.from({length: timeline.weeks}, () => 0);
+        }
+        
+        // Calcular progreso actual
+        const currentProgress = completedCritical;
+        const remaining = totalCritical - currentProgress;
+        
+        // Generar datos de burndown basados en progreso real
+        const burndownData = [];
+        
+        for (let i = 0; i < timeline.weeks; i++) {
+            // Calcular qué porcentaje del tiempo ha pasado
+            const timeRatio = i / (timeline.weeks - 1);
+            
+            // Si estamos en la última semana, mostrar el remanente real
+            if (i === timeline.weeks - 1) {
+                burndownData.push(remaining);
+            } else {
+                // Calcular lo ideal que debería haber sido completado
+                const idealCompleted = Math.round(totalCritical * timeRatio);
+                const idealRemaining = Math.max(0, totalCritical - idealCompleted);
+                
+                // Ajustar basado en progreso real
+                const adjustedRemaining = Math.max(remaining, idealRemaining);
+                burndownData.push(adjustedRemaining);
+            }
+        }
+        
+        console.log('📈 Datos burndown reales:', {
+            totalCritical: totalCritical,
+            completedCritical: completedCritical,
+            remaining: remaining,
+            timelineWeeks: timeline.weeks,
+            burndownData: burndownData
+        });
+        
+        return burndownData;
+    }
+
+    // CALCULAR LÍNEA IDEAL
+    function calculateIdealBurndown() {
+        const criticalData = getCriticalTasksData();
+        const timeline = calculateProjectTimeline();
+        
+        const totalCritical = criticalData.total;
+        
+        // Si no hay tareas críticas, línea plana en cero
+        if (totalCritical === 0) {
+            return Array.from({length: timeline.weeks}, () => 0);
+        }
+        
+        // Línea ideal: decremento lineal
+        const idealData = [];
+        const decrement = totalCritical / (timeline.weeks - 1);
+        
+        for (let i = 0; i < timeline.weeks; i++) {
+            const idealValue = Math.max(0, Math.round(totalCritical - (decrement * i)));
+            idealData.push(idealValue);
+        }
+        
+        return idealData;
+    }
+
+    // OBTENER DATOS ACTUALES
+    const criticalData = getCriticalTasksData();
+    const timeline = calculateProjectTimeline();
+    
+    console.log('🎯 Datos finales para gráfico:', {
+        totalCriticalTasks: criticalData.total,
+        completedCritical: criticalData.completed,
+        timeline: timeline
+    });
+
+    // CREAR EL GRÁFICO
+    new Chart(criticalCtx, {
+        type: 'line',
+        data: {
+            labels: timeline.labels,
+            datasets: [
+                {
+                    label: 'Plan Ideal',
+                    data: calculateIdealBurndown(),
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                },
+                {
+                    label: 'Progreso Real',
+                    data: calculateRealBurndown(),
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#e74c3c',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#ff6b6b',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#95a5a6',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 10,
+                        boxHeight: 10
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    titleFont: {
+                        size: 13,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            return tooltipItems[0].label;
+                        },
+                        label: function(context) {
+                            const datasetLabel = context.dataset.label;
+                            const value = context.parsed.y;
+                            const totalCritical = criticalData.total;
+                            
+                            if (datasetLabel === 'Plan Ideal') {
+                                return `Plan: ${value} de ${totalCritical} tareas`;
+                            } else {
+                                const completed = totalCritical - value;
+                                const progressPct = totalCritical > 0 ? 
+                                    Math.round((completed / totalCritical) * 100) : 0;
+                                return `Real: ${value} tareas restantes (${progressPct}% completado)`;
+                            }
+                        },
+                        afterLabel: function(context) {
+                            if (context.datasetIndex === 1 && context.dataIndex === timeline.labels.length - 1) {
+                                const totalCritical = criticalData.total;
+                                const completed = criticalData.completed;
+                                if (completed < totalCritical) {
+                                    return `⚠️ ${totalCritical - completed} tareas pendientes`;
+                                }
+                            }
+                            return null;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Tareas Críticas Restantes',
+                        color: '#95a5a6',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        padding: {top: 10, bottom: 10}
+                    },
+                    ticks: {
+                        color: '#95a5a6',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return value + (value === 1 ? ' tarea' : ' tareas');
+                        },
+                        stepSize: totalTasks > 10 ? Math.ceil(totalTasks / 10) : 1
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.05)',
+                        drawBorder: false
+                    },
+                    // Ajustar máximo basado en datos reales
+                    suggestedMax: Math.max(criticalData.total, 10) * 1.1
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Semanas del Proyecto',
+                        color: '#95a5a6',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        padding: {top: 10, bottom: 10}
+                    },
+                    ticks: {
+                        color: '#95a5a6',
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.05)',
+                        drawBorder: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            elements: {
+                line: {
+                    tension: 0.3
+                }
+            }
+        }
+    });
+    
+    // Actualizar contador en la interfaz
+    const criticalCountElement = document.getElementById('criticalTasksCount');
+    if (criticalCountElement) {
+        criticalCountElement.textContent = `${criticalData.total} Críticas`;
+    }
+}
+
+// Funciones auxiliares
+function getCriticalTasksCount() {
+    let count = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            if (t.critical || t.priority === 'alta' || t.status === 'overdue') count++;
+        });
+    });
+    return count;
+}
+
+function getTotalTasks() {
+    let count = 0;
+    projects.forEach(p => {
+        count += p.tasks.length;
+    });
+    return count;
+}
+
+function getCompletedTasks() {
+    let count = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            if (t.status === 'completed') count++;
+        });
+    });
+    return count;
+}
+
+function getOverdueTasks() {
+    let count = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            if (t.status === 'overdue') count++;
+        });
+    });
+    return count;
+}
+
+function getOverallProgress() {
+    let total = 0;
+    let completed = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            total++;
+            if (t.status === 'completed') completed++;
+        });
+    });
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+}
+
+function getRiskLevel() {
+    const total = getTotalTasks();
+    const overdue = getOverdueTasks();
+    const critical = getCriticalTasksCount();
+    if (overdue === 0 && critical === 0) return '<span style="color:#2ecc71">BAJO</span>';
+    if (overdue > total * 0.1 || critical > total * 0.2) return '<span style="color:#e74c3c">ALTO</span>';
+    return '<span style="color:#f39c12">MEDIO</span>';
+}
+
+function getEfficiency() {
+    const total = getTotalTasks();
+    const completed = getCompletedTasks();
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+}
+
+function getProjectsListHTML() {
+    const sortedProjects = [...projects].sort((a, b) => {
+        const aComp = a.tasks.filter(t => t.status === 'completed').length;
+        const bComp = b.tasks.filter(t => t.status === 'completed').length;
+        const aTotal = a.tasks.length;
+        const bTotal = b.tasks.length;
+        const aPct = aTotal ? (aComp / aTotal) * 100 : 0;
+        const bPct = bTotal ? (bComp / bTotal) * 100 : 0;
+        return bPct - aPct;
+    });
+    return `
+        <div style="color:#3498db;font-size:12px;margin-bottom:10px;padding:0 5px;display:flex;justify-content:space-between;">
+            <span>📊 Total: ${projects.length} proyectos</span>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
+        ${sortedProjects.slice(0, 8).map(p => {
+            const tasks = p.tasks || [];
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const total = tasks.length;
+            const progress = total ? Math.round((completed / total) * 100) : 0;
+            const color = progress >= 75 ? '#2ecc71' : progress >= 50 ? '#f39c12' : '#e74c3c';
+            const overdueTasks = tasks.filter(t => t.deadline && t.status !== 'completed' && new Date(t.deadline) < new Date()).length;
+            return `
+                <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid ${color};">
+                    <div style="flex:1;">
+                        <div style="color:white;font-weight:500;font-size:14px;margin-bottom:4px;">
+                            ${p.name.substring(0,25)}${p.name.length > 25 ? '...' : ''}
+                        </div>
+                        <div style="display:flex;gap:15px;font-size:11px;">
+                            <span style="color:#95a5a6;">📝 ${total} tareas</span>
+                            <span style="color:#${overdueTasks > 0 ? 'e74c3c' : '95a5a6'};">⏱️ ${overdueTasks} atrasadas</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:${color};font-weight:bold;font-size:16px;">${progress}%</div>
+                        <div style="width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;">
+                            <div style="width:${progress}%;height:100%;background:${color};border-radius:2px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('')}
+        </div>
+    `;
+}
+
+function getOverdueTasksHTML() {
+    const overdueTasks = getAllTasks().filter(t => {
+        if (!t.deadline || t.status === 'completed') return false;
+        return new Date(t.deadline) < new Date();
+    });
+    const totalOverdue = overdueTasks.length;
+    if (totalOverdue === 0) {
+        return `<div style="text-align:center;color:#2ecc71;padding:20px;">✅ Sin tareas atrasadas</div>`;
+    }
+    return `
+        <div style="color:#f39c12;font-size:12px;margin-bottom:10px;padding:0 5px;">
+            <span>📋 Total: ${totalOverdue} tareas</span>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
+        ${overdueTasks.slice(0, 10).map(t => `
+            <div style="background:rgba(243,156,18,0.1);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #f39c12;">
+                <div style="color:white;font-weight:bold;margin-bottom:5px;">
+                    ${t.name.substring(0,40)}${t.name.length > 40 ? '...' : ''}
+                </div>
+                <div style="color:#f39c12;display:flex;justify-content:space-between;font-size:12px;">
+                    <span>📂 ${t.projectName?.substring(0,20) || 'Proyecto'}${t.projectName?.length > 20 ? '...' : ''}</span>
+                    <span style="background:rgba(243,156,18,0.3);padding:2px 6px;border-radius:4px;font-size:11px;">
+                        ${new Date(t.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                    </span>
+                </div>
+                ${t.assignee ? `
+                    <div style="color:#95a5a6;font-size:11px;margin-top:5px;">
+                        👤 ${t.assignee}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('')}
+        </div>
+    `;
+}
+
+function getAlertCount() {
+    let count = 0;
+    if (projects.length === 0) count++;
+    if (getAllTasks().some(t => !t.assignee || t.assignee === 'Sin asignar')) count++;
+    if (getAllTasks().some(t => t.deadline && t.status !== 'completed' && new Date(t.deadline) < new Date())) count++;
+    return count;
+}
+
+function getAlertCardsHTML() {
+    const alerts = [];
+    if (projects.length === 0) {
+        alerts.push(`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
+                <div style="width:50px;height:50px;background:rgba(231,76,60,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#e74c3c;">📂</div>
+                <div><div style="color:white;font-weight:bold;font-size:16px;">Sin proyectos</div></div>
+            </div>
+        </div>`);
+    }
+    const unassigned = getAllTasks().filter(t => !t.assignee || t.assignee === 'Sin asignar').length;
+    if (unassigned > 0) {
+        alerts.push(`<div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.3);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
+                <div style="width:50px;height:50px;background:rgba(243,156,18,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#f39c12;">👤</div>
+                <div><div style="color:white;font-weight:bold;font-size:16px;">Tareas sin asignar</div><div style="color:#f39c12;font-size:32px;font-weight:bold;">${unassigned}</div></div>
+            </div>
+        </div>`);
+    }
+    if (getOverdueTasks() > 0) {
+        alerts.push(`<div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:12px;padding:20px;">
+            <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px;">
+                <div style="width:50px;height:50px;background:rgba(231,76,60,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#e74c3c;">⏱️</div>
+                <div><div style="color:white;font-weight:bold;font-size:16px;">Tareas atrasadas</div><div style="color:#e74c3c;font-size:32px;font-weight:bold;">${getOverdueTasks()}</div></div>
+            </div>
+        </div>`);
+    }
+    if (alerts.length === 0) {
+        alerts.push(`<div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:40px;text-align:center;grid-column:1/-1;">
+            <div style="font-size:48px;color:#2ecc71;margin-bottom:20px;">✅</div>
+            <h3 style="color:white;margin:0 0 15px 0;font-size:22px;">Sistema en estado óptimo</h3>
+            <p style="color:#95a5a6;font-size:16px;max-width:600px;margin:0 auto;">
+                Todos los proyectos están bajo control. ¡Excelente trabajo!
+            </p>
+        </div>`);
+    }
+    return alerts.join('');
+}
+
+function getAllTasks() {
+    const allTasks = [];
+    projects.forEach(project => {
+        const tasks = project.tasks || [];
+        tasks.forEach(task => {
+            allTasks.push({
+                ...task,
+                projectName: project.name || 'Proyecto'
+            });
+        });
+    });
+    return allTasks;
+}
+
+// Funciones de utilidad
+window.refreshDashboard4D = function () {
+    document.getElementById('dashboardTimestamp').innerHTML = '🔄 Actualizando...';
+    setTimeout(() => {
+        window.showDashboard4DView();
+    }, 500);
+};
+
+window.exportDashboard4DReport = function() {
+    console.log('📤 Exportando PDF ejecutivo...');
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Reporte Ejecutivo Dashboard 4D</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #9b59b6; padding-bottom: 20px; }
+                .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 30px 0; }
+                .kpi-card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; text-align: center; }
+                .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background: #9b59b6; color: white; }
+                .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; }
+                @media print {
+                    .no-print { display: none; }
+                    body { margin: 20px; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1 style="color: #9b59b6;">Reporte Ejecutivo Dashboard 4D</h1>
+                <p>Fecha: ${new Date().toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })}</p>
+                <p>Generado automáticamente por el sistema de gestión</p>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <h3>${projects.length}</h3>
+                    <p>Proyectos Activos</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>${getTotalTasks()}</h3>
+                    <p>Tareas Totales</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>${getOverallProgress()}%</h3>
+                    <p>Progreso Global</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>${getOverdueTasks()}</h3>
+                    <p>Tareas Atrasadas</p>
+                </div>
+            </div>
+            <div class="section">
+                <h2>📊 Estado de Tareas</h2>
+                <table>
+                    <tr>
+                        <th>Estado</th>
+                        <th>Cantidad</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                    <tr>
+                        <td>✅ Completadas</td>
+                        <td>${getCompletedTasks()}</td>
+                        <td>${getTotalTasks() > 0 ? Math.round((getCompletedTasks()/getTotalTasks())*100) : 0}%</td>
+                    </tr>
+                    <tr>
+                        <td>🔄 En Progreso</td>
+                        <td>${getAllTasks().filter(t => t.status === 'inProgress').length}</td>
+                        <td>${getTotalTasks() > 0 ? Math.round((getAllTasks().filter(t => t.status === 'inProgress').length/getTotalTasks())*100) : 0}%</td>
+                    </tr>
+                    <tr>
+                        <td>⏳ Pendientes</td>
+                        <td>${getAllTasks().filter(t => t.status === 'pending').length}</td>
+                        <td>${getTotalTasks() > 0 ? Math.round((getAllTasks().filter(t => t.status === 'pending').length/getTotalTasks())*100) : 0}%</td>
+                    </tr>
+                    <tr>
+                        <td>⚠️ Atrasadas</td>
+                        <td>${getOverdueTasks()}</td>
+                        <td>${getTotalTasks() > 0 ? Math.round((getOverdueTasks()/getTotalTasks())*100) : 0}%</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="section">
+                <h2>📋 Resumen Ejecutivo</h2>
+                <p>El sistema actual presenta un progreso global del <strong>${getOverallProgress()}%</strong>.</p>
+                <p>${getOverdueTasks() > 0 ?
+                    `⚠️ Se requiere atención en ${getOverdueTasks()} tareas atrasadas.` :
+                    '✅ Todas las tareas están al día.'}</p>
+                <p>${getOverallProgress() >= 80 ?
+                    '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
+                    getOverallProgress() >= 60 ?
+                    '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
+                    '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
+            </div>
+            <div class="footer">
+                <p>Reporte generado por Dashboard 4D Ejecutivo</p>
+                <p>Documento para uso interno - ${new Date().getFullYear()}</p>
+            </div>
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <button onclick="window.print()" style="
+                    background: #9b59b6;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">
+                    🖨️ Imprimir Reporte
+                </button>
+                <button onclick="window.close()" style="
+                    background: #95a5a6;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    margin-left: 10px;
+                ">
+                    ✕ Cerrar
+                </button>
+            </div>
+            <script>
+                // Abrir diálogo de impresión automáticamente
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            </script>
+        </body>
+        </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+};
+
+window.closeDashboard4D = function () {
+    const container = document.getElementById('mainAppContainer');
+    if (container) {
+        container.remove();
+        console.log('✅ Dashboard eliminado');
+    }
+    // Restaurar la vista de proyectos
+    if (typeof renderProjects === 'function') {
+        setTimeout(() => {
+            renderProjects();
+        }, 100);
+    }
+};
+
+function createGlobalDashboard4D() {
+    window.showDashboard4DView();
+}
+
+// Alias para compatibilidad
+function showDashboard4DView() {
+    window.showDashboard4DView();
+}
+
+
+
+
+
+
+
+
 
 
 
