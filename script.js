@@ -38181,7 +38181,8 @@ function generateDashboard4DHTML() {
                     </div>
                     <!-- Burndown Chart -->
                     <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #e74c3c;">📊</span> Burndown Chart<div style="display: flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(231,76,60,0.1); padding: 2px 8px; border-radius: 10px; margin-left: auto;"><span style="color: #e74c3c;">🔥</span><span style="color: #e74c3c;">Tareas Críticas</span></div></h3>
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #e74c3c;">📊</span> Burndown Chart<div style="display: flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(231,76,60,0.1); padding: 2px 8px; border-radius: 10px; margin-left: auto;"><span style="color: #e74c3c;">🔥</span><span style="color: #e74c3c;">Tareas Críticas: ${getCriticalTasksCount()}</span>
+</div></h3>
                         <div style="height: 180px; position: relative;"><canvas id="criticalChart" style="width: 100%; height: 100%;"></canvas></div>
                     </div>
                 </div>
@@ -38381,32 +38382,87 @@ new Chart(statusCtx, {
     new Chart(criticalCtx, {
         type: 'line',
         data: {
-            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-            datasets: [
-                {
-                    label: 'Plan Ideal',
-                    data: [10, 7, 4, 0],
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    borderDash: [5, 5],
-                    fill: false,
-                    tension: 0,
-                    pointRadius: 0
-                },
-                {
-                    label: 'Progreso Real',
-                    data: [10, 8, 5, 2],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#e74c3c',
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+           // ===== BURNDOWN REAL BASADO EN TAREAS CRÍTICAS =====
+const criticalTasks = getAllTasks().filter(
+    t => t.critical || t.priority === 'alta'
+);
+
+// Total de críticas
+const totalCritical = criticalTasks.length;
+
+// Críticas completadas (ordenadas por fecha si existe)
+const completedCritical = criticalTasks.filter(t => t.status === 'completed');
+
+// Generar eje temporal simple (etapas reales)
+const steps = Math.max(totalCritical, 1);
+const labels = Array.from({ length: steps }, (_, i) => `Paso ${i + 1}`);
+
+// Plan ideal: descenso lineal
+const idealData = [];
+for (let i = 0; i < steps; i++) {
+    idealData.push(totalCritical - i);
+}
+
+// Progreso real: cuántas críticas quedan
+const realData = [];
+let remaining = totalCritical;
+
+for (let i = 0; i < steps; i++) {
+    if (completedCritical[i]) remaining--;
+    realData.push(Math.max(remaining, 0));
+}
+
+new Chart(criticalCtx, {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [
+            {
+                label: 'Plan Ideal',
+                data: idealData,
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0,
+                pointRadius: 0
+            },
+            {
+                label: 'Progreso Real',
+                data: realData,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#e74c3c',
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} tareas`
                 }
-            ]
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: value => value + ' tareas'
+                }
+            }
+        }
+    }
+});
+
         },
         options: {
             responsive: true,
