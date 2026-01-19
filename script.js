@@ -1117,19 +1117,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     return; // ⬅️ Detener aquí si no hay token
   }
 
-  // 👇 Solo si hay token, continuar con la app
-  console.log('🎯 Iniciando aplicación con validación...');
-  const dataLoaded = safeLoad();
-  if (!dataLoaded || projects.length === 0) {
-    console.log('📝 No hay datos, creando proyecto inicial...');
-   
-  } else {
-    console.log('✅ Datos cargados correctamente');
-    renderProjects();
-    selectProject(currentProjectIndex);
-    checkOverdueTasks();
-  }
-  setupEventListeners();
+ // 👇 Solo si hay token, continuar con la app
+console.log('🎯 Iniciando aplicación con validación...');
+const dataLoaded = safeLoad();
+if (!dataLoaded || projects.length === 0) {
+  console.log('📝 No hay datos, creando proyecto inicial...');
+} else {
+  console.log('✅ Datos cargados correctamente');
+  renderProjects();
+  selectProject(currentProjectIndex);
+  checkOverdueTasks();
+}
+// setupEventListeners(); // ← Comentada/eliminada
   // ... resto de tu inicialización
 });
 
