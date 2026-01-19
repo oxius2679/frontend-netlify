@@ -38324,63 +38324,31 @@ new Chart(progressCtx, {
 
    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
 // ===============================
-// ESTADO DE TAREAS – DONUT FINAL PRO
+// ESTADO DE TAREAS – DONUT FINAL
 // ===============================
 
-// Plugin número central
-const donutCenterValuePlugin = {
-    id: 'donutCenterValue',
-    afterDraw(chart) {
-        const value = chart.config.options.centerValue;
-        if (!value) return;
+const allTasksLocal = getAllTasks();
 
-        const { ctx, chartArea } = chart;
-        ctx.save();
-        ctx.font = '600 24px Segoe UI';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(
-            value,
-            (chartArea.left + chartArea.right) / 2,
-            (chartArea.top + chartArea.bottom) / 2
-        );
-        ctx.restore();
-    }
-};
-
-Chart.register(donutCenterValuePlugin);
-
-// ===== DATOS REALES =====
-const tasksAll = getAllTasks();
-
-const tasksTotal = tasksAll.length;
-const tasksPending = tasksAll.filter(t => t.status === 'pending').length;
-const tasksProgress = tasksAll.filter(t => t.status === 'inProgress').length;
-const tasksCompleted = tasksAll.filter(t => t.status === 'completed').length;
-const tasksOverdue = tasksAll.filter(
-    t =>
-        t.status === 'overdue' ||
-        t.status === 'retrasado' ||
-        t.status === 'rezagado'
+const total = allTasksLocal.length;
+const pendingCount = allTasksLocal.filter(t => t.status === 'pending').length;
+const progressCount = allTasksLocal.filter(t => t.status === 'inProgress').length;
+const completedCount = allTasksLocal.filter(t => t.status === 'completed').length;
+const overdueCount = allTasksLocal.filter(
+    t => t.status === 'overdue' || t.status === 'retrasado' || t.status === 'rezagado'
 ).length;
 
-const percent = v =>
-    tasksTotal ? Math.round((v / tasksTotal) * 100) : 0;
-
-const statusCtx = document
-    .getElementById('statusChart')
-    .getContext('2d');
+const statusCtx = document.getElementById('statusChart').getContext('2d');
 
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
+        labels: ['Pendientes', 'En Progreso', 'Completadas', 'Retrasadas'],
         datasets: [{
             data: [
-                tasksPending,
-                tasksProgress,
-                tasksCompleted,
-                tasksOverdue
+                pendingCount,
+                progressCount,
+                completedCount,
+                overdueCount
             ],
             backgroundColor: [
                 '#f1c40f',
@@ -38396,54 +38364,58 @@ new Chart(statusCtx, {
         maintainAspectRatio: false,
         cutout: '75%',
         layout: {
-            padding: { bottom: 22 }
+            padding: {
+                bottom: 14
+            }
         },
         plugins: {
             legend: {
                 display: true,
                 position: 'bottom',
-                fullSize: false,
+                align: 'center',
                 labels: {
-                    color: '#ffffff',
+                    color: '#ffffff',          // 🔥 BLANCO
                     font: {
-                        size: 10,
+                        size: 10,               // 🔥 MÁS PEQUEÑO
                         weight: '500'
                     },
-                    boxWidth: 10,
-                    boxHeight: 10,
-                    padding: 12,
+                    padding: 10,
+                    boxWidth: 8,               // 🔥 CÍRCULOS MÁS PEQUEÑOS
+                    boxHeight: 8,
                     usePointStyle: true,
-                    pointStyle: 'circle',
-
-                    // 🔥 FORZAR LEYENDA HORIZONTAL CON LOS 4 ESTADOS
-                    generateLabels(chart) {
-                        const data = chart.data.datasets[0].data;
-                        const labels = [
-                            { text: `Pendientes ${data[0]} · ${percent(data[0])}%`, color: '#f1c40f' },
-                            { text: `En Progreso ${data[1]} · ${percent(data[1])}%`, color: '#3498db' },
-                            { text: `Completadas ${data[2]} · ${percent(data[2])}%`, color: '#2ecc71' },
-                            { text: `Retrasadas ${data[3]} · ${percent(data[3])}%`, color: '#e74c3c' }
-                        ];
-
-                        return labels.map((l, i) => ({
-                            text: l.text,
-                            fillStyle: l.color,
-                            strokeStyle: l.color,
-                            index: i
-                        }));
-                    }
+                    pointStyle: 'circle'
                 }
             },
             tooltip: {
                 enabled: true,
                 callbacks: {
-                    label: ctx =>
-                        `${ctx.raw} tareas (${percent(ctx.raw)}%)`
+                    label: ctx => {
+                        const pct = total
+                            ? Math.round((ctx.raw / total) * 100)
+                            : 0;
+                        return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                    }
                 }
             }
-        },
-        centerValue: tasksTotal
-    }
+        }
+    },
+    plugins: [{
+        id: 'centerNumber',
+        afterDraw(chart) {
+            const { ctx, chartArea } = chart;
+            ctx.save();
+            ctx.font = '600 22px Segoe UI';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                total,
+                (chartArea.left + chartArea.right) / 2,
+                (chartArea.top + chartArea.bottom) / 2
+            );
+            ctx.restore();
+        }
+    }]
 });
 
   // 3. Gráfico de Burndown (Críticas)
