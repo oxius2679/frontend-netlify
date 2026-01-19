@@ -19629,26 +19629,12 @@ document.addEventListener('DOMContentLoaded', function () {
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
  window.showExecutiveGantt = async function() {
-  // 🔒 VERIFICACIÓN REAL CON BACKEND
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
-    return;
-  }
-
-  try {
-    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
-    const data = await response.json();
-    
-    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      return;
-    }
-  } catch (error) {
-    console.error('Error verificando licencia:', error);
-    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
-    return;
-  }
+ // 🔒 VERIFICACIÓN DE LICENCIA DESDE LOCALSTORAGE
+const userPlan = localStorage.getItem('userPlan');
+if (userPlan !== 'professional' && userPlan !== 'premium') {
+  showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+  return;
+}
 
   // ✅ USUARIO AUTORIZADO - mostrar Gantt
   console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
@@ -20833,10 +20819,11 @@ document.addEventListener('DOMContentLoaded', function () {
    **************************************/
   window.showExecutiveGantt = function() {
     // 🔒 PROTECCIÓN POR LICENCIA: solo Profesional/Premium pueden usar el Gantt Ejecutivo
-    if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      return;
-    }
+    const userPlan = localStorage.getItem('userPlan');
+if (userPlan !== 'professional' && userPlan !== 'premium') {
+  showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+  return;
+}
 
     console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
@@ -38040,7 +38027,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
-indow.showDashboard4DView = function () {
+window.showDashboard4DView = function () {
   // ⛔ Si ya existe, eliminarlo para evitar duplicados
   const existingContainer = document.getElementById('mainAppContainer');
   if (existingContainer) {
