@@ -4,7 +4,7 @@
  **************************************/
 let projects = [];
 let currentProjectIndex = 0;
-let window.authToken = localStorage.getItem('authToken');
+
 
 
 
