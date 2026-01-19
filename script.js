@@ -38377,81 +38377,96 @@ new Chart(statusCtx, {
     }
 });
 
-    // ===============================
-// 3. GRÁFICO BURNDOWN – TAREAS CRÍTICAS
-// ===============================
+  // 3. Gráfico de Burndown (Críticas)
 
-// Obtener tareas críticas reales
+// ===== DATOS REALES DE TAREAS CRÍTICAS =====
 const criticalTasks = getAllTasks().filter(
-  t => t.critical === true || t.priority === 'alta'
+    t => t.critical === true || t.priority === 'alta'
 );
 
-// Total de tareas críticas
-const totalCriticalTasks = criticalTasks.length;
+const totalCritical = criticalTasks.length;
 
-// Labels simulando línea de tiempo
-const criticalLabels = criticalTasks.map((_, index) => `Paso ${index + 1}`);
+// Agrupar por semanas (4 semanas)
+const weeks = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+const completedByWeek = [0, 0, 0, 0];
 
-// Burndown real (tareas restantes)
-const criticalRemaining = criticalTasks.map(
-  (_, index) => totalCriticalTasks - index
-);
-
-// Contexto del canvas
-const criticalCtx = document
-  .getElementById('criticalChart')
-  .getContext('2d');
-
-// Crear gráfico
-new Chart(criticalCtx, {
-  type: 'line',
-  data: {
-    labels: criticalLabels,
-    datasets: [
-      {
-        label: 'Tareas críticas pendientes',
-        data: criticalRemaining,
-        fill: true,
-        tension: 0.4,
-        borderWidth: 2
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            return ` Pendientes: ${context.parsed.y}`;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Progreso'
-        }
-      },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Tareas críticas restantes'
-        },
-        ticks: {
-          stepSize: 1
-        }
-      }
+criticalTasks.forEach(task => {
+    if (task.status === 'completed' && task.deadline) {
+        const weekIndex = Math.min(
+            Math.floor((new Date(task.deadline).getDate() - 1) / 7),
+            3
+        );
+        completedByWeek[weekIndex]++;
     }
-  }
 });
+
+// Burndown real
+let remaining = totalCritical;
+const realBurndown = completedByWeek.map(done => {
+    remaining -= done;
+    return remaining < 0 ? 0 : remaining;
+});
+
+// Línea ideal
+const idealBurndown = weeks.map((_, i) =>
+    Math.round(totalCritical - (totalCritical / (weeks.length - 1)) * i)
+);
+
+const criticalCtx = document
+    .getElementById('criticalChart')
+    .getContext('2d');
+
+new Chart(criticalCtx, {
+    type: 'line',
+    data: {
+        labels: weeks,
+        datasets: [
+            {
+                label: 'Plan Ideal',
+                data: idealBurndown,
+                borderColor: 'rgba(255,255,255,0.3)',
+                borderDash: [5, 5],
+                borderWidth: 1,
+                fill: false,
+                pointRadius: 0
+            },
+            {
+                label: 'Críticas Reales',
+                data: realBurndown,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231,76,60,0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: true },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.parsed.y} tareas críticas`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => v + ' tareas'
+                }
+            }
+        }
+    }
+});
+
+// DEBUG (hover opcional)
+console.log('Críticas:', totalCritical);
+console.log('Críticas reales:', criticalTasks);
+
 
 
 // Funciones auxiliares
