@@ -1503,6 +1503,19 @@ function requireModeAccess(view, callback) {
     return;
   }
   callback();
+}
+
+
+
+
+// ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
+function requirePremiumAccess(featureName, callback) {
+  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+    showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
+    return;
+  }
+  callback();
+}
 
 
 
@@ -6122,7 +6135,11 @@ function ensureProjectHealthHandle() {
 // ========== FUNCIÓN BURNDOWN CHART PREMIUM ==========
 window.showBurnDownChartPremium = function() {
 
-  
+  // 🔒 Verificar licencia ANTES de hacer cualquier cosa
+  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+    showNotification('🔒 El Burndown Premium requiere el plan Profesional o Premium.');
+    return;
+  }
 
   console.log('📉 ACTIVANDO BURNDOWN CHART PREMIUM...');
   const ganttContainer = document.getElementById('premiumExecutiveGantt');
@@ -17795,7 +17812,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ✅ ACCESO PREMIUM AUTOMÁTICO PARA EL DESARROLLADOR
 const currentUserEmail = localStorage.getItem('userEmail');
-if (currentUserEmail === 'ajackson2672@gmail.com') {
+if (currentUserEmail === 'TU_CORREO_AQUI') {
   localStorage.setItem('userPlan', 'premium');
   console.log('👑 Acceso premium activado para desarrollador');
 }
@@ -37975,7 +37992,6 @@ window.login = async function() {
     
     if (res.ok) {
       localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userEmail', email);
       localStorage.setItem('user', JSON.stringify(data.user));
       location.reload();
     }
