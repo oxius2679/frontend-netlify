@@ -38328,11 +38328,11 @@ new Chart(progressCtx, {
 // ===============================
 
 // Plugin texto central
-const centerTextPlugin = {
-    id: 'centerText',
+const dashboardCenterTextPlugin = {
+    id: 'dashboardCenterText',
     afterDraw(chart) {
-        const opts = chart.config.options.centerText;
-        if (!opts) return;
+        const cfg = chart.config.options.dashboardCenterText;
+        if (!cfg) return;
 
         const { ctx, chartArea } = chart;
         ctx.save();
@@ -38341,7 +38341,7 @@ const centerTextPlugin = {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(
-            opts.text,
+            cfg.text,
             (chartArea.left + chartArea.right) / 2,
             (chartArea.top + chartArea.bottom) / 2
         );
@@ -38349,28 +38349,28 @@ const centerTextPlugin = {
     }
 };
 
-Chart.register(centerTextPlugin);
+Chart.register(dashboardCenterTextPlugin);
 
-// Datos reales
-const totalTasks = getTotalTasks();
-const completed = getCompletedTasks();
-const inProgress = getAllTasks().filter(t => t.status === 'inProgress').length;
-const pending = getAllTasks().filter(t => t.status === 'pending').length;
-const overdue = getOverdueTasks();
+// ===== DATOS REALES (SIN COLISIONES) =====
+const dashTotalTasks = getTotalTasks();
+const dashCompleted = getCompletedTasks();
+const dashInProgress = getAllTasks().filter(t => t.status === 'inProgress').length;
+const dashPending = getAllTasks().filter(t => t.status === 'pending').length;
+const dashOverdue = getOverdueTasks();
 
-const statusCtx = document.getElementById('statusChart').getContext('2d');
+const dashStatusCtx = document.getElementById('statusChart').getContext('2d');
 
-new Chart(statusCtx, {
+new Chart(dashStatusCtx, {
     type: 'doughnut',
     data: {
         labels: [
-            `Pendientes (${pending} • ${Math.round((pending / totalTasks) * 100)}%)`,
-            `En Progreso (${inProgress} • ${Math.round((inProgress / totalTasks) * 100)}%)`,
-            `Completadas (${completed} • ${Math.round((completed / totalTasks) * 100)}%)`,
-            `Atrasadas (${overdue} • ${Math.round((overdue / totalTasks) * 100)}%)`
+            `Pendientes (${dashPending} • ${Math.round((dashPending / dashTotalTasks) * 100)}%)`,
+            `En Progreso (${dashInProgress} • ${Math.round((dashInProgress / dashTotalTasks) * 100)}%)`,
+            `Completadas (${dashCompleted} • ${Math.round((dashCompleted / dashTotalTasks) * 100)}%)`,
+            `Atrasadas (${dashOverdue} • ${Math.round((dashOverdue / dashTotalTasks) * 100)}%)`
         ],
         datasets: [{
-            data: [pending, inProgress, completed, overdue],
+            data: [dashPending, dashInProgress, dashCompleted, dashOverdue],
             backgroundColor: [
                 '#f1c40f',
                 '#3498db',
@@ -38394,8 +38394,8 @@ new Chart(statusCtx, {
                 enabled: true
             }
         },
-        centerText: {
-            text: `${totalTasks} tareas`
+        dashboardCenterText: {
+            text: `${dashTotalTasks} tareas`
         }
     }
 });
