@@ -38466,7 +38466,7 @@ new Chart(criticalCtx, {
 // DEBUG (hover opcional)
 console.log('Críticas:', totalCritical);
 console.log('Críticas reales:', criticalTasks);
-
+}
 
 
 // Funciones auxiliares
