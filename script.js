@@ -1503,19 +1503,6 @@ function requireModeAccess(view, callback) {
     return;
   }
   callback();
-}
-
-
-
-
-// ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
-function requirePremiumAccess(featureName, callback) {
-  
-    showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
-    return;
-  }
-  callback();
-}
 
 
 
