@@ -38026,28 +38026,337 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-// ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
-window.showDashboard4DView = function () {
-  // ⛔ Si ya existe, eliminarlo para evitar duplicados
+// ========== DASHBOARD 4D EJECUTIVO - VERSIÓN COMPLETA (COMO EN LA IMAGEN) ==========
+window.showDashboard4DView = function() {
+  // Eliminar cualquier dashboard anterior
   const existingContainer = document.getElementById('mainAppContainer');
   if (existingContainer) {
     existingContainer.remove();
-    console.log('✅ Container anterior eliminado');
   }
 
-  // 🔒 Verificar licencia desde localStorage (NO licenseManager)
-  const userPlan = localStorage.getItem('userPlan');
-  if (userPlan !== 'professional' && userPlan !== 'premium') {
-    showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
-    return;
-  }
+  // Crear nuevo contenedor
+  const container = document.createElement('div');
+  container.id = 'mainAppContainer';
+  container.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  `;
+  document.body.appendChild(container);
 
-  // 🔄 Verificar modo híbrido
-  const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
-  if (currentMode !== 'hybrid') {
-    showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
-    return;
-  }
+  // Header
+  const header = document.createElement('div');
+  header.style.cssText = `
+    background: linear-gradient(90deg, #0a0a1a, #1a1a3a);
+    padding: 20px 30px;
+    border-bottom: 1px solid rgba(155, 89, 182, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  `;
+  header.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);">🌐</div>
+      <div>
+        <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;"><span style="font-weight: 700; color: #9b59b6;">Dashboard 4D Ejecutivo</span><span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">• Basado en Horas</span></h2>
+        <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;">
+          <span style="color: #3498db;">📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span> •
+          🕒 ${totalEstimatedHours}h estimadas • ⏱️ ${totalLoggedHours}h registradas • 🔥 ${criticalHours}h críticas
+        </p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button onclick="refreshDashboard4D()" style="background: linear-gradient(45deg, #3498db, #2980b9); border: none; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px;">🔄 Actualizar</button>
+      <button onclick="exportDashboard4DReport()" style="background: linear-gradient(45deg, #2ecc71, #27ae60); border: none; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px;">📥 Exportar PDF</button>
+      <button onclick="closeDashboard4D()" style="background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;">✕ Volver al Sistema</button>
+    </div>
+  `;
+  container.appendChild(header);
+
+  // Contenido principal
+  const content = document.createElement('div');
+  content.style.cssText = `
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(10,10,26,0.95), rgba(18,18,48,1));
+  `;
+  container.appendChild(content);
+
+  // Sidebar izquierdo
+  const sidebar = document.createElement('div');
+  sidebar.style.cssText = `
+    width: 280px;
+    background: linear-gradient(180deg, #0a0a1a, #121230);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    padding: 25px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    flex-shrink: 0;
+  `;
+  content.appendChild(sidebar);
+
+  // KPIs Globales
+  sidebar.innerHTML = `
+    <div>
+      <h3 style="color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <span style="color: #3498db; font-size: 20px;">📊</span> KPIs Globales (Horas)
+      </h3>
+      <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+        <div style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+          <div style="color: white; font-size: 32px; font-weight: bold;">${totalEstimatedHours}</div>
+          <div style="color: #d8b4fe; font-size: 14px; margin-top: 8px;">HORAS ESTIMADAS</div>
+        </div>
+        <div style="background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+          <div style="color: white; font-size: 32px; font-weight: bold;">${totalLoggedHours}</div>
+          <div style="color: #a7f3d0; font-size: 14px; margin-top: 8px;">HORAS REGISTRADAS</div>
+        </div>
+        <div style="background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+          <div style="color: white; font-size: 32px; font-weight: bold;">${globalProgressPct}%</div>
+          <div style="color: #fecaca; font-size: 14px; margin-top: 8px;">PROGRESO GLOBAL</div>
+        </div>
+        <div style="background: rgba(243,156,18,0.15); border: 1px solid rgba(243,156,18,0.3); border-radius: 12px; padding: 20px; text-align: center;">
+          <div style="color: white; font-size: 32px; font-weight: bold;">${criticalHours}</div>
+          <div style="color: #fde68a; font-size: 14px; margin-top: 8px;">HORAS CRÍTICAS</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+        <span style="color: #f39c12; font-size: 20px;">⚠️</span> Estado General
+      </h3>
+      <div style="color: #95a5a6; font-size: 14px;">
+        <p>🎯 <strong>Progreso:</strong> ${globalProgressPct}%</p>
+        <p>🚨 <strong>Riesgo:</strong> ${riskLevel}</p>
+        <p>⏳ <strong>Restantes:</strong> ${Math.max(0, totalEstimatedHours - totalLoggedHours)}h</p>
+      </div>
+    </div>
+  `;
+
+  // Área central
+  const mainArea = document.createElement('div');
+  mainArea.style.cssText = `
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  `;
+  content.appendChild(mainArea);
+
+  // Gráficos principales
+  const chartsRow = document.createElement('div');
+  chartsRow.style.cssText = `
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  `;
+  mainArea.appendChild(chartsRow);
+
+  // Progreso Acumulado
+  const progressChartDiv = document.createElement('div');
+  progressChartDiv.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 15px;
+    padding: 20px;
+  `;
+  progressChartDiv.innerHTML = `
+    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #9b59b6;">📈</span> Progreso Acumulado (Horas)
+    </h3>
+    <div style="height: 180px; position: relative;">
+      <canvas id="progressChart" style="width: 100%; height: 100%;"></canvas>
+    </div>
+  `;
+  chartsRow.appendChild(progressChartDiv);
+
+  // Estado de Tareas
+  const statusChartDiv = document.createElement('div');
+  statusChartDiv.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 15px;
+    padding: 20px;
+  `;
+  statusChartDiv.innerHTML = `
+    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #3498db;">📊</span> Distribución de Horas
+    </h3>
+    <div style="height: 180px; position: relative;">
+      <canvas id="statusChart" style="width: 100%; height: 100%;"></canvas>
+    </div>
+  `;
+  chartsRow.appendChild(statusChartDiv);
+
+  // Burndown Chart
+  const burndownChartDiv = document.createElement('div');
+  burndownChartDiv.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 15px;
+    padding: 20px;
+  `;
+  burndownChartDiv.innerHTML = `
+    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #e74c3c;">📉</span> Burndown Chart (Horas)
+    </h3>
+    <div style="height: 180px; position: relative;">
+      <canvas id="burndownChart" style="width: 100%; height: 100%;"></canvas>
+    </div>
+  `;
+  chartsRow.appendChild(burndownChartDiv);
+
+  // Proyectos Activos y Tareas Recientes
+  const projectsAndTasksRow = document.createElement('div');
+  projectsAndTasksRow.style.cssText = `
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  `;
+  mainArea.appendChild(projectsAndTasksRow);
+
+  // Proyectos Activos
+  const projectsDiv = document.createElement('div');
+  projectsDiv.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 15px;
+    padding: 20px;
+  `;
+  projectsDiv.innerHTML = `
+    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #2ecc71;">📂</span> Proyectos Activos (Horas)
+    </h3>
+    <div style="max-height: 250px; overflow-y: auto;">
+      ${allProjects.map(p => {
+        const projTasks = p.tasks || [];
+        const est = projTasks.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
+        const log = projTasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+        const prog = est > 0 ? Math.round((log / est) * 100) : 0;
+        const color = prog >= 75 ? '#2ecc71' : prog >= 50 ? '#f39c12' : '#e74c3c';
+        return `
+          <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid ${color};">
+            <div><strong style="color:white;">${p.name}</strong><br><span style="color:#95a5a6;font-size:12px;">${est}h estimadas</span></div>
+            <div style="text-align:right;"><span style="color:${color};font-weight:bold;">${prog}%</span></div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  projectsAndTasksRow.appendChild(projectsDiv);
+
+  // Tareas Recientes
+  const tasksDiv = document.createElement('div');
+  tasksDiv.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 15px;
+    padding: 20px;
+  `;
+  tasksDiv.innerHTML = `
+    <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #f39c12;">⏱️</span> Horas Atrasadas
+      <span style="background: rgba(243,156,18,0.2); color: #f39c12; padding: 2px 10px; border-radius: 20px; font-size: 12px;">${totalOverdueHours}h</span>
+    </h3>
+    <div style="max-height: 250px; overflow-y: auto;">
+      ${allTasks.filter(t => t.status === 'overdue' || t.status === 'rezagado').map(t => `
+        <div style="background:rgba(243,156,18,0.1);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #f39c12;">
+          <div style="color:white;font-weight:bold;">${t.name}</div>
+          <div style="color:#f39c12;font-size:12px;">${t.projectName} • ${t.estimatedTime || 0}h</div>
+        </div>
+      `).join('') || '<div style="color:#2ecc71;text-align:center;padding:20px;">✅ Sin horas atrasadas</div>'}
+    </div>
+  `;
+  projectsAndTasksRow.appendChild(tasksDiv);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.style.cssText = `
+    background: rgba(255,255,255,0.05);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #95a5a6;
+    font-size: 13px;
+    flex-shrink: 0;
+  `;
+  footer.innerHTML = `
+    <div>🌐 Dashboard 4D Ejecutivo – Basado en Horas</div>
+    <div id="dashboardTimestamp">🕐 Actualizado: ${new Date().toLocaleTimeString()}</div>
+  `;
+  container.appendChild(footer);
+
+  // Inicializar gráficos después de que el DOM se renderice
+  setTimeout(() => {
+    initDashboard4DCharts(totalEstimatedHours, totalLoggedHours, globalProgressPct, criticalHours, totalOverdueHours);
+  }, 200);
+
+  // Funciones de utilidad
+  window.refreshDashboard4D = () => {
+    document.getElementById('dashboardTimestamp').textContent = '🔄 Actualizando...';
+    setTimeout(window.showDashboard4DView, 500);
+  };
+
+  window.closeDashboard4D = () => {
+    const c = document.getElementById('mainAppContainer');
+    if (c) c.remove();
+    if (typeof renderProjects === 'function') renderProjects();
+  };
+
+  window.exportDashboard4DReport = () => {
+    alert('📄 Generando reporte basado en HORAS...\n(Implementa tu lógica de exportación aquí)');
+  };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ======== DASHBOARD 4D EJECUTIVO - VERSIÓN FINAL Y ESTABLE =========
+window.showDashboard4DView = function () {
+    // ⛔ Si ya existe, eliminarlo para evitar duplicados
+    const existingContainer = document.getElementById('mainAppContainer');
+    if (existingContainer) {
+        existingContainer.remove();
+        console.log('✅ Container anterior eliminado');
+    }
+
+
+// ✅ Asegurar que existan proyectos
+    if (!window.projects || !Array.isArray(window.projects) || window.projects.length === 0) {
+        showNotification('❌ No hay proyectos disponibles. Crea un proyecto primero.');
+        return;
+    }
+
+
+    
+    const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
+    if (currentMode !== 'hybrid') {
+        showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
+        return;
+    }
 
     // ✅ Crear nuevo contenedor
     const container = document.createElement('div');
@@ -38081,6 +38390,7 @@ window.showDashboard4DView = function () {
 };
 
 function generateDashboard4DHTML() {
+    // Aquí va el HTML limpio y funcional
     return `
         <!-- HEADER -->
         <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(155, 89, 182, 0.3); display: flex; justify-content: space-between; align-items: center;">
@@ -38136,52 +38446,22 @@ function generateDashboard4DHTML() {
             </div>
             <!-- ÁREA PRINCIPAL -->
             <div style="flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px;">
-                <!-- FILA 1: Gráficos - CONTENEDORES AGRANDADOS -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 25px;">
+                <!-- FILA 1: Gráficos -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                     <!-- Progreso Acumulado -->
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
-                        <div style="margin-bottom: 15px;">
-                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                                <span style="color: #9b59b6; font-size: 22px;">📈</span> Progreso Acumulado
-                                <span style="margin-left: auto; font-size: 12px; color: #95a5a6; background: rgba(155,89,182,0.1); padding: 4px 10px; border-radius: 12px;">
-                                    Últimos 7 días
-                                </span>
-                            </h3>
-                        </div>
-                        <div style="flex: 1; position: relative; min-height: 0;">
-                            <canvas id="progressChart" style="width: 100% !important; height: 100% !important;"></canvas>
-                        </div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #9b59b6;">📈</span> Progreso Acumulado</h3>
+                        <div style="height: 180px; position: relative;"><canvas id="progressChart" style="width: 100%; height: 100%;"></canvas></div>
                     </div>
-                    
                     <!-- Estado de Tareas -->
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
-                        <div style="margin-bottom: 15px;">
-                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                                <span style="color: #3498db; font-size: 22px;">📊</span> Estado de Tareas
-                                <span style="margin-left: auto; font-size: 12px; color: #95a5a6; background: rgba(52,152,219,0.1); padding: 4px 10px; border-radius: 12px;">
-                                    Total: ${getTotalTasks()}
-                                </span>
-                            </h3>
-                        </div>
-                        <div style="flex: 1; position: relative; min-height: 0;">
-                            <canvas id="statusChart" style="width: 100% !important; height: 100% !important;"></canvas>
-                        </div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #3498db;">📊</span> Estado de Tareas</h3>
+                        <div style="height: 180px; position: relative;"><canvas id="statusChart" style="width: 100%; height: 100%;"></canvas></div>
                     </div>
-                    
                     <!-- Burndown Chart -->
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; height: 320px;">
-                        <div style="margin-bottom: 15px;">
-                            <h3 style="color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-                                <span style="color: #e74c3c; font-size: 22px;">📊</span> Burndown Chart
-                                <div style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12px; background: rgba(231,76,60,0.1); padding: 4px 12px; border-radius: 12px;">
-                                    <span style="color: #e74c3c;">🔥</span>
-                                    <span style="color: #e74c3c;" id="criticalTasksCount">${getCriticalTasksCount()} Críticas</span>
-                                </div>
-                            </h3>
-                        </div>
-                        <div style="flex: 1; position: relative; min-height: 0;">
-                            <canvas id="criticalChart" style="width: 100% !important; height: 100% !important;"></canvas>
-                        </div>
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #e74c3c;">📊</span> Burndown Chart<div style="display: flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(231,76,60,0.1); padding: 2px 8px; border-radius: 10px; margin-left: auto;"><span style="color: #e74c3c;">🔥</span><span style="color: #e74c3c;">Tareas Críticas</span></div></h3>
+                        <div style="height: 180px; position: relative;"><canvas id="criticalChart" style="width: 100%; height: 100%;"></canvas></div>
                     </div>
                 </div>
                 <!-- FILA 2: Proyectos y Atrasadas -->
@@ -38229,33 +38509,45 @@ function initDashboard4DCharts() {
     const pending = allTasks.filter(t => t.status === 'pending').length;
     const overdue = allTasks.filter(t => t.status === 'overdue').length;
 
-    // 1. Gráfico de Progreso Acumulado
+    // 1. Gráfico de Progreso Acumulado (CORREGIDO)
     const progressCtx = document.getElementById('progressChart').getContext('2d');
-
+    
+    // Calcular progreso histórico basado en tareas
     function calculateHistoricalProgress() {
         const allTasks = getAllTasks();
         const completedTasks = allTasks.filter(t => t.status === 'completed').length;
         const totalTasks = allTasks.length;
         const progressPct = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         
+        // Mostrar progreso gradual HACIA el progreso actual
         const last7Days = [];
         
         for (let i = 6; i >= 0; i--) {
-            const dayRatio = (7 - i) / 7;
+            // Calcular qué porcentaje del progreso total debería haberse alcanzado
+            // Asumiendo progreso lineal a lo largo del tiempo
+            const dayRatio = (7 - i) / 7; // Día 1: 1/7, Día 7: 7/7 = 1
+            
+            // Si el progreso actual es mayor a 0, mostrar progreso gradual
             let dayProgress;
             if (progressPct > 0) {
+                // Mostrar progreso que aumenta gradualmente hasta el actual
                 dayProgress = Math.min(progressPct * dayRatio, progressPct);
             } else {
+                // Si no hay progreso, mostrar 0
                 dayProgress = 0;
             }
             
+            // Asegurarse de que nunca sea mayor al progreso actual
             dayProgress = Math.min(dayProgress, progressPct);
+            
+            // Redondear para evitar decimales
             last7Days.push(Math.round(dayProgress));
         }
         
         return last7Days;
     }
 
+    // Obtener nombres de los últimos 7 días
     function getLast7Days() {
         const days = [];
         const today = new Date();
@@ -38289,13 +38581,9 @@ function initDashboard4DCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
                     callbacks: {
                         title: ctx => `Día: ${ctx[0].label}`,
                         label: ctx => `Progreso: ${ctx.parsed.y}%`
@@ -38306,542 +38594,192 @@ function initDashboard4DCharts() {
                 y: {
                     beginAtZero: true,
                     max: 100,
-                    title: {
-                        display: true,
-                        text: 'Progreso (%)',
-                        color: '#95a5a6',
-                        font: {
-                            size: 12
-                        }
-                    },
-                    ticks: { 
-                        color: '#95a5a6',
-                        callback: value => value + '%' 
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Últimos 7 días',
-                        color: '#95a5a6',
-                        font: {
-                            size: 12
-                        }
-                    },
-                    ticks: {
-                        color: '#95a5a6'
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)'
-                    }
+                    ticks: { callback: value => value + '%' }
                 }
             }
         }
     });
 
- 
-// 2. Gráfico de Estado de Tareas CON TEXTO COMPLETAMENTE EN BLANCO
-// Asegúrate de que Chart.js y chartjs-plugin-datalabels estén cargados globalmente en tu app
-// Si no están registrados, hazlo así:
-if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
-    if (typeof window.ChartDataLabels !== 'undefined') {
-        Chart.register(window.ChartDataLabels);
-    }
-}
-
-// 2. Gráfico de Estado de Tareas CON TEXTO COMPLETAMENTE EN BLANCO
-// Asegúrate de que Chart.js y chartjs-plugin-datalabels estén cargados globalmente en tu app
-// Si no están registrados, hazlo así:
-if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
-    if (typeof window.ChartDataLabels !== 'undefined') {
-        Chart.register(window.ChartDataLabels);
-    }
-}
-
-// --- CONFIGURACIÓN DEL GRÁFICO ---
+    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL Y NÚMERO CENTRAL
+  // VERSIÓN PARA CHART.JS 3.x
 const statusCtx = document.getElementById('statusChart').getContext('2d');
 
-// Valores dinámicos con nombres únicos
-const chartPending = 4;      // Pendientes
-const chartInProgress = 6;   // En Progreso
-const chartCompleted = 4;    // Completadas
-const chartOverdue = 2;      // Atrasadas
-const chartTotalTasks = chartPending + chartInProgress + chartCompleted + chartOverdue;
+// Definir plugin inline
+const doughnutCenterPlugin = {
+    id: 'doughnutCenter',
+    afterDraw(chart, args, options) {
+        const {ctx, chartArea: {left, right, top, bottom, width, height}} = chart;
+        const centerX = (left + right) / 2;
+        const centerY = (top + bottom) / 2;
+        
+        // Guardar contexto
+        ctx.save();
+        
+        // Fondo circular para texto central
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(10, 10, 26, 0.9)';
+        ctx.fill();
+        
+        // Texto del total
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 30px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(totalTasks.toString(), centerX, centerY - 10);
+        
+        // Texto "Tareas"
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#95a5a6';
+        ctx.fillText('Tareas', centerX, centerY + 15);
+        
+        ctx.restore();
+    }
+};
 
+const segmentValuesPlugin = {
+    id: 'segmentValues',
+    afterDraw(chart, args, options) {
+        const {ctx, data, chartArea: {left, right, top, bottom}} = chart;
+        const meta = chart.getDatasetMeta(0);
+        const centerX = (left + right) / 2;
+        const centerY = (top + bottom) / 2;
+        
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 16px Arial';
+        
+        meta.data.forEach((segment, index) => {
+            const value = data.datasets[0].data[index];
+            if (value > 0) {
+                // Calcular posición en el segmento
+                const angle = segment.startAngle + (segment.endAngle - segment.startAngle) / 2;
+                const radius = (segment.outerRadius + segment.innerRadius) / 2;
+                
+                const x = segment.x + Math.cos(angle) * radius * 0.8;
+                const y = segment.y + Math.sin(angle) * radius * 0.8;
+                
+                // Fondo para el texto
+                const text = value.toString();
+                const textWidth = ctx.measureText(text).width;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, textWidth/2 + 6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fill();
+                ctx.restore();
+                
+                // Texto
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(text, x, y);
+            }
+        });
+        
+        ctx.restore();
+    }
+};
+
+// Registrar plugins si Chart.js 3.x
+if (typeof Chart !== 'undefined' && Chart.register) {
+    Chart.register(doughnutCenterPlugin);
+    Chart.register(segmentValuesPlugin);
+}
+
+// Crear el gráfico
 new Chart(statusCtx, {
     type: 'doughnut',
-    data: {  // ✅ ¡Aquí estaba el error! Faltaba "data:"
+    data: {
         labels: ['Pendientes', 'En Progreso', 'Completadas', 'Atrasadas'],
         datasets: [{
-            data: [chartPending, chartInProgress, chartCompleted, chartOverdue],
+            data: [pending, inProgress, completed, overdue],
             backgroundColor: [
-                'rgba(255, 215, 0, 0.8)',     // Amarillo
-                'rgba(32, 178, 170, 0.8)',    // Turquesa
-                'rgba(144, 238, 144, 0.8)',   // Verde claro
-                'rgba(255, 107, 107, 0.8)'    // Rojo claro
+                'rgba(255, 215, 0, 0.8)',
+                'rgba(32, 178, 170, 0.8)',
+                'rgba(144, 238, 144, 0.8)',
+                'rgba(255, 107, 107, 0.8)'
             ],
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.2)',
-            hoverBorderWidth: 2,
-            hoverBorderColor: 'rgba(255,255,255,0.5)'
+            borderColor: 'rgba(255,255,255,0.2)'
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '65%',
-        layout: {
-            padding: { bottom: 25, top: 10 }
-        },
+        cutout: '60%',
         plugins: {
             legend: {
                 position: 'bottom',
-                align: 'center',
-                display: true,
                 labels: {
                     color: '#FFFFFF',
-                    font: {
-                        size: 12,
-                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                        weight: '500'                   },
-                    padding: 15,
-                    boxWidth: 12,
-                    boxHeight: 12,
-                    usePointStyle: true,
-                    pointStyle: 'circle',
+                    font: { size: 12, weight: 'bold' },
                     generateLabels: function(chart) {
-                        const data = chart.data;
-                        if (data.labels.length && data.datasets.length) {
-                            return data.labels.map((label, i) => {
-                                const value = data.datasets[0].data[i];
-                                const percentage = totalTasks > 0 ? Math.round((value / totalTasks) * 100) : 0;
-                                return {
-                                    text: `${label}: ${value} (${percentage}%)`,
-                                    fillStyle: data.datasets[0].backgroundColor[i],
-                                    strokeStyle: data.datasets[0].borderColor[i],
-                                    lineWidth: 1,
-                                    hidden: false,
-                                    index: i
-                                };
-                            });
-                        }
-                        return [];
+                        const labels = chart.data.labels;
+                        const data = chart.data.datasets[0].data;
+                        return labels.map((label, i) => ({
+                            text: ` ${label}: ${data[i]} (${totalTasks > 0 ? Math.round((data[i]/totalTasks)*100) : 0}%)`,
+                            fillStyle: chart.data.datasets[0].backgroundColor[i],
+                            fontColor: '#FFFFFF',
+                            strokeStyle: chart.data.datasets[0].borderColor[i]
+                        }));
                     }
                 }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                titleColor: '#FFFFFF',
-                bodyColor: '#FFFFFF',
-                callbacks: {
-                    label: ctx => {
-                        const value = ctx.raw;
-                        const percentage = totalTasks > 0 ? Math.round((value / totalTasks) * 100) : 0;
-                        return `${ctx.label}: ${value} tareas (${percentage}%)`;
-                    }
-                }
-            },
-            // ✅ DATALABELS: MUESTRA VALORES EN LOS SEGMENTOS (como en la imagen)
-            datalabels: {
-                display: true,
-                color: '#FFFFFF',
-                font: {
-                    family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                    size: 12,
-                    weight: 'bold'
-                },
-                formatter: (value, ctx) => {
-                    const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                    return `${value}\n(${percentage}%)`;
-                },
-                anchor: 'center',
-                align: 'center',
-                offset: 0
             }
         }
-    },
-    // PLUGIN PERSONALIZADO: TEXTO CENTRAL (TOTAL DE TAREAS)
-    plugins: [{
-        id: 'centerText',
-        afterDraw: function(chart) {
-            const { ctx, chartArea } = chart;
-            const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-
-            const centerX = (chartArea.left + chartArea.right) / 2;
-            const centerY = (chartArea.top + chartArea.bottom) / 2;
-
-            // Total grande
-            ctx.font = 'bold 24px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(total.toString(), centerX, centerY - 10);
-
-            // Etiqueta "Tareas"
-            ctx.font = '14px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#95a5a6';
-            ctx.fillText('Tareas', centerX, centerY + 15);
-
-            ctx.restore();
-        }
-    }]
+    }
 });
 
-  // 3. Gráfico de Burndown (Críticas) - VERSIÓN COMPLETAMENTE CORREGIDA
+    // 3. Gráfico de Burndown (Críticas)
     const criticalCtx = document.getElementById('criticalChart').getContext('2d');
-
-    // OBTENER DATOS REALES DE TAREAS CRÍTICAS
-    function getCriticalTasksData() {
-        // Obtener todas las tareas críticas
-        const criticalTasks = getAllTasks().filter(t => 
-            t.critical || 
-            t.priority === 'alta' || 
-            t.status === 'overdue' ||
-            (t.deadline && new Date(t.deadline) < new Date())
-        );
-        
-        // Obtener tareas críticas completadas
-        const completedCritical = criticalTasks.filter(t => t.status === 'completed');
-        
-        // Calcular el total REAL de tareas críticas
-        const totalCritical = criticalTasks.length;
-        
-        console.log('📊 Datos críticos reales:', {
-            totalCritical: totalCritical,
-            completedCritical: completedCritical.length,
-            allCriticalTasks: criticalTasks.map(t => ({name: t.name, status: t.status}))
-        });
-        
-        return {
-            total: totalCritical,
-            completed: completedCritical.length,
-            tasks: criticalTasks
-        };
-    }
-
-    // CALCULAR SEMANAS DEL PROYECTO BASADO EN FECHAS REALES
-    function calculateProjectTimeline() {
-        const allTasks = getAllTasks();
-        const dates = [];
-        
-        // Recopilar todas las fechas relevantes
-        allTasks.forEach(task => {
-            if (task.createdAt) {
-                dates.push(new Date(task.createdAt));
-            }
-            if (task.deadline) {
-                dates.push(new Date(task.deadline));
-            }
-            if (task.startDate) {
-                dates.push(new Date(task.startDate));
-            }
-        });
-        
-        // Si no hay fechas, usar 4 semanas por defecto
-        if (dates.length === 0) {
-            return {
-                weeks: 4,
-                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
-            };
-        }
-        
-        // Encontrar la fecha más temprana y más tardía
-        const validDates = dates.filter(d => !isNaN(d.getTime()));
-        if (validDates.length === 0) {
-            return {
-                weeks: 4,
-                labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
-            };
-        }
-        
-        const minDate = new Date(Math.min(...validDates.map(d => d.getTime())));
-        const maxDate = new Date(Math.max(...validDates.map(d => d.getTime())));
-        
-        // Calcular diferencia en semanas
-        const diffTime = Math.abs(maxDate - minDate);
-        const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-        
-        // Asegurar entre 4 y 8 semanas
-        const weeks = Math.min(Math.max(diffWeeks, 4), 8);
-        
-        // Generar etiquetas
-        const labels = [];
-        for (let i = 1; i <= weeks; i++) {
-            labels.push(`Sem ${i}`);
-        }
-        
-        return {
-            weeks: weeks,
-            labels: labels,
-            startDate: minDate,
-            endDate: maxDate
-        };
-    }
-
-    // CALCULAR BURNDOWN REAL
-    function calculateRealBurndown() {
-        const criticalData = getCriticalTasksData();
-        const timeline = calculateProjectTimeline();
-        
-        const totalCritical = criticalData.total;
-        const completedCritical = criticalData.completed;
-        
-        // Si no hay tareas críticas, mostrar línea en cero
-        if (totalCritical === 0) {
-            return Array.from({length: timeline.weeks}, () => 0);
-        }
-        
-        // Calcular progreso actual
-        const currentProgress = completedCritical;
-        const remaining = totalCritical - currentProgress;
-        
-        // Generar datos de burndown basados en progreso real
-        const burndownData = [];
-        
-        for (let i = 0; i < timeline.weeks; i++) {
-            // Calcular qué porcentaje del tiempo ha pasado
-            const timeRatio = i / (timeline.weeks - 1);
-            
-            // Si estamos en la última semana, mostrar el remanente real
-            if (i === timeline.weeks - 1) {
-                burndownData.push(remaining);
-            } else {
-                // Calcular lo ideal que debería haber sido completado
-                const idealCompleted = Math.round(totalCritical * timeRatio);
-                const idealRemaining = Math.max(0, totalCritical - idealCompleted);
-                
-                // Ajustar basado en progreso real
-                const adjustedRemaining = Math.max(remaining, idealRemaining);
-                burndownData.push(adjustedRemaining);
-            }
-        }
-        
-        console.log('📈 Datos burndown reales:', {
-            totalCritical: totalCritical,
-            completedCritical: completedCritical,
-            remaining: remaining,
-            timelineWeeks: timeline.weeks,
-            burndownData: burndownData
-        });
-        
-        return burndownData;
-    }
-
-    // CALCULAR LÍNEA IDEAL
-    function calculateIdealBurndown() {
-        const criticalData = getCriticalTasksData();
-        const timeline = calculateProjectTimeline();
-        
-        const totalCritical = criticalData.total;
-        
-        // Si no hay tareas críticas, línea plana en cero
-        if (totalCritical === 0) {
-            return Array.from({length: timeline.weeks}, () => 0);
-        }
-        
-        // Línea ideal: decremento lineal
-        const idealData = [];
-        const decrement = totalCritical / (timeline.weeks - 1);
-        
-        for (let i = 0; i < timeline.weeks; i++) {
-            const idealValue = Math.max(0, Math.round(totalCritical - (decrement * i)));
-            idealData.push(idealValue);
-        }
-        
-        return idealData;
-    }
-
-    // OBTENER DATOS ACTUALES
-    const criticalData = getCriticalTasksData();
-    const timeline = calculateProjectTimeline();
-    
-    console.log('🎯 Datos finales para gráfico:', {
-        totalCriticalTasks: criticalData.total,
-        completedCritical: criticalData.completed,
-        timeline: timeline
-    });
-
-    // CREAR EL GRÁFICO
     new Chart(criticalCtx, {
         type: 'line',
         data: {
-            labels: timeline.labels,
+            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
             datasets: [
                 {
                     label: 'Plan Ideal',
-                    data: calculateIdealBurndown(),
+                    data: [10, 7, 4, 0],
                     borderColor: 'rgba(255, 255, 255, 0.3)',
                     backgroundColor: 'transparent',
                     borderWidth: 1,
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointRadius: 0
                 },
                 {
                     label: 'Progreso Real',
-                    data: calculateRealBurndown(),
+                    data: [10, 8, 5, 2],
                     borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.3,
                     pointBackgroundColor: '#e74c3c',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 8,
-                    pointHoverBackgroundColor: '#ff6b6b',
-                    pointHoverBorderColor: '#ffffff',
-                    pointHoverBorderWidth: 3
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        color: '#95a5a6',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        },
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        boxWidth: 10,
-                        boxHeight: 10
-                    }
-                },
+                legend: { position: 'top' },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    titleFont: {
-                        size: 13,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 12
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false,
                     callbacks: {
-                        title: function(tooltipItems) {
-                            return tooltipItems[0].label;
-                        },
-                        label: function(context) {
-                            const datasetLabel = context.dataset.label;
-                            const value = context.parsed.y;
-                            const totalCritical = criticalData.total;
-                            
-                            if (datasetLabel === 'Plan Ideal') {
-                                return `Plan: ${value} de ${totalCritical} tareas`;
-                            } else {
-                                const completed = totalCritical - value;
-                                const progressPct = totalCritical > 0 ? 
-                                    Math.round((completed / totalCritical) * 100) : 0;
-                                return `Real: ${value} tareas restantes (${progressPct}% completado)`;
-                            }
-                        },
-                        afterLabel: function(context) {
-                            if (context.datasetIndex === 1 && context.dataIndex === timeline.labels.length - 1) {
-                                const totalCritical = criticalData.total;
-                                const completed = criticalData.completed;
-                                if (completed < totalCritical) {
-                                    return `⚠️ ${totalCritical - completed} tareas pendientes`;
-                                }
-                            }
-                            return null;
-                        }
+                        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} tareas`
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Tareas Críticas Restantes',
-                        color: '#95a5a6',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        },
-                        padding: {top: 10, bottom: 10}
-                    },
-                    ticks: {
-                        color: '#95a5a6',
-                        font: {
-                            size: 11
-                        },
-                        callback: function(value) {
-                            return value + (value === 1 ? ' tarea' : ' tareas');
-                        },
-                        stepSize: totalTasks > 10 ? Math.ceil(totalTasks / 10) : 1
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)',
-                        drawBorder: false
-                    },
-                    // Ajustar máximo basado en datos reales
-                    suggestedMax: Math.max(criticalData.total, 10) * 1.1
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Semanas del Proyecto',
-                        color: '#95a5a6',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        },
-                        padding: {top: 10, bottom: 10}
-                    },
-                    ticks: {
-                        color: '#95a5a6',
-                        font: {
-                            size: 11
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)',
-                        drawBorder: false
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
-            },
-            elements: {
-                line: {
-                    tension: 0.3
+                    ticks: { callback: value => value + ' tareas' }
                 }
             }
         }
     });
-    
-    // Actualizar contador en la interfaz
-    const criticalCountElement = document.getElementById('criticalTasksCount');
-    if (criticalCountElement) {
-        criticalCountElement.textContent = `${criticalData.total} Críticas`;
-    }
 }
 
 // Funciones auxiliares
@@ -38849,7 +38787,7 @@ function getCriticalTasksCount() {
     let count = 0;
     projects.forEach(p => {
         p.tasks.forEach(t => {
-            if (t.critical || t.priority === 'alta' || t.status === 'overdue') count++;
+            if (t.critical || t.priority === 'alta') count++;
         });
     });
     return count;
@@ -38976,7 +38914,7 @@ function getOverdueTasksHTML() {
                     ${t.name.substring(0,40)}${t.name.length > 40 ? '...' : ''}
                 </div>
                 <div style="color:#f39c12;display:flex;justify-content:space-between;font-size:12px;">
-                    <span>📂 ${t.projectName?.substring(0,20) || 'Proyecto'}${t.projectName?.length > 20 ? '...' : ''}</span>
+                    <span>📂 ${t.projectName.substring(0,20)}${t.projectName.length > 20 ? '...' : ''}</span>
                     <span style="background:rgba(243,156,18,0.3);padding:2px 6px;border-radius:4px;font-size:11px;">
                         ${new Date(t.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
                     </span>
@@ -39057,7 +38995,7 @@ function getAllTasks() {
 window.refreshDashboard4D = function () {
     document.getElementById('dashboardTimestamp').innerHTML = '🔄 Actualizando...';
     setTimeout(() => {
-        window.showDashboard4DView();
+        createGlobalDashboard4D();
     }, 500);
 };
 
@@ -39146,12 +39084,12 @@ window.exportDashboard4DReport = function() {
             <div class="section">
                 <h2>📋 Resumen Ejecutivo</h2>
                 <p>El sistema actual presenta un progreso global del <strong>${getOverallProgress()}%</strong>.</p>
-                <p>${getOverdueTasks() > 0 ?
+                <p>${getOverdueTasks() > 0 ? 
                     `⚠️ Se requiere atención en ${getOverdueTasks()} tareas atrasadas.` :
                     '✅ Todas las tareas están al día.'}</p>
-                <p>${getOverallProgress() >= 80 ?
+                <p>${getOverallProgress() >= 80 ? 
                     '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
-                    getOverallProgress() >= 60 ?
+                    getOverallProgress() >= 60 ? 
                     '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
                     '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
             </div>
@@ -39212,21 +39150,12 @@ window.closeDashboard4D = function () {
     }
 };
 
+function createGlobalDashboard4D() {
+    window.showDashboard4DView();
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ❌ ELIMINA ESTO SI EXISTE
+// Alias para compatibilidad
+// function showDashboard4DView() {
+//     window.showDashboard4DView();
+// }
