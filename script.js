@@ -1,3 +1,13 @@
+
+/**************************************
+ * VARIABLES GLOBALES Y ELEMENTOS DOM *
+ **************************************/
+let projects = [];
+let currentProjectIndex = 0;
+let window.authToken = localStorage.getItem('authToken');
+
+
+
 // ✅ Asegurar que las funciones existan
 window.showDashboard4DView = window.showDashboard4DView || function() {
   alert('❌ Dashboard 4D no está configurado');
@@ -1506,12 +1516,6 @@ function requireModeAccess(view, callback) {
 
 
 
-
-/**************************************
- * VARIABLES GLOBALES Y ELEMENTOS DOM *
- **************************************/
-let projects = [];
-let currentProjectIndex = 0;
 
 
 // ========== FUNCIONES AUXILIARES BÁSICAS ==========
@@ -38018,7 +38022,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
-indow.showDashboard4DView = function () {
+window.showDashboard4DView = function () {
   // ⛔ Si ya existe, eliminarlo para evitar duplicados
   const existingContainer = document.getElementById('mainAppContainer');
   if (existingContainer) {
