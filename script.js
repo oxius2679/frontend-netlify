@@ -38324,7 +38324,7 @@ new Chart(progressCtx, {
 
    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
 // ===============================
-// ESTADO DE TAREAS – DONUT FINAL
+// ESTADO DE TAREAS – DONUT AJUSTADO FINAL
 // ===============================
 
 const allTasksLocal = getAllTasks();
@@ -38362,10 +38362,10 @@ new Chart(statusCtx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '75%',
+        cutout: '78%',
         layout: {
             padding: {
-                bottom: 14
+                bottom: 8
             }
         },
         plugins: {
@@ -38373,15 +38373,16 @@ new Chart(statusCtx, {
                 display: true,
                 position: 'bottom',
                 align: 'center',
+                fullSize: true,
                 labels: {
-                    color: '#ffffff',          // 🔥 BLANCO
+                    color: '#ffffff',
                     font: {
-                        size: 10,               // 🔥 MÁS PEQUEÑO
-                        weight: '500'
+                        size: 9,          // 🔥 MÁS PEQUEÑAS
+                        weight: '400'
                     },
-                    padding: 10,
-                    boxWidth: 8,               // 🔥 CÍRCULOS MÁS PEQUEÑOS
-                    boxHeight: 8,
+                    padding: 8,
+                    boxWidth: 6,        // 🔥 CÍRCULOS MÁS CHICOS
+                    boxHeight: 6,
                     usePointStyle: true,
                     pointStyle: 'circle'
                 }
@@ -38404,7 +38405,7 @@ new Chart(statusCtx, {
         afterDraw(chart) {
             const { ctx, chartArea } = chart;
             ctx.save();
-            ctx.font = '600 22px Segoe UI';
+            ctx.font = '700 30px Segoe UI'; // 🔥 NÚMERO MÁS GRANDE
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
