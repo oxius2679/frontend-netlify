@@ -1,10 +1,4 @@
 
-/**************************************
- * VARIABLES GLOBALES Y ELEMENTOS DOM *
- **************************************/
-let projects = [];
-let currentProjectIndex = 0;
-
 
 
 
@@ -1117,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return; // ⬅️ Detener aquí si no hay token
   }
 
- // 👇 Solo si hay token, continuar con la app
+  // 👇 Solo si hay token, continuar con la app
 console.log('🎯 Iniciando aplicación con validación...');
 const dataLoaded = safeLoad();
 if (!dataLoaded || projects.length === 0) {
