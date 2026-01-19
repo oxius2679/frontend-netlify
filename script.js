@@ -38323,56 +38323,79 @@ new Chart(progressCtx, {
 });
 
    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
+// ===============================
+// ESTADO DE TAREAS (DONUT)
+// ===============================
+
+// Plugin texto central
+const centerTextPlugin = {
+    id: 'centerText',
+    afterDraw(chart) {
+        const opts = chart.config.options.centerText;
+        if (!opts) return;
+
+        const { ctx, chartArea } = chart;
+        ctx.save();
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            opts.text,
+            (chartArea.left + chartArea.right) / 2,
+            (chartArea.top + chartArea.bottom) / 2
+        );
+        ctx.restore();
+    }
+};
+
+Chart.register(centerTextPlugin);
+
+// Datos reales
+const totalTasks = getTotalTasks();
+const completed = getCompletedTasks();
+const inProgress = getAllTasks().filter(t => t.status === 'inProgress').length;
+const pending = getAllTasks().filter(t => t.status === 'pending').length;
+const overdue = getOverdueTasks();
+
 const statusCtx = document.getElementById('statusChart').getContext('2d');
+
 new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: ['Pendientes', 'En Progreso', 'Completadas', 'Retrazadas'],
+        labels: [
+            `Pendientes (${pending} • ${Math.round((pending / totalTasks) * 100)}%)`,
+            `En Progreso (${inProgress} • ${Math.round((inProgress / totalTasks) * 100)}%)`,
+            `Completadas (${completed} • ${Math.round((completed / totalTasks) * 100)}%)`,
+            `Atrasadas (${overdue} • ${Math.round((overdue / totalTasks) * 100)}%)`
+        ],
         datasets: [{
             data: [pending, inProgress, completed, overdue],
-            backgroundColor: ['#FFD700', '#20B2AA', '#90EE90', '#FF6B6B'],
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.1)'
+            backgroundColor: [
+                '#f1c40f',
+                '#3498db',
+                '#2ecc71',
+                '#e74c3c'
+            ],
+            borderWidth: 0
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false, // Permite más control sobre el tamaño
+        maintainAspectRatio: false,
         cutout: '70%',
-        layout: {
-            padding: {
-                bottom: 30 // Añade espacio para la leyenda
-            }
-        },
         plugins: {
             legend: {
-                position: 'bottom',
-                align: 'center',
-                display: true,
                 labels: {
-                    color: '#95a5a6',
-                    font: {
-                        size: 11,
-                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-                    },
-                    padding: 10,
-                    boxWidth: 12,
-                    boxHeight: 12,
-                    usePointStyle: true, // Usa puntos en lugar de cajas
-                    pointStyle: 'circle'
-                },
-                // Configuración específica para disposición horizontal
-                rtl: false,
-                textDirection: 'ltr'
+                    color: '#ffffff'
+                }
             },
             tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                titleColor: '#fff',
-                bodyColor: '#fff',
-                callbacks: {
-                    label: ctx => `${ctx.label}: ${ctx.raw} (${Math.round((ctx.raw / totalTasks) * 100)}%)`
-                }
+                enabled: true
             }
+        },
+        centerText: {
+            text: `${totalTasks} tareas`
         }
     }
 });
