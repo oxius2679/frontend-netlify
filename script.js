@@ -1503,6 +1503,19 @@ function requireModeAccess(view, callback) {
     return;
   }
   callback();
+}
+
+
+
+
+// ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
+function requirePremiumAccess(featureName, callback) {
+  
+    showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
+    return;
+  }
+  callback();
+}
 
 
 
@@ -38018,7 +38031,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // ======== DASHBOARD 4D - VERSIÓN CORREGIDA (BURNDOWN REAL) =========
-window.showDashboard4DView = function () {
+indow.showDashboard4DView = function () {
   // ⛔ Si ya existe, eliminarlo para evitar duplicados
   const existingContainer = document.getElementById('mainAppContainer');
   if (existingContainer) {
