@@ -38377,112 +38377,82 @@ new Chart(statusCtx, {
     }
 });
 
-    // 3. Gráfico de Burndown (Críticas)
-    const criticalCtx = document.getElementById('criticalChart').getContext('2d');
-    new Chart(criticalCtx, {
-        type: 'line',
-        data: {
-           // ===== BURNDOWN REAL BASADO EN TAREAS CRÍTICAS =====
+    // ===============================
+// 3. GRÁFICO BURNDOWN – TAREAS CRÍTICAS
+// ===============================
+
+// Obtener tareas críticas reales
 const criticalTasks = getAllTasks().filter(
-    t => t.critical || t.priority === 'alta'
+  t => t.critical === true || t.priority === 'alta'
 );
 
-// Total de críticas
-const totalCritical = criticalTasks.length;
+// Total de tareas críticas
+const totalCriticalTasks = criticalTasks.length;
 
-// Críticas completadas (ordenadas por fecha si existe)
-const completedCritical = criticalTasks.filter(t => t.status === 'completed');
+// Labels simulando línea de tiempo
+const criticalLabels = criticalTasks.map((_, index) => `Paso ${index + 1}`);
 
-// Generar eje temporal simple (etapas reales)
-const steps = Math.max(totalCritical, 1);
-const labels = Array.from({ length: steps }, (_, i) => `Paso ${i + 1}`);
+// Burndown real (tareas restantes)
+const criticalRemaining = criticalTasks.map(
+  (_, index) => totalCriticalTasks - index
+);
 
-// Plan ideal: descenso lineal
-const idealData = [];
-for (let i = 0; i < steps; i++) {
-    idealData.push(totalCritical - i);
-}
+// Contexto del canvas
+const criticalCtx = document
+  .getElementById('criticalChart')
+  .getContext('2d');
 
-// Progreso real: cuántas críticas quedan
-const realData = [];
-let remaining = totalCritical;
-
-for (let i = 0; i < steps; i++) {
-    if (completedCritical[i]) remaining--;
-    realData.push(Math.max(remaining, 0));
-}
-
+// Crear gráfico
 new Chart(criticalCtx, {
-    type: 'line',
-    data: {
-        labels,
-        datasets: [
-            {
-                label: 'Plan Ideal',
-                data: idealData,
-                borderColor: 'rgba(255, 255, 255, 0.3)',
-                backgroundColor: 'transparent',
-                borderWidth: 1,
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0,
-                pointRadius: 0
-            },
-            {
-                label: 'Progreso Real',
-                data: realData,
-                borderColor: '#e74c3c',
-                backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#e74c3c',
-                pointRadius: 3,
-                pointHoverRadius: 5
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'top' },
-            tooltip: {
-                callbacks: {
-                    label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} tareas`
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: value => value + ' tareas'
-                }
-            }
+  type: 'line',
+  data: {
+    labels: criticalLabels,
+    datasets: [
+      {
+        label: 'Tareas críticas pendientes',
+        data: criticalRemaining,
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            return ` Pendientes: ${context.parsed.y}`;
+          }
         }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Progreso'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Tareas críticas restantes'
+        },
+        ticks: {
+          stepSize: 1
+        }
+      }
     }
+  }
 });
 
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} tareas`
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { callback: value => value + ' tareas' }
-                }
-            }
-        }
-    });
-}
 
 // Funciones auxiliares
 function getCriticalTasksCount() {
