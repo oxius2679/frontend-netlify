@@ -4001,31 +4001,7 @@ function closeProjectSelector() {
 }
 
 async function createGanttWithSelectedProject() {
-  // 🔒 VERIFICACIÓN DE LICENCIA
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    showNotification('🔒 Debes iniciar sesión para acceder al Gantt Ejecutivo.');
-    closeProjectSelector();
-    return;
-  }
-
-  try {
-    const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/license/check/${user.uid}`);
-    const data = await response.json();
-    
-    if (!(data.success && data.valid && ['professional', 'premium'].includes(data.plan))) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      closeProjectSelector();
-      return;
-    }
-  } catch (error) {
-    console.error('Error verificando licencia:', error);
-    showNotification('❌ Error al verificar licencia. Intenta de nuevo.');
-    closeProjectSelector();
-    return;
-  }
-
-  // ✅ USUARIO AUTORIZADO
+    // ✅ USUARIO AUTORIZADO
   closeProjectSelector();
   createCompleteGanttForCurrentProject();
 }
@@ -39234,11 +39210,6 @@ window.closeDashboard4D = function () {
 };
 
 function createGlobalDashboard4D() {
-    window.showDashboard4DView();
-}
-
-// Alias para compatibilidad
-function showDashboard4DView() {
     window.showDashboard4DView();
 }
 
