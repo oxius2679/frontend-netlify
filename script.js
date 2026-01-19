@@ -38334,7 +38334,12 @@ window.showDashboard4DView = function() {
 
 
 
-// ======== DASHBOARD 4D EJECUTIVO - VERSIÓN FINAL Y ESTABLE =========
+
+
+
+
+
+// ======== FIX PARA DASHBOARD 4D - VERSIÓN ESTABLE =========
 window.showDashboard4DView = function () {
     // ⛔ Si ya existe, eliminarlo para evitar duplicados
     const existingContainer = document.getElementById('mainAppContainer');
@@ -38343,15 +38348,11 @@ window.showDashboard4DView = function () {
         console.log('✅ Container anterior eliminado');
     }
 
-
-// ✅ Asegurar que existan proyectos
-    if (!window.projects || !Array.isArray(window.projects) || window.projects.length === 0) {
-        showNotification('❌ No hay proyectos disponibles. Crea un proyecto primero.');
+    // 🔒 Verificar licencia y modo
+    if (!window.licenseManager?.canAccess('premiumExecutiveGantt')) {
+        showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
         return;
     }
-
-
-    
     const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
     if (currentMode !== 'hybrid') {
         showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
@@ -38509,221 +38510,146 @@ function initDashboard4DCharts() {
     const pending = allTasks.filter(t => t.status === 'pending').length;
     const overdue = allTasks.filter(t => t.status === 'overdue').length;
 
-    // 1. Gráfico de Progreso Acumulado (CORREGIDO)
-    const progressCtx = document.getElementById('progressChart').getContext('2d');
+   // 1. Gráfico de Progreso Acumulado (CON DATOS REALES CORREGIDO)
+const progressCtx = document.getElementById('progressChart').getContext('2d');
+
+// Calcular progreso histórico basado en tareas - VERSIÓN CORREGIDA
+function calculateHistoricalProgress() {
+    const allTasks = getAllTasks();
+    const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+    const totalTasks = allTasks.length;
+    const progressPct = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
     
-    // Calcular progreso histórico basado en tareas
-    function calculateHistoricalProgress() {
-        const allTasks = getAllTasks();
-        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
-        const totalTasks = allTasks.length;
-        const progressPct = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    // Mostrar progreso gradual HACIA el progreso actual
+    const last7Days = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        // Calcular qué porcentaje del progreso total debería haberse alcanzado
+        // Asumiendo progreso lineal a lo largo del tiempo
+        const dayRatio = (7 - i) / 7; // Día 1: 1/7, Día 7: 7/7 = 1
         
-        // Mostrar progreso gradual HACIA el progreso actual
-        const last7Days = [];
-        
-        for (let i = 6; i >= 0; i--) {
-            // Calcular qué porcentaje del progreso total debería haberse alcanzado
-            // Asumiendo progreso lineal a lo largo del tiempo
-            const dayRatio = (7 - i) / 7; // Día 1: 1/7, Día 7: 7/7 = 1
-            
-            // Si el progreso actual es mayor a 0, mostrar progreso gradual
-            let dayProgress;
-            if (progressPct > 0) {
-                // Mostrar progreso que aumenta gradualmente hasta el actual
-                dayProgress = Math.min(progressPct * dayRatio, progressPct);
-            } else {
-                // Si no hay progreso, mostrar 0
-                dayProgress = 0;
-            }
-            
-            // Asegurarse de que nunca sea mayor al progreso actual
-            dayProgress = Math.min(dayProgress, progressPct);
-            
-            // Redondear para evitar decimales
-            last7Days.push(Math.round(dayProgress));
+        // Si el progreso actual es mayor a 0, mostrar progreso gradual
+        let dayProgress;
+        if (progressPct > 0) {
+            // Mostrar progreso que aumenta gradualmente hasta el actual
+            dayProgress = Math.min(progressPct * dayRatio, progressPct);
+        } else {
+            // Si no hay progreso, mostrar 0
+            dayProgress = 0;
         }
         
-        return last7Days;
+        // Asegurarse de que nunca sea mayor al progreso actual
+        dayProgress = Math.min(dayProgress, progressPct);
+        
+        // Redondear para evitar decimales
+        last7Days.push(Math.round(dayProgress));
     }
-
-    // Obtener nombres de los últimos 7 días
-    function getLast7Days() {
-        const days = [];
-        const today = new Date();
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(today.getDate() - i);
-            days.push(dayNames[date.getDay()]);
-        }
-        return days;
-    }
-
-    // Crear gráfico con datos reales
-    new Chart(progressCtx, {
-        type: 'line',
-        data: {
-            labels: getLast7Days(),
-            datasets: [{
-                label: 'Progreso Acumulado Real',
-                data: calculateHistoricalProgress(),
-                borderColor: '#9b59b6',
-                backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#9b59b6',
-                pointRadius: 5,
-                pointHoverRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        title: ctx => `Día: ${ctx[0].label}`,
-                        label: ctx => `Progreso: ${ctx.parsed.y}%`
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { callback: value => value + '%' }
-                }
-            }
-        }
-    });
-
-    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL Y NÚMERO CENTRAL
-  // VERSIÓN PARA CHART.JS 3.x
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-
-// Definir plugin inline
-const doughnutCenterPlugin = {
-    id: 'doughnutCenter',
-    afterDraw(chart, args, options) {
-        const {ctx, chartArea: {left, right, top, bottom, width, height}} = chart;
-        const centerX = (left + right) / 2;
-        const centerY = (top + bottom) / 2;
-        
-        // Guardar contexto
-        ctx.save();
-        
-        // Fondo circular para texto central
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 35, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(10, 10, 26, 0.9)';
-        ctx.fill();
-        
-        // Texto del total
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = 'bold 30px Arial';
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(totalTasks.toString(), centerX, centerY - 10);
-        
-        // Texto "Tareas"
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#95a5a6';
-        ctx.fillText('Tareas', centerX, centerY + 15);
-        
-        ctx.restore();
-    }
-};
-
-const segmentValuesPlugin = {
-    id: 'segmentValues',
-    afterDraw(chart, args, options) {
-        const {ctx, data, chartArea: {left, right, top, bottom}} = chart;
-        const meta = chart.getDatasetMeta(0);
-        const centerX = (left + right) / 2;
-        const centerY = (top + bottom) / 2;
-        
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = 'bold 16px Arial';
-        
-        meta.data.forEach((segment, index) => {
-            const value = data.datasets[0].data[index];
-            if (value > 0) {
-                // Calcular posición en el segmento
-                const angle = segment.startAngle + (segment.endAngle - segment.startAngle) / 2;
-                const radius = (segment.outerRadius + segment.innerRadius) / 2;
-                
-                const x = segment.x + Math.cos(angle) * radius * 0.8;
-                const y = segment.y + Math.sin(angle) * radius * 0.8;
-                
-                // Fondo para el texto
-                const text = value.toString();
-                const textWidth = ctx.measureText(text).width;
-                
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x, y, textWidth/2 + 6, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fill();
-                ctx.restore();
-                
-                // Texto
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillText(text, x, y);
-            }
-        });
-        
-        ctx.restore();
-    }
-};
-
-// Registrar plugins si Chart.js 3.x
-if (typeof Chart !== 'undefined' && Chart.register) {
-    Chart.register(doughnutCenterPlugin);
-    Chart.register(segmentValuesPlugin);
+    
+    return last7Days;
 }
 
-// Crear el gráfico
-new Chart(statusCtx, {
-    type: 'doughnut',
+// Obtener nombres de los últimos 7 días
+function getLast7Days() {
+    const days = [];
+    const today = new Date();
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(today.getDate() - i);
+        days.push(dayNames[date.getDay()]);
+    }
+    return days;
+}
+
+// Crear gráfico con datos reales
+new Chart(progressCtx, {
+    type: 'line',
     data: {
-        labels: ['Pendientes', 'En Progreso', 'Completadas', 'Atrasadas'],
+        labels: getLast7Days(),
         datasets: [{
-            data: [pending, inProgress, completed, overdue],
-            backgroundColor: [
-                'rgba(255, 215, 0, 0.8)',
-                'rgba(32, 178, 170, 0.8)',
-                'rgba(144, 238, 144, 0.8)',
-                'rgba(255, 107, 107, 0.8)'
-            ],
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.2)'
+            label: 'Progreso Acumulado Real',
+            data: calculateHistoricalProgress(),
+            borderColor: '#9b59b6',
+            backgroundColor: 'rgba(155, 89, 182, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#9b59b6',
+            pointRadius: 5,
+            pointHoverRadius: 8
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false,
-        cutout: '60%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    title: ctx => `Día: ${ctx[0].label}`,
+                    label: ctx => `Progreso: ${ctx.parsed.y}%`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: value => value + '%' }
+            }
+        }
+    }
+});
+
+   // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Pendientes', 'En Progreso', 'Completadas', 'Retrazadas'],
+        datasets: [{
+            data: [pending, inProgress, completed, overdue],
+            backgroundColor: ['#FFD700', '#20B2AA', '#90EE90', '#FF6B6B'],
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.1)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false, // Permite más control sobre el tamaño
+        cutout: '70%',
+        layout: {
+            padding: {
+                bottom: 30 // Añade espacio para la leyenda
+            }
+        },
         plugins: {
             legend: {
                 position: 'bottom',
+                align: 'center',
+                display: true,
                 labels: {
-                    color: '#FFFFFF',
-                    font: { size: 12, weight: 'bold' },
-                    generateLabels: function(chart) {
-                        const labels = chart.data.labels;
-                        const data = chart.data.datasets[0].data;
-                        return labels.map((label, i) => ({
-                            text: ` ${label}: ${data[i]} (${totalTasks > 0 ? Math.round((data[i]/totalTasks)*100) : 0}%)`,
-                            fillStyle: chart.data.datasets[0].backgroundColor[i],
-                            fontColor: '#FFFFFF',
-                            strokeStyle: chart.data.datasets[0].borderColor[i]
-                        }));
-                    }
+                    color: '#95a5a6',
+                    font: {
+                        size: 11,
+                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                    },
+                    padding: 10,
+                    boxWidth: 12,
+                    boxHeight: 12,
+                    usePointStyle: true, // Usa puntos en lugar de cajas
+                    pointStyle: 'circle'
+                },
+                // Configuración específica para disposición horizontal
+                rtl: false,
+                textDirection: 'ltr'
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                callbacks: {
+                    label: ctx => `${ctx.label}: ${ctx.raw} (${Math.round((ctx.raw / totalTasks) * 100)}%)`
                 }
             }
         }
@@ -39084,12 +39010,12 @@ window.exportDashboard4DReport = function() {
             <div class="section">
                 <h2>📋 Resumen Ejecutivo</h2>
                 <p>El sistema actual presenta un progreso global del <strong>${getOverallProgress()}%</strong>.</p>
-                <p>${getOverdueTasks() > 0 ? 
+                <p>${getOverdueTasks() > 0 ?
                     `⚠️ Se requiere atención en ${getOverdueTasks()} tareas atrasadas.` :
                     '✅ Todas las tareas están al día.'}</p>
-                <p>${getOverallProgress() >= 80 ? 
+                <p>${getOverallProgress() >= 80 ?
                     '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
-                    getOverallProgress() >= 60 ? 
+                    getOverallProgress() >= 60 ?
                     '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
                     '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
             </div>
@@ -39154,8 +39080,7 @@ function createGlobalDashboard4D() {
     window.showDashboard4DView();
 }
 
-// ❌ ELIMINA ESTO SI EXISTE
 // Alias para compatibilidad
-// function showDashboard4DView() {
-//     window.showDashboard4DView();
-// }
+function showDashboard4DView() {
+    window.showDashboard4DView();
+}
