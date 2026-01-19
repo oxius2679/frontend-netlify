@@ -4929,6 +4929,10 @@ function createSampleProjects() {
 
 
 function createCompleteGanttForCurrentProject() {
+  // ✅ Sin verificaciones de licencia
+  console.log('🚀 Creando Gantt completo...');
+
+
   if (currentProjectIndex >= projects.length) {
     alert('❌ Proyecto no válido');
     return;
@@ -37934,11 +37938,6 @@ window.showView = showView;
 
 
 
-
-// Alias para compatibilidad
-function createGlobalDashboard4D() {
-    window.showDashboard4DView();
-}
 
 
 
