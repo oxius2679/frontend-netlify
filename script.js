@@ -39131,11 +39131,11 @@ window.exportDashboard4DReport = function() {
                 </button>
             </div>
             <script>
-                // Abrir diálogo de impresión automáticamente
-                setTimeout(() => {
-                    window.print();
-                }, 500);
-            </script>
+    setTimeout(() => {
+        window.print();
+    }, 500);
+<\/script>
+
         </body>
         </html>
     `;
