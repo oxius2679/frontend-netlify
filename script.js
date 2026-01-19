@@ -38324,24 +38324,24 @@ new Chart(progressCtx, {
 
    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
 // ===============================
-// ESTADO DE TAREAS (DONUT FINAL)
+// ESTADO DE TAREAS – DONUT FINAL PRO
 // ===============================
 
-// Plugin texto central SOLO número
-const dashboardCenterNumberPlugin = {
-    id: 'dashboardCenterNumber',
+// Plugin número central
+const donutCenterValuePlugin = {
+    id: 'donutCenterValue',
     afterDraw(chart) {
-        const cfg = chart.config.options.dashboardCenterNumber;
-        if (!cfg) return;
+        const value = chart.config.options.centerValue;
+        if (!value) return;
 
         const { ctx, chartArea } = chart;
         ctx.save();
-        ctx.font = 'bold 28px Arial';
+        ctx.font = '600 24px Segoe UI';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(
-            cfg.number,
+            value,
             (chartArea.left + chartArea.right) / 2,
             (chartArea.top + chartArea.bottom) / 2
         );
@@ -38349,34 +38349,38 @@ const dashboardCenterNumberPlugin = {
     }
 };
 
-Chart.register(dashboardCenterNumberPlugin);
+Chart.register(donutCenterValuePlugin);
 
-// ===== DATOS REALES (SIN COLISIONES) =====
-const dashTotalTasks = getTotalTasks();
-const dashCompleted = getCompletedTasks();
-const dashInProgress = getAllTasks().filter(t => t.status === 'inProgress').length;
-const dashPending = getAllTasks().filter(t => t.status === 'pending').length;
-const dashOverdue = getOverdueTasks();
+// ===== DATOS REALES =====
+const tasksAll = getAllTasks();
 
-const dashStatusCtx = document
+const tasksTotal = tasksAll.length;
+const tasksPending = tasksAll.filter(t => t.status === 'pending').length;
+const tasksProgress = tasksAll.filter(t => t.status === 'inProgress').length;
+const tasksCompleted = tasksAll.filter(t => t.status === 'completed').length;
+const tasksOverdue = tasksAll.filter(
+    t =>
+        t.status === 'overdue' ||
+        t.status === 'retrasado' ||
+        t.status === 'rezagado'
+).length;
+
+const percent = v =>
+    tasksTotal ? Math.round((v / tasksTotal) * 100) : 0;
+
+const statusCtx = document
     .getElementById('statusChart')
     .getContext('2d');
 
-new Chart(dashStatusCtx, {
+new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-        labels: [
-            `Pendientes (${dashPending} · ${Math.round((dashPending / dashTotalTasks) * 100)}%)`,
-            `En Progreso (${dashInProgress} · ${Math.round((dashInProgress / dashTotalTasks) * 100)}%)`,
-            `Completadas (${dashCompleted} · ${Math.round((dashCompleted / dashTotalTasks) * 100)}%)`,
-            `Atrasadas (${dashOverdue} · ${Math.round((dashOverdue / dashTotalTasks) * 100)}%)`
-        ],
         datasets: [{
             data: [
-                dashPending,
-                dashInProgress,
-                dashCompleted,
-                dashOverdue
+                tasksPending,
+                tasksProgress,
+                tasksCompleted,
+                tasksOverdue
             ],
             backgroundColor: [
                 '#f1c40f',
@@ -38390,36 +38394,55 @@ new Chart(dashStatusCtx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '72%',
+        cutout: '75%',
         layout: {
-            padding: {
-                bottom: 25
-            }
+            padding: { bottom: 22 }
         },
         plugins: {
             legend: {
+                display: true,
                 position: 'bottom',
-                align: 'center',
+                fullSize: false,
                 labels: {
                     color: '#ffffff',
-                    boxWidth: 14,
-                    boxHeight: 14,
-                    padding: 14,
                     font: {
-                        size: 12,
+                        size: 10,
                         weight: '500'
                     },
+                    boxWidth: 10,
+                    boxHeight: 10,
+                    padding: 12,
                     usePointStyle: true,
-                    pointStyle: 'circle'
+                    pointStyle: 'circle',
+
+                    // 🔥 FORZAR LEYENDA HORIZONTAL CON LOS 4 ESTADOS
+                    generateLabels(chart) {
+                        const data = chart.data.datasets[0].data;
+                        const labels = [
+                            { text: `Pendientes ${data[0]} · ${percent(data[0])}%`, color: '#f1c40f' },
+                            { text: `En Progreso ${data[1]} · ${percent(data[1])}%`, color: '#3498db' },
+                            { text: `Completadas ${data[2]} · ${percent(data[2])}%`, color: '#2ecc71' },
+                            { text: `Retrasadas ${data[3]} · ${percent(data[3])}%`, color: '#e74c3c' }
+                        ];
+
+                        return labels.map((l, i) => ({
+                            text: l.text,
+                            fillStyle: l.color,
+                            strokeStyle: l.color,
+                            index: i
+                        }));
+                    }
                 }
             },
             tooltip: {
-                enabled: true
+                enabled: true,
+                callbacks: {
+                    label: ctx =>
+                        `${ctx.raw} tareas (${percent(ctx.raw)}%)`
+                }
             }
         },
-        dashboardCenterNumber: {
-            number: dashTotalTasks
-        }
+        centerValue: tasksTotal
     }
 });
 
