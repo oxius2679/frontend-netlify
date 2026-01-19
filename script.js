@@ -1,3 +1,14 @@
+// ✅ Asegurar que las funciones existan
+window.showDashboard4DView = window.showDashboard4DView || function() {
+  alert('❌ Dashboard 4D no está configurado');
+};
+window.createCompleteGanttForCurrentProject = window.createCompleteGanttForCurrentProject || function() {
+  alert('❌ Gantt no está configurado');
+};
+
+
+
+
 // === CONFIGURACIÓN DE FIREBASE ===
 const firebaseConfig = {
   apiKey: "AIzaSyBoywVxsuIsQVaBQIn-gzhIxj3etDOnIzs",
@@ -1499,7 +1510,7 @@ function requireModeAccess(view, callback) {
 
 // ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
 function requirePremiumAccess(featureName, callback) {
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+  
     showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
     return;
   }
@@ -6124,11 +6135,7 @@ function ensureProjectHealthHandle() {
 // ========== FUNCIÓN BURNDOWN CHART PREMIUM ==========
 window.showBurnDownChartPremium = function() {
 
-  // 🔒 Verificar licencia ANTES de hacer cualquier cosa
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    showNotification('🔒 El Burndown Premium requiere el plan Profesional o Premium.');
-    return;
-  }
+  
 
   console.log('📉 ACTIVANDO BURNDOWN CHART PREMIUM...');
   const ganttContainer = document.getElementById('premiumExecutiveGantt');
@@ -17799,6 +17806,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+// ✅ ACCESO PREMIUM AUTOMÁTICO PARA EL DESARROLLADOR
+const currentUserEmail = localStorage.getItem('userEmail');
+if (currentUserEmail === 'ajackson2672@gmail.com') {
+  localStorage.setItem('userPlan', 'premium');
+  console.log('👑 Acceso premium activado para desarrollador');
+}
+
+
+
+
   console.log('✅ Token válido detectado');
   
   // 👇 Solo si hay token, continuar con la app
@@ -20811,11 +20828,7 @@ document.addEventListener('DOMContentLoaded', function () {
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
   window.showExecutiveGantt = function() {
-    // 🔒 PROTECCIÓN POR LICENCIA: solo Profesional/Premium pueden usar el Gantt Ejecutivo
-    if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-      return;
-    }
+   
 
     console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
@@ -37780,9 +37793,7 @@ document.getElementById('btnEstadoCronograma')?.addEventListener('click', functi
 // Proteger la función real del Gantt si se llama directamente
 const originalGanttFunction = window.createCompleteGanttForCurrentProject;
 window.createCompleteGanttForCurrentProject = function() {
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-    return;
+ 
   }
   return originalGanttFunction.apply(this, arguments);
 };
@@ -37802,11 +37813,7 @@ function showView(view) {
   // 🔒 PROTECCIÓN POR LICENCIA
   const premiumViews = ['reports', 'profitability', 'dashboard4d'];
   if (premiumViews.includes(view)) {
-    if (!window.licenseManager?.canAccess('premiumExecutiveGantt')) {
-      showNotification('🔒 Esta vista requiere el plan Profesional o Premium.');
-      return;
-    }
-  }
+      }
 
   // 🧭 PROTECCIÓN POR MODO DE TRABAJO
   const currentMode = window.methodologyManager?.getCurrentMode();
@@ -37975,6 +37982,7 @@ window.login = async function() {
     
     if (res.ok) {
       localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userEmail', email);
       localStorage.setItem('user', JSON.stringify(data.user));
       location.reload();
     }
@@ -39208,9 +39216,7 @@ window.closeDashboard4D = function () {
     }
 };
 
-function createGlobalDashboard4D() {
-    window.showDashboard4DView();
-}
+
 
 
 
