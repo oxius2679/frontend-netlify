@@ -39089,14 +39089,17 @@ window.exportDashboard4DReport = function() {
             <div class="section">
                 <h2>📋 Resumen Ejecutivo</h2>
                 <p>El sistema actual presenta un progreso global del <strong>${getOverallProgress()}%</strong>.</p>
-                <p>${getOverdueTasks() > 0 ?
-                    `⚠️ Se requiere atención en ${getOverdueTasks()} tareas atrasadas.` :
-                    '✅ Todas las tareas están al día.'}</p>
-                <p>${getOverallProgress() >= 80 ?
-                    '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
-                    getOverallProgress() >= 60 ?
-                    '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
-                    '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
+               <p>${getOverdueTasks() > 0
+    ? '⚠️ Se requiere atención en ' + getOverdueTasks() + ' tareas atrasadas.'
+    : '✅ Todas las tareas están al día.'}</p>
+
+                <p>${getOverallProgress() >= 80
+    ? '🎯 Excelente rendimiento, se superan los objetivos establecidos.'
+    : (getOverallProgress() >= 60
+        ? '📊 Rendimiento aceptable, se recomienda seguimiento continuo.'
+        : '🔴 Se requiere revisión estratégica para mejorar el progreso.')
+}</p>
+
             </div>
             <div class="footer">
                 <p>Reporte generado por Dashboard 4D Ejecutivo</p>
