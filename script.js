@@ -38861,13 +38861,15 @@ window.closeDashboard4D = function () {
         }, 100);
     }
 };
-console.log('🟡 LLEGUÉ ANTES DEL CIERRE FINAL');
 
 function createGlobalDashboard4D() {
     window.showDashboard4DView();
 }
 
-console.log('🟢 FIN REAL DEL ARCHIVO');
+// Alias para compatibilidad
+function showDashboard4DView() {
+    window.showDashboard4DView();
+}
 
 
 
