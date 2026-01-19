@@ -38324,24 +38324,24 @@ new Chart(progressCtx, {
 
    // 2. Gráfico de Estado de Tareas CON LEYENDA HORIZONTAL
 // ===============================
-// ESTADO DE TAREAS (DONUT)
+// ESTADO DE TAREAS (DONUT FINAL)
 // ===============================
 
-// Plugin texto central
-const dashboardCenterTextPlugin = {
-    id: 'dashboardCenterText',
+// Plugin texto central SOLO número
+const dashboardCenterNumberPlugin = {
+    id: 'dashboardCenterNumber',
     afterDraw(chart) {
-        const cfg = chart.config.options.dashboardCenterText;
+        const cfg = chart.config.options.dashboardCenterNumber;
         if (!cfg) return;
 
         const { ctx, chartArea } = chart;
         ctx.save();
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 28px Arial';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(
-            cfg.text,
+            cfg.number,
             (chartArea.left + chartArea.right) / 2,
             (chartArea.top + chartArea.bottom) / 2
         );
@@ -38349,7 +38349,7 @@ const dashboardCenterTextPlugin = {
     }
 };
 
-Chart.register(dashboardCenterTextPlugin);
+Chart.register(dashboardCenterNumberPlugin);
 
 // ===== DATOS REALES (SIN COLISIONES) =====
 const dashTotalTasks = getTotalTasks();
@@ -38358,19 +38358,26 @@ const dashInProgress = getAllTasks().filter(t => t.status === 'inProgress').leng
 const dashPending = getAllTasks().filter(t => t.status === 'pending').length;
 const dashOverdue = getOverdueTasks();
 
-const dashStatusCtx = document.getElementById('statusChart').getContext('2d');
+const dashStatusCtx = document
+    .getElementById('statusChart')
+    .getContext('2d');
 
 new Chart(dashStatusCtx, {
     type: 'doughnut',
     data: {
         labels: [
-            `Pendientes (${dashPending} • ${Math.round((dashPending / dashTotalTasks) * 100)}%)`,
-            `En Progreso (${dashInProgress} • ${Math.round((dashInProgress / dashTotalTasks) * 100)}%)`,
-            `Completadas (${dashCompleted} • ${Math.round((dashCompleted / dashTotalTasks) * 100)}%)`,
-            `Atrasadas (${dashOverdue} • ${Math.round((dashOverdue / dashTotalTasks) * 100)}%)`
+            `Pendientes (${dashPending} · ${Math.round((dashPending / dashTotalTasks) * 100)}%)`,
+            `En Progreso (${dashInProgress} · ${Math.round((dashInProgress / dashTotalTasks) * 100)}%)`,
+            `Completadas (${dashCompleted} · ${Math.round((dashCompleted / dashTotalTasks) * 100)}%)`,
+            `Atrasadas (${dashOverdue} · ${Math.round((dashOverdue / dashTotalTasks) * 100)}%)`
         ],
         datasets: [{
-            data: [dashPending, dashInProgress, dashCompleted, dashOverdue],
+            data: [
+                dashPending,
+                dashInProgress,
+                dashCompleted,
+                dashOverdue
+            ],
             backgroundColor: [
                 '#f1c40f',
                 '#3498db',
@@ -38383,19 +38390,35 @@ new Chart(dashStatusCtx, {
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '70%',
+        cutout: '72%',
+        layout: {
+            padding: {
+                bottom: 25
+            }
+        },
         plugins: {
             legend: {
+                position: 'bottom',
+                align: 'center',
                 labels: {
-                    color: '#ffffff'
+                    color: '#ffffff',
+                    boxWidth: 14,
+                    boxHeight: 14,
+                    padding: 14,
+                    font: {
+                        size: 12,
+                        weight: '500'
+                    },
+                    usePointStyle: true,
+                    pointStyle: 'circle'
                 }
             },
             tooltip: {
                 enabled: true
             }
         },
-        dashboardCenterText: {
-            text: `${dashTotalTasks} tareas`
+        dashboardCenterNumber: {
+            number: dashTotalTasks
         }
     }
 });
