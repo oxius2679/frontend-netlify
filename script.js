@@ -1,7 +1,3 @@
-
-
-
-
 // ✅ Asegurar que las funciones existan
 window.showDashboard4DView = window.showDashboard4DView || function() {
   alert('❌ Dashboard 4D no está configurado');
@@ -1112,17 +1108,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 👇 Solo si hay token, continuar con la app
-console.log('🎯 Iniciando aplicación con validación...');
-const dataLoaded = safeLoad();
-if (!dataLoaded || projects.length === 0) {
-  console.log('📝 No hay datos, creando proyecto inicial...');
-} else {
-  console.log('✅ Datos cargados correctamente');
-  renderProjects();
-  selectProject(currentProjectIndex);
-  checkOverdueTasks();
-}
-// setupEventListeners(); // ← Comentada/eliminada
+  console.log('🎯 Iniciando aplicación con validación...');
+  const dataLoaded = safeLoad();
+  if (!dataLoaded || projects.length === 0) {
+    console.log('📝 No hay datos, creando proyecto inicial...');
+   
+  } else {
+    console.log('✅ Datos cargados correctamente');
+    renderProjects();
+    selectProject(currentProjectIndex);
+    checkOverdueTasks();
+  }
+  setupEventListeners();
   // ... resto de tu inicialización
 });
 
@@ -1509,6 +1506,12 @@ function requireModeAccess(view, callback) {
 
 
 
+
+/**************************************
+ * VARIABLES GLOBALES Y ELEMENTOS DOM *
+ **************************************/
+let projects = [];
+let currentProjectIndex = 0;
 
 
 // ========== FUNCIONES AUXILIARES BÁSICAS ==========
