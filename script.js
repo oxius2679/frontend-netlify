@@ -39027,7 +39027,7 @@ window.exportDashboard4DReport = function() {
                 }
             </style>
         </head>
-        <body>
+      <body onload="setTimeout(() => window.print(), 500)">
             <div class="header">
                 <h1 style="color: #9b59b6;">Reporte Ejecutivo Dashboard 4D</h1>
                 <p>Fecha: ${new Date().toLocaleDateString('es-ES', {
@@ -39130,12 +39130,7 @@ window.exportDashboard4DReport = function() {
                     ✕ Cerrar
                 </button>
             </div>
-            <script>
-    setTimeout(() => {
-        window.print();
-    }, 500);
-<\/script>
-
+            
         </body>
         </html>
     `;
