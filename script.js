@@ -1,3 +1,9 @@
+
+
+
+
+
+
 // ✅ Asegurar que las funciones existan
 window.showDashboard4DView = window.showDashboard4DView || function() {
   alert('❌ Dashboard 4D no está configurado');
@@ -81,6 +87,7 @@ async function logoutUser() {
     showNotification('❌ Error al cerrar sesión');
   }
 }
+
 
 
 console.log('🟢 SCRIPT EMPIEZA');
@@ -38384,6 +38391,25 @@ window.showDashboard4DView = function () {
     const content = generateDashboard4DHTML();
     container.innerHTML = content;
 
+
+function getCriticalTasks() {
+    return getAllTasks().filter(t => {
+        // Regla clara y REAL
+        return (
+            t.critical === true ||
+            t.priority === 'alta' ||
+            t.priority === 'Alta' ||
+            t.priority === 'ALTA' ||
+            t.priority === 'critica' ||
+            t.priority === 'Crítica'
+        );
+    });
+}
+
+
+
+
+
     // 📊 Inicializar gráficos después de que el DOM esté listo
     setTimeout(() => {
         initDashboard4DCharts();
@@ -38461,7 +38487,13 @@ function generateDashboard4DHTML() {
                     </div>
                     <!-- Burndown Chart -->
                     <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.25); border-radius: 15px; padding: 20px;">
-                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #e74c3c;">📊</span> Burndown Chart<div style="display: flex; align-items: center; gap: 5px; font-size: 11px; background: rgba(231,76,60,0.1); padding: 2px 8px; border-radius: 10px; margin-left: auto;"><span style="color: #e74c3c;">🔥</span><span style="color: #e74c3c;">Tareas Críticas</span></div></h3>
+                        <h3 style="color: white; margin: 0 0 15px 0; font-size: 16px; display: flex; align-items: center; gap: 10px;"><span style="color: #e74c3c;">📊</span> Burndown Chart<<div style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: rgba(231,76,60,0.15); padding: 3px 10px; border-radius: 12px; margin-left: auto;">
+    <span style="color: #e74c3c;">🔥</span>
+    <span style="color: #e74c3c; font-weight: bold;">
+        ${getCriticalTasksCount()} críticas
+    </span>
+</div>
+</h3>
                         <div style="height: 180px; position: relative;"><canvas id="criticalChart" style="width: 100%; height: 100%;"></canvas></div>
                     </div>
                 </div>
@@ -38656,57 +38688,104 @@ new Chart(statusCtx, {
     }
 });
 
-    // 3. Gráfico de Burndown (Críticas)
-    const criticalCtx = document.getElementById('criticalChart').getContext('2d');
-    new Chart(criticalCtx, {
-        type: 'line',
-        data: {
-            labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-            datasets: [
-                {
-                    label: 'Plan Ideal',
-                    data: [10, 7, 4, 0],
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    borderDash: [5, 5],
-                    fill: false,
-                    tension: 0,
-                    pointRadius: 0
-                },
-                {
-                    label: 'Progreso Real',
-                    data: [10, 8, 5, 2],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#e74c3c',
-                    pointRadius: 3,
-                    pointHoverRadius: 5
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y} tareas`
-                    }
-                }
+  // ===============================
+// 🔥 BURNDOWN REAL - TAREAS CRÍTICAS
+// ===============================
+const criticalCtx = document.getElementById('criticalChart').getContext('2d');
+
+const BURNDOWN_DAYS = 7;
+const criticalTasks = getCriticalTasks();
+const totalCritical = criticalTasks.length;
+
+// Etiquetas de fechas reales
+const burndownLabels = [];
+for (let i = BURNDOWN_DAYS - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    burndownLabels.push(
+        d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+    );
+}
+
+// Línea ideal (si no hay críticas → todo 0)
+const idealBurndown = [];
+for (let i = 0; i < BURNDOWN_DAYS; i++) {
+    idealBurndown.push(
+        totalCritical > 0
+            ? Math.round(totalCritical * (1 - i / (BURNDOWN_DAYS - 1)))
+            : 0
+    );
+}
+
+// Línea real (pendientes críticas por día)
+const realBurndown = [];
+for (let i = BURNDOWN_DAYS - 1; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+
+    const remaining = criticalTasks.filter(t => {
+        if (t.status !== 'completed') return true;
+        if (!t.completedDate) return false;
+        return new Date(t.completedDate) > date;
+    }).length;
+
+    realBurndown.push(remaining);
+}
+
+new Chart(criticalCtx, {
+    type: 'line',
+    data: {
+        labels: burndownLabels,
+        datasets: [
+            {
+                label: 'Plan Ideal',
+                data: idealBurndown,
+                borderColor: 'rgba(255,255,255,0.35)',
+                borderDash: [6, 6],
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { callback: value => value + ' tareas' }
+            {
+                label: 'Pendientes Reales',
+                data: realBurndown,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: ctx =>
+                        `${ctx.parsed.y} tareas críticas pendientes`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Tareas pendientes'
+                },
+                ticks: {
+                    precision: 0
                 }
             }
         }
-    });
-}
+    }
+});
+
+
 
 // Funciones auxiliares
 function getCriticalTasksCount() {
@@ -39084,3 +39163,29 @@ function createGlobalDashboard4D() {
 function showDashboard4DView() {
     window.showDashboard4DView();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
