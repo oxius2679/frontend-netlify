@@ -38377,11 +38377,11 @@ new Chart(statusCtx, {
                 labels: {
                     color: '#ffffff',
                     font: {
-                        size: 9,          // 🔥 MÁS PEQUEÑAS
+                        size: 8,          // 🔥 MÁS PEQUEÑAS
                         weight: '400'
                     },
                     padding: 8,
-                    boxWidth: 6,        // 🔥 CÍRCULOS MÁS CHICOS
+                    boxWidth: 5,        // 🔥 CÍRCULOS MÁS CHICOS
                     boxHeight: 6,
                     usePointStyle: true,
                     pointStyle: 'circle'
