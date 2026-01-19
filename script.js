@@ -1503,19 +1503,6 @@ function requireModeAccess(view, callback) {
     return;
   }
   callback();
-}
-
-
-
-
-// ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
-function requirePremiumAccess(featureName, callback) {
-  
-    showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
-    return;
-  }
-  callback();
-}
 
 
 
@@ -20828,7 +20815,11 @@ document.addEventListener('DOMContentLoaded', function () {
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
   window.showExecutiveGantt = function() {
-   
+    // 🔒 PROTECCIÓN POR LICENCIA: solo Profesional/Premium pueden usar el Gantt Ejecutivo
+    if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+      showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+      return;
+    }
 
     console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
@@ -37793,7 +37784,9 @@ document.getElementById('btnEstadoCronograma')?.addEventListener('click', functi
 // Proteger la función real del Gantt si se llama directamente
 const originalGanttFunction = window.createCompleteGanttForCurrentProject;
 window.createCompleteGanttForCurrentProject = function() {
- 
+  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+    showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+    return;
   }
   return originalGanttFunction.apply(this, arguments);
 };
