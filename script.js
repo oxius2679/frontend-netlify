@@ -17908,7 +17908,6 @@ if (isFreePlanValid) {
     if (!dataLoaded || projects.length === 0) {
       console.log('📝 No hay datos, preguntando si crear proyecto...');
       // No crear automáticamente, esperar interacción del usuario
-      // ← ¡NO llama a createNewProject() automáticamente!
     } else {
       console.log('✅ Datos cargados correctamente');
       renderProjects();
@@ -17922,9 +17921,9 @@ if (isFreePlanValid) {
   }
 } else {
   console.log('❌ Plan Free expirado. Acceso restringido.');
-  // La función checkFreePlanExpiry() ya mostró la ventana de licencias
   return;
-}    
+}
+
     // Iniciar WebSocket después de cargar todo
     setTimeout(() => {
       if (window.authToken) {
