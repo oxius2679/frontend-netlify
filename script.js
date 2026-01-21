@@ -17849,21 +17849,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 👆👆👆 HASTA AQUÍ 👆👆👆
 
 // 🔒 Verificar expiración del plan Free
+// 🔒 Verificar expiración del plan Free
 function checkFreePlanExpiry() {
   const license = localStorage.getItem('userLicense') || localStorage.getItem('userPlan');
   const expiresAt = localStorage.getItem('licenseExpiresAt');
   
   if (license === 'free' && expiresAt && Date.now() > parseInt(expiresAt)) {
+    // Limpiar datos de licencia
     localStorage.removeItem('userLicense');
     localStorage.removeItem('userPlan');
     localStorage.removeItem('licenseExpiresAt');
+    
+    // Mostrar notificación
     showNotification('⏳ Tu plan Free ha expirado. Actualiza a Professional para continuar.');
-    showLicensesView();
+    
+    // 👇👇👇 BLOQUEAR ACCESO 👇👇👇
+    showLicensesView(); // Mostrar ventana de licencias
     return false;
   }
   return true;
 }
-
   console.log('🚀 Iniciando aplicación...');  
   // 🔐 Verificar autenticación ANTES de cargar la app
   const token = localStorage.getItem('authToken');
@@ -17890,9 +17895,14 @@ if (!window.licenseManager) {
   window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
 }
 
-console.log('✅ Token válido detectado');  
-  // 👇 Solo si hay token, continuar con la app
-  try {    const dataLoaded = await safeLoad();
+// 🔍 Verificar expiración del plan Free
+const isFreePlanValid = checkFreePlanExpiry();
+
+if (isFreePlanValid) {
+  console.log('✅ Token válido detectado');
+  // 👇 Solo si hay token Y el plan es válido, continuar con la app
+  try {
+    const dataLoaded = await safeLoad();
     console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
     
     if (!dataLoaded || projects.length === 0) {
@@ -17907,7 +17917,14 @@ console.log('✅ Token válido detectado');
     }
     
     setupEventListeners();
-    
+  } catch (error) {
+    console.error('❌ Error al cargar la aplicación:', error);
+  }
+} else {
+  console.log('❌ Plan Free expirado. Acceso restringido.');
+  // La función checkFreePlanExpiry() ya mostró la ventana de licencias
+  return;
+}    
     // Iniciar WebSocket después de cargar todo
     setTimeout(() => {
       if (window.authToken) {
