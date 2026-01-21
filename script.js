@@ -92,6 +92,11 @@ async function logoutUser() {
 
 console.log('🟢 SCRIPT EMPIEZA');
 
+
+
+
+
+
 // 🔧 FUNCIÓN DE DIAGNÓSTICO EN TIEMPO REAL
 window.debugBurndownUpdate = function() {
   console.clear();
@@ -903,22 +908,20 @@ function showAbout() {
 }
 
 // === CREAR Y POSICIONAR BOTÓN DE CONFIGURACIÓN ===
-
-// Función para posicionar el botón junto al Gantt
 function positionConfigButton() {
   const configButton = document.getElementById('configButton');
   if (!configButton) return;
-  
+
   // Encontrar el botón de Gantt
-  const ganttButton = Array.from(document.querySelectorAll('button')).find(btn => 
+  const ganttButton = Array.from(document.querySelectorAll('button')).find(btn =>
     btn.textContent.trim().includes('Gantt') && btn.id === 'topNavGanttButton'
   );
-  
   if (ganttButton) {
     // Insertar justo después del botón de Gantt
     ganttButton.parentNode.insertBefore(configButton, ganttButton.nextSibling);
     configButton.style.marginLeft = '10px';
-    configButton.style.marginRight = '0';
+    configButton.style.marginTop = '15px'; // 👈 Más abajo
+
     console.log('✅ Botón de configuración posicionado junto a Gantt');
   } else {
     // Fallback: insertar en el header
@@ -934,11 +937,11 @@ function positionConfigButton() {
     } else {
       document.body.appendChild(configButton);
     }
+
+    configButton.style.marginTop = '15px'; // 👈 También en el fallback
     console.log('⚠️ Botón insertado en ubicación alternativa');
   }
-}
-
-// Crear botón de configuración si no existe
+}// Crear botón de configuración si no existe
 if (!document.getElementById('configButton')) {
   const configButton = document.createElement('button');
   configButton.id = 'configButton';
@@ -16066,7 +16069,7 @@ function showTaskDetails(task) {
             </div>
           </div>
         </div>
-  ${fileHTML}
+ 
 </div>
       
       <div class="detail-group full-width">
@@ -17819,12 +17822,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ✅ ACCESO PREMIUM AUTOMÁTICO PARA EL DESARROLLADOR
 const currentUserEmail = localStorage.getItem('userEmail');
-if (currentUserEmail === 'TU_CORREO_AQUI') {
+if (currentUserEmail === 'ajackson2672@gmail.com') {
   localStorage.setItem('userPlan', 'premium');
   console.log('👑 Acceso premium activado para desarrollador');
 }
 
-
+// 🛠️ Inicializar LicenseManager con el plan guardado
+if (!window.licenseManager) {
+  window.licenseManager = new LicenseManager();
+  // Sincronizar inmediatamente con localStorage para evitar inconsistencias
+  window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
+}
 
 
   console.log('✅ Token válido detectado');
@@ -22679,11 +22687,7 @@ const voiceAssistant = {
   },
   
   createVoiceButton: function() {
-    // Crear botón en la barra superior, al lado de cerrar sesión
-    const button = document.createElement('button');
-    button.id = 'voiceAssistantButton';
-    button.innerHTML = '🎤 Activar Voz';
-    button.title = 'Asistente por voz - Click para activar/desactivar';
+    
     
     button.style.cssText = `
         position: relative;
@@ -38231,7 +38235,7 @@ function initDashboard4DCharts() {
     const pending = allTasks.filter(t => t.status === 'pending').length;
     const overdue = allTasks.filter(t => t.status === 'overdue').length;
 
-   // 1. Gráfico de Progreso Acumulado (CON DATOS REALES CORREGIDO)
+  // 1. Gráfico de Progreso Acumulado (CON DATOS REALES CORREGIDO)
 const progressCtx = document.getElementById('progressChart').getContext('2d');
 
 // Calcular progreso histórico basado en tareas - VERSIÓN CORREGIDA
@@ -38313,9 +38317,27 @@ new Chart(progressCtx, {
             }
         },
         scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Días de la Semana',
+                    font: {
+                        size: 11,
+                        weight: 'normal'
+                    }
+                }
+            },
             y: {
                 beginAtZero: true,
                 max: 100,
+                title: {
+                    display: true,
+                    text: 'Progreso (%)',
+                    font: {
+                        size: 11,
+                        weight: 'normal'
+                    }
+                },
                 ticks: { callback: value => value + '%' }
             }
         }
@@ -38352,7 +38374,7 @@ new Chart(statusCtx, {
             ],
             backgroundColor: [
                 '#f1c40f',
-                '#3498db',
+                '#008080',
                 '#2ecc71',
                 '#e74c3c'
             ],
@@ -38418,7 +38440,7 @@ new Chart(statusCtx, {
     }]
 });
 
-  // 3. Gráfico de Burndown (Críticas)
+// 3. Gráfico de Burndown (Críticas)
 
 // ===== DATOS REALES DE TAREAS CRÍTICAS =====
 const criticalTasks = getAllTasks().filter(
@@ -38427,17 +38449,78 @@ const criticalTasks = getAllTasks().filter(
 
 const totalCritical = criticalTasks.length;
 
-// Agrupar por semanas (4 semanas)
-const weeks = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+// ===== CONFIGURACIÓN DE SEMANAS CON FECHAS REALES =====
+// Obtener la fecha actual para calcular las semanas
+const today = new Date();
+const currentMonth = today.getMonth();
+const currentYear = today.getFullYear();
+
+// Crear 4 semanas a partir del inicio del mes actual
+const weekRanges = [];
+for (let i = 0; i < 4; i++) {
+    const startDay = i * 7 + 1; // Día 1, 8, 15, 22 del mes
+    const endDay = Math.min(startDay + 6, new Date(currentYear, currentMonth + 1, 0).getDate());
+    
+    const startDate = new Date(currentYear, currentMonth, startDay);
+    const endDate = new Date(currentYear, currentMonth, endDay);
+    
+    // Formatear las fechas
+    const startStr = startDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const endStr = endDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    
+    weekRanges.push({
+        label: `Sem ${i + 1}`,
+        range: `${startStr} - ${endStr}`,
+        startDate: startDate,
+        endDate: endDate
+    });
+}
+
+const weeks = weekRanges.map(w => w.label);
 const completedByWeek = [0, 0, 0, 0];
 
+// Almacenar todas las tareas críticas PENDIENTES por semana
+const pendingTasksByWeek = [[], [], [], []];
+
 criticalTasks.forEach(task => {
-    if (task.status === 'completed' && task.deadline) {
-        const weekIndex = Math.min(
-            Math.floor((new Date(task.deadline).getDate() - 1) / 7),
-            3
-        );
-        completedByWeek[weekIndex]++;
+    if (task.deadline) {
+        const taskDate = new Date(task.deadline);
+        const taskDay = taskDate.getDate();
+        
+        // Determinar a qué semana pertenece la tarea (días 1-7, 8-14, 15-21, 22-28+)
+        let weekIndex = 0;
+        if (taskDay >= 22) weekIndex = 3;
+        else if (taskDay >= 15) weekIndex = 2;
+        else if (taskDay >= 8) weekIndex = 1;
+        else weekIndex = 0;
+        
+        if (task.status !== 'completed') {
+            // Buscar el nombre real de la tarea
+            let taskName = 'Tarea sin nombre';
+            
+            if (task.title) {
+                taskName = task.title;
+            } else if (task.name) {
+                taskName = task.name;
+            } else if (task.taskName) {
+                taskName = task.taskName;
+            } else if (task.description && task.description.length > 0) {
+                taskName = task.description.substring(0, 30) + (task.description.length > 30 ? '...' : '');
+            } else if (task.id) {
+                taskName = `Tarea ${task.id}`;
+            }
+            
+            pendingTasksByWeek[weekIndex].push({
+                name: taskName,
+                id: task.id || 'N/A',
+                deadline: task.deadline ? taskDate.toLocaleDateString('es-ES') : 'Sin fecha',
+                weekRange: weekRanges[weekIndex].range
+            });
+        }
+        
+        if (task.status === 'completed') {
+            completedByWeek[weekIndex]++;
+        }
     }
 });
 
@@ -38465,11 +38548,12 @@ new Chart(criticalCtx, {
             {
                 label: 'Plan Ideal',
                 data: idealBurndown,
-                borderColor: 'rgba(255,255,255,0.3)',
+                borderColor: 'rgba(100, 149, 237, 0.7)', // Azul más visible
                 borderDash: [5, 5],
-                borderWidth: 1,
+                borderWidth: 2,
                 fill: false,
-                pointRadius: 0
+                pointRadius: 0,
+                tension: 0
             },
             {
                 label: 'Críticas Reales',
@@ -38479,30 +38563,239 @@ new Chart(criticalCtx, {
                 borderWidth: 3,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 4
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointHoverBackgroundColor: '#e74c3c',
+                pointBackgroundColor: '#e74c3c',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
             }
         ]
     },
     options: {
         responsive: true,
+        interaction: {
+            intersect: true,
+            mode: 'nearest'
+        },
         plugins: {
-            legend: { display: true },
+            legend: { 
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 11
+                    },
+                    padding: 15,
+                    usePointStyle: true,
+                    boxWidth: 6,  // REDUCIDO: círculos más pequeños
+                    boxHeight: 6, // REDUCIDO: círculos más pequeños
+                    pointStyle: 'circle'
+                }
+            },
             tooltip: {
+                enabled: true,
+                mode: 'nearest',
+                intersect: true,
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#e74c3c',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                bodyFont: {
+                    size: 11
+                },
+                titleFont: {
+                    size: 12,
+                    weight: 'bold'
+                },
                 callbacks: {
-                    label: ctx => `${ctx.parsed.y} tareas críticas`
+                    title: function(tooltipItems) {
+                        const weekIndex = tooltipItems[0].dataIndex;
+                        return `Semana ${weekIndex + 1}: ${weekRanges[weekIndex].range}`;
+                    },
+                    label: function(context) {
+                        const weekIndex = context.dataIndex;
+                        const pendingTasks = pendingTasksByWeek[weekIndex];
+                        const remainingTasks = realBurndown[weekIndex];
+                        const idealTasks = idealBurndown[weekIndex];
+                        
+                        let tooltipLines = [];
+                        
+                        // Lógica correcta para calcular adelanto/retraso
+                        const difference = remainingTasks - idealTasks;
+                        let status = '';
+                        if (difference > 0) {
+                            status = `⚠️ Retrasado por ${difference} tareas`;
+                        } else if (difference < 0) {
+                            status = `✅ Adelantado por ${Math.abs(difference)} tareas`;
+                        } else {
+                            status = '📊 En el plan ideal';
+                        }
+                        
+                        tooltipLines.push(`Tareas pendientes: ${remainingTasks}`);
+                        tooltipLines.push(`Plan ideal: ${idealTasks}`);
+                        tooltipLines.push(status);
+                        
+                        if (pendingTasks.length > 0) {
+                            tooltipLines.push('');
+                            tooltipLines.push('📋 Tareas pendientes esta semana:');
+                            
+                            pendingTasks.forEach((task, index) => {
+                                if (index < 3) { // Mostrar máximo 3 tareas
+                                    tooltipLines.push(`• ${task.name}`);
+                                }
+                            });
+                            
+                            if (pendingTasks.length > 3) {
+                                tooltipLines.push(`... y ${pendingTasks.length - 3} más`);
+                            }
+                        }
+                        
+                        return tooltipLines;
+                    },
+                    afterLabel: function(context) {
+                        const weekIndex = context.dataIndex;
+                        const weekInfo = weekRanges[weekIndex];
+                        return `\n📅 Período: ${weekInfo.range}`;
+                    }
                 }
             }
         },
         scales: {
             y: {
                 beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Tareas Pendientes',
+                    font: {
+                        size: 11,
+                        weight: 'normal'
+                    },
+                    padding: {top: 5, bottom: 5}
+                },
                 ticks: {
-                    callback: v => v + ' tareas'
+                    callback: v => v,
+                    font: {
+                        size: 10
+                    },
+                    padding: 3
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Semanas del Mes',
+                    font: {
+                        size: 11,
+                        weight: 'normal'
+                    },
+                    padding: {top: 5, bottom: 5}
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    font: {
+                        size: 10
+                    },
+                    padding: 3
                 }
             }
+        },
+        hover: {
+            mode: 'nearest',
+            intersect: true
         }
     }
 });
+
+// ===== MINI BOTÓN DE AYUDA DISCRETO =====
+const chartContainer = document.getElementById('criticalChart').parentElement;
+if (chartContainer) {
+    // Crear botón de ayuda minimalista
+    const helpButton = document.createElement('div');
+    helpButton.innerHTML = '❓';
+    helpButton.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+    `;
+    
+    // Tooltip minimalista
+    const helpTooltip = document.createElement('div');
+    helpTooltip.style.cssText = `
+        display: none;
+        position: absolute;
+        top: 40px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #e74c3c;
+        z-index: 1000;
+        width: 200px;
+        font-size: 11px;
+        line-height: 1.4;
+    `;
+    
+    helpTooltip.innerHTML = `
+        <div style="color: #e74c3c; font-weight: bold; margin-bottom: 5px;">Interpretación:</div>
+        <div>🔵 <strong>Azul:</strong> Plan ideal</div>
+        <div>🔴 <strong>Rojo:</strong> Progreso real</div>
+        <div style="margin-top: 8px;">
+            <div style="color: #2ecc71;">✅ Rojo ABAJO = Adelantado</div>
+            <div style="color: #e74c3c;">⚠️ Rojo ARRIBA = Retrasado</div>
+        </div>
+    `;
+    
+    // Agregar al contenedor del gráfico
+    chartContainer.style.position = 'relative';
+    chartContainer.appendChild(helpButton);
+    chartContainer.appendChild(helpTooltip);
+    
+    // Eventos para el botón de ayuda
+    helpButton.addEventListener('mouseenter', function() {
+        helpTooltip.style.display = 'block';
+        helpButton.style.background = 'rgba(231, 76, 60, 0.2)';
+        helpButton.style.transform = 'scale(1.1)';
+    });
+    
+    helpButton.addEventListener('mouseleave', function() {
+        // Pequeño delay para evitar parpadeo
+        setTimeout(() => {
+            if (!helpTooltip.matches(':hover')) {
+                helpTooltip.style.display = 'none';
+                helpButton.style.background = 'rgba(231, 76, 60, 0.1)';
+                helpButton.style.transform = 'scale(1)';
+            }
+        }, 100);
+    });
+    
+    helpTooltip.addEventListener('mouseleave', function() {
+        helpTooltip.style.display = 'none';
+        helpButton.style.background = 'rgba(231, 76, 60, 0.1)';
+        helpButton.style.transform = 'scale(1)';
+    });
+}
 
 // DEBUG (hover opcional)
 console.log('Críticas:', totalCritical);
@@ -38510,7 +38803,124 @@ console.log('Críticas reales:', criticalTasks);
 }
 
 
-// Funciones auxiliares
+// Funciones auxiliares - SOLO LAS CORREGIDAS
+function getOverdueTasks() {
+    let count = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            // OPCIÓN B: Tarea con deadline pasada y NO completada
+            if (t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date()) {
+                count++;
+            }
+        });
+    });
+    return count;
+}
+
+function getOverallProgress() {
+    let total = 0;
+    let completed = 0;
+    projects.forEach(p => {
+        p.tasks.forEach(t => {
+            total++;
+            if (t.status === 'completed') completed++;
+        });
+    });
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+}
+
+function getOverdueTasksHTML() {
+    const overdueTasks = getAllTasks().filter(t => {
+        // OPCIÓN B: Tarea con deadline pasada y NO completada
+        return t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date();
+    });
+    
+    const totalOverdue = overdueTasks.length;
+    
+    if (totalOverdue === 0) {
+        return `<div style="text-align:center;color:#2ecc71;padding:20px;">✅ Sin tareas atrasadas</div>`;
+    }
+    
+    return `
+        <div style="color:#f39c12;font-size:12px;margin-bottom:10px;padding:0 5px;">
+            <span>📋 Total: ${totalOverdue} tareas</span>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
+        ${overdueTasks.slice(0, 10).map(t => `
+            <div style="background:rgba(243,156,18,0.1);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #f39c12;">
+                <div style="color:white;font-weight:bold;margin-bottom:5px;">
+                    ${t.name.substring(0,40)}${t.name.length > 40 ? '...' : ''}
+                </div>
+                <div style="color:#f39c12;display:flex;justify-content:space-between;font-size:12px;">
+                    <span>📂 ${t.projectName.substring(0,20)}${t.projectName.length > 20 ? '...' : ''}</span>
+                    <span style="background:rgba(243,156,18,0.3);padding:2px 6px;border-radius:4px;font-size:11px;">
+                        ${new Date(t.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                    </span>
+                </div>
+                <div style="color:#f39c12;font-size:11px;margin-top:5px;">
+                    Estado: ${t.status === 'inProgress' ? '🔄 En progreso' : '⏳ Pendiente'}
+                </div>
+                ${t.assignee ? `
+                    <div style="color:#95a5a6;font-size:11px;margin-top:5px;">
+                        👤 ${t.assignee}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('')}
+        </div>
+    `;
+}
+
+function getProjectsListHTML() {
+    const sortedProjects = [...projects].sort((a, b) => {
+        const aComp = a.tasks.filter(t => t.status === 'completed').length;
+        const bComp = b.tasks.filter(t => t.status === 'completed').length;
+        const aTotal = a.tasks.length;
+        const bTotal = b.tasks.length;
+        const aPct = aTotal ? (aComp / aTotal) * 100 : 0;
+        const bPct = bTotal ? (bComp / bTotal) * 100 : 0;
+        return bPct - aPct;
+    });
+    return `
+        <div style="color:#3498db;font-size:12px;margin-bottom:10px;padding:0 5px;display:flex;justify-content:space-between;">
+            <span>📊 Total: ${projects.length} proyectos</span>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
+        ${sortedProjects.slice(0, 8).map(p => {
+            const tasks = p.tasks || [];
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const total = tasks.length;
+            const progress = total ? Math.round((completed / total) * 100) : 0;
+            const color = progress >= 75 ? '#2ecc71' : progress >= 50 ? '#f39c12' : '#e74c3c';
+            const overdueTasks = tasks.filter(t => 
+                // OPCIÓN B: Tarea con deadline pasada y NO completada
+                t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date()
+            ).length;
+            return `
+                <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid ${color};">
+                    <div style="flex:1;">
+                        <div style="color:white;font-weight:500;font-size:14px;margin-bottom:4px;">
+                            ${p.name.substring(0,25)}${p.name.length > 25 ? '...' : ''}
+                        </div>
+                        <div style="display:flex;gap:15px;font-size:11px;">
+                            <span style="color:#95a5a6;">📝 ${total} tareas</span>
+                            <span style="color:#${overdueTasks > 0 ? 'e74c3c' : '95a5a6'};">⏱️ ${overdueTasks} atrasadas</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:${color};font-weight:bold;font-size:16px;">${progress}%</div>
+                        <div style="width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;">
+                            <div style="width:${progress}%;height:100%;background:${color};border-radius:2px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('')}
+        </div>
+    `;
+}
+
+// LAS DEMÁS FUNCIONES SE MANTIENEN IGUAL
 function getCriticalTasksCount() {
     let count = 0;
     projects.forEach(p => {
@@ -38539,28 +38949,6 @@ function getCompletedTasks() {
     return count;
 }
 
-function getOverdueTasks() {
-    let count = 0;
-    projects.forEach(p => {
-        p.tasks.forEach(t => {
-            if (t.status === 'overdue') count++;
-        });
-    });
-    return count;
-}
-
-function getOverallProgress() {
-    let total = 0;
-    let completed = 0;
-    projects.forEach(p => {
-        p.tasks.forEach(t => {
-            total++;
-            if (t.status === 'completed') completed++;
-        });
-    });
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-}
-
 function getRiskLevel() {
     const total = getTotalTasks();
     const overdue = getOverdueTasks();
@@ -38574,88 +38962,6 @@ function getEfficiency() {
     const total = getTotalTasks();
     const completed = getCompletedTasks();
     return total > 0 ? Math.round((completed / total) * 100) : 0;
-}
-
-function getProjectsListHTML() {
-    const sortedProjects = [...projects].sort((a, b) => {
-        const aComp = a.tasks.filter(t => t.status === 'completed').length;
-        const bComp = b.tasks.filter(t => t.status === 'completed').length;
-        const aTotal = a.tasks.length;
-        const bTotal = b.tasks.length;
-        const aPct = aTotal ? (aComp / aTotal) * 100 : 0;
-        const bPct = bTotal ? (bComp / bTotal) * 100 : 0;
-        return bPct - aPct;
-    });
-    return `
-        <div style="color:#3498db;font-size:12px;margin-bottom:10px;padding:0 5px;display:flex;justify-content:space-between;">
-            <span>📊 Total: ${projects.length} proyectos</span>
-        </div>
-        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
-        ${sortedProjects.slice(0, 8).map(p => {
-            const tasks = p.tasks || [];
-            const completed = tasks.filter(t => t.status === 'completed').length;
-            const total = tasks.length;
-            const progress = total ? Math.round((completed / total) * 100) : 0;
-            const color = progress >= 75 ? '#2ecc71' : progress >= 50 ? '#f39c12' : '#e74c3c';
-            const overdueTasks = tasks.filter(t => t.deadline && t.status !== 'completed' && new Date(t.deadline) < new Date()).length;
-            return `
-                <div style="background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid ${color};">
-                    <div style="flex:1;">
-                        <div style="color:white;font-weight:500;font-size:14px;margin-bottom:4px;">
-                            ${p.name.substring(0,25)}${p.name.length > 25 ? '...' : ''}
-                        </div>
-                        <div style="display:flex;gap:15px;font-size:11px;">
-                            <span style="color:#95a5a6;">📝 ${total} tareas</span>
-                            <span style="color:#${overdueTasks > 0 ? 'e74c3c' : '95a5a6'};">⏱️ ${overdueTasks} atrasadas</span>
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="color:${color};font-weight:bold;font-size:16px;">${progress}%</div>
-                        <div style="width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;">
-                            <div style="width:${progress}%;height:100%;background:${color};border-radius:2px;"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('')}
-        </div>
-    `;
-}
-
-function getOverdueTasksHTML() {
-    const overdueTasks = getAllTasks().filter(t => {
-        if (!t.deadline || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-    });
-    const totalOverdue = overdueTasks.length;
-    if (totalOverdue === 0) {
-        return `<div style="text-align:center;color:#2ecc71;padding:20px;">✅ Sin tareas atrasadas</div>`;
-    }
-    return `
-        <div style="color:#f39c12;font-size:12px;margin-bottom:10px;padding:0 5px;">
-            <span>📋 Total: ${totalOverdue} tareas</span>
-        </div>
-        <div style="max-height: 220px; overflow-y: auto; padding-right: 5px;">
-        ${overdueTasks.slice(0, 10).map(t => `
-            <div style="background:rgba(243,156,18,0.1);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:3px solid #f39c12;">
-                <div style="color:white;font-weight:bold;margin-bottom:5px;">
-                    ${t.name.substring(0,40)}${t.name.length > 40 ? '...' : ''}
-                </div>
-                <div style="color:#f39c12;display:flex;justify-content:space-between;font-size:12px;">
-                    <span>📂 ${t.projectName.substring(0,20)}${t.projectName.length > 20 ? '...' : ''}</span>
-                    <span style="background:rgba(243,156,18,0.3);padding:2px 6px;border-radius:4px;font-size:11px;">
-                        ${new Date(t.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                    </span>
-                </div>
-                ${t.assignee ? `
-                    <div style="color:#95a5a6;font-size:11px;margin-top:5px;">
-                        👤 ${t.assignee}
-                    </div>
-                ` : ''}
-            </div>
-        `).join('')}
-        </div>
-    `;
 }
 
 function getAlertCount() {
