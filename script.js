@@ -17939,7 +17939,9 @@ if (selector) {
       showNotification(`Modo cambiado a: ${this.value}`);
     }
   });
-}    
+} 
+});
+   
     console.log('✅ Sistema de metodologías inicializado');
     updateDashboardTitle(window.methodologyManager.getCurrentMode());
     addModeTooltips(window.methodologyManager.getCurrentMode());
