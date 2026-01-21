@@ -17886,28 +17886,23 @@ if (currentUserEmail === 'ajackson2672@gmail.com') {
 }
 
 // 🔒 Verificar expiración del plan Free
-checkFreePlanExpiry();
-
-// 🛠️ Inicializar LicenseManager con el plan guardado
-if (!window.licenseManager) {
-  window.licenseManager = new LicenseManager();
-  // Sincronizar inmediatamente con localStorage para evitar inconsistencias
-  window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
-}
-
-// 🔍 Verificar expiración del plan Free
 const isFreePlanValid = checkFreePlanExpiry();
 
 if (isFreePlanValid) {
   console.log('✅ Token válido detectado');
-  // 👇 Solo si hay token Y el plan es válido, continuar con la app
+  
   try {
+    // 🛠️ Inicializar LicenseManager con el plan guardado
+    if (!window.licenseManager) {
+      window.licenseManager = new LicenseManager();
+      window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
+    }
+
     const dataLoaded = await safeLoad();
     console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
     
     if (!dataLoaded || projects.length === 0) {
       console.log('📝 No hay datos, preguntando si crear proyecto...');
-      // No crear automáticamente, esperar interacción del usuario
     } else {
       console.log('✅ Datos cargados correctamente');
       renderProjects();
@@ -17916,13 +17911,6 @@ if (isFreePlanValid) {
     }
     
     setupEventListeners();
-  } catch (error) {
-    console.error('❌ Error al cargar la aplicación:', error);
-  }
-} else {
-  console.log('❌ Plan Free expirado. Acceso restringido.');
-  return;
-}
 
     // Iniciar WebSocket después de cargar todo
     setTimeout(() => {
@@ -17931,26 +17919,27 @@ if (isFreePlanValid) {
         initWebSocket();
       }
     }, 1000);
-    
+
   } catch (error) {
     console.error('❌ Error crítico al iniciar:', error);
     showNotification('Error al cargar la aplicación');
   }
-});
 
+} else {
+  console.log('❌ Plan Free expirado. Acceso restringido.');
+  return;
+}
 
-    
-    // INICIALIZACIÓN DEL PASO 1
-    const selector = document.getElementById('methodologySelector');
-    if (selector) {
-        selector.value = window.methodologyManager.getCurrentMode();
-        selector.addEventListener('change', function() {
-            if (window.methodologyManager.setMode(this.value)) {
-                showNotification(`Modo cambiado a: ${this.value}`);
-            }
-        });
+// INICIALIZACIÓN DEL PASO 1
+const selector = document.getElementById('methodologySelector');
+if (selector) {
+  selector.value = window.methodologyManager.getCurrentMode();
+  selector.addEventListener('change', function() {
+    if (window.methodologyManager.setMode(this.value)) {
+      showNotification(`Modo cambiado a: ${this.value}`);
     }
-    
+  });
+}    
     console.log('✅ Sistema de metodologías inicializado');
     updateDashboardTitle(window.methodologyManager.getCurrentMode());
     addModeTooltips(window.methodologyManager.getCurrentMode());
