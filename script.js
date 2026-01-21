@@ -17847,8 +17847,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Continuar con la inicialización normal (no return)
   }
   // 👆👆👆 HASTA AQUÍ 👆👆👆
-  console.log('🚀 Iniciando aplicación...');
+
+// 🔒 Verificar expiración del plan Free
+function checkFreePlanExpiry() {
+  const license = localStorage.getItem('userLicense') || localStorage.getItem('userPlan');
+  const expiresAt = localStorage.getItem('licenseExpiresAt');
   
+  if (license === 'free' && expiresAt && Date.now() > parseInt(expiresAt)) {
+    localStorage.removeItem('userLicense');
+    localStorage.removeItem('userPlan');
+    localStorage.removeItem('licenseExpiresAt');
+    showNotification('⏳ Tu plan Free ha expirado. Actualiza a Professional para continuar.');
+    showLicensesView();
+    return false;
+  }
+  return true;
+}
+
+  console.log('🚀 Iniciando aplicación...');  
   // 🔐 Verificar autenticación ANTES de cargar la app
   const token = localStorage.getItem('authToken');
   if (!token || token.length < 10) {
@@ -17864,6 +17880,9 @@ if (currentUserEmail === 'ajackson2672@gmail.com') {
   console.log('👑 Acceso premium activado para desarrollador');
 }
 
+// 🔒 Verificar expiración del plan Free
+checkFreePlanExpiry();
+
 // 🛠️ Inicializar LicenseManager con el plan guardado
 if (!window.licenseManager) {
   window.licenseManager = new LicenseManager();
@@ -17871,9 +17890,7 @@ if (!window.licenseManager) {
   window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
 }
 
-
-  console.log('✅ Token válido detectado');
-  
+console.log('✅ Token válido detectado');  
   // 👇 Solo si hay token, continuar con la app
   try {    const dataLoaded = await safeLoad();
     console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
