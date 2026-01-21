@@ -719,9 +719,19 @@ function showLicensesView() {
 
 // Función para activar plan
 async function showLicensesView_activatePlan(plan) {
-  const user = firebase.auth().currentUser;
-  if (!user) {
+  // 🔑 USAR EL TOKEN GUARDADO EN LUGAR DE FIREBASE AUTH
+  const token = localStorage.getItem('authToken');
+  if (!token) {
     showNotification('🔒 Debes iniciar sesión para actualizar tu plan.');
+    return;
+  }
+
+  // Decodificar el token para obtener email y uid
+  let payload;
+  try {
+    payload = JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    showNotification('❌ Sesión inválida. Por favor inicia sesión de nuevo.');
     return;
   }
 
@@ -750,8 +760,8 @@ async function showLicensesView_activatePlan(plan) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.uid,
-          email: user.email,
+          userId: payload.uid,
+          email: payload.email,
           plan: plan,
           successUrl: window.location.origin + '/?payment=success',
           cancelUrl: window.location.origin + '/?payment=cancelled'
@@ -772,7 +782,6 @@ async function showLicensesView_activatePlan(plan) {
     }
   }
 }
-
 // Función para activar código
 function showLicensesView_activateCode() {
   const code = document.getElementById('licenseCodeInput').value.trim();
