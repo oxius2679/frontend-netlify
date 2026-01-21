@@ -15015,7 +15015,7 @@ setTimeout(() => {
 function createNewProject() {
 
 // 👇 AÑADE ESTAS LÍNEAS 👇
-  if (localStorage.getItem('userPlan') === 'free' && projects.length >= 1) {
+  if (localStorage.getItem('userPlan') === 'free' && JSON.parse(localStorage.getItem('projects') || '[]').length >= 1) {
     showNotification('💡 El plan Free permite solo 1 proyecto. Actualiza a Professional.');
     return;
   }
@@ -17868,7 +17868,7 @@ if (currentUserEmail === 'ajackson2672@gmail.com') {
 
 
 
-
+if (isFreePlanValid) {
   console.log('✅ Token válido detectado');
 
 try {
@@ -17905,6 +17905,10 @@ try {
   showNotification('Error al cargar la aplicación');
 }
 
+} else {
+  console.log('❌ Plan Free expirado. Acceso restringido.');
+  return;
+}
 
 // INICIALIZACIÓN DEL PASO 1
 const selector = document.getElementById('methodologySelector');
