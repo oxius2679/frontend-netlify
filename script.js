@@ -736,19 +736,9 @@ async function showLicensesView_activatePlan(plan) {
   }
 
   if (plan === 'free') {
-    const expiresAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
-    localStorage.setItem('userLicense', 'free');
-    localStorage.setItem('licenseExpiresAt', expiresAt.getTime());
-    
-    const notification = showNotification(`✅ Plan FREE activado por 20 días (hasta ${expiresAt.toLocaleDateString()})`);
-    setTimeout(() => {
-      if (notification && notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 5000);
-    
-    document.getElementById('licensesModal')?.remove();
-    location.reload();
+  localStorage.setItem('userPlan', 'free');
+  showNotification('✅ Plan FREE activado permanentemente (1 proyecto)');
+  document.getElementById('licensesModal')?.remove();
     
   } else if (plan === 'professional' || plan === 'premium') {
     try {
@@ -15023,6 +15013,16 @@ setTimeout(() => {
  * GESTIÓN DE PROYECTOS *
  *************************/
 function createNewProject() {
+
+// 👇 AÑADE ESTAS LÍNEAS 👇
+  if (localStorage.getItem('userPlan') === 'free' && projects.length >= 1) {
+    showNotification('💡 El plan Free permite solo 1 proyecto. Actualiza a Professional.');
+    return;
+  }
+  // 👆 HASTA AQUÍ 👆
+
+
+
   const projectName = prompt('Ingrese el nombre del proyecto:');
   if (!projectName) return;
 
@@ -17848,27 +17848,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // 👆👆👆 HASTA AQUÍ 👆👆👆
 
-// 🔒 Verificar expiración del plan Free
-// 🔒 Verificar expiración del plan Free
-function checkFreePlanExpiry() {
-  const license = localStorage.getItem('userLicense') || localStorage.getItem('userPlan');
-  const expiresAt = localStorage.getItem('licenseExpiresAt');
-  
-  if (license === 'free' && expiresAt && Date.now() > parseInt(expiresAt)) {
-    // Limpiar datos de licencia
-    localStorage.removeItem('userLicense');
-    localStorage.removeItem('userPlan');
-    localStorage.removeItem('licenseExpiresAt');
-    
-    // Mostrar notificación
-    showNotification('⏳ Tu plan Free ha expirado. Actualiza a Professional para continuar.');
-    
-    // 👇👇👇 BLOQUEAR ACCESO 👇👇👇
-    showLicensesView(); // Mostrar ventana de licencias
-    return false;
-  }
-  return true;
-}
+
+
   console.log('🚀 Iniciando aplicación...');  
   // 🔐 Verificar autenticación ANTES de cargar la app
   const token = localStorage.getItem('authToken');
@@ -17885,50 +17866,45 @@ if (currentUserEmail === 'ajackson2672@gmail.com') {
   console.log('👑 Acceso premium activado para desarrollador');
 }
 
-// 🔒 Verificar expiración del plan Free
-const isFreePlanValid = checkFreePlanExpiry();
 
-if (isFreePlanValid) {
+
+
   console.log('✅ Token válido detectado');
-  
-  try {
-    // 🛠️ Inicializar LicenseManager con el plan guardado
-    if (!window.licenseManager) {
-      window.licenseManager = new LicenseManager();
-      window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
-    }
 
-    const dataLoaded = await safeLoad();
-    console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
-    
-    if (!dataLoaded || projects.length === 0) {
-      console.log('📝 No hay datos, preguntando si crear proyecto...');
-    } else {
-      console.log('✅ Datos cargados correctamente');
-      renderProjects();
-      selectProject(currentProjectIndex);
-      checkOverdueTasks();
-    }
-    
-    setupEventListeners();
-
-    // Iniciar WebSocket después de cargar todo
-    setTimeout(() => {
-      if (window.authToken) {
-        console.log('🚀 Iniciando WebSockets...');
-        initWebSocket();
-      }
-    }, 1000);
-
-  } catch (error) {
-    console.error('❌ Error crítico al iniciar:', error);
-    showNotification('Error al cargar la aplicación');
+try {
+  // 🛠️ Inicializar LicenseManager
+  if (!window.licenseManager) {
+    window.licenseManager = new LicenseManager();
+    window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
   }
 
-} else {
-  console.log('❌ Plan Free expirado. Acceso restringido.');
-  return;
+  const dataLoaded = await safeLoad();
+  console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
+  
+  if (!dataLoaded || projects.length === 0) {
+    console.log('📝 No hay datos, preguntando si crear proyecto...');
+  } else {
+    console.log('✅ Datos cargados correctamente');
+    renderProjects();
+    selectProject(currentProjectIndex);
+    checkOverdueTasks();
+  }
+  
+  setupEventListeners();
+
+  // Iniciar WebSocket
+  setTimeout(() => {
+    if (window.authToken) {
+      console.log('🚀 Iniciando WebSockets...');
+      initWebSocket();
+    }
+  }, 1000);
+
+} catch (error) {
+  console.error('❌ Error crítico al iniciar:', error);
+  showNotification('Error al cargar la aplicación');
 }
+
 
 // INICIALIZACIÓN DEL PASO 1
 const selector = document.getElementById('methodologySelector');
