@@ -69,6 +69,33 @@ async function loginUser(email, password) {
     throw error;
   }
 }
+
+// 👇👇 AÑADE ESTO DESPUÉS DEL LOGIN CON GITHUB/GOOGLE 👇👇
+firebase.auth().onAuthStateChanged(async (user) => {
+  if (user) {
+    // Obtener token de Firebase
+    const idToken = await user.getIdToken();
+    
+    // Enviar a TU backend para obtener un token válido
+    const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    
+    const data = await res.json();
+    if (data.token) {
+      // Guardar el token real de tu backend
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userEmail', user.email);
+      // Recargar solo si no estamos en medio de una operación crítica
+      if (!window.location.search.includes('payment=success')) {
+        location.reload();
+      }
+    }
+  }
+});
+
 // Obtener usuario actual
 function getCurrentUser() {
   return firebase.auth().currentUser;
@@ -733,7 +760,7 @@ async function showLicensesView_activatePlan(plan) {
       
       const session = await response.json();
       
-      if (session.id) {
+      if (session.url) {
         window.location.href = session.url;
       } else {
         throw new Error('No se pudo crear la sesión de pago');
@@ -744,7 +771,9 @@ async function showLicensesView_activatePlan(plan) {
       showNotification('❌ Error al procesar el pago. Intenta de nuevo.', 5000);
     }
   }
-}// Función para activar código
+}
+
+// Función para activar código
 function showLicensesView_activateCode() {
   const code = document.getElementById('licenseCodeInput').value.trim();
   if (!code) {
@@ -756,7 +785,6 @@ function showLicensesView_activateCode() {
     showNotification('❌ Código de licencia no válido o expirado');
   }, 2000);
 }
-
 // Ayuda y soporte
 function showHelpSupport() {
   const existingMenu = document.getElementById('configMenu');
