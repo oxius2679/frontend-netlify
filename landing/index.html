@@ -1562,20 +1562,16 @@
         </div>
     </div>
 
-    <script>
+   <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ===== NAVBAR SCROLL EFFECT =====
+    // Navbar scroll
     window.addEventListener('scroll', function() {
         const navbar = document.querySelector('.navbar');
-        if (window.scrollY > 100) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
+        navbar.classList.toggle('scrolled', window.scrollY > 100);
     });
 
-    // ===== MODAL =====
+    // Modal functions
     window.openRegisterModal = function () {
         document.getElementById('registerModal').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -1586,71 +1582,39 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.style.overflow = '';
     };
 
-    const modal = document.getElementById('registerModal');
-
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) {
-            closeRegisterModal();
-        }
+    // Close modal when clicking outside
+    document.getElementById('registerModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeRegisterModal();
     });
 
-    // ===== FORM =====
-    window.registerWithEmail = function (event) {
-        event.preventDefault();
-
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-
-        console.log({ name, email, password });
-
-        alert('Cuenta creada correctamente');
-closeRegisterModal();
-
-setTimeout(() => {
-    redirectToSystem();
-}, 500);
-
+    // Auth functions (temporary simulation)
+    window.registerWithGoogle = function () {
+        alert('Redirigiendo al sistema... ¡Bienvenido!');
+        closeRegisterModal();
+        setTimeout(() => redirectToSystem(), 500);
     };
 
-   <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "gantt-executive-pro.firebaseapp.com",
-  projectId: "gantt-executive-pro",
-  appId: "TU_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-window.registerWithGoogle = async function () {
-  const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth, provider);
-  alert('Login con Google exitoso');
-};
-</script>
-
-
     window.registerWithGitHub = function () {
-        alert('GitHub Auth pendiente');
+        alert('Redirigiendo al sistema... ¡Bienvenido!');
+        closeRegisterModal();
+        setTimeout(() => redirectToSystem(), 500);
+    };
+
+    window.registerWithEmail = function (event) {
+        event.preventDefault();
+        alert('Cuenta creada. Redirigiendo al sistema...');
+        closeRegisterModal();
+        setTimeout(() => redirectToSystem(), 500);
     };
 
     window.redirectToSystem = function () {
-    window.location.href = 'https://illustrious-raindrop-c7c514.netlify.app/';
-};
+        window.location.href = 'https://illustrious-raindrop-c7c514.netlify.app/';
+    };
 
-
+    // Debug
+    console.log('Landing page cargada correctamente');
 });
 </script>
-
 <script>
 function openRegisterModal() {
     alert('JS FUNCIONA');
