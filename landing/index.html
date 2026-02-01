@@ -936,9 +936,8 @@
             box-shadow: var(--glow-primary);
         }
 
-        /* ===== MODAL DE REGISTRO (CORREGIDO) ===== */
+        /* ===== MODAL DE REGISTRO SIMPLIFICADO ===== */
         .modal {
-            /* CORRECCIÓN CRUCIAL: Solo una definición de display */
             display: none;
             position: fixed;
             top: 0;
@@ -962,7 +961,7 @@
             border-radius: 28px;
             padding: 3rem;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             border: 3px solid var(--primary);
             box-shadow: 0 30px 80px rgba(99, 102, 241, 0.4);
             position: relative;
@@ -993,60 +992,6 @@
 
         .close-modal:hover {
             color: var(--danger);
-        }
-
-        .social-login {
-            margin-bottom: 2rem;
-        }
-
-        .social-login button {
-            width: 100%;
-            padding: 1.2rem;
-            border: none;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-bottom: 1.2rem;
-            transition: var(--transition);
-        }
-
-        .google-btn {
-            background: linear-gradient(135deg, #DB4437, #C53929);
-            color: white;
-            box-shadow: 0 8px 20px rgba(219, 68, 55, 0.3);
-        }
-
-        .github-btn {
-            background: linear-gradient(135deg, #333, #222);
-            color: white;
-            box-shadow: 0 8px 20px rgba(51, 51, 51, 0.3);
-        }
-
-        .divider {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin: 2rem 0;
-            position: relative;
-        }
-
-        .divider span {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            padding: 0 1.5rem;
-            position: relative;
-            z-index: 1;
-            font-weight: 600;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
         }
 
         .form-group {
@@ -1092,6 +1037,7 @@
             cursor: pointer;
             transition: var(--transition);
             box-shadow: var(--glow-primary), var(--shadow-lg);
+            margin-top: 1rem;
         }
 
         .submit-btn:hover {
@@ -1104,6 +1050,9 @@
             text-align: center;
             font-size: 0.9rem;
             line-height: 1.6;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .modal-footer a {
@@ -1176,6 +1125,10 @@
             
             .section {
                 padding: 6rem 5%;
+            }
+            
+            .modal-content {
+                padding: 2rem;
             }
         }
 
@@ -1364,7 +1317,7 @@
                     <li class="available"><i class="fas fa-check"></i> Colaboración en tiempo real</li>
                     <li class="available"><i class="fas fa-check"></i> Soporte prioritario</li>
                 </ul>
-                <button class="plan-button pro-button" onclick="redirectToSystem()">
+                <button class="plan-button pro-button" onclick="illustrious-raindrop-c7c514.netlify.app">
                     <i class="fas fa-shopping-cart"></i> Seleccionar Plan
                 </button>
             </div>
@@ -1382,7 +1335,7 @@
                     <li class="available"><i class="fas fa-check"></i> Soporte 24/7</li>
                     <li class="available"><i class="fas fa-check"></i> SLA garantizado</li>
                 </ul>
-                <button class="plan-button premium-button" onclick="redirectToSystem()">
+                <button class="plan-button premium-button" onclick="illustrious-raindrop-c7c514.netlify.app">
                     <i class="fas fa-crown"></i> Plan Premium
                 </button>
             </div>
@@ -1438,7 +1391,7 @@
                 <button class="cta-button" style="padding: 1.2rem 3rem; font-size: 1.2rem;" onclick="openRegisterModal()">
                     <i class="fas fa-rocket"></i> Comenzar Gratis
                 </button>
-                <button class="secondary-button" style="padding: ; font-size: 1.2rem;" onclick="redirectToSystem()">
+                <button class="secondary-button" style="padding: 1.2rem 3rem; font-size: 1.2rem;" onclick="illustrious-raindrop-c7c514.netlify.app">
                     <i class="fas fa-desktop"></i> Ver Sistema Completo
                 </button>
             </div>
@@ -1493,7 +1446,7 @@
         </div>
     </footer>
 
-    <!-- ===== MODAL DE REGISTRO (CORREGIDO) ===== -->
+    <!-- ===== MODAL DE REGISTRO SIMPLIFICADO ===== -->
     <div id="registerModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1504,22 +1457,6 @@
                 <button class="close-modal" onclick="closeRegisterModal()">
                     <i class="fas fa-times"></i>
                 </button>
-            </div>
-            
-            <div class="social-login">
-                <button class="google-btn" onclick="registerWithGoogle()">
-                    <i class="fab fa-google" style="margin-right: 12px;"></i>
-                    Continuar con Google
-                </button>
-                
-                <button class="github-btn" onclick="registerWithGitHub()">
-                    <i class="fab fa-github" style="margin-right: 12px;"></i>
-                    Continuar con GitHub
-                </button>
-            </div>
-            
-            <div class="divider">
-                <span>o</span>
             </div>
             
             <form id="registerForm" onsubmit="registerWithEmail(event)">
@@ -1562,9 +1499,106 @@
         </div>
     </div>
 
-   
-</script>
+    <!-- ===== SCRIPT SIMPLIFICADO ===== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
 
+        // ===== NAVBAR SCROLL EFFECT =====
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 100) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ===== MODAL FUNCTIONS =====
+        window.openRegisterModal = function () {
+            document.getElementById('registerModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeRegisterModal = function () {
+            document.getElementById('registerModal').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        // Cerrar modal al hacer clic fuera
+        const modal = document.getElementById('registerModal');
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    closeRegisterModal();
+                }
+            });
+        }
+
+        // ===== REGISTRO SIMPLE POR EMAIL =====
+        window.registerWithEmail = function (event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            // Validaciones simples
+            if (!name || !email || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            
+            if (password.length < 6) {
+                alert('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+            
+            // Validar email simple
+            if (!email.includes('@') || !email.includes('.')) {
+                alert('Por favor ingresa un email válido');
+                return;
+            }
+            
+            console.log('Usuario registrado:', { name, email });
+            
+            // Mensaje de éxito
+            alert(`¡Bienvenido ${name}!\n\n✅ Tu cuenta ha sido creada exitosamente.\n📧 Email: ${email}\n📋 Plan: Free (1 proyecto)\n\nRedirigiendo al sistema...`);
+            
+            // Guardar datos en localStorage (opcional)
+            localStorage.setItem('gantt_user_name', name);
+            localStorage.setItem('gantt_user_email', email);
+            localStorage.setItem('gantt_user_plan', 'free');
+            
+            // Cerrar modal
+            closeRegisterModal();
+            
+            // Redirigir después de 1.5 segundos
+            setTimeout(() => {
+                illustrious-raindrop-c7c514.netlify.app;
+            }, 1500);
+        };
+
+        // ===== REDIRECCIÓN AL SISTEMA =====
+        window.illustrious-raindrop-c7c514.netlify.app = function () {
+            console.log('Redirigiendo al sistema principal...');
+            // Cambia esta URL por la de tu sistema real
+            window.location.href = 'https://illustrious-raindrop-c7c514.netlify.app/';
+        };
+
+        // ===== DEBUG =====
+        console.log('Sistema de registro simple cargado ✅');
+        
+        // Agregar eventos de clic a todos los botones "Comenzar Gratis"
+        document.querySelectorAll('.cta-button, .free-button').forEach(button => {
+            if (!button.onclick) {
+                button.addEventListener('click', function() {
+                    console.log('Botón "Comenzar Gratis" clickeado');
+                });
+            }
+        });
+
+    });
+    </script>
 
 </body>
 </html>
