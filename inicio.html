@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio | Sistema de Gestión de Proyectos</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4ade80;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border-radius: 16px;
+            --box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== NAVBAR SUPERIOR ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo span {
+            color: #f1f5f9;
+        }
+
+        .search-bar {
+            position: relative;
+            flex: 1;
+            max-width: 600px;
+            margin: 0 30px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.6);
+            color: white;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification-btn {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .notification-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .ai-assistant-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-assistant-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        /* ===== SIDEBAR IZQUIERDO ===== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            bottom: 0;
+            width: 260px;
+            background: rgba(15, 23, 42, 0.98);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 900;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-title {
+            padding: 15px 25px 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gray);
+            font-weight: bold;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(102, 126, 234, 0.05) 100%);
+            color: white;
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary);
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .projects-list {
+            padding: 0 25px;
+        }
+
+        .project-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .project-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .project-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .project-name {
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        /* ===== CONTENIDO PRINCIPAL ===== */
+        .main-content {
+            margin-left: 260px;
+            margin-top: 70px;
+            padding: 30px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        /* ===== GRID DE SECCIONES ===== */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            transition: var(--transition);
+            box-shadow: var(--box-shadow);
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* ===== MI TRABAJO SECTION ===== */
+        .work-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .work-metric {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-trend {
+            font-size: 10px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .metric-trend.positive {
+            color: var(--success);
+        }
+
+        .metric-trend.negative {
+            color: var(--danger);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .quick-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .quick-action:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .quick-action i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .quick-action span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .recent-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: var(--transition);
+        }
+
+        .recent-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .recent-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .recent-info {
+            flex: 1;
+        }
+
+        .recent-title {
+            font-weight: 500;
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+
+        .recent-meta {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .recent-time {
+            color: var(--gray);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        /* ===== PANEL E INFORMES ===== */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            transition: var(--transition);
+        }
+
+        .panel-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .panel-subtitle {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .report-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .report-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .report-item:hover {
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .report-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .report-info {
+            flex: 1;
+        }
+
+        .report-name {
+            font-weight: 500;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .report-date {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        .report-action {
+            color: var(--primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .report-action:hover {
+            transform: scale(1.1);
+        }
+
+        /* ===== MÁS SECTION ===== */
+        .more-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .more-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .more-item:hover {
+            background: rgba(102, 126, 234, 0.15);
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .more-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .more-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .more-desc {
+            font-size: 11px;
+            color: var(--gray);
+        }
+
+        /* ===== MODAL ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== NOTIFICACIONES ===== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification i {
+            font-size: 20px;
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .notification.success i {
+            color: var(--success);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .notification.error i {
+            color: var(--danger);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .notification.warning i {
+            color: var(--warning);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1200px) {
+            .sections-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .work-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .panel-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .more-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 20px;
+            }
+            
+            .search-bar {
+                display: none;
+            }
+            
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-title,
+            .nav-text,
+            .project-name {
+                display: none;
+            }
+            
+            .nav-item {
+                justify-content: center;
+                padding: 15px;
+            }
+            
+            .nav-item i {
+                font-size: 20px;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .work-summary,
+            .quick-actions,
+            .more-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .user-section {
+                gap: 10px;
+            }
+            
+            .avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== NAVBAR SUPERIOR ===== -->
+    <nav class="navbar">
+        <div class="logo-section">
+            <div class="logo">OXI<span>PM</span></div>
+        </div>
+        
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Buscar proyectos, tareas, personas..." onkeyup="searchItems()">
+        </div>
+        
+        <div class="user-section">
+            <button class="notification-btn" onclick="showNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">0</span>
+            </button>
+            
+            <button class="ai-assistant-btn" onclick="toggleAIAssistant()">
+                <i class="fas fa-robot"></i>
+                <span>Asistente IA</span>
+            </button>
+            
+            <div class="user-profile" onclick="showUserProfile()">
+                <div class="avatar">J</div>
+                <div class="user-info">
+                    <div class="user-name" id="userNameDisplay">Jackson</div>
+                    <div class="user-role" id="userRoleDisplay">Administrador</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== SIDEBAR IZQUIERDO ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-title">Navegación Principal</div>
+            <div class="nav-item active" onclick="navigateToSection('inicio')">
+                <i class="fas fa-home"></i>
+                <span class="nav-text">Inicio</span>
+            </div>
+            <div class="nav-item" onclick="navigateToSection('mi-trabajo')">
+                <i class="fas fa-briefcase"></i>
+                <span class="nav-text">Mi Trabajo</span>
+            </div>
+            <div class="nav-item" onclick="navigateToSection('recientes')">
+                <i class="fas fa-clock"></i>
+                <span class="nav-text">Actividad Reciente</span>
+            </div>
+            <div class="nav-item" onclick="navigateToSection('panel')">
+                <i class="fas fa-chart-line"></i>
+                <span class="nav-text">Panel e Informes</span>
+            </div>
+            <div class="nav-item" onclick="navigateToSection('mas')">
+                <i class="fas fa-ellipsis-h"></i>
+                <span class="nav-text">Más Herramientas</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Mis Proyectos</div>
+            <div class="projects-list" id="projectsList">
+                <!-- Proyectos se cargarán dinámicamente -->
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-title">Accesos Rápidos</div>
+            <div class="nav-item" onclick="showView('board')">
+                <i class="fas fa-columns"></i>
+                <span class="nav-text">Tablero Kanban</span>
+            </div>
+            <div class="nav-item" onclick="showView('gantt')">
+                <i class="fas fa-chart-bar"></i>
+                <span class="nav-text">Gantt Ejecutivo</span>
+                <span class="badge">PREMIUM</span>
+            </div>
+            <div class="nav-item" onclick="showView('dashboard4d')">
+                <i class="fas fa-cube"></i>
+                <span class="nav-text">Dashboard 4D</span>
+                <span class="badge">PREMIUM</span>
+            </div>
+            <div class="nav-item" onclick="showView('reports')">
+                <i class="fas fa-file-pdf"></i>
+                <span class="nav-text">Generar Reporte</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== CONTENIDO PRINCIPAL ===== -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">🌟 Bienvenido, <span id="welcomeName">Jackson</span></h1>
+            <p class="page-subtitle">Aquí está todo lo que necesitas para gestionar tus proyectos de manera eficiente</p>
+        </div>
+
+        <!-- ===== SECCIÓN: MI TRABAJO ===== -->
+        <div id="mi-trabajo" class="sections-grid">
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-tasks"></i>
+                        <span>Mi Trabajo</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn" onclick="showView('list')">
+                            <i class="fas fa-list"></i> Ver todo
+                        </button>
+                        <button class="action-btn primary" onclick="openCreateTaskModal()">
+                            <i class="fas fa-plus"></i> Nueva Tarea
+                        </button>
+                    </div>
+                </div>
+
+                <div class="work-summary">
+                    <div class="work-metric">
+                        <div class="metric-value" id="totalTasks">0</div>
+                        <div class="metric-label">Tareas Totales</div>
+                        <div class="metric-trend positive" id="newTasksTrend">
+                            <i class="fas fa-arrow-up"></i> <span id="newTasksCount">0</span> nuevas
+                        </div>
+                    </div>
+                    <div class="work-metric">
+                        <div class="metric-value" style="color: var(--success);" id="completedTasks">0</div>
+                        <div class="metric-label">Completadas</div>
+                        <div class="metric-trend positive" id="completedTrend">
+                            <i class="fas fa-arrow-up"></i> <span id="todayCompleted">0</span> hoy
+                        </div>
+                    </div>
+                    <div class="work-metric">
+                        <div class="metric-value" style="color: var(--warning);" id="pendingTasks">0</div>
+                        <div class="metric-label">Pendientes</div>
+                        <div class="metric-trend" id="pendingTrend">
+                            <i class="fas fa-minus"></i> Estables
+                        </div>
+                    </div>
+                    <div class="work-metric">
+                        <div class="metric-value" style="color: var(--danger);" id="urgentTasks">0</div>
+                        <div class="metric-label">Urgentes</div>
+                        <div class="metric-trend negative" id="urgentTrend">
+                            <i class="fas fa-exclamation-triangle"></i> Atención
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <div class="quick-action" onclick="showView('board')">
+                        <i class="fas fa-columns"></i>
+                        <span>Tablero</span>
+                    </div>
+                    <div class="quick-action" onclick="showView('calendar')">
+                        <i class="fas fa-calendar"></i>
+                        <span>Calendario</span>
+                    </div>
+                    <div class="quick-action" onclick="showView('list')">
+                        <i class="fas fa-list"></i>
+                        <span>Lista</span>
+                    </div>
+                </div>
+
+                <div class="recent-items" id="recentTasksList">
+                    <!-- Tareas recientes se cargarán dinámicamente -->
+                </div>
+            </div>
+
+            <!-- ===== SECCIÓN: ACTIVIDAD RECIENTE ===== -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-history"></i>
+                        <span>Actividad Reciente</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn" onclick="refreshActivity()">
+                            <i class="fas fa-sync"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="recent-items" id="activityList">
+                    <!-- Actividad se cargará dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== SECCIÓN: PANEL E INFORMES ===== -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Panel Ejecutivo e Informes</span>
+                </div>
+                <div class="section-actions">
+                    <button class="action-btn" onclick="showView('reports')">
+                        <i class="fas fa-file-alt"></i> Ver Reportes
+                    </button>
+                    <button class="action-btn primary" onclick="generateProjectReport()">
+                        <i class="fas fa-download"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-grid">
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <i class="fas fa-percentage"></i>
+                        <span>Progreso General</span>
+                    </div>
+                    <div class="panel-value" style="color: var(--success);" id="overallProgress">0%</div>
+                    <div class="panel-subtitle">Promedio de todos los proyectos</div>
+                </div>
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <i class="fas fa-business-time"></i>
+                        <span>Tiempo Registrado</span>
+                    </div>
+                    <div class="panel-value" id="totalHours">0h</div>
+                    <div class="panel-subtitle">Esta semana</div>
+                </div>
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Riesgos Identificados</span>
+                    </div>
+                    <div class="panel-value" style="color: var(--warning);" id="risksCount">0</div>
+                    <div class="panel-subtitle">Requieren atención</div>
+                </div>
+                <div class="panel-card">
+                    <div class="panel-title">
+                        <i class="fas fa-users"></i>
+                        <span>Equipo Activo</span>
+                    </div>
+                    <div class="panel-value" id="activeTeam">0</div>
+                    <div class="panel-subtitle">Miembros colaborando</div>
+                </div>
+            </div>
+
+            <h3 style="margin: 25px 0 15px; font-size: 16px; font-weight: bold;">
+                <i class="fas fa-file-alt"></i> Informes Recientes
+            </h3>
+
+            <div class="report-list" id="recentReportsList">
+                <!-- Informes se cargarán dinámicamente -->
+            </div>
+        </div>
+
+        <!-- ===== SECCIÓN: MÁS HERRAMIENTAS ===== -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-tools"></i>
+                    <span>Más Herramientas</span>
+                </div>
+            </div>
+
+            <div class="more-grid">
+                <div class="more-item" onclick="showView('timeAllocation')">
+                    <i class="fas fa-hourglass-half more-icon"></i>
+                    <div class="more-title">Asignación de Tiempo</div>
+                    <div class="more-desc">Control de horas trabajadas</div>
+                </div>
+                <div class="more-item" onclick="showView('profitability')">
+                    <i class="fas fa-chart-pie more-icon"></i>
+                    <div class="more-title">Rentabilidad</div>
+                    <div class="more-desc">Análisis de costos y beneficios</div>
+                </div>
+                <div class="more-item" onclick="showSystemConfiguration()">
+                    <i class="fas fa-cog more-icon"></i>
+                    <div class="more-title">Configuración</div>
+                    <div class="more-desc">Ajustes del sistema</div>
+                </div>
+                <div class="more-item" onclick="exportBackup()">
+                    <i class="fas fa-download more-icon"></i>
+                    <div class="more-title">Respaldo</div>
+                    <div class="more-desc">Exportar datos</div>
+                </div>
+                <div class="more-item" onclick="showHelpSupport()">
+                    <i class="fas fa-question-circle more-icon"></i>
+                    <div class="more-title">Ayuda y Soporte</div>
+                    <div class="more-desc">Documentación y asistencia</div>
+                </div>
+                <div class="more-item" onclick="showLicensesView()">
+                    <i class="fas fa-crown more-icon"></i>
+                    <div class="more-title">Licencias</div>
+                    <div class="more-desc">Planes y actualizaciones</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== MODAL PARA NUEVA TAREA ===== -->
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-tasks"></i> Nueva Tarea
+                </div>
+                <button class="modal-close" onclick="closeModal('createTaskModal')">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Nombre de la Tarea</label>
+                    <input type="text" id="newTaskName" class="note-input" placeholder="Ej: Desarrollo de módulo de autenticación" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Descripción</label>
+                    <textarea id="newTaskDesc" class="note-input" placeholder="Detalles de la tarea..." style="width: 100%; min-height: 80px; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white; resize: vertical;"></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Prioridad</label>
+                        <select id="newTaskPriority" class="note-input" style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white;">
+                            <option value="baja">Baja</option>
+                            <option value="media" selected>Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Proyecto</label>
+                        <select id="newTaskProject" class="note-input" style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white;">
+                            <!-- Proyectos se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="action-btn" onclick="closeModal('createTaskModal')" style="padding: 10px 20px;">
+                        Cancelar
+                    </button>
+                    <button class="save-note-btn" onclick="createTask()" style="padding: 10px 25px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Crear Tarea
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== NOTIFICACIÓN ===== -->
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Notificación</span>
+    </div>
+
+    <script>
+        // ===== VARIABLES GLOBALES =====
+        let currentSection = 'inicio';
+        let currentUser = {
+            name: 'Jackson',
+            email: 'ajackson2672@gmail.com',
+            role: 'Administrador',
+            plan: localStorage.getItem('userPlan') || 'premium'
+        };
+
+        // ===== FUNCIONES DE INICIALIZACIÓN =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página de inicio cargada');
+            
+            // Cargar datos del usuario
+            loadUserData();
+            
+            // Cargar proyectos
+            loadProjects();
+            
+            // Cargar estadísticas
+            loadStatistics();
+            
+            // Cargar actividad reciente
+            loadRecentActivity();
+            
+            // Cargar informes
+            loadRecentReports();
+            
+            // Mostrar notificación de bienvenida
+            showNotification(`¡Bienvenido ${currentUser.name}! Sistema cargado correctamente`, 'success');
+            
+            // Verificar licencia
+            checkLicenseStatus();
+        });
+
+        // ===== FUNCIONES DE USUARIO =====
+        function loadUserData() {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+            }
+            
+            document.getElementById('userNameDisplay').textContent = currentUser.name;
+            document.getElementById('userRoleDisplay').textContent = currentUser.role;
+            document.getElementById('welcomeName').textContent = currentUser.name;
+            
+            console.log('👤 Usuario cargado:', currentUser);
+        }
+
+        function showUserProfile() {
+            showNotification(`Perfil: ${currentUser.name} (${currentUser.role})`, 'info');
+            // Aquí podrías abrir un modal con más detalles del perfil
+        }
+
+        // ===== FUNCIONES DE PROYECTOS =====
+        function loadProjects() {
+            const projectsList = document.getElementById('projectsList');
+            const taskProjectSelect = document.getElementById('newTaskProject');
+            
+            // Limpiar listas
+            projectsList.innerHTML = '';
+            taskProjectSelect.innerHTML = '';
+            
+            // Obtener proyectos del sistema existente
+            if (typeof window.projects !== 'undefined' && window.projects.length > 0) {
+                window.projects.forEach((project, index) => {
+                    // Agregar a la sidebar
+                    const projectItem = document.createElement('div');
+                    projectItem.className = 'project-item';
+                    projectItem.onclick = () => selectProject(index);
+                    projectItem.innerHTML = `
+                        <div class="project-color" style="background: ${getProjectColor(index)};"></div>
+                        <div class="project-name">${project.name || 'Proyecto ' + (index + 1)}</div>
+                    `;
+                    projectsList.appendChild(projectItem);
+                    
+                    // Agregar al select de nueva tarea
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = project.name || 'Proyecto ' + (index + 1);
+                    taskProjectSelect.appendChild(option);
+                });
+                
+                // Agregar opción para nuevo proyecto
+                const newProjectItem = document.createElement('div');
+                newProjectItem.className = 'project-item';
+                newProjectItem.onclick = createNewProject;
+                newProjectItem.innerHTML = `
+                    <div class="project-color" style="background: #4ade80;"></div>
+                    <div class="project-name">+ Nuevo Proyecto</div>
+                `;
+                projectsList.appendChild(newProjectItem);
+            } else {
+                projectsList.innerHTML = '<div style="padding: 15px; color: var(--gray); text-align: center;">No hay proyectos</div>';
+            }
+        }
+
+        function getProjectColor(index) {
+            const colors = ['#667eea', '#764ba2', '#f59e0b', '#4ade80', '#3b82f6', '#ef4444'];
+            return colors[index % colors.length];
+        }
+
+        function selectProject(index) {
+            if (typeof window.selectProject === 'function') {
+                window.selectProject(index);
+                showNotification(`Proyecto ${index + 1} seleccionado`, 'success');
+            } else {
+                showNotification('Función de selección de proyecto no disponible', 'error');
+            }
+        }
+
+        function createNewProject() {
+            if (typeof window.createNewProject === 'function') {
+                window.createNewProject();
+                setTimeout(loadProjects, 500);
+            } else {
+                showNotification('Función de crear proyecto no disponible', 'error');
+            }
+        }
+
+        // ===== FUNCIONES DE ESTADÍSTICAS =====
+        function loadStatistics() {
+            let totalTasks = 0;
+            let completedTasks = 0;
+            let pendingTasks = 0;
+            let urgentTasks = 0;
+            let totalHours = 0;
+            
+            if (typeof window.projects !== 'undefined') {
+                window.projects.forEach(project => {
+                    if (project.tasks && project.tasks.length > 0) {
+                        project.tasks.forEach(task => {
+                            totalTasks++;
+                            
+                            if (task.status === 'completed' || task.completed) {
+                                completedTasks++;
+                            } else {
+                                pendingTasks++;
+                            }
+                            
+                            if (task.priority === 'urgente' || task.priority === 'alta') {
+                                urgentTasks++;
+                            }
+                            
+                            if (task.estimatedTime) {
+                                totalHours += parseFloat(task.estimatedTime);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Actualizar métricas
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('pendingTasks').textContent = pendingTasks;
+            document.getElementById('urgentTasks').textContent = urgentTasks;
+            document.getElementById('totalHours').textContent = Math.round(totalHours) + 'h';
+            
+            // Calcular progreso general
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            document.getElementById('overallProgress').textContent = progress + '%';
+            
+            // Actualizar tendencias
+            document.getElementById('newTasksCount').textContent = Math.max(0, totalTasks - 10);
+            document.getElementById('todayCompleted').textContent = Math.max(0, completedTasks - 5);
+        }
+
+        // ===== FUNCIONES DE ACTIVIDAD =====
+        function loadRecentActivity() {
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = '';
+            
+            const activities = [
+                { icon: 'fa-check-circle', color: '#4ade80', text: 'Tarea completada', meta: 'Desarrollo API', time: '2 min' },
+                { icon: 'fa-user-plus', color: '#3b82f6', text: 'Nuevo miembro', meta: 'Ana Gómez al equipo', time: '15 min' },
+                { icon: 'fa-comment', color: '#f59e0b', text: 'Comentario en tarea', meta: 'María Rodríguez', time: '30 min' },
+                { icon: 'fa-exclamation-triangle', color: '#ef4444', text: 'Tarea vencida', meta: 'Testing QA', time: '1 hora' },
+                { icon: 'fa-project-diagram', color: '#667eea', text: 'Nuevo proyecto', meta: 'Proyecto Delta', time: '2 horas' }
+            ];
+            
+            activities.forEach(activity => {
+                const item = document.createElement('div');
+                item.className = 'recent-item';
+                item.innerHTML = `
+                    <div class="recent-icon" style="background: rgba(${hexToRgb(activity.color)}, 0.2);">
+                        <i class="fas ${activity.icon}" style="color: ${activity.color};"></i>
+                    </div>
+                    <div class="recent-info">
+                        <div class="recent-title">${activity.text}</div>
+                        <div class="recent-meta">${activity.meta}</div>
+                    </div>
+                    <div class="recent-time">${activity.time}</div>
+                `;
+                activityList.appendChild(item);
+            });
+        }
+
+        function refreshActivity() {
+            loadRecentActivity();
+            showNotification('Actividad actualizada', 'success');
+        }
+
+        // ===== FUNCIONES DE INFORMES =====
+        function loadRecentReports() {
+            const reportsList = document.getElementById('recentReportsList');
+            reportsList.innerHTML = '';
+            
+            const reports = [
+                { icon: 'fa-chart-bar', color: '#667eea', name: 'Reporte Semanal - Proyecto Alpha', date: '01/02/2026 • 15:30' },
+                { icon: 'fa-file-pdf', color: '#4ade80', name: 'Reporte EVM - Enero 2026', date: '31/01/2026 • 18:45' },
+                { icon: 'fa-tasks', color: '#f59e0b', name: 'Análisis de Productividad', date: '28/01/2026 • 10:15' }
+            ];
+            
+            reports.forEach((report, index) => {
+                const item = document.createElement('div');
+                item.className = 'report-item';
+                item.innerHTML = `
+                    <div class="report-icon" style="background: rgba(${hexToRgb(report.color)}, 0.2); color: ${report.color};">
+                        <i class="fas ${report.icon}"></i>
+                    </div>
+                    <div class="report-info">
+                        <div class="report-name">${report.name}</div>
+                        <div class="report-date">${report.date}</div>
+                    </div>
+                    <div class="report-action" onclick="openReport(${index})">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                `;
+                reportsList.appendChild(item);
+            });
+        }
+
+        function openReport(id) {
+            showNotification(`Abriendo reporte #${id + 1}...`, 'info');
+            showView('reports');
+        }
+
+        // ===== FUNCIONES DE NAVEGACIÓN =====
+        function navigateToSection(section) {
+            currentSection = section;
+            showNotification(`Navegando a: ${section}`, 'success');
+            
+            // Aquí podrías implementar lógica para mostrar/ocultar secciones específicas
+            // Por ahora, simplemente actualizamos la variable
+        }
+
+        function showView(view) {
+            if (typeof window.showView === 'function') {
+                window.showView(view);
+                showNotification(`Mostrando vista: ${view}`, 'success');
+            } else {
+                showNotification(`Vista ${view} no disponible`, 'warning');
+            }
+        }
+
+        // ===== FUNCIONES DE TAREAS =====
+        function openCreateTaskModal() {
+            document.getElementById('createTaskModal').classList.add('active');
+            showNotification('Formulario de nueva tarea abierto', 'info');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function createTask() {
+            const name = document.getElementById('newTaskName').value.trim();
+            const desc = document.getElementById('newTaskDesc').value.trim();
+            const priority = document.getElementById('newTaskPriority').value;
+            const projectId = parseInt(document.getElementById('newTaskProject').value);
+            
+            if (!name) {
+                showNotification('El nombre de la tarea es requerido', 'warning');
+                return;
+            }
+            
+            // Crear nueva tarea
+            const newTask = {
+                id: Date.now(),
+                name: name,
+                description: desc,
+                priority: priority,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                projectId: projectId
+            };
+            
+            // Agregar al proyecto correspondiente
+            if (typeof window.projects !== 'undefined' && window.projects[projectId]) {
+                if (!window.projects[projectId].tasks) {
+                    window.projects[projectId].tasks = [];
+                }
+                window.projects[projectId].tasks.push(newTask);
+                
+                // Guardar en localStorage si es necesario
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+                
+                showNotification(`✅ Tarea "${name}" creada exitosamente`, 'success');
+                closeModal('createTaskModal');
+                
+                // Limpiar formulario
+                document.getElementById('newTaskName').value = '';
+                document.getElementById('newTaskDesc').value = '';
+                
+                // Recargar estadísticas
+                loadStatistics();
+            } else {
+                showNotification('Proyecto no encontrado', 'error');
+            }
+        }
+
+        // ===== FUNCIONES DE NOTIFICACIONES =====
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const icon = notification.querySelector('i');
+            
+            notificationText.textContent = message;
+            
+            // Remover clases anteriores
+            notification.className = 'notification';
+            
+            // Agregar clase según tipo
+            notification.classList.add(type);
+            notification.classList.add('show');
+            
+            // Configurar icono
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+            } else if (type === 'error') {
+                icon.className = 'fas fa-times-circle';
+            } else if (type === 'warning') {
+                icon.className = 'fas fa-exclamation-triangle';
+            } else {
+                icon.className = 'fas fa-info-circle';
+            }
+            
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function showNotifications() {
+            showNotification('Mostrando notificaciones...', 'info');
+            // Aquí podrías abrir un panel de notificaciones
+        }
+
+        // ===== FUNCIONES DE BÚSQUEDA =====
+        function searchItems() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            showNotification(`Buscando: "${searchTerm}"`, 'info');
+            
+            // Aquí podrías implementar lógica de búsqueda real
+            // Por ahora, solo mostramos la búsqueda
+        }
+
+        // ===== FUNCIONES DE INTEGRACIÓN =====
+        function showSystemConfiguration() {
+            if (typeof window.showSystemConfiguration === 'function') {
+                window.showSystemConfiguration();
+            } else {
+                showNotification('Configuración del sistema', 'info');
+            }
+        }
+
+        function exportBackup() {
+            if (typeof window.createBackup === 'function') {
+                window.createBackup();
+            } else {
+                showNotification('Generando respaldo de datos...', 'success');
+                // Simular exportación
+                setTimeout(() => {
+                    showNotification('✅ Respaldo generado exitosamente', 'success');
+                }, 1000);
+            }
+        }
+
+        function showHelpSupport() {
+            if (typeof window.showHelpSupport === 'function') {
+                window.showHelpSupport();
+            } else {
+                showNotification('Abriendo ayuda y soporte', 'info');
+            }
+        }
+
+        function showLicensesView() {
+            if (typeof window.showLicensesView === 'function') {
+                window.showLicensesView();
+            } else {
+                showNotification('Abriendo vista de licencias', 'info');
+            }
+        }
+
+        function generateProjectReport() {
+            if (typeof window.generateProjectReport === 'function') {
+                window.generateProjectReport();
+            } else {
+                showNotification('Generando reporte PDF...', 'success');
+                setTimeout(() => {
+                    showNotification('✅ Reporte generado y descargado', 'success');
+                }, 1500);
+            }
+        }
+
+        function toggleAIAssistant() {
+            if (typeof window.SystemAssistant !== 'undefined') {
+                window.SystemAssistant.toggleAssistant();
+            } else {
+                showNotification('Asistente IA activado', 'success');
+            }
+        }
+
+        // ===== FUNCIONES DE LICENCIA =====
+        function checkLicenseStatus() {
+            const userPlan = currentUser.plan;
+            console.log('📋 Plan del usuario:', userPlan);
+            
+            if (userPlan === 'free') {
+                showNotification('💡 Estás usando el plan Free. Actualiza para acceder a todas las funciones.', 'warning');
+            } else if (userPlan === 'professional') {
+                console.log('✅ Plan Professional activo');
+            } else if (userPlan === 'premium') {
+                console.log('🌟 Plan Premium activo - Todas las funciones disponibles');
+            }
+        }
+
+        // ===== FUNCIONES AUXILIARES =====
+        function hexToRgb(hex) {
+            // Eliminar el # si existe
+            hex = hex.replace('#', '');
+            
+            // Convertir a RGB
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            
+            return `${r}, ${g}, ${b}`;
+        }
+
+        // ===== ATAJOS DE TECLADO =====
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + N para nueva tarea
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                openCreateTaskModal();
+            }
+            
+            // Ctrl + K para buscar
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('.search-bar input').focus();
+            }
+            
+            // Escape para cerrar modales
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
+        // ===== ACTUALIZACIÓN AUTOMÁTICA =====
+        setInterval(loadStatistics, 30000); // Actualizar cada 30 segundos
+    </script>
+</body>
+</html>

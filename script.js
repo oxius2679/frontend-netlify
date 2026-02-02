@@ -1540,10 +1540,10 @@ class LicenseManager {
 function requireModeAccess(view, callback) {
   const currentMode = window.methodologyManager.getCurrentMode();
   const allowedViews = {
-    agile: ["board", "calendar", "list", "dashboard", "timeAllocation", "premiumExecutiveGantt"],
-    traditional: ["gantt", "list", "reports", "dashboard", "profitability", "timeAllocation", "premiumExecutiveGantt"],
-    hybrid: ["board", "gantt", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "premiumExecutiveGantt"]
-  };
+  agile: ["inicio", "board", "calendar", "list", "dashboard", "timeAllocation"],
+  traditional: ["inicioview", "list", "reports", "dashboard", "profitability", "timeAllocation"],
+  hybrid: ["inicioview", "board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
+};
 
   if (!allowedViews[currentMode].includes(view)) {
     showNotification(`💡 En modo ${currentMode} no se recomienda usar esta vista. Cambia a otro modo.`);
@@ -12558,6 +12558,7 @@ const viewSelectors = {
 };
 
 const viewButtons = {
+   inicio: document.querySelector('#showInicioView'), // ← AGREGA ESTA LÍNEA
   board: document.querySelector('#showBoardView'),
   list: document.querySelector('#showListView'),
   calendar: document.querySelector('#showCalendarView'),
@@ -37866,18 +37867,18 @@ function showView(view) {
   if (premiumViews.includes(view)) {
       }
 
-  // 🧭 PROTECCIÓN POR MODO DE TRABAJO
-  const currentMode = window.methodologyManager?.getCurrentMode();
-  const allowedViews = {
-    agile: ["board", "calendar", "list", "dashboard", "timeAllocation"],
-    traditional: ["list", "reports", "dashboard", "profitability", "timeAllocation"],
-    hybrid: ["board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
-  };
+ // 🧭 PROTECCIÓN POR MODO DE TRABAJO
+const currentMode = window.methodologyManager?.getCurrentMode();
+const allowedViews = {
+  agile: ["inicio", "board", "calendar", "list", "dashboard", "timeAllocation"],
+  traditional: ["inicio", "list", "reports", "dashboard", "profitability", "timeAllocation"],
+  hybrid: ["inicio", "board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
+};
 
-  if (currentMode && !allowedViews[currentMode]?.includes(view)) {
-    showNotification(`💡 En modo ${currentMode} esta vista no está recomendada.`);
-    return;
-  }
+if (currentMode && !allowedViews[currentMode]?.includes(view)) {
+  showNotification(`💡 En modo ${currentMode} esta vista no está recomendada.`);
+  return;
+}
 
   // 🔥 LIMPIEZA GLOBAL
   document.body.classList.remove(
@@ -37944,6 +37945,16 @@ function showView(view) {
 
 switch (view) {
 
+case "inicio":
+  console.log('🏠 Navegando a vista de inicio');
+  // Cargar datos inmediatamente sin retraso
+  syncProjectsToWindow();
+  loadProjects();
+  loadStatistics();
+  loadRecentActivity();
+  loadRecentReports();
+  break;
+
     case "list":
       renderListTasks?.();
       break;
@@ -37973,14 +37984,12 @@ switch (view) {
       break;
 
     case "dashboard4d":
-      // ❗ IMPORTANTE:
-      // NO se llama renderDashboard4D()
-      // Esta vista es 100% HTML fija
       console.log("✅ Dashboard 4D como vista fija");
       break;
    
+  }   
   }
-}
+
 
 // Exponer globalmente
 window.showView = showView;
@@ -39235,3 +39244,538 @@ function createGlobalDashboard4D() {
 function showDashboard4DView() {
     window.showDashboard4DView();
 }
+
+
+
+
+
+
+
+
+
+
+// Asegurar que la vista de inicio sea la primera al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Ocultar todas las vistas
+    document.querySelectorAll('.view-content').forEach(view => {
+        view.classList.remove('active');
+    });
+    
+    // 2. Mostrar SOLO la vista de inicio
+    const inicioView = document.getElementById('inicioView');
+    if (inicioView) {
+        inicioView.classList.add('active');
+    }
+    
+    // 3. Cargar los datos de proyectos
+    loadProjects();
+    loadStatistics();
+});
+
+
+
+
+
+
+
+// ========================================
+// FUNCIONES PARA LA VISTA DE INICIO
+// ========================================
+
+/**
+ * Cargar proyectos y mostrarlos en la vista de inicio
+ */
+function loadProjects() {
+    console.log('📦 Cargando proyectos para vista de inicio...');
+    
+    // ✅ SINCRONIZAR PROYECTOS ANTES DE USARLOS
+    syncProjectsToWindow();
+    
+    // Verificar si hay proyectos disponibles
+    if (typeof window.projects !== 'undefined' && window.projects && window.projects.length > 0) {
+        console.log('✅ Proyectos encontrados, procesando datos...');
+        processProjectsData();
+        return;
+    }
+    
+    console.warn('⚠️ No hay proyectos disponibles, intentando recargar...');
+    
+    // Intentar recargar desde backend
+    if (typeof safeLoad === 'function') {
+        console.log('🔄 Intentando cargar desde backend...');
+        safeLoad();
+    }
+    
+    // Configurar reintento automático
+    let attemptCount = 0;
+    const maxAttempts = 10;
+    const retryInterval = 500; // 500ms entre intentos
+    
+    const retryLoad = () => {
+        attemptCount++;
+        
+        if (attemptCount > maxAttempts) {
+            console.error('❌ No se pudieron cargar proyectos después de 10 intentos');
+            return;
+        }
+        
+        console.log(`⏳ Intento ${attemptCount} de ${maxAttempts} para cargar proyectos...`);
+        
+        // Reintentar sincronización
+        syncProjectsToWindow();
+        
+        // Verificar si ahora hay proyectos
+        if (typeof window.projects !== 'undefined' && window.projects && window.projects.length > 0) {
+            console.log('✅ Proyectos encontrados en intento #' + attemptCount);
+            processProjectsData();
+            return;
+        }
+        
+        // Programar próximo intento
+        setTimeout(retryLoad, retryInterval);
+    };
+    
+    // Iniciar primer intento de reintento
+    setTimeout(retryLoad, retryInterval);
+}
+
+/**
+ * Procesar y mostrar los datos de proyectos
+ */
+function processProjectsData() {
+    // Contar estadísticas
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let pendingTasks = 0;
+    let urgentTasks = 0;
+    
+    window.projects.forEach(project => {
+        if (project.tasks && Array.isArray(project.tasks)) {
+            project.tasks.forEach(task => {
+                totalTasks++;
+                
+                // Contar tareas completadas
+                if (task.status === 'completed' || task.completed) {
+                    completedTasks++;
+                } else {
+                    pendingTasks++;
+                }
+                
+                // Contar tareas urgentes
+                if (task.priority === 'urgente' || task.priority === 'alta') {
+                    urgentTasks++;
+                }
+            });
+        }
+    });
+    
+    // ✅ SOLO ACTUALIZAR SI LA VISTA ESTÁ ACTIVA
+    if (!document.getElementById('inicioView')?.classList.contains('active')) {
+        console.log('ℹ️ Vista de inicio no activa, datos cargados pero no mostrados');
+        return;
+    }
+    
+    // Actualizar métricas en la vista de inicio
+    const totalTasksEl = document.getElementById('totalTasks');
+    const completedTasksEl = document.getElementById('completedTasks');
+    const pendingTasksEl = document.getElementById('pendingTasks');
+    const urgentTasksEl = document.getElementById('urgentTasks');
+    const newTasksCountEl = document.getElementById('newTasksCount');
+    const todayCompletedEl = document.getElementById('todayCompleted');
+    
+    if (totalTasksEl) totalTasksEl.textContent = totalTasks;
+    if (completedTasksEl) completedTasksEl.textContent = completedTasks;
+    if (pendingTasksEl) pendingTasksEl.textContent = pendingTasks;
+    if (urgentTasksEl) urgentTasksEl.textContent = urgentTasks;
+    if (newTasksCountEl) newTasksCountEl.textContent = Math.max(0, totalTasks - 10);
+    if (todayCompletedEl) todayCompletedEl.textContent = Math.max(0, completedTasks - 5);
+    
+    console.log(`✅ Estadísticas actualizadas: ${totalTasks} tareas totales`);
+}
+
+
+
+
+/**
+ * Cargar estadísticas generales
+ */
+function loadStatistics() {
+    console.log('📊 Cargando estadísticas generales...');
+    
+    // ✅ SINCRONIZAR PROYECTOS ANTES DE USARLOS
+    syncProjectsToWindow();
+    
+    // Verificar si hay proyectos disponibles
+    if (typeof window.projects !== 'undefined' && window.projects && window.projects.length > 0) {
+        console.log('✅ Proyectos encontrados, procesando estadísticas...');
+        processStatisticsData();
+        return;
+    }
+    
+    console.warn('⚠️ No hay proyectos para calcular estadísticas, intentando recargar...');
+    
+    // Intentar recargar desde backend
+    if (typeof safeLoad === 'function') {
+        console.log('🔄 Intentando cargar desde backend...');
+        safeLoad();
+    }
+    
+    // Configurar reintento automático
+    let attemptCount = 0;
+    const maxAttempts = 10;
+    const retryInterval = 500;
+    
+    const retryLoad = () => {
+        attemptCount++;
+        
+        if (attemptCount > maxAttempts) {
+            console.error('❌ No se pudieron cargar estadísticas después de 10 intentos');
+            return;
+        }
+        
+        console.log(`⏳ Intento ${attemptCount} de ${maxAttempts} para cargar estadísticas...`);
+        
+        // Reintentar sincronización
+        syncProjectsToWindow();
+        
+        // Verificar si ahora hay proyectos
+        if (typeof window.projects !== 'undefined' && window.projects && window.projects.length > 0) {
+            console.log('✅ Proyectos encontrados en intento #' + attemptCount);
+            processStatisticsData();
+            return;
+        }
+        
+        // Programar próximo intento
+        setTimeout(retryLoad, retryInterval);
+    };
+    
+    // Iniciar primer intento de reintento
+    setTimeout(retryLoad, retryInterval);
+}
+
+/**
+ * Procesar y mostrar las estadísticas
+ */
+function processStatisticsData() {
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let totalHours = 0;
+    let urgentTasks = 0;
+    
+    window.projects.forEach(project => {
+        if (project.tasks && Array.isArray(project.tasks)) {
+            project.tasks.forEach(task => {
+                totalTasks++;
+                
+                if (task.status === 'completed' || task.completed) {
+                    completedTasks++;
+                }
+                
+                // Sumar horas estimadas
+                if (task.estimatedTime) {
+                    totalHours += parseFloat(task.estimatedTime);
+                }
+                
+                // Contar tareas urgentes
+                if (task.priority === 'urgente' || task.priority === 'alta') {
+                    urgentTasks++;
+                }
+            });
+        }
+    });
+
+    // Calcular progreso general
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // ✅ SOLO ACTUALIZAR SI LA VISTA ESTÁ ACTIVA
+    if (!document.getElementById('inicioView')?.classList.contains('active')) {
+        console.log('ℹ️ Vista de inicio no activa, estadísticas cargadas pero no mostradas');
+        return;
+    }
+    
+    // Actualizar panel ejecutivo
+    const overallProgressEl = document.getElementById('overallProgress');
+    const totalHoursEl = document.getElementById('totalHours');
+    const risksCountEl = document.getElementById('risksCount');
+    const activeTeamEl = document.getElementById('activeTeam');
+    
+    if (overallProgressEl) overallProgressEl.textContent = progress + '%';
+    if (totalHoursEl) totalHoursEl.textContent = Math.round(totalHours) + 'h';
+    if (risksCountEl) risksCountEl.textContent = urgentTasks;
+    if (activeTeamEl) activeTeamEl.textContent = window.projects.length;
+    
+    console.log(`✅ Panel ejecutivo actualizado: ${progress}% progreso`);
+}
+
+
+
+
+/**
+ * Función placeholder para búsqueda
+ */
+function searchItems() {
+    const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+    console.log(`🔍 Buscando: "${searchTerm}"`);
+    
+    if (searchTerm.length > 2) {
+        showNotification(`Buscando: "${searchTerm}"`, 'info');
+    }
+}
+
+/**
+ * Función placeholder para notificaciones
+ */
+function showNotifications() {
+    console.log('🔔 Mostrando notificaciones...');
+    showNotification('Mostrando notificaciones...', 'info');
+}
+
+/**
+ * Función placeholder para perfil de usuario
+ */
+function showUserProfile() {
+    const userName = document.getElementById('userNameDisplay')?.textContent || 'Usuario';
+    console.log(`👤 Mostrando perfil de: ${userName}`);
+    showNotification(`Perfil de ${userName}`, 'info');
+}
+
+/**
+ * Función para crear nueva tarea desde la vista de inicio
+ */
+function openCreateTaskModal() {
+    console.log('📝 Abriendo modal para nueva tarea...');
+    showNotification('Función de crear tarea aún no implementada', 'warning');
+    // Aquí puedes abrir tu modal existente de crear tarea
+}
+
+/**
+ * Función para generar reporte
+ */
+function generateProjectReport() {
+    console.log('📄 Generando reporte de proyecto...');
+    showNotification('Generando reporte PDF...', 'success');
+    setTimeout(() => {
+        showNotification('✅ Reporte generado exitosamente', 'success');
+    }, 1000);
+}
+
+/**
+ * Función para alternar asistente IA
+ */
+function toggleAIAssistant() {
+    console.log('🤖 Alternando asistente IA...');
+    
+    if (typeof window.SystemAssistant !== 'undefined' && typeof window.SystemAssistant.toggleAssistant === 'function') {
+        window.SystemAssistant.toggleAssistant();
+    } else {
+        showNotification('Asistente IA activado', 'success');
+    }
+}
+
+// Exponer funciones globalmente
+window.loadProjects = loadProjects;
+window.loadStatistics = loadStatistics;
+window.searchItems = searchItems;
+window.showNotifications = showNotifications;
+window.showUserProfile = showUserProfile;
+window.openCreateTaskModal = openCreateTaskModal;
+window.generateProjectReport = generateProjectReport;
+window.toggleAIAssistant = toggleAIAssistant;
+
+console.log('✅ Funciones de vista de inicio cargadas');
+
+
+
+
+
+// ========================================
+// CONEXIÓN DE PROYECTOS CON VISTA DE INICIO
+// ========================================
+
+/**
+ * Obtener proyectos del sistema (versión robusta)
+ */
+function getProjectsFromSystem() {
+    // Intentar diferentes formas de acceder a los proyectos
+    if (typeof window.projects !== 'undefined' && window.projects) {
+        return window.projects;
+    }
+    
+    if (typeof projects !== 'undefined' && projects) {
+        return projects;
+    }
+    
+    // Buscar en localStorage
+    const storedProjects = localStorage.getItem('projects');
+    if (storedProjects) {
+        try {
+            return JSON.parse(storedProjects);
+        } catch (e) {
+            console.error('❌ Error parseando proyectos de localStorage:', e);
+        }
+    }
+    
+    // Buscar en el backend
+    if (typeof currentProjectIndex !== 'undefined' && typeof projects !== 'undefined') {
+        return projects;
+    }
+    
+    console.warn('⚠️ No se encontraron proyectos en el sistema');
+    return [];
+}
+
+/**
+ * Asegurar que window.projects siempre esté sincronizado
+ */
+function syncProjectsToWindow() {
+    const projectsFromSystem = getProjectsFromSystem();
+    
+    if (projectsFromSystem.length > 0) {
+        window.projects = projectsFromSystem;
+        console.log(`✅ Proyectos sincronizados: ${projectsFromSystem.length} proyectos`);
+        return true;
+    }
+    
+    console.warn('⚠️ No hay proyectos para sincronizar');
+    return false;
+}
+
+// Exponer globalmente
+window.getProjectsFromSystem = getProjectsFromSystem;
+window.syncProjectsToWindow = syncProjectsToWindow;
+
+console.log('✅ Sistema de sincronización de proyectos cargado');
+
+
+
+
+
+/**
+ * Cargar actividad reciente
+ */
+function loadRecentActivity() {
+    console.log('🕒 Cargando actividad reciente...');
+    
+    // Ejemplo de datos de actividad
+    const activityItems = [
+        {
+            icon: 'fa-check-circle',
+            color: '#4ade80',
+            text: 'Tarea completada',
+            meta: 'Diseño UI/UX',
+            time: '2 min'
+        },
+        {
+            icon: 'fa-user-plus',
+            color: '#3b82f6',
+            text: 'Nuevo miembro',
+            meta: 'Ana Gómez al equipo',
+            time: '15 min'
+        },
+        {
+            icon: 'fa-comment',
+            color: '#f59e0b',
+            text: 'Comentario en tarea',
+            meta: 'María Rodríguez en "Diseño UI/UX"',
+            time: '30 min'
+        }
+    ];
+    
+    // Limpiar y renderizar
+    const activityList = document.getElementById('activityList');
+    if (!activityList) {
+        console.error('❌ Elemento activityList no encontrado');
+        return;
+    }
+    
+    activityList.innerHTML = '';
+    
+    activityItems.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'recent-item';
+        itemElement.innerHTML = `
+            <div class="recent-icon" style="background: rgba(${hexToRgb(item.color)}, 0.2);">
+                <i class="fas ${item.icon}" style="color: ${item.color};"></i>
+            </div>
+            <div class="recent-info">
+                <div class="recent-title">${item.text}</div>
+                <div class="recent-meta">${item.meta}</div>
+            </div>
+            <div class="recent-time">${item.time}</div>
+        `;
+        activityList.appendChild(itemElement);
+    });
+    
+    console.log('✅ Actividad reciente cargada');
+}
+
+/**
+ * Cargar informes recientes
+ */
+function loadRecentReports() {
+    console.log('📄 Cargando informes recientes...');
+    
+    // Ejemplo de informes
+    const reports = [
+        {
+            icon: 'fa-chart-bar',
+            color: '#667eea',
+            name: 'Reporte Semanal - Proyecto Alpha',
+            date: '01/02/2026 • 15:30'
+        },
+        {
+            icon: 'fa-file-pdf',
+            color: '#4ade80',
+            name: 'Reporte EVM - Enero 2026',
+            date: '31/01/2026 • 18:45'
+        },
+        {
+            icon: 'fa-tasks',
+            color: '#f59e0b',
+            name: 'Análisis de Productividad',
+            date: '28/01/2026 • 10:15'
+        }
+    ];
+    
+    // Limpiar y renderizar
+    const reportsList = document.getElementById('recentReportsList');
+    if (!reportsList) {
+        console.error('❌ Elemento recentReportsList no encontrado');
+        return;
+    }
+    
+    reportsList.innerHTML = '';
+    
+    reports.forEach(report => {
+        const item = document.createElement('div');
+        item.className = 'report-item';
+        item.innerHTML = `
+            <div class="report-icon" style="background: rgba(${hexToRgb(report.color)}, 0.2); color: ${report.color};">
+                <i class="fas ${report.icon}"></i>
+            </div>
+            <div class="report-info">
+                <div class="report-name">${report.name}</div>
+                <div class="report-date">${report.date}</div>
+            </div>
+            <div class="report-action" onclick="openReport(${Math.floor(Math.random() * 100)})">
+                <i class="fas fa-eye"></i>
+            </div>
+        `;
+        reportsList.appendChild(item);
+    });
+    
+    console.log('✅ Informes recientes cargados');
+}
+
+/**
+ * Convertir hex a rgb
+ */
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `${r}, ${g}, ${b}`;
+}
+

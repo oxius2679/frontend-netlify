@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gantt Executive Pro | Sistema Ejecutivo Premium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            /* PALETA EJECUTIVA */
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --pink: #ec4899;
+            --blue: #3b82f6;
+            
+            /* FONDOS EJECUTIVOS */
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-accent: #020617;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%);
+            
+            /* TEXTOS */
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            /* EFECTOS */
+            --glow-primary: 0 0 30px rgba(99, 102, 241, 0.4);
+            --shadow-lg: 0 25px 60px rgba(0, 0, 0, 0.35);
+            --shadow-xl: 0 40px 80px rgba(0, 0, 0, 0.4);
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* HEADER EJECUTIVO */
+        .executive-header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid rgba(99, 102, 241, 0.4);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .logo-executive {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon-executive {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.3));
+        }
+        
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--text-primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .user-executive {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1.5rem;
+            background: rgba(99, 102, 241, 0.15);
+            border-radius: 50px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: var(--glow-primary);
+        }
+        
+        .plan-badge {
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .plan-free { background: linear-gradient(135deg, #ef4444, #f43f5e); }
+        .plan-pro { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .plan-premium { background: linear-gradient(135deg, var(--pink), #f43f5e); }
+        
+        /* LAYOUT PRINCIPAL */
+        .executive-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: calc(100vh - 85px);
+        }
+        
+        /* SIDEBAR EJECUTIVO */
+        .executive-sidebar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 2px solid rgba(99, 102, 241, 0.2);
+            padding: 2.5rem 1.5rem;
+        }
+        
+        .nav-section-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            font-weight: 600;
+        }
+        
+        .nav-item-executive {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 0.8rem;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            font-weight: 500;
+        }
+        
+        .nav-item-executive:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary-light);
+            transform: translateX(8px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
+        .nav-item-executive.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+            color: var(--text-primary);
+            border-color: var(--primary);
+            box-shadow: var(--glow-primary);
+        }
+        
+        .nav-icon {
+            font-size: 1.3rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* CONTENIDO PRINCIPAL */
+        .executive-content {
+            padding: 3rem;
+            overflow-y: auto;
+        }
+        
+        .tab-executive {
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .tab-executive.active {
+            display: block;
+        }
+        
+        .tab-header-executive {
+            margin-bottom: 3rem;
+        }
+        
+        .tab-title-executive {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--text-primary), var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        
+        .tab-subtitle-executive {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            line-height: 1.6;
+        }
+        
+        /* GRID EJECUTIVO */
+        .executive-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .card-executive {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            border-radius: 24px;
+            padding: 2.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-executive::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .card-executive:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: var(--glow-primary), var(--shadow-xl);
+        }
+        
+        .card-header-executive {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .card-title-executive {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* KPI CARDS */
+        .kpi-executive {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .kpi-card-executive {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            border-radius: 20px;
+            padding: 2rem;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card-executive::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.03) 100%);
+        }
+        
+        .kpi-value-executive {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        
+        .kpi-label-executive {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* GRÁFICAS PROFESIONALES */
+        .chart-executive {
+            height: 200px;
+            margin-top: 2rem;
+            position: relative;
+        }
+        
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 100%;
+            padding: 0 1rem;
+        }
+        
+        .chart-bar-executive {
+            flex: 1;
+            background: linear-gradient(to top, var(--primary), var(--secondary));
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.5s ease;
+            min-height: 20px;
+        }
+        
+        .chart-bar-executive:hover {
+            transform: scaleY(1.1);
+            opacity: 0.9;
+        }
+        
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* DONUT CHART */
+        .donut-executive {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .donut-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .donut-circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+        
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        /* LINE CHART */
+        .line-chart-executive {
+            height: 200px;
+            position: relative;
+        }
+        
+        .line-path-executive {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3));
+        }
+        
+        .grid-line-executive {
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 1;
+        }
+        
+        /* GANTT CHART */
+        .gantt-executive {
+            margin-top: 2rem;
+            overflow-x: auto;
+        }
+        
+        .gantt-timeline-executive {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .gantt-period {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gantt-task-executive {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 6px solid var(--primary);
+        }
+        
+        .gantt-bar {
+            height: 30px;
+            border-radius: 6px;
+            margin-left: 2rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .gantt-bar:hover {
+            transform: scaleY(1.2);
+        }
+        
+        /* TABLAS EJECUTIVAS */
+        .table-executive {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 1.5rem;
+        }
+        
+        .table-executive thead th {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+            color: var(--primary-light);
+            padding: 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 3px solid rgba(99, 102, 241, 0.3);
+            position: sticky;
+            top: 0;
+        }
+        
+        .table-executive tbody td {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        
+        .table-executive tbody tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        /* BADGES */
+        .badge-executive {
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-info { background: rgba(6, 182, 212, 0.2); color: var(--accent); border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-primary { background: rgba(99, 102, 241, 0.2); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); }
+        
+        /* PROGRESS BARS */
+        .progress-executive {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-executive {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+        
+        /* REPORTE EJECUTIVO */
+        .report-section-executive {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            box-shadow: var(--glow-primary), var(--shadow-lg);
+        }
+        
+        .report-header-executive {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .report-title-executive {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .report-subtitle-executive {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* ANIMACIONES */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1400px) {
+            .executive-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+        
+        @media (max-width: 1200px) {
+            .executive-container { grid-template-columns: 1fr; }
+            .executive-sidebar { display: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .executive-grid { grid-template-columns: 1fr; }
+            .kpi-executive { grid-template-columns: 1fr; }
+            .executive-content { padding: 1.5rem; }
+            .executive-header { padding: 1rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER EJECUTIVO -->
+    <header class="executive-header">
+        <div class="logo-executive">
+            <i class="fas fa-chart-line logo-icon-executive"></i>
+            <div>
+                <div class="logo-text">GANTT EXECUTIVE PRO</div>
+                <div style="font-size: 0.9rem; color: var(--text-muted);">Sistema de Gestión Ejecutiva</div>
+            </div>
+        </div>
+        
+        <div class="user-executive">
+            <div class="user-profile">
+                <div class="user-avatar" id="userAvatar">JD</div>
+                <div>
+                    <div style="font-weight: 600;" id="userName">John Doe</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);" id="userEmail">john@empresa.com</div>
+                </div>
+            </div>
+            <div class="plan-badge plan-pro" id="planBadge">PROFESSIONAL</div>
+            <button onclick="upgradePlan()" style="background: linear-gradient(135deg, var(--accent), var(--blue)); color: white; border: none; padding: 0.8rem 2rem; border-radius: 50px; font-weight: 600; cursor: pointer; transition: var(--transition);">
+                <i class="fas fa-crown"></i> Actualizar
+            </button>
+        </div>
+    </header>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="executive-container">
+        <!-- SIDEBAR EJECUTIVO -->
+        <nav class="executive-sidebar">
+            <div class="nav-section">
+                <div class="nav-section-title">Dashboard</div>
+                <div class="nav-item-executive active" onclick="switchTab('dashboard')">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span>Dashboard 4D</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Planificación</div>
+                <div class="nav-item-executive" onclick="switchTab('gantt')">
+                    <i class="fas fa-project-diagram nav-icon"></i>
+                    <span>Gantt Ejecutivo</span>
+                </div>
+                <div class="nav-item-executive" onclick="switchTab('tasks')">
+                    <i class="fas fa-tasks nav-icon"></i>
+                    <span>Tareas & Colaboración</span>
+                </div>
+                <div class="nav-item-executive" onclick="switchTab('team')">
+                    <i class="fas fa-users nav-icon"></i>
+                    <span>Gestión de Equipo</span>
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Análisis</div>
+                <div class="nav-item-executive" onclick="switchTab('evm')">
+                    <i class="fas fa-dollar-sign nav-icon"></i>
+                    <span>EVM - Valor Ganado</span>
+                </div>
+                <div class="nav-item-executive" onclick="switchTab('burndown')">
+                    <i class="fas fa-fire nav-icon"></i>
+                    <span>Burndown Charts</span>
+                </div>
+                <div class="nav-item-executive" onclick="switchTab('change')">
+        <i class="fas fa-exchange-alt nav-icon"></i>
+        <span>Control de Cambios</span>
+    </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Reportes</div>
+                <div class="nav-item-executive" onclick="switchTab('reports')">
+                    <i class="fas fa-file-alt nav-icon"></i>
+                    <span>Reporte Ejecutivo</span>
+                </div>
+                <div class="nav-item-executive" onclick="switchTab('analytics')">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span>Analytics Avanzado</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 3rem; padding: 1.5rem; background: rgba(6, 182, 212, 0.15); border-radius: 16px; border-left: 4px solid var(--accent);">
+                <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-rocket" style="color: var(--accent);"></i> 
+                    <strong>Estado del Sistema</strong>
+                </p>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+                    <div>📊 <span id="projectCount">5/10 proyectos</span></div>
+                    <div>👥 <span id="teamCount">8 miembros activos</span></div>
+                    <div>⚡ <span id="performanceStatus">Alto rendimiento</span></div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="executive-content">
+            <!-- ===== DASHBOARD 4D EJECUTIVO ===== -->
+            <section id="dashboard" class="tab-executive active">
+                <div class="tab-header-executive">
+                    <h1 class="tab-title-executive">Dashboard 4D Ejecutivo</h1>
+                    <p class="tab-subtitle-executive">Panel de control completo con KPIs en tiempo real, métricas de rendimiento y análisis predictivo con IA integrada.</p>
+                </div>
+                
+                <!-- KPI CARDS -->
+                <div class="kpi-executive">
+                    <div class="kpi-card-executive">
+                        <div class="kpi-value-executive" id="progressValue">78.5%</div>
+                        <div class="kpi-label-executive">Progreso Global</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 78.5%; background: linear-gradient(90deg, var(--success), var(--accent));"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card-executive">
+                        <div class="kpi-value-executive">€142.5K</div>
+                        <div class="kpi-label-executive">Presupuesto Ejecutado</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 65%; background: linear-gradient(90deg, var(--primary), var(--secondary));"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card-executive">
+                        <div class="kpi-value-executive">1.24</div>
+                        <div class="kpi-label-executive">CPI (EVM)</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 82%; background: linear-gradient(90deg, var(--success), #0ea5e9);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card-executive">
+                        <div class="kpi-value-executive">94%</div>
+                        <div class="kpi-label-executive">Satisfacción Cliente</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 94%; background: linear-gradient(90deg, var(--warning), #fbbf24);"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- GRID DE ANÁLISIS -->
+                <div class="executive-grid">
+                    <!-- Gráfica de Progreso por Departamento -->
+                    <div class="card-executive" style="grid-column: span 8;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-chart-bar" style="color: var(--primary);"></i>
+                                Progreso por Departamento
+                            </h3>
+                            <select class="select-executive">
+                                <option>Últimos 30 días</option>
+                                <option>Últimos 90 días</option>
+                                <option>YTD 2024</option>
+                            </select>
+                        </div>
+                        <div class="chart-executive">
+                            <div class="chart-bars">
+                                <div class="chart-bar-executive" style="height: 85%;">
+                                    <div class="bar-value">85%</div>
+                                    <div class="bar-label">IT</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 72%; background: linear-gradient(to top, var(--accent), var(--blue));">
+                                    <div class="bar-value">72%</div>
+                                    <div class="bar-label">Marketing</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 91%; background: linear-gradient(to top, var(--success), #0ea5e9);">
+                                    <div class="bar-value">91%</div>
+                                    <div class="bar-label">Ventas</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 68%; background: linear-gradient(to top, var(--warning), #fbbf24);">
+                                    <div class="bar-value">68%</div>
+                                    <div class="bar-label">Operaciones</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 95%; background: linear-gradient(to top, var(--pink), #f43f5e);">
+                                    <div class="bar-value">95%</div>
+                                    <div class="bar-label">Soporte</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución de Tareas -->
+                    <div class="card-executive" style="grid-column: span 4;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-chart-pie" style="color: var(--secondary);"></i>
+                                Distribución de Tareas
+                            </h3>
+                        </div>
+                        <div class="donut-executive">
+                            <svg class="donut-svg" viewBox="0 0 100 100">
+                                <circle class="donut-circle" cx="50" cy="50" r="40" stroke="var(--success)" stroke-dasharray="126 251" />
+                                <circle class="donut-circle" cx="50" cy="50" r="40" stroke="var(--warning)" stroke-dasharray="63 251" stroke-dashoffset="-126" />
+                                <circle class="donut-circle" cx="50" cy="50" r="40" stroke="var(--danger)" stroke-dasharray="32 251" stroke-dashoffset="-189" />
+                                <circle class="donut-circle" cx="50" cy="50" r="40" stroke="var(--text-muted)" stroke-dasharray="30 251" stroke-dashoffset="-221" />
+                            </svg>
+                            <div class="donut-center">
+                                <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary);">156</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">Total Tareas</div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                                    <div style="width: 12px; height: 12px; background: var(--success); border-radius: 3px;"></div>
+                                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Completadas</span>
+                                </div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">126</div>
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                                    <div style="width: 12px; height: 12px; background: var(--warning); border-radius: 3px;"></div>
+                                    <span style="font-size: 0.9rem; color: var(--text-secondary);">En Progreso</span>
+                                </div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">63</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tendencias de Rendimiento -->
+                    <div class="card-executive" style="grid-column: span 6;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-chart-line" style="color: var(--accent);"></i>
+                                Tendencias de Rendimiento
+                            </h3>
+                        </div>
+                        <div class="line-chart-executive">
+                            <svg width="100%" height="100%">
+                                <line x1="0" y1="40" x2="100%" y2="40" class="grid-line-executive" />
+                                <line x1="0" y1="80" x2="100%" y2="80" class="grid-line-executive" />
+                                <line x1="0" y1="120" x2="100%" y2="120" class="grid-line-executive" />
+                                <line x1="0" y1="160" x2="100%" y2="160" class="grid-line-executive" />
+                                
+                                <path class="line-path-executive" d="M0,160 L40,120 L80,100 L120,80 L160,60 L200,80 L240,100 L280,120 L320,140" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Indicadores Clave -->
+                    <div class="card-executive" style="grid-column: span 6;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-bullseye" style="color: var(--danger);"></i>
+                                Indicadores Clave EVM
+                            </h3>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                            <div>
+                                <div style="font-size: 2.5rem; font-weight: 800; color: var(--success); margin-bottom: 0.5rem;">1.24</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">CPI</div>
+                                <div style="font-size: 0.85rem; color: var(--success); margin-top: 0.3rem;">+24% sobre presupuesto</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 2.5rem; font-weight: 800; color: var(--warning); margin-bottom: 0.5rem;">0.96</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">SPI</div>
+                                <div style="font-size: 0.85rem; color: var(--warning); margin-top: 0.3rem;">-4% retraso</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">€175K</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">PV</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">€142.5K</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">EV</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">€115K</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">AC</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabla de Proyectos Activos -->
+                <div class="card-executive" style="grid-column: span 12; margin-top: 2rem;">
+                    <div class="card-header-executive">
+                        <h3 class="card-title-executive">
+                            <i class="fas fa-rocket" style="color: var(--pink);"></i>
+                            Proyectos Activos
+                        </h3>
+                        <button onclick="addProject()" class="btn-primary-executive">
+                            <i class="fas fa-plus"></i> Nuevo Proyecto
+                        </button>
+                    </div>
+                    <table class="table-executive">
+                        <thead>
+                            <tr>
+                                <th>Proyecto</th>
+                                <th>Líder</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Progreso</th>
+                                <th>Estado</th>
+                                <th>Presupuesto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-code" style="color: var(--primary); margin-right: 10px;"></i> Digital Transformation</td>
+                                <td>María Sánchez</td>
+                                <td>15 Ene 2025</td>
+                                <td>30 Jun 2025</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="progress-executive" style="flex: 1;">
+                                            <div class="progress-bar-executive" style="width: 85%; background: linear-gradient(90deg, var(--success), var(--accent));"></div>
+                                        </div>
+                                        <span>85%</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge-executive badge-success"><i class="fas fa-check-circle"></i> En Tiempo</span></td>
+                                <td>€125,000</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-shopping-cart" style="color: var(--secondary); margin-right: 10px;"></i> E-commerce Platform</td>
+                                <td>Juan Pérez</td>
+                                <td>01 Mar 2025</td>
+                                <td>15 Sep 2025</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="progress-executive" style="flex: 1;">
+                                            <div class="progress-bar-executive" style="width: 65%; background: linear-gradient(90deg, var(--warning), #fbbf24);"></div>
+                                        </div>
+                                        <span>65%</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge-executive badge-warning"><i class="fas fa-clock"></i> En Riesgo</span></td>
+                                <td>€89,500</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-mobile-alt" style="color: var(--accent); margin-right: 10px;"></i> Mobile App Development</td>
+                                <td>Carlos Rodríguez</td>
+                                <td>10 Feb 2025</td>
+                                <td>31 Ago 2025</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="progress-executive" style="flex: 1;">
+                                            <div class="progress-bar-executive" style="width: 45%; background: linear-gradient(90deg, var(--danger), #f43f5e);"></div>
+                                        </div>
+                                        <span>45%</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge-executive badge-danger"><i class="fas fa-exclamation-triangle"></i> Retrasado</span></td>
+                                <td>€67,800</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ===== GANTT EJECUTIVO ===== -->
+            <section id="gantt" class="tab-executive">
+                <div class="tab-header-executive">
+                    <h1 class="tab-title-executive">Gantt Ejecutivo Premium</h1>
+                    <p class="tab-subtitle-executive">Diagramas de Gantt avanzados con timeline dinámico de 181 días, hitos, dependencias y ruta crítica visualizada.</p>
+                </div>
+                
+                <div class="card-executive">
+                    <div class="card-header-executive">
+                        <h3 class="card-title-executive">
+                            <i class="fas fa-project-diagram" style="color: var(--primary);"></i>
+                            Cronograma del Proyecto: Digital Transformation
+                        </h3>
+                        <div>
+                            <button onclick="exportGantt()" class="btn-primary-executive">
+                                <i class="fas fa-download"></i> Exportar PDF
+                            </button>
+                            <button onclick="printGantt()" class="btn-secondary-executive">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline -->
+                    <div class="gantt-timeline-executive">
+                        <div class="gantt-period">Q1 2025</div>
+                        <div class="gantt-period">Q2 2025</div>
+                        <div class="gantt-period">Q3 2025</div>
+                        <div class="gantt-period">Q4 2025</div>
+                    </div>
+                    
+                    <!-- Tareas del Gantt -->
+                    <div class="gantt-executive">
+                        <div class="gantt-task-executive">
+                            <div style="width: 200px; font-weight: 600;">Planificación Estratégica</div>
+                            <div class="gantt-bar" style="width: 120px; background: linear-gradient(90deg, var(--primary), var(--primary-light));">
+                                <div style="position: absolute; top: -25px; font-size: 0.8rem; font-weight: 600; color: var(--primary);">Hito 1</div>
+                            </div>
+                            <div style="margin-left: auto; color: var(--text-secondary);">
+                                <span class="badge-executive badge-info">Completado</span>
+                            </div>
+                        </div>
+                        
+                        <div class="gantt-task-executive">
+                            <div style="width: 200px; font-weight: 600;">Desarrollo Frontend</div>
+                            <div class="gantt-bar" style="width: 180px; background: linear-gradient(90deg, var(--accent), var(--blue));"></div>
+                            <div style="margin-left: auto; color: var(--text-secondary);">
+                                <span class="badge-executive badge-success">85%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="gantt-task-executive">
+                            <div style="width: 200px; font-weight: 600;">Desarrollo Backend</div>
+                            <div class="gantt-bar" style="width: 160px; background: linear-gradient(90deg, var(--success), #0ea5e9);"></div>
+                            <div style="margin-left: auto; color: var(--text-secondary);">
+                                <span class="badge-executive badge-success">75%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="gantt-task-executive">
+                            <div style="width: 200px; font-weight: 600;">Pruebas QA</div>
+                            <div class="gantt-bar" style="width: 140px; background: linear-gradient(90deg, var(--warning), #fbbf24);">
+                                <div style="position: absolute; top: -25px; font-size: 0.8rem; font-weight: 600; color: var(--warning);">Hito 2</div>
+                            </div>
+                            <div style="margin-left: auto; color: var(--text-secondary);">
+                                <span class="badge-executive badge-warning">En Progreso</span>
+                            </div>
+                        </div>
+                        
+                        <div class="gantt-task-executive">
+                            <div style="width: 200px; font-weight: 600;">Implementación</div>
+                            <div class="gantt-bar" style="width: 100px; background: linear-gradient(90deg, var(--pink), #f43f5e);"></div>
+                            <div style="margin-left: auto; color: var(--text-secondary);">
+                                <span class="badge-executive badge-danger">Pendiente</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Leyenda del Gantt -->
+                    <div style="display: flex; gap: 2rem; margin-top: 2rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.03); border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 10px; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 3px;"></div>
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Planificación</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 10px; background: linear-gradient(90deg, var(--accent), var(--blue)); border-radius: 3px;"></div>
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Desarrollo</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 10px; background: linear-gradient(90deg, var(--warning), #fbbf24); border-radius: 3px;"></div>
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Pruebas</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 10px; background: linear-gradient(90deg, var(--pink), #f43f5e); border-radius: 3px;"></div>
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Implementación</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 20px; height: 10px; background: linear-gradient(90deg, var(--success), #0ea5e9); border-radius: 3px;"></div>
+                            <span style="font-size: 0.9rem; color: var(--text-secondary);">Completado</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== TAREAS Y COLABORACIÓN ===== -->
+            <section id="tasks" class="tab-executive">
+                <div class="tab-header-executive">
+                    <h1 class="tab-title-executive">Tareas y Colaboración</h1>
+                    <p class="tab-subtitle-executive">Gestión de tareas en tiempo real, asignación de recursos y colaboración del equipo con análisis de productividad.</p>
+                </div>
+                
+                <div class="executive-grid">
+                    <!-- Tabla de Tareas -->
+                    <div class="card-executive" style="grid-column: span 8;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-tasks" style="color: var(--primary);"></i>
+                                Lista de Tareas Activas
+                            </h3>
+                            <button onclick="createTask()" class="btn-primary-executive">
+                                <i class="fas fa-plus"></i> Nueva Tarea
+                            </button>
+                        </div>
+                        <table class="table-executive">
+                            <thead>
+                                <tr>
+                                    <th>Tarea</th>
+                                    <th>Asignado</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Desarrollar Dashboard Analytics</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">MS</div>
+                                            <span>María Sánchez</span>
+                                        </div>
+                                    </td>
+                                    <td>15 Mar 2025</td>
+                                    <td><span class="badge-executive badge-danger">Alta</span></td>
+                                    <td><span class="badge-executive badge-success">Completada</span></td>
+                                    <td>
+                                        <button class="btn-icon-executive" title="Editar"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon-executive" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Configurar Base de Datos</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">JP</div>
+                                            <span>Juan Pérez</span>
+                                        </div>
+                                    </td>
+                                    <td>20 Mar 2025</td>
+                                    <td><span class="badge-executive badge-warning">Media</span></td>
+                                    <td><span class="badge-executive badge-warning">En Progreso</span></td>
+                                    <td>
+                                        <button class="btn-icon-executive" title="Editar"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon-executive" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Documentación API</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--success), #0ea5e9); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">CR</div>
+                                            <span>Carlos Rodríguez</span>
+                                        </div>
+                                    </td>
+                                    <td>25 Mar 2025</td>
+                                    <td><span class="badge-executive badge-info">Baja</span></td>
+                                    <td><span class="badge-executive badge-danger">Pendiente</span></td>
+                                    <td>
+                                        <button class="btn-icon-executive" title="Editar"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon-executive" title="Eliminar"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Gráfica de Productividad -->
+                    <div class="card-executive" style="grid-column: span 4;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-chart-bar" style="color: var(--accent);"></i>
+                                Productividad del Equipo
+                            </h3>
+                        </div>
+                        <div class="chart-executive">
+                            <div class="chart-bars">
+                                <div class="chart-bar-executive" style="height: 92%; background: linear-gradient(to top, var(--primary), var(--secondary));">
+                                    <div class="bar-value">92%</div>
+                                    <div class="bar-label">María</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 85%; background: linear-gradient(to top, var(--accent), var(--blue));">
+                                    <div class="bar-value">85%</div>
+                                    <div class="bar-label">Juan</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 78%; background: linear-gradient(to top, var(--warning), #fbbf24);">
+                                    <div class="bar-value">78%</div>
+                                    <div class="bar-label">Carlos</div>
+                                </div>
+                                <div class="chart-bar-executive" style="height: 95%; background: linear-gradient(to top, var(--success), #0ea5e9);">
+                                    <div class="bar-value">95%</div>
+                                    <div class="bar-label">Ana</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== EVM - VALOR GANADO ===== -->
+            <section id="evm" class="tab-executive">
+                <div class="tab-header-executive">
+                    <h1 class="tab-title-executive">EVM - Valor Ganado</h1>
+                    <p class="tab-subtitle-executive">Sistema completo de gestión de costos con CPI, SPI, EAC, VAC y proyecciones financieras.</p>
+                </div>
+                
+                <div class="executive-grid">
+                    <!-- Gráfica de Valor Ganado -->
+                    <div class="card-executive" style="grid-column: span 8;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-chart-line" style="color: var(--primary);"></i>
+                                Análisis de Valor Ganado
+                            </h3>
+                        </div>
+                        <div class="line-chart-executive" style="height: 300px;">
+                            <svg width="100%" height="100%">
+                                <!-- Grid -->
+                                <line x1="0" y1="60" x2="100%" y2="60" class="grid-line-executive" />
+                                <line x1="0" y1="120" x2="100%" y2="120" class="grid-line-executive" />
+                                <line x1="0" y1="180" x2="100%" y2="180" class="grid-line-executive" />
+                                <line x1="0" y1="240" x2="100%" y2="240" class="grid-line-executive" />
+                                
+                                <!-- Líneas de EVM -->
+                                <path class="line-path-executive" d="M0,240 L80,200 L160,180 L240,160 L320,140 L400,120" style="stroke: var(--primary);" />
+                                <path class="line-path-executive" d="M0,240 L80,220 L160,200 L240,180 L320,160 L400,140" style="stroke: var(--accent);" />
+                                <path class="line-path-executive" d="M0,240 L80,210 L160,190 L240,170 L320,150 L400,130" style="stroke: var(--success);" />
+                            </svg>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; margin-top: 1rem;">
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                    <div style="width: 15px; height: 3px; background: var(--primary);"></div>
+                                    <span style="font-size: 0.9rem; color: var(--text-secondary);">PV (€175K)</span>
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                    <div style="width: 15px; height: 3px; background: var(--accent);"></div>
+                                    <span style="font-size: 0.9rem; color: var(--text-secondary);">EV (€142.5K)</span>
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                    <div style="width: 15px; height: 3px; background: var(--success);"></div>
+                                    <span style="font-size: 0.9rem; color: var(--text-secondary);">AC (€115K)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Métricas EVM -->
+                    <div class="card-executive" style="grid-column: span 4;">
+                        <div class="card-header-executive">
+                            <h3 class="card-title-executive">
+                                <i class="fas fa-calculator" style="color: var(--warning);"></i>
+                                Métricas EVM
+                            </h3>
+                        </div>
+                        <div style="display: grid; gap: 1.5rem; margin-top: 1rem;">
+                            <div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: var(--success);">1.24</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">CPI (Cost Performance Index)</div>
+                                <div style="font-size: 0.85rem; color: var(--success); margin-top: 0.3rem;">+24% sobre presupuesto</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: var(--warning);">0.96</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">SPI (Schedule Performance Index)</div>
+                                <div style="font-size: 0.85rem; color: var(--warning); margin-top: 0.3rem;">-4% retraso</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent);">€144.3K</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">EAC (Estimate At Completion)</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">€30.7K</div>
+                                <div style="font-size: 0.9rem; color: var(--text-muted);">VAC (Variance At Completion)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+
+
+
+
+
+
+
+<!-- ===== ANALYTICS AVANZADO ===== -->
+<section id="analytics" class="tab-executive">
+    <div class="tab-header-executive">
+        <h1 class="tab-title-executive">Analytics Avanzado</h1>
+        <p class="tab-subtitle-executive">Análisis predictivo con IA, machine learning y business intelligence para toma de decisiones ejecutivas.</p>
+    </div>
+    
+    <div class="executive-grid">
+        <!-- Predicciones con IA -->
+        <div class="card-executive" style="grid-column: span 6;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-brain" style="color: var(--primary);"></i>
+                    Predicciones con IA
+                </h3>
+                <button onclick="runAIAnalysis()" class="btn-primary-executive">
+                    <i class="fas fa-bolt"></i> Ejecutar Análisis
+                </button>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
+                            <i class="fas fa-calendar-check" style="color: var(--success);"></i> Fecha de Término
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: var(--success);">28 Jun 2024</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">Probabilidad: 92%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
+                            <i class="fas fa-dollar-sign" style="color: var(--warning);"></i> Costo Final
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: var(--warning);">€138,200</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">Ahorro estimado: 8.2%</div>
+                    </div>
+                </div>
+                
+                <!-- Gráfico de predicción -->
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px;">
+                    <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                        <i class="fas fa-chart-line"></i> Tendencias Predictivas
+                    </h4>
+                    <div style="height: 120px; position: relative;">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255, 255, 255, 0.2);"></div>
+                        <div style="position: absolute; bottom: 0; left: 0%; width: 30%; height: 40%; background: linear-gradient(to top, var(--primary), transparent); border-radius: 4px 4px 0 0;"></div>
+                        <div style="position: absolute; bottom: 0; left: 30%; width: 30%; height: 65%; background: linear-gradient(to top, var(--accent), transparent); border-radius: 4px 4px 0 0;"></div>
+                        <div style="position: absolute; bottom: 0; left: 60%; width: 30%; height: 85%; background: linear-gradient(to top, var(--success), transparent); border-radius: 4px 4px 0 0;"></div>
+                        <div style="position: absolute; bottom: 0; left: 90%; width: 10%; height: 100%; background: linear-gradient(to top, var(--warning), transparent); border-radius: 4px 4px 0 0;"></div>
+                        
+                        <div style="position: absolute; bottom: -25px; left: 0%; font-size: 0.8rem; color: var(--text-muted);">Q1</div>
+                        <div style="position: absolute; bottom: -25px; left: 30%; font-size: 0.8rem; color: var(--text-muted);">Q2</div>
+                        <div style="position: absolute; bottom: -25px; left: 60%; font-size: 0.8rem; color: var(--text-muted);">Q3</div>
+                        <div style="position: absolute; bottom: -25px; left: 90%; font-size: 0.8rem; color: var(--text-muted);">Q4</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Análisis de Riesgos Predictivo -->
+        <div class="card-executive" style="grid-column: span 6;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-shield-alt" style="color: var(--danger);"></i>
+                    Análisis de Riesgos Predictivo
+                </h3>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Retraso en aprovisionamiento</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 78%; background: linear-gradient(90deg, var(--danger), #f43f5e);"></div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.9rem; font-weight: 600; color: var(--danger);">Alto (78%)</div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Cambios en requerimientos</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 65%; background: linear-gradient(90deg, var(--warning), #fbbf24);"></div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.9rem; font-weight: 600; color: var(--warning);">Medio (65%)</div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Rotación de personal clave</div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 45%; background: linear-gradient(90deg, var(--accent), var(--blue));"></div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.9rem; font-weight: 600; color: var(--accent);">Bajo (45%)</div>
+                </div>
+                
+                <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 4px solid var(--danger);">
+                    <div style="font-size: 0.9rem; color: var(--text-primary);">
+                        <i class="fas fa-exclamation-triangle" style="color: var(--danger); margin-right: 8px;"></i>
+                        <strong>Alerta predictiva:</strong> Riesgo alto detectado para Q2
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem;">
+                        Recomendación: Iniciar plan de mitigación inmediato
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Business Intelligence -->
+        <div class="card-executive" style="grid-column: span 12;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-chart-bar" style="color: var(--accent);"></i>
+                    Business Intelligence Avanzado
+                </h3>
+                <div>
+                    <button onclick="exportAnalytics()" class="btn-secondary-executive">
+                        <i class="fas fa-download"></i> Exportar Datos
+                    </button>
+                    <button onclick="scheduleReport()" class="btn-secondary-executive">
+                        <i class="fas fa-clock"></i> Programar Reporte
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <div>
+                    <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                        <i class="fas fa-project-diagram"></i> Correlaciones Clave
+                    </h4>
+                    <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                        <li>Productividad vs. Satisfacción: r = 0.82</li>
+                        <li>Experiencia vs. Calidad: r = 0.76</li>
+                        <li>Comunicación vs. Eficiencia: r = 0.91</li>
+                        <li>Capacitación vs. Retención: r = 0.68</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                        <i class="fas fa-lightbulb"></i> Insights Detectados
+                    </h4>
+                    <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                        <li>Reuniones > 45min reducen productividad 23%</li>
+                        <li>Proyectos con daily standups terminan 18% antes</li>
+                        <li>Equipos de 5-7 personas son 35% más eficientes</li>
+                        <li>Feedback semanal mejora calidad 42%</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                        <i class="fas fa-bullseye"></i> Recomendaciones Automáticas
+                    </h4>
+                    <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                        <li>Optimizar tamaño de equipos (recomendado: 6)</li>
+                        <li>Implementar retrospectivas quincenales</li>
+                        <li>Automatizar reportes rutinarios</li>
+                        <li>Capacitar en metodologías ágiles</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Scorecard -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9)); border-radius: 12px; border: 2px solid rgba(99, 102, 241, 0.3);">
+                <h4 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--primary);">
+                    <i class="fas fa-trophy"></i> Scorecard Ejecutivo
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--success);">8.7/10</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Eficiencia Operacional</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--warning);">7.9/10</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Innovación Tecnológica</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">9.2/10</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Satisfacción Cliente</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">8.5/10</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Health Index</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function runAIAnalysis() {
+    alert('🧠 Ejecutando análisis predictivo con IA...\n\nProcesando datos históricos y aplicando algoritmos de machine learning.\n\nEste proceso toma aproximadamente 15 segundos.\nLos resultados se actualizarán automáticamente.');
+    
+    // Simular procesamiento
+    setTimeout(() => {
+        alert('✅ Análisis predictivo completado\n\nSe han identificado 3 insights clave y 2 alertas predictivas.\n\nLos dashboards han sido actualizados con las nuevas predicciones.');
+    }, 1500);
+}
+
+function exportAnalytics() {
+    alert('📊 Exportando datos analíticos...\n\nFormato: Excel con todas las métricas, correlaciones e insights.\n\nEl archivo incluye:\n• Datos históricos completos\n• Análisis predictivos\n• Recomendaciones estratégicas\n• Scorecards ejecutivos');
+    
+    setTimeout(() => {
+        alert('✅ Datos exportados exitosamente\n\nArchivo: analytics_export_' + new Date().toISOString().split('T')[0] + '.xlsx\n\nSe ha enviado una copia a: ' + currentUser.email);
+    }, 1000);
+}
+
+function scheduleReport() {
+    alert('⏰ Programando reporte automático\n\nSelecciona la frecuencia:\n\n1. Diario (8:00 AM)\n2. Semanal (Lunes 9:00 AM)\n3. Mensual (Día 1, 10:00 AM)\n\nLos reportes se enviarán automáticamente por email.');
+}
+</script>
+
+
+
+
+
+<!-- ===== GESTIÓN DE CONTROL DE CAMBIOS ===== -->
+<section id="change" class="tab-executive">
+    <div class="tab-header-executive">
+        <h1 class="tab-title-executive">Gestión de Control de Cambios</h1>
+        <p class="tab-subtitle-executive">Sistema completo de gestión de cambios basado en PMI: solicitudes, análisis de impacto, aprobaciones e implementación.</p>
+    </div>
+    
+    <div class="executive-grid">
+        <!-- Flujo de Control de Cambios -->
+        <div class="card-executive" style="grid-column: span 8;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-exchange-alt" style="color: var(--primary);"></i>
+                    Flujo de Control de Cambios (PMI)
+                </h3>
+                <button onclick="newChangeRequest()" class="btn-primary-executive">
+                    <i class="fas fa-plus"></i> Nueva Solicitud
+                </button>
+            </div>
+            
+            <div class="change-flow">
+                <!-- Paso 1: Identificación -->
+                <div class="change-step active">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Identificación</div>
+                        <div class="step-description">Solicitud de cambio identificada</div>
+                        <div class="step-count">5 pendientes</div>
+                    </div>
+                </div>
+                
+                <!-- Paso 2: Evaluación -->
+                <div class="change-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Evaluación</div>
+                        <div class="step-description">Análisis de impacto y costo</div>
+                        <div class="step-count">3 en análisis</div>
+                    </div>
+                </div>
+                
+                <!-- Paso 3: Aprobación -->
+                <div class="change-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Aprobación</div>
+                        <div class="step-description">Revisión por CCB</div>
+                        <div class="step-count">2 en revisión</div>
+                    </div>
+                </div>
+                
+                <!-- Paso 4: Implementación -->
+                <div class="change-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Implementación</div>
+                        <div class="step-description">Ejecución del cambio</div>
+                        <div class="step-count">4 en progreso</div>
+                    </div>
+                </div>
+                
+                <!-- Paso 5: Cierre -->
+                <div class="change-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Cierre</div>
+                        <div class="step-description">Verificación y documentación</div>
+                        <div class="step-count">12 completados</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Línea de conexión -->
+            <div class="flow-line"></div>
+        </div>
+        
+        <!-- Métricas de Cambios -->
+        <div class="card-executive" style="grid-column: span 4;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-chart-pie" style="color: var(--accent);"></i>
+                    Métricas de Cambios
+                </h3>
+            </div>
+            <div style="display: grid; gap: 1.5rem; margin-top: 1rem;">
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">26</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Total Solicitudes</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);">46%</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Tasa de Aprobación</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--warning);">3.2 días</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Tiempo Promedio</div>
+                </div>
+            </div>
+            
+            <!-- Distribución por Tipo -->
+            <div style="margin-top: 2rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                    Distribución por Tipo
+                </h4>
+                <div style="display: grid; gap: 0.8rem;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                            <span style="color: var(--text-secondary);">Alcance</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">8 (31%)</span>
+                        </div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 31%; background: var(--primary);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                            <span style="color: var(--text-secondary);">Cronograma</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">6 (23%)</span>
+                        </div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 23%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+                            <span style="color: var(--text-secondary);">Costo</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">5 (19%)</span>
+                        </div>
+                        <div class="progress-executive">
+                            <div class="progress-bar-executive" style="width: 19%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabla de Solicitudes de Cambio -->
+        <div class="card-executive" style="grid-column: span 12;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-file-alt" style="color: var(--warning);"></i>
+                    Solicitudes de Cambio Activas
+                </h3>
+                <div>
+                    <button onclick="filterChanges('pending')" class="btn-secondary-executive">
+                        <i class="fas fa-clock"></i> Pendientes
+                    </button>
+                    <button onclick="filterChanges('approved')" class="btn-secondary-executive">
+                        <i class="fas fa-check"></i> Aprobados
+                    </button>
+                </div>
+            </div>
+            <table class="table-executive">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Descripción</th>
+                        <th>Solicitante</th>
+                        <th>Fecha</th>
+                        <th>Impacto</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CC-2024-015</td>
+                        <td>Ampliación de funcionalidades en módulo de reportes</td>
+                        <td>María Sánchez</td>
+                        <td>14 Mar 2024</td>
+                        <td><span class="badge-executive badge-warning">Medio</span></td>
+                        <td><span class="badge-executive badge-info">En Evaluación</span></td>
+                        <td>
+                            <button onclick="reviewChange('CC-2024-015')" class="btn-icon-executive" title="Revisar">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="approveChange('CC-2024-015')" class="btn-icon-executive" title="Aprobar">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CC-2024-014</td>
+                        <td>Extensión de fecha límite por retrasos en desarrollo</td>
+                        <td>Juan Pérez</td>
+                        <td>12 Mar 2024</td>
+                        <td><span class="badge-executive badge-danger">Alto</span></td>
+                        <td><span class="badge-executive badge-warning">Pendiente CCB</span></td>
+                        <td>
+                            <button onclick="reviewChange('CC-2024-014')" class="btn-icon-executive" title="Revisar">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="approveChange('CC-2024-014')" class="btn-icon-executive" title="Aprobar">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CC-2024-013</td>
+                        <td>Adición de nueva tecnología de base de datos</td>
+                        <td>Carlos Rodríguez</td>
+                        <td>10 Mar 2024</td>
+                        <td><span class="badge-executive badge-success">Bajo</span></td>
+                        <td><span class="badge-executive badge-success">Aprobado</span></td>
+                        <td>
+                            <button onclick="reviewChange('CC-2024-013')" class="btn-icon-executive" title="Revisar">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="implementChange('CC-2024-013')" class="btn-icon-executive" title="Implementar">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<style>
+.change-flow {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    position: relative;
+}
+
+.change-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.change-step.active .step-number {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--glow-primary);
+}
+
+.step-content {
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.step-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+.step-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.step-count {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: var(--text-muted);
+}
+
+.flow-line {
+    position: absolute;
+    top: 25px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 1;
+}
+</style>
+
+<script>
+function newChangeRequest() {
+    alert('📝 Nueva Solicitud de Cambio\n\nEsta funcionalidad permite crear solicitudes de cambio siguiendo el estándar PMI.\n\nEn la versión completa incluye:\n• Formulario de solicitud\n• Análisis de impacto automático\n• Flujo de aprobación configurable\n• Notificaciones a stakeholders');
+}
+
+function reviewChange(changeId) {
+    alert(`🔍 Revisando Solicitud ${changeId}\n\nMostrando análisis de impacto:\n\n📊 Impacto en Alcance: Medio\n⏱️ Impacto en Cronograma: +5 días\n💰 Impacto en Costo: €2,500\n👥 Stakeholders afectados: 3\n\nRecomendación: Aprobar con condiciones`);
+}
+
+function approveChange(changeId) {
+    alert(`✅ Solicitud ${changeId} aprobada\n\nLa solicitud ha sido aprobada por el CCB (Change Control Board).\n\n📋 Próximos pasos:\n1. Notificar al solicitante\n2. Actualizar línea base\n3. Asignar recursos\n4. Programar implementación`);
+}
+
+function implementChange(changeId) {
+    alert(`🚀 Implementando Cambio ${changeId}\n\nIniciando proceso de implementación:\n\n📅 Fecha de implementación: 20 Mar 2024\n👨‍💼 Responsable: Carlos Rodríguez\n⏰ Estimación: 8 horas\n🔧 Recursos asignados: 2 desarrolladores`);
+}
+
+function filterChanges(filter) {
+    alert(`🔍 Filtrando solicitudes: ${filter}\n\nMostrando solo las solicitudes en estado: ${filter}`);
+}
+</script>
+
+
+
+
+<!-- ===== BURNDOWN CHARTS ===== -->
+<section id="burndown" class="tab-executive">
+    <div class="tab-header-executive">
+        <h1 class="tab-title-executive">Burndown Charts Avanzados</h1>
+        <p class="tab-subtitle-executive">Análisis de velocidad del equipo, proyecciones optimistas/pesimistas y tracking de scope creep.</p>
+    </div>
+    
+    <div class="executive-grid">
+        <!-- Burndown Chart Principal -->
+        <div class="card-executive" style="grid-column: span 8;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-fire" style="color: var(--warning);"></i>
+                    Burndown Chart - Sprint Actual
+                </h3>
+                <select class="select-executive">
+                    <option>Sprint 24.1 (15 Mar - 29 Mar)</option>
+                    <option>Sprint 23.4 (01 Mar - 14 Mar)</option>
+                    <option>Sprint 23.3 (15 Feb - 28 Feb)</option>
+                </select>
+            </div>
+            <div class="burndown-container">
+                <div class="burndown-grid">
+                    <!-- Grid vertical -->
+                    <div class="grid-line-vertical" style="left: 0%;"></div>
+                    <div class="grid-line-vertical" style="left: 20%;"></div>
+                    <div class="grid-line-vertical" style="left: 40%;"></div>
+                    <div class="grid-line-vertical" style="left: 60%;"></div>
+                    <div class="grid-line-vertical" style="left: 80%;"></div>
+                    <div class="grid-line-vertical" style="left: 100%;"></div>
+                    
+                    <!-- Grid horizontal -->
+                    <div class="grid-line-horizontal" style="top: 0%;"></div>
+                    <div class="grid-line-horizontal" style="top: 25%;"></div>
+                    <div class="grid-line-horizontal" style="top: 50%;"></div>
+                    <div class="grid-line-horizontal" style="top: 75%;"></div>
+                    <div class="grid-line-horizontal" style="top: 100%;"></div>
+                    
+                    <!-- Línea ideal -->
+                    <div class="ideal-line"></div>
+                    
+                    <!-- Línea real -->
+                    <div class="actual-line">
+                        <div class="data-point" style="left: 0%; top: 0%;"></div>
+                        <div class="data-point" style="left: 20%; top: 15%;"></div>
+                        <div class="data-point" style="left: 40%; top: 25%;"></div>
+                        <div class="data-point" style="left: 60%; top: 40%;"></div>
+                        <div class="data-point" style="left: 80%; top: 60%;"></div>
+                        <div class="data-point" style="left: 100%; top: 85%;"></div>
+                    </div>
+                    
+                    <!-- Scope creep -->
+                    <div class="scope-creep" style="left: 40%; top: 35%;">
+                        <div class="scope-dot"></div>
+                        <div class="scope-label">Scope Creep (+3 tareas)</div>
+                    </div>
+                </div>
+                
+                <!-- Leyenda -->
+                <div class="burndown-legend">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 20px; height: 3px; background: var(--success);"></div>
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">Línea Ideal</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 20px; height: 3px; background: var(--primary);"></div>
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">Línea Real</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 12px; height: 12px; background: var(--warning); border-radius: 50%;"></div>
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">Scope Creep</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Métricas de Velocidad -->
+        <div class="card-executive" style="grid-column: span 4;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-tachometer-alt" style="color: var(--accent);"></i>
+                    Métricas de Velocidad
+                </h3>
+            </div>
+            <div style="display: grid; gap: 1.5rem; margin-top: 1rem;">
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">42</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Velocidad Actual (story points)</div>
+                    <div style="font-size: 0.85rem; color: var(--success); margin-top: 0.3rem;">+8% vs sprint anterior</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--warning);">85%</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Trabajo Completado</div>
+                    <div style="font-size: 0.85rem; color: var(--warning); margin-top: 0.3rem;">15% pendiente para el objetivo</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--success);">3.2</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Focus Factor</div>
+                    <div style="font-size: 0.85rem; color: var(--success); margin-top: 0.3rem;">Alta productividad</div>
+                </div>
+            </div>
+            
+            <!-- Predicciones -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px;">
+                <h4 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">
+                    <i class="fas fa-chart-line"></i> Predicciones
+                </h4>
+                <div style="display: grid; gap: 0.8rem;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">Optimista:</span>
+                            <span style="color: var(--success); font-weight: 600;">29 Mar</span>
+                        </div>
+                        <div class="progress-executive" style="margin-top: 0.3rem;">
+                            <div class="progress-bar-executive" style="width: 90%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">Probable:</span>
+                            <span style="color: var(--warning); font-weight: 600;">01 Abr</span>
+                        </div>
+                        <div class="progress-executive" style="margin-top: 0.3rem;">
+                            <div class="progress-bar-executive" style="width: 75%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">Pesimista:</span>
+                            <span style="color: var(--danger); font-weight: 600;">05 Abr</span>
+                        </div>
+                        <div class="progress-executive" style="margin-top: 0.3rem;">
+                            <div class="progress-bar-executive" style="width: 60%; background: var(--danger);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.burndown-container {
+    height: 400px;
+    position: relative;
+    margin-top: 2rem;
+}
+
+.burndown-grid {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.grid-line-vertical {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.grid-line-horizontal {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ideal-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--success));
+    transform-origin: 0 0;
+    transform: rotate(-30deg);
+    opacity: 0.5;
+}
+
+.actual-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.data-point {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 3px solid var(--bg-card);
+}
+
+.scope-creep {
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.scope-dot {
+    width: 16px;
+    height: 16px;
+    background: var(--warning);
+    border-radius: 50%;
+    border: 3px solid var(--bg-card);
+    box-shadow: 0 0 10px var(--warning);
+}
+
+.scope-label {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+    padding: 0.3rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.burndown-legend {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+</style>
+
+
+
+
+
+<!-- ===== GESTIÓN DE EQUIPO ===== -->
+<section id="team" class="tab-executive">
+    <div class="tab-header-executive">
+        <h1 class="tab-title-executive">Gestión de Equipo</h1>
+        <p class="tab-subtitle-executive">Gestión integral de recursos humanos, asignación de tareas y análisis de productividad del equipo.</p>
+    </div>
+    
+    <div class="executive-grid">
+        <!-- Distribución de Carga -->
+        <div class="card-executive" style="grid-column: span 6;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-balance-scale" style="color: var(--primary);"></i>
+                    Distribución de Carga de Trabajo
+                </h3>
+            </div>
+            <div class="chart-executive">
+                <div class="chart-bars">
+                    <div class="chart-bar-executive" style="height: 85%; background: linear-gradient(to top, var(--primary), var(--secondary));">
+                        <div class="bar-value">85%</div>
+                        <div class="bar-label">María</div>
+                    </div>
+                    <div class="chart-bar-executive" style="height: 70%; background: linear-gradient(to top, var(--accent), var(--blue));">
+                        <div class="bar-value">70%</div>
+                        <div class="bar-label">Juan</div>
+                    </div>
+                    <div class="chart-bar-executive" style="height: 95%; background: linear-gradient(to top, var(--warning), #fbbf24);">
+                        <div class="bar-value">95%</div>
+                        <div class="bar-label">Carlos</div>
+                    </div>
+                    <div class="chart-bar-executive" style="height: 60%; background: linear-gradient(to top, var(--success), #0ea5e9);">
+                        <div class="bar-value">60%</div>
+                        <div class="bar-label">Ana</div>
+                    </div>
+                    <div class="chart-bar-executive" style="height: 75%; background: linear-gradient(to top, var(--pink), #f43f5e);">
+                        <div class="bar-value">75%</div>
+                        <div class="bar-label">Pedro</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Disponibilidad del Equipo -->
+        <div class="card-executive" style="grid-column: span 6;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-calendar-check" style="color: var(--accent);"></i>
+                    Disponibilidad del Equipo
+                </h3>
+            </div>
+            <table class="table-executive">
+                <thead>
+                    <tr>
+                        <th>Miembro</th>
+                        <th>Proyecto</th>
+                        <th>Horas Sem.</th>
+                        <th>Disponibilidad</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-small">MS</div>
+                                <span>María Sánchez</span>
+                            </div>
+                        </td>
+                        <td>Digital Transformation</td>
+                        <td>40h</td>
+                        <td>
+                            <div class="progress-executive">
+                                <div class="progress-bar-executive" style="width: 85%;"></div>
+                            </div>
+                        </td>
+                        <td><span class="badge-executive badge-warning">Alta Carga</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-small" style="background: linear-gradient(135deg, var(--accent), var(--blue));">JP</div>
+                                <span>Juan Pérez</span>
+                            </div>
+                        </td>
+                        <td>E-commerce Platform</td>
+                        <td>35h</td>
+                        <td>
+                            <div class="progress-executive">
+                                <div class="progress-bar-executive" style="width: 70%; background: linear-gradient(90deg, var(--accent), var(--blue));"></div>
+                            </div>
+                        </td>
+                        <td><span class="badge-executive badge-success">Óptimo</span></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="user-avatar-small" style="background: linear-gradient(135deg, var(--warning), #fbbf24);">CR</div>
+                                <span>Carlos Rodríguez</span>
+                            </div>
+                        </td>
+                        <td>Mobile App</td>
+                        <td>45h</td>
+                        <td>
+                            <div class="progress-executive">
+                                <div class="progress-bar-executive" style="width: 95%; background: linear-gradient(90deg, var(--warning), #fbbf24);"></div>
+                            </div>
+                        </td>
+                        <td><span class="badge-executive badge-danger">Sobrecarga</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Habilidades del Equipo -->
+        <div class="card-executive" style="grid-column: span 12;">
+            <div class="card-header-executive">
+                <h3 class="card-title-executive">
+                    <i class="fas fa-star" style="color: var(--warning);"></i>
+                    Matriz de Habilidades del Equipo
+                </h3>
+            </div>
+            <table class="table-executive">
+                <thead>
+                    <tr>
+                        <th>Habilidad</th>
+                        <th>María</th>
+                        <th>Juan</th>
+                        <th>Carlos</th>
+                        <th>Ana</th>
+                        <th>Pedro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Gestión de Proyectos</td>
+                        <td><div class="skill-level level-expert">Experto</div></td>
+                        <td><div class="skill-level level-advanced">Avanzado</div></td>
+                        <td><div class="skill-level level-intermediate">Intermedio</div></td>
+                        <td><div class="skill-level level-basic">Básico</div></td>
+                        <td><div class="skill-level level-advanced">Avanzado</div></td>
+                    </tr>
+                    <tr>
+                        <td>Desarrollo Frontend</td>
+                        <td><div class="skill-level level-advanced">Avanzado</div></td>
+                        <td><div class="skill-level level-expert">Experto</div></td>
+                        <td><div class="skill-level level-intermediate">Intermedio</div></td>
+                        <td><div class="skill-level level-expert">Experto</div></td>
+                        <td><div class="skill-level level-basic">Básico</div></td>
+                    </tr>
+                    <tr>
+                        <td>Análisis de Datos</td>
+                        <td><div class="skill-level level-expert">Experto</div></td>
+                        <td><div class="skill-level level-intermediate">Intermedio</div></td>
+                        <td><div class="skill-level level-advanced">Avanzado</div></td>
+                        <td><div class="skill-level level-intermediate">Intermedio</div></td>
+                        <td><div class="skill-level level-advanced">Avanzado</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<style>
+.user-avatar-small {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+}
+
+.skill-level {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.level-expert { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.level-advanced { background: rgba(6, 182, 212, 0.2); color: var(--accent); }
+.level-intermediate { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.level-basic { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+</style>
+
+
+
+
+
+
+
+
+
+
+
+            <!-- ===== REPORTE EJECUTIVO ===== -->
+            <section id="reports" class="tab-executive">
+                <div class="tab-header-executive">
+                    <h1 class="tab-title-executive">Reporte Ejecutivo</h1>
+                    <p class="tab-subtitle-executive">Reporte ejecutivo de excelencia con análisis detallado, gráficos profesionales y recomendaciones estratégicas.</p>
+                </div>
+                
+                <div class="report-section-executive">
+                    <div class="report-header-executive">
+                        <h2 class="report-title-executive">Reporte Ejecutivo Trimestral</h2>
+                        <p class="report-subtitle-executive">Análisis integral del desempeño del proyecto y recomendaciones estratégicas para la alta dirección</p>
+                        <div style="margin-top: 1rem; color: var(--text-secondary);">
+                            <span>Período: Q1 2024 | Generado: 15 Mar 2024 | Versión: 1.0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumen Ejecutivo -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-chart-line"></i> Resumen Ejecutivo
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                            <div style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">✅ Logros Principales</div>
+                                <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                                    <li>Proyecto en 78.5% de progreso general</li>
+                                    <li>CPI de 1.24 (24% bajo presupuesto)</li>
+                                    <li>94% de satisfacción del cliente</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(245, 158, 11, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--warning);">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">⚠️ Áreas de Atención</div>
+                                <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                                    <li>SPI de 0.96 (4% de retraso)</li>
+                                    <li>Proyecto Mobile App al 45% de progreso</li>
+                                    <li>3 tareas críticas pendientes</li>
+                                </ul>
+                            </div>
+                            <div style="background: rgba(6, 182, 212, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--accent);">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">🎯 Objetivos Q2</div>
+                                <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+                                    <li>Completar proyecto principal (100%)</li>
+                                    <li>Reducir SPI a 1.0 (cero retrasos)</li>
+                                    <li>Implementar 2 nuevos proyectos</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Análisis Financiero -->
+                    <div style="margin-bottom: 3rem;">
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-dollar-sign"></i> Análisis Financiero
+                        </h3>
+                        <div class="executive-grid">
+                            <div class="card-executive" style="grid-column: span 6;">
+                                <h4 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Desempeño de Costos</h4>
+                                <table class="table-executive">
+                                    <tbody>
+                                        <tr>
+                                            <td>Presupuesto Autorizado (BAC)</td>
+                                            <td style="text-align: right; font-weight: 600;">€175,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Valor Planificado (PV)</td>
+                                            <td style="text-align: right; font-weight: 600;">€142,500</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Valor Ganado (EV)</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--success);">€115,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Costo Real (AC)</td>
+                                            <td style="text-align: right; font-weight: 600;">€92,500</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Varianza de Costos (CV)</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--success);">+€22,500</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="card-executive" style="grid-column: span 6;">
+                                <h4 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Proyecciones Financieras</h4>
+                                <table class="table-executive">
+                                    <tbody>
+                                        <tr>
+                                            <td>Estimación a la Conclusión (EAC)</td>
+                                            <td style="text-align: right; font-weight: 600;">€144,300</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Estimación para Completar (ETC)</td>
+                                            <td style="text-align: right; font-weight: 600;">€51,800</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Varianza a la Conclusión (VAC)</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--success);">+€30,700</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Índice de Desempeño de Costos (CPI)</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--success);">1.24</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Índice de Desempeño del Cronograma (SPI)</td>
+                                            <td style="text-align: right; font-weight: 600; color: var(--warning);">0.96</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recomendaciones -->
+                    <div>
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-lightbulb"></i> Recomendaciones Estratégicas
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                            <div style="background: rgba(16, 185, 129, 0.1); padding: 1.5rem; border-radius: 12px;">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--success);">
+                                    <i class="fas fa-check-circle"></i> Acciones Inmediatas
+                                </div>
+                                <p style="color: var(--text-secondary); line-height: 1.6;">
+                                    • Asignar recursos adicionales al proyecto Mobile App<br>
+                                    • Revisar cronograma de tareas críticas<br>
+                                    • Optimizar proceso de aprobaciones
+                                </p>
+                            </div>
+                            <div style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 12px;">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">
+                                    <i class="fas fa-chart-line"></i> Oportunidades de Mejora
+                                </div>
+                                <p style="color: var(--text-secondary); line-height: 1.6;">
+                                    • Implementar automatización en procesos<br>
+                                    • Capacitar equipo en metodologías ágiles<br>
+                                    • Mejorar comunicación interdepartamental
+                                </p>
+                            </div>
+                            <div style="background: rgba(236, 72, 153, 0.1); padding: 1.5rem; border-radius: 12px;">
+                                <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink);">
+                                    <i class="fas fa-rocket"></i> Visión a Futuro
+                                </div>
+                                <p style="color: var(--text-secondary); line-height: 1.6;">
+                                    • Expandir a mercado internacional<br>
+                                    • Desarrollar módulos IA predictiva<br>
+                                    • Crear programa de certificación
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Firma -->
+                    <div style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid rgba(255, 255, 255, 0.1); text-align: center;">
+                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            <strong>Generado por:</strong> Sistema Gantt Executive Pro
+                        </p>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">
+                            © 2024 Gantt Executive Pro. Todos los derechos reservados.<br>
+                            Este reporte se actualiza automáticamente cada 24 horas.
+                        </p>
+                        <button onclick="generatePDFReport()" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 600; cursor: pointer; margin-top: 1.5rem; transition: var(--transition);">
+                            <i class="fas fa-file-pdf"></i> Generar Reporte PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- SCRIPT DEL SISTEMA -->
+    <script>
+    // ===== CONFIGURACIÓN DEL SISTEMA =====
+    const SYSTEM_VERSION = "2.0";
+    let currentUser = {
+        name: "John Doe",
+        email: "john@empresa.com",
+        plan: "professional",
+        avatar: "JD"
+    };
+    
+    let systemData = {
+        progress: 78.5,
+        budget: 142500,
+        cpi: 1.24,
+        spi: 0.96,
+        tasks: {
+            total: 156,
+            completed: 126,
+            inProgress: 63,
+            pending: 32
+        },
+        projects: {
+            active: 5,
+            completed: 12,
+            delayed: 1
+        }
+    };
+    
+    // ===== INICIALIZACIÓN =====
+    function initSystem() {
+        // Cargar datos del usuario desde localStorage
+        const savedUser = localStorage.getItem('gantt_user');
+        if (savedUser) {
+            try {
+                currentUser = JSON.parse(savedUser);
+            } catch(e) {
+                console.log("Error al cargar usuario");
+            }
+        }
+        
+        // Cargar datos de URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userParam = urlParams.get('user');
+        if (userParam) {
+            try {
+                const userData = JSON.parse(atob(userParam));
+                if (userData.user) {
+                    currentUser.name = userData.user.name || currentUser.name;
+                    currentUser.email = userData.user.email || currentUser.email;
+                    currentUser.plan = userData.user.plan || currentUser.plan;
+                }
+            } catch(e) {
+                console.log("Error al decodificar datos de URL");
+            }
+        }
+        
+        // Actualizar interfaz
+        updateUserInterface();
+        updateDashboard();
+        
+        console.log(`✅ Sistema Gantt Executive Pro v${SYSTEM_VERSION} inicializado`);
+        console.log(`👤 Usuario: ${currentUser.name} (${currentUser.plan})`);
+        
+        // Iniciar actualizaciones en tiempo real
+        setInterval(updateLiveData, 5000);
+    }
+    
+    // ===== ACTUALIZAR INTERFAZ =====
+    function updateUserInterface() {
+        // Actualizar header
+        document.getElementById('userName').textContent = currentUser.name;
+        document.getElementById('userEmail').textContent = currentUser.email;
+        document.getElementById('userAvatar').textContent = currentUser.avatar;
+        
+        // Actualizar badge del plan
+        const planBadge = document.getElementById('planBadge');
+        planBadge.className = 'plan-badge ';
+        planBadge.textContent = currentUser.plan.toUpperCase();
+        
+        if (currentUser.plan === 'free') {
+            planBadge.classList.add('plan-free');
+        } else if (currentUser.plan === 'professional') {
+            planBadge.classList.add('plan-pro');
+        } else {
+            planBadge.classList.add('plan-premium');
+        }
+        
+        // Actualizar contadores
+        document.getElementById('projectCount').textContent = `${systemData.projects.active}/10 proyectos`;
+        document.getElementById('teamCount').textContent = '8 miembros activos';
+        document.getElementById('performanceStatus').textContent = systemData.cpi >= 1 ? 'Alto rendimiento' : 'Rendimiento regular';
+    }
+    
+    function updateDashboard() {
+        // Actualizar valores KPI
+        document.getElementById('progressValue').textContent = `${systemData.progress}%`;
+        
+        // Actualizar gráficas
+        updateCharts();
+    }
+    
+    function updateCharts() {
+        // Animar barras de progreso
+        document.querySelectorAll('.progress-bar-executive').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 300);
+        });
+    }
+    
+    function updateLiveData() {
+        // Simular actualización en tiempo real
+        if (systemData.progress < 100) {
+            systemData.progress += 0.1;
+            systemData.progress = Math.min(systemData.progress, 100);
+        }
+        
+        updateDashboard();
+    }
+    
+    // ===== NAVEGACIÓN =====
+    function switchTab(tabId) {
+        // Ocultar todas las pestañas
+        document.querySelectorAll('.tab-executive').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Desactivar todos los items del menú
+        document.querySelectorAll('.nav-item-executive').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Activar pestaña seleccionada
+        document.getElementById(tabId).classList.add('active');
+        
+        // Activar item del menú
+        document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        
+        // Animar entrada
+        const activeTab = document.getElementById(tabId);
+        activeTab.style.animation = 'none';
+        setTimeout(() => {
+            activeTab.style.animation = 'slideIn 0.5s ease';
+        }, 10);
+    }
+    
+    // ===== FUNCIONES DEL SISTEMA =====
+    function upgradePlan() {
+        const plans = {
+            free: { price: 0, features: 3 },
+            professional: { price: 9.99, features: 8 },
+            premium: { price: 19.99, features: 'Todas' }
+        };
+        
+        const upgradeMessage = `📊 ACTUALIZACIÓN DE PLAN\n\nPlan actual: ${currentUser.plan.toUpperCase()}\n\nOpciones:\n1. Professional - €9.99/mes\n2. Premium - €19.99/mes\n\nEscribe "pro" o "premium":`;
+        
+        const selection = prompt(upgradeMessage);
+        
+        if (selection && ['pro', 'professional'].includes(selection.toLowerCase())) {
+            currentUser.plan = 'professional';
+            alert('✅ ¡Plan Professional activado!\n\nAhora tienes acceso completo a todas las funcionalidades ejecutivas.');
+        } else if (selection && selection.toLowerCase() === 'premium') {
+            currentUser.plan = 'premium';
+            alert('⭐ ¡Plan Premium activado!\n\nAcceso total a todas las funcionalidades avanzadas y soporte prioritario 24/7.');
+        }
+        
+        // Guardar cambios
+        localStorage.setItem('gantt_user', JSON.stringify(currentUser));
+        updateUserInterface();
+    }
+    
+    function addProject() {
+        alert('🎯 Función: Crear nuevo proyecto\n\nEsta funcionalidad está disponible en la versión completa del sistema.');
+    }
+    
+    function createTask() {
+        alert('📝 Función: Crear nueva tarea\n\nEsta funcionalidad está disponible en la versión completa del sistema.');
+    }
+    
+    function exportGantt() {
+        alert('📄 Exportando diagrama Gantt a PDF...\n\nEl archivo se descargará automáticamente en unos segundos.');
+        setTimeout(() => {
+            alert('✅ Diagrama Gantt exportado exitosamente.\n\nArchivo: gantt_diagram_' + new Date().toISOString().split('T')[0] + '.pdf');
+        }, 1500);
+    }
+    
+    function generatePDFReport() {
+        alert('📊 Generando reporte ejecutivo PDF...\n\nEste proceso puede tomar unos momentos.\nEl reporte incluirá todos los gráficos y tablas del dashboard.');
+        setTimeout(() => {
+            alert('✅ Reporte ejecutivo generado exitosamente.\n\nArchivo: reporte_ejecutivo_' + new Date().toISOString().split('T')[0] + '.pdf\n\nSe ha enviado una copia a: ' + currentUser.email);
+        }, 2000);
+    }
+    
+    // ===== INICIALIZAR AL CARGAR =====
+    document.addEventListener('DOMContentLoaded', initSystem);
+    
+    // ===== FUNCIONES GLOBALES =====
+    window.addEventListener('load', function() {
+        // Asegurar que las animaciones funcionen
+        setTimeout(updateCharts, 500);
+        
+        // Mostrar mensaje de bienvenida
+        setTimeout(() => {
+            console.log('🚀 Sistema completamente cargado y listo');
+        }, 1000);
+    });
+    </script>
+    
+    <!-- ESTILOS ADICIONALES -->
+    <style>
+    .select-executive {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    
+    .select-executive:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: var(--primary);
+    }
+    
+    .btn-primary-executive {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 0.8rem 1.8rem;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary-executive:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow-primary);
+    }
+    
+    .btn-secondary-executive {
+        background: transparent;
+        color: var(--text-primary);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        padding: 0.8rem 1.8rem;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+    }
+    
+    .btn-secondary-executive:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--primary);
+    }
+    
+    .btn-icon-executive {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-secondary);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: var(--transition);
+        margin: 0 2px;
+    }
+    
+    .btn-icon-executive:hover {
+        background: rgba(99, 102, 241, 0.2);
+        color: var(--primary);
+        transform: scale(1.1);
+    }
+    </style>
+</body>
+</html>

@@ -581,6 +581,7 @@
 
       <h3>Vistas del Proyecto</h3>
       <ul>
+        <li id="showInicioView"><i class="fas fa-home"></i> Inicio</li>
         <li id="showBoardView"><i class="fas fa-columns"></i> Board</li>
         <li id="showListView"><i class="fas fa-list"></i> List</li>
         <li id="showCalendarView"><i class="fas fa-calendar-alt"></i> Calendar</li>
@@ -604,6 +605,12 @@
         <!-- Proyectos se cargarán dinámicamente -->
       </ul>
 
+<li id="showInicioView" style="padding: 10px 15px; cursor: pointer; color: #e0e0ff; display: flex; align-items: center; gap: 12px;">
+  <i class="fas fa-home" style="color: #4d4dff; width: 20px;"></i>
+  <span>Inicio</span>
+</li>
+
+
  <!-- === AQUÍ DEBES COLOCAR EL NUEVO CÓDIGO === -->
   <div class="methodology-section">
     <h4>Modo de Trabajo</h4>
@@ -621,8 +628,244 @@
        <!-- CONTENEDOR DE TODAS LAS VISTAS -->
        <div id="appViews">
 
+
+
+
+<!-- ========== VISTA DE INICIO COMPLETA ========== -->
+<div id="inicioView" class="view-content active">
+    <div class="inicio-container">
+       
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="inicio-main">
+            <div class="page-header">
+                <h1 class="page-title">🌟 Bienvenido, <span id="welcomeName">Jackson</span></h1>
+                <p class="page-subtitle">Aquí está todo lo que necesitas para gestionar tus proyectos de manera eficiente</p>
+            </div>
+
+            <!-- SECCIÓN: MI TRABAJO -->
+            <div class="sections-grid">
+                <div class="section-card">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-tasks"></i>
+                            <span>Mi Trabajo</span>
+                        </div>
+                        <div class="section-actions">
+                            <button class="action-btn" onclick="showView('list')">
+                                <i class="fas fa-list"></i> Ver todo
+                            </button>
+                            <button class="action-btn primary" onclick="openCreateTaskModal()">
+                                <i class="fas fa-plus"></i> Nueva Tarea
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="work-summary">
+                        <div class="work-metric">
+                            <div class="metric-value" id="totalTasks">0</div>
+                            <div class="metric-label">Tareas Totales</div>
+                            <div class="metric-trend positive" id="newTasksTrend">
+                                <i class="fas fa-arrow-up"></i> <span id="newTasksCount">0</span> nuevas
+                            </div>
+                        </div>
+                        <div class="work-metric">
+                            <div class="metric-value" style="color: var(--success);" id="completedTasks">0</div>
+                            <div class="metric-label">Completadas</div>
+                            <div class="metric-trend positive" id="completedTrend">
+                                <i class="fas fa-arrow-up"></i> <span id="todayCompleted">0</span> hoy
+                            </div>
+                        </div>
+                        <div class="work-metric">
+                            <div class="metric-value" style="color: var(--warning);" id="pendingTasks">0</div>
+                            <div class="metric-label">Pendientes</div>
+                            <div class="metric-trend" id="pendingTrend">
+                                <i class="fas fa-minus"></i> Estables
+                            </div>
+                        </div>
+                        <div class="work-metric">
+                            <div class="metric-value" style="color: var(--danger);" id="urgentTasks">0</div>
+                            <div class="metric-label">Urgentes</div>
+                            <div class="metric-trend negative" id="urgentTrend">
+                                <i class="fas fa-exclamation-triangle"></i> Atención
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="showView('board')">
+                            <i class="fas fa-columns"></i>
+                            <span>Tablero</span>
+                        </div>
+                        <div class="quick-action" onclick="showView('calendar')">
+                            <i class="fas fa-calendar"></i>
+                            <span>Calendario</span>
+                        </div>
+                        <div class="quick-action" onclick="showView('list')">
+                            <i class="fas fa-list"></i>
+                            <span>Lista</span>
+                        </div>
+                    </div>
+
+                    <div class="recent-items" id="recentTasksList">
+                        <!-- Tareas recientes se cargarán dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- SECCIÓN: ACTIVIDAD RECIENTE -->
+<div class="section-card">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fas fa-history"></i>
+            <span>Actividad Reciente</span>
+        </div>
+        <div class="section-actions">
+            <button class="action-btn" onclick="refreshActivity()">
+                <i class="fas fa-sync"></i> Actualizar
+            </button>
+        </div>
+    </div>
+    
+    <!-- ✅ DEBE TENER ESTE ID EXACTO -->
+    <div class="recent-items" id="activityList">
+        <!-- Actividad se cargará dinámicamente -->
+    </div>
+</div>
+
+
+<!-- SECCIÓN: INFORMES RECIENTES -->
+<div class="section-card">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fas fa-file-alt"></i>
+            <span>Informes Recientes</span>
+        </div>
+        <div class="section-actions">
+            <button class="action-btn" onclick="showView('reports')">
+                <i class="fas fa-file-alt"></i> Ver Reportes
+            </button>
+        </div>
+    </div>
+    
+    <!-- ✅ DEBE TENER ESTE ID EXACTO -->
+    <div class="report-list" id="recentReportsList">
+        <!-- Informes se cargarán dinámicamente -->
+    </div>
+</div>
+
+
+
+            <!-- SECCIÓN: PANEL EJECUTIVO -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Panel Ejecutivo e Informes</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn" onclick="showView('reports')">
+                            <i class="fas fa-file-alt"></i> Ver Reportes
+                        </button>
+                        <button class="action-btn primary" onclick="generateProjectReport()">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-grid">
+                    <div class="panel-card">
+                        <div class="panel-title">
+                            <i class="fas fa-percentage"></i>
+                            <span>Progreso General</span>
+                        </div>
+                        <div class="panel-value" style="color: var(--success);" id="overallProgress">0%</div>
+                        <div class="panel-subtitle">Promedio de todos los proyectos</div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-title">
+                            <i class="fas fa-business-time"></i>
+                            <span>Tiempo Registrado</span>
+                        </div>
+                        <div class="panel-value" id="totalHours">0h</div>
+                        <div class="panel-subtitle">Esta semana</div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Riesgos Identificados</span>
+                        </div>
+                        <div class="panel-value" style="color: var(--warning);" id="risksCount">0</div>
+                        <div class="panel-subtitle">Requieren atención</div>
+                    </div>
+                    <div class="panel-card">
+                        <div class="panel-title">
+                            <i class="fas fa-users"></i>
+                            <span>Equipo Activo</span>
+                        </div>
+                        <div class="panel-value" id="activeTeam">0</div>
+                        <div class="panel-subtitle">Miembros colaborando</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 25px 0 15px; font-size: 16px; font-weight: bold;">
+                    <i class="fas fa-file-alt"></i> Informes Recientes
+                </h3>
+
+                <div class="report-list" id="recentReportsList">
+                    <!-- Informes se cargarán dinámicamente -->
+                </div>
+            </div>
+
+            <!-- SECCIÓN: MÁS HERRAMIENTAS -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-tools"></i>
+                        <span>Más Herramientas</span>
+                    </div>
+                </div>
+
+                <div class="more-grid">
+                    <div class="more-item" onclick="showView('timeAllocation')">
+                        <i class="fas fa-hourglass-half more-icon"></i>
+                        <div class="more-title">Asignación de Tiempo</div>
+                        <div class="more-desc">Control de horas trabajadas</div>
+                    </div>
+                    <div class="more-item" onclick="showView('profitability')">
+                        <i class="fas fa-chart-pie more-icon"></i>
+                        <div class="more-title">Rentabilidad</div>
+                        <div class="more-desc">Análisis de costos y beneficios</div>
+                    </div>
+                    <div class="more-item" onclick="showSystemConfiguration()">
+                        <i class="fas fa-cog more-icon"></i>
+                        <div class="more-title">Configuración</div>
+                        <div class="more-desc">Ajustes del sistema</div>
+                    </div>
+                    <div class="more-item" onclick="exportBackup()">
+                        <i class="fas fa-download more-icon"></i>
+                        <div class="more-title">Respaldo</div>
+                        <div class="more-desc">Exportar datos</div>
+                    </div>
+                    <div class="more-item" onclick="showHelpSupport()">
+                        <i class="fas fa-question-circle more-icon"></i>
+                        <div class="more-title">Ayuda y Soporte</div>
+                        <div class="more-desc">Documentación y asistencia</div>
+                    </div>
+                    <div class="more-item" onclick="showLicensesView()">
+                        <i class="fas fa-crown more-icon"></i>
+                        <div class="more-title">Licencias</div>
+                        <div class="more-desc">Planes y actualizaciones</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+
+
       <!-- Vista Board (Kanban) -->
-      <div id="boardView" class="view-content active">
+      <div id="boardView" class="view-content">
         <!-- Contenido existente del board view -->
         <div class="project-info">
           <h2>Proyecto: <span id="projectName">Nombre del Proyecto</span></h2>
@@ -659,6 +902,7 @@
           </label>
           <button id="clearFiltersBtn" class="blue-btn">Limpiar</button>
         </div>
+
 
         <!-- Kanban Board -->
         <div class="kanban-board">
