@@ -41421,3 +41421,26 @@ window.cancelarInvitacion = cancelarInvitacion;
 // ============================================================================
 
 
+
+
+
+
+
+// ============================================================================
+// 🚀 SOLUCIÓN DE EMERGENCIA - BOTÓN SIEMPRE VISIBLE
+// ============================================================================
+
+setTimeout(function() {
+    const boton = document.querySelector('button[onclick*="enviar"]');
+    if (boton) {
+        boton.style.cssText = `
+            position: relative !important;
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
+            display: inline-block !important;
+        `;
+        console.log('✅ Botón forzado a ser clickeable');
+    }
+}, 1000);
