@@ -41444,3 +41444,30 @@ setTimeout(function() {
         console.log('✅ Botón forzado a ser clickeable');
     }
 }, 1000);
+
+
+
+
+
+// ============================================================================
+// 🚀 SOLUCIÓN DEFINITIVA - QUITAR ASISTENTE DE ENCIMA DEL BOTÓN
+// ============================================================================
+
+// Ejecutar cada segundo para asegurar que el botón siempre sea clickeable
+setInterval(function() {
+    const boton = document.querySelector('button[onclick*="enviar"], #btnEnviarInvitacion');
+    if (boton) {
+        boton.style.zIndex = '999999';
+        boton.style.position = 'relative';
+        boton.style.pointerEvents = 'auto';
+    }
+    
+    // Buscar el div de Oxi y bajarlo
+    const oxiDivs = document.querySelectorAll('div');
+    oxiDivs.forEach(div => {
+        if (div.textContent && div.textContent.includes('Oxi')) {
+            div.style.zIndex = '1';
+            div.style.position = 'relative';
+        }
+    });
+}, 500);
