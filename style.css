@@ -14046,3 +14046,38 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
     border-bottom-left-radius: 8px !important;
     border-bottom-right-radius: 8px !important;
 }
+
+
+
+
+
+/* Animaciones */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Estados de carga */
+.btn-generando {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Notificaciones */
+.notification {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Stats animadas */
+.stat-value {
+    transition: all 0.3s ease;
+}
+
+.stat-value:hover {
+    transform: scale(1.1);
+}

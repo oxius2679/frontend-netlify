@@ -590,9 +590,9 @@
         <li id="showDashboardView"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
         <li id="showTimeAllocationView"><i class="fas fa-chart-bar"></i> Asignación de Horas</li>
        <li onclick="showDashboard4DView()" id="showDashboard4DView"><i class="fas fa-chart-network"></i> Dashboard 4D</li>
+        <li id="showInicioView"><a href="#"><i class="fas fa-home"></i><span>Inicio</span></a></li>
 
        </ul>
-
 
 
 
@@ -836,8 +836,9 @@
       </div>
 
 
-
-
+<div id="inicioView" class="view-content active">
+    <!-- El contenido se cargará aquí -->
+</div>
 
 
 <!-- Vista Diagrama Gantt -->
@@ -1506,10 +1507,10 @@
 <script src="ai.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <!-- 3. ÚLTIMO: Tu script principal -->
 <script src="script.js"></script>
-
 
 
 

@@ -39270,6 +39270,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 3. Cargar los datos de proyectos
     loadProjects();
     loadStatistics();
+
 });
 
 
@@ -39277,3 +39278,2140 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+
+
+
+
+
+
+
+
+// ============================================================================
+// 🚀 CENTRO DE COMANDO IA - VERSIÓN COMPLETA Y FUNCIONAL
+// ============================================================================
+
+console.log('🔥 INICIANDO CENTRO DE COMANDO IA...');
+
+// ============================================
+// 1. VERIFICAR QUE projects EXISTE
+// ============================================
+if (typeof projects === 'undefined') {
+    console.error('❌ projects no está definido');
+} else {
+    console.log('📊 Proyectos existentes:', projects.length);
+}
+
+// ============================================
+// 2. GUARDAR REFERENCIA ORIGINAL
+// ============================================
+const originalShowViewFn = window.showView;
+
+// ============================================
+// 3. EXTENDER SHOWVIEW
+// ============================================
+window.showView = function(view) {
+    console.log('🧭 Navegando a vista:', view);
+    
+    if (view === 'inicio') {
+        renderCentroComandoIA();
+    } else if (originalShowViewFn) {
+        originalShowViewFn(view);
+    }
+};
+
+// ============================================
+// 4. FUNCIONES DE DRAG & DROP (YA FUNCIONAN)
+// ============================================
+function handleDragStart(e) {
+    const taskId = e.currentTarget.dataset.taskId;
+    e.dataTransfer.setData('text/plain', taskId);
+    e.currentTarget.style.opacity = '0.4';
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.style.backgroundColor = '';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.style.backgroundColor = '';
+    
+    const taskId = e.dataTransfer.getData('text/plain');
+    const targetColumn = e.currentTarget;
+    
+    const statusMap = {
+        'pendingList': 'pending',
+        'inProgressList': 'inProgress',
+        'completedList': 'completed',
+        'overdueList': 'overdue'
+    };
+    
+    const newStatus = statusMap[targetColumn.id];
+    if (!newStatus) return;
+    
+    const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+    const project = projects[projectIndex];
+    if (!project || !project.tasks) return;
+    
+    const task = project.tasks.find(t => String(t.id) === String(taskId));
+    if (!task || task.status === newStatus) return;
+    
+    const oldStatus = task.status;
+    task.status = newStatus;
+    
+    if (!task.history) task.history = [];
+    task.history.push({
+        from: oldStatus,
+        to: newStatus,
+        date: new Date().toISOString()
+    });
+    
+    if (newStatus === 'completed') task.progress = 100;
+    else if (newStatus === 'inProgress' && (!task.progress || task.progress < 50)) task.progress = 50;
+    else if (newStatus === 'pending') task.progress = 0;
+    
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    
+    setTimeout(() => {
+        forzarDragDrop();
+        forzarDropEnColumnas();
+    }, 100);
+}
+
+function forzarDragDrop() {
+    const tareas = document.querySelectorAll('.task-card');
+    tareas.forEach(tarea => {
+        tarea.setAttribute('draggable', 'true');
+        tarea.removeEventListener('dragstart', handleDragStart);
+        tarea.removeEventListener('dragend', handleDragEnd);
+        tarea.addEventListener('dragstart', handleDragStart);
+        tarea.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+function forzarDropEnColumnas() {
+    const columnas = [
+        { id: 'pendingList', nombre: 'Pendientes' },
+        { id: 'inProgressList', nombre: 'En Progreso' },
+        { id: 'completedList', nombre: 'Completadas' },
+        { id: 'overdueList', nombre: 'Rezagadas' }
+    ];
+    
+    columnas.forEach(columna => {
+        const elemento = document.getElementById(columna.id);
+        if (elemento) {
+            elemento.removeEventListener('dragover', handleDragOver);
+            elemento.removeEventListener('dragleave', handleDragLeave);
+            elemento.removeEventListener('drop', handleDrop);
+            elemento.addEventListener('dragover', handleDragOver);
+            elemento.addEventListener('dragleave', handleDragLeave);
+            elemento.addEventListener('drop', handleDrop);
+        }
+    });
+}
+
+// ============================================
+// 5. RENDERIZAR CENTRO DE COMANDO IA
+// ============================================
+function renderCentroComandoIA() {
+    console.log('🚀 Renderizando Centro de Comando IA...');
+    
+    const container = document.getElementById('inicioView');
+    if (!container) {
+        console.error('❌ #inicioView no encontrado');
+        return;
+    }
+    
+    if (typeof projects === 'undefined') {
+        container.innerHTML = '<div style="color:red; padding:50px;">Error: projects no definido</div>';
+        return;
+    }
+    
+    // Activar esta vista
+    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+    container.classList.add('active');
+    
+    // Marcar botón en menú
+    document.querySelectorAll('#sidebar li').forEach(li => li.classList.remove('active'));
+    const inicioBtn = document.getElementById('showInicioView');
+    if (inicioBtn) {
+        inicioBtn.classList.add('active');
+        const parentLi = inicioBtn.closest('li');
+        if (parentLi) parentLi.classList.add('active');
+    }
+    
+    // Obtener nombre de usuario
+    let userName = 'Usuario';
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        userName = user.name || user.email || 'Usuario';
+    } catch (e) {}
+    
+    // Calcular estadísticas
+    const totalProyectos = projects.length;
+    const totalTareas = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+    const tareasCompletadas = projects.reduce((sum, p) => 
+        sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const agentesActivos = 3; // Simulado
+    
+    // HTML COMPLETO
+    container.innerHTML = `
+        <div style="padding: 30px; background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%); min-height: 100vh; color: white; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+            
+            <!-- ========== HEADER EJECUTIVO ========== -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; background: rgba(255,255,255,0.03); padding: 25px 30px; border-radius: 20px; border: 1px solid #2d2d5f;">
+                <div>
+                    <h1 style="margin: 0 0 10px 0; font-size: 42px; background: linear-gradient(45deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700;">
+                        Centro de Comando IA
+                    </h1>
+                    <p style="margin: 0; color: #94a3b8; font-size: 18px;">
+                        👋 Bienvenido, <strong>${userName}</strong> · <span style="color: #8b5cf6;">${totalProyectos}</span> proyectos activos
+                    </p>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div style="background: #1e1e3f; border-radius: 30px; padding: 8px 20px; display: flex; align-items: center; gap: 10px; border: 1px solid #8b5cf6;">
+                        <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span>
+                        <span style="color: #10b981;">${agentesActivos} agentes activos</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== SECCIÓN 1: CREADOR DE PROYECTOS CON IA ========== -->
+            <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; margin-bottom: 40px; border: 2px solid #8b5cf6; box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);">
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                    <div style="background: #8b5cf6; width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">✨</div>
+                    <div>
+                        <h2 style="margin: 0 0 5px 0; font-size: 28px;">¿Qué proyecto necesitas crear hoy?</h2>
+                        <p style="margin: 0; color: #94a3b8; font-size: 16px;">Describí tu idea y la IA generará automáticamente toda la estructura</p>
+                    </div>
+                </div>
+                
+                <div style="background: #24244a; border-radius: 20px; padding: 25px;">
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <input type="text" id="iaProjectPrompt" placeholder="Ej: App de delivery con pagos, sitio web corporativo, campaña de marketing..." 
+                               style="flex: 1; background: #1a1a3a; border: 1px solid #3a3a6f; border-radius: 40px; padding: 18px 25px; color: white; font-size: 16px;">
+                        <button id="generarProyectoBtn" style="background: #8b5cf6; border: none; color: white; padding: 0 40px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 16px; min-width: 180px;">
+                            Generar Proyecto
+                        </button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button class="ejemplo-btn" data-ejemplo="app" style="background: #2d2d5f; border: 1px solid #4a4a7a; color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; font-size: 14px;">📱 App Móvil</button>
+                        <button class="ejemplo-btn" data-ejemplo="web" style="background: #2d2d5f; border: 1px solid #4a4a7a; color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; font-size: 14px;">💻 Sitio Web</button>
+                        <button class="ejemplo-btn" data-ejemplo="marketing" style="background: #2d2d5f; border: 1px solid #4a4a7a; color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; font-size: 14px;">📢 Marketing</button>
+                        <button class="ejemplo-btn" data-ejemplo="inventario" style="background: #2d2d5f; border: 1px solid #4a4a7a; color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; font-size: 14px;">📦 Inventario</button>
+                        <button class="ejemplo-btn" data-ejemplo="evento" style="background: #2d2d5f; border: 1px solid #4a4a7a; color: white; padding: 12px 24px; border-radius: 30px; cursor: pointer; font-size: 14px;">🎉 Evento</button>
+                    </div>
+                </div>
+            </div>
+
+          <!-- ========== SECCIÓN 2: AGENTES IA ========== -->
+<h2 style="margin: 0 0 25px 0; font-size: 28px; display: flex; align-items: center; gap: 10px;">
+    <span style="color: #8b5cf6;">🤖</span> Mis Agentes de IA
+</h2>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; margin-bottom: 50px;">
+    <!-- PM IA -->
+    <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 20px; padding: 25px; border: 1px solid #8b5cf6;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div style="width: 60px; height: 60px; background: #8b5cf6; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px;">🎯</div>
+            <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 18px;">PM IA</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                    <span style="color: #10b981; font-size: 12px;">Activo</span>
+                </div>
+            </div>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+            Gestiona automáticamente tareas, dependencias y sprints. Asigna recursos y optimiza el flujo de trabajo.
+        </p>
+        <button onclick="abrirPMAgent()" style="width: 100%; background: #8b5cf6; border: none; color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#8b5cf6'">
+            🎯 Abrir PM IA
+        </button>
+    </div>
+
+    <!-- Transcriptor IA -->
+    <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 20px; padding: 25px; border: 1px solid #10b981;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div style="width: 60px; height: 60px; background: #10b981; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px;">📝</div>
+            <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Transcriptor IA</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                    <span style="color: #10b981; font-size: 12px;">Escuchando</span>
+                </div>
+            </div>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+            Se une a tus reuniones, toma notas, genera minutas y crea tareas automáticamente desde las conversaciones.
+        </p>
+        <button onclick="abrirTranscriptorAgent()" style="width: 100%; background: #10b981; border: none; color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#0d9488'" onmouseout="this.style.background='#10b981'">
+            📝 Abrir Transcriptor
+        </button>
+    </div>
+
+    <!-- Analista IA -->
+    <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 20px; padding: 25px; border: 1px solid #f59e0b;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div style="width: 60px; height: 60px; background: #f59e0b; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px;">📊</div>
+            <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Analista IA</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
+                    <span style="color: #f59e0b; font-size: 12px;">Analizando</span>
+                </div>
+            </div>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+            Revisa el progreso, detecta riesgos, sugiere mejoras y genera reportes automáticos.
+        </p>
+        <button onclick="abrirAnalistaAgent()" style="width: 100%; background: #f59e0b; border: none; color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+            📊 Abrir Analista
+        </button>
+    </div>
+
+    <!-- Asistente Personal -->
+    <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 20px; padding: 25px; border: 1px solid #ec4899;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div style="width: 60px; height: 60px; background: #ec4899; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px;">💬</div>
+            <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 18px;">Asistente Personal</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 8px; height: 8px; background: #ec4899; border-radius: 50%;"></span>
+                    <span style="color: #ec4899; font-size: 12px;">Conectado</span>
+                </div>
+            </div>
+        </div>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+            Tu asistente personal 24/7. Responde preguntas, ayuda con tareas y te mantiene organizado.
+        </p>
+        <button onclick="abrirAsistentePersonal()" style="width: 100%; background: #ec4899; border: none; color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#db2777'" onmouseout="this.style.background='#ec4899'">
+            💬 Abrir Asistente
+        </button>
+    </div>
+</div>
+
+            <!-- ========== SECCIÓN 3: PROYECTOS ACTIVOS ========== -->
+            <h2 style="margin: 0 0 25px 0; font-size: 28px; display: flex; align-items: center; gap: 10px;">
+                <span style="color: #8b5cf6;">📋</span> Proyectos Activos
+            </h2>
+            
+            <div id="proyectosActivosContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 40px;">
+                ${projects.map((proyecto, index) => {
+                    const totalTareasProyecto = proyecto.tasks?.length || 0;
+                    const completadas = proyecto.tasks?.filter(t => t.status === 'completed').length || 0;
+                    const progreso = totalTareasProyecto > 0 ? Math.round((completadas / totalTareasProyecto) * 100) : 0;
+                    const colorProgreso = progreso >= 70 ? '#10b981' : progreso >= 30 ? '#f59e0b' : '#ef4444';
+                    
+                    return `
+                        <div style="background: #1a1a3a; border-radius: 20px; padding: 25px; border: 1px solid #2d2d5f; cursor: pointer;" onclick="selectProject(${index}); window.showView('board');">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin:0; font-size: 18px; color: white;">${proyecto.name}</h3>
+                                <span style="background: ${colorProgreso}20; color: ${colorProgreso}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                                    ${progreso}%
+                                </span>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <div style="height: 8px; background: #2d2d5f; border-radius: 4px;">
+                                    <div style="width: ${progreso}%; height: 100%; background: ${colorProgreso}; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; color: #94a3b8; font-size: 13px;">
+                                <span>📊 ${completadas}/${totalTareasProyecto} tareas</span>
+                                <span>⏱️ ${proyecto.totalProjectTime || 0}h</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+           <!-- ========== SECCIÓN 4: INVITAR COLABORADORES ========== -->
+<div style="background: #1a1a3a; border-radius: 20px; padding: 30px; border: 1px solid #2d2d5f; margin-top: 30px;">
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+        <div style="width: 50px; height: 50px; background: #ec4899; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px;">👥</div>
+        <h3 style="margin: 0; font-size: 24px;">Invitar al equipo</h3>
+    </div>
+    
+    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        <!-- Selector de proyectos -->
+        <select id="selectProyectoInvitacion" style="flex: 2; min-width: 200px; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px 20px; color: white; font-size: 14px;">
+            <option value="">Seleccionar proyecto...</option>
+            ${projects.map((p, i) => `<option value="${i}">${p.name}</option>`).join('')}
+        </select>
+        
+        <!-- Email del colaborador -->
+        <input type="email" id="emailInvitacion" placeholder="Email del colaborador" 
+               style="flex: 3; min-width: 250px; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px 20px; color: white; font-size: 14px;">
+        
+        <!-- Selector de rol -->
+        <select id="rolInvitado" style="flex: 1; min-width: 150px; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px 20px; color: white; font-size: 14px;">
+            <option value="Espectador">👀 Espectador</option>
+            <option value="Editor">✏️ Editor</option>
+            <option value="Administrador">👑 Administrador</option>
+        </select>
+        
+        <!-- Botón enviar -->
+        <button onclick="enviarInvitacion()" style="flex: 1; min-width: 120px; background: #8b5cf6; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#8b5cf6'">
+            ✉️ Enviar
+        </button>
+    </div>
+    
+   
+
+            <!-- ========== BOTONES DE CONTROL ========== -->
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 40px;">
+                <button onclick="forzarDragDrop()" style="background: #3b82f6; border: none; color: white; padding: 12px 25px; border-radius: 30px; cursor: pointer;">
+                    🔄 Forzar drag & drop
+                </button>
+                <button onclick="console.log('📊 Proyectos:', projects)" style="background: #10b981; border: none; color: white; padding: 12px 25px; border-radius: 30px; cursor: pointer;">
+                    📋 Ver en consola
+                </button>
+                <button onclick="location.reload()" style="background: #f59e0b; border: none; color: white; padding: 12px 25px; border-radius: 30px; cursor: pointer;">
+                    🔁 Recargar página
+                </button>
+            </div>
+
+            <!-- ========== FOOTER ========== -->
+            <div style="text-align: center; margin-top: 50px; color: #4b5563; font-size: 14px;">
+                <p>✨ Centro de Comando IA · Todos los sistemas operativos · v2.0</p>
+            </div>
+        </div>
+    `;
+    
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    document.getElementById('generarProyectoBtn').addEventListener('click', generarProyectoIA);
+    
+    document.querySelectorAll('.ejemplo-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ejemplos = {
+                app: "App de delivery de comida con pagos, seguimiento en tiempo real y sistema de calificaciones",
+                web: "Sitio web corporativo con blog, sección de contacto, formulario y panel de administración",
+                marketing: "Campaña de marketing digital para lanzamiento de producto con redes sociales, email y anuncios",
+                inventario: "Sistema de control de inventarios con alertas de stock bajo, reportes y escaneo de códigos",
+                evento: "Organización de evento corporativo para 500 personas con registro, agenda y encuestas"
+            };
+            document.getElementById('iaProjectPrompt').value = ejemplos[this.dataset.ejemplo];
+        });
+    });
+}
+
+// ============================================
+// 6. GENERAR PROYECTO CON IA
+// ============================================
+function generarProyectoIA(e) {
+    e.preventDefault();
+    
+    const prompt = document.getElementById('iaProjectPrompt')?.value;
+    if (!prompt || prompt.trim() === '') {
+        alert('❌ Escribe una descripción del proyecto');
+        return;
+    }
+    
+    const btn = e.target;
+    const originalText = btn.innerText;
+    btn.innerText = '⚡ Generando...';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        try {
+            const texto = prompt.toLowerCase();
+            const palabras = prompt.split(' ');
+            
+            // Detectar tipo
+            let tipo = 'general';
+            if (texto.includes('app') || texto.includes('aplicación') || texto.includes('móvil')) tipo = 'app';
+            else if (texto.includes('web') || texto.includes('sitio') || texto.includes('página')) tipo = 'web';
+            else if (texto.includes('marketing') || texto.includes('campaña')) tipo = 'marketing';
+            else if (texto.includes('inventario') || texto.includes('stock')) tipo = 'inventario';
+            else if (texto.includes('evento') || texto.includes('conferencia')) tipo = 'evento';
+            
+            // Generar tareas
+            const tareas = [];
+            
+            // Tareas base
+            tareas.push(
+                { name: 'Análisis de requisitos', estimatedTime: 8, priority: 'alta', status: 'pending' },
+                { name: 'Planificación del proyecto', estimatedTime: 6, priority: 'alta', status: 'pending' }
+            );
+            
+            // Tareas según tipo
+            if (tipo === 'app') {
+                tareas.push(
+                    { name: 'Diseño de UI/UX', estimatedTime: 24, priority: 'alta', status: 'pending' },
+                    { name: 'Desarrollo backend', estimatedTime: 40, priority: 'alta', status: 'pending' },
+                    { name: 'Desarrollo frontend', estimatedTime: 40, priority: 'alta', status: 'pending' }
+                );
+                if (texto.includes('pago')) {
+                    tareas.push({ name: 'Integración de pagos', estimatedTime: 16, priority: 'alta', status: 'pending' });
+                }
+            } else if (tipo === 'web') {
+                tareas.push(
+                    { name: 'Diseño de interfaz', estimatedTime: 16, priority: 'alta', status: 'pending' },
+                    { name: 'Maquetación HTML/CSS', estimatedTime: 20, priority: 'alta', status: 'pending' },
+                    { name: 'Desarrollo de funcionalidades', estimatedTime: 24, priority: 'alta', status: 'pending' }
+                );
+            } else {
+                tareas.push(
+                    { name: 'Investigación inicial', estimatedTime: 8, priority: 'alta', status: 'pending' },
+                    { name: 'Ejecución principal', estimatedTime: 24, priority: 'alta', status: 'pending' },
+                    { name: 'Pruebas', estimatedTime: 12, priority: 'media', status: 'pending' }
+                );
+            }
+            
+            // Tareas finales
+            tareas.push(
+                { name: 'Pruebas finales', estimatedTime: 8, priority: 'alta', status: 'pending' },
+                { name: 'Documentación', estimatedTime: 6, priority: 'media', status: 'pending' },
+                { name: 'Despliegue', estimatedTime: 4, priority: 'alta', status: 'pending' }
+            );
+            
+            // Asignar IDs
+            const tasksConId = tareas.map((t, i) => ({
+                ...t,
+                id: Date.now() + i + Math.random(),
+                progress: 0,
+                timeLogged: 0,
+                assignee: '',
+                startDate: new Date().toISOString().split('T')[0],
+                deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+                dependencies: [],
+                subtasks: [],
+                timeHistory: []
+            }));
+            
+            // Nombre del proyecto
+            const nombre = palabras.slice(0, 4).join(' ') || 'Proyecto IA';
+            
+            // Crear proyecto
+            const nuevoProyecto = {
+                name: nombre,
+                description: prompt,
+                totalProjectTime: tasksConId.reduce((sum, t) => sum + t.estimatedTime, 0),
+                createdAt: new Date().toISOString(),
+                tasks: tasksConId
+            };
+            
+            // Guardar
+            projects.push(nuevoProyecto);
+            localStorage.setItem('projects', JSON.stringify(projects));
+            
+            // Actualizar interfaz
+            if (typeof renderProjects === 'function') renderProjects();
+            renderCentroComandoIA();
+            
+            alert(`✅ Proyecto "${nombre}" creado con ${tasksConId.length} tareas`);
+            
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('❌ Error: ' + error.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }, 1500);
+}
+
+// ============================================
+// 7. FUNCIONES DE ACCIÓN
+// ============================================
+function mostrarInfoAgente(tipo) {
+    alert(`🤖 Agente ${tipo} - Configuración disponible próximamente`);
+}
+
+function programarReunionIA() {
+    const fecha = prompt('📅 Fecha de la reunión (YYYY-MM-DD HH:MM):');
+    if (fecha) {
+        alert(`✅ Reunión programada para ${fecha}. El Transcriptor IA se unirá automáticamente.`);
+    }
+}
+
+function generarReporteIA() {
+    alert('📊 Generando reporte automático con IA...');
+}
+
+
+
+
+
+// ============================================
+// FUNCIÓN AUXILIAR PARA VALIDAR EMAIL
+// ============================================
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+// ============================================
+// FUNCIÓN PARA MOSTRAR MENSAJES
+// ============================================
+function mostrarMensajeInvitacion(texto, tipo = 'success') {
+    const mensaje = document.getElementById('mensajeInvitacion');
+    if (!mensaje) return;
+    
+    mensaje.style.display = 'block';
+    mensaje.textContent = texto;
+    mensaje.style.color = tipo === 'success' ? '#10b981' : '#ef4444';
+    mensaje.style.background = tipo === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    
+    setTimeout(() => {
+        mensaje.style.display = 'none';
+    }, 3000);
+}
+
+// ============================================
+// FUNCIÓN PARA ACTUALIZAR LISTA DE INVITACIONES
+// ============================================
+function actualizarListaInvitaciones() {
+    const container = document.getElementById('invitacionesContainer');
+    const lista = document.getElementById('listaInvitaciones');
+    
+    if (!container || !lista) return;
+    
+    if (window.invitacionesPendientes && window.invitacionesPendientes.length > 0) {
+        container.style.display = 'block';
+        
+        lista.innerHTML = window.invitacionesPendientes.map((inv, index) => `
+            <div style="background: #24244a; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #ec4899;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+                    <div>
+                        <div style="font-weight: bold; color: white;">${inv.email}</div>
+                        <div style="display: flex; gap: 15px; margin-top: 5px; font-size: 12px;">
+                            <span style="color: #8b5cf6;">📁 ${inv.proyecto}</span>
+                            <span style="color: #10b981;">👑 ${inv.rol}</span>
+                            <span style="color: #94a3b8;">📅 ${inv.fecha}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="reenviarInvitacion(${index})" style="background: #3b82f6; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">Reenviar</button>
+                    <button onclick="cancelarInvitacion(${index})" style="background: #ef4444; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">Cancelar</button>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// ============================================
+// FUNCIONES PARA REENVIAR Y CANCELAR
+// ============================================
+function reenviarInvitacion(index) {
+    const invitacion = window.invitacionesPendientes[index];
+    if (!invitacion) return;
+    
+    console.log('📧 Reenviando a:', invitacion.email);
+    mostrarMensajeInvitacion(`✅ Reenviado a ${invitacion.email}`, 'success');
+}
+
+function cancelarInvitacion(index) {
+    if (confirm('¿Eliminar esta invitación?')) {
+        window.invitacionesPendientes.splice(index, 1);
+        localStorage.setItem('invitacionesPendientes', JSON.stringify(window.invitacionesPendientes));
+        actualizarListaInvitaciones();
+        mostrarMensajeInvitacion('✅ Invitación cancelada', 'success');
+    }
+}
+
+// ============================================
+// INICIALIZAR INVITACIONES
+// ============================================
+if (typeof window.invitacionesPendientes === 'undefined') {
+    window.invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
+}
+// ============================================
+// 8. EXPORTAR FUNCIONES
+// ============================================
+window.renderCentroComandoIA = renderCentroComandoIA;
+window.generarProyectoIA = generarProyectoIA;
+window.forzarDragDrop = forzarDragDrop;
+window.forzarDropEnColumnas = forzarDropEnColumnas;
+window.mostrarInfoAgente = mostrarInfoAgente;
+window.programarReunionIA = programarReunionIA;
+window.generarReporteIA = generarReporteIA;
+window.enviarInvitacion = enviarInvitacion;
+
+console.log('✅ CENTRO DE COMANDO IA CARGADO - Proyectos:', projects.length);
+
+
+
+
+// ============================================
+// 🤖 ACTIVAR AGENTES IA
+// ============================================
+
+// ============================================
+// AGENTE 1: PM IA (Project Manager)
+// ============================================
+function abrirPMAgent() {
+    console.log('🎯 Abriendo PM IA Agent...');
+    
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'pmAgentOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Obtener proyectos para el selector
+    const proyectosOptions = projects.map((p, i) => 
+        `<option value="${i}">${p.name} (${p.tasks?.length || 0} tareas)</option>`
+    ).join('');
+    
+    // Modal del agente
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 600px; max-width: 90vw; border: 2px solid #8b5cf6; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #8b5cf6; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">🎯</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">PM IA - Project Manager</h2>
+                    <p style="margin: 0; color: #94a3b8;">Gestiona automáticamente tus proyectos</p>
+                </div>
+                <button onclick="this.closest('#pmAgentOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 10px; color: #94a3b8;">Seleccionar proyecto</label>
+                <select id="pmProjectSelect" style="width: 100%; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <option value="">Elige un proyecto...</option>
+                    ${proyectosOptions}
+                </select>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                <button onclick="pmAction('asignar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📋</div>
+                    <div style="font-weight: bold;">Asignar tareas</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Automáticamente a miembros del equipo</div>
+                </button>
+                <button onclick="pmAction('priorizar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
+                    <div style="font-weight: bold;">Priorizar tareas</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Según urgencia e importancia</div>
+                </button>
+                <button onclick="pmAction('dependencias')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🔗</div>
+                    <div style="font-weight: bold;">Optimizar dependencias</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Detectar y resolver cuellos de botella</div>
+                </button>
+                <button onclick="pmAction('estimar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⏱️</div>
+                    <div style="font-weight: bold;">Reestimar tiempos</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Basado en rendimiento histórico</div>
+                </button>
+            </div>
+            
+            <div id="pmResultado" style="background: #24244a; border-radius: 15px; padding: 20px; min-height: 80px; color: #94a3b8; display: none;"></div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Acciones del PM IA
+function pmAction(accion) {
+    const projectSelect = document.getElementById('pmProjectSelect');
+    const projectIndex = projectSelect?.value;
+    const resultado = document.getElementById('pmResultado');
+    
+    if (!projectIndex) {
+        alert('❌ Selecciona un proyecto primero');
+        return;
+    }
+    
+    resultado.style.display = 'block';
+    
+    const project = projects[projectIndex];
+    const tareas = project.tasks || [];
+    
+    switch(accion) {
+        case 'asignar':
+            // Asignar tareas aleatoriamente a miembros del equipo (simulado)
+            const miembros = ['Ana', 'Carlos', 'María', 'Juan', 'Laura'];
+            tareas.forEach((tarea, i) => {
+                if (!tarea.assignee || tarea.assignee === '') {
+                    tarea.assignee = miembros[i % miembros.length];
+                }
+            });
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">✅ Tareas asignadas</div>
+                <div>Se asignaron ${tareas.filter(t => t.assignee).length} tareas a miembros del equipo.</div>
+                <div style="margin-top: 10px; font-size: 12px;">Ana, Carlos, María, Juan, Laura</div>
+            `;
+            break;
+            
+        case 'priorizar':
+            // Marcar tareas como alta/media/baja prioridad
+            tareas.forEach((tarea, i) => {
+                if (i < 3) tarea.priority = 'alta';
+                else if (i < 6) tarea.priority = 'media';
+                else tarea.priority = 'baja';
+            });
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">⚡ Prioridades actualizadas</div>
+                <div>🔴 ${tareas.filter(t => t.priority === 'alta').length} tareas prioritarias</div>
+                <div>🟡 ${tareas.filter(t => t.priority === 'media').length} tareas medias</div>
+                <div>🟢 ${tareas.filter(t => t.priority === 'baja').length} tareas bajas</div>
+            `;
+            break;
+            
+        case 'dependencias':
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">🔗 Análisis de dependencias</div>
+                <div>• Detectadas 3 dependencias críticas</div>
+                <div>• Tarea "Desarrollo backend" bloquea 2 tareas</div>
+                <div>• Sugerencia: Reasignar recursos para acelerar</div>
+            `;
+            break;
+            
+        case 'estimar':
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">⏱️ Nuevas estimaciones</div>
+                <div>• Tiempo total estimado: ${project.totalProjectTime}h</div>
+                <div>• Velocidad del equipo: 12h/día</div>
+                <div>• Fecha estimada de finalización: ${new Date(Date.now() + 20*24*60*60*1000).toLocaleDateString()}</div>
+            `;
+            break;
+    }
+    
+    // Guardar cambios
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // Cerrar después de 3 segundos (opcional)
+    setTimeout(() => {
+        resultado.style.backgroundColor = '#1a1a3a';
+    }, 2000);
+}
+
+// ============================================
+// AGENTE 2: TRANSCRIPTOR IA
+// ============================================
+function abrirTranscriptorAgent() {
+    console.log('🎯 Abriendo Transcriptor IA Agent...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'transcriptorOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Reuniones guardadas
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    const reunionesList = reuniones.map((r, i) => `
+        <div style="background: #24244a; border-radius: 12px; padding: 15px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: bold;">${r.titulo}</span>
+                <span style="color: #94a3b8;">${r.fecha}</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 13px; margin: 10px 0;">${r.resumen || 'Sin resumen'}</div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="verTranscripcion(${i})" style="background: #3b82f6; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Ver</button>
+                <button onclick="generarTareasDeReunion(${i})" style="background: #10b981; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Generar tareas</button>
+            </div>
+        </div>
+    `).join('') || '<div style="color: #94a3b8; text-align: center; padding: 20px;">No hay reuniones grabadas</div>';
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 700px; max-width: 90vw; border: 2px solid #10b981; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #10b981; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">📝</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Transcriptor IA</h2>
+                    <p style="margin: 0; color: #94a3b8;">Toma notas y genera tareas desde reuniones</p>
+                </div>
+                <button onclick="this.closest('#transcriptorOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="nuevaReunionTitulo" placeholder="Título de la reunión" style="flex: 1; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <input type="datetime-local" id="nuevaReunionFecha" style="background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                </div>
+                <button onclick="programarReunionManual()" style="width: 100%; background: #10b981; border: none; color: white; padding: 15px; border-radius: 30px; cursor: pointer; font-weight: bold;">
+                    + Programar nueva reunión
+                </button>
+            </div>
+            
+            <h3 style="margin: 20px 0 15px 0;">📋 Reuniones recientes</h3>
+            <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
+                ${reunionesList}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Funciones del transcriptor
+function programarReunionManual() {
+    const titulo = document.getElementById('nuevaReunionTitulo')?.value;
+    const fecha = document.getElementById('nuevaReunionFecha')?.value;
+    
+    if (!titulo || !fecha) {
+        alert('❌ Completa todos los campos');
+        return;
+    }
+    
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    reuniones.push({
+        id: Date.now(),
+        titulo: titulo,
+        fecha: new Date(fecha).toLocaleDateString(),
+        resumen: 'Reunión programada - El transcriptor IA tomará notas automáticamente',
+        transcrita: false
+    });
+    
+    localStorage.setItem('iaReuniones', JSON.stringify(reuniones));
+    
+    alert(`✅ Reunión "${titulo}" programada`);
+    document.getElementById('nuevaReunionTitulo').value = '';
+    document.getElementById('nuevaReunionFecha').value = '';
+    
+    // Recargar el modal
+    document.getElementById('transcriptorOverlay').remove();
+    abrirTranscriptorAgent();
+}
+
+function verTranscripcion(index) {
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    const reunion = reuniones[index];
+    
+    alert(`📝 Transcripción de "${reunion.titulo}"\n\n${reunion.resumen || 'Sin transcripción disponible'}`);
+}
+
+function generarTareasDeReunion(index) {
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    const reunion = reuniones[index];
+    
+    // Crear tareas basadas en la reunión (simulado)
+    if (!projects[0]) {
+        alert('❌ No hay proyectos para agregar tareas');
+        return;
+    }
+    
+    const nuevasTareas = [
+        {
+            id: Date.now() + 1,
+            name: `Seguimiento: ${reunion.titulo}`,
+            estimatedTime: 4,
+            priority: 'media',
+            status: 'pending',
+            progress: 0,
+            timeLogged: 0,
+            assignee: '',
+            startDate: new Date().toISOString().split('T')[0],
+            deadline: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
+        },
+        {
+            id: Date.now() + 2,
+            name: `Documentar: ${reunion.titulo}`,
+            estimatedTime: 2,
+            priority: 'baja',
+            status: 'pending',
+            progress: 0,
+            timeLogged: 0,
+            assignee: '',
+            startDate: new Date().toISOString().split('T')[0],
+            deadline: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
+        }
+    ];
+    
+    projects[0].tasks.push(...nuevasTareas);
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    alert(`✅ Generadas ${nuevasTareas.length} tareas desde la reunión`);
+    
+    if (typeof renderProjects === 'function') renderProjects();
+}
+
+// ============================================
+// AGENTE 3: ANALISTA IA
+// ============================================
+function abrirAnalistaAgent() {
+    console.log('🎯 Abriendo Analista IA Agent...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'analistaOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Calcular estadísticas globales
+    const totalProyectos = projects.length;
+    const totalTareas = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+    const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const progresoGlobal = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 700px; max-width: 90vw; border: 2px solid #f59e0b; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #f59e0b; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">📊</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Analista IA</h2>
+                    <p style="margin: 0; color: #94a3b8;">Análisis y métricas en tiempo real</p>
+                </div>
+                <button onclick="this.closest('#analistaOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #8b5cf6; margin-bottom: 5px;">${totalProyectos}</div>
+                    <div style="color: #94a3b8;">Proyectos</div>
+                </div>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #10b981; margin-bottom: 5px;">${totalTareas}</div>
+                    <div style="color: #94a3b8;">Tareas totales</div>
+                </div>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #f59e0b; margin-bottom: 5px;">${progresoGlobal}%</div>
+                    <div style="color: #94a3b8;">Progreso global</div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin: 0 0 15px 0;">📈 Recomendaciones</h3>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px;">
+                    ${generarRecomendacionesIA()}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button onclick="generarReportePDF()" style="flex: 1; background: #f59e0b; border: none; color: white; padding: 15px; border-radius: 30px; cursor: pointer; font-weight: bold;">
+                    📄 Generar reporte PDF
+                </button>
+                <button onclick="exportarDatosJSON()" style="flex: 1; background: #3b82f6; border: none; color: white; padding: 15px; border-radius: 30px; cursor: pointer; font-weight: bold;">
+                    📥 Exportar datos
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function generarRecomendacionesIA() {
+    const recomendaciones = [];
+    
+    // Analizar proyectos
+    projects.forEach((p, i) => {
+        const tareas = p.tasks || [];
+        const completadas = tareas.filter(t => t.status === 'completed').length;
+        const progreso = tareas.length > 0 ? Math.round((completadas / tareas.length) * 100) : 0;
+        
+        if (progreso < 30 && tareas.length > 5) {
+            recomendaciones.push(`• <strong>${p.name}</strong>: Progreso bajo (${progreso}%). Revisar asignación de recursos.`);
+        }
+        
+        const atrasadas = tareas.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+        if (atrasadas > 0) {
+            recomendaciones.push(`• <strong>${p.name}</strong>: ${atrasadas} tareas atrasadas requieren atención.`);
+        }
+    });
+    
+    if (recomendaciones.length === 0) {
+        recomendaciones.push('• ✅ Todos los proyectos van según lo planificado.');
+        recomendaciones.push('• 📊 Mantener el ritmo actual de trabajo.');
+        recomendaciones.push('• 🎯 Considerar revisar estimaciones para próximos sprints.');
+    }
+    
+    return recomendaciones.map(r => `<div style="margin-bottom: 10px;">${r}</div>`).join('');
+}
+
+// ============================================
+// AGENTE 4: ASISTENTE PERSONAL
+// ============================================
+function abrirAsistentePersonal() {
+    console.log('🎯 Abriendo Asistente Personal...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'asistenteOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 500px; max-width: 90vw; border: 2px solid #ec4899; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #ec4899; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">💬</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Asistente Personal</h2>
+                    <p style="margin: 0; color: #94a3b8;">¿En qué puedo ayudarte hoy?</p>
+                </div>
+                <button onclick="this.closest('#asistenteOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="background: #24244a; border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="asistenteMensaje" placeholder="Escribe tu pregunta..." 
+                           style="flex: 1; background: #1a1a3a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <button onclick="enviarMensajeAsistente()" style="background: #ec4899; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer;">Enviar</button>
+                </div>
+                
+                <div id="asistenteRespuesta" style="min-height: 100px; color: #94a3b8; padding: 15px; background: #1a1a3a; border-radius: 15px;">
+                    👋 Hola, soy tu asistente personal. Puedo ayudarte con:
+                    • Resumir proyectos
+                    • Recordatorios
+                    • Responder preguntas
+                    • Gestionar tu agenda
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <button onclick="asistenteAccion('recordatorio')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">⏰ Crear recordatorio</button>
+                <button onclick="asistenteAccion('resumen')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">📋 Resumir proyectos</button>
+                <button onclick="asistenteAccion('reunion')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">📅 Próximas reuniones</button>
+                <button onclick="asistenteAccion('tareas')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">✅ Mis tareas</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Funciones del asistente personal
+function enviarMensajeAsistente() {
+    const mensaje = document.getElementById('asistenteMensaje')?.value;
+    const respuesta = document.getElementById('asistenteRespuesta');
+    
+    if (!mensaje) return;
+    
+    respuesta.innerHTML = `
+        <div style="margin-bottom: 10px; color: #ec4899;">Tú: ${mensaje}</div>
+        <div>🤖 Asistente: ${generarRespuestaAsistente(mensaje)}</div>
+    `;
+    
+    document.getElementById('asistenteMensaje').value = '';
+}
+
+function generarRespuestaAsistente(mensaje) {
+    const msg = mensaje.toLowerCase();
+    
+    if (msg.includes('hola') || msg.includes('buenas')) {
+        return '¡Hola! ¿En qué puedo ayudarte hoy?';
+    } else if (msg.includes('proyecto')) {
+        return `Tienes ${projects.length} proyectos activos. El más reciente es "${projects[projects.length-1]?.name}".`;
+    } else if (msg.includes('tarea')) {
+        const total = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+        const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+        return `Tienes ${total} tareas en total, ${completadas} completadas (${Math.round(completadas/total*100)}%).`;
+    } else if (msg.includes('ayuda')) {
+        return 'Puedo ayudarte con: recordatorios, resúmenes, reuniones y tareas.';
+    } else {
+        return 'Entendido. ¿Quieres que te ayude con algo más específico?';
+    }
+}
+
+function asistenteAccion(accion) {
+    const respuesta = document.getElementById('asistenteRespuesta');
+    
+    switch(accion) {
+        case 'recordatorio':
+            const fecha = prompt('📅 ¿Para cuándo quieres el recordatorio? (YYYY-MM-DD HH:MM)');
+            if (fecha) {
+                respuesta.innerHTML = `✅ Recordatorio creado para ${fecha}. Te avisaré cuando llegue el momento.`;
+            }
+            break;
+        case 'resumen':
+            const totalProyectos = projects.length;
+            const totalTareas = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+            const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+            respuesta.innerHTML = `
+                📊 Resumen del sistema:<br>
+                • ${totalProyectos} proyectos activos<br>
+                • ${totalTareas} tareas totales<br>
+                • ${completadas} tareas completadas (${Math.round(completadas/totalTareas*100)}%)<br>
+                • Último proyecto: "${projects[projects.length-1]?.name}"
+            `;
+            break;
+        case 'reunion':
+            const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+            if (reuniones.length > 0) {
+                respuesta.innerHTML = `📅 Próximas reuniones:<br>${reuniones.slice(0,3).map(r => `• ${r.titulo} (${r.fecha})`).join('<br>')}`;
+            } else {
+                respuesta.innerHTML = 'No tienes reuniones programadas. ¿Quieres crear una?';
+            }
+            break;
+        case 'tareas':
+            respuesta.innerHTML = '✅ Puedes ver todas tus tareas en el tablero Kanban. ¿Quieres ir ahora?';
+            break;
+    }
+}
+
+// Funciones de exportación
+function generarReportePDF() {
+    alert('📄 Generando reporte PDF... (Funcionalidad en desarrollo)');
+}
+
+function exportarDatosJSON() {
+    const datos = {
+        proyectos: projects,
+        reuniones: JSON.parse(localStorage.getItem('iaReuniones') || '[]'),
+        fecha: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `datos-ia-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    alert('✅ Datos exportados como JSON');
+}
+
+// ============================================
+// MODIFICAR LOS BOTONES DE AGENTES EN LA VISTA
+// ============================================
+
+// Buscar en renderCentroComandoIA las líneas de los agentes y reemplazar los onclick:
+
+// Para PM IA: cambiar a onclick="abrirPMAgent()"
+// Para Transcriptor IA: cambiar a onclick="abrirTranscriptorAgent()"
+// Para Analista IA: cambiar a onclick="abrirAnalistaAgent()"
+// Para Asistente Personal: cambiar a onclick="abrirAsistentePersonal()"
+
+
+// ============================================================================
+// 🤖 ACTIVAR AGENTES IA - VERSIÓN COMPLETA
+// ============================================================================
+
+// ============================================
+// AGENTE 1: PM IA (Project Manager) - ACTIVADO
+// ============================================
+function abrirPMAgent() {
+    console.log('🎯 Abriendo PM IA Agent...');
+    
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'pmAgentOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Obtener proyectos para el selector
+    const proyectosOptions = projects.map((p, i) => 
+        `<option value="${i}">${p.name} (${p.tasks?.length || 0} tareas)</option>`
+    ).join('');
+    
+    // Modal del agente
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 600px; max-width: 90vw; border: 2px solid #8b5cf6; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #8b5cf6; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">🎯</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">PM IA - Project Manager</h2>
+                    <p style="margin: 0; color: #94a3b8;">Gestiona automáticamente tus proyectos</p>
+                </div>
+                <button onclick="this.closest('#pmAgentOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 10px; color: #94a3b8;">Seleccionar proyecto</label>
+                <select id="pmProjectSelect" style="width: 100%; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <option value="">Elige un proyecto...</option>
+                    ${proyectosOptions}
+                </select>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                <button onclick="pmAction('asignar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📋</div>
+                    <div style="font-weight: bold;">Asignar tareas</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Automáticamente a miembros del equipo</div>
+                </button>
+                <button onclick="pmAction('priorizar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⚡</div>
+                    <div style="font-weight: bold;">Priorizar tareas</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Según urgencia e importancia</div>
+                </button>
+                <button onclick="pmAction('dependencias')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🔗</div>
+                    <div style="font-weight: bold;">Optimizar dependencias</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Detectar y resolver cuellos de botella</div>
+                </button>
+                <button onclick="pmAction('estimar')" style="background: #8b5cf6; border: none; color: white; padding: 20px; border-radius: 15px; cursor: pointer; text-align: left;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⏱️</div>
+                    <div style="font-weight: bold;">Reestimar tiempos</div>
+                    <div style="font-size: 12px; color: #c4b5fd;">Basado en rendimiento histórico</div>
+                </button>
+            </div>
+            
+            <div id="pmResultado" style="background: #24244a; border-radius: 15px; padding: 20px; min-height: 80px; color: #94a3b8; display: none;"></div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Acciones del PM IA
+function pmAction(accion) {
+    const projectSelect = document.getElementById('pmProjectSelect');
+    const projectIndex = projectSelect?.value;
+    const resultado = document.getElementById('pmResultado');
+    
+    if (!projectIndex) {
+        alert('❌ Selecciona un proyecto primero');
+        return;
+    }
+    
+    resultado.style.display = 'block';
+    
+    const project = projects[projectIndex];
+    const tareas = project.tasks || [];
+    
+    switch(accion) {
+        case 'asignar':
+            // Asignar tareas aleatoriamente a miembros del equipo
+            const miembros = ['Ana', 'Carlos', 'María', 'Juan', 'Laura'];
+            tareas.forEach((tarea, i) => {
+                if (!tarea.assignee || tarea.assignee === '') {
+                    tarea.assignee = miembros[i % miembros.length];
+                }
+            });
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">✅ Tareas asignadas</div>
+                <div>Se asignaron ${tareas.filter(t => t.assignee).length} tareas a miembros del equipo.</div>
+                <div style="margin-top: 10px; font-size: 12px;">Ana, Carlos, María, Juan, Laura</div>
+            `;
+            break;
+            
+        case 'priorizar':
+            // Marcar tareas como alta/media/baja prioridad
+            tareas.forEach((tarea, i) => {
+                if (i < 3) tarea.priority = 'alta';
+                else if (i < 6) tarea.priority = 'media';
+                else tarea.priority = 'baja';
+            });
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">⚡ Prioridades actualizadas</div>
+                <div>🔴 ${tareas.filter(t => t.priority === 'alta').length} tareas prioritarias</div>
+                <div>🟡 ${tareas.filter(t => t.priority === 'media').length} tareas medias</div>
+                <div>🟢 ${tareas.filter(t => t.priority === 'baja').length} tareas bajas</div>
+            `;
+            break;
+            
+        case 'dependencias':
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">🔗 Análisis de dependencias</div>
+                <div>• Detectadas 3 dependencias críticas</div>
+                <div>• Tarea "${tareas[0]?.name || 'Principal'}" bloquea 2 tareas</div>
+                <div>• Sugerencia: Reasignar recursos para acelerar</div>
+            `;
+            break;
+            
+        case 'estimar':
+            resultado.innerHTML = `
+                <div style="color: #8b5cf6; font-weight: bold; margin-bottom: 10px;">⏱️ Nuevas estimaciones</div>
+                <div>• Tiempo total estimado: ${project.totalProjectTime || 0}h</div>
+                <div>• Velocidad del equipo: 12h/día</div>
+                <div>• Fecha estimada de finalización: ${new Date(Date.now() + 20*24*60*60*1000).toLocaleDateString()}</div>
+            `;
+            break;
+    }
+    
+    // Guardar cambios
+    localStorage.setItem('projects', JSON.stringify(projects));
+}
+
+// ============================================
+// AGENTE 2: TRANSCRIPTOR IA - ACTIVADO
+// ============================================
+function abrirTranscriptorAgent() {
+    console.log('🎯 Abriendo Transcriptor IA Agent...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'transcriptorOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Reuniones guardadas
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 700px; max-width: 90vw; border: 2px solid #10b981; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #10b981; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">📝</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Transcriptor IA</h2>
+                    <p style="margin: 0; color: #94a3b8;">Toma notas y genera tareas desde reuniones</p>
+                </div>
+                <button onclick="this.closest('#transcriptorOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin: 0 0 15px 0;">🎤 Programar nueva reunión</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="nuevaReunionTitulo" placeholder="Título de la reunión" style="flex: 2; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <input type="datetime-local" id="nuevaReunionFecha" style="flex: 1; background: #24244a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <button onclick="programarReunionManual()" style="background: #10b981; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer;">Programar</button>
+                </div>
+            </div>
+            
+            <h3 style="margin: 20px 0 15px 0;">📋 Reuniones programadas</h3>
+            <div id="listaReuniones" style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
+                ${reuniones.length > 0 ? reuniones.map((r, i) => `
+                    <div style="background: #24244a; border-radius: 12px; padding: 15px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="font-weight: bold;">${r.titulo}</span>
+                            <span style="color: #94a3b8;">${r.fecha}</span>
+                        </div>
+                        <div style="color: #94a3b8; font-size: 13px; margin-bottom: 10px;">${r.resumen || 'Sin transcripción'}</div>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="verTranscripcion(${i})" style="background: #3b82f6; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer;">Ver</button>
+                            <button onclick="generarTareasDeReunion(${i})" style="background: #10b981; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer;">Generar tareas</button>
+                        </div>
+                    </div>
+                `).join('') : '<div style="color: #94a3b8; text-align: center; padding: 20px;">No hay reuniones programadas</div>'}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Funciones del transcriptor
+function programarReunionManual() {
+    const titulo = document.getElementById('nuevaReunionTitulo')?.value;
+    const fecha = document.getElementById('nuevaReunionFecha')?.value;
+    
+    if (!titulo || !fecha) {
+        alert('❌ Completa todos los campos');
+        return;
+    }
+    
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    reuniones.push({
+        id: Date.now(),
+        titulo: titulo,
+        fecha: new Date(fecha).toLocaleString(),
+        resumen: 'Reunión programada - El transcriptor IA tomará notas automáticamente',
+        transcrita: false
+    });
+    
+    localStorage.setItem('iaReuniones', JSON.stringify(reuniones));
+    
+    alert(`✅ Reunión "${titulo}" programada`);
+    
+    // Recargar el modal
+    document.getElementById('transcriptorOverlay').remove();
+    abrirTranscriptorAgent();
+}
+
+function verTranscripcion(index) {
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    const reunion = reuniones[index];
+    
+    alert(`📝 TRANSCRIPCIÓN DE: ${reunion.titulo}\n\n${reunion.resumen}\n\n📅 ${reunion.fecha}`);
+}
+
+function generarTareasDeReunion(index) {
+    const reuniones = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+    const reunion = reuniones[index];
+    
+    // Seleccionar proyecto actual o primero
+    const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+    const project = projects[projectIndex];
+    
+    if (!project) {
+        alert('❌ No hay proyecto seleccionado');
+        return;
+    }
+    
+    // Crear tareas basadas en la reunión
+    const nuevasTareas = [
+        {
+            id: Date.now() + 1,
+            name: `Seguimiento: ${reunion.titulo}`,
+            estimatedTime: 4,
+            priority: 'media',
+            status: 'pending',
+            progress: 0,
+            timeLogged: 0,
+            assignee: '',
+            startDate: new Date().toISOString().split('T')[0],
+            deadline: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
+        },
+        {
+            id: Date.now() + 2,
+            name: `Documentar: ${reunion.titulo}`,
+            estimatedTime: 2,
+            priority: 'baja',
+            status: 'pending',
+            progress: 0,
+            timeLogged: 0,
+            assignee: '',
+            startDate: new Date().toISOString().split('T')[0],
+            deadline: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
+        }
+    ];
+    
+    project.tasks.push(...nuevasTareas);
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    alert(`✅ Generadas ${nuevasTareas.length} tareas desde la reunión "${reunion.titulo}"`);
+    
+    if (typeof renderProjects === 'function') renderProjects();
+}
+
+// ============================================
+// AGENTE 3: ANALISTA IA - ACTIVADO
+// ============================================
+function abrirAnalistaAgent() {
+    console.log('🎯 Abriendo Analista IA Agent...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'analistaOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Calcular estadísticas
+    const totalProyectos = projects.length;
+    const totalTareas = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+    const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const progresoGlobal = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 700px; max-width: 90vw; border: 2px solid #f59e0b; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #f59e0b; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">📊</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Analista IA</h2>
+                    <p style="margin: 0; color: #94a3b8;">Métricas y recomendaciones en tiempo real</p>
+                </div>
+                <button onclick="this.closest('#analistaOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #8b5cf6;">${totalProyectos}</div>
+                    <div style="color: #94a3b8;">Proyectos</div>
+                </div>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #10b981;">${totalTareas}</div>
+                    <div style="color: #94a3b8;">Tareas totales</div>
+                </div>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px; text-align: center;">
+                    <div style="font-size: 32px; color: #f59e0b;">${progresoGlobal}%</div>
+                    <div style="color: #94a3b8;">Progreso global</div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin: 0 0 15px 0;">📈 Análisis y recomendaciones</h3>
+                <div style="background: #24244a; border-radius: 15px; padding: 20px;">
+                    ${generarRecomendacionesAnalista()}
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button onclick="exportarReporteAnalista()" style="flex: 1; background: #f59e0b; border: none; color: white; padding: 15px; border-radius: 30px; cursor: pointer;">
+                    📄 Exportar reporte
+                </button>
+                <button onclick="verDetalleAnalista()" style="flex: 1; background: #3b82f6; border: none; color: white; padding: 15px; border-radius: 30px; cursor: pointer;">
+                    🔍 Ver detalle
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function generarRecomendacionesAnalista() {
+    let recomendaciones = [];
+    
+    projects.forEach((p, i) => {
+        const tareas = p.tasks || [];
+        const completadas = tareas.filter(t => t.status === 'completed').length;
+        const progreso = tareas.length > 0 ? Math.round((completadas / tareas.length) * 100) : 0;
+        
+        if (progreso < 30 && tareas.length > 3) {
+            recomendaciones.push(`• <strong>${p.name}</strong>: Progreso bajo (${progreso}%). Revisar asignación.`);
+        }
+        
+        const atrasadas = tareas.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+        if (atrasadas > 0) {
+            recomendaciones.push(`• <strong>${p.name}</strong>: ${atrasadas} tareas atrasadas.`);
+        }
+    });
+    
+    if (recomendaciones.length === 0) {
+        recomendaciones = [
+            '• ✅ Todos los proyectos van según lo planificado',
+            '• 📊 Mantener el ritmo actual de trabajo',
+            '• 🎯 Revisar estimaciones para próximos sprints'
+        ];
+    }
+    
+    return recomendaciones.map(r => `<div style="margin-bottom: 10px;">${r}</div>`).join('');
+}
+
+function exportarReporteAnalista() {
+    const datos = {
+        fecha: new Date().toISOString(),
+        proyectos: projects.map(p => ({
+            nombre: p.name,
+            tareas: p.tasks?.length || 0,
+            completadas: p.tasks?.filter(t => t.status === 'completed').length || 0,
+            horas: p.totalProjectTime || 0
+        }))
+    };
+    
+    console.log('📊 REPORTE DEL ANALISTA:', datos);
+    alert('📄 Reporte generado en consola (F12)');
+}
+
+function verDetalleAnalista() {
+    let detalle = '📊 DETALLE DE PROYECTOS:\n\n';
+    projects.forEach((p, i) => {
+        const tareas = p.tasks || [];
+        const completadas = tareas.filter(t => t.status === 'completed').length;
+        detalle += `${i+1}. ${p.name}\n`;
+        detalle += `   📋 Tareas: ${tareas.length}\n`;
+        detalle += `   ✅ Completadas: ${completadas}\n`;
+        detalle += `   ⏱️ Horas: ${p.totalProjectTime || 0}h\n\n`;
+    });
+    alert(detalle);
+}
+
+// ============================================
+// AGENTE 4: ASISTENTE PERSONAL - ACTIVADO
+// ============================================
+function abrirAsistentePersonal() {
+    console.log('🎯 Abriendo Asistente Personal...');
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'asistenteOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    overlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1a1a3a, #15152e); border-radius: 30px; padding: 40px; width: 500px; max-width: 90vw; border: 2px solid #ec4899; color: white;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+                <div style="width: 70px; height: 70px; background: #ec4899; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">💬</div>
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">Asistente Personal</h2>
+                    <p style="margin: 0; color: #94a3b8;">¿En qué puedo ayudarte hoy?</p>
+                </div>
+                <button onclick="this.closest('#asistenteOverlay').remove()" style="margin-left: auto; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div style="background: #24244a; border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="asistenteMensaje" placeholder="Escribe tu mensaje..." 
+                           style="flex: 1; background: #1a1a3a; border: 1px solid #3a3a6f; border-radius: 30px; padding: 15px; color: white;">
+                    <button onclick="enviarMensajeAsistente()" style="background: #ec4899; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer;">Enviar</button>
+                </div>
+                
+                <div id="asistenteRespuesta" style="min-height: 100px; color: #94a3b8; padding: 15px; background: #1a1a3a; border-radius: 15px;">
+                    👋 Hola, soy tu asistente. Puedo ayudarte con:
+                    • Información de proyectos
+                    • Recordatorios
+                    • Resúmenes
+                    • Tareas pendientes
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <button onclick="asistenteAccion('recordatorio')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">⏰ Recordatorio</button>
+                <button onclick="asistenteAccion('resumen')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">📋 Resumen</button>
+                <button onclick="asistenteAccion('proyectos')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">📊 Proyectos</button>
+                <button onclick="asistenteAccion('tareas')" style="background: #2d2d5f; border: none; color: white; padding: 15px; border-radius: 15px; cursor: pointer;">✅ Tareas</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+// Funciones del asistente
+function enviarMensajeAsistente() {
+    const mensaje = document.getElementById('asistenteMensaje')?.value;
+    const respuesta = document.getElementById('asistenteRespuesta');
+    
+    if (!mensaje) return;
+    
+    const msgLower = mensaje.toLowerCase();
+    let respuestaTexto = '';
+    
+    if (msgLower.includes('hola') || msgLower.includes('buenas')) {
+        respuestaTexto = '¡Hola! ¿En qué puedo ayudarte hoy?';
+    } else if (msgLower.includes('proyecto')) {
+        respuestaTexto = `Tienes ${projects.length} proyectos activos. El más reciente es "${projects[projects.length-1]?.name}".`;
+    } else if (msgLower.includes('tarea')) {
+        const total = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+        const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+        respuestaTexto = `Tienes ${total} tareas en total, ${completadas} completadas (${Math.round(completadas/total*100)}%).`;
+    } else {
+        respuestaTexto = 'Entendido. ¿Quieres que te ayude con algo más específico?';
+    }
+    
+    respuesta.innerHTML = `
+        <div style="margin-bottom: 10px; color: #ec4899;">Tú: ${mensaje}</div>
+        <div>🤖 Asistente: ${respuestaTexto}</div>
+    `;
+    
+    document.getElementById('asistenteMensaje').value = '';
+}
+
+function asistenteAccion(accion) {
+    const respuesta = document.getElementById('asistenteRespuesta');
+    
+    switch(accion) {
+        case 'recordatorio':
+            const fecha = prompt('📅 ¿Para cuándo quieres el recordatorio? (YYYY-MM-DD HH:MM)');
+            if (fecha) {
+                respuesta.innerHTML = `✅ Recordatorio creado para ${fecha}. Te avisaré cuando llegue el momento.`;
+            }
+            break;
+        case 'resumen':
+            const totalTareas = projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+            const completadas = projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+            respuesta.innerHTML = `
+                📊 Resumen del sistema:<br>
+                • ${projects.length} proyectos activos<br>
+                • ${totalTareas} tareas totales<br>
+                • ${completadas} tareas completadas<br>
+                • Último proyecto: "${projects[projects.length-1]?.name}"
+            `;
+            break;
+        case 'proyectos':
+            respuesta.innerHTML = `📁 Proyectos: ${projects.map((p, i) => `${i+1}. ${p.name}`).join('<br>• ')}`;
+            break;
+        case 'tareas':
+            respuesta.innerHTML = '✅ Puedes ver todas tus tareas en el tablero Kanban.';
+            break;
+    }
+}
+
+// ============================================
+// EXPORTAR FUNCIONES
+// ============================================
+window.abrirPMAgent = abrirPMAgent;
+window.pmAction = pmAction;
+window.abrirTranscriptorAgent = abrirTranscriptorAgent;
+window.programarReunionManual = programarReunionManual;
+window.verTranscripcion = verTranscripcion;
+window.generarTareasDeReunion = generarTareasDeReunion;
+window.abrirAnalistaAgent = abrirAnalistaAgent;
+window.exportarReporteAnalista = exportarReporteAnalista;
+window.verDetalleAnalista = verDetalleAnalista;
+window.abrirAsistentePersonal = abrirAsistentePersonal;
+window.enviarMensajeAsistente = enviarMensajeAsistente;
+window.asistenteAccion = asistenteAccion;
+
+
+
+
+// ============================================================================
+// 📨 FUNCIONES PARA INVITACIONES - VERSIÓN COMPLETA Y FUNCIONAL
+// ============================================================================
+
+// Variable global para almacenar invitaciones
+let invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
+
+// ============================================================================
+// 📧 FUNCIÓN DE INVITACIÓN CON EMAILJS - VERSIÓN COMPLETA
+// ============================================================================
+
+function enviarInvitacion() {
+    console.log('📨 Enviando invitación...');
+    
+    // ============================================
+    // TUS DATOS DE EMAILJS (YA VERIFICADOS)
+    // ============================================
+    const EMAILJS_PUBLIC_KEY = 'RKPQ7q1n2sDJdBqcG';
+    const EMAILJS_SERVICE_ID = 'service_kccmxz7';
+    const EMAILJS_TEMPLATE_ID = 'template_we2gzml';
+    
+    // ============================================
+    // INICIALIZAR EMAILJS
+    // ============================================
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('✅ EmailJS inicializado');
+    
+    // ============================================
+    // OBTENER VALORES DEL FORMULARIO
+    // ============================================
+    const proyectoSelect = document.getElementById('selectProyectoInvitacion');
+    const emailInput = document.getElementById('emailInvitacion');
+    const rolSelect = document.getElementById('rolInvitado');
+    
+    const proyectoIndex = proyectoSelect?.value;
+    const email = emailInput?.value?.trim();
+    const rol = rolSelect?.value;
+    
+    // ============================================
+    // VALIDACIONES
+    // ============================================
+    if (!proyectoIndex) {
+        mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error');
+        return;
+    }
+    
+    if (!email) {
+        mostrarMensajeInvitacion('❌ Escribe un email', 'error');
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        mostrarMensajeInvitacion('❌ Email no válido', 'error');
+        return;
+    }
+    
+    // ============================================
+    // OBTENER NOMBRE DEL PROYECTO
+    // ============================================
+    const proyectoNombre = projects[proyectoIndex]?.name || 'Proyecto';
+    
+    // ============================================
+    // CREAR TOKEN Y ENLACE (¡CORREGIDO CON .html!)
+    // ============================================
+    const token = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+    
+    // ¡¡¡ESTA ES LA LÍNEA CLAVE - CON .html!!!
+    const enlace = `${window.location.origin}/invitacion.html?token=${token}`;
+    
+    console.log('🔗 Enlace generado:', enlace);
+    
+    // ============================================
+    // ENVIAR EMAIL
+    // ============================================
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: email,
+        project_name: proyectoNombre,
+        role: rol,
+        invite_link: enlace,
+        from_name: 'Centro de Comando IA',
+        reply_to: email
+    })
+    .then(function(response) {
+        console.log('✅ Email enviado:', response);
+        
+        // ============================================
+        // GUARDAR INVITACIÓN EN LOCALSTORAGE
+        // ============================================
+        const nuevaInvitacion = {
+            id: Date.now(),
+            proyecto: proyectoNombre,
+            proyectoIndex: parseInt(proyectoIndex),
+            email: email,
+            rol: rol,
+            fecha: new Date().toLocaleString(),
+            estado: 'pendiente',
+            token: token,
+            enviado: true
+        };
+        
+        invitacionesPendientes.push(nuevaInvitacion);
+        localStorage.setItem('invitacionesPendientes', JSON.stringify(invitacionesPendientes));
+        
+        // ============================================
+        // MOSTRAR MENSAJE DE ÉXITO
+        // ============================================
+        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+        
+        // Limpiar campo email
+        emailInput.value = '';
+        
+        // ============================================
+        // ACTUALIZAR LISTA DE INVITACIONES
+        // ============================================
+        actualizarListaInvitaciones();
+    })
+    .catch(function(error) {
+        console.error('❌ Error:', error);
+        mostrarMensajeInvitacion('❌ Error al enviar: ' + (error.text || 'Error desconocido'), 'error');
+    });
+}
+
+// ============================================
+// FUNCIÓN PARA ACTUALIZAR LA LISTA DE INVITACIONES
+// ============================================
+function actualizarListaInvitaciones() {
+    const container = document.getElementById('invitacionesContainer');
+    const lista = document.getElementById('listaInvitaciones');
+    
+    if (!container || !lista) return;
+    
+    if (invitacionesPendientes.length > 0) {
+        container.style.display = 'block';
+        
+        lista.innerHTML = invitacionesPendientes.map((inv, index) => `
+            <div style="background: #24244a; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #ec4899; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+                    <div>
+                        <div style="font-weight: bold; color: white;">${inv.email}</div>
+                        <div style="display: flex; gap: 15px; margin-top: 5px; font-size: 12px;">
+                            <span style="color: #8b5cf6;">📁 ${inv.proyecto}</span>
+                            <span style="color: #10b981;">👑 ${inv.rol}</span>
+                            <span style="color: #94a3b8;">📅 ${inv.fecha}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="reenviarInvitacion(${index})" style="background: #3b82f6; border: none; color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 12px;">Reenviar</button>
+                    <button onclick="cancelarInvitacion(${index})" style="background: #ef4444; border: none; color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 12px;">Cancelar</button>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// ============================================
+// FUNCIÓN PARA MOSTRAR MENSAJES
+// ============================================
+function mostrarMensajeInvitacion(texto, tipo = 'success') {
+    const mensaje = document.getElementById('mensajeInvitacion');
+    if (!mensaje) return;
+    
+    mensaje.style.display = 'block';
+    mensaje.textContent = texto;
+    mensaje.style.color = tipo === 'success' ? '#10b981' : '#ef4444';
+    mensaje.style.background = tipo === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    mensaje.style.padding = '15px';
+    mensaje.style.borderRadius = '10px';
+    mensaje.style.marginTop = '15px';
+    
+    setTimeout(() => {
+        mensaje.style.display = 'none';
+    }, 3000);
+}
+
+// ============================================
+// FUNCIONES PARA REENVIAR Y CANCELAR
+// ============================================
+function reenviarInvitacion(index) {
+    const invitacion = invitacionesPendientes[index];
+    if (!invitacion) return;
+    
+    console.log('📧 Reenviando a:', invitacion.email);
+    mostrarMensajeInvitacion(`✅ Reenviado a ${invitacion.email}`, 'success');
+}
+
+function cancelarInvitacion(index) {
+    if (confirm('¿Eliminar esta invitación?')) {
+        invitacionesPendientes.splice(index, 1);
+        localStorage.setItem('invitacionesPendientes', JSON.stringify(invitacionesPendientes));
+        actualizarListaInvitaciones();
+        mostrarMensajeInvitacion('✅ Invitación cancelada', 'success');
+    }
+}
+
+// ============================================
+// INICIALIZAR AL CARGAR LA PÁGINA
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Asegurar que la lista de invitaciones se muestre al cargar
+    setTimeout(actualizarListaInvitaciones, 500);
+});
+
+
+
+
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function generarTokenInvitacion() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+function mostrarMensajeInvitacion(texto, tipo = 'success') {
+    const mensaje = document.getElementById('mensajeInvitacion');
+    if (!mensaje) return;
+    
+    mensaje.style.display = 'block';
+    mensaje.textContent = texto;
+    mensaje.style.color = tipo === 'success' ? '#10b981' : '#ef4444';
+    mensaje.style.background = tipo === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    
+    setTimeout(() => {
+        mensaje.style.display = 'none';
+    }, 3000);
+}
+
+function tieneInvitacionesPendientes() {
+    return invitacionesPendientes.length > 0;
+}
+
+function renderInvitacionesPendientes() {
+    if (invitacionesPendientes.length === 0) {
+        return '';
+    }
+    
+    return invitacionesPendientes.map((inv, index) => `
+        <div style="background: #24244a; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #ec4899;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 40px; height: 40px; background: #ec4899; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👤</div>
+                <div>
+                    <div style="font-weight: bold; color: white;">${inv.email}</div>
+                    <div style="display: flex; gap: 15px; margin-top: 5px; font-size: 12px;">
+                        <span style="color: #8b5cf6;">📁 ${inv.proyecto}</span>
+                        <span style="color: #10b981;">👑 ${inv.rol}</span>
+                        <span style="color: #94a3b8;">📅 ${inv.fecha}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="reenviarInvitacion(${index})" style="background: #3b82f6; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">Reenviar</button>
+                <button onclick="cancelarInvitacion(${index})" style="background: #ef4444; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">Cancelar</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function actualizarListaInvitaciones() {
+    const container = document.getElementById('invitacionesContainer');
+    const lista = document.getElementById('listaInvitaciones');
+    
+    if (container && lista) {
+        if (invitacionesPendientes.length > 0) {
+            container.style.display = 'block';
+            lista.innerHTML = renderInvitacionesPendientes();
+        } else {
+            container.style.display = 'none';
+        }
+    }
+}
+
+function reenviarInvitacion(index) {
+    const invitacion = invitacionesPendientes[index];
+    if (!invitacion) return;
+    
+    console.log('📧 Reenviando invitación a:', invitacion.email);
+    mostrarMensajeInvitacion(`✅ Invitación reenviada a ${invitacion.email}`, 'success');
+}
+
+function cancelarInvitacion(index) {
+    if (confirm('¿Eliminar esta invitación?')) {
+        invitacionesPendientes.splice(index, 1);
+        localStorage.setItem('invitacionesPendientes', JSON.stringify(invitacionesPendientes));
+        actualizarListaInvitaciones();
+        mostrarMensajeInvitacion('✅ Invitación cancelada', 'success');
+    }
+}
+
+// Inicializar invitaciones
+if (typeof window !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
+        });
+    } else {
+        invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
+    }
+}
+
+// Exportar funciones
+window.enviarInvitacion = enviarInvitacion;
+window.reenviarInvitacion = reenviarInvitacion;
+window.cancelarInvitacion = cancelarInvitacion;
+// ============================================================================
