@@ -1636,6 +1636,8 @@ function generateDependenciesList(tasks) {
   `;
 }
 
+
+
 // 4. Detalles de tareas críticas (VERSIÓN SIMPLIFICADA)
 function getCriticalTasksDetails(tasks) {
   const critical = tasks.filter(t => t.critical);
@@ -39665,10 +39667,12 @@ function renderCentroComandoIA() {
             <option value="Administrador">👑 Administrador</option>
         </select>
         
-        <!-- Botón enviar -->
-        <button onclick="enviarInvitacion()" style="flex: 1; min-width: 120px; background: #8b5cf6; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#8b5cf6'">
-            ✉️ Enviar
-        </button>
+      
+       <!-- Botón enviar -->
+<!-- Botón enviar - AHORA CON ID -->
+<button id="btnEnviarInvitacion" style="flex: 1; min-width: 120px; background: #8b5cf6; border: none; color: white; padding: 15px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#8b5cf6'">
+    ✉️ Enviar
+</button>
     </div>
     
    
@@ -41415,3 +41419,5 @@ window.enviarInvitacion = enviarInvitacion;
 window.reenviarInvitacion = reenviarInvitacion;
 window.cancelarInvitacion = cancelarInvitacion;
 // ============================================================================
+
+

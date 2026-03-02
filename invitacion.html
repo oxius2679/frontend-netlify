@@ -129,6 +129,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
 
+        // Variable para almacenar la invitación actual
+        let invitacionActual = null;
+
         // Cargar datos de la invitación
         async function cargarInvitacion() {
             try {
@@ -136,6 +139,7 @@
                 const invitacion = invitaciones.find(inv => inv.token === token);
                 
                 if (invitacion) {
+                    invitacionActual = invitacion;
                     document.getElementById('proyectoNombre').textContent = invitacion.proyecto;
                     document.getElementById('rolInvitacion').textContent = invitacion.rol;
                     document.getElementById('emailInvitado').textContent = invitacion.email;
@@ -168,8 +172,16 @@
             
             setTimeout(() => {
                 mostrarExito('✅ ¡Invitación aceptada! Serás redirigido al proyecto...');
+                
+                // Redirigir al proyecto específico
                 setTimeout(() => {
-                    window.location.href = '/';
+                    if (invitacionActual && invitacionActual.proyectoIndex !== undefined) {
+                        // Redirigir a la página principal con el parámetro del proyecto
+                        window.location.href = `/?proyecto=${invitacionActual.proyectoIndex}`;
+                    } else {
+                        // Si no hay información del proyecto, ir a la página principal
+                        window.location.href = '/';
+                    }
                 }, 2000);
             }, 1500);
         }
