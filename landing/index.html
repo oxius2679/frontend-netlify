@@ -1940,10 +1940,11 @@ closeRegisterModal();
 
 // Redirigir después de 1.5 segundos
 setTimeout(function() {
-    console.log('🚀 Redirigiendo a http://localhost:8000/');
-    window.location.href = 'http://localhost:8000/';
-}, 1500);
-            
+    console.log('🚀 Redirigiendo al sistema en Netlify');
+    window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';  // ← URL completa de Netlify
+    // O también puedes usar la raíz directamente:
+    // window.location.href = '/';
+}, 1500);            
             // Confirmación visual
             alert(`🎉 ¡Perfecto ${name}!\n✅ Cuenta creada exitosamente\n📧 Email: ${email}\n📋 Plan: Free\n\nRedirigiendo al sistema...`);
             
@@ -2007,9 +2008,11 @@ setTimeout(function() {
     
     // ===== REDIRECCIÓN DIRECTA =====
     window.redirectToSystem = function() {
-        console.log('🚀 redirectToSystem() ejecutado - redirigiendo a localhost:8000');
-        window.location.href = 'http://localhost:8000/';
-    };
+    console.log('🚀 redirectToSystem() ejecutado en Netlify');
+    window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';  // ← URL completa
+    // O también:
+    // window.location.href = '/';
+};
     
     window.viewDemo = function() {
         console.log('🎬 viewDemo() ejecutado - redirigiendo a sistema.html');
