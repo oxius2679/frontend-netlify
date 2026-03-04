@@ -40171,10 +40171,12 @@ window.abrirTranscriptorAgent = function() {
 
             <!-- SECCIÓN DE HISTORIAL -->
             <div style="padding:25px; background:rgba(255,255,255,0.05); border-radius:15px;">
-                <h3 style="margin:0 0 15px; color:white;">📋 Historial de Reuniones</h3>
-                <div id="listaReuniones" style="max-height:300px; overflow-y:auto;"></div>
-            </div>
-        </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; color:white;">📋 Historial de Reuniones</h3>
+        <button id="clearHistoryBtn" class="btn-4d" style="background:#ef4444; padding:8px 20px; font-size:13px;">🗑️ Limpiar Todo</button>
+    </div>
+    <div id="listaReuniones" style="max-height:300px; overflow-y:auto;"></div>
+</div>
     `;
     
     document.body.appendChild(overlay);
@@ -40422,7 +40424,45 @@ window.actualizarListaReuniones = function() {
 
 
 
+// Función para borrar todo el historial
+window.limpiarHistorialReuniones = function() {
+    if (confirm('⚠️ ¿Estás seguro de eliminar TODAS las reuniones del historial?\n\nEsta acción no se puede deshacer.')) {
+        window.reunionesIA = [];
+        localStorage.setItem('iaReuniones', JSON.stringify([]));
+        window.actualizarListaReuniones();
+        
+        // Mostrar notificación
+        const notificacion = document.createElement('div');
+        notificacion.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 1000001;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+        `;
+        notificacion.textContent = '✅ Historial limpiado correctamente';
+        document.body.appendChild(notificacion);
+        
+        setTimeout(() => notificacion.remove(), 3000);
+    }
+};
 
+// Vincular el botón cuando se abra el transcriptor
+function conectarBotonLimpiar() {
+    const clearBtn = document.getElementById('clearHistoryBtn');
+    if (clearBtn) {
+        clearBtn.onclick = window.limpiarHistorialReuniones;
+    }
+}
+
+// Modifica la función abrirTranscriptorAgent para llamar a conectarBotonLimpiar
+// Al final de la función, después de agregar el overlay, agrega:
+// setTimeout(conectarBotonLimpiar, 100);
 
 
 
