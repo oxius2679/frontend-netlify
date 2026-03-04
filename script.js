@@ -40193,42 +40193,150 @@ window.abrirTranscriptorAgent = function() {
     }, 100);
 };
 
-// Función para borrar todo el historial
+// ============================================
+// FUNCIONES PARA GESTIÓN DE HISTORIAL
+// ============================================
+
+// Función para borrar TODO el historial (VERSIÓN CORREGIDA)
 window.limpiarHistorialReuniones = function() {
+    console.log('🧹 Intentando limpiar historial...');
+    
     if (confirm('⚠️ ¿Estás seguro de eliminar TODAS las reuniones del historial?\n\nEsta acción no se puede deshacer.')) {
+        
+        // 1. Vaciar el array global
         window.reunionesIA = [];
+        
+        // 2. Guardar en localStorage (array vacío)
         localStorage.setItem('iaReuniones', JSON.stringify([]));
+        
+        console.log('✅ Historial borrado de localStorage');
+        
+        // 3. Forzar actualización de la UI
         window.actualizarListaReuniones();
         
-        // Notificación visual
+        // 4. Mostrar notificación visual
         const notificacion = document.createElement('div');
         notificacion.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #ef4444;
+            background: #10b981;
             color: white;
             padding: 15px 25px;
             border-radius: 10px;
             z-index: 1000001;
             font-weight: bold;
-            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+            animation: slideIn 0.3s ease;
         `;
         notificacion.textContent = '✅ Historial limpiado correctamente';
         document.body.appendChild(notificacion);
         
-        setTimeout(() => notificacion.remove(), 3000);
+        setTimeout(() => {
+            notificacion.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notificacion.remove(), 300);
+        }, 3000);
     }
 };
 
-// También puedes agregar un botón para eliminar una reunión individual
+// Función ACTUALIZADA para refrescar la lista
+window.actualizarListaReuniones = function() {
+    console.log('🔄 Actualizando lista de reuniones...');
+    
+    const lista = document.getElementById('listaReuniones');
+    if (!lista) {
+        console.log('⚠️ Elemento listaReuniones no encontrado');
+        return;
+    }
+    
+    // Cargar desde localStorage SIEMPRE
+    try {
+        const stored = localStorage.getItem('iaReuniones');
+        window.reunionesIA = stored ? JSON.parse(stored) : [];
+        console.log(`📊 Reuniones cargadas: ${window.reunionesIA.length}`);
+    } catch (e) {
+        console.error('❌ Error cargando reuniones:', e);
+        window.reunionesIA = [];
+    }
+    
+    // Si no hay reuniones, mostrar mensaje
+    if (window.reunionesIA.length === 0) {
+        lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
+        return;
+    }
+    
+    // Ordenar por fecha (más reciente primero)
+    const reunionesOrdenadas = [...window.reunionesIA].sort((a, b) => {
+        return new Date(b.fecha) - new Date(a.fecha);
+    });
+    
+    // Generar HTML
+    lista.innerHTML = reunionesOrdenadas.map(r => `
+        <div style="padding:15px; margin-bottom:10px; background:rgba(16,185,129,0.1); border-left:4px solid #10b981; border-radius:8px; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <strong style="color:white;">${r.titulo || 'Sin título'}</strong>
+                <span style="color:#94a3b8; font-size:12px;">${r.duracion || ''}</span>
+            </div>
+            <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha || ''}</div>
+            <div style="color:#d1d5db; margin-bottom:10px;">${r.resumen || ''}</div>
+            
+            ${r.transcripcion ? `
+            <details style="margin-bottom:10px;">
+                <summary style="color:#10b981; cursor:pointer; font-size:13px;">📝 Ver transcripción</summary>
+                <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8; font-size:12px; max-height:150px; overflow-y:auto;">
+                    ${r.transcripcion}
+                </div>
+            </details>
+            ` : ''}
+            
+            <!-- Botón para eliminar individual -->
+            <button onclick="window.eliminarReunion('${r.id}')" 
+                    style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:5px; font-size:12px;">
+                🗑️
+            </button>
+        </div>
+    `).join('');
+};
+
+// Función para eliminar una reunión específica
 window.eliminarReunion = function(id) {
+    console.log('🗑️ Eliminando reunión:', id);
+    
     if (confirm('¿Eliminar esta reunión del historial?')) {
-        window.reunionesIA = window.reunionesIA.filter(r => r.id !== id);
+        // Filtrar el array
+        window.reunionesIA = window.reunionesIA.filter(r => String(r.id) !== String(id));
+        
+        // Guardar en localStorage
         localStorage.setItem('iaReuniones', JSON.stringify(window.reunionesIA));
+        
+        console.log('✅ Reunión eliminada');
+        
+        // Actualizar la vista
         window.actualizarListaReuniones();
     }
 };
+
+// Asegurar que el botón de limpiar esté correctamente vinculado
+function conectarBotonLimpiar() {
+    const clearBtn = document.getElementById('clearHistoryBtn');
+    if (clearBtn) {
+        console.log('🔗 Botón de limpiar conectado');
+        // Remover cualquier evento anterior
+        clearBtn.replaceWith(clearBtn.cloneNode(true));
+        const newBtn = document.getElementById('clearHistoryBtn');
+        newBtn.onclick = window.limpiarHistorialReuniones;
+    } else {
+        console.log('⚠️ Botón de limpiar no encontrado, reintentando...');
+        setTimeout(conectarBotonLimpiar, 500);
+    }
+}
+
+// Modificar la función abrirTranscriptorAgent para llamar a conectarBotonLimpiar
+// Busca en tu código donde se define abrirTranscriptorAgent y al final agrega:
+// setTimeout(conectarBotonLimpiar, 500);
+
+
+
 
 window.cerrarTranscriptorAgent = function() {
     const overlay = document.getElementById('transcriptorOverlay');
