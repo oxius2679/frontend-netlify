@@ -825,7 +825,6 @@ box-shadow: var(--glow-primary);
 }
 /* ===== MODAL DE REGISTRO (CORREGIDO) ===== */
 .modal {
-/* CORRECCIÓN CRUCIAL: Solo una definición de display */
 display: none;
 position: fixed;
 top: 0;
@@ -1059,28 +1058,20 @@ to { opacity: 1; transform: translateY(0); }
 <div class="hero-content">
 <h1>Gestión de Proyectos <span style="color: var(--primary);">Inteligente</span> y <span style="color: var(--accent);">Poderosa</span></h1>
 <p>Sistema completo de gestión de proyectos con Gantt ejecutivo, Dashboard 4D, EVM (Valor Ganado), Burndown Charts y colaboración en tiempo real. Optimiza tu flujo de trabajo con metodologías Ágiles, Tradicionales o Híbridas.</p>
-
-
-<!-- Agrega esto después del párrafo en la hero section -->
 <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);">
 <div style="display: flex; align-items: center; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-<!-- Logo Slack -->
 <div style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
 <i class="fab fa-slack" style="font-size: 1.8rem; color: white;"></i>
 </div>
-<!-- Logo Teams -->
 <div style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
 <i class="fab fa-microsoft" style="font-size: 1.8rem; color: white;"></i>
 </div>
-<!-- Logo Google -->
 <div style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
 <i class="fab fa-google" style="font-size: 1.8rem; color: white;"></i>
 </div>
-<!-- Logo GitHub -->
 <div style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
 <i class="fab fa-github" style="font-size: 1.8rem; color: white;"></i>
 </div>
-<!-- Logo Zapier -->
 <div style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
 <i class="fas fa-bolt" style="font-size: 1.8rem; color: white;"></i>
 </div>
@@ -1089,15 +1080,12 @@ to { opacity: 1; transform: translateY(0); }
 </div>
 </div>
 </div>
-
-
 <div class="hero-buttons">
 <button class="secondary-button" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
 <i class="fas fa-play-circle"></i> Ver Funcionalidades
 </button>
 </div>
 </div>
-<!-- IMAGEN ILUSTRATIVA PROFESIONAL -->
 <div class="hero-image-container">
 <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1000&h=500&fit=crop&q=80"
 alt="Administración de Proyectos Profesional"
@@ -1118,7 +1106,7 @@ class="hero-image">
 </div>
 </div>
 </section>
-<!-- ===== FEATURES SECTION (CARACTERÍSTICAS PODEROSAS) ===== -->
+<!-- ===== FEATURES SECTION ===== -->
 <section class="features" id="features">
 <div class="section-header">
 <h2 class="section-title">Características <span style="color: var(--accent);">Poderosas</span></h2>
@@ -1157,7 +1145,7 @@ class="hero-image">
 </div>
 </div>
 </section>
-<!-- ===== SHOWCASE SECTION (EXPLORA FUNCIONALIDADES) ===== -->
+<!-- ===== SHOWCASE SECTION ===== -->
 <section class="showcase" id="showcase">
 <div class="section-header">
 <h2 class="section-title">Explora <span style="color: var(--warning);">Nuestras Funcionalidades</span></h2>
@@ -1224,16 +1212,11 @@ class="hero-image">
 <button class="plan-button free-button" onclick="openRegisterModal()">
 <i class="fas fa-user"></i> Comenzar Gratis
 </button>
-
-
-
-<!-- Agrega esto DENTRO de cada pricing-card, después del botón -->
 <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border-left: 4px solid var(--success);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
 <i class="fas fa-shield-alt" style="color: var(--success);"></i>
 <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">🔒 Garantía 30 días</span>
 </div>
-
 </div>
 <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 4px solid var(--primary);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -1244,8 +1227,6 @@ class="hero-image">
 Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 </p>
 </div>
-
-
 </div>
 <div class="pricing-card popular">
 <h3 class="plan-name">Professional</h3>
@@ -1264,15 +1245,11 @@ Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 <button class="plan-button pro-button" onclick="redirectToSystem()">
 <i class="fas fa-shopping-cart"></i> Seleccionar Plan
 </button>
-
-
-<!-- Agrega esto DENTRO de cada pricing-card, después del botón -->
 <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border-left: 4px solid var(--success);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
 <i class="fas fa-shield-alt" style="color: var(--success);"></i>
 <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">🔒 Garantía 30 días</span>
 </div>
-
 </div>
 <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 4px solid var(--primary);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -1283,10 +1260,6 @@ Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 </p>
 </div>
-
-
-
-
 </div>
 <div class="pricing-card">
 <h3 class="plan-name">Premium</h3>
@@ -1305,13 +1278,11 @@ Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 <button class="plan-button premium-button" onclick="redirectToSystem()">
 <i class="fas fa-crown"></i> Plan Premium
 </button>
-<!-- Agrega esto DENTRO de cada pricing-card, después del botón -->
 <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border-left: 4px solid var(--success);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
 <i class="fas fa-shield-alt" style="color: var(--success);"></i>
 <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;">🔒 Garantía 30 días</span>
 </div>
-
 </div>
 <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 4px solid var(--primary);">
 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -1322,22 +1293,15 @@ Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 </p>
 </div>
-
 </div>
 </div>
 </section>
-
-
-
-
-
 <!-- ===== COMPARISON SECTION ===== -->
 <section class="comparison" id="comparison" style="padding: 8rem 10%; background: linear-gradient(180deg, var(--bg-accent) 0%, var(--bg-primary) 100%);">
 <div class="section-header">
 <h2 class="section-title" style="font-size: 3.2rem; font-weight: 800; margin-bottom: 1.2rem; background: linear-gradient(90deg, var(--success) 0%, var(--primary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Comparación <span style="color: var(--primary);">Directa</span></h2>
 <p class="section-subtitle" style="font-size: 1.3rem; color: var(--text-secondary); line-height: 1.8; font-weight: 400;">¿Por qué elegir Gantt Executive Pro sobre otras herramientas?</p>
 </div>
-<!-- Tabla de Comparación -->
 <div style="max-width: 1400px; margin: 0 auto; background: rgba(255, 255, 255, 0.05); border-radius: 28px; padding: 2rem; border: 3px solid rgba(255, 255, 255, 0.1); overflow-x: auto;">
 <table style="width: 100%; border-collapse: collapse; margin-top: 2rem;">
 <thead>
@@ -1370,136 +1334,61 @@ Tus datos están protegidos con cifrado AES-256 y cumplimos con GDPR UE.
 </tr>
 </thead>
 <tbody>
-<!-- Fila 1: Gantt Ejecutivo -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Gantt Ejecutivo (181 días)</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
 </tr>
-<!-- Fila 2: Dashboard 4D -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Dashboard 4D Ejecutivo</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
 </tr>
-<!-- Fila 3: EVM Integrado -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">EVM - Valor Ganado</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-<span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">Plugin</span>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; opacity: 0.5;"></i><span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">Plugin</span></td>
 </tr>
-<!-- Fila 4: Burndown Charts -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Burndown Charts Avanzados</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
 </tr>
-<!-- Fila 5: Colaboración Tiempo Real -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Colaboración en Tiempo Real</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
 </tr>
-<!-- Fila 6: Proyectos Ilimitados -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Proyectos Ilimitados</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-<span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">10 máx.</span>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-<span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">5 máx.</span>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i><span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">10 máx.</span></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i><span style="font-size: 0.8rem; display: block; margin-top: 0.3rem;">5 máx.</span></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
 </tr>
-<!-- Fila 7: Soporte 24/7 -->
 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Soporte 24/7</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
 </tr>
-<!-- Fila 8: Garantía 30 días -->
 <tr style="background: rgba(255, 255, 255, 0.02);">
 <td style="padding: 1.2rem; font-weight: 600; color: var(--text-primary);">Garantía 30 días</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--success);">
-<i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--warning);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--accent);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
-<td style="padding: 1.2rem; text-align: center; color: var(--pink);">
-<i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i>
-</td>
+<td style="padding: 1.2rem; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size: 1.5rem;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--warning);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--accent);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
+<td style="padding: 1.2rem; text-align: center; color: var(--pink);"><i class="fas fa-times-circle" style="font-size: 1.5rem; opacity: 0.5;"></i></td>
 </tr>
 </tbody>
 <tfoot>
@@ -1514,7 +1403,6 @@ Ahorra tiempo y dinero con control financiero real desde el primer día. Sin plu
 </tfoot>
 </table>
 </div>
-<!-- Resumen de Ventajas -->
 <div style="max-width: 800px; margin: 4rem auto 0; text-align: center; padding: 2.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 24px; border: 2px solid rgba(99, 102, 241, 0.3);">
 <h3 style="font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--text-primary);">🎯 ¿Por qué somos diferentes?</h3>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
@@ -1536,11 +1424,6 @@ Ahorra tiempo y dinero con control financiero real desde el primer día. Sin plu
 </div>
 </div>
 </section>
-
-
-
-
-
 <!-- ===== TESTIMONIALS ===== -->
 <section class="testimonials" id="testimonials">
 <div class="section-header">
@@ -1580,8 +1463,6 @@ Ahorra tiempo y dinero con control financiero real desde el primer día. Sin plu
 </div>
 </div>
 </section>
-
-
 <!-- ===== ABOUT US SECTION ===== -->
 <section class="about" id="about" style="padding: 8rem 10%; background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);">
 <div class="section-header">
@@ -1589,7 +1470,6 @@ Ahorra tiempo y dinero con control financiero real desde el primer día. Sin plu
 <p class="section-subtitle" style="font-size: 1.3rem; color: var(--text-secondary); line-height: 1.8; font-weight: 400;">El equipo detrás de Gantt Executive Pro</p>
 </div>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 3rem; max-width: 1400px; margin: 0 auto;">
-<!-- Historia de la Empresa -->
 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 2.5rem; border: 2px solid rgba(255, 255, 255, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
 <div style="width: 80px; height: 80px; background: var(--gradient-primary); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);">
 <i class="fas fa-building" style="font-size: 2.5rem; color: white;"></i>
@@ -1601,7 +1481,6 @@ Fundado en 2024 por un equipo de PMO con +10 años de experiencia en gestión de
 Nos frustró que herramientas como Asana y Monday no ofrecieran control financiero real con EVM integrado, así que creamos Gantt Executive Pro para resolver este problema.
 </p>
 </div>
-<!-- Misión -->
 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 2.5rem; border: 2px solid rgba(255, 255, 255, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
 <div style="width: 80px; height: 80px; background: var(--gradient-warning); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);">
 <i class="fas fa-bullseye" style="font-size: 2.5rem; color: white;"></i>
@@ -1613,7 +1492,6 @@ Democratizar la gestión de proyectos profesional con herramientas ejecutivas ac
 Queremos que cada equipo, desde startups hasta corporaciones, tenga acceso a tecnología de vanguardia sin sacrificar simplicidad.
 </p>
 </div>
-<!-- Equipo -->
 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 2.5rem; border: 2px solid rgba(255, 255, 255, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
 <div style="width: 80px; height: 80px; background: var(--gradient-pink); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);">
 <i class="fas fa-users" style="font-size: 2.5rem; color: white;"></i>
@@ -1626,14 +1504,9 @@ Trabajamos con metodologías ágiles y entregamos actualizaciones cada 2 semanas
 </p>
 </div>
 </div>
-
-
-<!-- Equipo - CON FOTOS Y DATOS REALES -->
 <div style="grid-column: span 3;">
 <h3 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: var(--text-primary); text-align: center;">Nuestro Equipo Directivo</h3>
-<!-- CEO -->
 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 2rem; border: 2px solid rgba(99, 102, 241, 0.3); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-align: center;">
-<!-- Foto del CEO - Reemplaza con imagen real -->
 <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; border: 4px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);">
 <img src="https://via.placeholder.com/120" alt="CEO" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
 </div>
@@ -1650,9 +1523,7 @@ Experto en gestión de proyectos con certificaciones PMP y Agile. Fundó Gantt E
 <a href="#" style="color: var(--primary); font-size: 1.2rem;"><i class="fab fa-twitter"></i></a>
 </div>
 </div>
-<!-- COO -->
 <div style="background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 2rem; border: 2px solid rgba(6, 182, 212, 0.3); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; margin-top: 2rem;">
-<!-- Foto del COO - Reemplaza con imagen real -->
 <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--blue)); margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; border: 4px solid rgba(255, 255, 255, 0.2); box-shadow: 0 0 30px rgba(6, 182, 212, 0.3);">
 <img src="https://via.placeholder.com/120" alt="COO" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
 </div>
@@ -1670,10 +1541,6 @@ Responsable de las operaciones diarias y la experiencia del cliente. Anteriormen
 </div>
 </div>
 </div>
-
-
-
-<!-- Estadísticas de la Empresa -->
 <div style="margin-top: 4rem; padding-top: 3rem; border-top: 2px solid rgba(255, 255, 255, 0.1);">
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 3rem; text-align: center;">
 <div>
@@ -1695,15 +1562,6 @@ Responsable de las operaciones diarias y la experiencia del cliente. Anteriormen
 </div>
 </div>
 </section>
-
-
-
-
-
-
-
-
-
 <!-- ===== CTA SECTION ===== -->
 <section class="cta-section">
 <div class="cta-content">
@@ -1766,7 +1624,7 @@ Sistema de gestión de proyectos premium con Gantt ejecutivo, Dashboard 4D, EVM 
 <p>&copy; 2026 Gantt Executive Pro. Todos los derechos reservados. Sistema de Gestión de Proyectos Premium v1.0</p>
 </div>
 </footer>
-<!-- ===== MODAL DE REGISTRO (CORREGIDO) ===== -->
+<!-- ===== MODAL DE REGISTRO ===== -->
 <div id="registerModal" class="modal">
 <div class="modal-content">
 <div class="modal-header">
@@ -1782,7 +1640,6 @@ Comenzar Prueba Gratuita
 <p style="color: var(--text-primary); font-weight: 600; margin: 0;">Acceso al Sistema Completo</p>
 <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0 0 0;">30 días gratis - Sin tarjeta de crédito</p>
 </div>
-<!-- TEXTO DE BIENVENIDA -->
 <div class="welcome-text" style="text-align: center; margin-bottom: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 10px; border-left: 4px solid var(--primary);">
 <i class="fas fa-user-plus" style="color: var(--primary); font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
 <p style="color: var(--text-primary); font-weight: 600; margin: 0;">Crea tu cuenta en segundos</p>
@@ -1825,166 +1682,83 @@ Tu cuenta Free incluye 1 proyecto activo. Actualiza a Professional para más pro
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM cargado - Iniciando diagnóstico del sistema de registro');
+    console.log('✅ DOM cargado - Iniciando sistema de registro');
     
-    // ===== VERIFICACIÓN CRÍTICA: ¿Existe el formulario? =====
+    // ===== VERIFICAR FORMULARIO =====
     const registerForm = document.getElementById('registerForm');
     if (!registerForm) {
-        console.error('❌ FATAL: Elemento #registerForm NO EXISTE en el DOM');
-        console.error('Posibles causas:');
-        console.error('1. El ID del formulario es incorrecto');
-        console.error('2. El modal está dentro de otro elemento que bloquea el acceso');
-        console.error('3. Hay múltiples elementos con el mismo ID');
-        
-        // Buscar TODOS los formularios para diagnóstico
-        const allForms = document.querySelectorAll('form');
-        console.log('🔍 Formularios encontrados en el DOM:', allForms.length);
-        allForms.forEach((form, i) => {
-            console.log(`   Form ${i}: ID="${form.id}", clases="${form.className}"`);
-        });
-        
-        // Intentar encontrar el formulario por clases como fallback
-        const fallbackForm = document.querySelector('.modal-content form');
-        if (fallbackForm) {
-            console.warn('⚠️ Encontré un formulario por clases (fallback). ID:', fallbackForm.id);
-        }
-        
+        console.error('❌ Error: Formulario no encontrado');
         return;
     }
     
-    console.log('✅ Formulario #registerForm encontrado correctamente');
-    console.log('   Tipo de elemento:', registerForm.tagName);
-    console.log('   Atributos:', {
-        id: registerForm.id,
-        onsubmit: registerForm.getAttribute('onsubmit')
-    });
-    
-    // ===== ELIMINAR onsubmit INLINE SI EXISTE (causa de fallos) =====
+    // ===== ELIMINAR onsubmit INLINE =====
     if (registerForm.hasAttribute('onsubmit')) {
-        console.warn('⚠️ Eliminando atributo onsubmit inline (causa de conflictos)');
         registerForm.removeAttribute('onsubmit');
     }
     
-    // ===== AGREGAR EVENT LISTENER CON DIAGNÓSTICO =====
+    // ===== EVENTO SUBMIT =====
     registerForm.addEventListener('submit', function(event) {
-        console.log('\n\n=== 🚨 EVENTO SUBMIT DETECTADO ===');
-        console.log('Timestamp:', new Date().toISOString());
-        
-        // Prevenir comportamiento default INMEDIATAMENTE
         event.preventDefault();
         event.stopPropagation();
-        console.log('✅ preventDefault() y stopPropagation() ejecutados');
         
         try {
-            // Obtener valores CON diagnóstico detallado
+            // Obtener valores
             const nameInput = document.getElementById('registerName');
             const emailInput = document.getElementById('registerEmail');
             const passwordInput = document.getElementById('registerPassword');
-            
-            console.log('🔍 Campos encontrados:', {
-                name: !!nameInput,
-                email: !!emailInput,
-                password: !!passwordInput
-            });
-            
-            if (!nameInput || !emailInput || !passwordInput) {
-                throw new Error('Uno o más campos de entrada no existen en el DOM');
-            }
             
             const name = nameInput.value.trim();
             const email = emailInput.value.trim();
             const password = passwordInput.value.trim();
             
-            console.log('📝 Valores capturados:', { name, email, password });
+            // Validaciones
+            if (!name) throw new Error('Nombre requerido');
+            if (!email || !email.includes('@')) throw new Error('Email válido requerido');
+            if (password.length < 6) throw new Error('Contraseña mínimo 6 caracteres');
             
-            // Validaciones con feedback específico
-            if (!name) {
-                throw new Error('Campo "Nombre Completo" está vacío');
-            }
-            if (!email || !email.includes('@')) {
-                throw new Error('Email inválido o vacío');
-            }
-            if (password.length < 6) {
-                throw new Error('Contraseña debe tener mínimo 6 caracteres (actual: ' + password.length + ')');
-            }
-            
-            console.log('✅ Validaciones pasadas');
+            console.log('✅ Validaciones OK');
             
             // Guardar en localStorage
-            // Guardar datos del usuario
-const userData = {
-    name: name,
-    email: email,
-    plan: 'free',
-    registeredAt: new Date().toISOString()
-};
-
-// Manejar error de cuota llena
-try {
-    localStorage.setItem('gantt_user', JSON.stringify(userData));
-    console.log('✅ Datos guardados en localStorage:', userData);
-} catch (error) {
-    console.warn('⚠️ localStorage lleno, pero continuando...');
-    // Continuar igual aunque falle el localStorage
-}
-
-// Mostrar confirmación
-alert(`🎉 ¡Perfecto ${name}!
-✅ Cuenta creada exitosamente
-📧 Email: ${email}
-📋 Plan: Free
-Redirigiendo al sistema...`);
-
-// Cerrar modal
-closeRegisterModal();
-
-// Redirigir después de 1.5 segundos
-setTimeout(function() {
-    console.log('🚀 Redirigiendo al sistema en Netlify');
-    window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';  // ← URL completa de Netlify
-    // O también puedes usar la raíz directamente:
-    // window.location.href = '/';
-}, 1500);            
-
+            const userData = {
+                name: name,
+                email: email,
+                plan: 'free',
+                registeredAt: new Date().toISOString()
+            };
             
-            // Confirmación visual
-            alert(`🎉 ¡Perfecto ${name}!\n✅ Cuenta creada exitosamente\n📧 Email: ${email}\n📋 Plan: Free\n\nRedirigiendo al sistema...`);
-            
-            // Cerrar modal
-            const modal = document.getElementById('registerModal');
-            if (modal) {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-                console.log('✅ Modal cerrado');
+            try {
+                localStorage.setItem('gantt_user', JSON.stringify(userData));
+                console.log('✅ Datos guardados');
+            } catch (e) {
+                console.warn('⚠️ localStorage lleno');
             }
             
-            // Redirección con fallback
-            console.log('🚀 Redirigiendo a http://localhost:8000/ en 1.5 segundos...');
-            setTimeout(() => {
-                console.log('📍 Ejecutando window.location.href = "http://localhost:8000/"');
-                window.location.href = 'http://localhost:8000/';
+            // Mostrar confirmación
+            alert(`🎉 ¡Bienvenido ${name}!\n✅ Cuenta creada\n📧 ${email}\n📋 Plan: Free\n\nRedirigiendo...`);
+            
+            // Cerrar modal
+            closeRegisterModal();
+            
+            // ÚNICA REDIRECCIÓN - a Netlify
+            setTimeout(function() {
+                console.log('🚀 Redirigiendo a Netlify');
+                window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';
             }, 1500);
             
         } catch (error) {
-            console.error('❌ ERROR EN SUBMIT:', error.message);
-            console.error('Stack trace:', error.stack);
-            alert('❌ Error: ' + error.message + '\n\nRevisa la consola (F12) para más detalles.');
+            console.error('❌ Error:', error);
+            alert('❌ ' + error.message);
         }
         
         return false;
     });
     
-    console.log('✅ Event listener "submit" registrado correctamente en #registerForm');
-    
-    // ===== FUNCIONES DE MODAL =====
+    // ===== FUNCIONES MODAL =====
     window.openRegisterModal = function() {
         const modal = document.getElementById('registerModal');
         if (modal) {
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            console.log('✅ Modal abierto');
-        } else {
-            console.error('❌ Modal #registerModal no encontrado');
         }
     };
     
@@ -1993,7 +1767,6 @@ setTimeout(function() {
         if (modal) {
             modal.classList.remove('active');
             document.body.style.overflow = '';
-            console.log('✅ Modal cerrado');
         }
     };
     
@@ -2005,29 +1778,20 @@ setTimeout(function() {
                 closeRegisterModal();
             }
         });
-        console.log('✅ Listener de cierre de modal configurado');
     }
     
     // ===== REDIRECCIÓN DIRECTA =====
     window.redirectToSystem = function() {
-    console.log('🚀 redirectToSystem() ejecutado en Netlify');
-    window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';  // ← URL completa
-    // O también:
-    // window.location.href = '/';
-};
-
+        console.log('🚀 Redirigiendo a Netlify');
+        window.location.href = 'https://tourmaline-bavarois-4eb193.netlify.app/';
+    };
     
     window.viewDemo = function() {
-        console.log('🎬 viewDemo() ejecutado - redirigiendo a sistema.html');
+        console.log('🎬 Redirigiendo a sistema.html');
         window.location.href = 'sistema.html';
     };
     
-    console.log('✅ Sistema de registro inicializado completamente');
-    console.log('💡 Para debuggear:');
-    console.log('   1. Abre la consola (F12)');
-    console.log('   2. Haz clic en "Comenzar Gratis"');
-    console.log('   3. Completa el formulario y envía');
-    console.log('   4. Observa los logs en tiempo real');
+    console.log('✅ Sistema listo');
 });
 </script>
 </body>
