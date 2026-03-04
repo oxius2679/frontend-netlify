@@ -40248,67 +40248,81 @@ window.inicializarGrabadorCompleto = function() {
             };
             
             mediaRecorder.onstop = async () => {
-                liveArea.innerHTML = '<span style="color:#f59e0b;">⏳ Procesando con IA...</span>';
-                aiSection.style.display = 'block';
-                summaryEl.innerHTML = '⏳ Analizando...';
-                actionsEl.innerHTML = '⏳ Extrayendo...';
-                keyPointsEl.innerHTML = '⏳ Identificando...';
-                decisionsEl.innerHTML = '⏳ Detectando...';
-                
-                stream.getTracks().forEach(t => t.stop());
-                
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const formData = new FormData();
-                formData.append('audio', audioBlob, 'grabacion.webm');
-                formData.append('title', titulo);
-                
-                try {
-                    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const data = await response.json();
-                    
-                    // Mostrar resultados
-                    liveArea.innerHTML = `<span style="color:#10b981;">📝 ${data.transcripcion || 'Sin transcripción'}</span>`;
-                    summaryEl.innerHTML = data.resumen || 'Sin resumen';
-                    
-                    // Acciones
-                    if (data.acciones && Array.isArray(data.acciones)) {
-                        actionsEl.innerHTML = data.acciones.map(a => `<div style="margin-bottom:5px;">• ${a}</div>`).join('');
-                    } else {
-                        actionsEl.innerHTML = 'No se detectaron acciones';
-                    }
-                    
-                    // Simular puntos clave y decisiones (personalizable)
-                    keyPointsEl.innerHTML = `
-                        <div>• Análisis de requisitos del proyecto</div>
-                        <div>• Identificación de riesgos principales</div>
-                        <div>• Asignación de recursos clave</div>
-                    `;
-                    
-                    decisionsEl.innerHTML = `
-                        <div>• Aprobar presupuesto inicial</div>
-                        <div>• Iniciar fase de desarrollo</div>
-                        <div>• Reunión de seguimiento en 7 días</div>
-                    `;
-                    
-                    if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
-                    
-                    window.currentProcessedMeeting = {
-                        titulo: titulo,
-                        fecha: new Date().toLocaleString(),
-                        resumen: data.resumen || 'Sin resumen',
-                        transcripcion: data.transcripcion || 'Sin transcripción',
-                        acciones: data.acciones || [],
-                        duracion: timerEl.textContent
-                    };
-                    
-                } catch (error) {
-                    liveArea.innerHTML = `<span style="color:#ef4444;">❌ Error: ${error.message}</span>`;
-                }
-            };
+    liveArea.innerHTML = '<span style="color:#f59e0b;">⏳ Procesando con IA...</span>';
+    aiSection.style.display = 'block';
+    summaryEl.innerHTML = '⏳ Analizando...';
+    actionsEl.innerHTML = '⏳ Extrayendo...';
+    keyPointsEl.innerHTML = '⏳ Identificando...';
+    decisionsEl.innerHTML = '⏳ Detectando...';
+    
+    stream.getTracks().forEach(t => t.stop());
+    
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'grabacion.webm');
+    formData.append('title', titulo);
+    
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        // ============================================
+        // ÁREA DE RESPUESTA - COLOCA AQUÍ EL CÓDIGO
+        // ============================================
+        
+        // Mostrar transcripción
+        liveArea.innerHTML = `<span style="color:#10b981;">📝 Transcripción:</span><br>${data.transcripcion || 'Sin transcripción'}`;
+        
+        // 1. RESUMEN EJECUTIVO
+        summaryEl.innerHTML = data.resumen || data.executiveSummary || 'Sin resumen';
+        
+        // 2. ACCIONES
+        if (data.acciones && Array.isArray(data.acciones)) {
+            actionsEl.innerHTML = data.acciones.map(a => `<div style="margin-bottom:8px;">• ${a}</div>`).join('');
+        } else {
+            actionsEl.innerHTML = 'No se detectaron acciones específicas';
+        }
+        
+        // 3. PUNTOS CLAVE
+        if (data.keyPoints && Array.isArray(data.keyPoints)) {
+            keyPointsEl.innerHTML = data.keyPoints.map(p => `<div style="margin-bottom:5px;">• ${p}</div>`).join('');
+        } else {
+            keyPointsEl.innerHTML = 'No se detectaron puntos clave';
+        }
+        
+        // 4. DECISIONES
+        if (data.decisions && Array.isArray(data.decisions)) {
+            decisionsEl.innerHTML = data.decisions.map(d => `<div style="margin-bottom:5px;">• ${d}</div>`).join('');
+        } else {
+            decisionsEl.innerHTML = 'No se detectaron decisiones';
+        }
+        
+        // Guardar para después
+        window.currentProcessedMeeting = {
+            titulo: titulo,
+            fecha: new Date().toLocaleString(),
+            resumen: data.resumen || data.executiveSummary || 'Sin resumen',
+            transcripcion: data.transcripcion || 'Sin transcripción',
+            acciones: data.acciones || [],
+            keyPoints: data.keyPoints || [],
+            decisions: data.decisions || [],
+            duracion: timerEl.textContent
+        };
+        
+        if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
+        
+    } catch (error) {
+        liveArea.innerHTML = `<span style="color:#ef4444;">❌ Error: ${error.message}</span>`;
+        summaryEl.innerHTML = 'Error al procesar';
+        actionsEl.innerHTML = 'Intenta nuevamente';
+        keyPointsEl.innerHTML = 'Error';
+        decisionsEl.innerHTML = 'Error';
+    }
+};
             
             mediaRecorder.start();
             window.currentRecording = { mediaRecorder, stream };
