@@ -41601,3 +41601,81 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
+
+
+
+// ============================================
+// SISTEMA DE COLABORACIÓN AUTOMÁTICO
+// ============================================
+(function initColaboracionAutomatica() {
+    console.log("🚀 Inicializando sistema de colaboración automática...");
+    
+    // Esperar a que todo cargue
+    setTimeout(() => {
+        // 1. Conectar WebSocket si no existe
+        if (typeof io !== 'undefined' && !window.tiempoRealSocket) {
+            window.tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com');
+        }
+        
+        // 2. ID único para esta máquina
+        window._miId = 'Cliente-' + Math.random().toString(36).substr(2, 5);
+        
+        // 3. Configurar listener permanente
+        if (window.tiempoRealSocket) {
+            window.tiempoRealSocket.on('connect', () => {
+                console.log("✅ WebSocket conectado automáticamente");
+                
+                // Unirse al proyecto actual
+                const proyecto = projects[currentProjectIndex];
+                if (proyecto) {
+                    window.tiempoRealSocket.emit('join-project', proyecto.name);
+                }
+            });
+            
+            // Escuchar actualizaciones
+            window.tiempoRealSocket.on('test-message', (data) => {
+                if (data.accion === 'actualizar' || data.mensaje === 'ACTUALIZAR_TAREAS') {
+                    console.log("🔄 Actualización automática recibida");
+                    
+                    const token = localStorage.getItem('authToken');
+                    if (!token) return;
+                    
+                    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.projects) {
+                            projects.length = 0;
+                            data.projects.forEach(p => projects.push(p));
+                            
+                            if (typeof renderKanbanTasks === 'function') {
+                                renderKanbanTasks();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        // 4. Parchear safeSave automáticamente
+        if (typeof safeSave === 'function' && !window.__safeSavePatched) {
+            const originalSave = safeSave;
+            safeSave = async function() {
+                const result = await originalSave.apply(this, arguments);
+                
+                if (window.tiempoRealSocket?.connected) {
+                    window.tiempoRealSocket.emit('test-message', {
+                        accion: 'actualizar',
+                        mensaje: 'ACTUALIZAR_TAREAS'
+                    });
+                }
+                return result;
+            };
+            window.__safeSavePatched = true;
+            console.log("✅ safeSave parcheado automáticamente");
+        }
+    }, 3000); // Esperar 3 segundos a que cargue todo
+})();
+
+
