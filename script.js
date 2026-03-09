@@ -41605,77 +41605,107 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 // ============================================
-// SISTEMA DE COLABORACIÓN AUTOMÁTICO
+// SISTEMA DE COLABORACIÓN - ACTUALIZACIÓN AUTOMÁTICA
 // ============================================
 (function initColaboracionAutomatica() {
-    console.log("🚀 Inicializando sistema de colaboración automática...");
-    
     // Esperar a que todo cargue
-    setTimeout(() => {
-        // 1. Conectar WebSocket si no existe
-        if (typeof io !== 'undefined' && !window.tiempoRealSocket) {
-            window.tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com');
-        }
+    setTimeout(function() {
+        console.log("🚀 Iniciando colaboración automática...");
         
-        // 2. ID único para esta máquina
-        window._miId = 'Cliente-' + Math.random().toString(36).substr(2, 5);
-        
-        // 3. Configurar listener permanente
-        if (window.tiempoRealSocket) {
-            window.tiempoRealSocket.on('connect', () => {
-                console.log("✅ WebSocket conectado automáticamente");
-                
-                // Unirse al proyecto actual
-                const proyecto = projects[currentProjectIndex];
-                if (proyecto) {
-                    window.tiempoRealSocket.emit('join-project', proyecto.name);
-                }
-            });
+        try {
+            // 1. Conectar WebSocket
+            if (typeof io !== 'undefined' && !window.tiempoRealSocket) {
+                window.tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com');
+            }
             
-            // Escuchar actualizaciones
-            window.tiempoRealSocket.on('test-message', (data) => {
-                if (data.accion === 'actualizar' || data.mensaje === 'ACTUALIZAR_TAREAS') {
-                    console.log("🔄 Actualización automática recibida");
+            // 2. ID único
+            window._miId = 'Cliente-' + Math.random().toString(36).substr(2, 5);
+            
+            // 3. Escuchar actualizaciones
+            if (window.tiempoRealSocket) {
+                window.tiempoRealSocket.on('test-message', function(data) {
+                    console.log("📨 Notificación recibida:", data);
                     
-                    const token = localStorage.getItem('authToken');
-                    if (!token) return;
-                    
-                    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.projects) {
-                            projects.length = 0;
-                            data.projects.forEach(p => projects.push(p));
-                            
-                            if (typeof renderKanbanTasks === 'function') {
-                                renderKanbanTasks();
-                            }
+                    if (data.accion === 'actualizar' || data.mensaje === 'ACTUALIZAR_TAREAS') {
+                        console.log("🔄 Actualizando vista automáticamente...");
+                        
+                        // Mostrar notificación visual
+                        const notif = document.createElement('div');
+                        notif.style.cssText = "position:fixed; top:20px; right:20px; background:#f59e0b; color:white; padding:15px 25px; border-radius:10px; z-index:10000; font-weight:bold; box-shadow:0 5px 20px rgba(0,0,0,0.3);";
+                        notif.innerHTML = '🔄 Actualizando tareas...';
+                        document.body.appendChild(notif);
+                        
+                        // Obtener token
+                        const token = localStorage.getItem('authToken');
+                        if (!token) {
+                            notif.remove();
+                            return;
                         }
-                    });
-                }
-            });
+                        
+                        // FETCH para obtener datos NUEVOS
+                        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.projects && data.projects.length > 0) {
+                                console.log("✅ Datos recibidos, actualizando UI...");
+                                
+                                // Actualizar projects
+                                window.projects = data.projects;
+                                if (data.currentProjectIndex !== undefined) {
+                                    window.currentProjectIndex = data.currentProjectIndex;
+                                }
+                                
+                                // FORZAR ACTUALIZACIÓN DE LA VISTA
+                                if (typeof renderKanbanTasks === 'function') {
+                                    renderKanbanTasks();
+                                    console.log("✅ Vista actualizada inmediatamente");
+                                    
+                                    notif.style.background = '#10b981';
+                                    notif.innerHTML = '✅ Tareas actualizadas';
+                                } else {
+                                    console.warn("⚠️ renderKanbanTasks no encontrada");
+                                }
+                            }
+                        })
+                        .catch(err => console.error("❌ Error:", err))
+                        .finally(() => {
+                            setTimeout(() => {
+                                notif.style.animation = 'fadeOut 0.3s ease';
+                                setTimeout(() => notif.remove(), 300);
+                            }, 2000);
+                        });
+                    }
+                });
+            }
+            
+            // 4. Parchear safeSave
+            if (typeof safeSave === 'function' && !window.__safeSavePatched) {
+                const originalSave = safeSave;
+                safeSave = async function() {
+                    const result = await originalSave.apply(this, arguments);
+                    
+                    // Notificar a otros después de guardar
+                    setTimeout(() => {
+                        if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                            window.tiempoRealSocket.emit('test-message', {
+                                accion: 'actualizar',
+                                mensaje: 'ACTUALIZAR_TAREAS'
+                            });
+                        }
+                    }, 100);
+                    
+                    return result;
+                };
+                window.__safeSavePatched = true;
+                console.log("✅ safeSave parcheado");
+            }
+            
+            console.log("✅ Colaboración automática activada");
+            
+        } catch (e) {
+            console.warn("⚠️ Error en colaboración:", e);
         }
-        
-        // 4. Parchear safeSave automáticamente
-        if (typeof safeSave === 'function' && !window.__safeSavePatched) {
-            const originalSave = safeSave;
-            safeSave = async function() {
-                const result = await originalSave.apply(this, arguments);
-                
-                if (window.tiempoRealSocket?.connected) {
-                    window.tiempoRealSocket.emit('test-message', {
-                        accion: 'actualizar',
-                        mensaje: 'ACTUALIZAR_TAREAS'
-                    });
-                }
-                return result;
-            };
-            window.__safeSavePatched = true;
-            console.log("✅ safeSave parcheado automáticamente");
-        }
-    }, 3000); // Esperar 3 segundos a que cargue todo
+    }, 3000);
 })();
-
-
