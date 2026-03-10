@@ -41718,60 +41718,39 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 // ============================================
-// SINCRONIZACIÓN CON DIAGNÓSTICO
+// SINCRONIZACIÓN DEFINITIVA (LA QUE FUNCIONA EN B)
 // ============================================
 (function esperarYActivar() {
-    // Mostrar en consola cada intento
-    console.log("🔄 Intentando activar sincronización...");
-    console.log("- projects existe?", typeof projects !== 'undefined');
-    console.log("- currentProjectIndex:", currentProjectIndex);
-    console.log("- renderKanbanTasks existe?", typeof renderKanbanTasks === 'function');
-    console.log("- Token existe?", !!localStorage.getItem('authToken'));
-    
     // Verificar si todo está listo
     if (typeof projects === 'undefined' || 
         !projects[currentProjectIndex] || 
-        typeof renderKanbanTasks !== 'function' ||
         !localStorage.getItem('authToken')) {
         
-        console.log("⏳ No está listo, esperando 1 segundo...");
         setTimeout(esperarYActivar, 1000);
         return;
     }
     
-    // ¡YA ESTÁ TODO LISTO!
-    console.log("%c✅ TODO LISTO! Activando sincronización...", "background:green;color:white;padding:5px;");
-    console.log("Proyecto:", projects[currentProjectIndex].name);
-    console.log("Tareas:", projects[currentProjectIndex].tasks.length);
+    console.log("🚀 ACTIVANDO SINCRONIZACIÓN DEFINITIVA...");
     
     let proyecto = projects[currentProjectIndex].name;
     let conteo = projects[currentProjectIndex].tasks.length;
-    let contador = 0;
+    let recargando = false;
     
-    // Intervalo que se ejecuta cada 2 segundos
-    let intervalo = setInterval(function() {
-        contador++;
-        console.log("🔄 Verificación #" + contador + " - Buscando cambios...");
+    console.log("📊 Proyecto:", proyecto, "| Tareas:", conteo);
+    
+    setInterval(function() {
+        if (recargando) return;
         
         let token = localStorage.getItem('authToken');
-        if (!token) {
-            console.log("❌ No hay token");
-            return;
-        }
+        if (!token) return;
         
         fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(r => r.json())
         .then(data => {
-            console.log("📥 Datos recibidos del servidor");
+            if (!data.projects) return;
             
-            if (!data.projects) {
-                console.log("❌ No hay proyectos en respuesta");
-                return;
-            }
-            
-            // Buscar el proyecto por nombre
             let indice = 0;
             for (let i = 0; i < data.projects.length; i++) {
                 if (data.projects[i].name === proyecto) {
@@ -41781,36 +41760,29 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
             }
             
             let nuevo = data.projects[indice]?.tasks.length || 0;
-            console.log("Tareas en servidor: " + nuevo + " | Tareas locales: " + conteo);
             
-            if (nuevo !== conteo) {
-                console.log("%c📥 ¡CAMBIO DETECTADO! Actualizando...", "background:orange;color:black;padding:5px;");
+            if (nuevo !== conteo && !recargando) {
+                recargando = true;
                 conteo = nuevo;
-                window.projects = data.projects;
-                window.currentProjectIndex = indice;
                 
-                // Guardar en localStorage
+                // Guardar datos
                 localStorage.setItem('projects', JSON.stringify(data.projects));
                 localStorage.setItem('currentProjectIndex', indice);
                 
-                // Actualizar vista
-                if (typeof renderKanbanTasks === 'function') {
-                    renderKanbanTasks();
-                    console.log("✅ Vista actualizada");
-                }
+                // Mostrar mensaje
+                let msg = document.createElement('div');
+                msg.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#f59e0b; color:white; padding:20px 40px; border-radius:10px; z-index:100000; font-size:20px; font-weight:bold; box-shadow:0 10px 30px rgba(0,0,0,0.3);";
+                msg.innerHTML = '🔄 Cambio detectado. Recargando...';
+                document.body.appendChild(msg);
                 
-                // Notificación visual
-                const notif = document.createElement('div');
-                notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.3);";
-                notif.innerHTML = '📥 Sincronizado';
-                document.body.appendChild(notif);
-                setTimeout(() => notif.remove(), 2000);
+                // Recargar después de 2 segundos
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
             }
         })
-        .catch(err => {
-            console.log("❌ Error en fetch:", err);
-        });
-    }, 2000);
+        .catch(function() {});
+    }, 3000);
     
-    console.log("%c✅ SINCRONIZACIÓN ACTIVADA (cada 2 segundos)", "background:green;color:white;padding:5px;");
+    console.log("✅ SINCRONIZACIÓN DEFINITIVA ACTIVADA");
 })();
