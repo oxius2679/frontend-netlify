@@ -41989,3 +41989,314 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 // FIN DE SINCRONIZACIÓN EN TIEMPO REAL
 // ============================================
 
+
+
+// ============================================================================
+// 🔄 FIX DEFINITIVO: SINCRONIZACIÓN AUTOMÁTICA ENTRE MÁQUINAS
+// ============================================================================
+
+// 1. Asegurar que projects y currentProjectIndex sean GLOBALES y accesibles
+(function ensureGlobalVariables() {
+    console.log('🔧 Verificando variables globales...');
+    
+    // Cargar desde localStorage SIEMPRE como respaldo
+    try {
+        const savedProjects = localStorage.getItem('projects');
+        const savedIndex = localStorage.getItem('currentProjectIndex');
+        
+        if (savedProjects && (!window.projects || window.projects.length === 0)) {
+            window.projects = JSON.parse(savedProjects);
+            console.log('✅ projects cargado desde localStorage:', window.projects.length, 'proyectos');
+        }
+        if (savedIndex && window.currentProjectIndex === undefined) {
+            window.currentProjectIndex = parseInt(savedIndex);
+            console.log('✅ currentProjectIndex cargado:', window.currentProjectIndex);
+        }
+    } catch (e) {
+        console.warn('⚠️ Error cargando desde localStorage:', e);
+    }
+    
+    // Exponer explícitamente en window para acceso cross-context
+    if (typeof projects !== 'undefined' && !window.projects) {
+        window.projects = projects;
+    }
+    if (typeof currentProjectIndex !== 'undefined' && window.currentProjectIndex === undefined) {
+        window.currentProjectIndex = currentProjectIndex;
+    }
+    
+    console.log('📊 Estado final:');
+    console.log('   - window.projects:', window.projects ? window.projects.length + ' proyectos' : 'undefined');
+    console.log('   - window.currentProjectIndex:', window.currentProjectIndex);
+    console.log('   - window.authToken:', window.authToken ? '✅ Presente' : '❌ Ausente');
+})();
+
+// 2. Sistema de sincronización automática MEJORADO
+(function initAutoSyncUltimate() {
+    console.log('🚀 Iniciando sincronización automática ULTIMATE...');
+    
+    let syncInterval = null;
+    let lastSyncTime = 0;
+    const SYNC_INTERVAL = 10000; // 10 segundos
+    const MIN_SYNC_GAP = 3000;   // Mínimo 3s entre syncs
+    
+    // Función para sincronizar datos desde backend
+    async function forceSyncFromBackend() {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.log('⚠️ No hay token, omitiendo sync con backend');
+            return false;
+        }
+        
+        try {
+            console.log('🔄 Forzando sync con backend...');
+            const response = await fetch(`${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (!response.ok) {
+                console.warn('⚠️ Backend respondió:', response.status);
+                return false;
+            }
+            
+            const data = await response.json();
+            
+            // Validar y aplicar datos
+            if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+                console.log('✅ Datos recibidos del backend:', data.projects.length, 'proyectos');
+                
+                // Actualizar variables GLOBALES
+                window.projects = data.projects;
+                if (data.currentProjectIndex !== undefined) {
+                    window.currentProjectIndex = data.currentProjectIndex;
+                }
+                
+                // Guardar en localStorage como respaldo
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                if (data.currentProjectIndex !== undefined) {
+                    localStorage.setItem('currentProjectIndex', data.currentProjectIndex);
+                }
+                
+                // Notificar a otras pestañas/máquinas
+                if (window.tiempoRealSocket?.connected) {
+                    window.tiempoRealSocket.emit('data-synced', {
+                        timestamp: Date.now(),
+                        projectCount: data.projects.length,
+                        clientId: window._miId || 'unknown'
+                    });
+                }
+                
+                return true;
+            }
+        } catch (error) {
+            console.warn('⚠️ Error en forceSyncFromBackend:', error.message);
+        }
+        return false;
+    }
+    
+    // Función para actualizar la vista actual
+    function refreshActiveView() {
+        console.log('🎨 Actualizando vista activa...');
+        
+        // Verificar que tenemos datos válidos
+        if (!window.projects || !Array.isArray(window.projects) || window.projects.length === 0) {
+            console.warn('⚠️ No hay proyectos válidos para renderizar');
+            return;
+        }
+        
+        // Determinar vista activa
+        const activeView = document.querySelector('.view-content.active')?.id?.replace('View', '') || 'board';
+        console.log('📍 Vista activa:', activeView);
+        
+        // Renderizar según vista
+        switch(activeView) {
+            case 'board':
+            case 'inicio':
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                    console.log('✅ Kanban renderizado');
+                }
+                break;
+            case 'list':
+                if (typeof renderListTasks === 'function') renderListTasks();
+                break;
+            case 'calendar':
+                if (typeof renderCalendar === 'function') renderCalendar();
+                break;
+            case 'dashboard':
+                if (typeof renderDashboard === 'function') renderDashboard();
+                break;
+        }
+        
+        // Actualizar estadísticas si existen
+        if (typeof updateStatistics === 'function') updateStatistics();
+        if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+            generatePieChart(getStats());
+        }
+    }
+    
+    // Ciclo de sincronización automática
+    function startAutoSync() {
+        if (syncInterval) clearInterval(syncInterval);
+        
+        syncInterval = setInterval(async () => {
+            const now = Date.now();
+            if (now - lastSyncTime < MIN_SYNC_GAP) return;
+            
+            lastSyncTime = now;
+            console.log('⏰ Sync automático ejecutándose...');
+            
+            const synced = await forceSyncFromBackend();
+            if (synced) {
+                refreshActiveView();
+                mostrarNotificacionSync('✅ Sincronizado');
+            }
+        }, SYNC_INTERVAL);
+        
+        console.log(`✅ Auto-sync iniciado (cada ${SYNC_INTERVAL/1000}s)`);
+    }
+    
+    // Notificación visual discreta
+    function mostrarNotificacionSync(mensaje) {
+        const existing = document.getElementById('sync-notification');
+        if (existing) existing.remove();
+        
+        const notif = document.createElement('div');
+        notif.id = 'sync-notification';
+        notif.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000000;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+            animation: slideIn 0.3s ease;
+        `;
+        notif.textContent = mensaje;
+        document.body.appendChild(notif);
+        
+        setTimeout(() => {
+            notif.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notif.remove(), 300);
+        }, 2500);
+    }
+    
+    // Escuchar eventos de WebSocket para actualización inmediata
+    if (typeof io !== 'undefined') {
+        // Conectar o reconectar socket
+        if (!window.tiempoRealSocket) {
+            window.tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5
+            });
+        }
+        
+        window.tiempoRealSocket.on('connect', () => {
+            console.log('🔗 WebSocket conectado');
+            window._miId = 'Cliente-' + Math.random().toString(36).substr(2, 5);
+            window.tiempoRealSocket.emit('register-client', { id: window._miId });
+        });
+        
+        // Escuchar actualizaciones de otras máquinas
+        window.tiempoRealSocket.on('project-updated', (data) => {
+            console.log('📨 Actualización recibida de otra máquina:', data);
+            if (data.forceRefresh) {
+                forceSyncFromBackend().then(synced => {
+                    if (synced) refreshActiveView();
+                });
+            }
+        });
+        
+        window.tiempoRealSocket.on('data-synced', (data) => {
+            if (data.clientId !== window._miId) {
+                console.log('🔄 Otra máquina sincronizó, actualizando...');
+                setTimeout(refreshActiveView, 500);
+            }
+        });
+    }
+    
+    // Parchear safeSave para notificar cambios
+    if (typeof safeSave === 'function' && !window.__safeSavePatched) {
+        const originalSave = safeSave;
+        window.safeSave = async function(...args) {
+            const result = await originalSave.apply(this, args);
+            
+            // Notificar a otras máquinas después de guardar
+            setTimeout(() => {
+                if (window.tiempoRealSocket?.connected) {
+                    window.tiempoRealSocket.emit('project-updated', {
+                        timestamp: Date.now(),
+                        clientId: window._miId,
+                        forceRefresh: true
+                    });
+                }
+            }, 200);
+            
+            return result;
+        };
+        window.__safeSavePatched = true;
+        console.log('✅ safeSave parcheado para notificar cambios');
+    }
+    
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startAutoSync);
+    } else {
+        startAutoSync();
+    }
+    
+    // Exponer para debugging
+    window.forceSyncManual = async function() {
+        console.log('🔄 Sync manual forzado...');
+        const synced = await forceSyncFromBackend();
+        if (synced) {
+            refreshActiveView();
+            mostrarNotificacionSync('✅ Sync manual completado');
+        } else {
+            mostrarNotificacionSync('⚠️ Sync fallido');
+        }
+        return synced;
+    };
+    
+    console.log('✅ Sistema de sincronización ULTIMATE cargado');
+})();
+
+// 3. Agregar animaciones CSS para notificaciones
+if (!document.getElementById('sync-animations')) {
+    const style = document.createElement('style');
+    style.id = 'sync-animations';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 4. Comando de consola para debugging
+console.log(`
+╔════════════════════════════════════════════════════════╗
+║  🔄 SISTEMA DE COLABORACIÓN ACTIVADO                   ║
+╠════════════════════════════════════════════════════════╣
+║  Comandos útiles:                                       ║
+║  • forceSyncManual()  → Forzar sync manual             ║
+║  • window.projects    → Ver proyectos cargados         ║
+║  • window.currentProjectIndex → Ver índice actual      ║
+║  • window._miId       → ID de esta máquina             ║
+╚════════════════════════════════════════════════════════╝
+`);
+
