@@ -41715,74 +41715,64 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
-
 // ============================================
-// SINCRONIZACIÓN DEFINITIVA (LA QUE FUNCIONA EN B)
+// SINCRONIZACIÓN AUTOMÁTICA (VERSIÓN 1.0)
 // ============================================
-(function esperarYActivar() {
-    // Verificar si todo está listo
-    if (typeof projects === 'undefined' || 
-        !projects[currentProjectIndex] || 
-        !localStorage.getItem('authToken')) {
+(function() {
+    // Esperar a que todo cargue
+    function iniciar() {
+        if (!localStorage.getItem('authToken')) return;
+        if (!projects || !projects[currentProjectIndex]) return;
         
-        setTimeout(esperarYActivar, 1000);
-        return;
+        console.log("🚀 Sincronización activada");
+        
+        let proyecto = projects[currentProjectIndex].name;
+        let conteo = projects[currentProjectIndex].tasks.length;
+        let recargando = false;
+        
+        setInterval(function() {
+            if (recargando) return;
+            
+            let token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.projects) return;
+                
+                let indice = 0;
+                for (let i = 0; i < data.projects.length; i++) {
+                    if (data.projects[i].name === proyecto) {
+                        indice = i;
+                        break;
+                    }
+                }
+                
+                let nuevo = data.projects[indice]?.tasks.length || 0;
+                
+                if (nuevo !== conteo && !recargando) {
+                    recargando = true;
+                    conteo = nuevo;
+                    localStorage.setItem('projects', JSON.stringify(data.projects));
+                    localStorage.setItem('currentProjectIndex', indice);
+                    location.reload();
+                }
+            })
+            .catch(() => {});
+        }, 3000);
     }
     
-    console.log("🚀 ACTIVANDO SINCRONIZACIÓN DEFINITIVA...");
-    
-    let proyecto = projects[currentProjectIndex].name;
-    let conteo = projects[currentProjectIndex].tasks.length;
-    let recargando = false;
-    
-    console.log("📊 Proyecto:", proyecto, "| Tareas:", conteo);
-    
-    setInterval(function() {
-        if (recargando) return;
-        
-        let token = localStorage.getItem('authToken');
-        if (!token) return;
-        
-        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.projects) return;
-            
-            let indice = 0;
-            for (let i = 0; i < data.projects.length; i++) {
-                if (data.projects[i].name === proyecto) {
-                    indice = i;
-                    break;
-                }
-            }
-            
-            let nuevo = data.projects[indice]?.tasks.length || 0;
-            
-            if (nuevo !== conteo && !recargando) {
-                recargando = true;
-                conteo = nuevo;
-                
-                // Guardar datos
-                localStorage.setItem('projects', JSON.stringify(data.projects));
-                localStorage.setItem('currentProjectIndex', indice);
-                
-                // Mostrar mensaje
-                let msg = document.createElement('div');
-                msg.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#f59e0b; color:white; padding:20px 40px; border-radius:10px; z-index:100000; font-size:20px; font-weight:bold; box-shadow:0 10px 30px rgba(0,0,0,0.3);";
-                msg.innerHTML = '🔄 Cambio detectado. Recargando...';
-                document.body.appendChild(msg);
-                
-                // Recargar después de 2 segundos
-                setTimeout(function() {
-                    location.reload();
-                }, 2000);
-            }
-        })
-        .catch(function() {});
-    }, 3000);
-    
-    console.log("✅ SINCRONIZACIÓN DEFINITIVA ACTIVADA");
+    // Intentar cada segundo hasta que todo esté listo
+    let intentos = 0;
+    let intervalo = setInterval(function() {
+        intentos++;
+        if (localStorage.getItem('authToken') && projects && projects[currentProjectIndex]) {
+            clearInterval(intervalo);
+            iniciar();
+        }
+        if (intentos > 20) clearInterval(intervalo); // 20 segundos máximo
+    }, 1000);
 })();
