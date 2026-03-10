@@ -1,5 +1,10 @@
 
-
+// ============================================
+// DIAGNÓSTICO DE CARGA
+// ============================================
+console.log("%c🔍 SCRIPT.JS SE ESTÁ EJECUTANDO", "background: blue; color: white; font-size: 16px;");
+console.log("Hora:", new Date().toLocaleTimeString());
+console.log("Token existe?", !!localStorage.getItem('authToken'));
 
 
 
@@ -41776,3 +41781,141 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
         if (intentos > 20) clearInterval(intervalo); // 20 segundos máximo
     }, 1000);
 })();
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// INSTALAR SINCRONIZACIÓN PERMANENTE EN B (EJECUTAR UNA SOLA VEZ)
+// ============================================
+let codigoSincronizacion = `
+(function() {
+    console.log("🔄 Sincronización automática iniciada");
+    
+    let recargando = false;
+    
+    setInterval(function() {
+        if (recargando) return;
+        
+        let token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.projects) return;
+            
+            let proyecto = projects[currentProjectIndex].name;
+            let indice = 0;
+            for (let i = 0; i < data.projects.length; i++) {
+                if (data.projects[i].name === proyecto) {
+                    indice = i;
+                    break;
+                }
+            }
+            
+            let nuevo = data.projects[indice]?.tasks.length || 0;
+            let viejo = projects[currentProjectIndex].tasks.length;
+            
+            if (nuevo !== viejo && !recargando) {
+                recargando = true;
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                localStorage.setItem('currentProjectIndex', indice);
+                localStorage.setItem('ultimaSincro', Date.now().toString());
+                location.reload();
+            }
+        })
+        .catch(() => {});
+    }, 3000);
+})();
+`;
+
+// Guardar en localStorage
+localStorage.setItem('sincronizacionB', codigoSincronizacion);
+
+// Crear función que se ejecuta SIEMPRE al cargar la página
+let script = document.createElement('script');
+script.innerHTML = localStorage.getItem('sincronizacionB');
+document.body.appendChild(script);
+
+// Hacer que se ejecute en TODAS las cargas futuras
+let meta = document.createElement('meta');
+meta.httpEquiv = 'Content-Script-Type';
+meta.content = 'text/javascript';
+document.head.appendChild(meta);
+
+// Crear un script invisible que se auto-ejecuta
+let scriptPermanente = document.createElement('script');
+scriptPermanente.innerHTML = `
+(function() {
+    let codigo = localStorage.getItem('sincronizacionB');
+    if (codigo) {
+        eval(codigo);
+    }
+})();
+`;
+document.body.appendChild(scriptPermanente);
+
+console.log("✅ SINCRONIZACIÓN INSTALADA PERMANENTEMENTE");
+console.log("🔁 Ahora recarga la página y funcionará siempre");
+console.log("📌 NUNCA MÁS necesitarás pegar código en B");
+
+
+
+
+
+// ============================================
+// SINCRONIZACIÓN (al final)
+// ============================================
+console.log("📦 Cargando módulo de sincronización...");
+
+setTimeout(function() {
+    if (!localStorage.getItem('authToken')) return;
+    if (!projects || !projects[currentProjectIndex]) return;
+    
+    console.log("🚀 Iniciando sincronización");
+    
+    let proyecto = projects[currentProjectIndex].name;
+    let conteo = projects[currentProjectIndex].tasks.length;
+    
+    setInterval(function() {
+        let token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.projects) return;
+            
+            let indice = 0;
+            for (let i = 0; i < data.projects.length; i++) {
+                if (data.projects[i].name === proyecto) {
+                    indice = i;
+                    break;
+                }
+            }
+            
+            let nuevo = data.projects[indice]?.tasks.length || 0;
+            
+            if (nuevo !== conteo) {
+                console.log("🔄 Cambio detectado");
+                conteo = nuevo;
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                localStorage.setItem('currentProjectIndex', indice);
+                location.reload();
+            }
+        })
+        .catch(() => {});
+    }, 3000);
+    
+}, 5000);
