@@ -41714,3 +41714,68 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
+
+
+
+
+
+
+
+
+// ============================================
+// SINCRONIZACIÓN PARA B - VERSIÓN SCRIPT.JS
+// ============================================
+setTimeout(function() {
+    try {
+        if (!localStorage.getItem('authToken')) return;
+        if (!projects || !projects[currentProjectIndex]) return;
+        
+        console.log("🚀 Iniciando sincronización en B...");
+        
+        let ultimoProyecto = projects[currentProjectIndex].name;
+        let ultimoConteo = projects[currentProjectIndex].tasks.length;
+        
+        setInterval(function() {
+            try {
+                let token = localStorage.getItem('authToken');
+                if (!token) return;
+                
+                fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    try {
+                        if (!data.projects) return;
+                        
+                        let indice = 0;
+                        for (let i = 0; i < data.projects.length; i++) {
+                            if (data.projects[i].name === ultimoProyecto) {
+                                indice = i;
+                                break;
+                            }
+                        }
+                        
+                        let nuevoConteo = data.projects[indice]?.tasks.length || 0;
+                        
+                        if (nuevoConteo !== ultimoConteo) {
+                            ultimoConteo = nuevoConteo;
+                            window.projects = data.projects;
+                            window.currentProjectIndex = indice;
+                            
+                            localStorage.setItem('projects', JSON.stringify(data.projects));
+                            localStorage.setItem('currentProjectIndex', indice);
+                            
+                            if (typeof renderKanbanTasks === 'function') {
+                                renderKanbanTasks();
+                            }
+                        }
+                    } catch (e) {}
+                })
+                .catch(function() {});
+            } catch (e) {}
+        }, 2000);
+        
+        console.log("✅ Sincronización B activada");
+    } catch (e) {}
+}, 3000);
