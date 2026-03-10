@@ -41714,7 +41714,6 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
 // ============================================
 // SINCRONIZACIÓN PROFESIONAL - VERSIÓN FINAL
 // ============================================
