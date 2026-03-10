@@ -41721,17 +41721,36 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
 // ============================================
-// SINCRONIZACIÓN PARA B - VERSIÓN SCRIPT.JS
+// SISTEMA DE SINCRONIZACIÓN INTEGRADO (A + B)
 // ============================================
 setTimeout(function() {
     try {
         if (!localStorage.getItem('authToken')) return;
         if (!projects || !projects[currentProjectIndex]) return;
         
-        console.log("🚀 Iniciando sincronización en B...");
+        console.log("🚀 Iniciando sistema de sincronización...");
         
+        // ===== PARTE 1: GUARDADO LOCAL (lo que tenía A) =====
+        function guardarLocalmente() {
+            try {
+                localStorage.setItem('projects', JSON.stringify(projects));
+                localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                console.log("💾 Datos guardados localmente");
+            } catch (e) {}
+        }
+        
+        // Parchear safeSave (lo que tenía A)
+        if (typeof safeSave === 'function') {
+            var safeSaveOriginal = safeSave;
+            safeSave = async function() {
+                var resultado = await safeSaveOriginal.apply(this, arguments);
+                guardarLocalmente();
+                return resultado;
+            };
+        }
+        
+        // ===== PARTE 2: SINCRONIZACIÓN CADA 2 SEGUNDOS (lo que tenía B) =====
         let ultimoProyecto = projects[currentProjectIndex].name;
         let ultimoConteo = projects[currentProjectIndex].tasks.length;
         
@@ -41759,6 +41778,7 @@ setTimeout(function() {
                         let nuevoConteo = data.projects[indice]?.tasks.length || 0;
                         
                         if (nuevoConteo !== ultimoConteo) {
+                            console.log("📥 Cambio detectado: " + ultimoConteo + " → " + nuevoConteo);
                             ultimoConteo = nuevoConteo;
                             window.projects = data.projects;
                             window.currentProjectIndex = indice;
@@ -41769,6 +41789,13 @@ setTimeout(function() {
                             if (typeof renderKanbanTasks === 'function') {
                                 renderKanbanTasks();
                             }
+                            
+                            // Mostrar notificación
+                            var notif = document.createElement('div');
+                            notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold;";
+                            notif.innerHTML = '📥 Sincronizado';
+                            document.body.appendChild(notif);
+                            setTimeout(function() { notif.remove(); }, 2000);
                         }
                     } catch (e) {}
                 })
@@ -41776,6 +41803,9 @@ setTimeout(function() {
             } catch (e) {}
         }, 2000);
         
-        console.log("✅ Sincronización B activada");
+        console.log("✅ SISTEMA INTEGRADO ACTIVADO");
+        console.log("⏱️  Actualización cada 2 segundos");
+        console.log("💾 Guardado local automático");
+        
     } catch (e) {}
 }, 3000);
