@@ -41717,43 +41717,61 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
-
 // ============================================
-// SINCRONIZACIÓN - VERSIÓN QUE ESPERA
+// SINCRONIZACIÓN CON DIAGNÓSTICO
 // ============================================
 (function esperarYActivar() {
+    // Mostrar en consola cada intento
+    console.log("🔄 Intentando activar sincronización...");
+    console.log("- projects existe?", typeof projects !== 'undefined');
+    console.log("- currentProjectIndex:", currentProjectIndex);
+    console.log("- renderKanbanTasks existe?", typeof renderKanbanTasks === 'function');
+    console.log("- Token existe?", !!localStorage.getItem('authToken'));
+    
     // Verificar si todo está listo
     if (typeof projects === 'undefined' || 
         !projects[currentProjectIndex] || 
         typeof renderKanbanTasks !== 'function' ||
         !localStorage.getItem('authToken')) {
         
-        // Si no está listo, esperar 1 segundo y reintentar
-        console.log("⏳ Esperando a que cargue...");
+        console.log("⏳ No está listo, esperando 1 segundo...");
         setTimeout(esperarYActivar, 1000);
         return;
     }
     
-    // ¡YA ESTÁ TODO LISTO! Activamos la sincronización
-    console.log("🚀 ACTIVANDO SINCRONIZACIÓN AHORA...");
+    // ¡YA ESTÁ TODO LISTO!
+    console.log("%c✅ TODO LISTO! Activando sincronización...", "background:green;color:white;padding:5px;");
     console.log("Proyecto:", projects[currentProjectIndex].name);
     console.log("Tareas:", projects[currentProjectIndex].tasks.length);
     
     let proyecto = projects[currentProjectIndex].name;
     let conteo = projects[currentProjectIndex].tasks.length;
+    let contador = 0;
     
-    setInterval(function() {
+    // Intervalo que se ejecuta cada 2 segundos
+    let intervalo = setInterval(function() {
+        contador++;
+        console.log("🔄 Verificación #" + contador + " - Buscando cambios...");
+        
         let token = localStorage.getItem('authToken');
-        if (!token) return;
+        if (!token) {
+            console.log("❌ No hay token");
+            return;
+        }
         
         fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
             headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(r => r.json())
         .then(data => {
-            if (!data.projects) return;
+            console.log("📥 Datos recibidos del servidor");
             
+            if (!data.projects) {
+                console.log("❌ No hay proyectos en respuesta");
+                return;
+            }
+            
+            // Buscar el proyecto por nombre
             let indice = 0;
             for (let i = 0; i < data.projects.length; i++) {
                 if (data.projects[i].name === proyecto) {
@@ -41763,18 +41781,36 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
             }
             
             let nuevo = data.projects[indice]?.tasks.length || 0;
+            console.log("Tareas en servidor: " + nuevo + " | Tareas locales: " + conteo);
             
             if (nuevo !== conteo) {
-                console.log("📥 Cambio detectado!");
+                console.log("%c📥 ¡CAMBIO DETECTADO! Actualizando...", "background:orange;color:black;padding:5px;");
                 conteo = nuevo;
                 window.projects = data.projects;
                 window.currentProjectIndex = indice;
                 
-                renderKanbanTasks();
+                // Guardar en localStorage
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                localStorage.setItem('currentProjectIndex', indice);
+                
+                // Actualizar vista
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                    console.log("✅ Vista actualizada");
+                }
+                
+                // Notificación visual
+                const notif = document.createElement('div');
+                notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.3);";
+                notif.innerHTML = '📥 Sincronizado';
+                document.body.appendChild(notif);
+                setTimeout(() => notif.remove(), 2000);
             }
         })
-        .catch(() => {});
+        .catch(err => {
+            console.log("❌ Error en fetch:", err);
+        });
     }, 2000);
     
-    console.log("✅ SINCRONIZACIÓN ACTIVADA");
+    console.log("%c✅ SINCRONIZACIÓN ACTIVADA (cada 2 segundos)", "background:green;color:white;padding:5px;");
 })();
