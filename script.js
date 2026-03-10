@@ -41714,8 +41714,9 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
+
 // ============================================
-// SINCRONIZACIÓN PROFESIONAL - VERSIÓN COMPLETA
+// SINCRONIZACIÓN PROFESIONAL - VERSIÓN FINAL
 // ============================================
 (function() {
     console.log("🚀 INICIANDO SINCRONIZACIÓN PROFESIONAL...");
@@ -41725,18 +41726,12 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
     const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
     
     // Variables de estado
-    let ultimoConteo = 0;
-    let ultimoProyecto = '';
+    let ultimoConteo = projects[currentProjectIndex]?.tasks.length || 0;
+    let ultimoProyecto = projects[currentProjectIndex]?.name || '';
+    let ultimoCambio = Date.now();
     let sincronizando = false;
     
-    // ===== FUNCIÓN PARA ACTUALIZAR ESTADO LOCAL =====
-    function actualizarEstadoLocal() {
-        if (projects && projects[currentProjectIndex]) {
-            ultimoConteo = projects[currentProjectIndex].tasks?.length || 0;
-            ultimoProyecto = projects[currentProjectIndex].name || '';
-        }
-    }
-    actualizarEstadoLocal();
+    console.log(`📊 Proyecto: ${ultimoProyecto} | Tareas: ${ultimoConteo}`);
     
     // ===== FUNCIÓN PARA GUARDAR LOCALMENTE =====
     function guardarLocalmente() {
@@ -41745,7 +41740,6 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
             localStorage.setItem('currentProjectIndex', currentProjectIndex);
             localStorage.setItem('ultimoProyecto', ultimoProyecto);
             localStorage.setItem('ultimoCambio', Date.now().toString());
-            console.log("💾 Datos guardados localmente");
         } catch (e) {
             console.warn("⚠️ Error guardando localmente:", e);
         }
@@ -41757,7 +41751,7 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
         if (!token) return null;
         
         try {
-            const res = await fetch(API_URL + '/api/projects', {
+            const res = await fetch(`${API_URL}/api/projects`, {
                 headers: { 'Authorization': 'Bearer ' + token },
                 cache: 'no-cache'
             });
@@ -41775,75 +41769,40 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
         
         // Método 1: renderKanbanTasks
         if (typeof renderKanbanTasks === 'function') {
-            try {
-                renderKanbanTasks();
-                return true;
-            } catch(e) {
-                console.log("⚠️ Error en renderKanbanTasks:", e);
-            }
+            renderKanbanTasks();
+            return true;
         }
         
         // Método 2: showView
         if (typeof showView === 'function') {
-            try {
-                showView('board');
-                return true;
-            } catch(e) {
-                console.log("⚠️ Error en showView:", e);
-            }
+            showView('board');
+            return true;
         }
         
-        console.log("⚠️ No se pudo actualizar la vista");
+        // Método 3: recargar página como último recurso
+        console.log("⚠️ No se pudo actualizar, recargando...");
+        setTimeout(() => location.reload(), 500);
         return false;
     }
     
     // ===== GUARDAR CADA VEZ QUE SE EJECUTA safeSave =====
-    if (typeof safeSave === 'function') {
-        const safeSaveOriginal = safeSave;
-        safeSave = async function() {
-            console.log("💾 Ejecutando safeSave con guardado local...");
-            const resultado = await safeSaveOriginal.apply(this, arguments);
-            guardarLocalmente();
-            actualizarEstadoLocal();
-            return resultado;
-        };
-        console.log("✅ safeSave parcheado correctamente");
-    }
-    
-    // ===== CARGAR DATOS GUARDADOS AL INICIAR =====
-    try {
-        const proyectosGuardados = localStorage.getItem('projects');
-        const indiceGuardado = localStorage.getItem('currentProjectIndex');
-        const proyectoGuardado = localStorage.getItem('ultimoProyecto');
-        
-        if (proyectosGuardados && indiceGuardado && proyectoGuardado) {
-            const proyectos = JSON.parse(proyectosGuardados);
-            const indice = parseInt(indiceGuardado);
-            
-            if (proyectos[indice] && proyectos[indice].name === proyectoGuardado) {
-                window.projects = proyectos;
-                window.currentProjectIndex = indice;
-                console.log("✅ Datos recuperados de localStorage");
-                actualizarEstadoLocal();
-            }
-        }
-    } catch (e) {
-        console.warn("⚠️ Error cargando datos locales:", e);
-    }
+    const safeSaveOriginal = safeSave;
+    safeSave = async function() {
+        const resultado = await safeSaveOriginal.apply(this, arguments);
+        guardarLocalmente();
+        ultimoCambio = Date.now();
+        ultimoConteo = projects[currentProjectIndex]?.tasks.length || 0;
+        return resultado;
+    };
     
     // ===== INTERVALO PRINCIPAL DE SINCRONIZACIÓN =====
-    setInterval(async function() {
+    setInterval(async () => {
         if (sincronizando) return;
         sincronizando = true;
         
         try {
             const proyectosServidor = await cargarDelServidor();
-            if (!proyectosServidor) {
-                sincronizando = false;
-                return;
-            }
-            
-            actualizarEstadoLocal();
+            if (!proyectosServidor) return;
             
             // Encontrar nuestro proyecto por nombre
             let indiceServidor = 0;
@@ -41857,13 +41816,17 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
             const tareasServidor = proyectosServidor[indiceServidor]?.tasks || [];
             const tareasLocales = projects[currentProjectIndex]?.tasks || [];
             
-            // Si hay cambios en el servidor
-            if (tareasServidor.length !== tareasLocales.length) {
-                console.log("📥 Cambio detectado en servidor: " + tareasLocales.length + " → " + tareasServidor.length);
+            // DETECCIÓN DE CAMBIOS (bidireccional)
+            const hayCambioServidor = tareasServidor.length !== tareasLocales.length;
+            const tiempoDesdeUltimoCambio = Date.now() - ultimoCambio;
+            
+            // Prioridad 1: Si hay cambios en el servidor Y no hemos cambiado nada localmente en los últimos 3 segundos
+            if (hayCambioServidor && tiempoDesdeUltimoCambio > 3000) {
+                console.log(`📥 Cambio detectado en servidor: ${tareasLocales.length} → ${tareasServidor.length}`);
                 
                 // Actualizar datos locales
-                window.projects = proyectosServidor;
-                window.currentProjectIndex = indiceServidor;
+                projects = proyectosServidor;
+                currentProjectIndex = indiceServidor;
                 
                 // Guardar localmente
                 guardarLocalmente();
@@ -41873,10 +41836,15 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
                 
                 // Mostrar notificación
                 const notif = document.createElement('div');
-                notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
-                notif.innerHTML = '📥 Sincronizado';
+                notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold;";
+                notif.innerHTML = '📥 Tareas sincronizadas';
                 document.body.appendChild(notif);
-                setTimeout(function() { notif.remove(); }, 2000);
+                setTimeout(() => notif.remove(), 2000);
+            }
+            
+            // Prioridad 2: Si nosotros cambiamos algo, asegurar que el servidor lo tenga
+            if (tiempoDesdeUltimoCambio < 5000) {
+                // Ya guardamos con safeSave, no necesitamos hacer nada
             }
             
         } catch (e) {
@@ -41886,7 +41854,26 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
         }
     }, INTERVALO_MS);
     
+    // ===== CARGAR DATOS GUARDADOS LOCALMENTE AL INICIAR =====
+    try {
+        const proyectosGuardados = localStorage.getItem('projects');
+        const indiceGuardado = localStorage.getItem('currentProjectIndex');
+        const proyectoGuardado = localStorage.getItem('ultimoProyecto');
+        
+        if (proyectosGuardados && indiceGuardado) {
+            const proyectos = JSON.parse(proyectosGuardados);
+            const indice = parseInt(indiceGuardado);
+            
+            if (proyectos[indice]?.name === proyectoGuardado) {
+                window.projects = proyectos;
+                window.currentProjectIndex = indice;
+                console.log("✅ Datos recuperados de localStorage");
+            }
+        }
+    } catch (e) {
+        console.warn("⚠️ Error cargando datos locales:", e);
+    }
+    
     console.log("✅ SINCRONIZACIÓN PROFESIONAL ACTIVADA");
-    console.log("⏱️  Intervalo: " + (INTERVALO_MS/1000) + " segundos");
-    console.log("💾 Guardado local automático activado");
+    console.log(`⏱️  Intervalo: ${INTERVALO_MS/1000} segundos`);
 })();
