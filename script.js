@@ -41709,3 +41709,134 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
         }
     }, 3000);
 })();
+
+
+
+
+
+
+// ============================================
+// SISTEMA DE SINCRONIZACIÓN PERMANENTE
+// ============================================
+(function initSincronizacionPermanente() {
+    // Esperar a que todo cargue
+    setTimeout(function() {
+        console.log("🔄 Iniciando sincronización permanente...");
+        
+        // Solo si hay token
+        if (!localStorage.getItem('authToken')) return;
+        
+        // Configuración
+        const INTERVALO_MS = 2000; // 2 segundos
+        const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
+        
+        // Variables de estado
+        let ultimoProyecto = '';
+        let ultimoConteo = 0;
+        let sincronizando = false;
+        
+        // Función para actualizar estado
+        function actualizarEstado() {
+            if (projects && projects[currentProjectIndex]) {
+                ultimoProyecto = projects[currentProjectIndex].name || '';
+                ultimoConteo = projects[currentProjectIndex].tasks?.length || 0;
+            }
+        }
+        
+        // Estado inicial
+        actualizarEstado();
+        
+        // Función para guardar localmente
+        function guardarLocalmente() {
+            try {
+                localStorage.setItem('projects', JSON.stringify(projects));
+                localStorage.setItem('currentProjectIndex', currentProjectIndex);
+            } catch (e) {}
+        }
+        
+        // Función para cargar del servidor
+        async function cargarDelServidor() {
+            const token = localStorage.getItem('authToken');
+            if (!token) return null;
+            
+            try {
+                const res = await fetch(API_URL + '/api/projects', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                return data.projects || null;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        // Función para actualizar vista
+        function actualizarVista() {
+            if (typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            } else if (typeof showView === 'function') {
+                showView('board');
+            }
+        }
+        
+        // Parchear safeSave si existe
+        if (typeof safeSave === 'function' && !window.__safeSavePermanent) {
+            var safeSaveOriginal = safeSave;
+            safeSave = async function() {
+                var resultado = await safeSaveOriginal.apply(this, arguments);
+                guardarLocalmente();
+                actualizarEstado();
+                return resultado;
+            };
+            window.__safeSavePermanent = true;
+        }
+        
+        // Intervalo de sincronización
+        setInterval(async function() {
+            if (sincronizando) return;
+            sincronizando = true;
+            
+            try {
+                // Actualizar estado actual
+                actualizarEstado();
+                
+                var proyectosServidor = await cargarDelServidor();
+                if (!proyectosServidor) {
+                    sincronizando = false;
+                    return;
+                }
+                
+                // Encontrar nuestro proyecto
+                var indiceServidor = 0;
+                for (var i = 0; i < proyectosServidor.length; i++) {
+                    if (proyectosServidor[i].name === ultimoProyecto) {
+                        indiceServidor = i;
+                        break;
+                    }
+                }
+                
+                var tareasServidor = proyectosServidor[indiceServidor]?.tasks || [];
+                var tareasLocales = projects[currentProjectIndex]?.tasks || [];
+                
+                // Si hay cambios, actualizar
+                if (tareasServidor.length !== tareasLocales.length) {
+                    console.log("📥 Sincronizando: " + tareasLocales.length + " → " + tareasServidor.length);
+                    
+                    projects = proyectosServidor;
+                    currentProjectIndex = indiceServidor;
+                    
+                    guardarLocalmente();
+                    actualizarVista();
+                    actualizarEstado();
+                }
+                
+            } catch (e) {
+                // Error silencioso
+            } finally {
+                sincronizando = false;
+            }
+        }, INTERVALO_MS);
+        
+        console.log("✅ Sincronización permanente activada (cada " + (INTERVALO_MS/1000) + " segundos)");
+    }, 3000); // Esperar 3 segundos a que cargue todo
+})();
