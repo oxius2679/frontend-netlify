@@ -41716,162 +41716,164 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 // ============================================
-// SISTEMA DE SINCRONIZACIÓN EN VIVO - NUNCA EXPIRA
+// SINCRONIZACIÓN PROFESIONAL - VERSIÓN FINAL
 // ============================================
 (function() {
-    // Este código se ejecuta UNA VEZ al cargar la página
-    // pero CREA un proceso que vive para siempre
+    console.log("🚀 INICIANDO SINCRONIZACIÓN PROFESIONAL...");
     
-    console.log("🔄 Iniciando servicio de sincronización en vivo...");
+    // Configuración
+    const INTERVALO_MS = 2000; // 2 segundos
+    const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
     
-    // Esperar a que todo cargue
-    setTimeout(function iniciarSincronizacion() {
+    // Variables de estado
+    let ultimoConteo = projects[currentProjectIndex]?.tasks.length || 0;
+    let ultimoProyecto = projects[currentProjectIndex]?.name || '';
+    let ultimoCambio = Date.now();
+    let sincronizando = false;
+    
+    console.log(`📊 Proyecto: ${ultimoProyecto} | Tareas: ${ultimoConteo}`);
+    
+    // ===== FUNCIÓN PARA GUARDAR LOCALMENTE =====
+    function guardarLocalmente() {
+        try {
+            localStorage.setItem('projects', JSON.stringify(projects));
+            localStorage.setItem('currentProjectIndex', currentProjectIndex);
+            localStorage.setItem('ultimoProyecto', ultimoProyecto);
+            localStorage.setItem('ultimoCambio', Date.now().toString());
+        } catch (e) {
+            console.warn("⚠️ Error guardando localmente:", e);
+        }
+    }
+    
+    // ===== FUNCIÓN PARA CARGAR DATOS DEL SERVIDOR =====
+    async function cargarDelServidor() {
+        const token = localStorage.getItem('authToken');
+        if (!token) return null;
         
-        // Verificar que hay sesión
-        if (!localStorage.getItem('authToken')) {
-            console.log("⏳ Esperando inicio de sesión...");
-            setTimeout(iniciarSincronizacion, 2000);
-            return;
+        try {
+            const res = await fetch(`${API_URL}/api/projects`, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                cache: 'no-cache'
+            });
+            const data = await res.json();
+            return data.projects || null;
+        } catch (e) {
+            console.log("⏳ Error de red, reintentando...");
+            return null;
+        }
+    }
+    
+    // ===== FUNCIÓN PARA ACTUALIZAR VISTA =====
+    function actualizarVista() {
+        console.log("🔄 Actualizando vista...");
+        
+        // Método 1: renderKanbanTasks
+        if (typeof renderKanbanTasks === 'function') {
+            renderKanbanTasks();
+            return true;
         }
         
-        // Verificar que projects existe
-        if (typeof projects === 'undefined' || !projects[currentProjectIndex]) {
-            console.log("⏳ Esperando datos del proyecto...");
-            setTimeout(iniciarSincronizacion, 2000);
-            return;
+        // Método 2: showView
+        if (typeof showView === 'function') {
+            showView('board');
+            return true;
         }
         
-        console.log("🚀 ACTIVANDO SINCRONIZACIÓN EN VIVO");
+        // Método 3: recargar página como último recurso
+        console.log("⚠️ No se pudo actualizar, recargando...");
+        setTimeout(() => location.reload(), 500);
+        return false;
+    }
+    
+    // ===== GUARDAR CADA VEZ QUE SE EJECUTA safeSave =====
+    const safeSaveOriginal = safeSave;
+    safeSave = async function() {
+        const resultado = await safeSaveOriginal.apply(this, arguments);
+        guardarLocalmente();
+        ultimoCambio = Date.now();
+        ultimoConteo = projects[currentProjectIndex]?.tasks.length || 0;
+        return resultado;
+    };
+    
+    // ===== INTERVALO PRINCIPAL DE SINCRONIZACIÓN =====
+    setInterval(async () => {
+        if (sincronizando) return;
+        sincronizando = true;
         
-        // Configuración
-        const INTERVALO_MS = 2000; // 2 segundos
-        const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
-        
-        // Variables de estado (se actualizan en cada ciclo)
-        let ultimoProyecto = projects[currentProjectIndex]?.name || '';
-        let ultimoConteo = projects[currentProjectIndex]?.tasks.length || 0;
-        let sincronizando = false;
-        
-        console.log("📊 Proyecto: " + ultimoProyecto + " | Tareas: " + ultimoConteo);
-        
-        // ===== FUNCIÓN PARA ACTUALIZAR REFERENCIAS =====
-        function actualizarReferencias() {
-            try {
-                ultimoProyecto = projects[currentProjectIndex]?.name || ultimoProyecto;
-                ultimoConteo = projects[currentProjectIndex]?.tasks.length || ultimoConteo;
-            } catch (e) {}
-        }
-        
-        // ===== FUNCIÓN PARA CARGAR DATOS DEL SERVIDOR =====
-        async function cargarDelServidor() {
-            const token = localStorage.getItem('authToken');
-            if (!token) return null;
+        try {
+            const proyectosServidor = await cargarDelServidor();
+            if (!proyectosServidor) return;
             
-            try {
-                const res = await fetch(API_URL + '/api/projects', {
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    cache: 'no-cache'
-                });
-                const data = await res.json();
-                return data.projects || null;
-            } catch (e) {
-                return null;
-            }
-        }
-        
-        // ===== FUNCIÓN PARA ACTUALIZAR VISTA (MÚLTIPLES MÉTODOS) =====
-        function actualizarVista() {
-            console.log("🔄 Actualizando vista en vivo...");
-            
-            // MÉTODO 1: renderKanbanTasks
-            if (typeof renderKanbanTasks === 'function') {
-                try {
-                    renderKanbanTasks();
-                    return true;
-                } catch (e) {}
-            }
-            
-            // MÉTODO 2: showView
-            if (typeof showView === 'function') {
-                try {
-                    showView('board');
-                    return true;
-                } catch (e) {}
-            }
-            
-            // MÉTODO 3: Forzar refresco manual
-            const boardView = document.getElementById('boardView');
-            if (boardView) {
-                boardView.style.display = 'none';
-                setTimeout(() => {
-                    boardView.style.display = 'block';
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
-                }, 50);
-                return true;
-            }
-            
-            return false;
-        }
-        
-        // ===== INTERVALO PRINCIPAL (VIVE PARA SIEMPRE) =====
-        setInterval(async function() {
-            if (sincronizando) return;
-            sincronizando = true;
-            
-            try {
-                // Actualizar referencias por si cambió de proyecto
-                actualizarReferencias();
-                
-                const proyectosServidor = await cargarDelServidor();
-                if (!proyectosServidor) {
-                    sincronizando = false;
-                    return;
+            // Encontrar nuestro proyecto por nombre
+            let indiceServidor = 0;
+            for (let i = 0; i < proyectosServidor.length; i++) {
+                if (proyectosServidor[i].name === ultimoProyecto) {
+                    indiceServidor = i;
+                    break;
                 }
-                
-                // Encontrar nuestro proyecto por nombre
-                let indiceServidor = 0;
-                for (let i = 0; i < proyectosServidor.length; i++) {
-                    if (proyectosServidor[i].name === ultimoProyecto) {
-                        indiceServidor = i;
-                        break;
-                    }
-                }
-                
-                const tareasServidor = proyectosServidor[indiceServidor]?.tasks || [];
-                const tareasLocales = projects[currentProjectIndex]?.tasks || [];
-                
-                // Si hay cambios, ACTUALIZAR INMEDIATAMENTE
-                if (tareasServidor.length !== tareasLocales.length) {
-                    console.log("📥 Cambio detectado: " + tareasLocales.length + " → " + tareasServidor.length);
-                    
-                    // 1. Actualizar datos globales
-                    window.projects = proyectosServidor;
-                    window.currentProjectIndex = indiceServidor;
-                    
-                    // 2. Guardar en localStorage
-                    try {
-                        localStorage.setItem('projects', JSON.stringify(proyectosServidor));
-                        localStorage.setItem('currentProjectIndex', indiceServidor);
-                    } catch (e) {}
-                    
-                    // 3. ACTUALIZAR VISTA INMEDIATAMENTE
-                    actualizarVista();
-                    
-                    // 4. Actualizar contador local
-                    ultimoConteo = tareasServidor.length;
-                }
-                
-            } catch (e) {
-                // Error silencioso
-            } finally {
-                sincronizando = false;
             }
-        }, INTERVALO_MS);
+            
+            const tareasServidor = proyectosServidor[indiceServidor]?.tasks || [];
+            const tareasLocales = projects[currentProjectIndex]?.tasks || [];
+            
+            // DETECCIÓN DE CAMBIOS (bidireccional)
+            const hayCambioServidor = tareasServidor.length !== tareasLocales.length;
+            const tiempoDesdeUltimoCambio = Date.now() - ultimoCambio;
+            
+            // Prioridad 1: Si hay cambios en el servidor Y no hemos cambiado nada localmente en los últimos 3 segundos
+            if (hayCambioServidor && tiempoDesdeUltimoCambio > 3000) {
+                console.log(`📥 Cambio detectado en servidor: ${tareasLocales.length} → ${tareasServidor.length}`);
+                
+                // Actualizar datos locales
+                projects = proyectosServidor;
+                currentProjectIndex = indiceServidor;
+                
+                // Guardar localmente
+                guardarLocalmente();
+                
+                // Actualizar vista
+                actualizarVista();
+                
+                // Mostrar notificación
+                const notif = document.createElement('div');
+                notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold;";
+                notif.innerHTML = '📥 Tareas sincronizadas';
+                document.body.appendChild(notif);
+                setTimeout(() => notif.remove(), 2000);
+            }
+            
+            // Prioridad 2: Si nosotros cambiamos algo, asegurar que el servidor lo tenga
+            if (tiempoDesdeUltimoCambio < 5000) {
+                // Ya guardamos con safeSave, no necesitamos hacer nada
+            }
+            
+        } catch (e) {
+            console.error("❌ Error en sincronización:", e);
+        } finally {
+            sincronizando = false;
+        }
+    }, INTERVALO_MS);
+    
+    // ===== CARGAR DATOS GUARDADOS LOCALMENTE AL INICIAR =====
+    try {
+        const proyectosGuardados = localStorage.getItem('projects');
+        const indiceGuardado = localStorage.getItem('currentProjectIndex');
+        const proyectoGuardado = localStorage.getItem('ultimoProyecto');
         
-        console.log("✅ SERVICIO DE SINCRONIZACIÓN EN VIVO ACTIVADO");
-        console.log("⏱️  Revisando cambios cada " + (INTERVALO_MS/1000) + " segundos");
-        
-    }, 3000); // Esperar 3 segundos iniciales
+        if (proyectosGuardados && indiceGuardado) {
+            const proyectos = JSON.parse(proyectosGuardados);
+            const indice = parseInt(indiceGuardado);
+            
+            if (proyectos[indice]?.name === proyectoGuardado) {
+                window.projects = proyectos;
+                window.currentProjectIndex = indice;
+                console.log("✅ Datos recuperados de localStorage");
+            }
+        }
+    } catch (e) {
+        console.warn("⚠️ Error cargando datos locales:", e);
+    }
+    
+    console.log("✅ SINCRONIZACIÓN PROFESIONAL ACTIVADA");
+    console.log(`⏱️  Intervalo: ${INTERVALO_MS/1000} segundos`);
 })();
