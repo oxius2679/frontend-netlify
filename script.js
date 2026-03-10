@@ -41719,54 +41719,62 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
 // ============================================
-// SINCRONIZACIÓN SIMPLE (FUNCIONA 100%)
+// SINCRONIZACIÓN - VERSIÓN QUE ESPERA
 // ============================================
-setTimeout(function() {
-    try {
-        if (!localStorage.getItem('authToken')) return;
-        if (!projects || !projects[currentProjectIndex]) return;
+(function esperarYActivar() {
+    // Verificar si todo está listo
+    if (typeof projects === 'undefined' || 
+        !projects[currentProjectIndex] || 
+        typeof renderKanbanTasks !== 'function' ||
+        !localStorage.getItem('authToken')) {
         
-        console.log("🚀 Iniciando sincronización...");
+        // Si no está listo, esperar 1 segundo y reintentar
+        console.log("⏳ Esperando a que cargue...");
+        setTimeout(esperarYActivar, 1000);
+        return;
+    }
+    
+    // ¡YA ESTÁ TODO LISTO! Activamos la sincronización
+    console.log("🚀 ACTIVANDO SINCRONIZACIÓN AHORA...");
+    console.log("Proyecto:", projects[currentProjectIndex].name);
+    console.log("Tareas:", projects[currentProjectIndex].tasks.length);
+    
+    let proyecto = projects[currentProjectIndex].name;
+    let conteo = projects[currentProjectIndex].tasks.length;
+    
+    setInterval(function() {
+        let token = localStorage.getItem('authToken');
+        if (!token) return;
         
-        let proyecto = projects[currentProjectIndex].name;
-        let conteo = projects[currentProjectIndex].tasks.length;
-        
-        setInterval(function() {
-            let token = localStorage.getItem('authToken');
-            if (!token) return;
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.projects) return;
             
-            fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (!data.projects) return;
-                
-                let indice = 0;
-                for (let i = 0; i < data.projects.length; i++) {
-                    if (data.projects[i].name === proyecto) {
-                        indice = i;
-                        break;
-                    }
+            let indice = 0;
+            for (let i = 0; i < data.projects.length; i++) {
+                if (data.projects[i].name === proyecto) {
+                    indice = i;
+                    break;
                 }
+            }
+            
+            let nuevo = data.projects[indice]?.tasks.length || 0;
+            
+            if (nuevo !== conteo) {
+                console.log("📥 Cambio detectado!");
+                conteo = nuevo;
+                window.projects = data.projects;
+                window.currentProjectIndex = indice;
                 
-                let nuevo = data.projects[indice]?.tasks.length || 0;
-                
-                if (nuevo !== conteo) {
-                    console.log("Cambio detectado");
-                    conteo = nuevo;
-                    window.projects = data.projects;
-                    window.currentProjectIndex = indice;
-                    
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
-                }
-            })
-            .catch(function() {});
-        }, 2000);
-        
-    } catch (e) {}
-}, 3000);
+                renderKanbanTasks();
+            }
+        })
+        .catch(() => {});
+    }, 2000);
+    
+    console.log("✅ SINCRONIZACIÓN ACTIVADA");
+})();
