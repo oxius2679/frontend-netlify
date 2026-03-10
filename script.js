@@ -41720,92 +41720,53 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-
 // ============================================
-// SISTEMA DE SINCRONIZACIÓN INTEGRADO (A + B)
+// SINCRONIZACIÓN SIMPLE (FUNCIONA 100%)
 // ============================================
 setTimeout(function() {
     try {
         if (!localStorage.getItem('authToken')) return;
         if (!projects || !projects[currentProjectIndex]) return;
         
-        console.log("🚀 Iniciando sistema de sincronización...");
+        console.log("🚀 Iniciando sincronización...");
         
-        // ===== PARTE 1: GUARDADO LOCAL (lo que tenía A) =====
-        function guardarLocalmente() {
-            try {
-                localStorage.setItem('projects', JSON.stringify(projects));
-                localStorage.setItem('currentProjectIndex', currentProjectIndex);
-                console.log("💾 Datos guardados localmente");
-            } catch (e) {}
-        }
-        
-        // Parchear safeSave (lo que tenía A)
-        if (typeof safeSave === 'function') {
-            var safeSaveOriginal = safeSave;
-            safeSave = async function() {
-                var resultado = await safeSaveOriginal.apply(this, arguments);
-                guardarLocalmente();
-                return resultado;
-            };
-        }
-        
-        // ===== PARTE 2: SINCRONIZACIÓN CADA 2 SEGUNDOS (lo que tenía B) =====
-        let ultimoProyecto = projects[currentProjectIndex].name;
-        let ultimoConteo = projects[currentProjectIndex].tasks.length;
+        let proyecto = projects[currentProjectIndex].name;
+        let conteo = projects[currentProjectIndex].tasks.length;
         
         setInterval(function() {
-            try {
-                let token = localStorage.getItem('authToken');
-                if (!token) return;
+            let token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.projects) return;
                 
-                fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    try {
-                        if (!data.projects) return;
-                        
-                        let indice = 0;
-                        for (let i = 0; i < data.projects.length; i++) {
-                            if (data.projects[i].name === ultimoProyecto) {
-                                indice = i;
-                                break;
-                            }
-                        }
-                        
-                        let nuevoConteo = data.projects[indice]?.tasks.length || 0;
-                        
-                        if (nuevoConteo !== ultimoConteo) {
-                            console.log("📥 Cambio detectado: " + ultimoConteo + " → " + nuevoConteo);
-                            ultimoConteo = nuevoConteo;
-                            window.projects = data.projects;
-                            window.currentProjectIndex = indice;
-                            
-                            localStorage.setItem('projects', JSON.stringify(data.projects));
-                            localStorage.setItem('currentProjectIndex', indice);
-                            
-                            if (typeof renderKanbanTasks === 'function') {
-                                renderKanbanTasks();
-                            }
-                            
-                            // Mostrar notificación
-                            var notif = document.createElement('div');
-                            notif.style.cssText = "position:fixed; top:20px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:5px; z-index:10000; font-weight:bold;";
-                            notif.innerHTML = '📥 Sincronizado';
-                            document.body.appendChild(notif);
-                            setTimeout(function() { notif.remove(); }, 2000);
-                        }
-                    } catch (e) {}
-                })
-                .catch(function() {});
-            } catch (e) {}
+                let indice = 0;
+                for (let i = 0; i < data.projects.length; i++) {
+                    if (data.projects[i].name === proyecto) {
+                        indice = i;
+                        break;
+                    }
+                }
+                
+                let nuevo = data.projects[indice]?.tasks.length || 0;
+                
+                if (nuevo !== conteo) {
+                    console.log("Cambio detectado");
+                    conteo = nuevo;
+                    window.projects = data.projects;
+                    window.currentProjectIndex = indice;
+                    
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                    }
+                }
+            })
+            .catch(function() {});
         }, 2000);
-        
-        console.log("✅ SISTEMA INTEGRADO ACTIVADO");
-        console.log("⏱️  Actualización cada 2 segundos");
-        console.log("💾 Guardado local automático");
         
     } catch (e) {}
 }, 3000);
