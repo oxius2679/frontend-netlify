@@ -93,6 +93,23 @@ firebase.auth().onAuthStateChanged(async (user) => {
       // Guardar el token real de tu backend
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userEmail', user.email);
+      
+      // ==================== 🔥 NUEVO: Extraer clienteId del token ====================
+      try {
+        // Decodificar el token JWT (está en formato base64)
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        
+        if (payload.clienteId) {
+          localStorage.setItem('clienteId', payload.clienteId);
+          console.log('✅ ClienteId guardado automáticamente:', payload.clienteId);
+        } else {
+          console.warn('⚠️ El token no contiene clienteId');
+        }
+      } catch (e) {
+        console.error('❌ Error al decodificar token:', e.message);
+      }
+      // ==================== FIN NUEVO ====================
+      
       // Recargar solo si no estamos en medio de una operación crítica
       if (!window.location.search.includes('payment=success')) {
         location.reload();
@@ -100,7 +117,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }
   }
 });
-
 // Obtener usuario actual
 function getCurrentUser() {
   return firebase.auth().currentUser;
@@ -12502,7 +12518,13 @@ async function login() {
       }
       // ==================== FIN NUEVO ====================
       
-      location.reload();
+      // 👇 COMENTA ESTO TEMPORALMENTE
+  // location.reload();
+  
+  // 👇 Agrega esto para ver el resultado sin recargar
+  console.log('✅ Login exitoso. ClienteId en localStorage:', localStorage.getItem('clienteId'));
+
+
     } else {
       document.getElementById('loginError').textContent = data.error || 'Error desconocido';
     }
