@@ -1302,48 +1302,65 @@ async function checkBackendStatus() {
   return false;
 }
 
-// Función de respaldo para guardar
-async function safeSave() {
+// ==================== SAFE SAVE CON CLIENTEID ====================
+async function safeSave(clienteId) {
   console.group('📤 Guardando datos en backend o localStorage');
+
+  // Si no recibimos clienteId, intentamos obtenerlo de localStorage
+  if (!clienteId) {
+    clienteId = localStorage.getItem('clienteId');
+  }
 
   // Siempre guardar en localStorage
   localStorage.setItem('projects', JSON.stringify(projects));
   console.log('📦 Datos guardados en localStorage');
+  console.log('🏢 Cliente ID:', clienteId || 'No definido');
 
   // Verificar backend al momento de guardar
-if (await checkBackendStatus()) {
-  console.log("➡️ Intentando guardar en backend...");
+  if (await checkBackendStatus()) {
+    console.log("➡️ Intentando guardar en backend...");
 
-    
-  const token = window.authToken;
-if (!token) {
-   return true;
-}
+    const token = window.authToken;
+    if (!token) {
+      console.warn('⚠️ No hay token, guardando solo en localStorage');
+      console.groupEnd();
+      return true;
+    }
 
-    
     try {
-console.log("🔐 Token usado para guardar:", token);
+      console.log("🔐 Token usado para guardar:", token);
 
-   const response = await fetch(`${API_URL}/api/projects`, {
+      // Preparar body con clienteId
+      const bodyData = {
+        projects: projects,
+        currentProjectIndex: currentProjectIndex,
+        timestamp: new Date().toISOString()
+      };
+
+      // Solo agregar clienteId si existe
+      if (clienteId) {
+        bodyData.clienteId = clienteId;
+      }
+
+      const response = await fetch(`${API_URL}/api/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          projects: projects,
-          currentProjectIndex: currentProjectIndex,
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify(bodyData)
       });
 
       if (response.ok) {
         console.log('✅ Datos guardados en MongoDB Atlas');
+        console.log(`📊 Proyectos guardados para cliente: ${clienteId || 'desconocido'}`);
       } else {
         console.warn('⚠️ Error guardando en backend:', response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Detalle:', errorData);
       }
     } catch (error) {
-      console.warn('⚠️ Error de conexión, datos solo en localStorage');
+      console.warn('⚠️ Error de conexión, datos solo en localStorage:', error.message);
     }
   }
 
@@ -1356,10 +1373,15 @@ console.log("🔐 Token usado para guardar:", token);
 
 
 // Función de respaldo para cargar
-// Función de respaldo para cargar
 async function safeLoad() {
   console.group('📥 Cargando datos desde backend o localStorage');
   console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
+
+// Obtener clienteId del localStorage
+const clienteId = localStorage.getItem('clienteId');
+console.log('🏢 Cliente ID:', clienteId || 'No definido');
+
+
   
   let loadedData = null;
   let backendAvailable = false;
@@ -1387,7 +1409,8 @@ async function safeLoad() {
     if (backendAvailable) {
       try {
         console.log('🔄 Intentando cargar desde MongoDB...');
-        const response = await fetch(`${API_URL}/api/projects`, {
+        const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}` : `${API_URL}/api/projects`;
+const response = await fetch(url, {
           headers: { 
             'Authorization': `Bearer ${window.authToken}`,
             'Content-Type': 'application/json'
@@ -1399,6 +1422,7 @@ async function safeLoad() {
         if (response.ok) {
           loadedData = await response.json();
           console.log('✅ Datos cargados desde MongoDB Atlas:', loadedData);
+console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length || 0} proyectos`);
           
           // Guardar en localStorage como respaldo
           if (loadedData.projects) {
@@ -12441,10 +12465,12 @@ async function register() {
 async function login() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
+  
   if (!email || !password) {
     document.getElementById('loginError').textContent = 'Completa todos los campos';
     return;
   }
+  
   try {
     const res = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
@@ -12466,15 +12492,26 @@ async function login() {
       authToken = data.token;
       localStorage.setItem('authToken', authToken);
       localStorage.setItem('userRole', data.user.role || 'viewer');
+      
+      // ==================== 🔥 NUEVO: Guardar clienteId ====================
+      if (data.user && data.user.clienteId) {
+        localStorage.setItem('clienteId', data.user.clienteId);
+        console.log('🏢 Cliente ID guardado:', data.user.clienteId);
+      } else {
+        console.warn('⚠️ No se recibió clienteId del backend');
+      }
+      // ==================== FIN NUEVO ====================
+      
       location.reload();
     } else {
       document.getElementById('loginError').textContent = data.error || 'Error desconocido';
     }
   } catch (err) {
-    console.error('❌ Error en login():', err); // 👈 Añade este log
+    console.error('❌ Error en login():', err);
     document.getElementById('loginError').textContent = 'Error de conexión con el servidor';
   }
 }
+
 // === MOSTRAR PANTALLA DE LOGIN/REGISTRO ===
 function showLoginScreen() {
   document.body.innerHTML = `
@@ -12752,12 +12789,21 @@ function showNotification(message) {
     document.body.appendChild(notif);
     setTimeout(() => document.body.removeChild(notif), 3000);
 }
+// ==================== ACTUALIZAR LOCALSTORAGE Y BACKEND ====================
 function updateLocalStorage() {
-    // Esta función ahora solo es un alias para safeSave
-    safeSave().then(() => {
+    // Obtener clienteId del localStorage
+    const clienteId = localStorage.getItem('clienteId');
+    
+    // Esta función ahora solo es un alias para safeSave, pero le pasamos el clienteId
+    safeSave(clienteId).then(() => {
         console.log('🔄 Datos persistidos (localStorage + backend si está disponible)');
+        console.log('🏢 Cliente ID:', clienteId);
+    }).catch(error => {
+        console.error('❌ Error al persistir datos:', error);
+        showNotification('Error al guardar datos', 'error');
     });
 }
+
 function debounce(func, wait) {
   let timeout;
   return function() {
@@ -40513,15 +40559,16 @@ window.inicializarGrabadorCompleto = function() {
     
     // Botones
     // ============================================
-// BOTONES DEL TRANSCRIPTOR IA - VERSIÓN MONGODB
+// VERSIÓN SIMPLIFICADA - SOLO AGREGAR MONGODB
 // ============================================
 
+// Reemplazar SOLO la función de guardado
 document.getElementById('saveMeetingBtn').onclick = async () => {
     if (!window.currentProcessedMeeting) return alert('No hay reunión para guardar');
     
     try {
-        // 1. Guardar en MongoDB
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
+        // Guardar en MongoDB
+        await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -40530,37 +40577,7 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
             })
         });
         
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log('✅ Transcripción guardada en MongoDB');
-            
-            // 2. También guardar en localStorage para compatibilidad
-            window.reunionesIA.push({
-                id: Date.now(),
-                titulo: window.currentProcessedMeeting.titulo,
-                fecha: window.currentProcessedMeeting.fecha,
-                resumen: window.currentProcessedMeeting.resumen,
-                transcripcion: window.currentProcessedMeeting.transcripcion,
-                acciones: window.currentProcessedMeeting.acciones,
-                keyPoints: window.currentProcessedMeeting.keyPoints || [],
-                decisions: window.currentProcessedMeeting.decisions || [],
-                duracion: window.currentProcessedMeeting.duracion
-            });
-            
-            localStorage.setItem('iaReuniones', JSON.stringify(window.reunionesIA));
-            
-            alert('✅ Reunión guardada en MongoDB y localStorage');
-            window.actualizarListaReuniones();
-        } else {
-            alert('❌ Error al guardar en MongoDB');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error guardando:', error);
-        alert('❌ Error de conexión al guardar');
-        
-        // Fallback: guardar solo en localStorage
+        // También guardar en localStorage (original)
         window.reunionesIA.push({
             id: Date.now(),
             titulo: window.currentProcessedMeeting.titulo,
@@ -40568,38 +40585,53 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
             resumen: window.currentProcessedMeeting.resumen,
             transcripcion: window.currentProcessedMeeting.transcripcion,
             acciones: window.currentProcessedMeeting.acciones,
-            keyPoints: window.currentProcessedMeeting.keyPoints || [],
-            decisions: window.currentProcessedMeeting.decisions || [],
             duracion: window.currentProcessedMeeting.duracion
         });
         
         localStorage.setItem('iaReuniones', JSON.stringify(window.reunionesIA));
-        alert('✅ Reunión guardada solo en localStorage (sin conexión a MongoDB)');
+        alert('✅ Reunión guardada');
+        window.actualizarListaReuniones();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        // Fallback a solo localStorage
+        window.reunionesIA.push({
+            id: Date.now(),
+            titulo: window.currentProcessedMeeting.titulo,
+            fecha: window.currentProcessedMeeting.fecha,
+            resumen: window.currentProcessedMeeting.resumen,
+            transcripcion: window.currentProcessedMeeting.transcripcion,
+            acciones: window.currentProcessedMeeting.acciones,
+            duracion: window.currentProcessedMeeting.duracion
+        });
+        localStorage.setItem('iaReuniones', JSON.stringify(window.reunionesIA));
+        alert('✅ Reunión guardada (solo local)');
         window.actualizarListaReuniones();
     }
 };
 
-document.getElementById('discardMeetingBtn').onclick = () => {
-    if (confirm('¿Descartar esta reunión?')) {
-        const aiSection = document.getElementById('aiAnalysisSection');
-        const liveArea = document.getElementById('liveTranscriptArea');
-        if (aiSection) aiSection.style.display = 'none';
-        if (liveArea) liveArea.innerHTML = '<span style="color:#6b7280;">La transcripción aparecerá aquí...</span>';
-        window.currentProcessedMeeting = null;
-    }
-};
-
-document.getElementById('exportMeetingBtn').onclick = () => {
-    if (!window.currentProcessedMeeting) return alert('No hay reunión para exportar');
+// Mantener el resto de funciones igual
     
-    const dataStr = JSON.stringify(window.currentProcessedMeeting, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportName = `reunion_${Date.now()}.json`;
+    document.getElementById('discardMeetingBtn').onclick = () => {
+        if (confirm('¿Descartar esta reunión?')) {
+            aiSection.style.display = 'none';
+            liveArea.innerHTML = '<span style="color:#6b7280;">La transcripción aparecerá aquí...</span>';
+            window.currentProcessedMeeting = null;
+        }
+    };
     
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', exportName);
-    link.click();
+    document.getElementById('exportMeetingBtn').onclick = () => {
+        if (!window.currentProcessedMeeting) return alert('No hay reunión para exportar');
+        
+        const dataStr = JSON.stringify(window.currentProcessedMeeting, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportName = `reunion_${Date.now()}.json`;
+        
+        const link = document.createElement('a');
+        link.setAttribute('href', dataUri);
+        link.setAttribute('download', exportName);
+        link.click();
+    };
 };
 
 // ============================================
@@ -40612,10 +40644,12 @@ window.actualizarListaReuniones = async function() {
     // 1. Cargar desde localStorage (grabaciones manuales)
     window.reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
     
-    // 2. Cargar desde MongoDB (transcripciones de Teams)
     try {
+        // 2. Cargar desde MongoDB (transcripciones de Teams)
         const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones');
         const data = await response.json();
+        
+        let todasReuniones = [...window.reunionesIA];
         
         if (data.success && data.transcripciones && data.transcripciones.length > 0) {
             // Convertir transcripciones de MongoDB al formato de la UI
@@ -40633,118 +40667,68 @@ window.actualizarListaReuniones = async function() {
             }));
             
             // 3. Combinar ambas fuentes
-            const todasReuniones = [...transcripcionesMongo, ...window.reunionesIA];
-            
-            // 4. Ordenar por fecha (más reciente primero)
-            todasReuniones.sort((a, b) => {
-                return new Date(b.fecha) - new Date(a.fecha);
-            });
-            
-            // 5. Mostrar en UI
-            if (todasReuniones.length === 0) {
-                lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
-                return;
-            }
-            
-            lista.innerHTML = todasReuniones.map(r => `
-                <div style="padding:15px; margin-bottom:10px; background:${r.fuente === 'mongodb' ? 'rgba(139,92,246,0.1)' : 'rgba(16,185,129,0.1)'}; border-left:4px solid ${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; border-radius:8px; position:relative;">
-                    
-                    <!-- Header con título y duración -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <strong style="color:white;">${r.titulo}</strong>
-                        ${r.duracion ? `<span style="color:#94a3b8; font-size:12px;">${r.duracion}</span>` : ''}
-                    </div>
-                    
-                    <!-- Fecha -->
-                    <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha}</div>
-                    
-                    <!-- Resumen -->
-                    <div style="color:#d1d5db; margin-bottom:10px;">${r.resumen}</div>
-                    
-                    <!-- Puntos Clave (solo mostrar primeros 2) -->
-                    ${r.keyPoints && r.keyPoints.length > 0 ? `
-                        <div style="margin-bottom:10px;">
-                            ${r.keyPoints.slice(0, 2).map(kp => `
-                                <span style="background:#2c3e50; color:white; padding:2px 8px; border-radius:4px; font-size:11px; margin-right:5px;">${kp.substring(0, 30)}${kp.length > 30 ? '...' : ''}</span>
-                            `).join('')}
-                            ${r.keyPoints.length > 2 ? `<span style="color:#94a3b8; font-size:11px;">+${r.keyPoints.length-2} más</span>` : ''}
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Transcripción (colapsable) -->
-                    ${r.transcripcion ? `
-                        <details style="margin-bottom:10px;">
-                            <summary style="color:${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; cursor:pointer; font-size:13px;">📝 Ver transcripción</summary>
-                            <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8; font-size:12px; max-height:150px; overflow-y:auto;">
-                                ${r.transcripcion}
-                            </div>
-                        </details>
-                    ` : ''}
-                    
-                    <!-- Acciones y Decisiones (si existen) -->
-                    ${r.acciones && r.acciones.length > 0 ? `
-                        <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);">
-                            <span style="color:#10b981; font-size:12px; font-weight:bold;">✅ Acciones:</span>
-                            <div style="margin-top:5px;">
-                                ${r.acciones.slice(0, 2).map(a => `<div style="color:#94a3b8; font-size:12px;">• ${a}</div>`).join('')}
-                                ${r.acciones.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.acciones.length-2} acciones más</div>` : ''}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${r.decisions && r.decisions.length > 0 ? `
-                        <div style="margin-top:10px;">
-                            <span style="color:#ec4899; font-size:12px; font-weight:bold;">⚖️ Decisiones:</span>
-                            <div style="margin-top:5px;">
-                                ${r.decisions.slice(0, 2).map(d => `<div style="color:#94a3b8; font-size:12px;">• ${d}</div>`).join('')}
-                                ${r.decisions.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.decisions.length-2} decisiones más</div>` : ''}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Badge de origen (Teams) o botón de eliminar (manual) -->
-                    ${r.fuente === 'mongodb' ? `
-                        <span style="position:absolute; top:10px; right:10px; background:#8b5cf6; color:white; padding:2px 8px; border-radius:4px; font-size:10px;">📡 Teams</span>
-                    ` : `
-                        <button onclick="window.eliminarReunion('${r.id}')" 
-                                style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:4px; font-size:12px;"
-                                onmouseover="this.style.background='rgba(239,68,68,0.3)'"
-                                onmouseout="this.style.background='rgba(239,68,68,0.2)'">
-                            🗑️
-                        </button>
-                    `}
-                </div>
-            `).join('');
-            
-        } else {
-            // No hay transcripciones en MongoDB, mostrar solo localStorage
-            if (window.reunionesIA.length === 0) {
-                lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
-            } else {
-                lista.innerHTML = window.reunionesIA.map(r => `
-                    <div style="padding:15px; margin-bottom:10px; background:rgba(16,185,129,0.1); border-left:4px solid #10b981; border-radius:8px; position:relative;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <strong style="color:white;">${r.titulo}</strong>
-                            ${r.duracion ? `<span style="color:#94a3b8; font-size:12px;">${r.duracion}</span>` : ''}
-                        </div>
-                        <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha}</div>
-                        <div style="color:#d1d5db;">${r.resumen}</div>
-                        ${r.transcripcion ? `
-                            <details style="margin-top:10px;">
-                                <summary style="color:#10b981; cursor:pointer;">Ver transcripción</summary>
-                                <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8;">
-                                    ${r.transcripcion}
-                                </div>
-                            </details>
-                        ` : ''}
-                        <button onclick="window.eliminarReunion('${r.id}')" 
-                                style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:5px; font-size:12px;">
-                            🗑️
-                        </button>
-                    </div>
-                `).join('');
-            }
+            todasReuniones = [...transcripcionesMongo, ...window.reunionesIA];
         }
+        
+        // 4. Ordenar por fecha (más reciente primero)
+        todasReuniones.sort((a, b) => {
+            return new Date(b.fecha) - new Date(a.fecha);
+        });
+        
+        // 5. Mostrar en UI
+        if (todasReuniones.length === 0) {
+            lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
+            return;
+        }
+        
+        lista.innerHTML = todasReuniones.map(r => `
+            <div style="padding:15px; margin-bottom:10px; background:${r.fuente === 'mongodb' ? 'rgba(139,92,246,0.1)' : 'rgba(16,185,129,0.1)'}; border-left:4px solid ${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; border-radius:8px; position:relative;">
+                
+                <!-- Header con título y duración -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                    <strong style="color:white;">${r.titulo}</strong>
+                    ${r.duracion ? `<span style="color:#94a3b8; font-size:12px;">${r.duracion}</span>` : ''}
+                </div>
+                
+                <!-- Fecha -->
+                <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha}</div>
+                
+                <!-- Resumen -->
+                <div style="color:#d1d5db; margin-bottom:10px;">${r.resumen}</div>
+                
+                <!-- Puntos Clave (solo mostrar primeros 2) -->
+                ${r.keyPoints && r.keyPoints.length > 0 ? `
+                    <div style="margin-bottom:10px;">
+                        ${r.keyPoints.slice(0, 2).map(kp => `
+                            <span style="background:#2c3e50; color:white; padding:2px 8px; border-radius:4px; font-size:11px; margin-right:5px;">${kp.substring(0, 30)}${kp.length > 30 ? '...' : ''}</span>
+                        `).join('')}
+                        ${r.keyPoints.length > 2 ? `<span style="color:#94a3b8; font-size:11px;">+${r.keyPoints.length-2} más</span>` : ''}
+                    </div>
+                ` : ''}
+                
+                <!-- Transcripción (colapsable) -->
+                ${r.transcripcion ? `
+                    <details style="margin-bottom:10px;">
+                        <summary style="color:${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; cursor:pointer; font-size:13px;">📝 Ver transcripción</summary>
+                        <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8; font-size:12px; max-height:150px; overflow-y:auto;">
+                            ${r.transcripcion}
+                        </div>
+                    </details>
+                ` : ''}
+                
+                <!-- Badge de origen (Teams) o botón de eliminar (manual) -->
+                ${r.fuente === 'mongodb' ? `
+                    <span style="position:absolute; top:10px; right:10px; background:#8b5cf6; color:white; padding:2px 8px; border-radius:4px; font-size:10px;">📡 Teams</span>
+                ` : `
+                    <button onclick="window.eliminarReunion('${r.id}')" 
+                            style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:4px; font-size:12px;"
+                            onmouseover="this.style.background='rgba(239,68,68,0.3)'"
+                            onmouseout="this.style.background='rgba(239,68,68,0.2)'">
+                        🗑️
+                    </button>
+                `}
+            </div>
+        `).join('');
         
     } catch (error) {
         console.error('Error cargando transcripciones de MongoDB:', error);
@@ -40778,7 +40762,6 @@ window.actualizarListaReuniones = async function() {
         }
     }
 };
-
 
 
 
@@ -42027,3 +42010,21 @@ if (document.readyState === 'loading') {
     setTimeout(cargarTranscripciones, 2000);
 }
 
+
+
+
+// ==================== OBTENER USUARIO COMPLETO CON CLIENTEID ====================
+function getCurrentUserCompleto() {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    
+    const user = JSON.parse(userStr);
+    // Agregar clienteId desde localStorage
+    user.clienteId = localStorage.getItem('clienteId') || '';
+    return user;
+  } catch (e) {
+    console.error('Error parseando usuario:', e);
+    return null;
+  }
+}
