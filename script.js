@@ -41610,693 +41610,222 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-// ============================================
-// 🔄 SINCRONIZACIÓN EN TIEMPO REAL - VERSIÓN ROBUSTA
-// ============================================
-(function iniciarSincronizacionRobusta() {
-    "use strict";
-    
-    console.log("🚀 [SYNC] Iniciando sincronización robusta...");
-    
-    // Configuración
-    const CONFIG = {
-        INTERVALO_MS: 2000,
-        API_URL: 'https://mi-sistema-proyectos-backend-4.onrender.com',
-        MIN_TIEMPO_PARA_SYNC: 3000, // Esperar 3s antes de aceptar cambios del servidor
-        MAX_REINTENTOS: 3
-    };
-    
-    // Estado interno
-    let estado = {
-        ultimoConteo: 0,
-        ultimoProyecto: '',
-        ultimoCambio: Date.now(),
-        sincronizando: false,
-        listo: false,
-        reintentos: 0
-    };
-    
-    // ===== VERIFICAR QUE TODO ESTÉ LISTO =====
-    function verificarPrerrequisitos() {
-        // Verificar que projects exista y sea un array
-        if (!Array.isArray(window.projects)) {
-            console.warn("⏳ [SYNC] projects no está listo, esperando...");
-            return false;
-        }
-        
-        // Verificar que currentProjectIndex sea válido
-        if (typeof window.currentProjectIndex !== 'number' || 
-            window.currentProjectIndex < 0 || 
-            window.currentProjectIndex >= window.projects.length) {
-            console.warn("⏳ [SYNC] currentProjectIndex no es válido, esperando...");
-            return false;
-        }
-        
-        // Verificar que haya token de autenticación
-        const token = localStorage.getItem('authToken');
-        if (!token || token.length < 10) {
-            console.warn("⏳ [SYNC] authToken no válido, esperando...");
-            return false;
-        }
-        
-        // ✅ Todo listo
-        return true;
-    }
-    
-    // ===== INICIALIZAR ESTADO =====
-    function inicializarEstado() {
-        try {
-            const proyectoActual = window.projects[window.currentProjectIndex];
-            if (proyectoActual) {
-                estado.ultimoProyecto = proyectoActual.name || '';
-                estado.ultimoConteo = (proyectoActual.tasks || []).length;
-                estado.ultimoCambio = Date.now();
-                estado.listo = true;
-                console.log("✅ [SYNC] Estado inicializado:", {
-                    proyecto: estado.ultimoProyecto,
-                    tareas: estado.ultimoConteo
-                });
-            }
-        } catch (e) {
-            console.warn("⚠️ [SYNC] Error inicializando estado:", e);
-        }
-    }
-    
-    // ===== GUARDAR EN LOCALSTORAGE =====
-    function guardarLocalmente() {
-        try {
-            localStorage.setItem('projects', JSON.stringify(window.projects));
-            localStorage.setItem('currentProjectIndex', String(window.currentProjectIndex));
-            localStorage.setItem('ultimoProyecto', estado.ultimoProyecto);
-            localStorage.setItem('ultimoCambio', String(Date.now()));
-        } catch (e) {
-            console.warn("⚠️ [SYNC] Error guardando en localStorage:", e);
-        }
-    }
-    
-    // ===== CARGAR DEL SERVIDOR =====
-    async function cargarDelServidor() {
-        const token = localStorage.getItem('authToken');
-        if (!token) return null;
-        
-        try {
-            const url = CONFIG.API_URL + '/api/projects';
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                cache: 'no-cache'
-            });
-            
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            
-            const data = await response.json();
-            return data.projects || null;
-            
-        } catch (error) {
-            console.log("⏳ [SYNC] Error cargando del servidor:", error.message);
-            estado.reintentos++;
-            if (estado.reintentos >= CONFIG.MAX_REINTENTOS) {
-                console.warn("⚠️ [SYNC] Máximo de reintentos alcanzado");
-                estado.reintentos = 0;
-            }
-            return null;
-        }
-    }
-    
-    // ===== ACTUALIZAR VISTA =====
-    function actualizarVista() {
-        console.log("🔄 [SYNC] Actualizando vista...");
-        
-        // Intentar método 1: renderKanbanTasks
-        if (typeof window.renderKanbanTasks === 'function') {
-            try {
-                window.renderKanbanTasks();
-                console.log("✅ [SYNC] Vista actualizada con renderKanbanTasks");
-                return true;
-            } catch (e) {
-                console.warn("⚠️ [SYNC] Error con renderKanbanTasks:", e);
-            }
-        }
-        
-        // Intentar método 2: showView('board')
-        if (typeof window.showView === 'function') {
-            try {
-                window.showView('board');
-                console.log("✅ [SYNC] Vista actualizada con showView");
-                return true;
-            } catch (e) {
-                console.warn("⚠️ [SYNC] Error con showView:", e);
-            }
-        }
-        
-        // Método 3: Forzar recarga de tareas específicas
-        try {
-            if (typeof window.aplicarFiltros === 'function') {
-                window.aplicarFiltros();
-                console.log("✅ [SYNC] Vista actualizada con aplicarFiltros");
-                return true;
-            }
-        } catch (e) {
-            console.warn("⚠️ [SYNC] Error con aplicarFiltros:", e);
-        }
-        
-        // Último recurso: recargar página
-        console.log("⚠️ [SYNC] Recargando página como último recurso...");
-        setTimeout(function() { 
-            if (window.location) {
-                window.location.reload(); 
-            }
-        }, 1000);
-        return false;
-    }
-    
-    // ===== MOSTRAR NOTIFICACIÓN =====
-    function mostrarNotificacion(mensaje, tipo) {
-        try {
-            // Eliminar notificaciones anteriores
-            var olds = document.querySelectorAll('.sync-notif');
-            for (var i = 0; i < olds.length; i++) {
-                olds[i].remove();
-            }
-            
-            var notif = document.createElement('div');
-            notif.className = 'sync-notif';
-            notif.style.cssText = "position:fixed;top:20px;right:20px;background:" + 
-                (tipo === 'success' ? '#10b981' : '#f59e0b') + 
-                ";color:white;padding:12px 24px;border-radius:8px;z-index:10000;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.2);animation:slideIn 0.3s ease;";
-            notif.innerHTML = mensaje;
-            document.body.appendChild(notif);
-            
-            // Animación de salida
-            setTimeout(function() {
-                notif.style.animation = 'slideOut 0.3s ease';
-                setTimeout(function() { 
-                    if (notif.parentNode) notif.remove(); 
-                }, 300);
-            }, 2500);
-            
-        } catch (e) {
-            console.log("📢 [SYNC]", mensaje);
-        }
-    }
-    
-    // ===== LÓGICA PRINCIPAL DE SINCRONIZACIÓN =====
-    async function ejecutarSincronizacion() {
-        if (estado.sincronizando || !estado.listo) return;
-        estado.sincronizando = true;
-        
-        try {
-            // 1. Cargar datos del servidor
-            var proyectosServidor = await cargarDelServidor();
-            if (!proyectosServidor || !Array.isArray(proyectosServidor)) {
-                return;
-            }
-            
-            // 2. Encontrar nuestro proyecto en el servidor
-            var indiceServidor = -1;
-            for (var i = 0; i < proyectosServidor.length; i++) {
-                if (proyectosServidor[i] && proyectosServidor[i].name === estado.ultimoProyecto) {
-                    indiceServidor = i;
-                    break;
-                }
-            }
-            
-            if (indiceServidor === -1) {
-                console.warn("⚠️ [SYNC] Proyecto no encontrado en servidor:", estado.ultimoProyecto);
-                return;
-            }
-            
-            // 3. Comparar tareas
-            var tareasServidor = proyectosServidor[indiceServidor].tasks || [];
-            var proyectoLocal = window.projects[window.currentProjectIndex];
-            var tareasLocales = proyectoLocal ? proyectoLocal.tasks || [] : [];
-            
-            var hayCambio = tareasServidor.length !== tareasLocales.length;
-            var tiempoDesdeCambio = Date.now() - estado.ultimoCambio;
-            
-            // 4. Si hay cambio en servidor y no hemos cambiado localmente recientemente → ACTUALIZAR
-            if (hayCambio && tiempoDesdeCambio > CONFIG.MIN_TIEMPO_PARA_SYNC) {
-                console.log("📥 [SYNC] Actualizando desde servidor:", tareasLocales.length, "→", tareasServidor.length);
-                
-                // Actualizar variables globales
-                window.projects = proyectosServidor;
-                window.currentProjectIndex = indiceServidor;
-                
-                // Actualizar estado local
-                estado.ultimoConteo = tareasServidor.length;
-                estado.ultimoCambio = Date.now();
-                
-                // Guardar en localStorage
-                guardarLocalmente();
-                
-                // Actualizar vista
-                actualizarVista();
-                
-                // Notificar al usuario
-                mostrarNotificacion('📥 Tareas sincronizadas', 'success');
-            }
-            
-            // Resetear reintentos si tuvo éxito
-            estado.reintentos = 0;
-            
-        } catch (error) {
-            console.error("❌ [SYNC] Error en sincronización:", error);
-        } finally {
-            estado.sincronizando = false;
-        }
-    }
-    
-    // ===== INTERCEPTAR safeSave PARA ACTUALIZAR ESTADO =====
-    function interceptarSafeSave() {
-        if (typeof window.safeSave !== 'function') {
-            console.warn("⚠️ [SYNC] safeSave no encontrada, usando fallback");
-            return;
-        }
-        
-        // Guardar referencia original
-        var originalSafeSave = window.safeSave;
-        
-        // Crear nueva versión que actualiza nuestro estado
-        window.safeSave = function() {
-            var args = arguments;
-            var ctx = this;
-            
-            // Ejecutar original
-            var resultado = originalSafeSave.apply(ctx, args);
-            
-            // Si es una Promise, manejarla asíncronamente
-            if (resultado && typeof resultado.then === 'function') {
-                return resultado.then(function(res) {
-                    // Actualizar estado después de guardar
-                    try {
-                        var proyectoActual = window.projects[window.currentProjectIndex];
-                        if (proyectoActual) {
-                            estado.ultimoConteo = (proyectoActual.tasks || []).length;
-                            estado.ultimoCambio = Date.now();
-                            guardarLocalmente();
-                        }
-                    } catch (e) {
-                        console.warn("⚠️ [SYNC] Error actualizando estado post-save:", e);
-                    }
-                    return res;
-                });
-            }
-            
-            // Si no es Promise, actualizar inmediatamente
-            try {
-                var proyectoActual = window.projects[window.currentProjectIndex];
-                if (proyectoActual) {
-                    estado.ultimoConteo = (proyectoActual.tasks || []).length;
-                    estado.ultimoCambio = Date.now();
-                    guardarLocalmente();
-                }
-            } catch (e) {
-                console.warn("⚠️ [SYNC] Error actualizando estado post-save:", e);
-            }
-            
-            return resultado;
-        };
-        
-        console.log("✅ [SYNC] safeSave interceptada correctamente");
-    }
-    
-    // ===== INICIALIZACIÓN CON RETRASO =====
-    function iniciarConRetraso() {
-        console.log("🔄 [SYNC] Verificando prerrequisitos...");
-        
-        // Intentar inicializar hasta que todo esté listo
-        var intentos = 0;
-        var maxIntentos = 20; // 10 segundos máximo de espera
-        
-        var verificar = setInterval(function() {
-            intentos++;
-            
-            if (verificarPrerrequisitos()) {
-                clearInterval(verificar);
-                inicializarEstado();
-                interceptarSafeSave();
-                
-                // Iniciar intervalo de sincronización
-                setInterval(ejecutarSincronizacion, CONFIG.INTERVALO_MS);
-                console.log("✅ [SYNC] Sincronización activada - Intervalo: " + (CONFIG.INTERVALO_MS/1000) + "s");
-                
-                // Ejecutar una vez inmediatamente para verificar estado
-                setTimeout(ejecutarSincronizacion, 1000);
-                
-            } else if (intentos >= maxIntentos) {
-                clearInterval(verificar);
-                console.error("❌ [SYNC] No se pudieron cargar los prerrequisitos después de " + maxIntentos + " intentos");
-                mostrarNotificacion('⚠️ Sincronización: Verifica tu conexión', 'warning');
-            }
-        }, 500); // Verificar cada 500ms
-    }
-    
-    // ===== AGREGAR ANIMACIONES CSS PARA NOTIFICACIONES =====
-    function agregarEstilosNotificaciones() {
-        if (document.getElementById('sync-styles')) return;
-        
-        var style = document.createElement('style');
-        style.id = 'sync-styles';
-        style.textContent = '@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}';
-        document.head.appendChild(style);
-    }
-    
-    // ===== EJECUTAR =====
-    function iniciar() {
-        agregarEstilosNotificaciones();
-        
-        // Si el DOM ya está listo, iniciar inmediatamente
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            setTimeout(iniciarConRetraso, 100);
-        } else {
-            // Esperar a que el DOM esté listo
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(iniciarConRetraso, 100);
-            });
-        }
-    }
-    
-    // Iniciar
-    iniciar();
-    
-})();
-// ============================================
-// FIN DE SINCRONIZACIÓN EN TIEMPO REAL
-// ============================================
 
 
 
-// ============================================================================
-// 🔄 FIX DEFINITIVO: SINCRONIZACIÓN AUTOMÁTICA ENTRE MÁQUINAS
-// ============================================================================
-
-// 1. Asegurar que projects y currentProjectIndex sean GLOBALES y accesibles
-(function ensureGlobalVariables() {
-    console.log('🔧 Verificando variables globales...');
-    
-    // Cargar desde localStorage SIEMPRE como respaldo
+// ==================== CARGAR TRANSCRIPCIONES DESDE MONGODB ====================
+async function cargarTranscripciones() {
     try {
-        const savedProjects = localStorage.getItem('projects');
-        const savedIndex = localStorage.getItem('currentProjectIndex');
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones');
+        const data = await response.json();
         
-        if (savedProjects && (!window.projects || window.projects.length === 0)) {
-            window.projects = JSON.parse(savedProjects);
-            console.log('✅ projects cargado desde localStorage:', window.projects.length, 'proyectos');
+        if (data.success && data.transcripciones && data.transcripciones.length > 0) {
+            mostrarTranscripciones(data.transcripciones);
+        } else {
+            mostrarMensajeSinTranscripciones();
         }
-        if (savedIndex && window.currentProjectIndex === undefined) {
-            window.currentProjectIndex = parseInt(savedIndex);
-            console.log('✅ currentProjectIndex cargado:', window.currentProjectIndex);
-        }
-    } catch (e) {
-        console.warn('⚠️ Error cargando desde localStorage:', e);
+    } catch (error) {
+        console.error('Error cargando transcripciones:', error);
+        mostrarMensajeSinTranscripciones();
     }
-    
-    // Exponer explícitamente en window para acceso cross-context
-    if (typeof projects !== 'undefined' && !window.projects) {
-        window.projects = projects;
-    }
-    if (typeof currentProjectIndex !== 'undefined' && window.currentProjectIndex === undefined) {
-        window.currentProjectIndex = currentProjectIndex;
-    }
-    
-    console.log('📊 Estado final:');
-    console.log('   - window.projects:', window.projects ? window.projects.length + ' proyectos' : 'undefined');
-    console.log('   - window.currentProjectIndex:', window.currentProjectIndex);
-    console.log('   - window.authToken:', window.authToken ? '✅ Presente' : '❌ Ausente');
-})();
+}
 
-// 2. Sistema de sincronización automática MEJORADO
-(function initAutoSyncUltimate() {
-    console.log('🚀 Iniciando sincronización automática ULTIMATE...');
+// ==================== MOSTRAR TRANSCRIPCIONES EN UI ====================
+function mostrarTranscripciones(transcripciones) {
+    // Buscar el contenedor del Transcriptor IA
+    const contenedor = document.querySelector('.transcriptor-container, #transcriptor, .ia-section, .transcriptor-view');
     
-    let syncInterval = null;
-    let lastSyncTime = 0;
-    const SYNC_INTERVAL = 10000; // 10 segundos
-    const MIN_SYNC_GAP = 3000;   // Mínimo 3s entre syncs
-    
-    // Función para sincronizar datos desde backend
-    async function forceSyncFromBackend() {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.log('⚠️ No hay token, omitiendo sync con backend');
-            return false;
-        }
-        
-        try {
-            console.log('🔄 Forzando sync con backend...');
-            const response = await fetch(`${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
-            
-            if (!response.ok) {
-                console.warn('⚠️ Backend respondió:', response.status);
-                return false;
-            }
-            
-            const data = await response.json();
-            
-            // Validar y aplicar datos
-            if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
-                console.log('✅ Datos recibidos del backend:', data.projects.length, 'proyectos');
-                
-                // Actualizar variables GLOBALES
-                window.projects = data.projects;
-                if (data.currentProjectIndex !== undefined) {
-                    window.currentProjectIndex = data.currentProjectIndex;
-                }
-                
-                // Guardar en localStorage como respaldo
-                localStorage.setItem('projects', JSON.stringify(data.projects));
-                if (data.currentProjectIndex !== undefined) {
-                    localStorage.setItem('currentProjectIndex', data.currentProjectIndex);
-                }
-                
-                // Notificar a otras pestañas/máquinas
-                if (window.tiempoRealSocket?.connected) {
-                    window.tiempoRealSocket.emit('data-synced', {
-                        timestamp: Date.now(),
-                        projectCount: data.projects.length,
-                        clientId: window._miId || 'unknown'
-                    });
-                }
-                
-                return true;
-            }
-        } catch (error) {
-            console.warn('⚠️ Error en forceSyncFromBackend:', error.message);
-        }
-        return false;
+    if (!contenedor) {
+        console.warn('No se encontró contenedor de transcriptor, creando uno nuevo');
+        crearContenedorTranscripciones(transcripciones);
+        return;
     }
     
-    // Función para actualizar la vista actual
-    function refreshActiveView() {
-        console.log('🎨 Actualizando vista activa...');
-        
-        // Verificar que tenemos datos válidos
-        if (!window.projects || !Array.isArray(window.projects) || window.projects.length === 0) {
-            console.warn('⚠️ No hay proyectos válidos para renderizar');
-            return;
-        }
-        
-        // Determinar vista activa
-        const activeView = document.querySelector('.view-content.active')?.id?.replace('View', '') || 'board';
-        console.log('📍 Vista activa:', activeView);
-        
-        // Renderizar según vista
-        switch(activeView) {
-            case 'board':
-            case 'inicio':
-                if (typeof renderKanbanTasks === 'function') {
-                    renderKanbanTasks();
-                    console.log('✅ Kanban renderizado');
-                }
-                break;
-            case 'list':
-                if (typeof renderListTasks === 'function') renderListTasks();
-                break;
-            case 'calendar':
-                if (typeof renderCalendar === 'function') renderCalendar();
-                break;
-            case 'dashboard':
-                if (typeof renderDashboard === 'function') renderDashboard();
-                break;
-        }
-        
-        // Actualizar estadísticas si existen
-        if (typeof updateStatistics === 'function') updateStatistics();
-        if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
-            generatePieChart(getStats());
-        }
+    // Crear o buscar el área de historial
+    let historial = document.getElementById('transcripciones-historial');
+    if (!historial) {
+        historial = document.createElement('div');
+        historial.id = 'transcripciones-historial';
+        historial.className = 'transcripciones-historial';
+        historial.innerHTML = '<h3>📋 Historial de Transcripciones</h3>';
+        contenedor.appendChild(historial);
     }
     
-    // Ciclo de sincronización automática
-    function startAutoSync() {
-        if (syncInterval) clearInterval(syncInterval);
-        
-        syncInterval = setInterval(async () => {
-            const now = Date.now();
-            if (now - lastSyncTime < MIN_SYNC_GAP) return;
-            
-            lastSyncTime = now;
-            console.log('⏰ Sync automático ejecutándose...');
-            
-            const synced = await forceSyncFromBackend();
-            if (synced) {
-                refreshActiveView();
-                mostrarNotificacionSync('✅ Sincronizado');
-            }
-        }, SYNC_INTERVAL);
-        
-        console.log(`✅ Auto-sync iniciado (cada ${SYNC_INTERVAL/1000}s)`);
-    }
+    // Limpiar y mostrar
+    historial.innerHTML = '<h3>📋 Historial de Transcripciones</h3>';
     
-    // Notificación visual discreta
-    function mostrarNotificacionSync(mensaje) {
-        const existing = document.getElementById('sync-notification');
-        if (existing) existing.remove();
+    transcripciones.forEach(t => {
+        const fecha = new Date(t.fecha).toLocaleString();
+        const item = document.createElement('div');
+        item.className = 'transcripcion-item';
+        item.onclick = () => verDetalleTranscripcion(t);
         
-        const notif = document.createElement('div');
-        notif.id = 'sync-notification';
-        notif.style.cssText = `
+        item.innerHTML = `
+            <div style="border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 15px; background: #1e1e2f; border-radius: 8px; cursor: pointer;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong style="color: #4CAF50;">${t.titulo || 'Sin título'}</strong>
+                    <span style="color: #888; font-size: 12px;">${fecha}</span>
+                </div>
+                <div style="color: #ddd; margin-bottom: 10px; font-size: 14px;">
+                    ${t.resumen || 'Sin resumen'}
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${t.keyPoints ? t.keyPoints.slice(0, 3).map(kp => 
+                        `<span style="background: #2c3e50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${kp.substring(0, 30)}...</span>`
+                    ).join('') : ''}
+                </div>
+                ${t.acciones && t.acciones.length > 0 ? `
+                    <div style="margin-top: 10px; color: #f39c12; font-size: 12px;">
+                        ⚡ ${t.acciones.length} acción(es) pendiente(s)
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        historial.appendChild(item);
+    });
+}
+
+// ==================== CREAR CONTENEDOR SI NO EXISTE ====================
+function crearContenedorTranscripciones(transcripciones) {
+    let contenedor = document.getElementById('transcripciones-container');
+    if (!contenedor) {
+        contenedor = document.createElement('div');
+        contenedor.id = 'transcripciones-container';
+        contenedor.className = 'transcripciones-container';
+        contenedor.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 12px 20px;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: #0a0a1a;
+            border: 1px solid #4CAF50;
             border-radius: 10px;
-            z-index: 1000000;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-            animation: slideIn 0.3s ease;
+            padding: 20px;
+            z-index: 10000;
+            color: white;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
         `;
-        notif.textContent = mensaje;
-        document.body.appendChild(notif);
-        
-        setTimeout(() => {
-            notif.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notif.remove(), 300);
-        }, 2500);
+        document.body.appendChild(contenedor);
     }
     
-    // Escuchar eventos de WebSocket para actualización inmediata
-    if (typeof io !== 'undefined') {
-        // Conectar o reconectar socket
-        if (!window.tiempoRealSocket) {
-            window.tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
-                transports: ['websocket', 'polling'],
-                reconnection: true,
-                reconnectionAttempts: 5
-            });
-        }
-        
-        window.tiempoRealSocket.on('connect', () => {
-            console.log('🔗 WebSocket conectado');
-            window._miId = 'Cliente-' + Math.random().toString(36).substr(2, 5);
-            window.tiempoRealSocket.emit('register-client', { id: window._miId });
-        });
-        
-        // Escuchar actualizaciones de otras máquinas
-        window.tiempoRealSocket.on('project-updated', (data) => {
-            console.log('📨 Actualización recibida de otra máquina:', data);
-            if (data.forceRefresh) {
-                forceSyncFromBackend().then(synced => {
-                    if (synced) refreshActiveView();
-                });
-            }
-        });
-        
-        window.tiempoRealSocket.on('data-synced', (data) => {
-            if (data.clientId !== window._miId) {
-                console.log('🔄 Otra máquina sincronizó, actualizando...');
-                setTimeout(refreshActiveView, 500);
-            }
-        });
-    }
+    let html = '<h3 style="color: #4CAF50; margin-bottom: 20px;">📋 Historial de Transcripciones</h3>';
     
-    // Parchear safeSave para notificar cambios
-    if (typeof safeSave === 'function' && !window.__safeSavePatched) {
-        const originalSave = safeSave;
-        window.safeSave = async function(...args) {
-            const result = await originalSave.apply(this, args);
-            
-            // Notificar a otras máquinas después de guardar
-            setTimeout(() => {
-                if (window.tiempoRealSocket?.connected) {
-                    window.tiempoRealSocket.emit('project-updated', {
-                        timestamp: Date.now(),
-                        clientId: window._miId,
-                        forceRefresh: true
-                    });
-                }
-            }, 200);
-            
-            return result;
-        };
-        window.__safeSavePatched = true;
-        console.log('✅ safeSave parcheado para notificar cambios');
-    }
+    transcripciones.forEach(t => {
+        const fecha = new Date(t.fecha).toLocaleString();
+        html += `
+            <div onclick='verDetalleTranscripcion(${JSON.stringify(t).replace(/'/g, "\\'")})' style="border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 15px; background: #1e1e2f; border-radius: 8px; cursor: pointer;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong style="color: #4CAF50;">${t.titulo || 'Sin título'}</strong>
+                    <span style="color: #888; font-size: 12px;">${fecha}</span>
+                </div>
+                <div style="color: #ddd; margin-bottom: 10px; font-size: 14px;">
+                    ${t.resumen || 'Sin resumen'}
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    ${t.keyPoints ? t.keyPoints.slice(0, 3).map(kp => 
+                        `<span style="background: #2c3e50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${kp.substring(0, 30)}...</span>`
+                    ).join('') : ''}
+                </div>
+            </div>
+        `;
+    });
     
-    // Iniciar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', startAutoSync);
-    } else {
-        startAutoSync();
-    }
-    
-    // Exponer para debugging
-    window.forceSyncManual = async function() {
-        console.log('🔄 Sync manual forzado...');
-        const synced = await forceSyncFromBackend();
-        if (synced) {
-            refreshActiveView();
-            mostrarNotificacionSync('✅ Sync manual completado');
-        } else {
-            mostrarNotificacionSync('⚠️ Sync fallido');
-        }
-        return synced;
-    };
-    
-    console.log('✅ Sistema de sincronización ULTIMATE cargado');
-})();
-
-// 3. Agregar animaciones CSS para notificaciones
-if (!document.getElementById('sync-animations')) {
-    const style = document.createElement('style');
-    style.id = 'sync-animations';
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
+    contenedor.innerHTML = html;
 }
 
-// 4. Comando de consola para debugging
-console.log(`
-╔════════════════════════════════════════════════════════╗
-║  🔄 SISTEMA DE COLABORACIÓN ACTIVADO                   ║
-╠════════════════════════════════════════════════════════╣
-║  Comandos útiles:                                       ║
-║  • forceSyncManual()  → Forzar sync manual             ║
-║  • window.projects    → Ver proyectos cargados         ║
-║  • window.currentProjectIndex → Ver índice actual      ║
-║  • window._miId       → ID de esta máquina             ║
-╚════════════════════════════════════════════════════════╝
-`);
+// ==================== VER DETALLE COMPLETO ====================
+function verDetalleTranscripcion(transcripcion) {
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    const fecha = new Date(transcripcion.fecha).toLocaleString();
+    
+    modal.innerHTML = `
+        <div style="background: #1a1a2e; border: 2px solid #4CAF50; border-radius: 15px; padding: 30px; max-width: 800px; max-height: 90vh; overflow-y: auto; color: white;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h2 style="color: #4CAF50; margin: 0;">📝 Detalle de Transcripción</h2>
+                <button onclick="this.closest('div[style*=\\'fixed\\']').remove()" style="background: #e74c3c; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">✕</button>
+            </div>
+            
+            <p><strong>Título:</strong> ${transcripcion.titulo || 'Sin título'}</p>
+            <p><strong>Fecha:</strong> ${fecha}</p>
+            
+            <h3 style="color: #4CAF50; margin: 20px 0 10px;">📄 Transcripción</h3>
+            <div style="background: #0f0f1f; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                ${transcripcion.transcripcion.replace(/\n/g, '<br>')}
+            </div>
+            
+            <h3 style="color: #4CAF50; margin: 20px 0 10px;">📋 Resumen</h3>
+            <p>${transcripcion.resumen || 'No disponible'}</p>
+            
+            ${transcripcion.keyPoints && transcripcion.keyPoints.length > 0 ? `
+                <h3 style="color: #4CAF50; margin: 20px 0 10px;">📌 Puntos Clave</h3>
+                <ul>
+                    ${transcripcion.keyPoints.map(kp => `<li style="margin-bottom: 8px;">${kp}</li>`).join('')}
+                </ul>
+            ` : ''}
+            
+            ${transcripcion.acciones && transcripcion.acciones.length > 0 ? `
+                <h3 style="color: #4CAF50; margin: 20px 0 10px;">✅ Acciones</h3>
+                <ul>
+                    ${transcripcion.acciones.map(a => `<li style="margin-bottom: 8px;">${a}</li>`).join('')}
+                </ul>
+            ` : ''}
+            
+            ${transcripcion.decisions && transcripcion.decisions.length > 0 ? `
+                <h3 style="color: #4CAF50; margin: 20px 0 10px;">⚖️ Decisiones</h3>
+                <ul>
+                    ${transcripcion.decisions.map(d => `<li style="margin-bottom: 8px;">${d}</li>`).join('')}
+                </ul>
+            ` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// ==================== MOSTRAR MENSAJE SIN TRANSCRIPCIONES ====================
+function mostrarMensajeSinTranscripciones() {
+    const contenedor = document.querySelector('.transcriptor-container, #transcriptor, .ia-section');
+    if (contenedor) {
+        let msg = document.getElementById('transcripciones-mensaje');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.id = 'transcripciones-mensaje';
+            msg.style.cssText = `
+                padding: 20px;
+                text-align: center;
+                color: #888;
+                font-style: italic;
+            `;
+            contenedor.appendChild(msg);
+        }
+        msg.innerHTML = '📭 No hay transcripciones guardadas';
+    }
+}
+
+// ==================== INICIALIZAR ====================
+// Ejecutar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(cargarTranscripciones, 2000);
+    });
+} else {
+    setTimeout(cargarTranscripciones, 2000);
+}
 
