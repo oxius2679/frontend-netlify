@@ -40675,21 +40675,30 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
 // ============================================
 // ACTUALIZAR LISTA DE REUNIONES (CON MONGODB)
 // ============================================
+// ============================================
+// ACTUALIZAR LISTA DE REUNIONES (CON FILTRO POR CLIENTE)
+// ============================================
 window.actualizarListaReuniones = async function() {
     const lista = document.getElementById('listaReuniones');
     if (!lista) return;
     
-    // 1. Cargar desde localStorage (grabaciones manuales)
+    // Obtener el clienteId del usuario actual
+    const clienteId = localStorage.getItem('clienteId');
+    console.log('🔍 Cargando transcripciones para cliente:', clienteId);
+    
+    // 1. Cargar desde localStorage (grabaciones manuales) - ESTAS SÍ SON DEL USUARIO
     window.reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
     
     try {
-        // 2. Cargar desde MongoDB (transcripciones de Teams)
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones');
+        // 2. Cargar desde MongoDB (transcripciones de Teams) FILTRADAS POR CLIENTE
+        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`);
         const data = await response.json();
         
         let todasReuniones = [...window.reunionesIA];
         
         if (data.success && data.transcripciones && data.transcripciones.length > 0) {
+            console.log(`✅ Cargadas ${data.transcripciones.length} transcripciones para cliente ${clienteId}`);
+            
             // Convertir transcripciones de MongoDB al formato de la UI
             const transcripcionesMongo = data.transcripciones.map(t => ({
                 id: t._id,
@@ -40701,7 +40710,8 @@ window.actualizarListaReuniones = async function() {
                 keyPoints: t.keyPoints || [],
                 decisions: t.decisions || [],
                 duracion: t.duracion || '',
-                fuente: 'mongodb'
+                fuente: 'mongodb',
+                clienteId: t.clienteId // Para verificación
             }));
             
             // 3. Combinar ambas fuentes
@@ -40754,6 +40764,27 @@ window.actualizarListaReuniones = async function() {
                     </details>
                 ` : ''}
                 
+                <!-- Acciones y Decisiones (si existen) -->
+                ${r.acciones && r.acciones.length > 0 ? `
+                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);">
+                        <span style="color:#10b981; font-size:12px; font-weight:bold;">✅ Acciones:</span>
+                        <div style="margin-top:5px;">
+                            ${r.acciones.slice(0, 2).map(a => `<div style="color:#94a3b8; font-size:12px;">• ${a}</div>`).join('')}
+                            ${r.acciones.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.acciones.length-2} acciones más</div>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${r.decisions && r.decisions.length > 0 ? `
+                    <div style="margin-top:10px;">
+                        <span style="color:#ec4899; font-size:12px; font-weight:bold;">⚖️ Decisiones:</span>
+                        <div style="margin-top:5px;">
+                            ${r.decisions.slice(0, 2).map(d => `<div style="color:#94a3b8; font-size:12px;">• ${d}</div>`).join('')}
+                            ${r.decisions.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.decisions.length-2} decisiones más</div>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+                
                 <!-- Badge de origen (Teams) o botón de eliminar (manual) -->
                 ${r.fuente === 'mongodb' ? `
                     <span style="position:absolute; top:10px; right:10px; background:#8b5cf6; color:white; padding:2px 8px; border-radius:4px; font-size:10px;">📡 Teams</span>
@@ -40800,7 +40831,6 @@ window.actualizarListaReuniones = async function() {
         }
     }
 };
-
 
 
 
