@@ -40601,8 +40601,14 @@ window.inicializarGrabadorCompleto = function() {
 // ============================================
 
 // Reemplazar SOLO la función de guardado
+// En el saveMeetingBtn.onclick
 document.getElementById('saveMeetingBtn').onclick = async () => {
     if (!window.currentProcessedMeeting) return alert('No hay reunión para guardar');
+    
+    // ===== 🔥 NUEVO: Obtener clienteId =====
+    const clienteId = localStorage.getItem('clienteId');
+    console.log('📤 Enviando transcripción con clienteId:', clienteId);
+    // ========================================
     
     try {
         // Guardar en MongoDB
@@ -40610,6 +40616,7 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                clienteId: clienteId,  // 👈 NUEVO CAMPO
                 titulo: window.currentProcessedMeeting.titulo,
                 transcripcion: window.currentProcessedMeeting.transcripcion
             })
@@ -40647,7 +40654,6 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
         window.actualizarListaReuniones();
     }
 };
-
 // Mantener el resto de funciones igual
     
     document.getElementById('discardMeetingBtn').onclick = () => {
