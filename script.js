@@ -12456,20 +12456,24 @@ async function register() {
   const name = document.getElementById('registerName').value.trim();
   const email = document.getElementById('registerEmail').value.trim();
   const password = document.getElementById('registerPassword').value;
-  if (!name || !email || !password) {
+  const empresa = document.getElementById('registerEmpresa').value.trim(); // 👈 NUEVO
+  
+  if (!name || !email || !password || !empresa) {
     document.getElementById('registerError').textContent = 'Completa todos los campos';
     return;
   }
+  
   try {
     const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role: 'viewer'  })
+      body: JSON.stringify({ name, email, password, empresa }) // 👈 ENVIAR EMPRESA
     });
+    
     const data = await res.json();
     if (res.ok) {
       alert('✅ Cuenta creada. Ahora inicia sesión.');
-      setTimeout(showLoginForm, 1500);
+      showLoginForm();
     } else {
       document.getElementById('registerError').textContent = data.error || 'Error al crear cuenta';
     }
@@ -12554,17 +12558,29 @@ function showLoginScreen() {
 
         <!-- Formulario de Registro (oculto por defecto) -->
         <div id="registerForm" style="display:none;">
-          <h2 style="text-align:center;margin:0 0 20px;">📝 Crear Cuenta</h2>
-          <input type="text" id="registerName" placeholder="Nombre completo" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
-          <input type="email" id="registerEmail" placeholder="Email" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
-          <input type="password" id="registerPassword" placeholder="Contraseña" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
-          <button onclick="register()" style="width:100%;padding:12px;background:#2ecc71;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Crear Cuenta</button>
-          <div id="registerError" style="color:#e74c3c;margin-top:12px;text-align:center;"></div>
-          <div style="margin-top:15px;text-align:center;">
-            ¿Ya tienes cuenta? 
-            <a href="#" onclick="showLoginForm(); return false;" style="color:#3498db;text-decoration:underline;">Inicia sesión</a>
-          </div>
-        </div>
+  <h2 style="text-align:center;margin:0 0 20px;">📝 Crear Cuenta</h2>
+  
+  <!-- Nombre completo -->
+  <input type="text" id="registerName" placeholder="Nombre completo" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
+  
+  <!-- Email -->
+  <input type="email" id="registerEmail" placeholder="Email" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
+  
+  <!-- Contraseña -->
+  <input type="password" id="registerPassword" placeholder="Contraseña" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
+  
+  <!-- 🔥 NUEVO: Campo Empresa -->
+  <input type="text" id="registerEmpresa" placeholder="Nombre de la empresa" style="width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;">
+  
+  <button onclick="register()" style="width:100%;padding:12px;background:#2ecc71;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Crear Cuenta</button>
+  
+  <div id="registerError" style="color:#e74c3c;margin-top:12px;text-align:center;"></div>
+  
+  <div style="margin-top:15px;text-align:center;">
+    ¿Ya tienes cuenta? 
+    <a href="#" onclick="showLoginForm(); return false;" style="color:#3498db;text-decoration:underline;">Inicia sesión</a>
+  </div>
+</div>
       </div>
     </div>
   `;
