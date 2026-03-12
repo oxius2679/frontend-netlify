@@ -1347,13 +1347,14 @@
         <!-- Fila 3: Riesgos, Acciones y Hitos (con IDs originales) -->
 <div class="dashboard-footer">
   <!-- Riesgos y Problemas -->
-  <div class="quick-actions" style="flex: 1; min-width: 300px;">
+  <!-- Riesgos y Problemas (EXACTAMENTE IGUAL A ACCIONES REQUERIDAS) -->
+<div class="actions-panel">
+  <div class="actions-header">
     <h3>Riesgos y Problemas</h3>
-    <div class="risks-container" id="risksContainer" style="max-height: 200px; overflow-y: auto; margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-      <!-- Se llenará con loadRisks() -->
-    </div>
-    <button class="add-risk-btn" id="addRiskBtn" style="width: 100%; margin-top: 10px;">+ Reportar Nuevo Riesgo</button>
   </div>
+  <ul id="risksContainer"></ul>  <!-- Cambié a UL para que sea igual -->
+  <button id="addRiskBtn" class="add-action-btn">+ Reportar Nuevo Riesgo</button>
+</div>
 
   <!-- Acciones Requeridas -->
   <div class="actions-panel">

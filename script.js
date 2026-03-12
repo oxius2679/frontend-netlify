@@ -15507,28 +15507,79 @@ function createNewProject() {
   console.log('💡 Recuerda: Para que las estadísticas funcionen, asigna tiempo estimado a las tareas');
 }
 
+// ============================================
+// RENDERIZAR PROYECTOS CON FILTRO DE PERMISOS
+// ============================================
 function renderProjects() {
-  if (!projectListContainer) return;
-  projectListContainer.innerHTML = '';
-
-  projects.forEach((project, index) => {
-    const li = document.createElement('li');
-    li.className = 'project-item';
-    li.dataset.projectIndex = index;
+    const projectListContainer = document.getElementById('projectList');
+    if (!projectListContainer) {
+        console.log('⚠️ No se encontró projectListContainer');
+        return;
+    }
     
-    li.innerHTML = `
-      <span>${project.name}</span>
-      <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${index})">⋮</div>
-      <div class="project-context-menu" id="project-menu-${index}">
-        <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${index})">Editar</div>
-        <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${index})">Eliminar</div>
-      </div>
-    `;
-
-    li.addEventListener('click', () => selectProject(index));
-    projectListContainer.appendChild(li);
-  });
+    // Obtener proyectos permitidos
+    const proyectosPermitidos = getProyectosPermitidos();
+    
+    projectListContainer.innerHTML = '';
+    
+    if (proyectosPermitidos.length === 0) {
+        projectListContainer.innerHTML = `
+            <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
+                <i class="fas fa-lock" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                No tienes acceso a ningún proyecto
+            </li>
+        `;
+        return;
+    }
+    
+    proyectosPermitidos.forEach((project, index) => {
+        // Encontrar el índice REAL en el array original
+        const realIndex = projects.findIndex(p => 
+            p.name === project.name && 
+            JSON.stringify(p.tasks) === JSON.stringify(project.tasks)
+        );
+        
+        if (realIndex === -1) return; // Safety check
+        
+        const li = document.createElement('li');
+        li.className = 'project-item';
+        li.dataset.projectIndex = realIndex;
+        
+        // Buscar el rol del usuario para este proyecto
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const permiso = user.proyectosPermitidos?.find(p => p.proyectoIndex === realIndex);
+        
+        li.innerHTML = `
+            <span>
+                ${project.name}
+                ${permiso ? `<span class="rol-badge" style="
+                    font-size: 10px;
+                    background: #8b5cf6;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    margin-left: 10px;
+                    display: inline-block;
+                ">${permiso.rol}</span>` : ''}
+            </span>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${realIndex})">⋮</div>
+            <div class="project-context-menu" id="project-menu-${realIndex}">
+                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${realIndex})">Editar</div>
+                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${realIndex})">Eliminar</div>
+            </div>
+        `;
+        
+        li.addEventListener('click', () => selectProject(realIndex));
+        projectListContainer.appendChild(li);
+    });
+    
+    console.log(`📋 Renderizados ${proyectosPermitidos.length} proyectos`);
 }
+
+
+
+
+
 function selectProject(index) {
   console.trace('🧭 selectProject llamado');
 
@@ -38098,147 +38149,504 @@ function downloadTaskFile(taskId) {
 
 
 
-// === CARGAR DATOS DE LA FILA 3 CON FORMATO UNIFORME ===
+// === VARIABLE GLOBAL PARA CONTROLAR INICIALIZACIÓN ===
+window.riesgosYAccionesInicializado = false;
+
+// === CARGAR DATOS DE LA FILA 3 CON FORMATO UNIFORME Y PERSISTENCIA ===
 function loadDashboardProjectData() {
     const projectId = currentProjectIndex;
-    if (projectId === null || projectId < 0) return;
+    if (projectId === null || projectId < 0 || projectId >= (projects?.length || 0)) return;
 
-    // ---------- RIESGOS ----------
+    console.log('🔄 Cargando proyecto:', projectId);
+
+    // ===== RIESGOS (mismo tamaño que acciones) =====
     const risksContainer = document.getElementById('risksContainer');
     if (risksContainer) {
-        // Asegurar que sea un div con estilos
-        risksContainer.style.background = 'rgb(248, 250, 252)';
-        risksContainer.style.borderLeft = '1px solid rgb(226, 232, 240)';
-        risksContainer.style.borderRadius = '8px';
-        risksContainer.style.padding = '10px';
-        risksContainer.style.minHeight = '120px';
-
-        // Cargar riesgos
-        const risks = JSON.parse(localStorage.getItem(`risks_${projectId}`) || '[]');
         risksContainer.innerHTML = '';
-        if (risks.length === 0) {
-      
+        risksContainer.style.padding = '0';
+        risksContainer.style.margin = '0';
+        
+        let riesgos = [];
+        try {
+            const stored = localStorage.getItem(`risks_${projectId}`);
+            riesgos = stored ? JSON.parse(stored) : [];
+            riesgos = riesgos.map(r => typeof r === 'string' ? { texto: r } : r);
+        } catch (e) {
+            riesgos = [];
+        }
+        
+        if (riesgos.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = 'color:#95a5a6; font-style:italic; text-align:center; padding:20px; height:100%; display:flex; align-items:center; justify-content:center;';
+            emptyDiv.textContent = 'No hay riesgos';
+            risksContainer.appendChild(emptyDiv);
         } else {
-            risks.forEach(r => {
-                const el = document.createElement('div');
-                el.className = 'risk-item';
-                el.innerHTML = r.html || 'Riesgo sin datos';
-                risksContainer.appendChild(el);
+            riesgos.forEach((riesgo, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-left: 4px solid #e74c3c;
+                    border-radius: 6px;
+                    padding: 12px 15px;
+                    margin-bottom: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+                
+                div.innerHTML = `
+                    <span style="flex:1; cursor:pointer;">${riesgo.texto}</span>
+                    <button class="delete-risk-btn" data-project="${projectId}" data-index="${index}" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:14px; padding:5px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                risksContainer.appendChild(div);
+            });
+            
+            // Agregar event listeners a los botones de eliminar
+            document.querySelectorAll('.delete-risk-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const project = this.getAttribute('data-project');
+                    const index = this.getAttribute('data-index');
+                    eliminarRiesgo(parseInt(project), parseInt(index));
+                });
             });
         }
     }
 
-    // ---------- ACCIONES ----------
+    // ===== ACCIONES (exactamente igual que riesgos pero azul) =====
     const actionsContainer = document.getElementById('requiredActions');
     if (actionsContainer) {
-        // Convertir a div si es ul
-        if (actionsContainer.tagName === 'UL') {
-            const newDiv = document.createElement('div');
-            newDiv.id = 'requiredActions';
-            newDiv.style.background = 'rgb(248, 250, 252)';
-            newDiv.style.borderLeft = '1px solid rgb(226, 232, 240)';
-            newDiv.style.borderRadius = '8px';
-            newDiv.style.padding = '10px';
-            newDiv.style.minHeight = '120px';
-            // Mover hijos
-            while (actionsContainer.firstChild) {
-                newDiv.appendChild(actionsContainer.firstChild);
-            }
-            actionsContainer.parentElement.replaceChild(newDiv, actionsContainer);
-            // Actualizar referencia
-            actionsContainer = newDiv;
-        } else {
-            actionsContainer.style.background = 'rgb(248, 250, 252)';
-            actionsContainer.style.borderLeft = '1px solid rgb(226, 232, 240)';
-            actionsContainer.style.borderRadius = '8px';
-            actionsContainer.style.padding = '10px';
-            actionsContainer.style.minHeight = '120px';
-        }
-
-        // Cargar acciones
-        const actions = JSON.parse(localStorage.getItem(`actions_${projectId}`) || '[]');
         actionsContainer.innerHTML = '';
-        if (actions.length === 0) {
-       
+        actionsContainer.style.padding = '0';
+        actionsContainer.style.margin = '0';
+        actionsContainer.style.listStyle = 'none';
+        
+        let acciones = [];
+        try {
+            const stored = localStorage.getItem(`actions_${projectId}`);
+            acciones = stored ? JSON.parse(stored) : [];
+            acciones = acciones.map(a => typeof a === 'string' ? { texto: a } : a);
+        } catch (e) {
+            acciones = [];
+        }
+        
+        if (acciones.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = 'color:#95a5a6; font-style:italic; text-align:center; padding:20px; height:100%; display:flex; align-items:center; justify-content:center;';
+            emptyDiv.textContent = 'No hay acciones';
+            actionsContainer.appendChild(emptyDiv);
         } else {
-            actions.forEach(a => {
-                const el = document.createElement('div');
-                el.className = 'action-item';
-                el.innerHTML = a.html || 'Acción sin datos';
-                actionsContainer.appendChild(el);
+            acciones.forEach((accion, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-left: 4px solid #3498db;
+                    border-radius: 6px;
+                    padding: 12px 15px;
+                    margin-bottom: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+                
+                div.innerHTML = `
+                    <span style="flex:1; cursor:pointer;">${accion.texto}</span>
+                    <button class="delete-action-btn" data-project="${projectId}" data-index="${index}" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:14px; padding:5px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                actionsContainer.appendChild(div);
+            });
+            
+            // Agregar event listeners a los botones de eliminar
+            document.querySelectorAll('.delete-action-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const project = this.getAttribute('data-project');
+                    const index = this.getAttribute('data-index');
+                    eliminarAccion(parseInt(project), parseInt(index));
+                });
             });
         }
     }
 
-    // ---------- HITOS ----------
+    // ===== HITOS (mismo formato) =====
     const milestonesContainer = document.getElementById('milestonesList');
     if (milestonesContainer) {
-        milestonesContainer.style.background = 'rgb(248, 250, 252)';
-        milestonesContainer.style.borderLeft = '1px solid rgb(226, 232, 240)';
-        milestonesContainer.style.borderRadius = '8px';
-        milestonesContainer.style.padding = '10px';
-        milestonesContainer.style.minHeight = '120px';
-
-        // Cargar hitos
-        const milestones = JSON.parse(localStorage.getItem(`milestones_${projectId}`) || '[]');
         milestonesContainer.innerHTML = '';
-        if (milestones.length === 0) {
-         
+        milestonesContainer.style.padding = '0';
+        milestonesContainer.style.margin = '0';
+        
+        let hitos = [];
+        try {
+            const stored = localStorage.getItem(`milestones_${projectId}`);
+            hitos = stored ? JSON.parse(stored) : [];
+            hitos = hitos.map(h => typeof h === 'string' ? { texto: h } : h);
+        } catch (e) {
+            hitos = [];
+        }
+        
+        if (hitos.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = 'color:#95a5a6; font-style:italic; text-align:center; padding:20px; height:100%; display:flex; align-items:center; justify-content:center;';
+            emptyDiv.textContent = 'No hay hitos';
+            milestonesContainer.appendChild(emptyDiv);
         } else {
-            milestones.forEach(m => {
-                const el = document.createElement('div');
-                el.className = 'milestone-item';
-                el.innerHTML = m.html || 'Hito sin datos';
-                milestonesContainer.appendChild(el);
+            hitos.forEach((hito, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = `
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-left: 4px solid #f39c12;
+                    border-radius: 6px;
+                    padding: 12px 15px;
+                    margin-bottom: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    box-sizing: border-box;
+                `;
+                
+                div.innerHTML = `
+                    <span style="flex:1; cursor:pointer;">${hito.texto}</span>
+                    <button class="delete-milestone-btn" data-project="${projectId}" data-index="${index}" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:14px; padding:5px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                milestonesContainer.appendChild(div);
+            });
+            
+            document.querySelectorAll('.delete-milestone-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const project = this.getAttribute('data-project');
+                    const index = this.getAttribute('data-index');
+                    eliminarHito(parseInt(project), parseInt(index));
+                });
             });
         }
     }
 }
 
+// === FUNCIONES GLOBALES PARA RIESGOS ===
+function eliminarRiesgo(projectId, index) {
+    if (!confirm('¿Eliminar este riesgo?')) return;
+    
+    let items = JSON.parse(localStorage.getItem(`risks_${projectId}`) || '[]');
+    items.splice(index, 1);
+    localStorage.setItem(`risks_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
 
+// === FUNCIONES GLOBALES PARA ACCIONES ===
+function eliminarAccion(projectId, index) {
+    if (!confirm('¿Eliminar esta acción?')) return;
+    
+    let items = JSON.parse(localStorage.getItem(`actions_${projectId}`) || '[]');
+    items.splice(index, 1);
+    localStorage.setItem(`actions_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
 
+// === FUNCIONES GLOBALES PARA HITOS ===
+function eliminarHito(projectId, index) {
+    if (!confirm('¿Eliminar este hito?')) return;
+    
+    let items = JSON.parse(localStorage.getItem(`milestones_${projectId}`) || '[]');
+    items.splice(index, 1);
+    localStorage.setItem(`milestones_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
 
-// === ALINEAR LAS TRES SECCIONES DE LA FILA 3 ===
+// === FUNCIONES PARA AGREGAR (con event listeners directos) ===
+function setupAddButtons() {
+    // Botón de riesgos
+    const riskBtn = document.getElementById('addRiskBtn');
+    if (riskBtn) {
+        // Remover listeners anteriores
+        const newRiskBtn = riskBtn.cloneNode(true);
+        riskBtn.parentNode.replaceChild(newRiskBtn, riskBtn);
+        
+        newRiskBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const texto = prompt('Nuevo riesgo:');
+            if (!texto || texto.trim() === '') return;
+            
+            const projectId = currentProjectIndex;
+            let items = JSON.parse(localStorage.getItem(`risks_${projectId}`) || '[]');
+            items.push({ texto: texto.trim() });
+            localStorage.setItem(`risks_${projectId}`, JSON.stringify(items));
+            loadDashboardProjectData();
+        });
+    }
+    
+    // Botón de acciones
+    const actionBtn = document.getElementById('addActionBtn');
+    if (actionBtn) {
+        const newActionBtn = actionBtn.cloneNode(true);
+        actionBtn.parentNode.replaceChild(newActionBtn, actionBtn);
+        
+        newActionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const texto = prompt('Nueva acción:');
+            if (!texto || texto.trim() === '') return;
+            
+            const projectId = currentProjectIndex;
+            let items = JSON.parse(localStorage.getItem(`actions_${projectId}`) || '[]');
+            items.push({ texto: texto.trim() });
+            localStorage.setItem(`actions_${projectId}`, JSON.stringify(items));
+            loadDashboardProjectData();
+        });
+    }
+    
+    // Botón de hitos
+    const milestoneBtn = document.getElementById('addMilestoneBtn');
+    if (milestoneBtn) {
+        const newMilestoneBtn = milestoneBtn.cloneNode(true);
+        milestoneBtn.parentNode.replaceChild(newMilestoneBtn, milestoneBtn);
+        
+        newMilestoneBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const texto = prompt('Nuevo hito:');
+            if (!texto || texto.trim() === '') return;
+            
+            const projectId = currentProjectIndex;
+            let items = JSON.parse(localStorage.getItem(`milestones_${projectId}`) || '[]');
+            items.push({ texto: texto.trim() });
+            localStorage.setItem(`milestones_${projectId}`, JSON.stringify(items));
+            loadDashboardProjectData();
+        });
+    }
+}
+
+// === INICIALIZACIÓN ===
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        loadDashboardProjectData();
+        setupAddButtons();
+    }, 500);
+});
+
+// También ejecutar cuando cambie el proyecto
+const originalSelectProject = window.selectProject;
+window.selectProject = function(index) {
+    if (originalSelectProject) originalSelectProject(index);
+    setTimeout(() => {
+        loadDashboardProjectData();
+        setupAddButtons();
+    }, 100);
+};
+// === FUNCIONES PARA EDITAR Y ELIMINAR ===
+function editarItem(storageKey, projectId, index, nuevoTexto) {
+    if (!nuevoTexto || nuevoTexto.trim() === '') return;
+    
+    // Obtener items actuales
+    let items = JSON.parse(localStorage.getItem(`${storageKey}_${projectId}`) || '[]');
+    
+    // Actualizar el texto
+    if (typeof items[index] === 'string') {
+        items[index] = nuevoTexto.trim();
+    } else if (items[index].texto) {
+        items[index].texto = nuevoTexto.trim();
+    } else if (items[index].html) {
+        items[index].html = nuevoTexto.trim();
+    }
+    
+    // Guardar y recargar
+    localStorage.setItem(`${storageKey}_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
+
+function eliminarItem(storageKey, projectId, index) {
+    if (!confirm('¿Eliminar este elemento?')) return;
+    
+    let items = JSON.parse(localStorage.getItem(`${storageKey}_${projectId}`) || '[]');
+    items.splice(index, 1);
+    localStorage.setItem(`${storageKey}_${projectId}`, JSON.stringify(items));
+    
+    // Recargar completamente para regenerar índices
+    loadDashboardProjectData();
+}
+// === FUNCIONES PARA AGREGAR ===
+function agregarRiesgo() {
+    const texto = prompt('Nuevo riesgo:');
+    if (!texto || texto.trim() === '') return;
+    
+    const projectId = currentProjectIndex;
+    let items = JSON.parse(localStorage.getItem(`risks_${projectId}`) || '[]');
+    items.push(texto.trim());
+    localStorage.setItem(`risks_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
+
+function agregarAccion() {
+    console.log('➕ Agregando acción...');
+    const texto = prompt('Nueva acción:');
+    if (!texto || texto.trim() === '') return;
+    
+    const projectId = currentProjectIndex;
+    let items = JSON.parse(localStorage.getItem(`actions_${projectId}`) || '[]');
+    items.push(texto.trim());
+    localStorage.setItem(`actions_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
+
+function agregarHito() {
+    const texto = prompt('Nuevo hito:');
+    if (!texto || texto.trim() === '') return;
+    
+    const projectId = currentProjectIndex;
+    let items = JSON.parse(localStorage.getItem(`milestones_${projectId}`) || '[]');
+    items.push(texto.trim());
+    localStorage.setItem(`milestones_${projectId}`, JSON.stringify(items));
+    loadDashboardProjectData();
+}
+
+// === CONECTAR BOTONES (AHORA CON LISTENERS SEGUROS) ===
+function conectarBotonesRiesgos() {
+    console.log('🔌 Conectando botones...');
+    
+    // Botón de riesgos
+    const riskBtn = document.getElementById('addRiskBtn');
+    if (riskBtn) {
+        // Remover listeners anteriores clonando y reemplazando
+        const newRiskBtn = riskBtn.cloneNode(true);
+        riskBtn.parentNode.replaceChild(newRiskBtn, riskBtn);
+        newRiskBtn.onclick = function(e) {
+            e.preventDefault();
+            agregarRiesgo();
+        };
+        console.log('✅ Botón de riesgos conectado');
+    }
+    
+    // Botón de acciones
+    const actionBtn = document.getElementById('addActionBtn');
+    if (actionBtn) {
+        const newActionBtn = actionBtn.cloneNode(true);
+        actionBtn.parentNode.replaceChild(newActionBtn, actionBtn);
+        newActionBtn.onclick = function(e) {
+            e.preventDefault();
+            agregarAccion();
+        };
+        console.log('✅ Botón de acciones conectado');
+    }
+    
+    // Botón de hitos
+    const milestoneBtn = document.getElementById('addMilestoneBtn');
+    if (milestoneBtn) {
+        const newMilestoneBtn = milestoneBtn.cloneNode(true);
+        milestoneBtn.parentNode.replaceChild(newMilestoneBtn, milestoneBtn);
+        newMilestoneBtn.onclick = function(e) {
+            e.preventDefault();
+            agregarHito();
+        };
+        console.log('✅ Botón de hitos conectado');
+    }
+}
+
+// === REEMPLAZAR LA FUNCIÓN ORIGINAL DE SELECTPROJECT PARA RECARGAR DATOS ===
+const originalSelectProjectRiesgos = window.selectProject;
+window.selectProject = function(index) {
+    if (originalSelectProjectRiesgos) originalSelectProjectRiesgos(index);
+    // Recargar datos del dashboard después de cambiar de proyecto
+    setTimeout(() => {
+        loadDashboardProjectData();
+    }, 100);
+};
+
+// === INICIALIZACIÓN AUTOMÁTICA CON NOMBRE ÚNICO ===
+const dashboardObserverRiesgos = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const dashboard = document.getElementById('dashboardView');
+            if (dashboard && dashboard.classList.contains('active') && !window.riesgosYAccionesInicializado) {
+                console.log('🚀 Dashboard activado, cargando datos...');
+                loadDashboardProjectData();
+                window.riesgosYAccionesInicializado = true;
+            }
+        }
+    });
+});
+
+// Observar cambios en las clases de dashboardView
+const dashboardElement = document.getElementById('dashboardView');
+if (dashboardElement) {
+    dashboardObserverRiesgos.observe(dashboardElement, { attributes: true });
+}
+
+// También cargar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        if (document.getElementById('dashboardView')?.classList.contains('active')) {
+            loadDashboardProjectData();
+        }
+    }, 1500);
+});
+
+// Mantener la función alignDashboardRow3Cards original
 function alignDashboardRow3Cards() {
-    const riskCard = Array.from(document.querySelectorAll('.dashboard-card'))
-        .find(card => card.querySelector('h3')?.textContent.trim() === 'Riesgos y Problemas');
+    // Obtener todas las cards del dashboard
+    const cards = Array.from(document.querySelectorAll('.dashboard-card'));
+    
+    // Encontrar la card base (Riesgos) para copiar sus estilos
+    const riskCard = cards.find(card => {
+        const title = card.querySelector('h3');
+        return title && title.textContent.trim() === 'Riesgos y Problemas';
+    });
 
     if (!riskCard) return;
 
-    // Clonar para Acciones Requeridas
-    const actionsCard = Array.from(document.querySelectorAll('.dashboard-card'))
-        .find(card => card.querySelector('h3')?.textContent.trim() === 'Acciones Requeridas');
-    if (actionsCard) {
-        const newCard = riskCard.cloneNode(true);
-        newCard.querySelector('h3').textContent = 'Acciones Requeridas';
-        const container = newCard.querySelector('#risksContainer');
-        if (container) container.id = 'requiredActions';
-        const btn = newCard.querySelector('.add-risk-btn');
-        if (btn) {
-            btn.className = 'add-action-btn';
-            btn.textContent = '+ Agregar';
-        }
-        actionsCard.parentElement.replaceChild(newCard, actionsCard);
+    // Función para unificar estilos de una card
+    function unifyCardStyles(card) {
+        const content = card.querySelector('.dashboard-card-content') || card;
+        content.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        `;
     }
 
-    // Clonar para Próximos Hitos
-    const milestonesCard = Array.from(document.querySelectorAll('.dashboard-card'))
-        .find(card => card.querySelector('h3')?.textContent.trim() === 'Próximos Hitos');
-    if (milestonesCard) {
-        const newCard = riskCard.cloneNode(true);
-        newCard.querySelector('h3').textContent = 'Próximos Hitos';
-        const container = newCard.querySelector('#risksContainer');
-        if (container) container.id = 'milestonesList';
-        const btn = newCard.querySelector('.add-risk-btn');
-        if (btn) {
-            btn.className = 'add-milestone-btn';
-            btn.textContent = '+ Agregar';
+    unifyCardStyles(riskCard);
+
+    ['Acciones Requeridas', 'Próximos Hitos'].forEach(title => {
+        const targetCard = cards.find(card => {
+            const h3 = card.querySelector('h3');
+            return h3 && h3.textContent.trim() === title;
+        });
+        if (targetCard) {
+            unifyCardStyles(targetCard);
+            const container = targetCard.querySelector('[id]');
+            if (container && container.id.includes('risksContainer')) {
+                container.id = container.id.replace('risksContainer', title.includes('Acciones') ? 'requiredActions' : 'milestonesList');
+            }
         }
-        milestonesCard.parentElement.replaceChild(newCard, milestonesCard);
-    }
+    });
+
+    console.log('✅ Estilos de fila 3 unificados');
 }
-
-
 
 
 
@@ -40102,6 +40510,51 @@ function enviarInvitacion() {
     });
 }
 
+
+// ============================================
+// FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
+// ============================================
+function getProyectosPermitidos() {
+    try {
+        // 1. Obtener usuario actual
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+            console.log('ℹ️ No hay usuario logueado');
+            return [];
+        }
+        
+        const user = JSON.parse(userStr);
+        
+        // 2. Si es admin/creador, ver todos los proyectos
+        if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
+            console.log('👑 Usuario admin - mostrando todos los proyectos');
+            return projects; // Devuelve todos los proyectos
+        }
+        
+        // 3. Si tiene proyectos permitidos, filtrar
+        if (user.proyectosPermitidos && user.proyectosPermitidos.length > 0) {
+            const indicesPermitidos = user.proyectosPermitidos.map(p => p.proyectoIndex);
+            const proyectosFiltrados = projects.filter((_, index) => indicesPermitidos.includes(index));
+            
+            console.log(`🔐 Usuario con acceso a ${proyectosFiltrados.length} proyectos:`, 
+                        proyectosFiltrados.map(p => p.name));
+            return proyectosFiltrados;
+        }
+        
+        // 4. Usuario sin permisos
+        console.log('🔒 Usuario sin acceso a proyectos');
+        return [];
+        
+    } catch (error) {
+        console.error('Error filtrando proyectos:', error);
+        return [];
+    }
+}
+
+
+
+
+
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
@@ -41532,7 +41985,6 @@ function generarProyectoIA(e) {
         btn.disabled = false;
     }, 1500);
 }
-
 // ============================================
 // 14. GENERAR DOCUMENTO PROJECT MEJORADO
 // ============================================
@@ -41573,7 +42025,7 @@ function generarDocumentoProject() {
     const rezagadas = tareas.filter(t => {
         // Por estado explícito
         if (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' || 
-            t.status === 'atrasada' || t.status === 'overdue') {
+            t.status === 'atrasada') {
             return true;
         }
         
@@ -41587,8 +42039,16 @@ function generarDocumentoProject() {
         return false;
     }).length;
     
-    // Calcular progreso general (basado en completadas)
-    const progresoGeneral = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
+    // Calcular progreso por TAREAS completadas
+    const progresoTareas = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
+    
+    // Calcular progreso por HORAS registradas
+    const totalHorasEstimadas = tareas.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
+    const totalHorasRegistradas = tareas.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+    const progresoHoras = totalHorasEstimadas > 0 ? Math.round((totalHorasRegistradas / totalHorasEstimadas) * 100) : 0;
+    
+    // Para usar en la barra principal (usamos el de horas como principal)
+    const progresoGeneral = progresoHoras;
     
     // Determinar si el proyecto está en tiempo
     const enTiempo = rezagadas === 0;
@@ -41782,18 +42242,41 @@ function generarDocumentoProject() {
                     </div>
                 </div>
                 
-                <!-- BARRA DE AVANCE GENERAL -->
-                <h3 style="margin: 20px 0 10px;">📊 Progreso General del Proyecto</h3>
-                <div class="progress-container">
+                <!-- BARRA DE AVANCE GENERAL (BASADA EN HORAS) -->
+                <h3 style="margin: 20px 0 10px;">📊 Avance del Proyecto (Basado en Horas Trabajadas)</h3>
+                <div style="color: #666; font-size: 13px; margin-bottom: 5px;">
+                    *Calculado como: (Horas Registradas / Horas Estimadas) × 100. Incluye trabajo en progreso.
+                </div>
+                <div class="progress-container" style="margin-bottom: 30px;">
                     <div class="progress-bar"></div>
-                    <div class="progress-label">${progresoGeneral}%</div>
+                    <div class="progress-label" title="Horas Registradas: ${totalHorasRegistradas}h / Horas Estimadas: ${totalHorasEstimadas}h">
+                        ${progresoHoras}%
+                    </div>
+                </div>
+                
+                <!-- COMPARATIVA DE MÉTRICAS (TAREAS VS HORAS) -->
+                <div style="display: flex; gap: 30px; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 15px;">
+                    <div style="flex: 1; text-align: center; padding: 15px; border-right: 2px solid #e9ecef;">
+                        <div style="color: #8b5cf6; font-size: 14px; font-weight: bold; margin-bottom: 10px;">📈 POR TAREAS COMPLETADAS</div>
+                        <div style="font-size: 36px; font-weight: bold; color: #8b5cf6;">${progresoTareas}%</div>
+                        <div style="color: #666; font-size: 13px; margin-top: 5px;">
+                            ${completadas} de ${totalTareas} tareas
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 15px;">
+                        <div style="color: #10b981; font-size: 14px; font-weight: bold; margin-bottom: 10px;">⏱️ POR HORAS TRABAJADAS</div>
+                        <div style="font-size: 36px; font-weight: bold; color: #10b981;">${progresoHoras}%</div>
+                        <div style="color: #666; font-size: 13px; margin-top: 5px;">
+                            ${totalHorasRegistradas}h de ${totalHorasEstimadas}h
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- GRÁFICA DE ESTATUS -->
                 <div style="display: flex; flex-wrap: wrap; gap: 30px; margin: 40px 0;">
                     <div style="flex: 1; min-width: 300px;">
                         <h3 style="margin-bottom: 20px;">📈 Distribución de Tareas</h3>
-                        <div class="chart-container">
+                        <div class="chart-container" style="margin-top: 140px;">
                             <canvas id="statusChart"></canvas>
                         </div>
                     </div>
@@ -41818,12 +42301,28 @@ function generarDocumentoProject() {
                             </div>
                         </div>
                         
-                        <!-- MÉTRICAS ADICIONALES -->
+                        <!-- MÉTRICAS ADICIONALES (ACTUALIZADO CON AMBAS) -->
                         <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 15px;">
-                            <h4>📋 Resumen</h4>
-                            <p><strong>Total tareas:</strong> ${totalTareas}</p>
-                            <p><strong>Tasa de completitud:</strong> ${Math.round(completadas/totalTareas*100)}%</p>
-                            <p><strong>Tareas por día:</strong> ${(totalTareas / 30).toFixed(1)}</p>
+                            <h4>📋 Resumen de Métricas</h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <p><strong>📊 POR TAREAS:</strong></p>
+                                    <p>• Total: ${totalTareas}</p>
+                                    <p>• Completadas: ${completadas}</p>
+                                    <p>• En progreso: ${enProgreso}</p>
+                                    <p>• Pendientes: ${pendientes}</p>
+                                    <p>• Rezagadas: ${rezagadas}</p>
+                                    <p style="margin-top: 10px;"><strong>Progreso:</strong> ${progresoTareas}%</p>
+                                </div>
+                                <div>
+                                    <p><strong>⏱️ POR HORAS:</strong></p>
+                                    <p>• Estimadas: ${totalHorasEstimadas}h</p>
+                                    <p>• Registradas: ${totalHorasRegistradas}h</p>
+                                    <p>• Restantes: ${totalHorasEstimadas - totalHorasRegistradas}h</p>
+                                    <p>• Diferencia: ${totalHorasEstimadas - totalHorasRegistradas > 0 ? '🔵 Faltan' : '🔴 Sobran'} ${Math.abs(totalHorasEstimadas - totalHorasRegistradas)}h</p>
+                                    <p style="margin-top: 10px;"><strong>Progreso:</strong> ${progresoHoras}%</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -41954,6 +42453,11 @@ function generarDocumentoProject() {
     ventana.document.write(htmlContent);
     ventana.document.close();
 }
+
+
+
+
+
 // ============================================
 // 15. GENERAR DOCUMENTO DESDE SELECTOR
 // ============================================

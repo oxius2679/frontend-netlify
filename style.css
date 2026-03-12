@@ -14081,3 +14081,153 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
 .stat-value:hover {
     transform: scale(1.1);
 }
+
+
+
+
+/* === FORZAR RIESGOS IGUAL A ACCIONES === */
+
+/* 1. Forzar el contenedor a tener exactamente las mismas dimensiones */
+#risksContainer {
+    height: 187px !important;
+    max-height: 187px !important;
+    min-height: 187px !important;
+    padding: 15px !important;
+    margin: 10px 15px !important;
+    width: calc(100% - 30px) !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    list-style-type: none !important;
+}
+
+/* 2. Forzar el botón de riesgos al mismo color y posición */
+#addRiskBtn {
+    background: #00ccff !important;  /* Mismo azul que acciones */
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    margin: 15px !important;
+    margin-top: auto !important;
+    width: calc(100% - 30px) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+#addRiskBtn:hover {
+    background: #0099cc !important;  /* Versión más oscura del mismo azul */
+}
+
+/* 3. Asegurar que los items dentro se vean igual */
+#risksContainer li,
+#risksContainer .risk-item {
+    padding: 10px !important;
+    margin-bottom: 5px !important;
+    background-color: #f8f9fa !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+#risksContainer li:hover,
+#risksContainer .risk-item:hover {
+    background-color: #e9ecef !important;
+}
+
+#risksContainer button {
+    background: none !important;
+    border: none !important;
+    color: #dc3545 !important;
+    cursor: pointer !important;
+    margin-left: 10px !important;
+}
+
+
+
+
+
+
+
+/* === HACER QUE LOS ITEMS OCUPEN TODO EL ANCHO DEL CONTENEDOR === */
+
+/* Para acciones requeridas - items ocupan todo el ancho */
+#requiredActions {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    padding: 15px !important;
+    margin: 10px 15px !important;
+    box-sizing: border-box !important;
+}
+
+#requiredActions li,
+#requiredActions .action-item {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 12px 15px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background-color: #f8f9fa !important;
+    border-radius: 4px !important;
+    margin-bottom: 5px !important;
+}
+
+/* Para riesgos - items ocupan todo el ancho */
+#risksContainer {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    padding: 15px !important;
+    margin: 10px 15px !important;
+    box-sizing: border-box !important;
+}
+
+#risksContainer li,
+#risksContainer .risk-item {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 12px 15px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background-color: #f8f9fa !important;
+    border-radius: 4px !important;
+    margin-bottom: 5px !important;
+}
+
+/* El texto dentro de los items */
+#requiredActions li span,
+#requiredActions .action-item span,
+#risksContainer li span,
+#risksContainer .risk-item span {
+    flex: 1 !important;
+    padding-right: 10px !important;
+    word-break: break-word !important;
+}
+
+/* Los botones de eliminar se mantienen a la derecha */
+#requiredActions li button,
+#requiredActions .action-item button,
+#risksContainer li button,
+#risksContainer .risk-item button {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+
+
+
