@@ -140,7 +140,59 @@ async function logoutUser() {
 
 console.log('🟢 SCRIPT EMPIEZA');
 
-
+// ===== SOLUCIÓN DEFINITIVA - CLIENTEID =====
+(function() {
+    console.log('🚀 INICIANDO SISTEMA DE CLIENTEID...');
+    
+    // Función para generar clienteId
+    function generarClienteIdDesdeToken() {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.log('❌ No hay token');
+                return null;
+            }
+            
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('🔑 Token payload:', payload);
+            
+            // Intentar obtener clienteId existente
+            let clienteId = payload.clienteId || payload.clienteid;
+            
+            // Si no hay, generar uno basado en UID
+            if (!clienteId && payload.uid) {
+                clienteId = 'user_' + payload.uid.substring(0, 8);
+                console.log('🆕 Generado nuevo clienteId:', clienteId);
+            }
+            
+            return clienteId;
+        } catch(e) {
+            console.error('❌ Error generando clienteId:', e);
+            return null;
+        }
+    }
+    
+    // Ejecutar inmediatamente
+    const clienteId = generarClienteIdDesdeToken();
+    if (clienteId) {
+        localStorage.setItem('clienteId', clienteId);
+        console.log('✅ ClienteId guardado:', clienteId);
+    } else {
+        console.log('⚠️ No se pudo generar clienteId');
+    }
+    
+    // Cargar transcripciones después de 3 segundos
+    setTimeout(() => {
+        if (localStorage.getItem('clienteId')) {
+            console.log('⏰ Cargando transcripciones...');
+            if (typeof cargarTranscripciones === 'function') {
+                cargarTranscripciones();
+            } else {
+                console.log('❌ Función cargarTranscripciones no encontrada');
+            }
+        }
+    }, 3000);
+})();
 
 
 
@@ -1318,7 +1370,7 @@ async function checkBackendStatus() {
   return false;
 }
 
-// ==================== SAFE SAVE CON CLIENTEID ====================
+// ==================== SAFE SAVE MEJORADO ====================
 async function safeSave(clienteId) {
   console.group('📤 Guardando datos en backend o localStorage');
 
@@ -1327,12 +1379,23 @@ async function safeSave(clienteId) {
     clienteId = localStorage.getItem('clienteId');
   }
 
-  // Siempre guardar en localStorage
+  // 🔥 DETECTAR SI ES CLIENTE GENERADO
+  const esClienteGenerado = clienteId && clienteId.startsWith('user_');
+
+  // SIEMPRE guardar en localStorage
   localStorage.setItem('projects', JSON.stringify(projects));
   console.log('📦 Datos guardados en localStorage');
   console.log('🏢 Cliente ID:', clienteId || 'No definido');
 
-  // Verificar backend al momento de guardar
+  // 🔥 Si es cliente generado, NO intentar con backend
+  if (esClienteGenerado) {
+    console.log('🔧 Cliente generado - Modo LOCAL ONLY');
+    console.log('✅ Proyectos guardados SOLO en localStorage');
+    console.groupEnd();
+    return true;
+  }
+
+  // Verificar backend al momento de guardar (solo para clientes NO generados)
   if (await checkBackendStatus()) {
     console.log("➡️ Intentando guardar en backend...");
 
@@ -1346,14 +1409,12 @@ async function safeSave(clienteId) {
     try {
       console.log("🔐 Token usado para guardar:", token);
 
-      // Preparar body con clienteId
       const bodyData = {
         projects: projects,
         currentProjectIndex: currentProjectIndex,
         timestamp: new Date().toISOString()
       };
 
-      // Solo agregar clienteId si existe
       if (clienteId) {
         bodyData.clienteId = clienteId;
       }
@@ -1369,7 +1430,7 @@ async function safeSave(clienteId) {
 
       if (response.ok) {
         console.log('✅ Datos guardados en MongoDB Atlas');
-        console.log(`📊 Proyectos guardados para cliente: ${clienteId || 'desconocido'}`);
+        console.log(`📊 Proyectos guardados para cliente: ${clienteId}`);
       } else {
         console.warn('⚠️ Error guardando en backend:', response.status);
         const errorData = await response.json().catch(() => ({}));
@@ -1386,18 +1447,20 @@ async function safeSave(clienteId) {
 
 
 
-
-
-// Función de respaldo para cargar
+// ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
   console.group('📥 Cargando datos desde backend o localStorage');
   console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
 
-// Obtener clienteId del localStorage
-const clienteId = localStorage.getItem('clienteId');
-console.log('🏢 Cliente ID:', clienteId || 'No definido');
-
-
+  // Obtener clienteId del localStorage
+  const clienteId = localStorage.getItem('clienteId');
+  console.log('🏢 Cliente ID:', clienteId || 'No definido');
+  
+  // 🔥 NUEVO: Detectar si es un cliente generado (empieza con "user_")
+  const esClienteGenerado = clienteId && clienteId.startsWith('user_');
+  if (esClienteGenerado) {
+    console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
+  }
   
   let loadedData = null;
   let backendAvailable = false;
@@ -1406,27 +1469,31 @@ console.log('🏢 Cliente ID:', clienteId || 'No definido');
   if (!window.authToken || window.authToken.length < 10) {
     console.warn('⚠️ No hay token válido, usando localStorage');
   } else {
-    // ✅ Verificar si el backend está disponible
-    try {
-      console.log('🔄 Verificando backend...');
-      const healthResponse = await fetch(`${API_URL}/api/health`, {
-        timeout: 5000
-      });
-      
-      if (healthResponse.ok) {
-        backendAvailable = true;
-        console.log('✅ Backend disponible');
+    // ✅ Verificar si el backend está disponible (SOLO si NO es cliente generado)
+    if (!esClienteGenerado) {
+      try {
+        console.log('🔄 Verificando backend...');
+        const healthResponse = await fetch(`${API_URL}/api/health`, {
+          timeout: 5000
+        });
+        
+        if (healthResponse.ok) {
+          backendAvailable = true;
+          console.log('✅ Backend disponible');
+        }
+      } catch (error) {
+        console.warn('⚠️ Backend no disponible:', error.message);
       }
-    } catch (error) {
-      console.warn('⚠️ Backend no disponible:', error.message);
+    } else {
+      console.log('🔧 Cliente generado - Omitiendo verificación de backend');
     }
 
-    // ✅ Si el backend está disponible, intentar cargar desde ahí
-    if (backendAvailable) {
+    // ✅ Si el backend está disponible Y NO es cliente generado, intentar cargar desde ahí
+    if (backendAvailable && !esClienteGenerado) {
       try {
         console.log('🔄 Intentando cargar desde MongoDB...');
         const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}` : `${API_URL}/api/projects`;
-const response = await fetch(url, {
+        const response = await fetch(url, {
           headers: { 
             'Authorization': `Bearer ${window.authToken}`,
             'Content-Type': 'application/json'
@@ -1438,7 +1505,7 @@ const response = await fetch(url, {
         if (response.ok) {
           loadedData = await response.json();
           console.log('✅ Datos cargados desde MongoDB Atlas:', loadedData);
-console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length || 0} proyectos`);
+          console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length || 0} proyectos`);
           
           // Guardar en localStorage como respaldo
           if (loadedData.projects) {
@@ -1446,28 +1513,25 @@ console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length 
             localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
             console.log('📦 Datos guardados en localStorage como respaldo');
           }
-       } else if (response.status === 401) {
-  console.warn('⚠️ Backend respondió 401. Continuando en modo local.');
-  
-  // ⚠️ NO borrar token
-  // ⚠️ NO cerrar sesión
-  // ⚠️ NO redirigir al login
-
-  showNotification(
-    'No se pudo sincronizar con el servidor. Trabajando en modo local.',
-    'warning'
-  );
-
-  return []; // Continuar sin proyectos desde backend
-}
-
+        } else if (response.status === 401) {
+          console.warn('⚠️ Backend respondió 401. Continuando en modo local.');
+          
+          showNotification(
+            'No se pudo sincronizar con el servidor. Trabajando en modo local.',
+            'warning'
+          );
+          
+          // No hacemos return, continuamos a localStorage
+        }
       } catch (error) {
         console.warn('⚠️ Error cargando desde backend:', error.message);
       }
+    } else if (esClienteGenerado) {
+      console.log('🔧 Cliente generado - Saltando carga desde backend');
     }
   }
 
-  // ❌ Si no se pudo cargar desde backend, usar localStorage
+  // ❌ Si no se pudo cargar desde backend, usar localStorage (SIEMPRE)
   if (!loadedData || !loadedData.projects) {
     console.log('🔄 Usando datos de localStorage...');
     const savedProjects = localStorage.getItem('projects');
@@ -1478,6 +1542,22 @@ console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length 
           currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
         };
         console.log('✅ Datos cargados desde localStorage');
+        
+        // 🔥 NUEVO: Asegurar que los proyectos tengan el clienteId correcto
+        if (loadedData.projects && clienteId) {
+          let modificados = 0;
+          loadedData.projects.forEach(proj => {
+            if (!proj.clienteId) {
+              proj.clienteId = clienteId;
+              modificados++;
+            }
+          });
+          if (modificados > 0) {
+            console.log(`🔧 Actualizados ${modificados} proyectos con clienteId: ${clienteId}`);
+            // Guardar de nuevo con los IDs corregidos
+            localStorage.setItem('projects', JSON.stringify(loadedData.projects));
+          }
+        }
       } catch (error) {
         console.error('❌ Error parseando localStorage:', error);
       }
@@ -1489,6 +1569,12 @@ console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length 
     projects = loadedData.projects;
     currentProjectIndex = loadedData.currentProjectIndex || 0;
     console.log(`✅ ${projects.length} proyectos cargados`);
+    
+    // 🔥 NUEVO: Verificación final
+    console.log('📋 Resumen de proyectos:');
+    projects.forEach((p, i) => {
+      console.log(`   ${i+1}. "${p.name}" - clienteId: ${p.clienteId || 'NO DEFINIDO'}`);
+    });
   } else {
     console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
   }
@@ -1496,7 +1582,6 @@ console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length 
   console.groupEnd();
   return !!loadedData;
 }
-
 
 
 
@@ -12512,22 +12597,55 @@ async function login() {
       localStorage.setItem('authToken', authToken);
       localStorage.setItem('userRole', data.user.role || 'viewer');
       
-      // ==================== 🔥 GUARDAR CLIENTEID ====================
-      if (data.user && data.user.clienteId) {
-        localStorage.setItem('clienteId', data.user.clienteId);
-        console.log('🏢 Cliente ID guardado:', data.user.clienteId);
-      } else {
-        console.warn('⚠️ No se recibió clienteId del backend');
+      // ==================== 🔥 NUEVA VERSIÓN CORREGIDA ====================
+      let clienteIdGuardado = null;
+      
+      // OPCIÓN 1: Intentar obtener del token
+      try {
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        console.log('🔑 Token payload:', payload);
+        
+        if (payload.clienteId || payload.clienteid) {
+          clienteIdGuardado = payload.clienteId || payload.clienteid;
+          console.log('🏢 Cliente ID desde token:', clienteIdGuardado);
+        }
+      } catch (e) {
+        console.warn('⚠️ Error decodificando token:', e.message);
       }
-      // ==================== FIN ====================
+      
+      // OPCIÓN 2: Si no vino en el token, usar el del objeto user
+      if (!clienteIdGuardado && data.user && data.user.clienteId) {
+        clienteIdGuardado = data.user.clienteId;
+        console.log('🏢 Cliente ID desde user:', clienteIdGuardado);
+      }
+      
+      // OPCIÓN 3: Si el usuario tiene un campo _id (por si acaso)
+      if (!clienteIdGuardado && data.user && data.user._id) {
+        clienteIdGuardado = data.user._id;
+        console.log('🏢 Usando _id como clienteId:', clienteIdGuardado);
+      }
+      
+      // OPCIÓN 4: Para usuarios de prueba sin clienteId, generar uno basado en email
+      if (!clienteIdGuardado && data.user && data.user.email) {
+        // Crear un ID simple a partir del email (solo para prueba)
+        clienteIdGuardado = 'cliente_' + btoa(data.user.email).substring(0, 10);
+        console.log('🏢 Cliente ID generado (para prueba):', clienteIdGuardado);
+      }
+      
+      // Guardar el clienteId SIEMPRE
+      if (clienteIdGuardado) {
+        localStorage.setItem('clienteId', clienteIdGuardado);
+        console.log('✅ Cliente ID guardado en localStorage:', clienteIdGuardado);
+      } else {
+        console.error('❌ NO SE PUDO OBTENER CLIENTEID');
+        // Fallback: usar el email como ID
+        const fallbackId = 'user_' + (data.user?.email || Date.now());
+        localStorage.setItem('clienteId', fallbackId);
+        console.log('⚠️ Usando fallback ID:', fallbackId);
+      }
       
       // Guardar usuario completo
       localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // 🔥 NUEVO: Cargar transcripciones inmediatamente
-      setTimeout(() => {
-        cargarTranscripciones();
-      }, 500);
       
       // Recargar para aplicar cambios
       location.reload();
@@ -12540,8 +12658,6 @@ async function login() {
     document.getElementById('loginError').textContent = 'Error de conexión con el servidor';
   }
 }
-
-
 
 
 // === MOSTRAR PANTALLA DE LOGIN/REGISTRO ===
@@ -12834,6 +12950,7 @@ function showNotification(message) {
     setTimeout(() => document.body.removeChild(notif), 3000);
 }
 // ==================== ACTUALIZAR LOCALSTORAGE Y BACKEND ====================
+// ==================== UPDATE LOCAL STORAGE MEJORADO ====================
 function updateLocalStorage() {
     // Obtener clienteId del localStorage
     const clienteId = localStorage.getItem('clienteId');
@@ -12842,12 +12959,233 @@ function updateLocalStorage() {
     safeSave(clienteId).then(() => {
         console.log('🔄 Datos persistidos (localStorage + backend si está disponible)');
         console.log('🏢 Cliente ID:', clienteId);
+        
+        // ===== 🔥 NUEVO: Forzar actualización de todas las vistas =====
+        refreshAllViews();
+        
     }).catch(error => {
         console.error('❌ Error al persistir datos:', error);
         showNotification('Error al guardar datos', 'error');
     });
 }
 
+// ===== FUNCIÓN PARA REFRESCAR TODAS LAS VISTAS =====
+function refreshAllViews() {
+    console.log('📊 Actualizando todas las vistas después de cambios...');
+    
+    // Actualizar dashboard si está visible
+    if (typeof renderDashboard === 'function') {
+        try {
+            renderDashboard();
+            console.log('✅ Dashboard actualizado');
+        } catch(e) {
+            console.warn('⚠️ Error en renderDashboard:', e);
+        }
+    }
+    
+    // Actualizar estadísticas
+    if (typeof updateStatistics === 'function') {
+        try {
+            updateStatistics();
+            console.log('✅ Estadísticas actualizadas');
+        } catch(e) {
+            console.warn('⚠️ Error en updateStatistics:', e);
+        }
+    }
+    
+    // Actualizar reportes
+    if (typeof generateReports === 'function') {
+        try {
+            generateReports();
+            console.log('✅ Reportes actualizados');
+        } catch(e) {
+            console.warn('⚠️ Error en generateReports:', e);
+        }
+    }
+    
+    // 🔥 ACTUALIZAR ESTADO DEL PROYECTO (ETIQUETA "En tiempo" / "A destiempo")
+    if (typeof updateProjectStatusLabel === 'function') {
+        try {
+            updateProjectStatusLabel();
+            console.log('✅ Etiqueta de estado actualizada');
+        } catch(e) {
+            console.warn('⚠️ Error en updateProjectStatusLabel:', e);
+        }
+    }
+    
+    // Actualizar estado de salud del proyecto
+    if (typeof updateProjectHealthStatus === 'function') {
+        try {
+            updateProjectHealthStatus();
+            console.log('✅ Salud del proyecto actualizada');
+        } catch(e) {
+            console.warn('⚠️ Error en updateProjectHealthStatus:', e);
+        }
+    }
+    
+    // Actualizar fechas del proyecto
+    if (typeof updateProjectDatesFromTasks === 'function') {
+        try {
+            updateProjectDatesFromTasks();
+            console.log('✅ Fechas del proyecto actualizadas');
+        } catch(e) {
+            console.warn('⚠️ Error en updateProjectDatesFromTasks:', e);
+        }
+    }
+    
+    // Actualizar gráfico de pastel
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        try {
+            generatePieChart(getStats());
+            console.log('✅ Gráfico actualizado');
+        } catch(e) {
+            console.warn('⚠️ Error en generatePieChart:', e);
+        }
+    }
+    
+    // Actualizar vista de tareas (Kanban)
+    if (typeof renderKanbanTasks === 'function') {
+        try {
+            renderKanbanTasks();
+            console.log('✅ Vista Kanban actualizada');
+        } catch(e) {
+            console.warn('⚠️ Error en renderKanbanTasks:', e);
+        }
+    }
+    
+    // Actualizar progreso del proyecto
+    if (typeof updateProjectProgress === 'function') {
+        try {
+            updateProjectProgress();
+            console.log('✅ Progreso actualizado');
+        } catch(e) {
+            console.warn('⚠️ Error en updateProjectProgress:', e);
+        }
+    }
+    
+    console.log('🎉 Todas las vistas actualizadas correctamente');
+}
+
+// ===== FUNCIÓN PARA ACTUALIZAR LA ETIQUETA DE ESTADO (si no existe) =====
+if (typeof updateProjectStatusLabel !== 'function') {
+    window.updateProjectStatusLabel = function() {
+        console.log('🏷️ Actualizando etiqueta de estado...');
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks || project.tasks.length === 0) {
+            const label = document.getElementById('projectStatusLabel');
+            if (label) {
+                label.textContent = 'Sin tareas';
+                label.classList.remove('onTime', 'offTime');
+            }
+            return;
+        }
+
+        // CALCULAR TIEMPO TOTAL Y REGISTRADO DEL PROYECTO
+        const tiempoTotal = project.totalProjectTime || 0;
+        const tiempoRegistrado = project.tasks.reduce((sum, task) => sum + (task.timeLogged || 0), 0);
+        
+        // TIEMPO RESTANTE = TIEMPO TOTAL - TIEMPO REGISTRADO
+        const tiempoRestante = tiempoTotal - tiempoRegistrado;
+        const isOnTime = tiempoRestante >= 0;
+
+        const label = document.getElementById('projectStatusLabel');
+        if (label) {
+            label.classList.remove('onTime', 'offTime');
+            if (isOnTime) {
+                label.classList.add('onTime');
+                label.textContent = 'En tiempo';
+            } else {
+                label.classList.add('offTime');
+                label.textContent = 'A destiempo';
+            }
+        }
+    };
+    console.log('✅ Función updateProjectStatusLabel creada');
+}
+
+// ===== SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA MEJORADO =====
+(function() {
+    console.log('🔄 Inicializando sistema de actualización automática...');
+    
+    // Guardar referencia a funciones originales
+    const originalCreateNewTask = window.createNewTask;
+    const originalSaveTaskChanges = window.saveTaskChanges;
+    const originalDeleteTask = window.deleteTask;
+    const originalHandleDrop = window.handleDrop;
+    
+    // Sobrescribir createNewTask
+    if (typeof createNewTask === 'function') {
+        window.createNewTask = function(e) {
+            const result = originalCreateNewTask(e);
+            setTimeout(() => {
+                console.log('📊 Tarea creada - Actualizando vistas...');
+                refreshAllViews();
+            }, 200);
+            return result;
+        };
+        console.log('✅ createNewTask parcheada');
+    }
+    
+    // Sobrescribir saveTaskChanges
+    if (typeof saveTaskChanges === 'function') {
+        window.saveTaskChanges = function(taskId) {
+            const result = originalSaveTaskChanges(taskId);
+            setTimeout(() => {
+                console.log('📊 Tarea actualizada - Actualizando vistas...');
+                refreshAllViews();
+            }, 200);
+            return result;
+        };
+        console.log('✅ saveTaskChanges parcheada');
+    }
+    
+    // Sobrescribir deleteTask
+    if (typeof deleteTask === 'function') {
+        window.deleteTask = function(taskStr) {
+            const result = originalDeleteTask(taskStr);
+            setTimeout(() => {
+                console.log('📊 Tarea eliminada - Actualizando vistas...');
+                refreshAllViews();
+            }, 200);
+            return result;
+        };
+        console.log('✅ deleteTask parcheada');
+    }
+    
+    // Sobrescribir handleDrop (drag & drop)
+    if (typeof handleDrop === 'function') {
+        window.handleDrop = function(e) {
+            const result = originalHandleDrop(e);
+            setTimeout(() => {
+                console.log('📊 Tarea movida - Actualizando vistas...');
+                refreshAllViews();
+            }, 200);
+            return result;
+        };
+        console.log('✅ handleDrop parcheada');
+    }
+    
+    // También observar cambios en el modal de edición de tareas
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            const modal = document.getElementById('taskDetailsModal');
+            if (modal && modal.style.display === 'none' && mutation.type === 'attributes') {
+                // Cuando se cierra el modal de edición, actualizar
+                setTimeout(() => {
+                    refreshAllViews();
+                }, 300);
+            }
+        });
+    });
+    
+    const modal = document.getElementById('taskDetailsModal');
+    if (modal) {
+        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+        console.log('✅ Observer de modal configurado');
+    }
+    
+    console.log('✅ Sistema de actualización automática completamente operativo');
+})();
 function debounce(func, wait) {
   let timeout;
   return function() {
@@ -15120,6 +15458,7 @@ setTimeout(() => {
 /*************************
  * GESTIÓN DE PROYECTOS *
  *************************/
+// ==================== CREAR NUEVO PROYECTO CORREGIDO ====================
 function createNewProject() {
   // 👇 AÑADE ESTAS LÍNEAS AL INICIO 👇
   const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
@@ -15135,10 +15474,13 @@ function createNewProject() {
   const totalTime = prompt('Ingrese el tiempo total estimado del proyecto (horas):');
   const timeValue = totalTime ? parseFloat(totalTime) || 0 : 0;
 
+  // ===== 🔥 NUEVO: Crear proyecto con estructura COMPLETA =====
   const newProject = {
     name: projectName,
-    totalProjectTime: timeValue,
-    tasks: []
+    totalProjectTime: timeValue, // ← IMPORTANTE para estadísticas
+    tasks: [],
+    clienteId: localStorage.getItem('clienteId'), // ← Asignar clienteId actual
+    createdAt: new Date().toISOString() // ← Para tracking
   };
 
   projects.push(newProject);
@@ -15160,7 +15502,11 @@ function createNewProject() {
   selectProject(currentProjectIndex);
   actualizarAsignados();
   showNotification(`✅ Proyecto "${newProject.name}" creado`);
+  
+  // 🔥 Mensaje de ayuda
+  console.log('💡 Recuerda: Para que las estadísticas funcionen, asigna tiempo estimado a las tareas');
 }
+
 function renderProjects() {
   if (!projectListContainer) return;
   projectListContainer.innerHTML = '';
@@ -15454,29 +15800,23 @@ function createNewTask(e) {
     console.log('📌 STORY POINTS (number) →', storyPoints, typeof storyPoints);
 
     // ✅✅✅ TAREA CON TODOS LOS CAMPOS NECESARIOS ✅✅✅
-    const task = {
-        id: Date.now(),
-        name: taskName,
-        startDate: document.getElementById('taskStartDate')?.value || '',
-        deadline: document.getElementById('taskDeadline')?.value || '',
-        priority: document.getElementById('taskPriority')?.value || 'baja',
-        assignee: document.getElementById('taskAssignee')?.value || '',
-        description: document.getElementById('taskDescription')?.value || '',
-        status: 'pending',
-    progress: 0, // ← ¡AGREGA ESTA LÍNEA!
-        // 🔥 CAMPO CLAVE PARA EL BURNDOWN CHART
-        progress: 0, // ← ¡ESTO ES LO QUE FALTABA!
-
-        // 🔥 STORY POINTS CORRECTOS
-        storyPoints: storyPoints,
-        estimatedTime: storyPoints, // mismo valor, coherente
-
-        timeLogged: 0,
-        timeHistory: [],
-        subtasks: [],
-        dependencies: [],
-        file: taskFile
-    };
+   const task = {
+    id: Date.now(),
+    name: taskName,
+    startDate: document.getElementById('taskStartDate')?.value || new Date().toISOString().split('T')[0], // ← Fecha por defecto
+    deadline: document.getElementById('taskDeadline')?.value || new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0], // ← +7 días
+    priority: document.getElementById('taskPriority')?.value || 'baja',
+    assignee: document.getElementById('taskAssignee')?.value || '',
+    description: document.getElementById('taskDescription')?.value || '',
+    status: 'pending',
+    progress: 0, // ← ¡CRÍTICO!
+    estimatedTime: storyPoints, // ← Horas estimadas
+    timeLogged: 0,
+    timeHistory: [],
+    subtasks: [],
+    dependencies: [],
+    file: taskFile
+};
 
 
 
@@ -42253,3 +42593,7 @@ setTimeout(() => {
         cargarTranscripciones();
     }
 }, 3000);
+
+
+
+
