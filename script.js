@@ -12500,7 +12500,6 @@ async function login() {
 
     console.log('🚀 Respuesta del backend:', res.status, res.statusText);
 
-    // Intenta leer el cuerpo solo si hay contenido
     let data = {};
     if (res.headers.get('content-length') !== '0') {
       data = await res.json();
@@ -12513,21 +12512,25 @@ async function login() {
       localStorage.setItem('authToken', authToken);
       localStorage.setItem('userRole', data.user.role || 'viewer');
       
-      // ==================== 🔥 NUEVO: Guardar clienteId ====================
+      // ==================== 🔥 GUARDAR CLIENTEID ====================
       if (data.user && data.user.clienteId) {
         localStorage.setItem('clienteId', data.user.clienteId);
         console.log('🏢 Cliente ID guardado:', data.user.clienteId);
       } else {
         console.warn('⚠️ No se recibió clienteId del backend');
       }
-      // ==================== FIN NUEVO ====================
+      // ==================== FIN ====================
       
-      // 👇 COMENTA ESTO TEMPORALMENTE
-  // location.reload();
-  
-  // 👇 Agrega esto para ver el resultado sin recargar
-  console.log('✅ Login exitoso. ClienteId en localStorage:', localStorage.getItem('clienteId'));
-
+      // Guardar usuario completo
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // 🔥 NUEVO: Cargar transcripciones inmediatamente
+      setTimeout(() => {
+        cargarTranscripciones();
+      }, 500);
+      
+      // Recargar para aplicar cambios
+      location.reload();
 
     } else {
       document.getElementById('loginError').textContent = data.error || 'Error desconocido';
@@ -12537,6 +12540,9 @@ async function login() {
     document.getElementById('loginError').textContent = 'Error de conexión con el servidor';
   }
 }
+
+
+
 
 // === MOSTRAR PANTALLA DE LOGIN/REGISTRO ===
 function showLoginScreen() {
@@ -41871,29 +41877,85 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 // ==================== CARGAR TRANSCRIPCIONES DESDE MONGODB ====================
 async function cargarTranscripciones() {
     try {
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones');
+        // 🔥 OBTENER EL CLIENTEID DEL LOCALSTORAGE
+        const clienteId = localStorage.getItem('clienteId');
+        
+        if (!clienteId) {
+            console.warn('⚠️ No hay clienteId en localStorage');
+            mostrarMensajeSinTranscripciones();
+            return;
+        }
+        
+        console.log('🔍 Cargando transcripciones para cliente:', clienteId);
+        
+        // 🔥 ENVIAR EL CLIENTEID EN LA URL
+        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`);
         const data = await response.json();
         
+        console.log('📥 Respuesta del backend:', data);
+        
         if (data.success && data.transcripciones && data.transcripciones.length > 0) {
+            console.log(`✅ Mostrando ${data.transcripciones.length} transcripciones`);
             mostrarTranscripciones(data.transcripciones);
         } else {
+            console.log('📭 No hay transcripciones para este cliente');
             mostrarMensajeSinTranscripciones();
         }
     } catch (error) {
-        console.error('Error cargando transcripciones:', error);
+        console.error('❌ Error cargando transcripciones:', error);
         mostrarMensajeSinTranscripciones();
     }
 }
 
 // ==================== MOSTRAR TRANSCRIPCIONES EN UI ====================
 function mostrarTranscripciones(transcripciones) {
-    // Buscar el contenedor del Transcriptor IA
-    const contenedor = document.querySelector('.transcriptor-container, #transcriptor, .ia-section, .transcriptor-view');
+    console.log('🎨 Mostrando transcripciones en UI:', transcripciones.length);
     
+    // 🔥 Buscar TODOS los posibles contenedores
+    const posiblesContenedores = [
+        '.transcriptor-container',
+        '#transcriptor',
+        '.ia-section',
+        '.transcriptor-view',
+        '#inicioView',  // La vista de inicio
+        '#dashboardView', // El dashboard
+        '#transcripciones-historial'
+    ];
+    
+    let contenedor = null;
+    
+    // Buscar cada posible selector
+    for (const selector of posiblesContenedores) {
+        const elemento = document.querySelector(selector);
+        if (elemento) {
+            contenedor = elemento;
+            console.log(`✅ Contenedor encontrado: ${selector}`);
+            break;
+        }
+    }
+    
+    // Si no encuentra contenedor, buscar por texto
     if (!contenedor) {
-        console.warn('No se encontró contenedor de transcriptor, creando uno nuevo');
-        crearContenedorTranscripciones(transcripciones);
-        return;
+        // Buscar cualquier elemento que contenga "Transcripción" o "Transcriptor"
+        const todosLosElementos = document.querySelectorAll('div, section, main');
+        for (const el of todosLosElementos) {
+            const texto = el.textContent || '';
+            if (texto.includes('Transcripción') || texto.includes('Transcriptor')) {
+                contenedor = el;
+                console.log('✅ Contenedor encontrado por texto:', el);
+                break;
+            }
+        }
+    }
+    
+    // Si aún no encuentra, crear contenedor
+    if (!contenedor) {
+        console.log('⚠️ No se encontró contenedor, creando uno en inicioView');
+        contenedor = document.getElementById('inicioView');
+        if (!contenedor) {
+            console.error('❌ No hay inicioView, creando contenedor en body');
+            contenedor = document.body;
+        }
     }
     
     // Crear o buscar el área de historial
@@ -41901,13 +41963,40 @@ function mostrarTranscripciones(transcripciones) {
     if (!historial) {
         historial = document.createElement('div');
         historial.id = 'transcripciones-historial';
-        historial.className = 'transcripciones-historial';
-        historial.innerHTML = '<h3>📋 Historial de Transcripciones</h3>';
+        historial.style.cssText = `
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+        `;
         contenedor.appendChild(historial);
+        console.log('✅ Creado nuevo contenedor de historial');
     }
     
     // Limpiar y mostrar
-    historial.innerHTML = '<h3>📋 Historial de Transcripciones</h3>';
+    historial.innerHTML = `
+        <h3 style="color: #8b5cf6; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">📋</span> 
+            Historial de Transcripciones
+            <span style="background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 20px; font-size: 14px;">
+                ${transcripciones.length}
+            </span>
+        </h3>
+    `;
+    
+    if (transcripciones.length === 0) {
+        historial.innerHTML += `
+            <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
+                <h4 style="color: white; margin-bottom: 10px;">No hay transcripciones</h4>
+                <p>Las transcripciones de Teams aparecerán aquí automáticamente</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Ordenar por fecha (más reciente primero)
+    transcripciones.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     
     transcripciones.forEach(t => {
         const fecha = new Date(t.fecha).toLocaleString();
@@ -41915,29 +42004,80 @@ function mostrarTranscripciones(transcripciones) {
         item.className = 'transcripcion-item';
         item.onclick = () => verDetalleTranscripcion(t);
         
+        item.style.cssText = `
+            border-left: 4px solid #8b5cf6;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        `;
+        
+        item.onmouseover = function() {
+            this.style.background = 'rgba(139, 92, 246, 0.15)';
+            this.style.transform = 'translateX(5px)';
+        };
+        
+        item.onmouseout = function() {
+            this.style.background = 'rgba(255,255,255,0.05)';
+            this.style.transform = 'translateX(0)';
+        };
+        
+        // Formatear resumen
+        let resumenHTML = t.resumen || 'Sin resumen';
+        if (resumenHTML.length > 200) {
+            resumenHTML = resumenHTML.substring(0, 200) + '...';
+        }
+        
         item.innerHTML = `
-            <div style="border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 15px; background: #1e1e2f; border-radius: 8px; cursor: pointer;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <strong style="color: #4CAF50;">${t.titulo || 'Sin título'}</strong>
-                    <span style="color: #888; font-size: 12px;">${fecha}</span>
-                </div>
-                <div style="color: #ddd; margin-bottom: 10px; font-size: 14px;">
-                    ${t.resumen || 'Sin resumen'}
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    ${t.keyPoints ? t.keyPoints.slice(0, 3).map(kp => 
-                        `<span style="background: #2c3e50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${kp.substring(0, 30)}...</span>`
-                    ).join('') : ''}
-                </div>
-                ${t.acciones && t.acciones.length > 0 ? `
-                    <div style="margin-top: 10px; color: #f39c12; font-size: 12px;">
-                        ⚡ ${t.acciones.length} acción(es) pendiente(s)
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                        <span style="font-size: 20px;">📝</span>
+                        <strong style="color: #8b5cf6; font-size: 18px;">${t.titulo || 'Transcripción'}</strong>
                     </div>
-                ` : ''}
+                    <div style="color: #94a3b8; font-size: 13px; display: flex; align-items: center; gap: 15px;">
+                        <span>📅 ${fecha}</span>
+                        <span>🔑 ${t.clienteId}</span>
+                    </div>
+                </div>
+                <span style="background: #8b5cf6; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px;">
+                    Teams
+                </span>
+            </div>
+            
+            <div style="color: #e2e8f0; margin-bottom: 15px; line-height: 1.5;">
+                ${resumenHTML}
+            </div>
+            
+            ${t.keyPoints && t.keyPoints.length > 0 ? `
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+                    ${t.keyPoints.slice(0, 3).map(kp => `
+                        <span style="background: #2d3748; color: #a0aec0; padding: 4px 12px; border-radius: 15px; font-size: 12px;">
+                            ${kp.substring(0, 30)}${kp.length > 30 ? '...' : ''}
+                        </span>
+                    `).join('')}
+                    ${t.keyPoints.length > 3 ? `<span style="color: #8b5cf6; font-size: 12px;">+${t.keyPoints.length-3} más</span>` : ''}
+                </div>
+            ` : ''}
+            
+            ${t.acciones && t.acciones.length > 0 ? `
+                <div style="color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+                    <span>⚡</span>
+                    <span><strong>Acciones:</strong> ${t.acciones.length} pendiente(s)</span>
+                </div>
+            ` : ''}
+            
+            <div style="margin-top: 10px; color: #4a5568; font-size: 12px; display: flex; justify-content: flex-end;">
+                <span>Haz clic para ver detalles completos →</span>
             </div>
         `;
+        
         historial.appendChild(item);
     });
+    
+    console.log('✅ Transcripciones mostradas en UI');
 }
 
 // ==================== CREAR CONTENEDOR SI NO EXISTE ====================
@@ -42102,3 +42242,14 @@ function getCurrentUserCompleto() {
     return null;
   }
 }
+
+
+
+
+
+// ===== PARCHE TEMPORAL PARA TRANSCRIPCIONES =====
+setTimeout(() => {
+    if (localStorage.getItem('clienteId')) {
+        cargarTranscripciones();
+    }
+}, 3000);
