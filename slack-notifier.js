@@ -2,7 +2,9 @@
 // ✅ SLACK-NOTIFIER.JS - VERSIÓN CORREGIDA
 // ===================================================
 
-const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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";
+// Usar window para evitar doble declaración
+window.SLACK_WEBHOOK_URL = window.SLACK_WEBHOOK_URL || "https://hooks.slack.com/services/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";
+const SLACK_WEBHOOK_URL = window.SLACK_WEBHOOK_URL;
 
 async function sendSlackMessage(text, options = {}) {
   console.log(`📨 [Slack] ${text.substring(0, 50)}...`);
