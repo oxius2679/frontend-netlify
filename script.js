@@ -15493,9 +15493,9 @@ function createNewProject() {
 
 
 // 🔥 NOTIFICAR A SLACK - PROYECTO CREADO
-  if (window.SlackNotifier) {
-    window.SlackNotifier.projectCreated(newProject);
-  }
+if (window.SlackNotifier && typeof window.SlackNotifier.projectCreated === 'function') {
+  window.SlackNotifier.projectCreated(newProject);
+}
 
 
   // === AGREGAR ESTA LÍNEA ===
@@ -15889,11 +15889,10 @@ function createNewTask(e) {
         
         updateLocalStorage();
 
- // 🔥 NOTIFICAR A SLACK - TAREA CREADA
-        if (window.SlackNotifier) {
-            window.SlackNotifier.taskCreated(task, currentProject.name);
-        }
-        
+// 🔥 NOTIFICAR A SLACK - TAREA CREADA
+if (window.SlackNotifier && typeof window.SlackNotifier.taskCreated === 'function') {
+  window.SlackNotifier.taskCreated(task, currentProject.name);
+}        
         // 🔥 NOTIFICAR A OTROS USUARIOS
         if (tiempoRealSocket && tiempoRealSocket.connected) {
             tiempoRealSocket.emit('task-changed', {
@@ -43399,4 +43398,8 @@ setTimeout(() => {
         document.head.appendChild(script);
     }
 }, 1000);
+
+
+
+
 
