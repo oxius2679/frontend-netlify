@@ -48,3 +48,51 @@ async function sendSlackMessage(text, options = {}) {
 }
 
 // El resto de funciones (taskCreated, taskCompleted, etc.) IGUAL
+
+
+
+// Funciones auxiliares que necesita SlackNotifier
+async function testSlackConnection() {
+  console.log('🧪 Probando Slack vía backend...');
+  return await sendSlackMessage(
+    '🔄 *Prueba de conexión*\nSistema conectado a Slack vía backend.\n📅 ' + new Date().toLocaleString(),
+    { title: '✅ Conexión Exitosa', color: '#2ecc71', emoji: ':white_check_mark:' }
+  );
+}
+
+function getSlackStatus() {
+  return {
+    enabled: true,
+    usando: 'Backend en Render',
+    token: localStorage.getItem('authToken') ? '✓ Token presente' : '✗ Sin token'
+  };
+}
+
+// Funciones de notificación (si no existen, créalas)
+async function notifyTaskCreated(task, projectName) {
+  const text = `📝 *Tarea Creada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}\n• *Responsable:* ${task.assignee || 'Sin asignar'}`;
+  return sendSlackMessage(text, { title: '✅ Nueva Tarea', color: '#3498db', emoji: ':sparkles:' });
+}
+
+// ... (similar para las demás funciones)
+
+// ===================================================
+// 🚀 EXPORTAR FUNCIONES (ESTO ES LO QUE FALTABA)
+// ===================================================
+window.SlackNotifier = {
+  send: sendSlackMessage,
+  taskCreated: notifyTaskCreated,
+  taskCompleted: notifyTaskCompleted,
+  taskUpdated: notifyTaskUpdated,
+  taskDeleted: notifyTaskDeleted,
+  taskMoved: notifyTaskMoved,
+  projectCreated: notifyProjectCreated,
+  reportGenerated: notifyReportGenerated,
+  overdueTasks: notifyOverdueTasks,
+  riskAdded: notifyRiskAdded,
+  test: testSlackConnection,
+  getStatus: getSlackStatus
+};
+
+console.log('✅ SlackNotifier CARGADO CORRECTAMENTE');
+console.log('📊 Funciones disponibles:', Object.keys(window.SlackNotifier));
