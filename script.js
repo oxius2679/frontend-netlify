@@ -14183,7 +14183,7 @@ function renderCalendar() {
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     headerToolbar: {
-      left: 'prev,next today',
+      left: 'prev,next',
       center: 'title',
       right: 'dayGridMonth,timeGridWeek,timeGridDay'
     },
@@ -15491,6 +15491,13 @@ function createNewProject() {
   // 💾 persistir
   updateLocalStorage();
 
+
+// 🔥 NOTIFICAR A SLACK - PROYECTO CREADO
+  if (window.SlackNotifier) {
+    window.SlackNotifier.projectCreated(newProject);
+  }
+
+
   // === AGREGAR ESTA LÍNEA ===
   if (window.syncManager) window.syncManager.notifyChange('project-changed', { 
       action: 'created', 
@@ -15869,12 +15876,6 @@ function createNewTask(e) {
     file: taskFile
 };
 
-
-
-
-
-
-
     console.log('✅ Tarea creada:', task);
     console.group('🧪 STORY POINTS CHECK');
     console.log('storyPoints →', task.storyPoints);
@@ -15887,6 +15888,11 @@ function createNewTask(e) {
         console.log('✅ Tarea agregada al proyecto:', task.name);
         
         updateLocalStorage();
+
+ // 🔥 NOTIFICAR A SLACK - TAREA CREADA
+        if (window.SlackNotifier) {
+            window.SlackNotifier.taskCreated(task, currentProject.name);
+        }
         
         // 🔥 NOTIFICAR A OTROS USUARIOS
         if (tiempoRealSocket && tiempoRealSocket.connected) {
@@ -15935,6 +15941,18 @@ function deleteTask(taskStr) {
     // 🔥 NOTIFICAR ANTES de eliminar
     console.log('🔔 Intentando notificar eliminación...');
     
+
+const project = projects[currentProjectIndex];
+    const projectName = project.name;
+
+ // 🔥 NOTIFICAR A SLACK - TAREA ELIMINADA
+    if (window.SlackNotifier) {
+      window.SlackNotifier.taskDeleted(task.name, projectName);
+    }
+
+
+
+// 🔥 NOTIFICAR A OTROS USUARIOS
     if (tiempoRealSocket && tiempoRealSocket.connected) {
       tiempoRealSocket.emit('task-changed', {
         projectId: currentProjectIndex,
@@ -17188,6 +17206,7 @@ function saveTaskChanges(taskId) {
     };
     // Actualizar la tarea en el array
     project.tasks[taskIndex] = editedTask;
+
     // Guardar y actualizar UI
     updateLocalStorage();
     renderKanbanTasks();
@@ -17201,6 +17220,13 @@ function saveTaskChanges(taskId) {
     // Actualizar fechas del proyecto
     const { earliestDate, latestDate } = calculateProjectDatesFromTasks(project);
     updateProjectDatesInDashboard(earliestDate, latestDate);
+
+// 🔥 NOTIFICAR A SLACK - TAREA ACTUALIZADA
+    if (window.SlackNotifier && changes.length > 0) {
+      window.SlackNotifier.taskUpdated(editedTask, project.name, changes.join(', '));
+    }
+
+
     // Notificar a otros usuarios
     if (tiempoRealSocket && tiempoRealSocket.connected) {
       tiempoRealSocket.emit('task-changed', {
@@ -17373,6 +17399,8 @@ setTimeout(() => {
     aplicarFiltros();
     updateStatistics();
     updateResourceAllocation(); // <-- Esta es la línea que agregas
+    generatePieChart(getStats());
+    refreshBurndown();
 
 
  // 🔥 AGREGAR NOTIFICACIÓN PARA DRAG & DROP
@@ -17627,9 +17655,13 @@ function checkOverdueTasks() {
            updateProjectProgress();
            actualizarAsignados();
     showNotification('Tareas actualizadas: algunas han sido marcadas como "Rezagadas"');
+
+// 🔥 NOTIFICAR A SLACK - TAREAS ATRASADAS
+    if (window.SlackNotifier && overdueTasksList.length > 0) {
+      window.SlackNotifier.overdueTasks(overdueTasksList, projects[currentProjectIndex].name);
   }
 }
-
+}
 /***********************
  * FUNCIONES DE REPORTES *
  ***********************/
@@ -26516,6 +26548,15 @@ console.log('💡 Usa setupProjectCommand() en la consola si necesitas forzar la
 // === FUNCIÓN GLOBAL PARA GENERAR REPORTE (accesible desde el asistente) ===
 function generateStatusReportPDF() {
   console.log("🎤 generateStatusReportPDF ejecutado");
+
+// 🔥 NOTIFICAR A SLACK - REPORTE GENERADO
+  if (window.SlackNotifier) {
+    const project = projects[currentProjectIndex];
+    if (project) {
+      window.SlackNotifier.reportGenerated(project.name, 'Reporte de Estado');
+    }
+  }
+
   try {
     generateProjectReport(); // Esta función SÍ existe y ya incluye gráfico + bloques de tiempo
   } catch (err) {
@@ -38494,6 +38535,13 @@ function agregarRiesgo() {
     let items = JSON.parse(localStorage.getItem(`risks_${projectId}`) || '[]');
     items.push(texto.trim());
     localStorage.setItem(`risks_${projectId}`, JSON.stringify(items));
+
+// 🔥 NOTIFICAR A SLACK - RIESGO AGREGADO
+    if (window.SlackNotifier) {
+      window.SlackNotifier.riskAdded(texto.trim(), project.name);
+    }
+
+
     loadDashboardProjectData();
 }
 
@@ -43101,3 +43149,236 @@ setTimeout(() => {
 
 
 
+
+
+
+
+
+
+// ============================================
+// INTEGRACIÓN CON SLACK VÍA BACKEND
+// ============================================
+
+// Función para configurar Slack
+function configurarSlack(webhookUrl, canal = 'general') {
+    try {
+        if (!webhookUrl) {
+            console.error('❌ Debes proporcionar un webhook URL');
+            return false;
+        }
+        
+        if (!webhookUrl.includes('hooks.slack.com/services/')) {
+            console.error('❌ La URL no parece ser un webhook válido de Slack');
+            return false;
+        }
+        
+        // Guardar en localStorage
+        localStorage.setItem('slack_webhook', webhookUrl);
+        localStorage.setItem('slack_channel', canal);
+        
+        console.log('✅ Slack configurado correctamente');
+        console.log('📢 Webhook guardado:', webhookUrl);
+        console.log('💡 Ahora puedes usar: probarSlack()');
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Error:', error.message);
+        return false;
+    }
+}
+
+// Función para enviar notificación usando el backend
+async function enviarNotificacionSlack(mensaje, tipo = 'info') {
+    const webhookUrl = localStorage.getItem('slack_webhook');
+    const token = localStorage.getItem('authToken');
+    
+    if (!webhookUrl) {
+        console.error('❌ No hay webhook de Slack configurado');
+        console.log('💡 Usa: configurarSlack("URL_DEL_WEBHOOK")');
+        return false;
+    }
+    
+    if (!token) {
+        console.error('❌ No hay token de autenticación');
+        return false;
+    }
+    
+    const colores = {
+        info: '#3498db',
+        success: '#2ecc71',
+        warning: '#f39c12',
+        error: '#e74c3c'
+    };
+    
+    const payload = {
+        webhookUrl: webhookUrl,
+        mensaje: mensaje,
+        tipo: tipo,
+        color: colores[tipo] || colores.info
+    };
+    
+    try {
+        console.log('🔄 Enviando a Slack vía backend...');
+        
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ Notificación enviada a Slack:', data.message || 'OK');
+            return true;
+        } else {
+            console.error('❌ Error del backend:', data.error || 'Error desconocido');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión con el backend:', error.message);
+        return false;
+    }
+}
+
+// Función para probar Slack
+async function probarSlack() {
+    console.log('🔄 Probando integración con Slack...');
+    
+    const webhook = localStorage.getItem('slack_webhook');
+    if (!webhook) {
+        console.log('❌ No hay webhook configurado');
+        console.log('📝 Para configurar, ejecuta:');
+        console.log('   configurarSlack("https://hooks.slack.com/services/XXX/YYY/ZZZ")');
+        return;
+    }
+    
+    const resultado = await enviarNotificacionSlack(
+        '🔔 Prueba de integración desde el sistema de proyectos - ' + new Date().toLocaleString(),
+        'success'
+    );
+    
+    if (resultado) {
+        console.log('✅ Slack funciona correctamente');
+    } else {
+        console.log('❌ Slack no respondió correctamente');
+    }
+}
+
+// Función para notificar tarea completada
+async function notificarTareaCompletada(tarea, proyecto) {
+    const mensaje = `✅ Tarea completada: *${tarea.name}*\n📋 Proyecto: ${proyecto}\n👤 Responsable: ${tarea.assignee || 'No asignado'}`;
+    return await enviarNotificacionSlack(mensaje, 'success');
+}
+
+// Función para notificar tarea atrasada
+async function notificarTareaAtrasada(tarea, proyecto) {
+    const mensaje = `⚠️ *Tarea ATRASADA*\n📌 ${tarea.name}\n📋 Proyecto: ${proyecto}\n📅 Vencía: ${tarea.deadline ? new Date(tarea.deadline).toLocaleDateString() : 'Sin fecha'}`;
+    return await enviarNotificacionSlack(mensaje, 'warning');
+}
+
+// Función para notificar nuevo proyecto
+async function notificarNuevoProyecto(proyecto) {
+    const mensaje = `🚀 *Nuevo Proyecto Creado*\n📌 ${proyecto.name}\n📊 Tareas: ${proyecto.tasks?.length || 0}`;
+    return await enviarNotificacionSlack(mensaje, 'info');
+}
+
+console.log('✅ Funciones de Slack cargadas (vía backend)');
+console.log('📝 Para configurar Slack, usa:');
+console.log('   configurarSlack("https://hooks.slack.com/services/TU/WEBHOOK/AQUI")');
+
+
+
+
+
+
+
+
+
+// ===================================================
+// 🔧 INICIALIZAR SISTEMA DE SLACK
+// ===================================================
+function initSlackNotifications() {
+  console.log('🔔 Inicializando sistema de notificaciones Slack...');
+  
+  // Verificar que SlackNotifier está disponible
+  if (!window.SlackNotifier) {
+    console.error('❌ SlackNotifier no encontrado');
+    return false;
+  }
+  
+  // Probar conexión (opcional)
+  setTimeout(() => {
+    if (confirm('¿Activar notificaciones a Slack?')) {
+      SlackNotifier.test();
+    }
+  }, 5000);
+  
+  return true;
+}
+
+// Inicializar después de cargar todo
+setTimeout(initSlackNotifications, 3000);
+
+
+
+
+
+
+// Comandos de prueba para Slack
+window.testSlack = {
+  test: () => SlackNotifier ? SlackNotifier.test() : console.error('SlackNotifier no disponible'),
+  taskCreated: () => {
+    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
+    const task = { 
+      name: 'Tarea de prueba', 
+      assignee: 'Usuario', 
+      priority: 'alta' 
+    };
+    SlackNotifier.taskCreated(task, 'Proyecto Demo');
+  },
+  taskCompleted: () => {
+    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
+    const task = { 
+      name: 'Tarea completada', 
+      assignee: 'Usuario', 
+      estimatedTime: 8,
+      timeLogged: 7.5
+    };
+    SlackNotifier.taskCompleted(task, 'Proyecto Demo');
+  },
+  taskMoved: () => {
+    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
+    const task = { name: 'Tarea movida' };
+    SlackNotifier.taskMoved(task, 'pending', 'inProgress', 'Proyecto Demo');
+  },
+  overdue: () => {
+    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
+    const tasks = [
+      { name: 'Tarea 1 atrasada', deadline: '2024-01-01' },
+      { name: 'Tarea 2 atrasada', deadline: '2024-01-02' }
+    ];
+    SlackNotifier.overdueTasks(tasks, 'Proyecto Demo');
+  },
+  risk: () => {
+    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
+    SlackNotifier.riskAdded('Riesgo de seguridad detectado', 'Proyecto Demo');
+  },
+  status: () => SlackNotifier ? SlackNotifier.getStatus() : console.error('SlackNotifier no disponible'),
+  disable: () => SlackNotifier ? SlackNotifier.setEnabled(false) : console.error('SlackNotifier no disponible'),
+  enable: () => SlackNotifier ? SlackNotifier.setEnabled(true) : console.error('SlackNotifier no disponible')
+};
+
+console.log('🎮 Comandos de prueba para Slack:');
+console.log('testSlack.test() - Probar conexión');
+console.log('testSlack.taskCreated() - Simular tarea creada');
+console.log('testSlack.taskCompleted() - Simular tarea completada');
+console.log('testSlack.taskMoved() - Simular tarea movida');
+console.log('testSlack.overdue() - Simular tareas atrasadas');
+console.log('testSlack.risk() - Simular riesgo agregado');
+console.log('testSlack.status() - Ver estado de Slack');
+console.log('testSlack.disable() - Desactivar Slack');
+console.log('testSlack.enable() - Activar Slack');
