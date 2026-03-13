@@ -195,12 +195,12 @@
 
     <script>
         // ===================================================
-        // CONFIGURACIÓN DE SLACK - VERSIÓN ÚNICA Y CORREGIDA
+        // CONFIGURACIÓN DE SLACK - VERSIÓN CORREGIDA
         // ===================================================
 
         const API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
-        // Función para conectar Slack
+        // Función para conectar Slack (CORREGIDA)
         async function connectSlack() {
             const token = localStorage.getItem('authToken');
             
@@ -214,7 +214,10 @@
                 const btn = document.getElementById('connect-slack-btn');
                 btn.innerHTML = '🔄 Conectando...';
                 btn.disabled = true;
-                window.location.href = `${API_URL}/api/slack/install`;
+                
+                // 🔥 IMPORTANTE: Enviar token como query parameter
+                window.location.href = `${API_URL}/api/slack/install?token=${encodeURIComponent(token)}`;
+                
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ Error al conectar. Intenta de nuevo.');
@@ -305,9 +308,10 @@
             }
         }
 
-        // Eventos
+        // Evento del botón
         document.getElementById('connect-slack-btn').addEventListener('click', connectSlack);
 
+        // Función para reconectar
         window.reconnectSlack = function() {
             connectSlack();
         };
