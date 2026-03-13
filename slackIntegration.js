@@ -1,9 +1,19 @@
 // ===================================================
-// ✅ SLACK INTEGRATION - VERSIÓN CON VARIABLES DE ENTORNO
+// ✅ SLACK INTEGRATION - VERSIÓN SIN IMPORT.META
 // ===================================================
 
-// Obtener webhook desde variable de entorno (Vite)
-const SLACK_WEBHOOK_URL = import.meta.env.VITE_SLACK_WEBHOOK_URL || "";
+// Obtener webhook desde variable global o localStorage
+const SLACK_WEBHOOK_URL = (function() {
+    // Intentar desde variable global (si la defines en index.html)
+    if (window.VITE_SLACK_WEBHOOK_URL) return window.VITE_SLACK_WEBHOOK_URL;
+    
+    // Intentar desde localStorage (para pruebas)
+    const saved = localStorage.getItem('VITE_SLACK_WEBHOOK_URL');
+    if (saved) return saved;
+    
+    // En desarrollo local, simular
+    return '';
+})();
 
 // Sistema de cola
 let messageQueue = [];
@@ -201,7 +211,7 @@ function setSlackEnabled(enabled) {
 function getSlackStatus() {
   return {
     enabled: window.__slackEnabled !== false,
-    webhookUrl: SLACK_WEBHOOK_URL ? "✓ Configurado" : "✗ No configurado",
+    webhookUrl: SLACK_WEBHOOK_URL ? "✓ Configurado" : "✗ No configurado (modo simulación)",
     queueLength: messageQueue.length,
     simulateLocal: !SLACK_WEBHOOK_URL
   };
@@ -226,4 +236,4 @@ window.SlackNotifier = {
   getStatus: getSlackStatus
 };
 
-console.log('✅ Slack cargado. Webhook:', SLACK_WEBHOOK_URL ? "✓" : "✗ (modo simulación)");
+console.log('✅ Slack cargado. Webhook:', SLACK_WEBHOOK_URL ? "✓ Configurado" : "✗ Modo simulación");
