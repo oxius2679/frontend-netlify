@@ -342,7 +342,7 @@ console.log("🔥 SCRIPT CORRECTO CARGADO v1");
 // ===== CONFIGURACIÓN GLOBAL MEJORADA =====
 window.API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
-const API_URL = window.API_URL;
+ const API_URL = window.API_URL;  
 console.log("🌐 API_URL cargado:", API_URL);
 
 // 🔐 Cargar token global SOLO UNA VEZ
@@ -43382,3 +43382,21 @@ console.log('testSlack.risk() - Simular riesgo agregado');
 console.log('testSlack.status() - Ver estado de Slack');
 console.log('testSlack.disable() - Desactivar Slack');
 console.log('testSlack.enable() - Activar Slack');
+
+
+
+
+// ============================================
+// 🚨 CARGA DE SLACK (AL FINAL)
+// ============================================
+setTimeout(() => {
+    if (!window.SlackNotifier) {
+        console.log('🔄 Cargando Slack manualmente...');
+        const script = document.createElement('script');
+        script.src = 'slackIntegration.js?' + Date.now();
+        script.onload = () => console.log('✅ Slack cargado');
+        script.onerror = () => console.error('❌ Error cargando Slack');
+        document.head.appendChild(script);
+    }
+}, 1000);
+
