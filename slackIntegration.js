@@ -3,18 +3,7 @@
 // ===================================================
 
 // Obtener webhook desde variable global o localStorage
-const SLACK_WEBHOOK_URL = (function() {
-    // Intentar desde variable global (si la defines en index.html)
-    if (window.VITE_SLACK_WEBHOOK_URL) return window.VITE_SLACK_WEBHOOK_URL;
-    
-    // Intentar desde localStorage (para pruebas)
-    const saved = localStorage.getItem('VITE_SLACK_WEBHOOK_URL');
-    if (saved) return saved;
-    
-    // En desarrollo local, simular
-    return '';
-})();
-
+const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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";
 // Sistema de cola
 let messageQueue = [];
 let isProcessing = false;
