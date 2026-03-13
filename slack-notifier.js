@@ -1,8 +1,6 @@
 // ===================================================
-// ✅ SLACK-NOTIFIER.JS - VERSIÓN FUNCIONAL
+// ✅ SLACK-NOTIFIER.JS - VERSIÓN ULTRA SIMPLE
 // ===================================================
-
-const SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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";
 
 async function sendSlackMessage(text, options = {}) {
   console.log(`📨 [Slack] ${text.substring(0, 50)}...`);
@@ -14,7 +12,8 @@ async function sendSlackMessage(text, options = {}) {
   }
 
   try {
-    const response = await fetch(`${window.API_URL}/api/slack-notify-user`, {
+    // USAR EL ENDPOINT CORRECTO
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,36 +34,27 @@ async function sendSlackMessage(text, options = {}) {
       console.log('✅ Mensaje enviado a Slack');
       return { success: true };
     } else {
-      throw new Error(data.error || 'Error desconocido');
+      console.error('❌ Error del servidor:', data);
+      return { success: false, error: data.error || 'Error desconocido' };
     }
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error de red:', error);
     return { success: false, error: error.message };
   }
 }
 
-// Funciones de notificación
-async function notifyTaskCreated(task, projectName) {
-  const text = `📝 *Tarea Creada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}`;
-  return sendSlackMessage(text, { title: '✅ Nueva Tarea', color: '#3498db' });
-}
-
-async function notifyTaskCompleted(task, projectName) {
-  const text = `✅ *Tarea Completada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}`;
-  return sendSlackMessage(text, { title: '🎉 Completada', color: '#2ecc71' });
-}
-
 async function testSlackConnection() {
-  return sendSlackMessage('🔄 *Prueba de conexión*\nSistema conectado a Slack.\n📅 ' + new Date().toLocaleString(), 
-    { title: '✅ Conexión Exitosa', color: '#2ecc71' });
+  console.log('🧪 Probando Slack...');
+  return await sendSlackMessage(
+    '🔄 *Prueba de conexión*\nSistema conectado a Slack.\n📅 ' + new Date().toLocaleString(),
+    { title: '✅ Prueba', color: '#2ecc71' }
+  );
 }
 
-// Exportar
+// Exportar funciones
 window.SlackNotifier = {
   send: sendSlackMessage,
-  taskCreated: notifyTaskCreated,
-  taskCompleted: notifyTaskCompleted,
   test: testSlackConnection
 };
 
-console.log('✅ SlackNotifier listo');
+console.log('✅ SlackNotifier listo (versión ultra simple)');
