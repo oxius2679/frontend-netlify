@@ -195,35 +195,34 @@
 
     <script>
         // ===================================================
-        // CONFIGURACIÓN DE SLACK - PÁGINA INDEPENDIENTE
+        // CONFIGURACIÓN DE SLACK - VERSIÓN ÚNICA Y CORREGIDA
         // ===================================================
 
         const API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
-        // Verificar autenticación al cargar la página
-        function checkAuth() {
+        // Función para conectar Slack
+        async function connectSlack() {
             const token = localStorage.getItem('authToken');
-            const statusDiv = document.getElementById('slack-status');
             
             if (!token) {
-                statusDiv.innerHTML = `
-                    <div style="text-align: center;">
-                        <p style="color: #f59e0b; font-size: 18px; margin-bottom: 15px;">⚠️ No has iniciado sesión</p>
-                        <p style="color: #94a3b8; margin-bottom: 20px;">Para configurar Slack, primero debes iniciar sesión en el sistema.</p>
-                        <button onclick="goToLogin()" class="btn" style="width: auto; padding: 12px 30px; margin: 0 auto; display: inline-block;">
-                            🔑 Ir al inicio de sesión
-                        </button>
-                    </div>
-                `;
-                return false;
+                alert('❌ Debes iniciar sesión primero');
+                window.location.href = '/';
+                return;
             }
-            return true;
-        }
 
-        // Redirigir al inicio
-        window.goToLogin = function() {
-            window.location.href = '/';
-        };
+            try {
+                const btn = document.getElementById('connect-slack-btn');
+                btn.innerHTML = '🔄 Conectando...';
+                btn.disabled = true;
+                window.location.href = `${API_URL}/api/slack/install`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al conectar. Intenta de nuevo.');
+                const btn = document.getElementById('connect-slack-btn');
+                btn.innerHTML = '🔗 Conectar con Slack';
+                btn.disabled = false;
+            }
+        }
 
         // Verificar estado de Slack
         async function checkSlackStatus() {
@@ -236,9 +235,9 @@
                 statusDiv.innerHTML = `
                     <div style="text-align: center; padding: 20px;">
                         <p style="color: #f59e0b; font-size: 16px;">⚠️ Sesión no iniciada</p>
-                        <p style="color: #94a3b8; margin-top: 10px;">Por favor, inicia sesión primero.</p>
-                        <button onclick="goToLogin()" style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
-                            Iniciar sesión
+                        <p style="color: #94a3b8; margin-top: 10px;">Para configurar Slack, primero inicia sesión.</p>
+                        <button onclick="window.location.href='/'" style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                            Ir al inicio
                         </button>
                     </div>
                 `;
@@ -248,15 +247,26 @@
 
             try {
                 const response = await fetch(`${API_URL}/api/slack/webhook`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (response.status === 401) {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <p style="color: #ef4444; font-size: 16px;">❌ Sesión expirada</p>
+                            <p style="color: #94a3b8; margin-top: 10px;">Por favor, inicia sesión nuevamente.</p>
+                            <button onclick="window.location.href='/'" style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                                Iniciar sesión
+                            </button>
+                        </div>
+                    `;
+                    connectBtn.style.display = 'none';
+                    return;
+                }
 
                 const data = await response.json();
 
                 if (data.configured) {
-                    // Usuario ya tiene Slack conectado
                     statusDiv.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
@@ -270,7 +280,6 @@
                     `;
                     connectBtn.style.display = 'none';
                 } else {
-                    // Usuario no tiene Slack conectado
                     statusDiv.innerHTML = `
                         <div style="text-align: center;">
                             <div style="font-size: 48px; margin-bottom: 15px;">⚡</div>
@@ -296,26 +305,11 @@
             }
         }
 
-        // Iniciar conexión con Slack
-        document.getElementById('connect-slack-btn')?.addEventListener('click', () => {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                alert('Debes iniciar sesión primero');
-                window.location.href = '/';
-                return;
-            }
-            window.location.href = `${API_URL}/api/slack/install`;
-        });
+        // Eventos
+        document.getElementById('connect-slack-btn').addEventListener('click', connectSlack);
 
-        // Reconectar Slack
         window.reconnectSlack = function() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                alert('Debes iniciar sesión primero');
-                window.location.href = '/';
-                return;
-            }
-            window.location.href = `${API_URL}/api/slack/install`;
+            connectSlack();
         };
 
         // Verificar parámetros de retorno
@@ -324,7 +318,6 @@
             
             if (urlParams.get('slack') === 'success') {
                 alert('✅ Slack conectado exitosamente');
-                // Limpiar URL
                 window.history.replaceState({}, document.title, window.location.pathname);
                 checkSlackStatus();
             } else if (urlParams.get('slack') === 'error') {
@@ -335,14 +328,8 @@
         }
 
         // Inicializar
-        checkAuth();
         checkSlackStatus();
         checkUrlParams();
-
-        // Exponer función global para botones
-        window.goToLogin = function() {
-            window.location.href = '/';
-        };
     </script>
 </body>
 </html>
