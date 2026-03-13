@@ -79,6 +79,13 @@
         .btn-secondary {
             background: #4b5563;
             box-shadow: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: all 0.3s;
         }
         
         .btn-secondary:hover {
@@ -188,19 +195,19 @@
             
             <p class="info-text">
                 Al conectar Slack, autorizas a nuestra aplicación a enviar notificaciones al canal que selecciones. 
-                Puedes desconectar en cualquier momento.
+                Puedes desconectar en cualquier momento contactando al administrador.
             </p>
         </div>
     </div>
 
     <script>
         // ===================================================
-        // CONFIGURACIÓN DE SLACK - VERSIÓN CORREGIDA
+        // CONFIGURACIÓN DE SLACK - VERSIÓN MULTI-USUARIO
         // ===================================================
 
         const API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
-        // Función para conectar Slack (CORREGIDA)
+        // Función para conectar Slack
         async function connectSlack() {
             const token = localStorage.getItem('authToken');
             
@@ -215,7 +222,7 @@
                 btn.innerHTML = '🔄 Conectando...';
                 btn.disabled = true;
                 
-                // 🔥 IMPORTANTE: Enviar token como query parameter
+                // Enviar token por query param
                 window.location.href = `${API_URL}/api/slack/install?token=${encodeURIComponent(token)}`;
                 
             } catch (error) {
@@ -274,9 +281,9 @@
                         <div style="text-align: center;">
                             <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
                             <h3 style="color: #10b981; margin: 0 0 10px 0;">Slack Conectado</h3>
-                            <p style="color: white; margin: 10px 0;">Canal: <strong style="color: #8b5cf6;">${data.channel || '#general'}</strong></p>
-                            <p style="color: #94a3b8; margin: 5px 0;">Equipo: ${data.teamName || 'Desconocido'}</p>
-                            <button onclick="reconnectSlack()" class="btn btn-secondary" style="margin-top: 20px; width: auto; display: inline-block; padding: 10px 25px;">
+                            <p style="color: white; margin: 10px 0;">Canal: <strong style="color: #8b5cf6;">${data.channel}</strong></p>
+                            <p style="color: #94a3b8; margin: 5px 0;">Equipo: ${data.teamName}</p>
+                            <button onclick="reconnectSlack()" class="btn-secondary" style="margin-top: 20px;">
                                 🔄 Reconectar
                             </button>
                         </div>
@@ -299,7 +306,7 @@
                         <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
                         <h3 style="color: #ef4444; margin: 0 0 10px 0;">Error de conexión</h3>
                         <p style="color: #94a3b8;">No se pudo verificar el estado de Slack.</p>
-                        <button onclick="checkSlackStatus()" style="background: #4b5563; color: white; border: none; padding: 8px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                        <button onclick="checkSlackStatus()" class="btn-secondary" style="margin-top: 20px;">
                             Reintentar
                         </button>
                     </div>
@@ -308,8 +315,8 @@
             }
         }
 
-        // Evento del botón
-        document.getElementById('connect-slack-btn').addEventListener('click', connectSlack);
+        // Asignar evento al botón
+        document.getElementById('connect-slack-btn')?.addEventListener('click', connectSlack);
 
         // Función para reconectar
         window.reconnectSlack = function() {
@@ -334,6 +341,11 @@
         // Inicializar
         checkSlackStatus();
         checkUrlParams();
+
+        // Exponer función global para botones
+        window.goToLogin = function() {
+            window.location.href = '/';
+        };
     </script>
 </body>
 </html>
