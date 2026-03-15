@@ -1353,22 +1353,6 @@ checkBackendStatus(); // ejecutar inmediatamente al iniciar
 
 
 
-// Función para verificar estado del backend
-async function checkBackendStatus() {
-  try {
-    console.log('🔄 Verificando conexión con backend...');
-    const response = await fetch(`${API_URL}/api/health`);
-    if (response.ok) {
-      console.log('✅ Backend disponible');
-      useBackend = true;
-      return true;
-    }
-  } catch (error) {
-    console.warn('⚠️ Backend no disponible - Modo localStorage');
-    useBackend = false;
-  }
-  return false;
-}
 
 // ==================== SAFE SAVE MEJORADO ====================
 async function safeSave(clienteId) {
@@ -1430,22 +1414,84 @@ async function safeSave(clienteId) {
 
       if (response.ok) {
         console.log('✅ Datos guardados en MongoDB Atlas');
+
+
+  // 🚀 WebSocket: notificar a otros clientes
+  try {
+    var sock = window.tiempoRealSocket || window.rtSocket;
+    if (sock && sock.connected) {
+      var proj = projects[currentProjectIndex] || {};
+      sock.emit('task-changed', {
+        projectId: proj._id,
+        taskId: window.currentTaskId || taskId,
+        changes: { updated: new Date().toISOString() },
+        updatedBy: localStorage.getItem('userId') || 'unknown'
+      });
+      console.log('📡 Evento emitido');
+    }
+  } catch(e) {
+    console.log('⚠️ WebSocket skip:', e.message);
+  }
+
+
+  // 🚀 Notificar a otros clientes (WebSocket)
+  if (typeof window.initWebSocket === 'function' && currentProject?._id && taskId) {
+    try {
+      var socket = window.rtSocket || window.realtimeSocket;
+      if (socket && socket.connected) {
+        socket.emit('task-changed', {
+          projectId: currentProject._id,
+          taskId: taskId,
+          changes: { updated: new Date().toISOString() },
+          updatedBy: localStorage.getItem('userId') || 'unknown'
+        });
+      }
+    } catch(e) {}
+  }
+
+
+
+  
         console.log(`📊 Proyectos guardados para cliente: ${clienteId}`);
+        
+               // ===== 🔥 NOTIFICACIÓN EN TIEMPO REAL - VERSIÓN FINAL =====
+        if (typeof tiempoRealSocket !== 'undefined' && tiempoRealSocket && tiempoRealSocket.connected) {
+          console.log('📢 Enviando notificación en tiempo real...');
+          
+          // Obtener projectId correcto (usando projects array, NO currentProject)
+          var project = projects[currentProjectIndex];
+          var projectId = project ? (project._id || project.id) : null;
+          var taskId = window.currentTaskId || window.taskId || 'unknown';
+          
+          if (projectId && taskId) {
+            tiempoRealSocket.emit('task-changed', {
+              projectId: projectId,
+              taskId: taskId,
+              changes: { updated: new Date().toISOString() },
+              updatedBy: localStorage.getItem('userId') || 'unknown'
+            });
+            console.log('✅ Notificación enviada:', { projectId, taskId });
+          } else {
+            console.log('⚠️ Faltan projectId o taskId para WebSocket');
+          }
+        } else {
+          console.log('⚠️ WebSocket no conectado, otros usuarios verán cambios en 30s');
+        }
+        // ===== FIN NOTIFICACIÓN =====
+        
       } else {
         console.warn('⚠️ Error guardando en backend:', response.status);
         const errorData = await response.json().catch(() => ({}));
         console.warn('Detalle:', errorData);
       }
     } catch (error) {
-      console.warn('⚠️ Error de conexión, datos solo en localStorage:', error.message);
+      // console.warn silenciado
     }
   }
 
   console.groupEnd();
   return true;
 }
-
-
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
@@ -1583,6 +1629,42 @@ async function safeLoad() {
   return !!loadedData;
 }
 
+
+
+
+// Función para forzar refresco desde backend
+async function forceRefreshFromBackend() {
+    console.log('🔄 Forzando refresh desde backend...');
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        
+        if (!token) {
+            console.warn('⚠️ No hay token');
+            return;
+        }
+        
+        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Datos frescos recibidos');
+            
+            if (data.projects) {
+                window.projects = data.projects;
+                if (typeof refreshCurrentView === 'function') refreshCurrentView();
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+    }
+}
 
 
 
@@ -1925,6 +2007,7 @@ function setTaskStatus(task, newStatus) {
 
   // Actualizar estado
   task.status = newStatus;
+
 
   // 🔥 ACTUALIZAR PROGRESO SEGÚN EL ESTADO
   if (newStatus === 'completed') {
@@ -12423,106 +12506,252 @@ console.log('📋 Comando para iniciar: createPremiumGanttWithYourData()');
 let authToken = localStorage.getItem('authToken');
 
 
-// === SISTEMA DE TIEMPO REAL ===
-let tiempoRealSocket = null;
+// === SISTEMA DE TIEMPO REAL MEJORADO - VERSIÓN CORREGIDA ===
+// Variables globales para acceso desde cualquier parte
+window.tiempoRealSocket = null;
+window.socketConnected = false;
 
-
-// === SISTEMA HÍBRIDO WEBSOCKET + LOCALSTORAGE ===
-let useWebSocket = true;
-
-
-
-
-
-
+// Referencias locales (se mantienen sincronizadas)
+let tiempoRealSocket = window.tiempoRealSocket;
+let socketConnected = window.socketConnected;
 
 function initWebSocket() {
-  try {
-    if (typeof io === 'undefined') {
-      console.warn('⚠️ Socket.io no cargado, reintentando...');
-      setTimeout(initWebSocket, 2000);
-      return;
+    try {
+        if (typeof io === 'undefined') {
+            console.warn('⚠️ Socket.io no cargado, esperando...');
+            setTimeout(initWebSocket, 2000);
+            return;
+        }
+        
+        console.log('🔄 Iniciando WebSocket mejorado...');
+        
+        // Obtener token para autenticación
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.warn('⚠️ No hay token, WebSocket no iniciado');
+            return;
+        }
+        
+        // Cerrar conexión anterior si existe
+        if (window.tiempoRealSocket) {
+            window.tiempoRealSocket.disconnect();
+            window.tiempoRealSocket = null;
+            tiempoRealSocket = null;
+        }
+        
+        // Conectar con autenticación
+        const socket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
+            transports: ['websocket', 'polling'],
+            auth: { token: token },
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 10000
+        });
+        
+        // Guardar en variables globales y locales
+        window.tiempoRealSocket = socket;
+        tiempoRealSocket = socket;
+        
+        // Evento: conexión exitosa
+        socket.on('connect', function() {
+            console.log('🔗 WebSocket CONECTADO:', socket.id);
+            
+            // Actualizar estado
+            window.socketConnected = true;
+            socketConnected = true;
+            
+            // Unirse a la sala del proyecto actual
+            if (currentProjectIndex !== undefined && currentProjectIndex !== null) {
+                console.log('📡 Unido a sala de proyecto:', currentProjectIndex);
+                socket.emit('join-project', currentProjectIndex);
+            }
+            
+            // Mostrar notificación visual
+            if (typeof showNotification === 'function') {
+                showNotification('🔗 Conectado en tiempo real', 'success');
+            }
+        });
+        
+        // Evento: RECIBIR actualizaciones
+        socket.on('project-updated', function(data) {
+            console.log('🎯 RECIBIDO: project-updated', data);
+            console.log('📦 Datos del evento:', data);
+            
+            // Mostrar quién hizo el cambio
+            const userName = data.userName || 'Otro usuario';
+            if (typeof showNotification === 'function') {
+                showNotification(`📢 ${userName} actualizó el proyecto`, 'info');
+            }
+            
+            // Forzar actualización desde backend
+           refreshCurrentView();
+        });
+        
+        // Evento: cuando alguien se une
+        socket.on('user-joined', function(data) {
+            console.log('👤 Usuario unido:', data);
+            if (typeof showNotification === 'function') {
+                showNotification(`👤 ${data.userName || 'Alguien'} se unió al proyecto`, 'info');
+            }
+        });
+        
+        // Evento: cuando alguien se desconecta
+        socket.on('user-left', function(data) {
+            console.log('👋 Usuario desconectado:', data);
+        });
+        
+        // Evento: error de autenticación
+        socket.on('connect_error', function(error) {
+            console.error('❌ Error de conexión WebSocket:', error.message);
+            
+            // Actualizar estado
+            window.socketConnected = false;
+            socketConnected = false;
+            
+            if (error.message.includes('auth')) {
+                console.warn('⚠️ Error de autenticación - token inválido');
+            }
+        });
+        
+        // Evento: desconexión
+        socket.on('disconnect', function(reason) {
+            console.log('🔌 WebSocket desconectado:', reason);
+            
+            // Actualizar estado
+            window.socketConnected = false;
+            socketConnected = false;
+            
+            if (reason === 'io server disconnect') {
+                // El servidor forzó la desconexión, intentar reconectar
+                setTimeout(initWebSocket, 3000);
+            }
+        });
+        
+        // Evento: reconexión exitosa
+        socket.on('reconnect', function(attemptNumber) {
+            console.log('🔄 WebSocket reconectado después de', attemptNumber, 'intentos');
+            
+            // Actualizar estado
+            window.socketConnected = true;
+            socketConnected = true;
+            
+            // Volver a unirse a la sala
+            if (currentProjectIndex !== undefined) {
+                socket.emit('join-project', currentProjectIndex);
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en initWebSocket:', error);
+        
+        // Actualizar estado
+        window.socketConnected = false;
+        socketConnected = false;
     }
-    
-    console.log('🔄 Iniciando WebSocket...');
-    tiempoRealSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
-      transports: ['websocket', 'polling']
-    });
-    
-    tiempoRealSocket.on('connect', function() {
-      console.log('🔗 Conectado al servidor en tiempo real');
-      if (window.currentProjectIndex !== null && window.currentProjectIndex !== undefined) {
-        tiempoRealSocket.emit('join-project', window.currentProjectIndex);
-      }
-      
-      // 🔥 CONFIGURAR LISTENERS PARA EVENTOS DE SALIDA
-      console.log('👂 Configurando listeners de salida...');
-    });
-    
-    // 🔥 LISTENER PARA EVENTOS ENTRANTES (RECIBIR)
-    tiempoRealSocket.on('task-updated', function(data) {
-      console.log('🎯 EVENTO RECIBIDO:', data);
-      refreshCurrentView();
-    });
-    
-    tiempoRealSocket.on('disconnect', function() {
-      console.log('🔌 Desconectado');
-    });
-    
-  } catch (error) {
-    console.error('❌ Error WebSocket:', error);
-  }
 }
-function refreshCurrentView() {
-  console.log('🔄 Sincronizando datos desde la base de datos...');
-  
-  // 🔥 FORZAR CARGA DESDE LA BASE DE DATOS COMPARTIDA
-  safeLoad().then(() => {
-    console.log('✅ Datos sincronizados desde MongoDB');
+
+// Función para forzar refresco desde backend
+async function forceRefreshFromBackend() {
+    console.log('🔄 Forzando refresh desde backend...');
     
     try {
-      if (typeof getActiveView !== 'function') return;
-      
-      const activeView = getActiveView();
-      console.log('🔄 Actualizando vista:', activeView);
-      
-      switch(activeView) {
-        case 'board':
-          if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-          break;
-        case 'list':
-          if (typeof renderListTasks === 'function') renderListTasks();
-          break;
-        case 'dashboard':
-          if (typeof renderDashboard === 'function') renderDashboard();
-          break;
-        case 'calendar':
-          if (typeof renderCalendar === 'function') renderCalendar();
-          break;
-        case 'gantt':
-          if (typeof renderGanttChart === 'function') renderGanttChart();
-          break;
-        case 'reports':
-          if (typeof generateReports === 'function') generateReports();
-          break;
-        default:
-          if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-      }
-      
-      // Actualizar estadísticas
-      if (typeof updateStatistics === 'function') updateStatistics();
-      if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
-        generatePieChart(getStats());
-      }
-      if (typeof updateProjectProgress === 'function') updateProjectProgress();
-      
+        const token = localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        
+        if (!token) {
+            console.warn('⚠️ No hay token');
+            return;
+        }
+        
+        // Cargar datos frescos
+        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Datos frescos recibidos');
+            
+            if (data.projects) {
+                // Actualizar variable global
+                window.projects = data.projects;
+                
+                // Actualizar vista actual
+                refreshCurrentView();
+                
+                if (typeof showNotification === 'function') {
+                    showNotification('🔄 Datos sincronizados', 'success');
+                }
+            }
+        } else {
+            console.warn('⚠️ Error obteniendo datos frescos:', response.status);
+        }
     } catch (error) {
-      console.error('❌ Error actualizando vista:', error);
+        console.error('❌ Error en forceRefreshFromBackend:', error);
     }
-  }).catch(error => {
-    console.error('❌ Error sincronizando datos:', error);
-  });
 }
+
+// Función para refrescar la vista actual
+function refreshCurrentView() {
+    console.log('🔄 Refrescando vista actual...');
+    
+    // Determinar qué vista está activa
+    const activeView = typeof getActiveView === 'function' ? getActiveView() : 'board';
+    
+    switch(activeView) {
+        case 'board':
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            break;
+        case 'list':
+            if (typeof renderListTasks === 'function') renderListTasks();
+            break;
+        case 'calendar':
+            if (typeof renderCalendar === 'function') renderCalendar();
+            break;
+        case 'gantt':
+            // Si el Gantt está abierto, actualizarlo
+            if (document.getElementById('premiumExecutiveGantt')) {
+                if (typeof refreshGanttView === 'function') refreshGanttView();
+            }
+            break;
+        case 'dashboard':
+            if (typeof renderDashboard === 'function') renderDashboard();
+            break;
+        case 'reports':
+            if (typeof generateReports === 'function') generateReports();
+            break;
+        default:
+            // Por defecto, actualizar Kanban
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    }
+    
+    // Actualizar estadísticas siempre
+    if (typeof updateStatistics === 'function') updateStatistics();
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        generatePieChart(getStats());
+    }
+}
+
+// ===== EXPORTAR FUNCIONES AL ÁMBITO GLOBAL =====
+window.initWebSocket = initWebSocket;
+window.forceRefreshFromBackend = forceRefreshFromBackend;
+window.refreshCurrentView = refreshCurrentView;
+
+console.log('✅ Sistema de tiempo real cargado correctamente');
+console.log('📡 Funciones disponibles: initWebSocket(), forceRefreshFromBackend(), refreshCurrentView()');
+
+
+
+
+
+
+
+
+
 
 // === FUNCIONES DE AUTENTICACIÓN (ÁMBITO GLOBAL) ===
 function showRegisterForm() {
@@ -13813,7 +14042,7 @@ updateRisksCount();
 // === [NUEVO: ÉNFASIS DETALLADO] ===
   const currentMode = window.methodologyManager.getCurrentMode();
   applyDashboardModeStyles(currentMode);
-  applyDetailedModeStyles(currentMode); // ← Añadir esta línea
+ //  applyDetailedModeStyles(currentMode); // ← Añadir esta línea
 }
 
 
@@ -15600,6 +15829,12 @@ function selectProject(index) {
   const project = projects[index];
   if (!project) return;
 
+  // 🔌 SOCKET → unir al proyecto para sincronización en tiempo real
+  if (window.rtSocket && project._id) {
+    console.log("🔌 Uniéndose al proyecto en tiempo real:", project._id);
+    window.rtSocket.emit("join-project", project._id);
+  }
+
   // 📝 Actualizar nombres del proyecto en todas las vistas
   if (projectNameDisplay) projectNameDisplay.textContent = project.name;
   if (projectNameList) projectNameList.textContent = project.name;
@@ -15618,7 +15853,7 @@ function selectProject(index) {
     totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
   }
 
-  // 🔄 Actualizaciones generales (dependen del proyecto)
+  // 🔄 Actualizaciones generales
   actualizarAsignados();
   renderKanbanTasks();
   updateTaskList();
@@ -15631,7 +15866,7 @@ function selectProject(index) {
   generateReports();
   generatePieChart(getStats());
 
-  // ⚠️ Riesgos, acciones e hitos (forzado con pequeño delay)
+  // ⚠️ Riesgos, acciones e hitos
   setTimeout(() => {
     loadRisksFromLocalStorage();
     loadActionsFromLocalStorage();
@@ -15639,7 +15874,7 @@ function selectProject(index) {
     updateMilestonesStatus();
   }, 50);
 
-  // 🔁 Re-renderizar dashboard SI está visible (CAMBIO DE PROYECTO)
+  // 🔁 Re-renderizar dashboard si está visible
   const dashboardView = document.getElementById('dashboardView');
   if (
     dashboardView &&
@@ -15649,7 +15884,7 @@ function selectProject(index) {
     setTimeout(renderDashboard, 50);
   }
 
-  // 🔀 Renderizar vista activa si requiere acción explícita
+  // 🔀 Renderizar vista activa
   const activeView = getActiveView();
   switch (activeView) {
     case 'calendar':
@@ -15659,11 +15894,9 @@ function selectProject(index) {
       renderProfitabilityView();
       break;
     case 'dashboard':
-      // ya se maneja arriba con seguridad
       break;
   }
-}
-function editProjectName(index) {
+}function editProjectName(index) {
   const newName = prompt('Ingrese el nuevo nombre:', projects[index].name);
   if (newName && newName.trim()) {
     projects[index].name = newName.trim();
@@ -17186,8 +17419,12 @@ const dependencies = Array.from(
 function saveTaskChanges(taskId) {
   const project = projects[currentProjectIndex];
   const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+  
   if (taskIndex !== -1) {
-    // Obtener todos los valores editados
+    // ✅ GUARDAR VALORES ANTIGUOS
+    const oldTask = {...project.tasks[taskIndex]};
+    
+    // ✅ OBTENER VALORES EDITADOS
     const editedTask = {
       ...project.tasks[taskIndex],
       name: document.getElementById('editTaskName')?.value || project.tasks[taskIndex].name,
@@ -17203,9 +17440,19 @@ function saveTaskChanges(taskId) {
         .filter(id => !isNaN(id)),
       subtasks: project.tasks[taskIndex].subtasks || []
     };
+    
+    // 🔥 DEFINIR ARRAY CHANGES (ESTO ES LO QUE FALTA)
+    const changes = [];
+    if (oldTask.name !== editedTask.name) changes.push('nombre');
+    if (oldTask.priority !== editedTask.priority) changes.push('prioridad');
+    if (oldTask.status !== editedTask.status) changes.push('estado');
+    if (oldTask.assignee !== editedTask.assignee) changes.push('responsable');
+    if (oldTask.deadline !== editedTask.deadline) changes.push('fecha límite');
+    if (oldTask.estimatedTime !== editedTask.estimatedTime) changes.push('tiempo estimado');
+    
     // Actualizar la tarea en el array
     project.tasks[taskIndex] = editedTask;
-
+    
     // Guardar y actualizar UI
     updateLocalStorage();
     renderKanbanTasks();
@@ -17216,16 +17463,12 @@ function saveTaskChanges(taskId) {
     actualizarAsignados();
     generateReports();
     updateResourceAllocation();
-    // Actualizar fechas del proyecto
-    const { earliestDate, latestDate } = calculateProjectDatesFromTasks(project);
-    updateProjectDatesInDashboard(earliestDate, latestDate);
-
-// 🔥 NOTIFICAR A SLACK - TAREA ACTUALIZADA
+    
+    // 🔥 NOTIFICAR A SLACK - TAREA ACTUALIZADA (AHORA SÍ FUNCIONA)
     if (window.SlackNotifier && changes.length > 0) {
       window.SlackNotifier.taskUpdated(editedTask, project.name, changes.join(', '));
     }
-
-
+    
     // Notificar a otros usuarios
     if (tiempoRealSocket && tiempoRealSocket.connected) {
       tiempoRealSocket.emit('task-changed', {
@@ -17238,18 +17481,19 @@ function saveTaskChanges(taskId) {
       });
       console.log('📢 Notificando actualización de tarea');
     }
+    
     // Cerrar el modal
     taskDetailsModal.style.display = 'none';
     showNotification('Cambios guardados exitosamente');
     
     // ✅ ACTUALIZAR EL BURNDOWN CHART
- refreshBurndown();
+    refreshBurndown();
   } else {
     showNotification('Error: No se encontró la tarea para actualizar');
   }
- setTimeout(forceRefreshCalendarSafe, 300);
+  
+  setTimeout(forceRefreshCalendarSafe, 300);
 }
-
 
 
 
@@ -43403,3 +43647,60 @@ setTimeout(() => {
 
 
 
+
+
+
+
+
+// ============================================
+// 🚀 SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA
+// ============================================
+setInterval(function() {
+    // Solo verificar si hay cambios (sin mostrar errores)
+    if (window.tiempoRealSocket && !window.tiempoRealSocket.connected) {
+        const token = localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        
+        fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.projects && window.projects && 
+                data.projects[0].tasks.length !== window.projects[0].tasks.length) {
+                window.projects = data.projects;
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                if (typeof window.renderKanbanTasks === 'function') {
+                    window.renderKanbanTasks();
+                }
+            }
+        })
+        .catch(() => {}); // Ignorar errores silenciosamente
+    }
+}, 10000); // Cada 10 segundos
+
+
+// ============================================
+// 🚨 ACTUALIZACIÓN AUTOMÁTICA (NO TOCAR)
+// ============================================
+setInterval(function() {
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    
+    fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.projects) {
+            window.projects = data.projects;
+            localStorage.setItem('projects', JSON.stringify(data.projects));
+            if (typeof window.renderKanbanTasks === 'function') {
+                window.renderKanbanTasks();
+            }
+        }
+    })
+    .catch(() => {});
+}, 3000);
+
+console.log('✅ ACTUALIZACIÓN AUTOMÁTICA INSTALADA');

@@ -1,28 +1,9 @@
 // ===================================================
-<<<<<<< HEAD
-// ✅ SLACK-NOTIFIER.JS - VERSIÓN COMPLETA CON TODAS LAS FUNCIONES
+// ✅ SLACK-NOTIFIER.JS - VERSIÓN FINAL
 // ===================================================
 
-// Sistema de cola para no sobrecargar
-let messageQueue = [];
-let isProcessing = false;
-=======
-// ✅ SLACK-NOTIFIER.JS - VERSIÓN COMPLETA CON TODOS LOS EVENTOS
 // ===================================================
-
-
-// Sistema de cola para no sobrecargar
-let messageQueue = [];
-let isProcessing = false;
-
-// ===================================================
-// 🚀 Función principal de envío
-// ===================================================
-// CAMBIA la función sendSlackMessage para usar /api/slack-notify-user
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
-
-// ===================================================
-// 🚀 Función principal de envío
+// 🚀 Función principal de envío (USA /api/slack-notify)
 // ===================================================
 async function sendSlackMessage(text, options = {}) {
   console.log(`📨 [Slack] ${text.substring(0, 50)}...`);
@@ -33,18 +14,22 @@ async function sendSlackMessage(text, options = {}) {
     return { simulated: true };
   }
 
+  // Obtener webhook de localStorage (guardado manualmente)
+  const webhookUrl = localStorage.getItem('slackWebhook');
+  if (!webhookUrl) {
+    console.log('❌ No hay webhook guardado en localStorage');
+    return { success: false, error: 'No webhook' };
+  }
+
   try {
-<<<<<<< HEAD
-=======
-    // ✅ Usa el nuevo endpoint por usuario
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
-    const response = await fetch(`${window.API_URL}/api/slack-notify-user`, {
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
+        webhookUrl: webhookUrl,
         mensaje: text,
         tipo: options.color === '#2ecc71' ? 'success' : 
                options.color === '#f39c12' ? 'warning' : 
@@ -54,11 +39,6 @@ async function sendSlackMessage(text, options = {}) {
     });
 
     const data = await response.json();
-    
-    if (response.status === 404 && data.error?.includes('no tiene Slack')) {
-      console.log('⚠️ Usuario no tiene Slack configurado');
-      return { notConfigured: true };
-    }
     
     if (response.ok) {
       console.log('✅ Mensaje enviado a Slack');
@@ -73,7 +53,6 @@ async function sendSlackMessage(text, options = {}) {
   }
 }
 
-<<<<<<< HEAD
 // ===================================================
 // 📊 FUNCIONES DE NOTIFICACIÓN
 // ===================================================
@@ -99,46 +78,6 @@ async function notifyTaskCompleted(task, projectName) {
 }
 
 // Tarea actualizada
-=======
-
-async function processMessageQueue() {
-  if (messageQueue.length === 0 || isProcessing) return;
-  isProcessing = true;
-  
-  while (messageQueue.length > 0) {
-    const msg = messageQueue.shift();
-    await sendSlackMessage(msg.text, msg.options);
-    await new Promise(r => setTimeout(r, 1000));
-  }
-  isProcessing = false;
-}
-
-// ===================================================
-// 📊 NOTIFICACIONES POR TIPO DE EVENTO
-// ===================================================
-
-// 🆕 Tarea creada
-async function notifyTaskCreated(task, projectName) {
-  const text = `📝 *Tarea Creada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}\n• *Responsable:* ${task.assignee || 'Sin asignar'}\n• *Prioridad:* ${task.priority || 'media'}`;
-  return sendSlackMessage(text, {
-    title: '✅ Nueva Tarea',
-    color: '#3498db',
-    emoji: ':sparkles:'
-  });
-}
-
-// ✅ Tarea completada
-async function notifyTaskCompleted(task, projectName) {
-  const text = `✅ *Tarea Completada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}\n• *Responsable:* ${task.assignee || 'No asignado'}`;
-  return sendSlackMessage(text, {
-    title: '🎉 ¡Felicidades!',
-    color: '#2ecc71',
-    emoji: ':tada:'
-  });
-}
-
-// 🔄 Tarea actualizada
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyTaskUpdated(task, projectName, changes) {
   const text = `🔄 *Tarea Actualizada*\n• *Tarea:* ${task.name}\n• *Proyecto:* ${projectName}\n• *Cambios:* ${changes}`;
   return sendSlackMessage(text, {
@@ -148,11 +87,7 @@ async function notifyTaskUpdated(task, projectName, changes) {
   });
 }
 
-<<<<<<< HEAD
 // Tarea eliminada
-=======
-// 🗑️ Tarea eliminada
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyTaskDeleted(taskName, projectName) {
   const text = `🗑️ *Tarea Eliminada*\n• *Tarea:* ${taskName}\n• *Proyecto:* ${projectName}`;
   return sendSlackMessage(text, {
@@ -162,11 +97,7 @@ async function notifyTaskDeleted(taskName, projectName) {
   });
 }
 
-<<<<<<< HEAD
 // Tarea movida
-=======
-// 🎯 Tarea movida (drag & drop)
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyTaskMoved(task, fromStatus, toStatus, projectName) {
   const statusNames = {
     'pending': '⏳ Pendiente',
@@ -183,11 +114,7 @@ async function notifyTaskMoved(task, fromStatus, toStatus, projectName) {
   });
 }
 
-<<<<<<< HEAD
 // Proyecto creado
-=======
-// 🚀 Proyecto creado
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyProjectCreated(project) {
   const text = `🚀 *Nuevo Proyecto*\n• *Nombre:* ${project.name}\n• *Tareas:* ${project.tasks?.length || 0}`;
   return sendSlackMessage(text, {
@@ -197,11 +124,7 @@ async function notifyProjectCreated(project) {
   });
 }
 
-<<<<<<< HEAD
 // Reporte generado
-=======
-// 📊 Reporte generado
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyReportGenerated(projectName, reportType) {
   const text = `📊 *Reporte Generado*\n• *Proyecto:* ${projectName}\n• *Tipo:* ${reportType}`;
   return sendSlackMessage(text, {
@@ -211,52 +134,32 @@ async function notifyReportGenerated(projectName, reportType) {
   });
 }
 
-<<<<<<< HEAD
 // Tareas atrasadas
-=======
-// ⚠️ Tareas atrasadas
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function notifyOverdueTasks(overdueTasks, projectName) {
   const taskList = overdueTasks.map(t => `• *${t.name}*`).join('\n');
   const text = `⚠️ *Tareas Atrasadas*\n📋 *Proyecto:* ${projectName}\n📌 *Total:* ${overdueTasks.length} tareas\n\n${taskList}`;
   return sendSlackMessage(text, {
-<<<<<<< HEAD
     title: '🚨 Alerta',
-=======
-    title: '🚨 Alerta de Riesgo',
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
     color: '#e67e22',
     emoji: ':warning:'
   });
 }
 
-<<<<<<< HEAD
 // Riesgo agregado
 async function notifyRiskAdded(risk, projectName) {
   const text = `⚠️ *Nuevo Riesgo*\n• *Proyecto:* ${projectName}\n• *Riesgo:* ${risk.texto || risk}`;
   return sendSlackMessage(text, {
     title: '🛡️ Riesgo',
-=======
-// 🛡️ Riesgo agregado
-async function notifyRiskAdded(risk, projectName) {
-  const text = `⚠️ *Nuevo Riesgo*\n• *Proyecto:* ${projectName}\n• *Riesgo:* ${risk.texto || risk}`;
-  return sendSlackMessage(text, {
-    title: '🛡️ Riesgo Identificado',
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
     color: '#e74c3c',
     emoji: ':sos:'
   });
 }
 
-<<<<<<< HEAD
 // ===================================================
 // 🔧 Utilidades
 // ===================================================
 
 // Probar conexión
-=======
-// 🔧 Utilidades
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
 async function testSlackConnection() {
   console.log('🧪 Probando Slack...');
   return await sendSlackMessage(
@@ -269,9 +172,9 @@ async function testSlackConnection() {
 function getSlackStatus() {
   return {
     enabled: true,
-    usando: 'Backend en Render',
+    usando: 'Webhook local + proxy',
     token: localStorage.getItem('authToken') ? '✓ Token presente' : '✗ Sin token',
-    queueLength: messageQueue.length
+    webhook: localStorage.getItem('slackWebhook') ? '✓ Webhook guardado' : '✗ Sin webhook'
   };
 }
 
@@ -300,10 +203,5 @@ window.SlackNotifier = {
   riskAdded: notifyRiskAdded
 };
 
-<<<<<<< HEAD
-console.log('✅ SlackNotifier CARGADO CON TODAS LAS FUNCIONES');
+console.log('✅ SlackNotifier CARGADO - Usando webhook de localStorage');
 console.log('📊 Funciones disponibles:', Object.keys(window.SlackNotifier));
-=======
-console.log('✅ SlackNotifier CARGADO - Todas las notificaciones automáticas listas');
-console.log('📊 Eventos disponibles:', Object.keys(window.SlackNotifier));
->>>>>>> 454d356 (Feat: Slack multi-cliente sin webhook hardcodeado)
