@@ -1,24 +1,15 @@
-:root {
-  --bg-main: #ffffff;
-  --bg-card: #f5f6fa;
-  --text-main: #2c3e50;
-  --border: #e0e0e0;
-}
-
-.dark {
-  --bg-main: #0a0a1a;
-  --bg-card: #1a1a3a;
-  --text-main: #ffffff;
-  --border: rgba(255,255,255,0.1);
-}
 
 
 
 
+
+
+/* Fondo por defecto claro */
 body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: #f8f9fa !important;
+  color: #2c3e50;
 }
+
 
 
 
@@ -3235,21 +3226,19 @@ select.editable-field {
 }
 
 .priority-baja {
-  background-color: #2ecc71 !important;
-  color: white !important;
+  background-color: #2ecc71;
+  color: white;
 }
 
 .priority-media {
-  background-color: #f39c12 !important;
-  color: white !important;
+  background-color: #f39c12;
+  color: white;
 }
 
 .priority-alta {
-  background-color: #e74c3c !important;
-  color: white !important;
+  background-color: #e74c3c;
+  color: white;
 }
-
-
 
 /* Estilos para fechas */
 .date-cell {
@@ -14502,54 +14491,6 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
   color: black !important;
   background-color: white !important;
 }
-
-
-
-
-
-
-/* Días de la semana (Lun, Mar, Mié, etc) */
-.fc .fc-col-header-cell {
-    background: linear-gradient(135deg, #1e293b, #0f172a) !important;
-    color: white !important;
-    padding: 12px 0 !important;
-    border-bottom: 2px solid #8b5cf6 !important;
-}
-
-/* Texto de los días */
-.fc .fc-col-header-cell-cushion {
-    color: #e2e8f0 !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-}
-
-/* Efecto al pasar el mouse */
-.fc .fc-col-header-cell:hover {
-    background: linear-gradient(135deg, #2d3a4f, #1e2a3a) !important;
-    cursor: pointer;
-}
-
-/* Borde inferior del header */
-.fc .fc-scrollgrid-section-header {
-    border-bottom: 2px solid #8b5cf6 !important;
-}
-
-
-/* Prioridades corregidas */
-.priority-baja {
-    background: #2ecc71 !important;
-    color: white !important;
-}
-.priority-media {
-    background: #f39c12 !important;
-    color: white !important;
-}
-.priority-alta {
-    background: #e74c3c !important;
-    color: white !important;
-}
-
-
 
 
 

@@ -1,0 +1,19 @@
+/* ============================================
+   BOARD PREMIUM - SOLO EFECTOS VISUALES
+   ============================================ */
+
+#pendingTasks,
+#inProgressTasks,
+#completedTasks,
+#overdueTasks {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    transition: all 0.3s ease !important;
+}
+
+#pendingTasks:hover,
+#inProgressTasks:hover,
+#completedTasks:hover,
+#overdueTasks:hover {
+    transform: translateY(-2px) !important;
+    border-color: #9b59b6 !important;
+}

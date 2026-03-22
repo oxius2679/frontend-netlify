@@ -1,0 +1,385 @@
+/* ============================================
+   ESTILO FINAL - COPIA ESTO EN TU ARCHIVO CSS
+   ============================================ */
+
+/* FONDO PRINCIPAL */
+html, body {
+    background-color: #0a0a0f !important;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   SIDEBAR - BARRA LATERAL
+   ============================================ */
+.sidebar, aside {
+    background: rgba(26, 26, 42, 0.6) !important;
+    backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+    color: white;
+}
+
+.nav-item.active {
+    background: rgba(139, 92, 246, 0.2) !important;
+    color: white;
+    border-left: 3px solid #8b5cf6 !important;
+}
+
+/* ============================================
+   HEADER - CABECERA
+   ============================================ */
+header, .executive-header {
+    background: rgba(26, 26, 42, 0.6) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    padding: 20px 24px !important;
+    margin-bottom: 24px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffffff, #e2e8f0) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+.status-badge.on-time {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    padding: 6px 16px !important;
+    border-radius: 30px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ============================================
+   KPI CARDS - TARJETAS DE ESTADÍSTICAS
+   ============================================ */
+.kpi-card, .metric-card, .dashboard-card {
+    background: rgba(26, 26, 42, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    padding: 24px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+}
+
+.kpi-number {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: white !important;
+}
+
+.kpi-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   COLUMNAS DEL KANBAN
+   ============================================ */
+.column, #pendingTasks, #inProgressTasks, #completedTasks, #overdueTasks {
+    background: rgba(26, 26, 42, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    padding: 20px !important;
+}
+
+.column h3, #pendingTasks h3, #inProgressTasks h3, #completedTasks h3, #overdueTasks h3 {
+    color: white !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 16px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column-count {
+    background: rgba(139, 92, 246, 0.2) !important;
+    color: #8b5cf6 !important;
+    padding: 2px 10px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+}
+
+/* ============================================
+   TARJETAS DE TAREAS
+   ============================================ */
+.task-card {
+    background: rgba(26, 26, 42, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.task-card:hover {
+    border-color: #8b5cf6 !important;
+    transform: translateY(-2px) !important;
+}
+
+/* BORDES DE PRIORIDAD */
+.task-card.priority-alta, .priority-alta .task-card {
+    border-top: 4px solid #ef4444 !important;
+}
+.task-card.priority-media, .priority-media .task-card {
+    border-top: 4px solid #f59e0b !important;
+}
+.task-card.priority-baja, .priority-baja .task-card {
+    border-top: 4px solid #10b981 !important;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.task-title {
+    font-weight: 600;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.task-dot.purple { background: #8b5cf6; }
+.task-dot.green { background: #10b981; }
+.task-dot.blue { background: #3b82f6; }
+.task-dot.red { background: #ef4444; }
+
+.task-menu {
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* BADGES DE ESTADO Y PRIORIDAD */
+.badge, .status-badge, .priority-badge {
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    display: inline-block;
+}
+
+.badge.pending, .status-pending {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #f59e0b !important;
+}
+.badge.inProgress, .status-inProgress {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #3b82f6 !important;
+}
+.badge.completed, .status-completed {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+}
+.badge.overdue, .status-overdue {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+}
+.badge.alta, .priority-alta {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ef4444 !important;
+}
+.badge.media, .priority-media {
+    background: rgba(245, 158, 11, 0.2) !important;
+    color: #f59e0b !important;
+}
+.badge.baja, .priority-baja {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+}
+
+/* BARRA DE PROGRESO */
+.progress-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 2px;
+}
+.progress-bar.completed { background: #10b981; }
+.progress-bar.inProgress { background: #3b82f6; }
+.progress-bar.pending { background: #f59e0b; }
+.progress-bar.overdue { background: #ef4444; }
+
+.task-progress {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin: 4px 0;
+}
+
+.task-meta {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* ============================================
+   TABLAS
+   ============================================ */
+.table-container {
+    background: rgba(26, 26, 42, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    padding: 20px !important;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.table-title {
+    color: white !important;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.view-all {
+    color: #8b5cf6 !important;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 16px 12px !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 12px !important;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+td {
+    padding: 16px 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* AVATARES CON INICIALES */
+.avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+.avatar.purple { background: linear-gradient(135deg, #667eea, #764ba2); }
+.avatar.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.avatar.green { background: linear-gradient(135deg, #10b981, #047857); }
+.avatar.orange { background: linear-gradient(135deg, #f59e0b, #b45309); }
+
+.assignee {
+    display: flex;
+    align-items: center;
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+button, .btn {
+    padding: 10px 20px !important;
+    border-radius: 30px !important;
+    border: none !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+button:hover, .btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    border: none !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3) !important;
+}

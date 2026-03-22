@@ -1,0 +1,346 @@
+/* ============================================
+   TEMA OSCURO - VERSIÓN DEFINITIVA QUE FUNCIONA
+   Basado en el código de consola que sí funcionó
+   ============================================ */
+
+/* --- FUERZA BRUTA: FONDO NEGRO PARA TODO --- */
+html, body, div, section, main, article, aside, header, footer {
+    background-color: #000000 !important;
+}
+
+/* ============================================
+   HEADER - NEGRO BONITO
+   ============================================ */
+
+/* Header principal */
+header {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    border-bottom: 2px solid #333333 !important;
+}
+
+/* Todos los textos del header en blanco */
+header * {
+    color: #ffffff !important;
+}
+
+/* Todos los botones del header */
+header button {
+    background-color: #222222 !important;
+    border: 1px solid #444444 !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+}
+
+/* Botón de logout */
+header #logoutBtn {
+    background-color: #c0392b !important;
+}
+
+/* Botón de voz */
+header #voiceAssistantButton {
+    background-color: #8e44ad !important;
+}
+
+/* ============================================
+   COLUMNAS DEL KANBAN
+   ============================================ */
+
+/* Contenedores de las columnas */
+#pendingTasks,
+#inProgressTasks,
+#completedTasks,
+#overdueTasks {
+    background-color: #0a0a0a !important;
+    border: 1px solid #333333 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+
+/* ============================================
+   TÍTULOS DE COLUMNAS - ESTILO QUE FUNCIONÓ EN CONSOLA
+   ============================================ */
+
+/* Aplicamos exactamente el mismo estilo que funcionó */
+#pendingTasks h3,
+#inProgressTasks h3,
+#completedTasks h3,
+#overdueTasks h3 {
+    color: #ffffff !important;
+    background-color: #1a1a1a !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #9b59b6 !important;
+    padding: 12px !important;
+    margin: 0 0 15px 0 !important;
+    display: block !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+/* ============================================
+   CONTADOR MORADO
+   ============================================ */
+
+.results-counter {
+    color: #9b59b6 !important;
+    font-weight: bold !important;
+    background-color: transparent !important;
+}
+
+/* ============================================
+   TARJETAS DE TAREAS
+   ============================================ */
+
+.task-card {
+    background-color: #111111 !important;
+    border: 1px solid #333333 !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    margin-bottom: 10px !important;
+}
+
+.task-card * {
+    color: #ffffff !important;
+}
+
+/* ============================================
+   ESTATUS - COLORES ORIGINALES
+   ============================================ */
+
+.status-pending {
+    background-color: #f1c40f !important;
+    color: #2c3e50 !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+.status-inProgress {
+    background-color: #008090 !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+.status-completed {
+    background-color: #2ecc71 !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+.status-overdue {
+    background-color: #e74c3c !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+/* ============================================
+   PRIORIDADES - COLORES ORIGINALES
+   ============================================ */
+
+.priority-baja {
+    background-color: #2ecc71 !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+.priority-media {
+    background-color: #f39c12 !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+.priority-alta {
+    background-color: #e74c3c !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+/* ============================================
+   FECHA LÍMITE
+   ============================================ */
+
+.task-deadline {
+    color: #cccccc !important;
+    border-top: 1px solid #333333 !important;
+    padding-top: 8px !important;
+    margin-top: 8px !important;
+}
+
+/* ============================================
+   MODALES
+   ============================================ */
+
+.modal,
+.modal-content {
+    background-color: #111111 !important;
+    border: 1px solid #333333 !important;
+}
+
+.modal * {
+    color: #ffffff !important;
+}
+
+/* ============================================
+   TABLAS
+   ============================================ */
+
+table {
+    background-color: #0a0a0a !important;
+}
+
+th {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+td {
+    background-color: #111111 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #333333 !important;
+}
+
+/* ============================================
+   INPUTS Y SELECTS
+   ============================================ */
+
+input, select, textarea {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #333333 !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #9b59b6 !important;
+    outline: none !important;
+}
+
+/* ============================================
+   BOTONES GENERALES
+   ============================================ */
+
+button {
+    background-color: #222222 !important;
+    color: #ffffff !important;
+    border: 1px solid #333333 !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+}
+
+button:hover {
+    background-color: #9b59b6 !important;
+}
+
+/* ============================================
+   HEADER - FORZADO A NEGRO (MISMA TÉCNICA QUE FUNCIONÓ)
+   ============================================ */
+
+/* Forzar el header principal */
+body > header,
+header:first-of-type,
+header {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    background-image: none !important;
+    border-bottom: 2px solid #333333 !important;
+}
+
+/* Todos los elementos dentro del header */
+header * {
+    color: #ffffff !important;
+}
+
+/* El logo */
+header .logo {
+    color: #ffffff !important;
+    font-weight: bold !important;
+}
+
+/* Todos los botones dentro del header */
+header button,
+header .blue-btn {
+    background-color: #222222 !important;
+    border: 1px solid #444444 !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+    margin: 0 4px !important;
+}
+
+/* Botón de logout específico */
+header #logoutBtn {
+    background-color: #c0392b !important;
+    border-color: #e74c3c !important;
+}
+
+/* Botón de voz específico */
+header #voiceAssistantButton {
+    background-color: #8e44ad !important;
+    border-color: #9b59b6 !important;
+}
+
+/* Botón de Gantt */
+header #topNavGanttButton {
+    background: linear-gradient(45deg, #2980b9, #27ae60) !important;
+    border: none !important;
+}
+
+/* Botón de configuración */
+header #configButton {
+    background-color: #222222 !important;
+    border: 1px solid #444444 !important;
+}
+
+/* Header actions container */
+header .header-actions {
+    background-color: transparent !important;
+}
+
+
+/* ============================================
+   TEMA OSCURO - VERSIÓN FINAL CON HEADER NEGRO
+   ============================================ */
+
+/* (aquí va todo el código que ya tenías) */
+
+/* ============================================
+   HEADER - VERSIÓN QUE FUNCIONÓ EN CONSOLA (AGREGADO AL FINAL)
+   ============================================ */
+
+header {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    border-bottom: 2px solid #333333 !important;
+}
+
+header button {
+    background-color: #222222 !important;
+    color: #ffffff !important;
+    border: 1px solid #444444 !important;
+}
+
+header .logo {
+    color: #ffffff !important;
+}
+
+header #logoutBtn {
+    background-color: #c0392b !important;
+}
+
+header #voiceAssistantButton {
+    background-color: #8e44ad !important;
+}

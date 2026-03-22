@@ -1,0 +1,178 @@
+/* ==============================================
+   ✨ EFECTOS PREMIUM V2 - ELEGANTES Y COMPLETOS
+   ============================================== */
+
+/* ===== EFECTOS SUTILES PARA TARJETAS ===== */
+.task-card, .project-item, .kanban-card, 
+.dashboard-card, .metric-card, .kpi-card,
+[class*="card"], [class*="metric"], [class*="kpi"] {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.task-card:hover, .project-item:hover, .kanban-card:hover,
+.dashboard-card:hover, .metric-card:hover, .kpi-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* ===== BOTONES ELEGANTES (SIN DISTRACCIÓN) ===== */
+button, .btn, [class*="btn"] {
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+button:hover, .btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.25) !important;
+}
+
+button:active, .btn:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Efecto de brillo sutil al hacer hover */
+button::after, .btn::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+button:hover::after, .btn:hover::after {
+    left: 100% !important;
+}
+
+/* Botones de acción principal (azules, guardar, etc) */
+.btn-primary, .blue-btn, [class*="primary"] {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Botones de peligro (eliminar) */
+.btn-danger, [class*="danger"], button[onclick*="eliminar"] {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* ===== ANIMACIONES DE ENTRADA ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.task-card, .project-item, .kanban-card,
+.dashboard-card, .metric-card, .kpi-card,
+.transcripcion-item {
+    animation: fadeInUp 0.4s ease-out !important;
+}
+
+/* ===== SCROLL PERSONALIZADO ELEGANTE ===== */
+::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.4) !important;
+    border-radius: 3px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.7) !important;
+}
+
+/* ===== EFECTOS PARA VISTA STATUS/REPORTS ===== */
+.reports-view, .status-view, #reportsView, #statusView {
+    animation: fadeInUp 0.4s ease-out !important;
+}
+
+.report-card, .stat-card, [class*="report"], [class*="stat"] {
+    transition: all 0.3s ease !important;
+}
+
+.report-card:hover, .stat-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* ===== EFECTOS PARA DASHBOARD 4D ===== */
+.dashboard4d-view, #dashboard4dView, [class*="dashboard4d"] {
+    animation: fadeInUp 0.4s ease-out !important;
+}
+
+.dashboard4d-card, .metric-4d, [class*="4d"] {
+    transition: all 0.3s ease !important;
+}
+
+.dashboard4d-card:hover, .metric-4d:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* ===== EFECTOS PARA TABLAS ===== */
+table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+tr {
+    transition: all 0.2s ease !important;
+}
+
+tr:hover td {
+    background: rgba(139, 92, 246, 0.03) !important;
+}
+
+/* ===== EFECTOS PARA EL MENÚ LATERAL ===== */
+.project-item {
+    border-left: 3px solid transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.project-item:hover {
+    border-left-color: #8b5cf6 !important;
+    padding-left: 20px !important;
+    background: rgba(139, 92, 246, 0.05) !important;
+}
+
+.project-item.active, .project-item.selected {
+    border-left-color: #8b5cf6 !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+
+/* ===== EFECTOS PARA EL KANBAN BOARD ===== */
+.kanban-column {
+    transition: all 0.3s ease !important;
+}
+
+.kanban-column:hover {
+    box-shadow: 0 5px 20px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* ===== INDICADORES DE ESTADO SUTILES ===== */
+.status-badge, .priority-badge {
+    transition: all 0.2s ease !important;
+}
+
+.status-badge:hover, .priority-badge:hover {
+    transform: scale(1.05) !important;
+}
