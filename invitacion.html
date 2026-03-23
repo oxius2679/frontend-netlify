@@ -125,27 +125,22 @@
     </div>
 
     <script>
-        // Obtener token de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
 
-        // Variable para almacenar la invitación actual
-        let invitacionActual = null;
-
-        // Cargar datos de la invitación
         async function cargarInvitacion() {
             try {
-                const invitaciones = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
-                const invitacion = invitaciones.find(inv => inv.token === token);
+                const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/validate?token=${token}`);
+                const data = await response.json();
                 
-                if (invitacion) {
-                    invitacionActual = invitacion;
-                    document.getElementById('proyectoNombre').textContent = invitacion.proyecto;
-                    document.getElementById('rolInvitacion').textContent = invitacion.rol;
-                    document.getElementById('emailInvitado').textContent = invitacion.email;
-                } else {
-                    mostrarError('Invitación no encontrada o expirada');
+                if (!data.success) {
+                    mostrarError(data.error || 'Invitación no válida');
+                    return;
                 }
+                
+                document.getElementById('proyectoNombre').textContent = data.proyecto;
+                document.getElementById('rolInvitacion').textContent = data.rol;
+                document.getElementById('emailInvitado').textContent = data.email;
             } catch (error) {
                 console.error('Error:', error);
                 mostrarError('Error al cargar la invitación');
@@ -170,20 +165,23 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('actionButtons').style.display = 'none';
             
-            setTimeout(() => {
-                mostrarExito('✅ ¡Invitación aceptada! Serás redirigido al proyecto...');
+            try {
+                const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
                 
-                // Redirigir al proyecto específico
+                mostrarExito('✅ ¡Invitación aceptada! Serás redirigido al proyecto...');
                 setTimeout(() => {
-                    if (invitacionActual && invitacionActual.proyectoIndex !== undefined) {
-                        // Redirigir a la página principal con el parámetro del proyecto
-                        window.location.href = `/?proyecto=${invitacionActual.proyectoIndex}`;
-                    } else {
-                        // Si no hay información del proyecto, ir a la página principal
-                        window.location.href = '/';
-                    }
+                    window.location.href = '/';
                 }, 2000);
-            }, 1500);
+            } catch (error) {
+                console.error(error);
+                mostrarError('Error al aceptar la invitación. Intenta de nuevo más tarde.');
+            }
         }
 
         function rechazarInvitacion() {
@@ -195,7 +193,6 @@
             }
         }
 
-        // Cargar al iniciar
         if (token) {
             cargarInvitacion();
         } else {
