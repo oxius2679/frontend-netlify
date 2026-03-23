@@ -41915,6 +41915,9 @@ async function enviarInvitacion() {
     const inviteToken = data.token;
     const enlace = `${window.location.origin}/invitacion.html?token=${inviteToken}`;
     
+    // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
+    emailjs.init('RKPQ7q1n2sDJdBqcG');
+    
     // Enviar correo con EmailJS
     await emailjs.send('service_kccmxz7', 'template_we2gzml', {
       to_email: email,
@@ -41931,7 +41934,6 @@ async function enviarInvitacion() {
     mostrarMensajeInvitacion('❌ Error al enviar invitación', 'error');
   }
 }
-
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
