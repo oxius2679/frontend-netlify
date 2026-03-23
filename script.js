@@ -41886,21 +41886,34 @@ async function enviarInvitacion() {
   }
   
   const proyectoNombre = projects[proyectoIndex]?.name;
-  
+  if (!proyectoNombre) {
+    mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
+    return;
+  }
+
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
+    return;
+  }
+
   try {
-    // Crear invitación en el servidor
-console.log('📤 Preparando fetch...');
+    console.log('📤 Preparando fetch...');
     const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ email, proyectoIndex, proyectoNombre, rol })
     });
-    
+
     const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
     if (!data.success) throw new Error(data.error);
     
-    const token = data.token;
-    const enlace = `${window.location.origin}/invitacion.html?token=${token}`;
+    const inviteToken = data.token;
+    const enlace = `${window.location.origin}/invitacion.html?token=${inviteToken}`;
     
     // Enviar correo con EmailJS
     await emailjs.send('service_kccmxz7', 'template_we2gzml', {
