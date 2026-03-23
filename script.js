@@ -14664,7 +14664,18 @@ dayMaxEventRows: true,
     return calendar;
 }
 // 🔥 FUNCIÓN PARA APLICAR ESTILOS AL HEADER DEL CALENDARIO (DÍAS DE LA SEMANA)
+let _calendarStylesRetries = 0;
+const MAX_CALENDAR_RETRIES = 10;
+
 function applyCalendarHeaderStyles() {
+    // Si la vista calendario no está activa, no hacemos nada y reiniciamos contador
+    const calendarView = document.getElementById('calendarView');
+    if (!calendarView || !calendarView.classList.contains('active')) {
+        console.log('📅 Vista calendario inactiva, cancelando estilos');
+        _calendarStylesRetries = 0;
+        return;
+    }
+
     console.log('🎨 Aplicando estilos al header del calendario...');
     
     // Buscar todos los elementos de días de la semana
@@ -14696,8 +14707,14 @@ function applyCalendarHeaderStyles() {
         });
         
         console.log(`✅ Estilos aplicados a ${headerCells.length} celdas de días`);
+        _calendarStylesRetries = 0; // reiniciamos contador tras éxito
     } else {
-        console.warn('⚠️ No se encontraron celdas de días, reintentando...');
+        if (_calendarStylesRetries >= MAX_CALENDAR_RETRIES) {
+            console.warn(`❌ No se pudo aplicar estilos al calendario después de ${MAX_CALENDAR_RETRIES} intentos`);
+            return;
+        }
+        _calendarStylesRetries++;
+        console.warn(`⚠️ No se encontraron celdas de días, reintentando (${_calendarStylesRetries}/${MAX_CALENDAR_RETRIES})...`);
         setTimeout(applyCalendarHeaderStyles, 500);
         return;
     }
@@ -14711,23 +14728,19 @@ function applyCalendarHeaderStyles() {
         });
     }
 }
-
 // 🔥 OBSERVADOR PARA APLICAR ESTILOS CUANDO CAMBIA LA VISTA O EL MES
 function setupCalendarHeaderObserver() {
     console.log('👁️ Configurando observador para el header del calendario...');
     
     const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            // Si se agregaron nuevos elementos al calendario
-            if (mutation.addedNodes.length > 0) {
-                // Pequeño delay para que FullCalendar termine de renderizar
-                setTimeout(() => {
-                    applyCalendarHeaderStyles();
-                }, 50);
-            }
-        });
-    });
-    
+        // Solo aplicar si la vista calendario está activa
+        const calendarView = document.getElementById('calendarView');
+        if (calendarView && calendarView.classList.contains('active')) {
+            setTimeout(() => {
+                applyCalendarHeaderStyles();
+            }, 50);
+        }
+    });    
     // Observar cambios en el contenedor del calendario
     const calendarContainer = document.getElementById('calendar');
     if (calendarContainer) {
@@ -18375,31 +18388,55 @@ function getTimeStats(tasks = null) {
  ***********************/
 function renderProfitabilityView() {
   const project = projects[currentProjectIndex];
-  
-  // Cálculos de ejemplo (ajusta según tu lógica de negocio)
+  if (!project) {
+    console.warn('No hay proyecto seleccionado para rentabilidad');
+    return;
+  }
+
   const totalHours = project.tasks.reduce((sum, task) => sum + (task.timeLogged || 0), 0);
-  const hourlyCost = 50; // Costo por hora (ejemplo)
-  const projectBudget = 10000; // Presupuesto del proyecto (ejemplo)
-  
+  const hourlyCost = 50;
+  const projectBudget = 10000;
+
   const totalCost = totalHours * hourlyCost;
   const profitMargin = ((projectBudget - totalCost) / projectBudget) * 100;
-  
-  // Actualiza la UI
-  document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
-  document.getElementById('totalIncome').textContent = `$${projectBudget.toFixed(2)}`;
-  document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(2)}%`;
-  
-  // Gráfico
-  renderProfitabilityChart(totalCost, projectBudget);
+
+  // Verificar existencia de elementos
+  const totalCostEl = document.getElementById('totalCost');
+  const totalIncomeEl = document.getElementById('totalIncome');
+  const profitMarginEl = document.getElementById('profitMargin');
+
+  if (!totalCostEl || !totalIncomeEl || !profitMarginEl) {
+    console.warn('❌ Elementos de rentabilidad no encontrados en el DOM');
+    // Opcional: crearlos si es necesario (no recomendado, mejor asegurar que existan en el HTML)
+    return;
+  }
+
+  totalCostEl.textContent = `$${totalCost.toFixed(2)}`;
+  totalIncomeEl.textContent = `$${projectBudget.toFixed(2)}`;
+  profitMarginEl.textContent = `${profitMargin.toFixed(2)}%`;
+
+  // Gráfico (también con validación)
+  const canvas = document.getElementById('profitabilityChart');
+  if (canvas) {
+    renderProfitabilityChart(totalCost, projectBudget);
+  } else {
+    console.warn('Canvas profitabilityChart no encontrado');
+  }
 }
 
+
 function renderProfitabilityChart(cost, income) {
-  const ctx = document.getElementById('profitabilityChart').getContext('2d');
-  
+  const canvas = document.getElementById('profitabilityChart');
+  if (!canvas) {
+    console.warn('Canvas profitabilityChart no encontrado');
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+
   if (window.profitabilityChart) {
     window.profitabilityChart.destroy();
   }
-  
+
   window.profitabilityChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -18423,7 +18460,6 @@ function renderProfitabilityChart(cost, income) {
     }
   });
 }
-
 /*********************
  * ANÁLISIS DE RUTA CRÍTICA *
  *********************/
@@ -47255,6 +47291,11 @@ function renderKanbanTasks(tasks = null) {
 })();
 
 console.log('✅ Código de reporte ejecutivo cargado correctamente');
+
+
+
+
+
 
 
 
