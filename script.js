@@ -41871,69 +41871,53 @@ function mostrarMensajeInvitacion(texto, tipo = 'success') {
 // ============================================
 // 7. FUNCIÓN DE EMAILJS MEJORADA
 // ============================================
-function enviarInvitacion() {
-    console.log('📨 Enviando invitación ejecutiva...');
+async function enviarInvitacion() {
+  const proyectoSelect = document.getElementById('selectProyectoInvitacion');
+  const emailInput = document.getElementById('emailInvitacion');
+  const rolSelect = document.getElementById('rolInvitado');
+  
+  const proyectoIndex = proyectoSelect.value;
+  const email = emailInput.value.trim();
+  const rol = rolSelect.value;
+  
+  if (!proyectoIndex || !email || !rol) {
+    mostrarMensajeInvitacion('❌ Completa todos los campos', 'error');
+    return;
+  }
+  
+  const proyectoNombre = projects[proyectoIndex]?.name;
+  
+  try {
+    // Crear invitación en el servidor
+console.log('📤 Preparando fetch...');
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, proyectoIndex, proyectoNombre, rol })
+    });
     
-    if (typeof emailjs === 'undefined') {
-        mostrarMensajeInvitacion('❌ EmailJS no cargado', 'error');
-        return;
-    }
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
     
-    emailjs.init('RKPQ7q1n2sDJdBqcG');
-    
-    const proyectoSelect = document.getElementById('selectProyectoInvitacion');
-    const emailInput = document.getElementById('emailInvitacion');
-    const rolSelect = document.getElementById('rolInvitado');
-    
-    const proyectoIndex = proyectoSelect?.value;
-    const email = emailInput?.value?.trim();
-    const rol = rolSelect?.value;
-    
-    if (!proyectoIndex || !email) {
-        mostrarMensajeInvitacion('❌ Completa todos los campos', 'error');
-        return;
-    }
-    
-    if (!isValidEmail(email)) {
-        mostrarMensajeInvitacion('❌ Email no válido', 'error');
-        return;
-    }
-    
-    const proyectoNombre = projects[proyectoIndex]?.name || 'Proyecto';
-    const token = generarTokenInvitacion();
+    const token = data.token;
     const enlace = `${window.location.origin}/invitacion.html?token=${token}`;
     
-    emailjs.send('service_kccmxz7', 'template_we2gzml', {
-        to_email: email,
-        project_name: proyectoNombre,
-        role: rol,
-        invite_link: enlace,
-        from_name: 'Centro de Comando IA 4D Élite',
-        reply_to: email
-    })
-    .then(() => {
-        const nuevaInvitacion = {
-            id: Date.now(),
-            proyecto: proyectoNombre,
-            proyectoIndex: parseInt(proyectoIndex),
-            email, rol,
-            fecha: new Date().toLocaleString(),
-            estado: 'pendiente',
-            token
-        };
-        
-        invitacionesPendientes.push(nuevaInvitacion);
-        localStorage.setItem('invitacionesPendientes', JSON.stringify(invitacionesPendientes));
-        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
-        emailInput.value = '';
-        actualizarListaInvitaciones();
-    })
-    .catch(error => {
-        console.error('❌ Error:', error);
-        mostrarMensajeInvitacion('❌ Error al enviar', 'error');
+    // Enviar correo con EmailJS
+    await emailjs.send('service_kccmxz7', 'template_we2gzml', {
+      to_email: email,
+      project_name: proyectoNombre,
+      role: rol,
+      invite_link: enlace,
+      from_name: 'Centro de Comando IA 4D Élite'
     });
+    
+    mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+    emailInput.value = '';
+  } catch (error) {
+    console.error(error);
+    mostrarMensajeInvitacion('❌ Error al enviar invitación', 'error');
+  }
 }
-
 
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
