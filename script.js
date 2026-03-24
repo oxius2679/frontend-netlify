@@ -1294,7 +1294,6 @@ function logout() {
 // Reemplazar el evento DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
 
-
   // 🔐 Cargar token aquí, SOLO aquí
   window.authToken = localStorage.getItem("authToken") || "";
   // ✅ Verificar autenticación ANTES de cargar la app
@@ -1317,9 +1316,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkOverdueTasks();
   }
   setupEventListeners();
-  // ... resto de tu inicialización
-});
 
+  // ========== CREAR/RENOVAR SUSCRIPCIÓN DE TEAMS ==========
+  const clienteId = localStorage.getItem('clienteId');
+  if (clienteId) {
+    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/create-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clienteId })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('✅ Suscripción de Teams creada/renovada:', data);
+    })
+    .catch(err => {
+      console.error('❌ Error al crear/renovar suscripción de Teams:', err);
+    });
+  } else {
+    console.warn('⚠️ No se encontró clienteId, no se puede crear suscripción de Teams');
+  }
+  // ========== FIN NUEVO ==========
+
+}); // ← CIERRE DEL DOMContentLoaded (asegúrate de que esta llave exista)
 
 /**************************************
  * SISTEMA DE VALIDACIÓN Y RESPALDO *
