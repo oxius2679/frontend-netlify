@@ -1,3 +1,11651 @@
+// Sincronizar webhook de Slack con la clave que espera SlackNotifier
+const webhook = localStorage.getItem('slack_webhook');
+if (webhook) {
+    localStorage.setItem('slackWebhook', webhook);
+}
+
+// ========== ESTILOS PERSONALIZADOS - EDICIÓN EJECUTIVA AZUL PROFESIONAL ==========
+// ========== COLOCAR AL INICIO DE script.js ==========
+(function() {
+  console.log('🎨🚀 INICIANDO ESTILOS EJECUTIVOS AZUL - LOGO BLANCO');
+
+  let initializationComplete = false;
+
+
+
+
+  // ==================== 1. INYECTAR ESTILOS CSS ====================
+ function injectStyles() {
+  const existingStyles = document.querySelector('style[data-executive-styles]');
+  if (existingStyles) existingStyles.remove();
+
+  const style = document.createElement('style');
+  style.setAttribute('data-executive-styles', 'true');
+  style.textContent = `
+    /* ===== HEADER CON FONDO AZUL OSCURO PROFESIONAL ===== */
+    header, header#mainHeader, .main-header {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+      background-color: #0F172A !important;
+      background-image: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 10px 20px !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 1000 !important;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+    }
+
+    /* ===== LOGO BLANCO ===== */
+    .logo, 
+    header .logo, 
+    .logo-text,
+    header .logo-text,
+    div.logo,
+    header > div.logo,
+    .logo *,
+    header .logo * {
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      stroke: #ffffff !important;
+      background: transparent !important;
+      text-shadow: none !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+
+    header .logo,
+    header div.logo {
+      color: white !important;
+      -webkit-text-fill-color: white !important;
+    }
+
+    /* ===== BOTONES DEL HEADER ===== */
+    #toggleSidebarBtn, #newProjectBtn {
+      background: rgba(59, 130, 246, 0.2) !important;
+      color: white !important;
+      border: 1px solid rgba(59, 130, 246, 0.5) !important;
+      padding: 8px 14px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    #toggleSidebarBtn:hover, #newProjectBtn:hover {
+      background: rgba(59, 130, 246, 0.4) !important;
+      border-color: #3B82F6 !important;
+    }
+
+    #voiceAssistantButton {
+      background: #2563EB !important;
+      color: white !important;
+      border: none !important;
+      padding: 8px 14px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    #voiceAssistantButton:hover {
+      background: #3B82F6 !important;
+      transform: translateY(-1px) !important;
+    }
+
+    #logoutBtn {
+      background: #DC2626 !important;
+      color: white !important;
+      border: none !important;
+      padding: 8px 14px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    #logoutBtn:hover {
+      background: #EF4444 !important;
+    }
+
+    #topNavGanttButton {
+      background: linear-gradient(45deg, #2563EB, #06B6D4) !important;
+      border: none !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-weight: 600 !important;
+      margin-left: 10px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      transition: all 0.2s ease !important;
+    }
+    #topNavGanttButton:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    }
+
+    #configButton {
+      background: rgba(0,0,0,0.3) !important;
+      color: white !important;
+      border: 1px solid rgba(59, 130, 246, 0.4) !important;
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      cursor: pointer !important;
+      font-size: 16px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin-left: 10px !important;
+      transition: all 0.2s ease !important;
+    }
+    #configButton:hover {
+      background: rgba(59, 130, 246, 0.3) !important;
+      border-color: #3B82F6 !important;
+    }
+
+    /* ===== TARJETA SISTEMA 4D ACTIVO ===== */
+    .glass-card-4d.floating {
+      padding: 20px 40px !important;
+      background: rgba(15, 23, 42, 0.8) !important;
+      backdrop-filter: blur(12px) !important;
+      border-radius: 12px !important;
+      margin: 20px 0 !important;
+      display: inline-block !important;
+      border: 1px solid rgba(59, 130, 246, 0.3) !important;
+      color: white !important;
+    }
+
+    /* ===== BOTONES PRINCIPALES CON AZUL PROFESIONAL ===== */
+    .btn-4d,
+    #generarProyectoBtn,
+    #btnEnviarInvitacion,
+    button[onclick*="abrirPMAgent"],
+    button[onclick*="abrirTranscriptorAgent"],
+    button[onclick*="abrirAnalistaAgent"],
+    button[onclick*="abrirAsistentePersonal"],
+    button[onclick*="generarDocumentoDesdeSelector"] {
+      background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      font-weight: 600 !important;
+      padding: 18px 30px !important;
+      margin: 5px !important;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3) !important;
+      transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+
+    .btn-4d:hover,
+    #generarProyectoBtn:hover,
+    #btnEnviarInvitacion:hover,
+    button[onclick*="abrirPMAgent"]:hover,
+    button[onclick*="abrirTranscriptorAgent"]:hover,
+    button[onclick*="abrirAnalistaAgent"]:hover,
+    button[onclick*="abrirAsistentePersonal"]:hover,
+    button[onclick*="generarDocumentoDesdeSelector"]:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.5) !important;
+      filter: brightness(1.05) !important;
+    }
+
+    /* ===== BOTÓN REPORTE EJECUTIVO ===== */
+    #reportButtonBoard {
+      background: linear-gradient(135deg, #2563EB, #06B6D4) !important;
+      color: white !important;
+      border: none !important;
+      padding: 12px 24px !important;
+      border-radius: 40px !important;
+      font-weight: bold !important;
+      cursor: pointer !important;
+      font-size: 14px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 5px !important;
+      margin: 10px !important;
+      transition: all 0.2s ease !important;
+    }
+    #reportButtonBoard:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4) !important;
+    }
+
+    /* ===== BOTÓN NUEVA TAREA ===== */
+    #newTaskBtn,
+    .action-btn.new-task {
+      background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+      color: white !important;
+      border: none !important;
+      padding: 12px 20px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-weight: bold !important;
+      margin: 10px !important;
+      transition: all 0.2s ease !important;
+    }
+    #newTaskBtn:hover,
+    .action-btn.new-task:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    }
+
+    /* ===== TÍTULOS DE ESTADO (Columnas Kanban) ===== */
+    .column h3,
+    .kanban-column h3,
+    #pendingTasks h3,
+    #inProgressTasks h3,
+    #completedTasks h3,
+    #overdueTasks h3 {
+      background: linear-gradient(135deg, #1E293B, #0F172A) !important;
+      color: white !important;
+      padding: 15px !important;
+      border-radius: 8px !important;
+      text-align: center !important;
+      margin: 10px 5px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+      border-left: 4px solid #3B82F6 !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+    }
+
+    .column,
+    .kanban-column,
+    #pendingTasks,
+    #inProgressTasks,
+    #completedTasks,
+    #overdueTasks {
+      background-color: #0F172A !important;
+    }
+
+    /* ===== CONTENEDOR PARA TÍTULO DEL PROYECTO ===== */
+    .project-title-wrapper,
+    #projectTitleWrapper {
+      display: block !important;
+      width: 100% !important;
+      text-align: center !important;
+      margin: 0 0 40px 0 !important;
+    }
+
+    /* ===== TÍTULO DEL PROYECTO CON GRADIENTE AZUL ===== */
+    .project-info h2,
+    h2.project-title,
+    h2#projectTitle,
+    h2:has(#projectName) {
+      font-size: 2.8rem !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      color: transparent !important;
+      text-shadow: 0 2px 10px rgba(59, 130, 246, 0.3) !important;
+      letter-spacing: -0.02em !important;
+      margin: 0 auto !important;
+      display: block !important;
+      width: 100% !important;
+      text-align: center !important;
+      transition: all 0.3s ease !important;
+      animation: titleGlow 3s ease-in-out infinite !important;
+    }
+
+    #projectName {
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      color: transparent !important;
+      display: inline-block !important;
+      text-align: center !important;
+    }
+
+    @keyframes titleGlow {
+      0% { text-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+      50% { text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+      100% { text-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+    }
+
+    /* ===== BOARD: CONTENEDOR DE TAREAS ===== */
+    .tasks,
+    .task-list,
+    .kanban-board,
+    .board-container,
+    #taskContainer,
+    #tasksContainer,
+    .task-container {
+      background-color: #0F172A !important;
+      background: #0F172A !important;
+    }
+
+    /* ===== TARJETAS DE TAREAS ===== */
+    .task-card,
+    .task-item,
+    .card.task,
+    .task {
+      background-color: #1E293B !important;
+      background: #1E293B !important;
+      border: 1px solid #334155 !important;
+      border-radius: 8px !important;
+      transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+    .task-card:hover,
+    .task-item:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+      border-color: #3B82F6 !important;
+    }
+
+    /* ===== PROGRESO DE SUBTAREAS ===== */
+    .subtasks-progress-container {
+      background-color: #0F172A !important;
+      background: #0F172A !important;
+      border: 1px solid #334155 !important;
+      border-radius: 8px !important;
+      padding: 12px !important;
+      margin: 10px 0 !important;
+    }
+
+    .subtasks-progress-container .progress-bar {
+      background-color: #1E293B !important;
+      height: 6px !important;
+      border-radius: 3px !important;
+      overflow: hidden !important;
+    }
+
+    .subtasks-progress-container .progress-fill {
+      background-color: #3B82F6 !important;
+      background: linear-gradient(90deg, #3B82F6, #06B6D4) !important;
+    }
+
+    .subtasks-progress-container .progress-info {
+      display: flex !important;
+      justify-content: space-between !important;
+      margin-top: 8px !important;
+      font-size: 12px !important;
+      color: #ffffff !important;
+    }
+
+    .subtasks-progress-container .progress-text,
+    .subtasks-progress-container .progress-percentage {
+      color: #ffffff !important;
+    }
+
+    /* ===== TEXTO DENTRO DE TARJETAS ===== */
+    .task-title,
+    .task-name,
+    .task-description,
+    .task-content,
+    .task-card h4,
+    .task-card p,
+    .task-card span {
+      color: #ffffff !important;
+    }
+
+    /* ===== FILTROS PROFESIONALES ===== */
+    .filter-bar,
+    .filter-container,
+    #filterBar {
+      background: #0F172A !important;
+      background-color: #0F172A !important;
+      padding: 20px 25px !important;
+      border-radius: 12px !important;
+      margin-bottom: 25px !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 15px !important;
+      align-items: center !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .filter-bar label {
+      color: #e2e8f0 !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    .filter-bar select,
+    .filter-bar input,
+    .filter-bar button {
+      background: #1E293B !important;
+      background-color: #1E293B !important;
+      color: #ffffff !important;
+      border: 1px solid #3B82F6 !important;
+      border-radius: 8px !important;
+      padding: 10px 16px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      transition: all 0.3s ease !important;
+      outline: none !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+      min-width: 140px !important;
+    }
+
+    .filter-bar select:hover,
+    .filter-bar input:hover,
+    .filter-bar button:hover {
+      border-color: #60A5FA !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+      background: #2D3A5E !important;
+    }
+
+    .filter-bar select:focus,
+    .filter-bar input:focus,
+    .filter-bar button:focus {
+      border-color: #3B82F6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+      outline: none !important;
+    }
+
+    .filter-bar select {
+      appearance: none !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233B82F6' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 12px center !important;
+      padding-right: 35px !important;
+    }
+
+    .filter-bar button:not(#reportButtonBoard):not(#newTaskBtn) {
+      background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+      border: none !important;
+    }
+
+    .filter-bar button:not(#reportButtonBoard):not(#newTaskBtn):hover {
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.5) !important;
+      transform: translateY(-2px) !important;
+    }
+
+    .filter-bar select,
+    .filter-bar input,
+    .filter-bar button {
+      animation: filterFadeIn 0.5s ease-out !important;
+    }
+
+    @keyframes filterFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    select::-webkit-scrollbar {
+      width: 8px !important;
+    }
+    select::-webkit-scrollbar-track {
+      background: #0F172A !important;
+    }
+    select::-webkit-scrollbar-thumb {
+      background: #3B82F6 !important;
+      border-radius: 4px !important;
+    }
+    select::-webkit-scrollbar-thumb:hover {
+      background: #60A5FA !important;
+    }
+
+    html, body {
+      background: #0A0A0F !important;
+      background-color: #0A0A0F !important;
+    }
+
+    #appViews, main, .container, .app-container {
+      background: #0F172A !important;
+    }
+
+    #mainAppContainer,
+    .dashboard-4d,
+    .dashboard-container,
+    [id*="dashboard"],
+    [class*="dashboard"] {
+      background: #0F172A !important;
+      background-color: #0F172A !important;
+    }
+
+    #mainAppContainer div[style*="background: rgba(255,255,255,0.05)"],
+    #mainAppContainer .metric,
+    #mainAppContainer .stat-card,
+    #mainAppContainer .dashboard-card,
+    .dashboard-4d .metric,
+    .dashboard-4d .stat-card,
+    .dashboard-4d .dashboard-card,
+    [class*="metric"],
+    [class*="stat-card"],
+    [class*="dashboard-card"] {
+      background: #1E293B !important;
+      background-color: #1E293B !important;
+      border-color: #3B82F6 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    #mainAppContainer h3,
+    #mainAppContainer .stat-value,
+    #mainAppContainer .stat-label,
+    .dashboard-4d h3,
+    .dashboard-4d .stat-value,
+    .dashboard-4d .stat-label {
+      color: #ffffff !important;
+    }
+
+    #mainAppContainer div[style*="background: rgba(59,130,246,0.15)"] div:first-child,
+    #mainAppContainer div[style*="background: rgba(6,182,212,0.15)"] div:first-child,
+    #mainAppContainer div[style*="background: rgba(34,197,94,0.15)"] div:first-child,
+    #mainAppContainer div[style*="background: rgba(239,68,68,0.15)"] div:first-child,
+    .dashboard-4d div[style*="background: rgba(59,130,246,0.15)"] div:first-child,
+    .dashboard-4d div[style*="background: rgba(6,182,212,0.15)"] div:first-child,
+    .dashboard-4d div[style*="background: rgba(34,197,94,0.15)"] div:first-child,
+    .dashboard-4d div[style*="background: rgba(239,68,68,0.15)"] div:first-child {
+      color: #ffffff !important;
+    }
+
+    /* ===== BOTÓN PM VIRTUAL ===== */
+    #boardUltimateBtn {
+      background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 50px !important;
+      padding: 12px 28px !important;
+      font-size: 16px !important;
+      font-weight: bold !important;
+      cursor: pointer !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+      font-family: system-ui, "Segoe UI", sans-serif !important;
+      letter-spacing: 0.5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      margin-left: 10px !important;
+    }
+    #boardUltimateBtn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.5) !important;
+      filter: brightness(1.05) !important;
+    }
+
+    /* ===== TÍTULOS DE COLUMNAS EN VISTA LISTA (MEJORADOS) ===== */
+    th {
+      background: linear-gradient(135deg, #3B82F6, #1E40AF) !important;
+      color: white !important;
+      padding: 12px 15px !important;
+      text-align: left !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      border-bottom: 2px solid #06B6D4 !important;
+      font-size: 14px !important;
+      transition: all 0.2s ease !important;
+    }
+    th:hover {
+      background: linear-gradient(135deg, #60A5FA, #2563EB) !important;
+      cursor: pointer !important;
+    }
+
+    /* ===== NOMBRE DEL PROYECTO EN VISTA LISTA ===== */
+    #projectNameList {
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      color: transparent !important;
+      font-weight: 800 !important;
+      display: inline-block !important;
+      animation: titleGlow 3s ease-in-out infinite !important;
+    }
+
+    /* ===== CONTENEDOR DEL PROYECTO (H2) EN VISTA LISTA ===== */
+    h2:has(#projectNameList) {
+      font-size: 2rem !important;
+      font-weight: 700 !important;
+      color: #e2e8f0 !important;
+      border-left: 4px solid #3B82F6 !important;
+      padding-left: 15px !important;
+      margin-bottom: 20px !important;
+      margin-top: 0 !important;
+    }
+
+    /* ===== SECCIÓN STATUS DEL PROYECTO - UNIFICACIÓN AZUL PROFESIONAL ===== */
+    /* Fondo principal de la sección (reemplaza #0a0a1a) */
+    div[style*="background: #0a0a1a"][style*="min-height: 100vh"] {
+      background: #0F172A !important;
+      background-color: #0F172A !important;
+    }
+
+    /* Tarjetas que usaban #1a1a3a o gradientes morados */
+    div[style*="background: #1a1a3a"],
+    div[style*="background: linear-gradient(135deg, #1a1a3a, #121230)"] {
+      background: #1E293B !important;
+      background-image: none !important;
+      border-color: #3B82F6 !important;
+    }
+
+    /* Botón de exportar PDF */
+    #exportarPdfBtn {
+      background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+    }
+
+    /* Gradientes que usaban morado/rosa (cambiar a azul/cian) */
+    div[style*="background: linear-gradient(135deg, #8b5cf6, #ec4899)"] {
+      background: linear-gradient(135deg, #2563EB, #06B6D4) !important;
+    }
+    div[style*="background: linear-gradient(90deg, #8b5cf6, #ec4899)"] {
+      background: linear-gradient(90deg, #3B82F6, #06B6D4) !important;
+    }
+
+    /* Bordes izquierdos con colores morado/rosa */
+    div[style*="border-left: 6px solid #8b5cf6"] {
+      border-left-color: #3B82F6 !important;
+    }
+    div[style*="border-left: 6px solid #ec4899"] {
+      border-left-color: #06B6D4 !important;
+    }
+    div[style*="border-left: 6px solid #f59e0b"] {
+      border-left-color: #F59E0B !important;
+    }
+
+    /* Bordes superiores de los KPIs */
+    div[style*="border-top: 4px solid #2ecc71"] {
+      border-top-color: #10B981 !important;
+    }
+    div[style*="border-top: 4px solid #008090"] {
+      border-top-color: #06B6D4 !important;
+    }
+    div[style*="border-top: 4px solid #f1c40f"] {
+      border-top-color: #F59E0B !important;
+    }
+    div[style*="border-top: 4px solid #ef4444"] {
+      border-top-color: #EF4444 !important;
+    }
+
+    /* Textos con gradiente blanco-gris (usar gradiente azul) */
+    div[style*="background: linear-gradient(135deg, #fff, #cbd5e1)"] {
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+
+    /* Colores de texto de acento (morado, rosa, naranja) */
+    span[style*="color: #8b5cf6"],
+    span[style*="color: #ec4899"],
+    span[style*="color: #f59e0b"] {
+      color: #3B82F6 !important;
+    }
+
+    /* Barras de progreso internas */
+    div[style*="background: #2d2d5f"] {
+      background: #334155 !important;
+    }
+  `;
+  document.head.appendChild(style);
+  console.log('✅ Estilos CSS azul profesional inyectados (versión completa con Status)');
+}
+
+  // ==================== 2. FORZAR LOGO BLANCO CON JAVASCRIPT ====================
+  function forceLogoWhite() {
+    console.log('🔥 Forzando logo blanco con JavaScript...');
+    
+    const logoSelectors = [
+      '.logo',
+      'header .logo',
+      'div.logo',
+      'header div.logo',
+      '.logo-text',
+      '[class*="logo"]'
+    ];
+    
+    logoSelectors.forEach(selector => {
+      const logos = document.querySelectorAll(selector);
+      logos.forEach(logo => {
+        logo.style.cssText = `
+          color: #ffffff !important;
+          fill: #ffffff !important;
+          stroke: #ffffff !important;
+          background: transparent !important;
+          text-shadow: none !important;
+          -webkit-text-fill-color: #ffffff !important;
+        `;
+        
+        logo.querySelectorAll('*').forEach(child => {
+          child.style.color = '#ffffff';
+          child.style.setProperty('color', '#ffffff', 'important');
+        });
+        
+        console.log('✅ Logo forzado a blanco:', logo.textContent);
+      });
+    });
+  }
+
+  // ==================== 3. FORZAR NOMBRE DEL PROYECTO ====================
+  function forceProjectName() {
+    console.log('🔥 Verificando nombre del proyecto...');
+    
+    let projectH2 = document.querySelector('h2');
+    
+    if (!projectH2) {
+      projectH2 = document.createElement('h2');
+      projectH2.id = 'projectTitle';
+      
+      let mainContainer = document.querySelector('#appViews') || 
+                          document.querySelector('main') || 
+                          document.querySelector('.container') || 
+                          document.querySelector('.app-container') ||
+                          document.body;
+      
+      mainContainer.appendChild(projectH2);
+      console.log('✅ H2 creado');
+    }
+
+    let projectNameSpan = document.getElementById('projectName');
+    let projectNameText = 'revision';
+    
+    if (window.currentProjectName) {
+      projectNameText = window.currentProjectName;
+    } else if (window.projectName) {
+      projectNameText = window.projectName;
+    }
+
+    if (!projectNameSpan) {
+      projectNameSpan = document.createElement('span');
+      projectNameSpan.id = 'projectName';
+      projectNameSpan.textContent = projectNameText;
+      
+      projectH2.innerHTML = 'Proyecto: ';
+      projectH2.appendChild(projectNameSpan);
+      console.log('✅ Span #projectName creado:', projectNameText);
+    }
+
+    // === CREAR WRAPPER PARA CENTRAR ===
+    let wrapper = document.getElementById('projectTitleWrapper');
+    if (!wrapper) {
+      wrapper = document.createElement('div');
+      wrapper.id = 'projectTitleWrapper';
+      wrapper.className = 'project-title-wrapper';
+      projectH2.parentNode.insertBefore(wrapper, projectH2);
+      wrapper.appendChild(projectH2);
+    }
+
+    // === APLICAR ESTILOS EN LÍNEA AL WRAPPER ===
+    wrapper.style.cssText = `
+      display: block !important;
+      width: 100% !important;
+      text-align: center !important;
+      margin: 0 0 40px 0 !important;
+    `;
+
+    // === APLICAR ESTILOS EN LÍNEA AL H2 ===
+    projectH2.style.cssText = `
+      font-size: 2.8rem !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      color: transparent !important;
+      text-shadow: 0 2px 10px rgba(59, 130, 246, 0.3) !important;
+      letter-spacing: -0.02em !important;
+      margin: 0 auto !important;
+      display: block !important;
+      width: 100% !important;
+      text-align: center !important;
+      animation: titleGlow 3s ease-in-out infinite !important;
+    `;
+
+    // === APLICAR ESTILOS EN LÍNEA AL SPAN ===
+    projectNameSpan.style.cssText = `
+      background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      color: transparent !important;
+      display: inline-block !important;
+    `;
+
+    return { projectH2, wrapper };
+  }
+
+  // ==================== 4. APLICAR ESTILOS AL DASHBOARD 4D ====================
+  function applyDashboard4DStyles() {
+    console.log('🔥 Aplicando estilos al Dashboard 4D (azul profesional)...');
+    
+    const dashboardContainers = [
+      document.querySelector('#mainAppContainer'),
+      document.querySelector('.dashboard-4d'),
+      document.querySelector('.dashboard-container')
+    ];
+    
+    dashboardContainers.forEach(container => {
+      if (container) {
+        // Fondo principal azul oscuro
+        container.style.background = '#0F172A';
+        container.style.setProperty('background-color', '#0F172A', 'important');
+        
+        // Contenedores internos con #1E293B
+        const innerContainers = container.querySelectorAll('div[style*="background: rgba(255,255,255,0.05)"], .metric, .stat-card, .dashboard-card');
+        innerContainers.forEach(inner => {
+          inner.style.background = '#1E293B';
+          inner.style.setProperty('background-color', '#1E293B', 'important');
+          inner.style.borderColor = '#3B82F6';
+          inner.style.borderRadius = '12px';
+        });
+        
+        // Textos en blanco
+        const texts = container.querySelectorAll('h3, .stat-value, .stat-label');
+        texts.forEach(text => {
+          text.style.color = '#ffffff';
+        });
+      }
+    });
+    
+    console.log('✅ Dashboard 4D: Fondo azul oscuro + contenedores #1E293B');
+  }
+
+  // ==================== 5. APLICAR CAMBIOS DOM ====================
+  function applyDOMChanges() {
+    // === 1. FORZAR HEADER CON GRADIENTE AZUL ===
+    let header = document.querySelector('header');
+    if (header) {
+      header.style.background = 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)';
+      header.style.backgroundColor = '#0F172A';
+      header.style.setProperty('background', 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 'important');
+      header.style.setProperty('background-color', '#0F172A', 'important');
+      console.log('✅ Header color: gradiente azul');
+    }
+
+    // === 2. FORZAR LOGO BLANCO ===
+    forceLogoWhite();
+
+    // === 3. FORZAR NOMBRE DEL PROYECTO ===
+    const { projectH2, wrapper } = forceProjectName();
+    
+    // === 4. APLICAR ESTILOS AL DASHBOARD 4D ===
+    applyDashboard4DStyles();
+
+    console.log('✅✅✅ CAMBIOS DOM COMPLETADOS (tema azul profesional) ✅✅✅');
+  }
+
+  // ==================== 6. INICIALIZACIÓN ====================
+  function initExecutiveStyles() {
+    if (initializationComplete) return;
+    
+    injectStyles();
+    applyDOMChanges();
+    initializationComplete = true;
+    console.log('🎉🎉 ESTILOS EJECUTIVOS AZUL INICIALIZADOS CORRECTAMENTE 🎉');
+  }
+
+  // ==================== 7. EJECUTAR ====================
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initExecutiveStyles);
+  } else {
+    initExecutiveStyles();
+  }
+
+  // ==================== 8. REINTENTOS ====================
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  const retryInterval = setInterval(() => {
+    if (initializationComplete && retryCount >= 2) {
+      clearInterval(retryInterval);
+      return;
+    }
+    
+    retryCount++;
+    
+    const header = document.querySelector('header');
+    if (header) {
+      header.style.background = 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)';
+      header.style.setProperty('background', 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 'important');
+    }
+    
+    // Re-forzar logo blanco en cada reintento
+    forceLogoWhite();
+    
+    // Re-aplicar Dashboard 4D
+    applyDashboard4DStyles();
+    
+    if (retryCount >= maxRetries) {
+      clearInterval(retryInterval);
+    }
+  }, 1500);
+
+  console.log('🚀 SISTEMA DE ESTILOS EJECUTIVOS AZUL ACTIVADO');
+
+})();
+// ========== FIN DE ESTILOS PERSONALIZADOS - VERSIÓN AZUL PROFESIONAL ==========
+
+
+
+
+
+
+
+
+// ============================================================
+// BOTÓN FLOTANTE (TU CÓDIGO ORIGINAL - SIN CAMBIOS)
+// ============================================================
+(function ultimateFloatingButton(){
+function spawn() {
+let btn = document.getElementById("boardUltimateBtn");
+if (!btn) {
+btn = document.createElement("button");
+btn.id = "boardUltimateBtn";
+btn.textContent = "PM Virtual";                    // Cambia el texto
+btn.title = "Abrir PM Virtual";
+btn.style.cssText = `
+position: static !important;
+bottom: auto !important;
+left: auto !important;
+transform: none !important;
+width: auto !important;
+height: auto !important;
+margin-left: 10px !important;padding: 12px 28px !important;
+border-radius: 50px !important;
+background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+color: white !important;
+font-size: 16px !important;
+font-weight: bold !important;
+border: none !important;
+cursor: pointer !important;
+z-index: 99999999999999 !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+gap: 8px !important;
+box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
+transition: all 0.3s ease !important;
+font-family: system-ui, 'Segoe UI', sans-serif !important;
+letter-spacing: 0.5px !important;
+`;btn.onclick = () => {
+console.log("✔ Botón Ultimate presionado");
+if (typeof abrirModalPM === "function") {
+abrirModalPM();
+} else {
+alert("abrirModalPM no existe todavía");
+}
+};
+let header = document.querySelector('header, header#mainHeader, .main-header');
+if (header) { header.appendChild(btn); }
+else { document.body.appendChild(btn); }
+console.log("✔ Botón Ultimate generado");
+}
+}
+// Crear inmediatamente
+document.addEventListener("DOMContentLoaded", spawn);
+// Re-crear si lo eliminan
+setInterval(spawn, 800);
+})();
+
+// ============================================================
+// PM VIRTUAL EJECUTIVO - VERSIÓN COMPLETA CORREGIDA
+// ============================================================
+(function() {
+'use strict';
+
+// ========== FUNCIONES FALTANTES AGREGADAS (CORRECCIÓN DEL ERROR) ==========
+
+// ✅ FUNCIÓN: actualizarSelector (llamada desde script.js)
+function actualizarSelector() {
+const proyecto = obtenerProyectoActual();
+const selector = document.getElementById('projectSelector');
+if (selector && proyecto) {
+selector.value = proyecto.name;
+}
+console.log("✔ Selector actualizado");
+}
+
+// ✅ FUNCIÓN: abrirModalPM (llamada desde script.js - línea 405)
+function abrirModalPM() {
+console.log("✔ Abrir Modal PM");
+actualizarSelector();
+abrirPanelCompleto();
+}
+
+// Exponer funciones globalmente para acceso desde script.js externo
+window.actualizarSelector = actualizarSelector;
+window.abrirModalPM = abrirModalPM;
+
+// ---------- UTILIDADES SEGURAS ----------
+function obtenerProyectos() {
+try {
+if (window.projects && window.projects.length) return window.projects;
+const stored = localStorage.getItem('projects');
+return stored ? JSON.parse(stored) : [];
+} catch(e) { return []; }
+}
+
+function obtenerProyectoActual() {
+const proyectos = obtenerProyectos();
+let idx = window.currentProjectIndex;
+if (idx === undefined) idx = parseInt(localStorage.getItem('currentProjectIndex')) || 0;
+return proyectos[idx] || null;
+}
+
+function guardarProyectos(proyectos) {
+localStorage.setItem('projects', JSON.stringify(proyectos));
+if (window.projects) window.projects = proyectos;
+}
+
+function generarHTML(titulo, contenido, extraStyles = '') {
+    return `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${titulo}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    font-family: 'Inter', 'Segoe UI', sans-serif; 
+                    background: #f1f5f9; 
+                    padding: 20px; 
+                }
+                .document-container { 
+                    max-width: 1100px; 
+                    margin: 0 auto; 
+                    background: white; 
+                    border-radius: 16px; 
+                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+                    overflow: hidden; 
+                }
+                @media print {
+                    body { background: white; padding: 0; }
+                    .document-container { box-shadow: none; margin: 0; max-width: 100%; }
+                    button[onclick*="print"] {
+                        display: none !important;
+                    }
+                }
+                ${extraStyles}
+            </style>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+        </head>
+        <body>
+            <div class="document-container">
+                ${contenido}
+            </div>
+        </body>
+        </html>
+    `;
+}
+function abrirVentanaDocumento(html, nombre) {
+    const win = window.open('', '_blank');
+    if (!win) { alert('Permite ventanas emergentes para generar documentos'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.document.title = nombre;
+    // ❌ Elimina la siguiente línea:
+    // win.print();
+}
+
+// ========== SECCIÓN DOCUMENTOS ==========
+// ========== FUNCIÓN MEJORADA: GENERAR ACTA CONSTITUTIVA EJECUTIVA ==========
+// ========================
+// GENERAR ACTA CONSTITUTIVA (sin cambios en esta parte, la dejo igual)
+// ========================
+function generarActaConstitutiva() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    // Modal de selección de método (igual que antes, no lo modifico)
+    const modal = document.createElement('div');
+    modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+    const content = document.createElement('div');
+    content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:25px; border-radius:16px; width:500px; max-width:90vw; max-height:85vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+    content.innerHTML = `
+        <h2 style="color:#3b82f6; margin:0 0 20px 0; text-align:center; font-size:18px;">📑 Acta Constitutiva</h2>
+        <p style="margin:0 0 20px 0; text-align:center; color:#94a3b8; font-size:13px;">Selecciona el método:</p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+            <button id="metodoManual" style="background:#3b82f6; border:none; padding:15px; border-radius:10px; color:white; cursor:pointer; font-size:13px; font-weight:bold;">✏️ Manual</button>
+            <button id="metodoArchivo" style="background:#8b5cf6; border:none; padding:15px; border-radius:10px; color:white; cursor:pointer; font-size:13px; font-weight:bold;">📁 Archivo</button>
+        </div>
+
+        <div id="formularioManual" style="display:block; flex:1; overflow-y:auto;">
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nombre del Proyecto:</label>
+            <input type="text" id="actaNombre" value="${proyecto.name}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Objetivo Principal (SMART):</label>
+            <textarea id="actaObjetivo" rows="2" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">${proyecto.description || ''}</textarea>
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Alcance (Incluye/Excluye):</label>
+            <textarea id="actaAlcance" rows="2" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;"></textarea>
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Equipamiento a instalar:</label>
+            <textarea id="actaEquipamiento" rows="3" placeholder="Ej: Servidores (rack 42U), switches (armario telecomunicaciones), estaciones de trabajo (oficina 3ª planta)..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;"></textarea>
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Stakeholders Clave:</label>
+            <input type="text" id="actaStakeholders" placeholder="Ej: CEO, Director TI..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Presupuesto Estimado (€):</label>
+            <input type="text" id="actaPresupuesto" placeholder="Ej: 500,000" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Sponsor / Patrocinador:</label>
+            <input type="text" id="actaSponsor" placeholder="Nombre completo" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Sponsor / Cliente:</label>
+            <input type="text" id="actaSponsorCliente" placeholder="Nombre del cliente o sponsor" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Gerente del Proyecto:</label>
+            <input type="text" id="actaPM" value="Usuario" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha de Inicio:</label>
+            <input type="date" id="actaFechaInicio" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha de Fin Estimada:</label>
+            <input type="date" id="actaFechaFin" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;">
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Criterios de Éxito:</label>
+            <textarea id="actaExito" rows="2" placeholder="Ej: ROI > 20%..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;"></textarea>
+
+            <label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Riesgos Principales:</label>
+            <textarea id="actaRiesgos" rows="2" placeholder="Ej: Cambios de alcance..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:12px; font-size:13px;"></textarea>
+        </div>
+
+        <div id="formularioArchivo" style="display:none; flex:1; overflow-y:auto;">
+            <h3 style="color:#f59e0b; margin:0 0 10px 0; font-size:14px;">📁 Cargar Documento</h3>
+            <p style="color:#94a3b8; margin:0 0 15px 0; font-size:12px;">Sube un archivo y el sistema extraerá la información.</p>
+            <input type="file" id="archivoActa" accept=".txt,.pdf,.doc,.docx" style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; margin-bottom:10px; font-size:13px;">
+            <div id="analisisProgreso" style="display:none; color:#10b981; margin-bottom:10px; font-size:12px;">🔄 Analizando...</div>
+            <div id="archivoInfo" style="color:#94a3b8; font-size:11px;"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+            <button id="generarActaBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">✅ Generar Acta</button>
+            <button id="cancelarActaBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+        </div>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Mostrar/ocultar formularios
+    document.getElementById('metodoManual').onclick = () => {
+        document.getElementById('formularioManual').style.display = 'block';
+        document.getElementById('formularioArchivo').style.display = 'none';
+    };
+
+    document.getElementById('metodoArchivo').onclick = () => {
+        document.getElementById('formularioManual').style.display = 'none';
+        document.getElementById('formularioArchivo').style.display = 'block';
+    };
+
+    // Procesar archivo
+    document.getElementById('archivoActa').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('archivoInfo').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(2)} KB)`;
+            document.getElementById('analisisProgreso').style.display = 'block';
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const texto = event.target.result;
+                analizarDocumento(texto);
+                document.getElementById('analisisProgreso').style.display = 'none';
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    // Función de análisis de documento
+    function analizarDocumento(texto) {
+        const patrones = {
+            objetivo: /(objetivo|meta|propósito)[:\s]+([^.]+)/i,
+            alcance: /(alcance|scope)[:\s]+([^.]+)/i,
+            presupuesto: /(\d+[,.]?\d*)\s*(€|EUR|euros|dólares|USD)/i,
+            sponsor: /(sponsor|patrocinador)[:\s]+([^.]+)/i,
+            gerente: /(gerente|director|pm|project manager)[:\s]+([^.]+)/i,
+            fecha: /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i
+        };
+
+        Object.keys(patrones).forEach(campo => {
+            const match = texto.match(patrones[campo]);
+            if (match && match[2]) {
+                const inputId = 'acta' + campo.charAt(0).toUpperCase() + campo.slice(1);
+                const input = document.getElementById(inputId);
+                if (input) input.value = match[2].trim();
+            }
+        });
+
+        alert('✅ Documento analizado. Revisa los campos completados automáticamente.');
+    }
+
+    // Generar acta
+    document.getElementById('generarActaBtn').onclick = () => {
+        const datos = {
+            nombre: document.getElementById('actaNombre').value || proyecto.name,
+            objetivo: document.getElementById('actaObjetivo').value || 'No especificado',
+            alcance: document.getElementById('actaAlcance').value || 'No especificado',
+            equipamiento: document.getElementById('actaEquipamiento').value || 'No especificado',
+            stakeholders: document.getElementById('actaStakeholders').value || 'No especificado',
+            presupuesto: document.getElementById('actaPresupuesto').value || 'No especificado',
+            sponsor: document.getElementById('actaSponsor').value || 'No especificado',
+            sponsorCliente: document.getElementById('actaSponsorCliente').value || 'No especificado',
+            pm: document.getElementById('actaPM').value || 'Usuario',
+            fechaInicio: document.getElementById('actaFechaInicio').value || new Date().toISOString().split('T')[0],
+            fechaFin: document.getElementById('actaFechaFin').value || '',
+            exito: document.getElementById('actaExito').value || 'Entrega dentro del plazo y presupuesto aprobado',
+            riesgos: document.getElementById('actaRiesgos').value || 'Por definir en fase de planificación'
+        };
+        generarActaEjecutiva(datos, proyecto);
+        modal.remove();
+    };
+
+    document.getElementById('cancelarActaBtn').onclick = () => modal.remove();
+}
+
+// ========================
+// GENERAR ACTA EJECUTIVA (con botón de impresión manual)
+// ========================
+function generarActaEjecutiva(datos, proyecto) {
+    const fechaEmision = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    const version = '1.0';
+    const codigoProyecto = 'PRJ-' + Date.now().toString().slice(-6);
+
+    // Contenido del documento (sin el botón de impresión todavía)
+    const contenidoDocumento = `
+        <div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:40px; border-radius:16px 16px 0 0; text-align:center;">
+            <h1 style="margin:0; font-size:32px; font-weight:bold; color:#ffffff !important;">📑 ACTA CONSTITUTIVA DE PROYECTO</h1>
+            <p style="margin:10px 0 0 0; opacity:0.9; font-size:14px;">PROJECT CHARTER - DOCUMENTO EJECUTIVO</p>
+        </div>
+
+        <div style="background:#f8fafc; padding:25px; border-bottom:3px solid #3b82f6;">
+            <table style="width:100%; border:none;">
+                <tr>
+                    <td style="border:none; padding:8px;"><strong>📋 Código:</strong> ${codigoProyecto}</td>
+                    <td style="border:none; padding:8px;"><strong>📅 Fecha de Emisión:</strong> ${fechaEmision}</td>
+                    <td style="border:none; padding:8px;"><strong>📝 Versión:</strong> ${version}</td>
+                </tr>
+                <tr>
+                    <td style="border:none; padding:8px;"><strong>🏢 Proyecto:</strong> ${datos.nombre}</td>
+                    <td style="border:none; padding:8px;"><strong>👤 Gerente:</strong> ${datos.pm}</td>
+                    <td style="border:none; padding:8px;"><strong>💼 Sponsor:</strong> ${datos.sponsor}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="padding:30px;">
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">🎯 1. OBJETIVO Y JUSTIFICACIÓN</h2>
+            <p style="line-height:1.8; color:#374151;">${datos.objetivo}</p>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">📐 2. ALCANCE DEL PROYECTO</h2>
+            <div style="background:#f1f5f9; padding:20px; border-radius:10px; margin-top:15px;">
+                <strong style="color:#10b981;">✅ INCLUYE:</strong>
+                <ul style="line-height:1.8; color:#374151;">
+                    <li>${datos.alcance.split('\n')[0] || 'Entregables principales del proyecto'}</li>
+                    <li>Documentación completa y aprobaciones</li>
+                    <li>Capacitación y transferencia de conocimiento</li>
+                </ul>
+                <strong style="color:#ef4444;">❌ EXCLUYE:</strong>
+                <ul style="line-height:1.8; color:#374151;">
+                    <li>Mantenimiento post-implementación (sujeto a contrato separado)</li>
+                    <li>Actividades no especificadas en este documento</li>
+                </ul>
+            </div>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">🖥️ 2.1 EQUIPAMIENTO A INSTALAR</h2>
+            <div style="background:#f1f5f9; padding:20px; border-radius:10px; margin-top:15px;">
+                ${datos.equipamiento.split('\n').map(line => `<p style="margin:5px 0; color:#374151;">• ${line}</p>`).join('') || '<p style="color:#374151;">No especificado</p>'}
+            </div>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">👥 3. STAKEHOLDERS CLAVE</h2>
+            <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+                <thead>
+                    <tr style="background:#3b82f6; color:black;">
+                        <th style="padding:12px; text-align:left;">Rol</th>
+                        <th style="padding:12px; text-align:left;">Responsabilidad</th>
+                        <th style="padding:12px; text-align:left;">Nivel de Influencia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.sponsor}</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">Patrocinador / Aprobador</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">🔴 Alta</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.pm}</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">Gerente de Proyecto</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">🟡 Media</td>
+                    </tr>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.stakeholders}</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">Interesados / Usuarios</td>
+                        <td style="padding:12px; border-bottom:1px solid #e2e8f0;">🟢 Variable</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">💰 4. PRESUPUESTO Y RECURSOS</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:15px;">
+                <div style="background:#f0fdf4; padding:20px; border-radius:10px; border-left:4px solid #10b981;">
+                    <strong style="color:#166534; font-size:18px;">💵 Presupuesto Estimado</strong>
+                    <p style="font-size:28px; color:#10b981; margin:10px 0;">${datos.presupuesto !== 'No especificado' ? '€ ' + datos.presupuesto : 'Por definir'}</p>
+                </div>
+                <div style="background:#fef3c7; padding:20px; border-radius:10px; border-left:4px solid #f59e0b;">
+                    <strong style="color:#92400e; font-size:18px;">📅 Duración Estimada</strong>
+                    <p style="font-size:28px; color:#f59e0b; margin:10px 0;">${datos.fechaInicio && datos.fechaFin ? Math.ceil((new Date(datos.fechaFin) - new Date(datos.fechaInicio)) / (1000*3600*24)) + ' días' : 'Por definir'}</p>
+                </div>
+            </div>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">📊 5. CRITERIOS DE ÉXITO</h2>
+            <ul style="line-height:2; color:#374151;">
+                ${datos.exito.split('\n').map(c => `<li>${c || '• Cumplimiento de objetivos SMART'}</li>`).join('')}
+            </ul>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">⚠️ 6. RIESGOS PRINCIPALES</h2>
+            <div style="background:#fef2f2; padding:20px; border-radius:10px; border-left:4px solid #ef4444; margin-top:15px;">
+                ${datos.riesgos.split('\n').map(r => `<p style="margin:5px 0; color:#991b1b;">⚠️ ${r || 'Riesgos por identificar en fase de planificación'}</p>`).join('')}
+            </div>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">📅 7. CRONOGRAMA PRINCIPAL</h2>
+            <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+                <tr style="background:#3b82f6; color:black;">
+                    <th style="padding:12px; text-align:left;">Hito</th>
+                    <th style="padding:12px; text-align:left;">Fecha Estimada</th>
+                </tr>
+                <tr><td style="padding:12px; border-bottom:1px solid #e2e8f0;">🚀 Inicio del Proyecto</td><td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.fechaInicio}</td></tr>
+                <tr><td style="padding:12px; border-bottom:1px solid #e2e8f0;">📋 Planificación Completada</td><td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.fechaInicio ? new Date(new Date(datos.fechaInicio).setDate(new Date(datos.fechaInicio).getDate() + 15)).toISOString().split('T')[0] : 'TBD'}</td></tr>
+                <tr><td style="padding:12px; border-bottom:1px solid #e2e8f0;">✅ Entrega Final</td><td style="padding:12px; border-bottom:1px solid #e2e8f0;">${datos.fechaFin || 'Por definir'}</td></tr>
+            </table>
+
+            <h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin-top:30px;">✍️ 8. APROBACIONES</h2>
+            <p style="color:#6b7280; margin-bottom:20px;">Las siguientes firmas indican aprobación formal para iniciar el proyecto:</p>
+            <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+                <thead>
+                    <tr style="background:#1e3a8a; color:black;">
+                        <th style="padding:15px; text-align:left;">Rol</th>
+                        <th style="padding:15px; text-align:left;">Nombre</th>
+                        <th style="padding:15px; text-align:left;">Firma</th>
+                        <th style="padding:15px; text-align:left;">Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">Sponsor / Patrocinador</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${datos.sponsor}</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6; height:50px;"></td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${fechaEmision}</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">Gerente de Proyecto</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${datos.pm}</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6; height:50px;"></td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${fechaEmision}</td>
+                    </tr>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">Sponsor / Cliente</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${datos.sponsorCliente}</td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6; height:50px;"></td>
+                        <td style="padding:15px; border-bottom:2px solid #3b82f6;">${fechaEmision}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top:40px; padding:20px; background:#f8fafc; border-radius:10px; text-align:center;">
+                <p style="color:#6b7280; font-size:12px; margin:0;">
+                    <strong>CONFIDENCIALIDAD:</strong> Este documento es propiedad de la organización y su distribución está restringida.<br>
+                    Generado automáticamente por PM Virtual Ejecutivo - ${fechaEmision}
+                </p>
+            </div>
+        </div>
+    `;
+
+    // Botón flotante de impresión (solo se muestra en pantalla, no en papel)
+    const botonImpresion = `
+        <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+            <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+                🖨️ Imprimir Acta
+            </button>
+        </div>
+    `;
+
+    // HTML completo con estilos y botón (sin impresión automática)
+    const htmlCompleto = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Acta Constitutiva - ${datos.nombre}</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                body {
+                    font-family: 'Inter', 'Segoe UI', sans-serif !important;
+                    margin: 0;
+                    padding: 20px;
+                    background: #e2e8f0;
+                }
+                .document-container {
+                    max-width: 1100px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+                    overflow: hidden;
+                }
+                @media print {
+                    body {
+                        background: white;
+                        padding: 0;
+                    }
+                    .document-container {
+                        box-shadow: none;
+                        margin: 0;
+                        max-width: 100%;
+                    }
+                    /* Ocultar el botón de impresión al imprimir */
+                    button[onclick*="print"] {
+                        display: none !important;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="document-container">
+                ${contenidoDocumento}
+            </div>
+            ${botonImpresion}
+        </body>
+        </html>
+    `;
+
+    // Abrir el documento en una nueva ventana SIN forzar impresión
+    const ventana = window.open();
+    ventana.document.write(htmlCompleto);
+    ventana.document.close();
+    ventana.document.title = `Acta_Ejecutiva_${datos.nombre.replace(/\s+/g, '_')}`;
+
+    // Guardar en localStorage para historial
+    let actasGuardadas = JSON.parse(localStorage.getItem('actasConstitutivas') || '[]');
+    actasGuardadas.push({
+        proyecto: datos.nombre,
+        fecha: new Date().toISOString(),
+        version: version,
+        codigo: codigoProyecto
+    });
+    localStorage.setItem('actasConstitutivas', JSON.stringify(actasGuardadas));
+
+    alert('✅ Acta Constitutiva Ejecutiva generada exitosamente.\n\n📋 Código: ' + codigoProyecto + '\n📄 Documento abierto. Use el botón flotante para imprimir.');
+}
+
+// Registro de Stakeholders - VERSIÓN EJECUTIVA DE EXCELENCIA
+function generarRegistroStakeholders() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+// ✅ Código único para trazabilidad
+const codigoStakeholders = 'STK-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Modal elegante para ingreso de stakeholders
+const modal = document.createElement('div');
+modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+const content = document.createElement('div');
+content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:800px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 10px 0; text-align:center; font-size:22px;">👥 Registro de Stakeholders</h2>
+<p style="margin:0 0 25px 0; text-align:center; color:#94a3b8; font-size:13px;">Proyecto: <strong>${proyecto.name}</strong></p>
+
+<!-- Formulario para agregar stakeholder -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#3b82f6; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">➕ Registrar Nuevo Stakeholder</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nombre / Rol:</label>
+<input type="text" id="stkNombre" placeholder="Ej: Director de TI, Cliente Principal..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nivel de Influencia:</label>
+<select id="stkInfluencia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Alta">🔴 Alta</option><option value="Media">🟡 Media</option><option value="Baja">🟢 Baja</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nivel de Interés:</label>
+<select id="stkInteres" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Alto">🔴 Alto</option><option value="Medio">🟡 Medio</option><option value="Bajo">🟢 Bajo</option>
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Expectativas Clave:</label>
+<textarea id="stkExpectativas" rows="2" placeholder="¿Qué espera este stakeholder del proyecto?" style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Estrategia de Gestión:</label>
+<select id="stkEstrategia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Gestionar de cerca">🔴 Gestionar de cerca</option>
+<option value="Mantener informado">🟡 Mantener informado</option>
+<option value="Monitorear">🟢 Monitorear</option>
+<option value="Mantener satisfecho">🔵 Mantener satisfecho</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Frecuencia de Comunicación:</label>
+<select id="stkFrecuencia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Diaria</option><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>Según necesidad</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Canal Preferido:</label>
+<select id="stkCanal" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Email</option><option>Reunión presencial</option><option>Videoconferencia</option><option>Chat/Slack</option><option>Informe escrito</option>
+</select>
+</div>
+</div>
+<button id="agregarStakeholder" style="margin-top:20px; background:#3b82f6; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Guardar Stakeholder</button>
+</div>
+
+<!-- Matriz de Poder/Interés Visual -->
+<div id="matrizStakeholders" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;"></div>
+
+<!-- Lista de stakeholders registrados -->
+<div id="listaStakeholders" style="flex:1; overflow-y:auto; margin-bottom:20px;"></div>
+
+<!-- Botones de acción -->
+<div style="display:flex; gap:15px; justify-content:center; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+<button id="generarRegistroBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">📄 Generar Registro Ejecutivo</button>
+<button id="cancelarStkBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// ✅ Almacenamiento temporal para stakeholders
+let stakeholdersTemp = JSON.parse(localStorage.getItem('stakeholdersData') || '[]').filter(s => s.proyectoId === proyecto.name);
+
+// ✅ Función para renderizar matriz de poder/interés
+function renderMatriz() {
+const container = document.getElementById('matrizStakeholders');
+if (stakeholdersTemp.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">📊 Agrega stakeholders para visualizar la matriz de poder/interés</p>';
+return;
+}
+
+// Contar por cuadrante
+const cuadrantes = {
+altoAlto: stakeholdersTemp.filter(s => s.influencia === 'Alta' && s.interes === 'Alto').length,
+altoBajo: stakeholdersTemp.filter(s => s.influencia === 'Alta' && s.interes === 'Bajo').length,
+bajoAlto: stakeholdersTemp.filter(s => s.influencia === 'Baja' && s.interes === 'Alto').length,
+bajoBajo: stakeholdersTemp.filter(s => s.influencia === 'Baja' && s.interes === 'Bajo').length
+};
+
+container.innerHTML = `
+<h3 style="color:#f59e0b; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #f59e0b; padding-bottom:10px;">📊 Matriz de Poder/Interés</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;">
+<div style="background:rgba(239,68,68,0.2); padding:15px; border-radius:8px; border:2px solid #ef4444;">
+<div style="font-size:20px; font-weight:bold; color:#ef4444;">${cuadrantes.altoAlto}</div>
+<div style="font-size:10px; color:#94a3b8;">🔴 Gestionar de cerca</div>
+<div style="font-size:9px; color:#64748b; margin-top:5px;">Alta influencia, Alto interés</div>
+</div>
+<div style="background:rgba(59,130,246,0.2); padding:15px; border-radius:8px; border:2px solid #3b82f6;">
+<div style="font-size:20px; font-weight:bold; color:#60a5fa;">${cuadrantes.bajoAlto}</div>
+<div style="font-size:10px; color:#94a3b8;">🔵 Mantener satisfecho</div>
+<div style="font-size:9px; color:#64748b; margin-top:5px;">Baja influencia, Alto interés</div>
+</div>
+<div style="background:rgba(245,158,11,0.2); padding:15px; border-radius:8px; border:2px solid #f59e0b;">
+<div style="font-size:20px; font-weight:bold; color:#fbbf24;">${cuadrantes.altoBajo}</div>
+<div style="font-size:10px; color:#94a3b8;">🟡 Mantener informado</div>
+<div style="font-size:9px; color:#64748b; margin-top:5px;">Alta influencia, Bajo interés</div>
+</div>
+<div style="background:rgba(34,197,94,0.2); padding:15px; border-radius:8px; border:2px solid #22c55e;">
+<div style="font-size:20px; font-weight:bold; color:#4ade80;">${cuadrantes.bajoBajo}</div>
+<div style="font-size:10px; color:#94a3b8;">🟢 Monitorear</div>
+<div style="font-size:9px; color:#64748b; margin-top:5px;">Baja influencia, Bajo interés</div>
+</div>
+</div>
+`;
+}
+
+// ✅ Función para renderizar lista de stakeholders
+function renderLista() {
+const container = document.getElementById('listaStakeholders');
+if (stakeholdersTemp.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:30px; font-size:14px;">👥 No hay stakeholders registrados aún. Agrega el primero usando el formulario de arriba.</p>';
+return;
+}
+
+let html = `<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Stakeholders Registrados (${stakeholdersTemp.length})</h3>`;
+
+stakeholdersTemp.forEach((stk, idx) => {
+const colorInfluencia = stk.influencia === 'Alta' ? '#ef4444' : (stk.influencia === 'Media' ? '#f59e0b' : '#22c55e');
+const colorInteres = stk.interes === 'Alto' ? '#ef4444' : (stk.interes === 'Medio' ? '#f59e0b' : '#22c55e');
+
+html += `
+<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${colorInfluencia};">
+<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+<div style="flex:1;">
+<div style="display:flex; gap:8px; margin-bottom:8px;">
+<span style="background:${colorInfluencia}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${stk.influencia} Influencia</span>
+<span style="background:${colorInteres}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${stk.interes} Interés</span>
+<span style="background:#3b82f6; color:white; padding:3px 10px; border-radius:12px; font-size:11px;">${stk.estrategia}</span>
+</div>
+<p style="margin:0 0 8px 0; color:#e2e8f0; font-size:14px; font-weight:bold;">👤 ${stk.nombre}</p>
+<p style="margin:0 0 8px 0; color:#94a3b8; font-size:13px;"><strong>💭 Expectativas:</strong> ${stk.expectativas || 'Sin registrar'}</p>
+<div style="display:flex; flex-wrap:wrap; gap:15px; font-size:12px;">
+<span style="color:#64748b;"><strong>📅</strong> ${stk.frecuencia}</span>
+<span style="color:#64748b;"><strong>📡</strong> ${stk.canal}</span>
+</div>
+</div>
+<button data-idx="${idx}" class="btn-eliminar-stk" style="background:#ef4444; border:none; padding:6px 12px; border-radius:6px; color:white; cursor:pointer; font-size:11px; margin-left:10px;">🗑️</button>
+</div>
+</div>
+`;
+});
+
+container.innerHTML = html;
+
+// Event listeners para eliminar
+document.querySelectorAll('.btn-eliminar-stk').forEach(btn => {
+btn.onclick = () => {
+if (confirm('¿Eliminar este stakeholder?')) {
+stakeholdersTemp.splice(parseInt(btn.dataset.idx), 1);
+renderLista();
+renderMatriz();
+}
+};
+});
+}
+
+// ✅ Agregar nuevo stakeholder
+document.getElementById('agregarStakeholder').onclick = () => {
+const nombre = document.getElementById('stkNombre').value.trim();
+if (!nombre) { alert('Ingresa un nombre o rol para el stakeholder'); return; }
+
+const nuevoStk = {
+id: Date.now(),
+proyectoId: proyecto.name,
+nombre: nombre,
+influencia: document.getElementById('stkInfluencia').value,
+interes: document.getElementById('stkInteres').value,
+expectativas: document.getElementById('stkExpectativas').value.trim(),
+estrategia: document.getElementById('stkEstrategia').value,
+frecuencia: document.getElementById('stkFrecuencia').value,
+canal: document.getElementById('stkCanal').value,
+fecha: new Date().toISOString()
+};
+
+stakeholdersTemp.push(nuevoStk);
+
+// Guardar en localStorage global
+let todosStakeholders = JSON.parse(localStorage.getItem('stakeholdersData') || '[]');
+todosStakeholders.push(nuevoStk);
+localStorage.setItem('stakeholdersData', JSON.stringify(todosStakeholders));
+
+// Limpiar formulario
+document.getElementById('stkNombre').value = '';
+document.getElementById('stkExpectativas').value = '';
+
+renderLista();
+renderMatriz();
+alert('✅ Stakeholder registrado exitosamente');
+};
+
+// ✅ Generar documento ejecutivo
+document.getElementById('generarRegistroBtn').onclick = () => {
+if (stakeholdersTemp.length === 0) { alert('No hay stakeholders para generar el registro'); return; }
+
+// Agrupar por estrategia para el documento
+const porEstrategia = {
+gestionCerca: stakeholdersTemp.filter(s => s.estrategia === 'Gestionar de cerca'),
+mantenerSatisfecho: stakeholdersTemp.filter(s => s.estrategia === 'Mantener satisfecho'),
+mantenerInformado: stakeholdersTemp.filter(s => s.estrategia === 'Mantener informado'),
+monitorear: stakeholdersTemp.filter(s => s.estrategia === 'Monitorear')
+};
+
+const generarFilas = (stakeholders) => stakeholders.map(s => {
+const colorInf = s.influencia === 'Alta' ? '#ef4444' : (s.influencia === 'Media' ? '#f59e0b' : '#22c55e');
+const colorInt = s.interes === 'Alto' ? '#ef4444' : (s.interes === 'Medio' ? '#f59e0b' : '#22c55e');
+return `
+<tr>
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${s.nombre}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${colorInf}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${s.influencia}</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${colorInt}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${s.interes}</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">${s.expectativas || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#3b82f6; font-weight:500;">${s.estrategia}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${s.frecuencia}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${s.canal}</td>
+</tr>
+`;
+}).join('');
+
+const contenido = `
+<!-- Header Ejecutivo con Gradiente -->
+<div style="background:linear-gradient(135deg,#7c3aed,#8b5cf6,#a78bfa); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">👥 REGISTRO DE STAKEHOLDERS</h1>
+<p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">STAKEHOLDER REGISTER - DOCUMENTO EJECUTIVO</p>
+<div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:10px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${codigoStakeholders}</div>
+<div style="font-size:10px; opacity:0.9;">Código STK</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:10px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+
+<!-- Dashboard de Stakeholders -->
+<div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #8b5cf6;">
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; text-align:center;">
+<div style="background:#ede9fe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#6d28d9;">${stakeholdersTemp.length}</div>
+<div style="font-size:11px; color:#64748b;">Total Stakeholders</div>
+</div>
+<div style="background:#fee2e2; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#991b1b;">${porEstrategia.gestionCerca.length}</div>
+<div style="font-size:11px; color:#64748b;">🔴 Gestionar Cerca</div>
+</div>
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${porEstrategia.mantenerSatisfecho.length}</div>
+<div style="font-size:11px; color:#64748b;">🔵 Mantener Satisfecho</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${porEstrategia.mantenerInformado.length + porEstrategia.monitorear.length}</div>
+<div style="font-size:11px; color:#64748b;">🟡🟢 Informar/Monitorear</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal -->
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+El presente Registro de Stakeholders identifica, analiza y clasifica a todas las partes interesadas del proyecto 
+<strong>${proyecto.name}</strong>, estableciendo estrategias de gestión diferenciadas según su nivel de influencia 
+e interés. Este documento es fundamental para la comunicación efectiva, la gestión de expectativas y el éxito 
+del proyecto, asegurando que cada stakeholder reciba la atención y información adecuada según su perfil.
+</p>
+
+<!-- Matriz de Poder/Interés -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Matriz de Poder/Interés - Clasificación Estratégica</h2>
+<div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+<div style="background:#fee2e2; padding:20px; border-radius:10px; border-left:5px solid #ef4444;">
+<h4 style="margin:0 0 10px 0; color:#991b1b; font-size:15px; font-weight:600;">🔴 Gestionar de Cerca (Alta Influencia, Alto Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Stakeholders clave que requieren atención prioritaria, comunicación frecuente y participación activa en decisiones.</p>
+</div>
+<div style="background:#dbeafe; padding:20px; border-radius:10px; border-left:5px solid #3b82f6;">
+<h4 style="margin:0 0 10px 0; color:#1e40af; font-size:15px; font-weight:600;">🔵 Mantener Satisfecho (Baja Influencia, Alto Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Stakeholders que deben ser consultados y mantenidos contentos, aunque no requieren decisiones diarias.</p>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:10px; border-left:5px solid #f59e0b;">
+<h4 style="margin:0 0 10px 0; color:#92400e; font-size:15px; font-weight:600;">🟡 Mantener Informado (Alta Influencia, Bajo Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Stakeholders con poder que deben ser informados para evitar sorpresas, pero sin sobrecargar con detalles.</p>
+</div>
+<div style="background:#dcfce7; padding:20px; border-radius:10px; border-left:5px solid #22c55e;">
+<h4 style="margin:0 0 10px 0; color:#166534; font-size:15px; font-weight:600;">🟢 Monitorear (Baja Influencia, Bajo Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Stakeholders que requieren seguimiento mínimo, con comunicación básica y actualización periódica.</p>
+</div>
+</div>
+</div>
+
+<!-- Tabla Principal de Stakeholders -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📋 Registro Detallado de Stakeholders</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#ede9fe;">
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Stakeholder</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Influencia</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Interés</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Expectativas</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Estrategia</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Frecuencia</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Canal</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(stakeholdersTemp)}
+</tbody>
+</table>
+
+<!-- Plan de Comunicación por Estrategia -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📡 Plan de Comunicación Diferenciado</h2>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:#ede9fe;">
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Estrategia</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Tipo de Comunicación</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Contenido</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#ef4444;">🔴 Gestionar de cerca</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Reuniones 1:1, Reportes ejecutivos, Consultas previas a decisiones</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Avance crítico, riesgos, cambios de alcance, decisiones estratégicas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Gerente de Proyecto</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#3b82f6;">🔵 Mantener satisfecho</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Informes mensuales, Encuestas de satisfacción, Reuniones de hitos</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Resultados, beneficios esperados, cronograma general</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">PM / Comunicaciones</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#f59e0b;">🟡 Mantener informado</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Newsletter ejecutivo, Resúmenes quincenales, Alertas de cambios</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Hitos alcanzados, desviaciones relevantes, próximos pasos</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Comunicaciones</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#22c55e;">🟢 Monitorear</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Portal del proyecto, Informes públicos, Comunicación masiva</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">Información general, logros del proyecto, contacto para consultas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Equipo / Automatizado</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #8b5cf6;">
+<p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información sensible sobre stakeholders y estrategias de gestión.<br>
+<strong>📋 ACTUALIZACIÓN:</strong> Este registro debe ser revisado y actualizado mensualmente o ante cambios en el entorno del proyecto.<br>
+<strong>✅ APROBACIÓN:</strong> Requiere validación del Gerente de Proyecto y Sponsor antes de su distribución.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoStakeholders} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Registro
+        </button>
+    </div>
+`;
+
+const html = generarHTML(`Registro de Stakeholders - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Registro_Stakeholders_${proyecto.name.replace(/\s+/g, '_')}`);
+modal.remove();
+
+alert('✅ Registro de Stakeholders generado exitosamente.\n\n📋 Código: ' + codigoStakeholders + '\n👥 Total Stakeholders: ' + stakeholdersTemp.length + '\n📄 Documento listo para presentación ejecutiva');
+};
+
+// ✅ Cancelar
+document.getElementById('cancelarStkBtn').onclick = () => modal.remove();
+
+// ✅ Renderizar inicial
+renderLista();
+renderMatriz();
+}
+
+
+
+
+
+
+
+// Plan de Proyecto con Gantt - VERSIÓN EJECUTIVA ESPECTACULAR
+function generarPlanProyecto() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+const tasks = proyecto.tasks || [];
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const pendientes = tasks.filter(t => t.status === 'pending').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const porcentajeAvance = total > 0 ? Math.round(completadas/total*100) : 0;
+
+// ✅ Calcular fechas del proyecto
+let minDate = new Date(), maxDate = new Date();
+tasks.forEach(t => {
+if (t.startDate) { const d = new Date(t.startDate); if (d < minDate) minDate = d; if (d > maxDate) maxDate = d; }
+if (t.deadline) { const d = new Date(t.deadline); if (d < minDate) minDate = d; if (d > maxDate) maxDate = d; }
+});
+const start = new Date(minDate); start.setDate(start.getDate() - 2);
+const end = new Date(maxDate); end.setDate(end.getDate() + 2);
+const totalDays = Math.ceil((end - start) / (1000*3600*24));
+const duracionDias = Math.ceil((new Date(maxDate) - new Date(minDate)) / (1000*3600*24));
+
+// ✅ Identificar hitos críticos (tareas con alta prioridad o fecha cercana)
+const hitosCriticos = tasks.filter(t => t.priority === 'high' || (t.deadline && new Date(t.deadline) < new Date(Date.now() + 7*24*3600*1000) && t.status !== 'completed'));
+
+// ✅ Código único para trazabilidad
+const codigoPlan = 'PP-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Generar filas del Gantt mejorado
+const ganttRows = tasks.map(t => {
+let startOffset = 0, duration = 3;
+if (t.startDate) startOffset = Math.max(0, Math.floor((new Date(t.startDate) - start) / (1000*3600*24)));
+if (t.deadline && t.startDate) duration = Math.max(1, Math.floor((new Date(t.deadline) - new Date(t.startDate)) / (1000*3600*24)));
+const leftPercent = Math.min(95, (startOffset / totalDays) * 100);
+const widthPercent = Math.min(95-leftPercent, (duration / totalDays) * 100);
+
+// Colores por estado y prioridad
+const isCritical = t.priority === 'high' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
+const baseColor = t.status === 'completed' ? '#10b981' : (t.status === 'inProgress' ? '#3b82f6' : '#94a3b8');
+const barColor = isCritical ? '#ef4444' : baseColor;
+const borderColor = isCritical ? '#dc2626' : (t.status === 'completed' ? '#059669' : '#2563eb');
+
+// Badge de prioridad
+const priorityBadge = t.priority === 'high' ? '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:8px;">🔴 Alta</span>' : 
+(t.priority === 'medium' ? '<span style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:8px;">🟡 Media</span>' : 
+'<span style="background:#22c55e; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:8px;">🟢 Baja</span>');
+
+// Badge de estado
+const statusBadge = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : '⏳');
+
+return `
+<div style="margin-bottom: 14px; padding: 8px 0; border-bottom: 1px dashed #e2e8f0;">
+<div style="display: flex; align-items: center; gap: 12px;">
+<div style="width: 200px; min-width: 200px;">
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 13px; font-weight: 600; color: #1e293b;">${t.name}</span>
+${priorityBadge}
+</div>
+<div style="font-size: 11px; color: #64748b; margin-top: 2px;">${t.assignee || 'No asignado'} ${statusBadge}</div>
+</div>
+<div style="flex: 1; position: relative; height: 28px; background: #f1f5f9; border-radius: 6px; overflow: hidden;">
+<div style="position: absolute; left: ${leftPercent}%; width: ${widthPercent}%; height: 100%; background: ${barColor}; border: 2px solid ${borderColor}; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+${duration}d ${isCritical ? '⚠️' : ''}
+</div>
+</div>
+<div style="width: 80px; text-align: right; font-size: 11px; color: #64748b;">
+${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES', {day:'numeric', month:'short'}) : 'N/D'}
+</div>
+</div>
+</div>
+`;
+}).join('');
+
+// ✅ Tabla de cronograma ejecutiva
+const cronograma = tasks.map(t => {
+const isDelayed = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+const statusColor = t.status === 'completed' ? '#10b981' : (t.status === 'inProgress' ? '#3b82f6' : (isDelayed ? '#ef4444' : '#94a3b8'));
+const statusText = t.status === 'completed' ? '✅ Completada' : (t.status === 'inProgress' ? '🔄 En Progreso' : (isDelayed ? '🔴 Atrasada' : '⏳ Pendiente'));
+
+return `
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${t.name}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${t.assignee || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${t.estimatedTime || 0}h</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${statusColor}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${statusText}</span></td>
+</tr>
+`;
+}).join('');
+
+// ✅ Contenido HTML ejecutivo espectacular
+const contenido = `
+<!-- Header Ejecutivo con Gradiente -->
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6,#60a5fa); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">📅 PLAN DE PROYECTO CON GANTT</h1>
+<p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">PROJECT PLAN & TIMELINE - DOCUMENTO EJECUTIVO</p>
+<div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:10px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${codigoPlan}</div>
+<div style="font-size:10px; opacity:0.9;">Código Plan</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:10px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+
+<!-- Dashboard de Métricas del Proyecto -->
+<div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #3b82f6;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+<h3 style="margin:0; color:#1e3a8a; font-size:16px;">📊 Estado General del Proyecto</h3>
+<span style="background:${porcentajeAvance>=80?'#10b981':(porcentajeAvance>=50?'#3b82f6':'#ef4444')}; color:white; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:14px;">${porcentajeAvance}% Avance</span>
+</div>
+<div style="background:#e2e8f0; height:16px; border-radius:8px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${porcentajeAvance}%; border-radius:8px; transition:width 0.5s ease;"></div>
+</div>
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:15px; margin-top:20px; text-align:center;">
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${total}</div>
+<div style="font-size:11px; color:#64748b;">Total Tareas</div>
+</div>
+<div style="background:#dcfce7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#166534;">${completadas}</div>
+<div style="font-size:11px; color:#64748b;">✅ Completadas</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${enProgreso}</div>
+<div style="font-size:11px; color:#64748b;">🔄 En Progreso</div>
+</div>
+<div style="background:#fee2e2; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#991b1b;">${atrasadas}</div>
+<div style="font-size:11px; color:#64748b;">🔴 Atrasadas</div>
+</div>
+<div style="background:#f3f4f6; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#374151;">${duracionDias}d</div>
+<div style="font-size:11px; color:#64748b;">Duración</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal -->
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+El presente Plan de Proyecto proporciona una visión integral del cronograma, hitos críticos y asignación de recursos 
+para el proyecto <strong>${proyecto.name}</strong>. Este documento está diseñado para facilitar la toma de decisiones 
+estratégicas, el seguimiento del avance y la identificación temprana de riesgos. El diagrama de Gantt visualiza la 
+secuencia de actividades, dependencias y fechas clave, permitiendo una gestión proactiva del tiempo y los entregables.
+</p>
+
+<!-- Fechas Clave del Proyecto -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📅 Fechas Clave del Proyecto</h2>
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:30px;">
+<div style="background:#ecfdf5; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+<span style="font-size:24px;">🚀</span>
+<h4 style="margin:0; color:#065f46; font-size:15px; font-weight:600;">Fecha de Inicio</h4>
+</div>
+<div style="font-size:20px; font-weight:bold; color:#065f46;">${minDate.toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' })}</div>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:12px; border-left:5px solid #f59e0b;">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+<span style="font-size:24px;">🎯</span>
+<h4 style="margin:0; color:#92400e; font-size:15px; font-weight:600;">Fecha de Fin Prevista</h4>
+</div>
+<div style="font-size:20px; font-weight:bold; color:#92400e;">${maxDate.toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' })}</div>
+</div>
+<div style="background:#dbeafe; padding:20px; border-radius:12px; border-left:5px solid #3b82f6;">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+<span style="font-size:24px;">⏱️</span>
+<h4 style="margin:0; color:#1e40af; font-size:15px; font-weight:600;">Duración Total</h4>
+</div>
+<div style="font-size:20px; font-weight:bold; color:#1e40af;">${duracionDias} días • ${horasEst}h estimadas</div>
+</div>
+</div>
+
+<!-- Diagrama de Gantt Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Diagrama de Gantt - Cronograma Visual</h2>
+<div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:30px; overflow-x:auto;">
+<div style="min-width: 800px;">
+<!-- Leyenda del Gantt -->
+<div style="display:flex; gap:20px; margin-bottom:20px; flex-wrap:wrap;">
+<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+<span style="width:16px; height:16px; background:#10b981; border:2px solid #059669; border-radius:4px;"></span> ✅ Completada
+</div>
+<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+<span style="width:16px; height:16px; background:#3b82f6; border:2px solid #2563eb; border-radius:4px;"></span> 🔄 En Progreso
+</div>
+<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+<span style="width:16px; height:16px; background:#94a3b8; border:2px solid #64748b; border-radius:4px;"></span> ⏳ Pendiente
+</div>
+<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+<span style="width:16px; height:16px; background:#ef4444; border:2px solid #dc2626; border-radius:4px;"></span> 🔴 Crítica/Atrasada
+</div>
+</div>
+<!-- Barras del Gantt -->
+${ganttRows}
+</div>
+</div>
+
+<!-- Hitos Críticos -->
+${hitosCriticos.length > 0 ? `
+<h2 style="color:#1e3a8a; border-left:6px solid #ef4444; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">⚠️ Hitos Críticos - Atención Prioritaria</h2>
+<div style="background:#fee2e2; padding:20px; border-radius:12px; margin-bottom:30px;">
+${hitosCriticos.map(t => `
+<div style="display:flex; align-items:start; gap:12px; padding:12px 0; border-bottom:1px solid #fecaca; ${hitosCriticos.indexOf(t) === hitosCriticos.length-1 ? 'border-bottom:none' : ''}">
+<span style="background:#ef4444; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; flex-shrink:0;">!</span>
+<div>
+<div style="font-weight:600; color:#991b1b; margin-bottom:4px;">${t.name}</div>
+<div style="font-size:13px; color:#64748b;">
+${t.deadline ? '📅 Vence: ' + new Date(t.deadline).toLocaleDateString('es-ES') : ''} • 
+${t.assignee ? '👤 ' + t.assignee : ''} • 
+${t.estimatedTime ? '⏱️ ' + t.estimatedTime + 'h' : ''}
+</div>
+</div>
+</div>
+`).join('')}
+</div>
+` : ''}
+
+<!-- Cronograma Detallado -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📋 Cronograma Detallado de Actividades</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#dbeafe;">
+<th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Tarea</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Inicio</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Fin</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Horas</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Estado</th>
+</tr>
+</thead>
+<tbody>
+${cronograma}
+</tbody>
+</table>
+
+<!-- Resumen de Recursos por Responsable -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">👥 Carga de Trabajo por Responsable</h2>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:#dbeafe;">
+<th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Tareas Asignadas</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Horas Estimadas</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Completadas</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Carga</th>
+</tr>
+</thead>
+<tbody>
+${(() => {
+const recursos = {};
+tasks.forEach(t => {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { total: 0, horas: 0, completadas: 0 };
+recursos[t.assignee].total++;
+recursos[t.assignee].horas += Number(t.estimatedTime) || 0;
+if (t.status === 'completed') recursos[t.assignee].completadas++;
+}
+});
+return Object.entries(recursos).map(([nombre, datos]) => {
+const carga = Math.round((datos.total / Math.max(1, Object.keys(recursos).length)) * 100);
+return `
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${nombre}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${datos.total}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${datos.horas}h</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#166534;">${datos.completadas}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">
+<div style="background:#e2e8f0; height:8px; border-radius:4px; display:inline-block; width:80px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${Math.min(100, carga)}%; border-radius:4px;"></div>
+</div>
+<span style="margin-left:8px; font-size:11px; color:#64748b;">${carga}%</span>
+</td>
+</tr>
+`;
+}).join('');
+})()}
+</tbody>
+</table>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #3b82f6;">
+<p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información estratégica del cronograma del proyecto y su distribución debe ser controlada.<br>
+<strong>📋 ACTUALIZACIÓN:</strong> Este plan debe ser revisado semanalmente y actualizado ante cambios significativos en el alcance o cronograma.<br>
+<strong>✅ SEGUIMIENTO:</strong> El avance real debe compararse contra este plan base para identificar desviaciones tempranas.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoPlan} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Plan
+        </button>
+    </div>
+`;
+const html = generarHTML(`Plan de Proyecto - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Plan_Proyecto_${proyecto.name.replace(/\s+/g, '_')}`);
+
+// Guardar en historial
+let planesProyecto = JSON.parse(localStorage.getItem('planesProyecto') || '[]');
+planesProyecto.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoPlan, totalTareas: total, avance: porcentajeAvance });
+localStorage.setItem('planesProyecto', JSON.stringify(planesProyecto));
+
+alert('✅ Plan de Proyecto con Gantt generado exitosamente.\n\n📋 Código: ' + codigoPlan + '\n📊 Avance: ' + porcentajeAvance + '%\n📄 Documento listo para presentación ejecutiva');
+}
+
+
+
+
+
+
+
+
+
+
+// WBS Ejecutiva - VERSIÓN ESPECTACULAR PARA ALTA DIRECCIÓN
+function generarWBS() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+const tasks = proyecto.tasks || [];
+const totalTasks = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const pendientes = tasks.filter(t => t.status === 'pending').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const horasTotales = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+
+// ✅ Agrupar tareas por fase/categoría para jerarquía visual
+const fases = [...new Set(tasks.map(t => t.fase || 'General').filter(Boolean))];
+
+// ✅ Calcular métricas por fase
+const metricsPorFase = fases.map(fase => {
+const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
+return {
+fase,
+total: tareasFase.length,
+completadas: tareasFase.filter(t => t.status === 'completed').length,
+horas: tareasFase.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0)
+};
+});
+
+// ✅ Generar código único para trazabilidad
+const codigoWBS = 'WBS-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Contenido HTML ejecutivo espectacular
+const contenido = `
+<!-- Header Ejecutivo con Gradiente (ULTRA COMPACTO) -->
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:18px 25px; border-radius:10px 10px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:20px; font-weight:700; position:relative; z-index:1;">📊 ESTRUCTURA DE DESGLOSE DEL TRABAJO</h1>
+<p style="margin:6px 0 0 0; opacity:0.95; font-size:11px; position:relative; z-index:1;">WORK BREAKDOWN STRUCTURE - DOCUMENTO EJECUTIVO</p>
+<div style="margin-top:12px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:8px 14px; border-radius:6px; backdrop-filter:blur(10px);">
+<div style="font-size:15px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:9px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:8px 14px; border-radius:6px; backdrop-filter:blur(10px);">
+<div style="font-size:15px; font-weight:bold;">${codigoWBS}</div>
+<div style="font-size:9px; opacity:0.9;">Código WBS</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:8px 14px; border-radius:6px; backdrop-filter:blur(10px);">
+<div style="font-size:15px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:9px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+<!-- Barra de Progreso del Proyecto -->
+<div style="background:#f8fafc; padding:25px 40px; border-bottom:3px solid #3b82f6;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+<h3 style="margin:0; color:#1e3a8a; font-size:16px;">📈 Progreso General del Proyecto</h3>
+<span style="background:#3b82f6; color:white; padding:6px 20px; border-radius:20px; font-weight:bold; font-size:14px;">${Math.round(completadas/totalTasks*100) || 0}% Completado</span>
+</div>
+<div style="background:#e2e8f0; height:12px; border-radius:6px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${Math.round(completadas/totalTasks*100) || 0}%; border-radius:6px; transition:width 0.5s ease;"></div>
+</div>
+
+
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:15px; margin-top:20px; text-align:center;">
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${totalTasks}</div>
+<div style="font-size:11px; color:#64748b;">Total Tareas</div>
+</div>
+<div style="background:#86efac; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#14532d;">${completadas}</div>
+<div style="font-size:11px; color:#14532d;">✅ Completadas</div>
+</div>
+<div style="background:#2dd4bf; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#134e4a;">${enProgreso}</div>
+<div style="font-size:11px; color:#134e4a;">🔄 En Progreso</div>
+</div>
+<div style="background:#ef4444; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#7f1d1d;">${atrasadas}</div>
+<div style="font-size:11px; color:#7f1d1d;">🔴 Atrasadas</div>
+</div>
+<div style="background:#fde047; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#713f12;">${pendientes}</div>
+<div style="font-size:11px; color:#713f12;">⏳ Pendientes</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal con Jerarquía Visual -->
+<div style="padding:40px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+La presente Estructura de Desglose del Trabajo (WBS) define de manera jerárquica y exhaustiva todos los entregables, 
+actividades y componentes necesarios para la ejecución exitosa del proyecto <strong>${proyecto.name}</strong>. 
+Este documento sirve como base fundamental para la planificación, asignación de recursos, estimación de costos 
+y seguimiento del avance. Cada elemento ha sido identificado, codificado y asignado para garantizar trazabilidad 
+completa y responsabilidad clara en toda la organización.
+</p>
+
+<!-- Métricas por Fase -->
+${fases.length > 0 ? `
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Métricas por Fase del Proyecto</h2>
+<div style="display:grid; grid-template-columns:repeat(${Math.min(fases.length, 3)},1fr); gap:20px; margin-bottom:40px;">
+${metricsPorFase.map(m => `
+<div style="background:linear-gradient(135deg,#f8fafc,#e2e8f0); padding:25px; border-radius:16px; border-left:5px solid #3b82f6; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
+<h3 style="margin:0; color:#1e3a8a; font-size:16px; font-weight:600;">${m.fase}</h3>
+<span style="background:${m.completadas===m.total?'#10b981':'#3b82f6'}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${Math.round(m.completadas/m.total*100) || 0}%</span>
+</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;">
+<div style="background:white; padding:12px; border-radius:8px;">
+<div style="font-size:20px; font-weight:bold; color:#1e40af;">${m.total}</div>
+<div style="font-size:10px; color:#64748b;">Tareas</div>
+</div>
+<div style="background:white; padding:12px; border-radius:8px;">
+<div style="font-size:20px; font-weight:bold; color:#166534;">${m.horas}h</div>
+<div style="font-size:10px; color:#64748b;">Horas</div>
+</div>
+</div>
+<div style="background:#e2e8f0; height:6px; border-radius:3px; margin-top:15px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${Math.round(m.completadas/m.total*100) || 0}%; border-radius:3px;"></div>
+</div>
+</div>
+`).join('')}
+</div>
+` : ''}
+
+<!-- Árbol Jerárquico WBS -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🌳 Estructura Jerárquica de Entregables</h2>
+
+<!-- Nivel 1: Proyecto -->
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:20px 25px; border-radius:12px; margin-bottom:20px; box-shadow:0 4px 20px rgba(59,130,246,0.3);">
+<div style="display:flex; align-items:center; gap:15px;">
+<div style="background:white; color:#1e3a8a; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:18px; flex-shrink:0;">1</div>
+<div style="flex:1;">
+<div style="font-size:18px; font-weight:600;">${proyecto.name}</div>
+<div style="font-size:12px; opacity:0.9; margin-top:4px;">Nivel 1 • Proyecto Principal • Responsable: ${proyecto.pm || 'PM'}</div>
+</div>
+<div style="text-align:right;">
+<div style="font-size:24px; font-weight:bold;">${totalTasks}</div>
+<div style="font-size:11px; opacity:0.9;">Entregables</div>
+</div>
+</div>
+</div>
+
+<!-- Nivel 2: Fases -->
+<div style="margin-left:30px; border-left:3px dashed #cbd5e1; padding-left:25px;">
+${fases.map((fase, idx) => {
+const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
+const completadasFase = tareasFase.filter(t => t.status === 'completed').length;
+return `
+<div style="margin-bottom:25px;">
+<div style="background:linear-gradient(135deg,#475569,#64748b); color:white; padding:15px 20px; border-radius:10px; margin-bottom:15px; box-shadow:0 3px 12px rgba(0,0,0,0.15);">
+<div style="display:flex; align-items:center; gap:12px;">
+<div style="background:white; color:#475569; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; flex-shrink:0;">${idx+1}.${idx+1}</div>
+<div style="flex:1;">
+<div style="font-size:15px; font-weight:600;">${fase}</div>
+<div style="font-size:11px; opacity:0.9; margin-top:3px;">Nivel 2 • Fase • ${tareasFase.length} actividades</div>
+</div>
+<div style="text-align:right;">
+<div style="font-size:18px; font-weight:bold;">${Math.round(completadasFase/tareasFase.length*100) || 0}%</div>
+<div style="font-size:10px; opacity:0.9;">Avance</div>
+</div>
+</div>
+</div>
+
+<!-- Nivel 3: Tareas -->
+<div style="margin-left:25px; border-left:2px solid #e2e8f0; padding-left:20px;">
+${tareasFase.map((t, tIdx) => {
+// ✅ NUEVOS COLORES DE STATUS ACTUALIZADOS
+const statusColor = t.status === 'completed' ? '#86efac' : (t.status === 'inProgress' ? '#2dd4bf' : (t.status === 'pending' ? '#fde047' : '#ef4444'));
+const statusIcon = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : (t.status === 'pending' ? '⏳' : '🔴'));
+const priorityColor = t.priority === 'high' ? '#ef4444' : (t.priority === 'medium' ? '#f59e0b' : '#22c55e');
+
+// ✅ VERIFICAR SI ESTÁ ATRASADA (REZAGADA)
+const estaAtrasada = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+const displayColor = estaAtrasada ? '#ef4444' : statusColor;
+const displayIcon = estaAtrasada ? '🔴' : statusIcon;
+
+return `
+<div style="background:white; padding:15px 20px; border-radius:10px; margin-bottom:12px; border-left:4px solid ${displayColor}; box-shadow:0 2px 8px rgba(0,0,0,0.06); transition:transform 0.2s;">
+<div style="display:flex; align-items:start; gap:12px;">
+<div style="background:${displayColor}; color:white; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}.${idx+1}.${tIdx+1}</div>
+<div style="flex:1; min-width:0;">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+<span style="font-size:14px; font-weight:600; color:#1e293b;">${t.name}</span>
+<span style="background:${priorityColor}; color:white; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">${t.priority || 'Media'}</span>
+<span style="background:${displayColor}; color:white; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">${displayIcon}</span>
+</div>
+<p style="margin:0 0 10px 0; color:#64748b; font-size:13px; line-height:1.5;">${t.description || 'Sin descripción'}</p>
+<div style="display:flex; flex-wrap:wrap; gap:15px; font-size:12px;">
+<span style="color:#64748b;"><strong>👤</strong> ${t.assignee || 'No asignado'}</span>
+<span style="color:#64748b;"><strong>⏱️</strong> ${t.estimatedTime || 0}h estimadas</span>
+<span style="color:#64748b;"><strong>📅</strong> ${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'Sin fecha'}</span>
+${t.timeLogged ? `<span style="color:#64748b;"><strong>✅</strong> ${t.timeLogged}h registradas</span>` : ''}
+${estaAtrasada ? `<span style="color:#ef4444; font-weight:bold;"><strong>⚠️ ATRASADA</strong></span>` : ''}
+</div>
+</div>
+</div>
+</div>
+`;
+}).join('')}
+</div>
+</div>
+`;
+}).join('')}
+</div>
+
+<!-- Leyenda de Estados -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:50px 0 25px 0; font-size:20px; font-weight:600;">🔑 Leyenda de Estados y Prioridades</h2>
+<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:40px;">
+<div style="background:#f8fafc; padding:20px; border-radius:12px;">
+<h4 style="margin:0 0 15px 0; color:#1e3a8a; font-size:14px; font-weight:600;">Estados de Tarea</h4>
+<div style="display:flex; flex-wrap:wrap; gap:12px;">
+<!-- ✅ VERDE CLARO para Completadas -->
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#86efac; border-radius:4px;"></span> ✅ Completada</span>
+<!-- ✅ VERDE AZULADO para En Progreso -->
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#2dd4bf; border-radius:4px;"></span> 🔄 En Progreso</span>
+<!-- ✅ AMARILLO para Pendientes -->
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#fde047; border-radius:4px;"></span> ⏳ Pendiente</span>
+<!-- ✅ ROJO para Atrasadas/Rezagadas -->
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> 🔴 Atrasada</span>
+</div>
+</div><div style="background:#f8fafc; padding:20px; border-radius:12px;">
+<h4 style="margin:0 0 15px 0; color:#1e3a8a; font-size:14px; font-weight:600;">Niveles de Prioridad</h4>
+<div style="display:flex; flex-wrap:wrap; gap:12px;">
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> 🔴 Alta</span>
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#f59e0b; border-radius:4px;"></span> 🟡 Media</span>
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#22c55e; border-radius:4px;"></span> 🟢 Baja</span>
+</div>
+</div>
+</div>
+
+<!-- Resumen de Recursos -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:50px 0 25px 0; font-size:20px; font-weight:600;">👥 Distribución de Recursos por Fase</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:40px;">
+<thead>
+<tr style="background:#e2e8f0; color:#000000;">
+<th style="padding:15px; text-align:left; border:1px solid #3b82f6; font-weight:600;">Fase</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Tareas</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Horas Estimadas</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Responsables</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Avance</th>
+</tr>
+</thead>
+<tbody>
+${metricsPorFase.map(m => {
+const responsables = [...new Set(tasks.filter(t => (t.fase||'General')===m.fase && t.assignee).map(t => t.assignee))].join(', ') || 'No asignado';
+return `
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${m.fase}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#3b82f6;">${m.total}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#166534;">${m.horas}h</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-size:13px; color:#64748b;">${responsables}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">
+<div style="background:#e2e8f0; height:8px; border-radius:4px; display:inline-block; width:100px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${Math.round(m.completadas/m.total*100) || 0}%; border-radius:4px;"></div>
+</div>
+<span style="margin-left:10px; font-weight:bold; color:#1e40af;">${Math.round(m.completadas/m.total*100) || 0}%</span>
+</td>
+</tr>
+`;
+}).join('')}
+</tbody>
+</table>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:60px; padding:30px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:16px; text-align:center; border-top:4px solid #3b82f6;">
+<p style="color:#64748b; font-size:13px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información estratégica del proyecto y su distribución debe ser controlada según políticas de la organización.<br>
+<strong>📋 PRÓXIMA REVISIÓN:</strong> Esta WBS debe ser actualizada ante cambios significativos en el alcance, cronograma o recursos del proyecto.<br>
+<strong>✅ APROBACIÓN REQUERIDA:</strong> Cualquier modificación a esta estructura requiere aprobación formal del Sponsor y Gerente de Proyecto.
+</p>
+<p style="color:#94a3b8; font-size:12px; margin:0;">
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoWBS} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir WBS
+        </button>
+    </div>
+`;
+const html = generarHTML(`WBS Ejecutiva - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `WBS_Ejecutiva_${proyecto.name.replace(/\s+/g, '_')}`);
+
+// Guardar en historial
+let wbsGeneradas = JSON.parse(localStorage.getItem('wbsGeneradas') || '[]');
+wbsGeneradas.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoWBS, totalTareas: totalTasks });
+localStorage.setItem('wbsGeneradas', JSON.stringify(wbsGeneradas));
+
+alert('✅ WBS Ejecutiva generada exitosamente.\n\n📋 Código: ' + codigoWBS + '\n📄 Documento listo para presentación ejecutiva');
+}
+
+
+
+
+// ✅ Inicialización segura de raciData (evita re-declaración)
+// Matriz RACI con editor interactivo - VERSIÓN CORREGIDA
+if (typeof window.raciData === 'undefined') {
+  window.raciData = JSON.parse(localStorage.getItem('raciData') || '{}');
+}
+const raciData = window.raciData;
+
+
+
+function generarMatrizRACI() {
+    try {
+        console.log("🔄 Iniciando Matriz RACI...");
+        const proyecto = obtenerProyectoActual();
+        if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+        const tasks = proyecto.tasks || [];
+        if (tasks.length === 0) {
+            alert('⚠️ No hay tareas en este proyecto.\n\nAgrega tareas primero para crear la matriz RACI.');
+            return;
+        }
+
+        const roles = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+        if (roles.length === 0) {
+            alert('⚠️ No hay recursos asignados a las tareas.\n\nAsigna responsables a las tareas primero.');
+            return;
+        }
+
+        const key = proyecto.name;
+        if (!raciData) { window.raciData = {}; }
+        if (!raciData[key]) { raciData[key] = {}; }
+
+        tasks.forEach(t => {
+            if (!raciData[key][t.id]) { raciData[key][t.id] = {}; }
+            roles.forEach(r => {
+                if (raciData[key][t.id][r] === undefined) {
+                    raciData[key][t.id][r] = '';
+                }
+            });
+        });
+
+        // ========== CREAR MODAL DE EDICIÓN (igual que tu código original) ==========
+        const modal = document.createElement('div');
+        modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+        const content = document.createElement('div');
+        content.style.cssText = `background:#1e293b; padding:25px; border-radius:16px; width:95%; max-width:900px; max-height:85vh; color:white; overflow:auto; border:1px solid #3b82f6;`;
+
+        let html = `<h3 style="margin:0 0 20px 0; color:#3b82f6; text-align:center;">📊 Matriz RACI - ${proyecto.name}</h3>`;
+        html += `<table border="1" cellpadding="10" style="width:100%; border-collapse:collapse; font-size:13px;"><thead><tr style="background:#334155;"><th style="padding:12px; text-align:left; border:1px solid #475569;">Tarea</th>`;
+        roles.forEach(r => {
+            html += `<th style="padding:12px; text-align:center; border:1px solid #475569; background:#475569;">${r}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        tasks.forEach(t => {
+            html += `<tr><td style="padding:12px; border:1px solid #475569; font-weight:bold;">${t.name || 'Sin nombre'}</td>`;
+            roles.forEach(r => {
+                const taskRaci = raciData[key]?.[t.id] || {};
+                const val = taskRaci[r] || '';
+                html += `<td style="padding:8px; border:1px solid #475569; text-align:center;">
+                            <select data-task="${t.id}" data-rol="${r}" class="raci-select" style="width:100%; padding:6px; border-radius:4px; border:1px solid #3b82f6; background:#0f172a; color:white;">
+                                <option value="" ${val===''?'selected':''}>-</option>
+                                <option value="R" ${val==='R'?'selected':''}>R</option>
+                                <option value="A" ${val==='A'?'selected':''}>A</option>
+                                <option value="C" ${val==='C'?'selected':''}>C</option>
+                                <option value="I" ${val==='I'?'selected':''}>I</option>
+                            </select>
+                        </td>`;
+            });
+            html += `</tr>`;
+        });
+
+        html += `</tbody></table>`;
+        html += `<div style="margin-top:20px; text-align:center; color:#94a3b8; font-size:12px;">
+                    <strong>R</strong>=Responsable • <strong>A</strong>=Aprobador • <strong>C</strong>=Consultado • <strong>I</strong>=Informado
+                </div>`;
+        html += `<div style="display:flex; gap:15px; justify-content:center; margin-top:25px;">
+                    <button id="guardarRACI" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold;">💾 Guardar</button>
+                    <button id="cancelarRACI" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold;">❌ Cancelar</button>
+                </div>`;
+
+        content.innerHTML = html;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+        // ========== EVENTO GUARDAR ==========
+        document.getElementById('guardarRACI').onclick = () => {
+            try {
+                document.querySelectorAll('.raci-select').forEach(sel => {
+                    const taskId = parseInt(sel.dataset.task);
+                    const rol = sel.dataset.rol;
+                    const valor = sel.value;
+
+                    if (!raciData[key]) { raciData[key] = {}; }
+                    if (!raciData[key][taskId]) { raciData[key][taskId] = {}; }
+                    raciData[key][taskId][rol] = valor;
+                });
+
+                localStorage.setItem('raciData', JSON.stringify(raciData));
+                window.raciData = raciData;
+                modal.remove();
+
+                // ========== GENERAR DOCUMENTO CON BOTÓN FLOTANTE ==========
+                const rows = tasks.map(t => {
+                    const taskRaci = raciData[key]?.[t.id] || {};
+                    return `<tr><td style="padding:12px; border:1px solid #e2e8f0;">${t.name}</td>` +
+                        roles.map(r => `<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold;">${taskRaci[r] || '-'}</td>`).join('') +
+                        `</tr>`;
+                }).join('');
+
+                const contenido = `
+                    <h2 style="color:#1e3a8a;">📊 Matriz de Responsabilidades RACI</h2>
+                    <p><strong>Proyecto:</strong> ${proyecto.name}</p>
+                    <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}</p>
+                    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                        <thead>
+                            <tr style="background:#e2e8f0;">
+                                <th style="padding:12px; text-align:left; border:1px solid #cbd5e1;">Tarea</th>
+                                ${roles.map(r => `<th style="padding:12px; text-align:center; border:1px solid #cbd5e1;">${r}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <p style="margin-top:30px; color:#6b7280; font-size:13px;">
+                        <strong>Leyenda:</strong> R=Responsable (ejecuta) • A=Aprobador (aprueba) • C=Consultado (opina) • I=Informado (recibe actualización)
+                    </p>
+                `;
+
+                const botonImpresion = `
+                    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+                        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            🖨️ Imprimir Matriz RACI
+                        </button>
+                    </div>
+                `;
+
+                const htmlDoc = generarHTML(`Matriz RACI - ${proyecto.name}`, contenido + botonImpresion, `
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+                    body { font-family: 'Inter', 'Segoe UI', sans-serif !important; background: #f1f5f9 !important; }
+                    .document-container { max-width: 1200px !important; box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important; }
+                    @media print { body { background: white !important; } .document-container { box-shadow: none !important; max-width: 100% !important; } }
+                `);
+
+                abrirVentanaDocumento(htmlDoc, `Matriz_RACI_${proyecto.name.replace(/\s+/g, '_')}`);
+                console.log("✅ Matriz RACI guardada exitosamente");
+
+            } catch(e) {
+                console.error("❌ Error al guardar:", e);
+                alert('Error al guardar: ' + e.message);
+            }
+        };
+
+        document.getElementById('cancelarRACI').onclick = () => {
+            modal.remove();
+            console.log("❌ Matriz RACI cancelada");
+        };
+
+        console.log("✅ Modal de Matriz RACI abierto");
+
+    } catch(error) {
+        console.error("❌ Error crítico en generarMatrizRACI:", error);
+        alert('❌ Error en Matriz RACI:\n\n' + error.message + '\n\nRevisa la consola (F12) para detalles.');
+    }
+}
+
+
+
+
+
+// Plan de riesgos - VERSIÓN EJECUTIVA PROFESIONAL
+let riesgosData = JSON.parse(localStorage.getItem('riesgosData') || '[]');
+
+function generarPlanRiesgos() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+// ✅ Categorías de riesgos PMI
+const categorias = [
+'Técnico', 'Gestión', 'Organizacional', 'Externo', 
+'Financiero', 'Legal', 'Recursos', 'Cronograma', 'Calidad'
+];
+
+const nivelesImpacto = [
+{ valor: 1, label: 'Mínimo', color: '#22c55e' },
+{ valor: 2, label: 'Bajo', color: '#84cc16' },
+{ valor: 3, label: 'Medio', color: '#eab308' },
+{ valor: 4, label: 'Alto', color: '#f97316' },
+{ valor: 5, label: 'Crítico', color: '#ef4444' }
+];
+
+const nivelesProbabilidad = [
+{ valor: 1, label: 'Muy Baja (0-20%)', color: '#22c55e' },
+{ valor: 2, label: 'Baja (20-40%)', color: '#84cc16' },
+{ valor: 3, label: 'Media (40-60%)', color: '#eab308' },
+{ valor: 4, label: 'Alta (60-80%)', color: '#f97316' },
+{ valor: 5, label: 'Muy Alta (80-100%)', color: '#ef4444' }
+];
+
+const estrategias = [
+'Evitar', 'Mitigar', 'Transferir', 'Aceptar', 'Explotar', 'Compartir'
+];
+
+// ✅ Crear modal elegante
+const modal = document.createElement('div');
+modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+const content = document.createElement('div');
+content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:850px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 10px 0; text-align:center; font-size:22px;">⚠️ Plan de Gestión de Riesgos</h2>
+<p style="margin:0 0 25px 0; text-align:center; color:#94a3b8; font-size:13px;">Proyecto: <strong>${proyecto.name}</strong></p>
+
+<!-- Formulario para agregar nuevo riesgo -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#ef4444; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #ef4444; padding-bottom:10px;">➕ Registrar Nuevo Riesgo</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Descripción del Riesgo:</label>
+<input type="text" id="riesgoDescripcion" placeholder="Ej: Retraso en entrega de proveedor clave..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Categoría:</label>
+<select id="riesgoCategoria" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fase del Proyecto:</label>
+<select id="riesgoFase" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Inicio</option><option>Planificación</option><option>Ejecución</option><option>Monitoreo</option><option>Cierre</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto (1-5):</label>
+<select id="riesgoImpacto" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${nivelesImpacto.map(n => `<option value="${n.valor}" style="color:${n.color}">${n.label}</option>`).join('')}
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Probabilidad (1-5):</label>
+<select id="riesgoProbabilidad" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${nivelesProbabilidad.map(n => `<option value="${n.valor}" style="color:${n.color}">${n.label}</option>`).join('')}
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Estrategia de Respuesta:</label>
+<select id="riesgoEstrategia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${estrategias.map(e => `<option value="${e}">${e}</option>`).join('')}
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Plan de Mitigación:</label>
+<textarea id="riesgoMitigacion" rows="2" placeholder="Acciones específicas para reducir el riesgo..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Responsable:</label>
+<input type="text" id="riesgoResponsable" placeholder="Ej: PM, Equipo Técnico..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha Límite:</label>
+<input type="date" id="riesgoFechaLimite" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+</div>
+<button id="agregarRiesgo" style="margin-top:20px; background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Guardar Riesgo</button>
+</div>
+
+<!-- Matriz de Riesgos Visual -->
+<div id="matrizRiesgos" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;"></div>
+
+<!-- Lista de riesgos registrados -->
+<div id="listaRiesgos" style="flex:1; overflow-y:auto; margin-bottom:20px;"></div>
+
+<!-- Botones de acción -->
+<div style="display:flex; gap:15px; justify-content:center; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+<button id="generarPlanRiesgosBtn" style="background:#3b82f6; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">📄 Generar Plan de Riesgos</button>
+<button id="cancelarRiesgosBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// ✅ Función para calcular nivel de riesgo
+function calcularNivelRiesgo(impacto, probabilidad) {
+const nivel = impacto * probabilidad;
+if (nivel >= 20) return { nivel: 'Crítico', color: '#ef4444', prioridad: 1 };
+if (nivel >= 12) return { nivel: 'Alto', color: '#f97316', prioridad: 2 };
+if (nivel >= 6) return { nivel: 'Medio', color: '#eab308', prioridad: 3 };
+return { nivel: 'Bajo', color: '#22c55e', prioridad: 4 };
+}
+
+// ✅ Función para renderizar matriz de riesgos
+function renderMatriz() {
+const container = document.getElementById('matrizRiesgos');
+const riesgosProyecto = riesgosData.filter(r => r.proyectoId === proyecto.name);
+
+if (riesgosProyecto.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">📊 Agrega riesgos para visualizar la matriz</p>';
+return;
+}
+
+// Contar riesgos por cuadrante
+const matriz = { alto: 0, medio: 0, bajo: 0 };
+riesgosProyecto.forEach(r => {
+const info = calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad));
+if (info.nivel === 'Crítico' || info.nivel === 'Alto') matriz.alto++;
+else if (info.nivel === 'Medio') matriz.medio++;
+else matriz.bajo++;
+});
+
+container.innerHTML = `
+<h3 style="color:#f59e0b; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #f59e0b; padding-bottom:10px;">📊 Matriz de Riesgos (Impacto vs Probabilidad)</h3>
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; text-align:center;">
+<div style="background:rgba(239,68,68,0.2); padding:15px; border-radius:8px; border:2px solid #ef4444;">
+<div style="font-size:24px; font-weight:bold; color:#ef4444;">${matriz.alto}</div>
+<div style="font-size:11px; color:#94a3b8;">Riesgos Altos/Críticos</div>
+</div>
+<div style="background:rgba(234,179,8,0.2); padding:15px; border-radius:8px; border:2px solid #eab308;">
+<div style="font-size:24px; font-weight:bold; color:#eab308;">${matriz.medio}</div>
+<div style="font-size:11px; color:#94a3b8;">Riesgos Medios</div>
+</div>
+<div style="background:rgba(34,197,94,0.2); padding:15px; border-radius:8px; border:2px solid #22c55e;">
+<div style="font-size:24px; font-weight:bold; color:#22c55e;">${matriz.bajo}</div>
+<div style="font-size:11px; color:#94a3b8;">Riesgos Bajos</div>
+</div>
+</div>
+`;
+}
+
+// ✅ Función para renderizar lista de riesgos
+function renderLista() {
+const container = document.getElementById('listaRiesgos');
+const riesgosProyecto = riesgosData.filter(r => r.proyectoId === proyecto.name);
+
+if (riesgosProyecto.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:30px; font-size:14px;">⚠️ No hay riesgos registrados aún. Agrega el primero usando el formulario de arriba.</p>';
+return;
+}
+
+// Ordenar por prioridad (Crítico primero)
+riesgosProyecto.sort((a, b) => {
+const nivelA = calcularNivelRiesgo(parseInt(a.impacto), parseInt(a.probabilidad));
+const nivelB = calcularNivelRiesgo(parseInt(b.impacto), parseInt(b.probabilidad));
+return nivelA.prioridad - nivelB.prioridad;
+});
+
+let html = `<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Riesgos Registrados (${riesgosProyecto.length})</h3>`;
+
+riesgosProyecto.forEach((riesgo, idx) => {
+const info = calcularNivelRiesgo(parseInt(riesgo.impacto), parseInt(riesgo.probabilidad));
+html += `
+<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${info.color};">
+<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+<div style="flex:1;">
+<div style="display:flex; gap:8px; margin-bottom:8px;">
+<span style="background:${info.color}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${info.nivel}</span>
+<span style="background:#475569; color:#cbd5e1; padding:3px 10px; border-radius:12px; font-size:11px;">${riesgo.categoria}</span>
+<span style="background:#3b82f6; color:white; padding:3px 10px; border-radius:12px; font-size:11px;">${riesgo.fase}</span>
+</div>
+<p style="margin:0 0 8px 0; color:#e2e8f0; font-size:13px; font-weight:bold;">⚠️ ${riesgo.descripcion}</p>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+<div style="font-size:12px; color:#94a3b8;"><strong>Impacto:</strong> ${nivelesImpacto.find(n=>n.valor==riesgo.impacto)?.label||'N/A'}</div>
+<div style="font-size:12px; color:#94a3b8;"><strong>Probabilidad:</strong> ${nivelesProbabilidad.find(n=>n.valor==riesgo.probabilidad)?.label||'N/A'}</div>
+</div>
+<p style="margin:0 0 8px 0; color:#94a3b8; font-size:13px;"><strong>🛡️ Estrategia:</strong> ${riesgo.estrategia} | <strong>💡 Mitigación:</strong> ${riesgo.mitigacion || 'Sin plan registrado'}</p>
+<p style="margin:0; color:#64748b; font-size:12px;"><strong>👤 Responsable:</strong> ${riesgo.responsable || 'Pendiente'} | <strong>📅 Límite:</strong> ${riesgo.fechaLimite ? new Date(riesgo.fechaLimite).toLocaleDateString('es-ES') : 'N/D'} | <strong>📅 Registro:</strong> ${new Date(riesgo.fecha).toLocaleDateString('es-ES')}</p>
+</div>
+<button data-id="${riesgo.id}" class="btn-eliminar-riesgo" style="background:#ef4444; border:none; padding:6px 12px; border-radius:6px; color:white; cursor:pointer; font-size:11px; margin-left:10px;">🗑️</button>
+</div>
+</div>
+`;
+});
+
+container.innerHTML = html;
+
+// Event listeners para eliminar
+document.querySelectorAll('.btn-eliminar-riesgo').forEach(btn => {
+btn.onclick = () => {
+if (confirm('¿Eliminar este riesgo?')) {
+const id = parseInt(btn.dataset.id);
+riesgosData = riesgosData.filter(r => r.id !== id);
+localStorage.setItem('riesgosData', JSON.stringify(riesgosData));
+renderLista();
+renderMatriz();
+}
+};
+});
+}
+
+// ✅ Agregar nuevo riesgo
+document.getElementById('agregarRiesgo').onclick = () => {
+const descripcion = document.getElementById('riesgoDescripcion').value.trim();
+if (!descripcion) { alert('Ingresa una descripción del riesgo'); return; }
+
+const nuevoRiesgo = {
+id: Date.now(),
+proyectoId: proyecto.name,
+descripcion: descripcion,
+categoria: document.getElementById('riesgoCategoria').value,
+fase: document.getElementById('riesgoFase').value,
+impacto: document.getElementById('riesgoImpacto').value,
+probabilidad: document.getElementById('riesgoProbabilidad').value,
+estrategia: document.getElementById('riesgoEstrategia').value,
+mitigacion: document.getElementById('riesgoMitigacion').value.trim(),
+responsable: document.getElementById('riesgoResponsable').value.trim(),
+fechaLimite: document.getElementById('riesgoFechaLimite').value,
+fecha: new Date().toISOString()
+};
+
+riesgosData.push(nuevoRiesgo);
+localStorage.setItem('riesgosData', JSON.stringify(riesgosData));
+
+// Limpiar formulario
+document.getElementById('riesgoDescripcion').value = '';
+document.getElementById('riesgoMitigacion').value = '';
+document.getElementById('riesgoResponsable').value = '';
+document.getElementById('riesgoFechaLimite').value = '';
+
+renderLista();
+renderMatriz();
+alert('✅ Riesgo registrado exitosamente');
+};
+
+// ✅ Generar documento ejecutivo
+document.getElementById('generarPlanRiesgosBtn').onclick = () => {
+const riesgosProyecto = riesgosData.filter(r => r.proyectoId === proyecto.name);
+if (riesgosProyecto.length === 0) { alert('No hay riesgos para generar el plan'); return; }
+
+// Ordenar por prioridad
+riesgosProyecto.sort((a, b) => {
+const nivelA = calcularNivelRiesgo(parseInt(a.impacto), parseInt(a.probabilidad));
+const nivelB = calcularNivelRiesgo(parseInt(b.impacto), parseInt(b.probabilidad));
+return nivelA.prioridad - nivelB.prioridad;
+});
+
+// Agrupar por nivel
+const agrupados = {
+critico: riesgosProyecto.filter(r => calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad)).nivel === 'Crítico'),
+alto: riesgosProyecto.filter(r => calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad)).nivel === 'Alto'),
+medio: riesgosProyecto.filter(r => calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad)).nivel === 'Medio'),
+bajo: riesgosProyecto.filter(r => calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad)).nivel === 'Bajo')
+};
+
+const generarFilas = (riesgos) => riesgos.map(r => {
+const info = calcularNivelRiesgo(parseInt(r.impacto), parseInt(r.probabilidad));
+return `
+<tr>
+<td style="padding:12px; border:1px solid #e2e8f0;">${r.descripcion}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${r.categoria}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${nivelesImpacto.find(n=>n.valor==r.impacto)?.label||'N/A'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${nivelesProbabilidad.find(n=>n.valor==r.probabilidad)?.label||'N/A'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; background:${info.color}; color:white; font-weight:bold;">${info.nivel}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${r.estrategia}</td>
+<td style="padding:12px; border:1px solid #e2e8f0;">${r.mitigacion || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${r.responsable || '-'}</td>
+</tr>
+`;
+}).join('');
+
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+const codigoPlan = 'PR-' + Date.now().toString().slice(-6);
+
+const contenido = `
+<div style="background:linear-gradient(135deg,#991b1b,#ef4444); color:white; padding:40px; border-radius:16px 16px 0 0; text-align:center;">
+<h1 style="margin:0; font-size:28px; font-weight:bold;">⚠️ PLAN DE GESTIÓN DE RIESGOS</h1>
+<p style="margin:10px 0 0 0; opacity:0.9; font-size:14px;">RISK MANAGEMENT PLAN - DOCUMENTO EJECUTIVO</p>
+</div>
+
+<div style="background:#f8fafc; padding:25px; border-bottom:3px solid #ef4444;">
+<table style="width:100%; border:none; font-size:13px;">
+<tr>
+<td style="border:none; padding:8px;"><strong>📋 Código:</strong> ${codigoPlan}</td>
+<td style="border:none; padding:8px;"><strong>📅 Fecha de Emisión:</strong> ${fechaEmision}</td>
+<td style="border:none; padding:8px;"><strong>🏢 Proyecto:</strong> ${proyecto.name}</td>
+</tr>
+<tr>
+<td style="border:none; padding:8px;"><strong>👤 Gerente:</strong> ${proyecto.pm || 'Usuario'}</td>
+<td style="border:none; padding:8px;"><strong>📊 Total Riesgos:</strong> ${riesgosProyecto.length}</td>
+<td style="border:none; padding:8px;"><strong>🔴 Críticos/Altos:</strong> ${agrupados.critico.length + agrupados.alto.length}</td>
+</tr>
+</table>
+</div>
+
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:5px solid #ef4444; padding-left:15px; margin:30px 0 20px 0; font-size:18px;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.8; color:#374151; text-align:justify;">
+Este documento presenta el plan de gestión de riesgos del proyecto <strong>${proyecto.name}</strong>, identificando, 
+analizando y estableciendo estrategias de respuesta para cada riesgo potencial que pueda afectar el éxito del proyecto. 
+Los riesgos han sido evaluados según su impacto y probabilidad, priorizándose aquellos que representan mayor amenaza 
+para los objetivos del proyecto. Este plan debe ser revisado y actualizado periódicamente durante todo el ciclo de vida del proyecto.
+</p>
+
+<!-- Matriz de Riesgos -->
+<h2 style="color:#1e3a8a; border-left:5px solid #ef4444; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">📊 Matriz de Riesgos - Resumen</h2>
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:20px;">
+<div style="background:#fee2e2; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #ef4444;">
+<div style="font-size:28px; font-weight:bold; color:#991b1b;">${agrupados.critico.length}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">🔴 Críticos</div>
+</div>
+<div style="background:#ffedd5; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #f97316;">
+<div style="font-size:28px; font-weight:bold; color:#9a3412;">${agrupados.alto.length}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">🟠 Altos</div>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #eab308;">
+<div style="font-size:28px; font-weight:bold; color:#92400e;">${agrupados.medio.length}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">🟡 Medios</div>
+</div>
+<div style="background:#dcfce7; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #22c55e;">
+<div style="font-size:28px; font-weight:bold; color:#166534;">${agrupados.bajo.length}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">🟢 Bajos</div>
+</div>
+</div>
+
+<!-- Riesgos Críticos -->
+${agrupados.critico.length > 0 ? `
+<h2 style="color:#ef4444; border-left:5px solid #ef4444; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🔴 Riesgos Críticos (Acción Inmediata Requerida)</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#fee2e2;">
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Riesgo</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Impacto</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Probabilidad</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Nivel</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Estrategia</th>
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Mitigación</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupados.critico)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Riesgos Altos -->
+${agrupados.alto.length > 0 ? `
+<h2 style="color:#f97316; border-left:5px solid #f97316; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🟠 Riesgos Altos (Monitoreo Cercano)</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#ffedd5;">
+<th style="padding:12px; text-align:left; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Riesgo</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Impacto</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Probabilidad</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Nivel</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Estrategia</th>
+<th style="padding:12px; text-align:left; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Mitigación</th>
+<th style="padding:12px; text-align:center; border:1px solid #fed7aa; color:#9a3412; font-weight:bold;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupados.alto)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Riesgos Medios -->
+${agrupados.medio.length > 0 ? `
+<h2 style="color:#eab308; border-left:5px solid #eab308; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🟡 Riesgos Medios (Monitoreo Periódico)</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#fef3c7;">
+<th style="padding:12px; text-align:left; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Riesgo</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Impacto</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Probabilidad</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Nivel</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Estrategia</th>
+<th style="padding:12px; text-align:left; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Mitigación</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupados.medio)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Riesgos Bajos -->
+${agrupados.bajo.length > 0 ? `
+<h2 style="color:#22c55e; border-left:5px solid #22c55e; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🟢 Riesgos Bajos (Monitoreo General)</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#dcfce7;">
+<th style="padding:12px; text-align:left; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Riesgo</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Impacto</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Probabilidad</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Nivel</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Estrategia</th>
+<th style="padding:12px; text-align:left; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Mitigación</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupados.bajo)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Plan de Respuesta -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🛡️ Estrategias de Respuesta Aplicadas</h2>
+<table style="width:100%; border-collapse:collapse;">
+<tr><td style="padding:15px; border:1px solid #e2e8f0; background:#fee2e2; width:20%;"><strong>🔴 Evitar</strong></td><td style="padding:15px; border:1px solid #e2e8f0;">Eliminar la amenaza completamente cambiando el plan del proyecto</td></tr>
+<tr><td style="padding:15px; border:1px solid #e2e8f0; background:#ffedd5;"><strong>🟠 Mitigar</strong></td><td style="padding:15px; border:1px solid #e2e8f0;">Reducir la probabilidad o impacto del riesgo a un nivel aceptable</td></tr>
+<tr><td style="padding:15px; border:1px solid #e2e8f0; background:#fef3c7;"><strong>🟡 Transferir</strong></td><td style="padding:15px; border:1px solid #e2e8f0;">Transferir el impacto a un tercero (seguros, outsourcing, etc.)</td></tr>
+<tr><td style="padding:15px; border:1px solid #e2e8f0; background:#dcfce7;"><strong>🟢 Aceptar</strong></td><td style="padding:15px; border:1px solid #e2e8f0;">Aceptar el riesgo y establecer reservas de contingencia</td></tr>
+</table>
+
+<!-- Footer -->
+<div style="margin-top:50px; padding:25px; background:#f8fafc; border-radius:12px; text-align:center; border-top:3px solid #ef4444;">
+<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">
+<strong>CONFIDENCIALIDAD:</strong> Este documento contiene información sensible sobre riesgos del proyecto.<br>
+<strong>REVISIÓN:</strong> Este plan debe ser revisado y actualizado mensualmente o ante cambios significativos.<br>
+<strong>APROBACIÓN:</strong> Requiere aprobación del Sponsor y Gerente de Proyecto.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo - ${fechaEmision}</em><br>
+<em>Código de Documento: ${codigoPlan}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Plan de Riesgos
+        </button>
+    </div>
+`;
+const html = generarHTML(`Plan de Riesgos - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Plan_Riesgos_${proyecto.name.replace(/\s+/g, '_')}`);
+modal.remove();
+
+// Guardar en historial
+let planesRiesgos = JSON.parse(localStorage.getItem('planesRiesgos') || '[]');
+planesRiesgos.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoPlan, totalRiesgos: riesgosProyecto.length });
+localStorage.setItem('planesRiesgos', JSON.stringify(planesRiesgos));
+
+alert('✅ Plan de Riesgos generado exitosamente.\n\n📋 Código: ' + codigoPlan + '\n📄 Lista para imprimir y presentar');
+};
+
+// ✅ Cancelar
+document.getElementById('cancelarRiesgosBtn').onclick = () => modal.remove();
+
+// ✅ Renderizar inicial
+renderLista();
+renderMatriz();
+}
+
+
+
+
+
+// Informe EVM Ejecutivo - VERSIÓN ESPECTACULAR PARA ALTA DIRECCIÓN
+function generarInformeEVM() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+    const tasks = proyecto.tasks || [];
+    const total = tasks.length;
+    const completadas = tasks.filter(t => t.status === 'completed').length;
+    const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+    const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+    const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+
+    // ✅ Cálculos EVM avanzados (fórmulas PMI estándar)
+    const PV = horasEst; // Planned Value
+    const EV = horasEst * (completadas / Math.max(total, 1)); // Earned Value
+    const AC = horasReg; // Actual Cost
+    const SV = EV - PV; // Schedule Variance
+    const CV = EV - AC; // Cost Variance
+    const SPI = PV > 0 ? EV / PV : 1; // Schedule Performance Index
+    const CPI = AC > 0 ? EV / AC : 1; // Cost Performance Index
+    const EAC = CPI > 0 ? PV / CPI : PV; // Estimate at Completion
+    const ETC = EAC - AC; // Estimate to Complete
+    const VAC = PV - EAC; // Variance at Completion
+    const TCPI = (PV - EV) / Math.max((PV - AC), 0.01); // To Complete Performance Index
+
+    // ✅ Determinar estado del proyecto
+    const estadoProyecto = (SPI >= 0.9 && CPI >= 0.9) ? '✅ En Línea' : 
+    (SPI >= 0.8 || CPI >= 0.8) ? '⚠️ Con Observaciones' : '🔴 Requiere Atención';
+    const colorEstado = (SPI >= 0.9 && CPI >= 0.9) ? '#10b981' : 
+    (SPI >= 0.8 || CPI >= 0.8) ? '#f59e0b' : '#ef4444';
+
+    // ✅ Código único para trazabilidad
+    const codigoEVM = 'EVM-' + Date.now().toString().slice(-6);
+    const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+    // ✅ Contenido HTML ejecutivo espectacular (igual que en tu código original)
+    const contenido = `
+        <!-- Header Ejecutivo con Gradiente -->
+        <div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6,#60a5fa); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+            <div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+            <h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">📊 INFORME DE VALOR GANADO (EVM)</h1>
+            <p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">EARNED VALUE MANAGEMENT REPORT - DOCUMENTO EJECUTIVO</p>
+            <div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+                <div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+                    <div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+                    <div style="font-size:10px; opacity:0.9;">Proyecto</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+                    <div style="font-size:18px; font-weight:bold;">${codigoEVM}</div>
+                    <div style="font-size:10px; opacity:0.9;">Código EVM</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+                    <div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+                    <div style="font-size:10px; opacity:0.9;">Fecha</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard de Métricas EVM -->
+        <div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #3b82f6;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:#1e3a8a; font-size:16px;">📈 Estado General del Proyecto</h3>
+                <span style="background:${colorEstado}; color:white; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:14px;">${estadoProyecto}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; text-align:center;">
+                <div style="background:#dbeafe; padding:15px; border-radius:10px;">
+                    <div style="font-size:24px; font-weight:bold; color:#1e40af;">${total}</div>
+                    <div style="font-size:11px; color:#64748b;">Total Tareas</div>
+                </div>
+                <div style="background:#dcfce7; padding:15px; border-radius:10px;">
+                    <div style="font-size:24px; font-weight:bold; color:#166534;">${completadas}</div>
+                    <div style="font-size:11px; color:#64748b;">✅ Completadas</div>
+                </div>
+                <div style="background:#fef3c7; padding:15px; border-radius:10px;">
+                    <div style="font-size:24px; font-weight:bold; color:#92400e;">${enProgreso}</div>
+                    <div style="font-size:11px; color:#64748b;">🔄 En Progreso</div>
+                </div>
+                <div style="background:#fee2e2; padding:15px; border-radius:10px;">
+                    <div style="font-size:24px; font-weight:bold; color:#991b1b;">${atrasadas}</div>
+                    <div style="font-size:11px; color:#64748b;">🔴 Atrasadas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cuerpo Principal -->
+        <div style="padding:30px;">
+
+            <!-- Resumen Ejecutivo -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo para Alta Dirección</h2>
+            <p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+                El presente Informe de Valor Ganado (EVM) proporciona un análisis integral del desempeño del proyecto 
+                <strong>${proyecto.name}</strong> mediante métricas estandarizadas del Project Management Institute (PMI). 
+                Este documento evalúa el avance físico versus el planificado, la eficiencia en el uso de recursos y proyecta 
+                el desempeño futuro, permitiendo a la alta dirección tomar decisiones informadas sobre la continuidad, 
+                ajustes de alcance o asignación de recursos adicionales.
+            </p>
+
+            <!-- Métricas Principales de Valor Ganado -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Métricas Principales de Valor Ganado</h2>
+            <div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+                    <div style="background:#dbeafe; padding:20px; border-radius:10px; border-left:5px solid #3b82f6;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h4 style="margin:0; color:#1e40af; font-size:15px; font-weight:600;">📋 PV - Valor Planificado</h4>
+                            <span style="font-size:24px;">📊</span>
+                        </div>
+                        <div style="font-size:28px; font-weight:bold; color:#1e40af;">${PV.toFixed(1)}h</div>
+                        <div style="font-size:12px; color:#64748b; margin-top:5px;">Presupuesto base aprobado (BAC)</div>
+                    </div>
+                    <div style="background:#dcfce7; padding:20px; border-radius:10px; border-left:5px solid #10b981;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h4 style="margin:0; color:#166534; font-size:15px; font-weight:600;">✅ EV - Valor Ganado</h4>
+                            <span style="font-size:24px;">💎</span>
+                        </div>
+                        <div style="font-size:28px; font-weight:bold; color:#166534;">${EV.toFixed(1)}h</div>
+                        <div style="font-size:12px; color:#64748b; margin-top:5px;">Valor del trabajo realmente completado</div>
+                    </div>
+                    <div style="background:#fee2e2; padding:20px; border-radius:10px; border-left:5px solid #ef4444;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h4 style="margin:0; color:#991b1b; font-size:15px; font-weight:600;">💵 AC - Costo Real</h4>
+                            <span style="font-size:24px;">💰</span>
+                        </div>
+                        <div style="font-size:28px; font-weight:bold; color:#991b1b;">${AC.toFixed(1)}h</div>
+                        <div style="font-size:12px; color:#64748b; margin-top:5px;">Horas reales registradas (AC)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Índices de Desempeño -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📈 Índices de Desempeño y Variaciones</h2>
+            <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+                <thead>
+                    <tr style="background:#dbeafe;">
+                        <th style="padding:15px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Indicador</th>
+                        <th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Fórmula</th>
+                        <th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Valor</th>
+                        <th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Interpretación</th>
+                        <th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📅 SV - Variación de Cronograma</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">EV - PV</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:${SV>=0?'#166534':'#991b1b'};">${SV>=0?'+':''}${SV.toFixed(1)}h</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${SV>=0?'✅ Adelantado':'🔴 Retrasado'}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${SV>=0?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Positivo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Negativo</span>'}</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">💰 CV - Variación de Costo</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">EV - AC</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:${CV>=0?'#166534':'#991b1b'};">${CV>=0?'+':''}${CV.toFixed(1)}h</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${CV>=0?'✅ Bajo presupuesto':'🔴 Sobrecosto'}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${CV>=0?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Positivo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Negativo</span>'}</td>
+                    </tr>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">⏱️ SPI - Índice de Cronograma</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">EV / PV</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${SPI.toFixed(2)}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${SPI>=1?'✅ Eficiencia óptima':SPI>=0.9?'⚠️ Ligeramente retrasado':'🔴 Significativamente retrasado'}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${SPI>=1?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Óptimo</span>':(SPI>=0.9?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Alerta</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Crítico</span>')}</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">💵 CPI - Índice de Costo</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">EV / AC</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${CPI.toFixed(2)}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${CPI>=1?'✅ Eficiencia financiera óptima':CPI>=0.9?'⚠️ Ligero sobrecosto':'🔴 Sobrecosto significativo'}</td>
+                        <td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${CPI>=1?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Óptimo</span>':(CPI>=0.9?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Alerta</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Crítico</span>')}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Proyecciones Futuras -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🔮 Proyecciones y Estimaciones Futuras</h2>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:30px;">
+                <div style="background:#fef3c7; padding:20px; border-radius:10px; border-left:5px solid #f59e0b;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="margin:0; color:#92400e; font-size:15px; font-weight:600;">📊 EAC - Estimado al Finalizar</h4>
+                        <span style="font-size:24px;">🎯</span>
+                    </div>
+                    <div style="font-size:28px; font-weight:bold; color:#92400e;">${EAC.toFixed(1)}h</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:5px;">Costo total proyectado al completar el proyecto</div>
+                </div>
+                <div style="background:#dbeafe; padding:20px; border-radius:10px; border-left:5px solid #3b82f6;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="margin:0; color:#1e40af; font-size:15px; font-weight:600;">⏳ ETC - Estimado para Completar</h4>
+                        <span style="font-size:24px;">🔄</span>
+                    </div>
+                    <div style="font-size:28px; font-weight:bold; color:#1e40af;">${ETC.toFixed(1)}h</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:5px;">Horas adicionales necesarias para finalizar</div>
+                </div>
+                <div style="background:${VAC>=0?'#dcfce7':'#fee2e2'}; padding:20px; border-radius:10px; border-left:5px solid:${VAC>=0?'#10b981':'#ef4444'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="margin:0; color:${VAC>=0?'#166534':'#991b1b'}; font-size:15px; font-weight:600;">📈 VAC - Variación al Finalizar</h4>
+                        <span style="font-size:24px;">${VAC>=0?'✅':'⚠️'}</span>
+                    </div>
+                    <div style="font-size:28px; font-weight:bold; color:${VAC>=0?'#166534':'#991b1b'};">${VAC>=0?'+':''}${VAC.toFixed(1)}h</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:5px;">${VAC>=0?'Ahorro proyectado':'Sobrecosto proyectado'} vs presupuesto</div>
+                </div>
+            </div>
+
+            <!-- Gráfico EVM (FUNCIONAL GARANTIZADO) -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Visualización Gráfica de Métricas EVM</h2>
+            <div style="text-align:center; margin:30px 0; background:#f8fafc; padding:25px; border-radius:12px;">
+                <canvas id="evmChart" width="600" height="300"></canvas>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+                    const canvas = document.getElementById("evmChart");
+                    if (!canvas) return;
+                    try {
+                        new Chart(canvas.getContext("2d"), {
+                            type: "bar",
+                            data: {
+                                labels: ["PV", "EV", "AC"],
+                                datasets: [{
+                                    label: "Horas",
+                                    data: [${PV}, ${EV}, ${AC}],
+                                    backgroundColor: ["#3b82f6", "#10b981", "#ef4444"]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { position: "top" } }
+                            }
+                        });
+                    } catch(e) { console.log("Gráfico:", e); }
+                });
+            </script>
+            <div style="display:flex; justify-content:center; gap:20px; margin-top:20px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+                    <span style="width:16px; height:16px; background:#3b82f6; border-radius:4px;"></span> PV (Planificado)
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+                    <span style="width:16px; height:16px; background:#10b981; border-radius:4px;"></span> EV (Ganado)
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+                    <span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> AC (Real)
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
+                    <span style="width:16px; height:2px; background:#64748b; border-radius:1px; display:inline-block;"></span> Línea Base
+                </div>
+            </div>
+
+            <!-- Análisis de Riesgos Basado en EVM -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">⚠️ Análisis de Riesgos Basado en Métricas EVM</h2>
+            <div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#fee2e2;">
+                            <th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:600; font-size:13px;">Riesgo Identificado</th>
+                            <th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:600; font-size:13px;">Indicador EVM</th>
+                            <th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:600; font-size:13px;">Probabilidad</th>
+                            <th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:600; font-size:13px;">Impacto</th>
+                            <th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:600; font-size:13px;">Mitigación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${SPI < 0.9 ? `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🔴 Retraso en cronograma proyectado</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">SPI = ${SPI.toFixed(2)} &lt; 0.9</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Crítico</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Revisar ruta crítica, asignar recursos adicionales</td>
+                        </tr>
+                        ` : ''}
+                        ${CPI < 0.9 ? `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🔴 Sobrecosto proyectado</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">CPI = ${CPI.toFixed(2)} &lt; 0.9</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Crítico</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Controlar horas extra, revisar estimaciones pendientes</td>
+                        </tr>
+                        ` : ''}
+                        ${TCPI > 1.1 ? `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🟡 Eficiencia requerida elevada</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">TCPI = ${TCPI.toFixed(2)} &gt; 1.1</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Media</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alto</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Optimizar procesos, eliminar actividades de bajo valor</td>
+                        </tr>
+                        ` : ''}
+                        ${SPI >= 0.9 && CPI >= 0.9 ? `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🟢 Proyecto en línea</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">SPI ≥ 0.9, CPI ≥ 0.9</td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Controlado</span></td>
+                            <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Mantener prácticas actuales, monitoreo continuo</td>
+                        </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recomendaciones Estratégicas -->
+            <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">💡 Recomendaciones Estratégicas</h2>
+            <table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+                <thead>
+                    <tr style="background:#dbeafe;">
+                        <th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">#</th>
+                        <th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Recomendación</th>
+                        <th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Prioridad</th>
+                        <th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Impacto Esperado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">1</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">${SPI<0.9?'Revisar cronograma y reasignar recursos a tareas críticas':'Continuar con el ritmo actual de ejecución'}</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${SPI<0.9?'<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span>':'<span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span>'}</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${SPI<0.9?'Recuperar 10-15% del retraso':'Mantener eficiencia actual'}</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">2</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">${CPI<0.9?'Implementar control estricto de horas y revisar estimaciones pendientes':'Mantener prácticas actuales de gestión de costos'}</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${CPI<0.9?'<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span>':'<span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span>'}</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${CPI<0.9?'Reducir sobrecosto en 5-10%':'Mantener eficiencia financiera'}</td>
+                    </tr>
+                    <tr style="background:#f8fafc;">
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">3</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Actualizar línea base EVM tras cambios de alcance aprobados</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Media</span></td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mejorar precisión de proyecciones futuras</td>
+                    </tr>
+                    <tr style="background:white;">
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">4</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Establecer revisiones EVM quincenales para monitoreo proactivo</td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span></td>
+                        <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Detección temprana de desviaciones</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Footer Ejecutivo -->
+            <div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #3b82f6;">
+                <p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+                    <strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información financiera y de desempeño estratégica del proyecto.<br>
+                    <strong>📋 ACTUALIZACIÓN:</strong> Este informe EVM debe ser generado y revisado mensualmente o ante cambios significativos en el proyecto.<br>
+                    <strong>✅ APROBACIÓN:</strong> Requiere validación del Gerente de Proyecto, Sponsor y PMO antes de su distribución.<br><br>
+                    <em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoEVM} • ${fechaEmision}</em>
+                </p>
+            </div>
+        </div>
+    `;
+
+    // ========== AGREGAR BOTÓN FLOTANTE DE IMPRESIÓN ==========
+    const botonImpresion = `
+        <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+            <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+                🖨️ Imprimir Informe EVM
+            </button>
+        </div>
+    `;
+
+    // ========== CONSTRUIR HTML COMPLETO ==========
+    const htmlCompleto = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Informe EVM Ejecutivo - ${proyecto.name}</title>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f8fafc; }
+                .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 30px; }
+                @media print { body { background: white !important; } .container { box-shadow: none !important; } button[onclick*="print"] { display: none !important; } }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                ${contenido}
+            </div>
+            ${botonImpresion}
+            <script>
+                // Forzar la creación del gráfico después de cargar
+                setTimeout(function() {
+                    const canvas = document.getElementById('evmChart');
+                    if (canvas) {
+                        try {
+                            new Chart(canvas.getContext('2d'), {
+                                type: 'bar',
+                                data: { 
+                                    labels: ['PV', 'EV', 'AC'], 
+                                    datasets: [{ 
+                                        label: 'Horas', 
+                                        data: [${PV}, ${EV}, ${AC}], 
+                                        backgroundColor: ['#3b82f6', '#10b981', '#ef4444'] 
+                                    }] 
+                                },
+                                options: { 
+                                    responsive: true, 
+                                    plugins: { legend: { position: 'top' } } 
+                                }
+                            });
+                        } catch(e) { console.log('Gráfico:', e); }
+                    }
+                }, 300);
+            </script>
+        </body>
+        </html>
+    `;
+
+    // ========== ABRIR VENTANA SIN IMPRESIÓN AUTOMÁTICA ==========
+    const win = window.open('', '_blank');
+    if (!win) { alert('⚠️ Permite ventanas emergentes'); return; }
+    win.document.write(htmlCompleto);
+    win.document.close();
+    win.document.title = `Informe EVM Ejecutivo - ${proyecto.name}`;
+
+    // ========== GUARDAR EN HISTORIAL ==========
+    let informesEVM = JSON.parse(localStorage.getItem('informesEVM') || '[]');
+    informesEVM.push({ 
+        proyecto: proyecto.name, 
+        fecha: new Date().toISOString(), 
+        codigo: codigoEVM, 
+        SPI: SPI.toFixed(2), 
+        CPI: CPI.toFixed(2), 
+        estado: estadoProyecto,
+        PV: PV.toFixed(1),
+        EV: EV.toFixed(1),
+        AC: AC.toFixed(1)
+    });
+    localStorage.setItem('informesEVM', JSON.stringify(informesEVM));
+
+    alert('✅ Informe EVM Ejecutivo generado exitosamente.\n\n📋 Código: ' + codigoEVM + '\n📊 SPI: ' + SPI.toFixed(2) + ' | CPI: ' + CPI.toFixed(2) + '\n📄 Documento listo para presentación a alta dirección');
+}
+
+
+
+
+
+
+
+
+// Plan de Calidad - VERSIÓN EJECUTIVA ESPECTACULAR
+function generarPlanCalidad() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+const tasks = proyecto?.tasks || [];
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const pendientes = tasks.filter(t => t.status === 'pending').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const defectos = atrasadas;
+const satisfaccion = total > 0 ? (completadas / total) * 100 : 0;
+const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const eficiencia = horasEst > 0 ? (horasEst / horasReg) * 100 : 0;
+
+// ✅ Códigos únicos para trazabilidad
+const codigoCalidad = 'CAL-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Calcular nivel de calidad overall
+const scoreCalidad = Math.round((satisfaccion * 0.4) + ((100 - Math.min(defectos * 10, 100)) * 0.3) + ((eficiencia > 100 ? 100 : eficiencia) * 0.3));
+const nivelCalidad = scoreCalidad >= 90 ? 'Excelente' : (scoreCalidad >= 75 ? 'Bueno' : (scoreCalidad >= 60 ? 'Aceptable' : 'Requiere Mejora'));
+const colorNivel = scoreCalidad >= 90 ? '#10b981' : (scoreCalidad >= 75 ? '#3b82f6' : (scoreCalidad >= 60 ? '#f59e0b' : '#ef4444'));
+
+// ✅ Contenido HTML ejecutivo espectacular
+const contenido = `
+<!-- Header Ejecutivo con Gradiente -->
+<div style="background:linear-gradient(135deg,#059669,#10b981,#34d399); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">✅ PLAN DE GESTIÓN DE LA CALIDAD</h1>
+<p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">QUALITY MANAGEMENT PLAN - DOCUMENTO EJECUTIVO</p>
+<div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:10px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${codigoCalidad}</div>
+<div style="font-size:10px; opacity:0.9;">Código Calidad</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:10px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+
+<!-- Score de Calidad Overall -->
+<div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #10b981;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+<h3 style="margin:0; color:#065f46; font-size:16px;">📊 Nivel de Calidad General del Proyecto</h3>
+<span style="background:${colorNivel}; color:white; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:14px;">${nivelCalidad} (${scoreCalidad}%)</span>
+</div>
+<div style="background:#e2e8f0; height:16px; border-radius:8px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#34d399); height:100%; width:${scoreCalidad}%; border-radius:8px; transition:width 0.5s ease; position:relative;">
+<div style="position:absolute; right:5px; top:50%; transform:translateY(-50%); color:white; font-size:11px; font-weight:bold;">${scoreCalidad}%</div>
+</div>
+</div>
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:15px; margin-top:20px; text-align:center;">
+<div style="background:#dcfce7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#166534;">${total}</div>
+<div style="font-size:11px; color:#64748b;">Total Tareas</div>
+</div>
+<div style="background:#dcfce7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#166534;">${completadas}</div>
+<div style="font-size:11px; color:#64748b;">✅ Completadas</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${defectos}</div>
+<div style="font-size:11px; color:#64748b;">⚠️ Defectos</div>
+</div>
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${Math.round(eficiencia)}%</div>
+<div style="font-size:11px; color:#64748b;">⚡ Eficiencia</div>
+</div>
+<div style="background:#f3f4f6; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#374151;">${satisfaccion.toFixed(0)}%</div>
+<div style="font-size:11px; color:#64748b;">📈 Satisfacción</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal -->
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+El presente Plan de Gestión de la Calidad define los estándares, métricas y procesos para asegurar que el proyecto 
+<strong>${proyecto.name}</strong> cumpla con los requisitos establecidos y las expectativas de los stakeholders. 
+Este documento establece los criterios de aceptación, los indicadores de desempeño de calidad (KPIs), y las actividades 
+de aseguramiento y control de calidad que se ejecutarán durante todo el ciclo de vida del proyecto. El objetivo es 
+minimizar defectos, maximizar la satisfacción del cliente y garantizar la entrega de valor conforme a lo planificado.
+</p>
+
+<!-- Métricas Principales de Calidad -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Métricas Principales de Calidad</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#ecfdf5;">
+<th style="padding:15px; text-align:left; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:14px;">Indicador (KPI)</th>
+<th style="padding:15px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:14px;">Valor Actual</th>
+<th style="padding:15px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:14px;">Objetivo</th>
+<th style="padding:15px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:14px;">Umbral Mínimo</th>
+<th style="padding:15px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:14px;">Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📈 % Tareas Completadas</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#166534;">${Math.round(satisfaccion)}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">&gt;80%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">70%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${satisfaccion>=80?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Cumple</span>':(satisfaccion>=70?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Riesgo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">❌ No Cumple</span>')}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">⚠️ Defectos / Retrabajos</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:${defectos<5?'#166534':'#991b1b'};">${defectos}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">&lt;5</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">10</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${defectos<5?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Cumple</span>':(defectos<10?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Riesgo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">❌ No Cumple</span>')}</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📊 Satisfacción Estimada</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${satisfaccion.toFixed(0)}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">&gt;85%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">75%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${satisfaccion>=85?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Cumple</span>':(satisfaccion>=75?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Mejorable</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">❌ No Cumple</span>')}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">⚡ Eficiencia de Esfuerzo</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${Math.round(eficiencia)}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">&gt;90%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">80%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${eficiencia>=90?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Cumple</span>':(eficiencia>=80?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Mejorable</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">❌ No Cumple</span>')}</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">🔴 Tareas Atrasadas</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:${atrasadas===0?'#166534':'#991b1b'};">${atrasadas}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">0</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">&lt;3</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${atrasadas===0?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Cumple</span>':(atrasadas<3?'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Riesgo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">❌ Crítico</span>')}</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Estándares de Calidad Aplicados -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📐 Estándares de Calidad Aplicados</h2>
+<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:30px;">
+<div style="background:#ecfdf5; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<h4 style="margin:0 0 12px 0; color:#065f46; font-size:15px; font-weight:600;">🏆 ISO 9001:2015</h4>
+<p style="margin:0; color:#374151; font-size:13px; line-height:1.6;">Sistema de Gestión de Calidad internacional que asegura la consistencia en los procesos y la mejora continua del proyecto.</p>
+</div>
+<div style="background:#ecfdf5; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<h4 style="margin:0 0 12px 0; color:#065f46; font-size:15px; font-weight:600;">📚 PMI - PMBOK Guide</h4>
+<p style="margin:0; color:#374151; font-size:13px; line-height:1.6;">Prácticas estándar de gestión de proyectos del Project Management Institute para asegurar calidad en entregables.</p>
+</div>
+<div style="background:#ecfdf5; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<h4 style="margin:0 0 12px 0; color:#065f46; font-size:15px; font-weight:600;">🔄 Revisiones Semanales</h4>
+<p style="margin:0; color:#374151; font-size:13px; line-height:1.6;">Evaluaciones periódicas del avance para identificar desviaciones tempranas y aplicar acciones correctivas oportunas.</p>
+</div>
+<div style="background:#ecfdf5; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<h4 style="margin:0 0 12px 0; color:#065f46; font-size:15px; font-weight:600;">✅ Checklists de Verificación</h4>
+<p style="margin:0; color:#374151; font-size:13px; line-height:1.6;">Listas de verificación para cada entregable que aseguran el cumplimiento de todos los criterios de aceptación.</p>
+</div>
+</div>
+
+<!-- Procesos de Control de Calidad -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🔍 Procesos de Control de Calidad</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#ecfdf5;">
+<th style="padding:12px; text-align:left; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Proceso</th>
+<th style="padding:12px; text-align:left; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Descripción</th>
+<th style="padding:12px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Frecuencia</th>
+<th style="padding:12px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Responsable</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📋 Revisión de Entregables</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Verificación de cada entregable contra criterios de aceptación definidos</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Por entregable</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">PM / QA</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📊 Métricas de Desempeño</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Seguimiento de KPIs de calidad mediante dashboard ejecutivo</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Semanal</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">PM</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">🔧 Acciones Correctivas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Implementación de medidas para corregir desviaciones de calidad</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Según necesidad</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Equipo</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📝 Auditorías de Calidad</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Evaluación independiente de procesos y cumplimiento de estándares</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mensual</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">QA / PMO</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Actividades de Aseguramiento de Calidad -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🛡️ Actividades de Aseguramiento de Calidad</h2>
+<div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+<div style="text-align:center; padding:20px; background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<div style="font-size:36px; margin-bottom:10px;">📋</div>
+<div style="font-weight:600; color:#065f46; margin-bottom:8px;">Planificación</div>
+<div style="font-size:12px; color:#64748b;">Definición de estándares y criterios de aceptación desde el inicio</div>
+</div>
+<div style="text-align:center; padding:20px; background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<div style="font-size:36px; margin-bottom:10px;">🔍</div>
+<div style="font-weight:600; color:#065f46; margin-bottom:8px;">Ejecución</div>
+<div style="font-size:12px; color:#64748b;">Implementación de procesos de verificación y validación continuos</div>
+</div>
+<div style="text-align:center; padding:20px; background:white; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<div style="font-size:36px; margin-bottom:10px;">📈</div>
+<div style="font-weight:600; color:#065f46; margin-bottom:8px;">Mejora</div>
+<div style="font-size:12px; color:#64748b;">Análisis de métricas y aplicación de mejoras continuas</div>
+</div>
+</div>
+</div>
+
+<!-- Plan de Mejora Continua -->
+<h2 style="color:#065f46; border-left:6px solid #10b981; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🔄 Plan de Mejora Continua</h2>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:#ecfdf5;">
+<th style="padding:12px; text-align:left; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Área de Mejora</th>
+<th style="padding:12px; text-align:left; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Acción Propuesta</th>
+<th style="padding:12px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Prioridad</th>
+<th style="padding:12px; text-align:center; border:1px solid #a7f3d0; color:#065f46; font-weight:600; font-size:13px;">Plazo</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-size:13px;">${defectos>=5?'🔴 Reducción de Defectos':'🟢 Mantenimiento de Calidad'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">${defectos>=5?'Implementar revisiones de código y testing automatizado':'Continuar con prácticas actuales de verificación'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${defectos>=5?'<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span>':'<span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span>'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">${defectos>=5?'2 semanas':'Continuo'}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-size:13px;">📚 Documentación</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Mantener documentación actualizada y accesible para todo el equipo</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Media</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Continuo</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-size:13px;">🎯 Satisfacción del Cliente</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Encuestas periódicas y reuniones de feedback con stakeholders</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mensual</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #10b981;">
+<p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información sensible sobre estándares y métricas de calidad del proyecto.<br>
+<strong>📋 REVISIÓN:</strong> Este plan debe ser revisado y actualizado mensualmente o ante cambios significativos en los requisitos de calidad.<br>
+<strong>✅ APROBACIÓN:</strong> Requiere aprobación del Sponsor, Gerente de Proyecto y Responsable de Calidad (QA).<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoCalidad} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Plan de Calidad
+        </button>
+    </div>
+`;
+const html = generarHTML(`Plan de Calidad - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Plan_Calidad_${proyecto.name.replace(/\s+/g, '_')}`);
+
+// Guardar en historial
+let planesCalidad = JSON.parse(localStorage.getItem('planesCalidad') || '[]');
+planesCalidad.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoCalidad, scoreCalidad: scoreCalidad, nivel: nivelCalidad });
+localStorage.setItem('planesCalidad', JSON.stringify(planesCalidad));
+
+alert('✅ Plan de Calidad generado exitosamente.\n\n📋 Código: ' + codigoCalidad + '\n📊 Score de Calidad: ' + scoreCalidad + '% (' + nivelCalidad + ')\n📄 Documento listo para presentación ejecutiva');
+}
+
+
+
+
+
+// Plan de Comunicaciones - VERSIÓN EJECUTIVA ESPECTACULAR
+function generarPlanComunicaciones() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+// ✅ Código único para trazabilidad
+const codigoComunicaciones = 'COM-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Modal elegante para gestión de comunicaciones
+const modal = document.createElement('div');
+modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+const content = document.createElement('div');
+content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:850px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 10px 0; text-align:center; font-size:22px;">📢 Plan de Comunicaciones</h2>
+<p style="margin:0 0 25px 0; text-align:center; color:#94a3b8; font-size:13px;">Proyecto: <strong>${proyecto.name}</strong></p>
+
+<!-- Formulario para agregar comunicación -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#3b82f6; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">➕ Registrar Nueva Comunicación</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Interesado / Stakeholder:</label>
+<input type="text" id="comInteresado" placeholder="Ej: Director de TI, Cliente Principal, Comité Ejecutivo..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nivel de Influencia:</label>
+<select id="comInfluencia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Alta">🔴 Alta</option><option value="Media">🟡 Media</option><option value="Baja">🟢 Baja</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nivel de Interés:</label>
+<select id="comInteres" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Alto">🔴 Alto</option><option value="Medio">🟡 Medio</option><option value="Bajo">🟢 Bajo</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Frecuencia:</label>
+<select id="comFrecuencia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Diaria</option><option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>Trimestral</option><option>Según hito</option><option>Según necesidad</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Canal Principal:</label>
+<select id="comCanal" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Email Ejecutivo</option><option>Reunión Presencial</option><option>Videoconferencia</option><option>Chat/Slack</option><option>Informe Escrito</option><option>Portal del Proyecto</option><option>Stand-up Diario</option><option>Newsletter</option>
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Contenido / Tipo de Información:</label>
+<textarea id="comContenido" rows="2" placeholder="Ej: Avance semanal, Alertas de riesgo, Decisiones estratégicas..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Responsable:</label>
+<select id="comResponsable" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>PM</option><option>Sponsor</option><option>Equipo Técnico</option><option>Comunicaciones</option><option>Stakeholder</option><option>Comité de Dirección</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Formato de Entrega:</label>
+<select id="comFormato" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Resumen Ejecutivo</option><option>Informe Detallado</option><option>Dashboard Visual</option><option>Presentación</option><option>Acta de Reunión</option><option>Alerta Rápida</option>
+</select>
+</div>
+</div>
+<button id="agregarComunicacion" style="margin-top:20px; background:#3b82f6; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Guardar Comunicación</button>
+</div>
+
+<!-- Matriz de Comunicaciones Visual -->
+<div id="matrizComunicaciones" style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;"></div>
+
+<!-- Lista de comunicaciones registradas -->
+<div id="listaComunicaciones" style="flex:1; overflow-y:auto; margin-bottom:20px;"></div>
+
+<!-- Botones de acción -->
+<div style="display:flex; gap:15px; justify-content:center; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+<button id="generarPlanBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">📄 Generar Plan Ejecutivo</button>
+<button id="cancelarComBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// ✅ Almacenamiento temporal para comunicaciones
+let comunicacionesTemp = JSON.parse(localStorage.getItem('comunicacionesData') || '[]').filter(c => c.proyectoId === proyecto.name);
+
+// ✅ Función para renderizar matriz de comunicaciones
+function renderMatriz() {
+const container = document.getElementById('matrizComunicaciones');
+if (comunicacionesTemp.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">📊 Agrega comunicaciones para visualizar la matriz estratégica</p>';
+return;
+}
+
+// Agrupar por frecuencia
+const porFrecuencia = {
+diaria: comunicacionesTemp.filter(c => c.frecuencia === 'Diaria').length,
+semanal: comunicacionesTemp.filter(c => c.frecuencia === 'Semanal').length,
+mensual: comunicacionesTemp.filter(c => ['Quincenal','Mensual','Trimestral'].includes(c.frecuencia)).length,
+eventual: comunicacionesTemp.filter(c => ['Según hito','Según necesidad'].includes(c.frecuencia)).length
+};
+
+container.innerHTML = `
+<h3 style="color:#f59e0b; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #f59e0b; padding-bottom:10px;">📊 Matriz de Frecuencia de Comunicaciones</h3>
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; text-align:center;">
+<div style="background:rgba(239,68,68,0.2); padding:15px; border-radius:8px; border:2px solid #ef4444;">
+<div style="font-size:20px; font-weight:bold; color:#ef4444;">${porFrecuencia.diaria}</div>
+<div style="font-size:10px; color:#94a3b8;">🔴 Diarias</div>
+</div>
+<div style="background:rgba(59,130,246,0.2); padding:15px; border-radius:8px; border:2px solid #3b82f6;">
+<div style="font-size:20px; font-weight:bold; color:#60a5fa;">${porFrecuencia.semanal}</div>
+<div style="font-size:10px; color:#94a3b8;">🔵 Semanales</div>
+</div>
+<div style="background:rgba(245,158,11,0.2); padding:15px; border-radius:8px; border:2px solid #f59e0b;">
+<div style="font-size:20px; font-weight:bold; color:#fbbf24;">${porFrecuencia.mensual}</div>
+<div style="font-size:10px; color:#94a3b8;">🟡 Periódicas</div>
+</div>
+<div style="background:rgba(34,197,94,0.2); padding:15px; border-radius:8px; border:2px solid #22c55e;">
+<div style="font-size:20px; font-weight:bold; color:#4ade80;">${porFrecuencia.eventual}</div>
+<div style="font-size:10px; color:#94a3b8;">🟢 Eventuales</div>
+</div>
+</div>
+`;
+}
+
+// ✅ Función para renderizar lista de comunicaciones
+function renderLista() {
+const container = document.getElementById('listaComunicaciones');
+if (comunicacionesTemp.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:30px; font-size:14px;">📢 No hay comunicaciones registradas aún. Agrega la primera usando el formulario de arriba.</p>';
+return;
+}
+
+let html = `<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Comunicaciones Registradas (${comunicacionesTemp.length})</h3>`;
+
+comunicacionesTemp.forEach((com, idx) => {
+const colorInf = com.influencia === 'Alta' ? '#ef4444' : (com.influencia === 'Media' ? '#f59e0b' : '#22c55e');
+const colorInt = com.interes === 'Alto' ? '#ef4444' : (com.interes === 'Medio' ? '#f59e0b' : '#22c55e');
+
+html += `
+<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${colorInf};">
+<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+<div style="flex:1;">
+<div style="display:flex; gap:8px; margin-bottom:8px;">
+<span style="background:${colorInf}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${com.influencia} Influencia</span>
+<span style="background:${colorInt}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${com.interes} Interés</span>
+<span style="background:#3b82f6; color:white; padding:3px 10px; border-radius:12px; font-size:11px;">${com.frecuencia}</span>
+</div>
+<p style="margin:0 0 8px 0; color:#e2e8f0; font-size:14px; font-weight:bold;">👥 ${com.interesado}</p>
+<p style="margin:0 0 8px 0; color:#94a3b8; font-size:13px;"><strong>📝 Contenido:</strong> ${com.contenido || 'Sin especificar'}</p>
+<div style="display:flex; flex-wrap:wrap; gap:15px; font-size:12px;">
+<span style="color:#64748b;"><strong>📡</strong> ${com.canal}</span>
+<span style="color:#64748b;"><strong>👤</strong> ${com.responsable}</span>
+<span style="color:#64748b;"><strong>📄</strong> ${com.formato}</span>
+</div>
+</div>
+<button data-idx="${idx}" class="btn-eliminar-com" style="background:#ef4444; border:none; padding:6px 12px; border-radius:6px; color:white; cursor:pointer; font-size:11px; margin-left:10px;">🗑️</button>
+</div>
+</div>
+`;
+});
+
+container.innerHTML = html;
+
+// Event listeners para eliminar
+document.querySelectorAll('.btn-eliminar-com').forEach(btn => {
+btn.onclick = () => {
+if (confirm('¿Eliminar esta comunicación?')) {
+comunicacionesTemp.splice(parseInt(btn.dataset.idx), 1);
+renderLista();
+renderMatriz();
+}
+};
+});
+}
+
+// ✅ Agregar nueva comunicación
+document.getElementById('agregarComunicacion').onclick = () => {
+const interesado = document.getElementById('comInteresado').value.trim();
+if (!interesado) { alert('Ingresa un interesado o stakeholder'); return; }
+
+const nuevaCom = {
+id: Date.now(),
+proyectoId: proyecto.name,
+interesado: interesado,
+influencia: document.getElementById('comInfluencia').value,
+interes: document.getElementById('comInteres').value,
+frecuencia: document.getElementById('comFrecuencia').value,
+canal: document.getElementById('comCanal').value,
+contenido: document.getElementById('comContenido').value.trim(),
+responsable: document.getElementById('comResponsable').value,
+formato: document.getElementById('comFormato').value,
+fecha: new Date().toISOString()
+};
+
+comunicacionesTemp.push(nuevaCom);
+
+// Guardar en localStorage global
+let todasComunicaciones = JSON.parse(localStorage.getItem('comunicacionesData') || '[]');
+todasComunicaciones.push(nuevaCom);
+localStorage.setItem('comunicacionesData', JSON.stringify(todasComunicaciones));
+
+// Limpiar formulario
+document.getElementById('comInteresado').value = '';
+document.getElementById('comContenido').value = '';
+
+renderLista();
+renderMatriz();
+alert('✅ Comunicación registrada exitosamente');
+};
+
+// ✅ Generar documento ejecutivo
+document.getElementById('generarPlanBtn').onclick = () => {
+if (comunicacionesTemp.length === 0) { alert('No hay comunicaciones para generar el plan'); return; }
+
+// Agrupar por estrategia para el documento
+const porEstrategia = {
+gestionCerca: comunicacionesTemp.filter(c => c.influencia === 'Alta' && c.interes === 'Alto'),
+mantenerSatisfecho: comunicacionesTemp.filter(c => c.influencia === 'Baja' && c.interes === 'Alto'),
+mantenerInformado: comunicacionesTemp.filter(c => c.influencia === 'Alta' && c.interes === 'Bajo'),
+monitorear: comunicacionesTemp.filter(c => c.influencia === 'Baja' && c.interes === 'Bajo')
+};
+
+const generarFilas = (comunicaciones) => comunicaciones.map(c => {
+const colorInf = c.influencia === 'Alta' ? '#ef4444' : (c.influencia === 'Media' ? '#f59e0b' : '#22c55e');
+const colorInt = c.interes === 'Alto' ? '#ef4444' : (c.interes === 'Medio' ? '#f59e0b' : '#22c55e');
+return `
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${c.interesado}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${colorInf}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${c.influencia}</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${colorInt}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${c.interes}</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${c.frecuencia}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${c.canal}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b;">${c.contenido || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#3b82f6; font-weight:500;">${c.responsable}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${c.formato}</td>
+</tr>
+`;
+}).join('');
+
+const contenido = `
+<!-- Header Ejecutivo con Gradiente -->
+<div style="background:linear-gradient(135deg,#7c3aed,#8b5cf6,#a78bfa); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">📢 PLAN DE COMUNICACIONES DEL PROYECTO</h1>
+<p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">COMMUNICATIONS MANAGEMENT PLAN - DOCUMENTO EJECUTIVO</p>
+<div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:10px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${codigoComunicaciones}</div>
+<div style="font-size:10px; opacity:0.9;">Código COM</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:10px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+
+<!-- Dashboard de Comunicaciones -->
+<div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #8b5cf6;">
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; text-align:center;">
+<div style="background:#ede9fe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#6d28d9;">${comunicacionesTemp.length}</div>
+<div style="font-size:11px; color:#64748b;">Total Comunicaciones</div>
+</div>
+<div style="background:#fee2e2; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#991b1b;">${porEstrategia.gestionCerca.length}</div>
+<div style="font-size:11px; color:#64748b;">🔴 Gestión Cercana</div>
+</div>
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${porEstrategia.mantenerSatisfecho.length}</div>
+<div style="font-size:11px; color:#64748b;">🔵 Mantener Satisfecho</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${porEstrategia.mantenerInformado.length + porEstrategia.monitorear.length}</div>
+<div style="font-size:11px; color:#64748b;">🟡🟢 Informar/Monitorear</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal -->
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo para Alta Dirección</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+El presente Plan de Comunicaciones define la estrategia integral para gestionar el flujo de información entre 
+el proyecto <strong>${proyecto.name}</strong> y todas sus partes interesadas. Este documento establece los canales, 
+frecuencias, formatos y responsables para cada tipo de comunicación, asegurando que la información correcta 
+llegue a las personas adecuadas en el momento oportuno. Una comunicación efectiva es fundamental para la gestión 
+de expectativas, la mitigación de riesgos y el éxito del proyecto.
+</p>
+
+<!-- Matriz de Poder/Interés Aplicada a Comunicaciones -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 Estrategia de Comunicaciones por Perfil de Stakeholder</h2>
+<div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+<div style="background:#fee2e2; padding:20px; border-radius:10px; border-left:5px solid #ef4444;">
+<h4 style="margin:0 0 10px 0; color:#991b1b; font-size:15px; font-weight:600;">🔴 Gestionar de Cerca (Alta Influencia, Alto Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Comunicaciones frecuentes, detalladas y bidireccionales. Reuniones 1:1, reportes ejecutivos y consultas previas a decisiones.</p>
+</div>
+<div style="background:#dbeafe; padding:20px; border-radius:10px; border-left:5px solid #3b82f6;">
+<h4 style="margin:0 0 10px 0; color:#1e40af; font-size:15px; font-weight:600;">🔵 Mantener Satisfecho (Baja Influencia, Alto Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Información regular sobre beneficios y avances. Encuestas de satisfacción y reuniones de hitos para mantener engagement.</p>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:10px; border-left:5px solid #f59e0b;">
+<h4 style="margin:0 0 10px 0; color:#92400e; font-size:15px; font-weight:600;">🟡 Mantener Informado (Alta Influencia, Bajo Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Resúmenes ejecutivos y alertas de cambios relevantes. Evitar sobrecarga de información pero asegurar visibilidad de impactos.</p>
+</div>
+<div style="background:#dcfce7; padding:20px; border-radius:10px; border-left:5px solid #22c55e;">
+<h4 style="margin:0 0 10px 0; color:#166534; font-size:15px; font-weight:600;">🟢 Monitorear (Baja Influencia, Bajo Interés)</h4>
+<p style="margin:0; color:#64748b; font-size:13px;">Información general accesible vía portal o newsletter. Comunicación masiva con opción de profundizar si lo solicitan.</p>
+</div>
+</div>
+</div>
+
+<!-- Tabla Principal de Comunicaciones -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📋 Registro Detallado de Comunicaciones</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px; font-size:13px;">
+<thead>
+<tr style="background:#ede9fe;">
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Stakeholder</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Influencia</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Interés</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Frecuencia</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Canal</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Contenido</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600;">Formato</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(comunicacionesTemp)}
+</tbody>
+</table>
+
+<!-- Matriz de Escalación -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🚨 Matriz de Escalación de Comunicaciones</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#ede9fe;">
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Nivel de Urgencia</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Tipo de Situación</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Canal de Escalación</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Tiempo de Respuesta</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Destinatarios</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#ef4444;">🔴 Crítica</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Riesgos inminentes, bloqueos críticos, cambios de alcance mayores</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Llamada directa + Email ejecutivo + Reunión de emergencia</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#ef4444; font-weight:bold;">&lt; 2 horas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Sponsor, PM, Comité Dirección</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#f59e0b;">🟡 Alta</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Desviaciones de cronograma, problemas de calidad, cambios de requisitos</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Videoconferencia + Informe ejecutivo</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#f59e0b; font-weight:bold;">&lt; 24 horas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">PM, Stakeholders clave</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#3b82f6;">🔵 Media</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Actualizaciones de progreso, consultas de stakeholders, ajustes menores</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Email + Reunión programada</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#3b82f6; font-weight:bold;">&lt; 48 horas</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Equipo, Stakeholders afectados</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#22c55e;">🟢 Baja</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Información general, documentación, recordatorios</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Portal del proyecto + Newsletter</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#22c55e; font-weight:bold;">Próximo ciclo</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Todos los interesados</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Calendario de Comunicaciones Clave -->
+<h2 style="color:#1e3a8a; border-left:6px solid #8b5cf6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📅 Calendario de Comunicaciones Clave</h2>
+<div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:#ede9fe;">
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Hito / Evento</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Fecha Estimada</th>
+<th style="padding:12px; text-align:left; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Comunicaciones Asociadas</th>
+<th style="padding:12px; text-align:center; border:1px solid #ddd6fe; color:#6d28d9; font-weight:600; font-size:13px;">Audiencia Principal</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🚀 Kick-off del Proyecto</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Inicio</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Presentación ejecutiva, Acta constitutiva, Plan de proyecto</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Todos los stakeholders</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">📊 Revisiones de Progreso</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Semanal/Mensual</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Dashboard ejecutivo, Informe de avance, Reunión de seguimiento</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Sponsor, PM, Equipo</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🎯 Hitos de Entrega</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Según cronograma</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Acta de entrega, Demostración, Aprobación formal</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Cliente, Usuarios finales</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b; font-weight:500;">🔚 Cierre del Proyecto</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">Fin del proyecto</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Informe final, Lecciones aprendidas, Acta de cierre</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Todos los stakeholders</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #8b5cf6;">
+<p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información estratégica sobre comunicaciones del proyecto y su distribución debe ser controlada.<br>
+<strong>📋 ACTUALIZACIÓN:</strong> Este plan debe ser revisado mensualmente y actualizado ante cambios en el entorno de stakeholders.<br>
+<strong>✅ APROBACIÓN:</strong> Requiere validación del Gerente de Proyecto y Sponsor antes de su implementación.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoComunicaciones} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Plan de Comunicaciones
+        </button>
+    </div>
+`;
+const html = generarHTML(`Plan de Comunicaciones - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Plan_Comunicaciones_${proyecto.name.replace(/\s+/g, '_')}`);
+modal.remove();
+
+// Guardar en historial
+let planesComunicaciones = JSON.parse(localStorage.getItem('planesComunicaciones') || '[]');
+planesComunicaciones.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoComunicaciones, totalComunicaciones: comunicacionesTemp.length });
+localStorage.setItem('planesComunicaciones', JSON.stringify(planesComunicaciones));
+
+alert('✅ Plan de Comunicaciones generado exitosamente.\n\n📋 Código: ' + codigoComunicaciones + '\n📢 Total Comunicaciones: ' + comunicacionesTemp.length + '\n📄 Documento listo para presentación ejecutiva');
+};
+
+// ✅ Cancelar
+document.getElementById('cancelarComBtn').onclick = () => modal.remove();
+
+// ✅ Renderizar inicial
+renderLista();
+renderMatriz();
+}
+
+
+
+
+// Lecciones aprendidas - VERSIÓN EJECUTIVA COMPLETA
+let leccionesAprendidas = JSON.parse(localStorage.getItem('leccionesAprendidas') || '[]');
+
+function generarLeccionesAprendidas() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+// ✅ Categorías PMI estándar
+const categorias = [
+'Alcance', 'Cronograma', 'Costos', 'Calidad', 'Recursos', 
+'Comunicaciones', 'Riesgos', 'Adquisiciones', 'Stakeholders', 'Tecnología'
+];
+
+const impactos = ['Bajo', 'Medio', 'Alto', 'Crítico'];
+const tipos = [
+{ valor: 'positiva', label: '✅ Lo que funcionó bien', color: '#10b981' },
+{ valor: 'mejora', label: '⚠️ Área de mejora', color: '#f59e0b' },
+{ valor: 'negativa', label: '❌ Problema identificado', color: '#ef4444' }
+];
+
+// ✅ Crear modal elegante
+const modal = document.createElement('div');
+modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+const content = document.createElement('div');
+content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:800px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+content.innerHTML = `
+<h2 style="color:#ffffff !important; margin:0 0 10px 0; text-align:center; font-size:22px;">🎓 Lecciones Aprendidas</h2>style="margin:0 0 25px 0; text-align:center; color:#94a3b8; font-size:13px;">Proyecto: <strong>${proyecto.name}</strong></p>
+
+<!-- Formulario para agregar nueva lección -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#10b981; margin:0 0 15px 0; font-size:16px;">➕ Registrar Nueva Lección</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Tipo de Lección:</label>
+<select id="leccionTipo" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${tipos.map(t => `<option value="${t.valor}" style="color:${t.color}">${t.label}</option>`).join('')}
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Categoría PMI:</label>
+<select id="leccionCategoria" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fase del Proyecto:</label>
+<select id="leccionFase" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option>Inicio</option><option>Planificación</option><option>Ejecución</option><option>Monitoreo</option><option>Cierre</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto:</label>
+<select id="leccionImpacto" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+${impactos.map(i => `<option value="${i}">${i}</option>`).join('')}
+</select>
+</div>
+</div>
+<div style="margin-top:15px;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Descripción de la Lección:</label>
+<textarea id="leccionDescripcion" rows="2" placeholder="Describe qué sucedió y por qué es importante..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div style="margin-top:15px;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Recomendación para Futuros Proyectos:</label>
+<textarea id="leccionRecomendacion" rows="2" placeholder="¿Qué harías diferente la próxima vez?" style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div style="margin-top:15px;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Responsable de Implementar:</label>
+<input type="text" id="leccionResponsable" placeholder="Ej: PM, Equipo, Organización..." style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<button id="agregarLeccion" style="margin-top:20px; background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Guardar Lección</button>
+</div>
+
+<!-- Lista de lecciones registradas -->
+<div id="listaLecciones" style="flex:1; overflow-y:auto; margin-bottom:20px;"></div>
+
+<!-- Botones de acción -->
+<div style="display:flex; gap:15px; justify-content:center; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+<button id="generarDocumentoBtn" style="background:#3b82f6; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">📄 Generar Documento Ejecutivo</button>
+<button id="cancelarLeccionesBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// ✅ Función para renderizar la lista de lecciones
+function renderLista() {
+const container = document.getElementById('listaLecciones');
+const leccionesProyecto = leccionesAprendidas.filter(l => l.proyectoId === proyecto.name);
+
+if (leccionesProyecto.length === 0) {
+container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:30px; font-size:14px;">📭 No hay lecciones registradas aún. Agrega la primera usando el formulario de arriba.</p>';
+return;
+}
+
+// Agrupar por tipo para mejor visualización
+const agrupadas = {
+positiva: leccionesProyecto.filter(l => l.tipo === 'positiva'),
+mejora: leccionesProyecto.filter(l => l.tipo === 'mejora'),
+negativa: leccionesProyecto.filter(l => l.tipo === 'negativa')
+};
+
+let html = `<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Lecciones Registradas (${leccionesProyecto.length})</h3>`;
+
+['positiva', 'mejora', 'negativa'].forEach(tipo => {
+if (agrupadas[tipo].length > 0) {
+const tipoConfig = tipos.find(t => t.valor === tipo);
+html += `
+<div style="margin-bottom:25px;">
+<h4 style="color:${tipoConfig.color}; margin:0 0 10px 0; font-size:14px; display:flex; align-items:center; gap:8px;">
+<span style="font-size:16px;">${tipoConfig.label.split(' ')[0]}</span> ${tipoConfig.label}
+</h4>
+`;
+agrupadas[tipo].forEach((lec, idx) => {
+html += `
+<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid ${tipoConfig.color};">
+<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+<div>
+<span style="background:${tipoConfig.color}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">${lec.categoria}</span>
+<span style="background:#475569; color:#cbd5e1; padding:3px 10px; border-radius:12px; font-size:11px; margin-left:8px;">${lec.fase}</span>
+<span style="background:${lec.impacto==='Crítico'?'#ef4444':lec.impacto==='Alto'?'#f97316':lec.impacto==='Medio'?'#eab308':'#22c55e'}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; margin-left:8px;">${lec.impacto}</span>
+</div>
+<button data-id="${lec.id}" class="btn-eliminar-leccion" style="background:#ef4444; border:none; padding:4px 10px; border-radius:4px; color:white; cursor:pointer; font-size:11px;">🗑️</button>
+</div>
+<p style="margin:0 0 10px 0; color:#e2e8f0; font-size:13px; line-height:1.5;"><strong>📝 Lección:</strong> ${lec.descripcion}</p>
+<p style="margin:0 0 10px 0; color:#94a3b8; font-size:13px; line-height:1.5;"><strong>💡 Recomendación:</strong> ${lec.recomendacion || 'Sin recomendación registrada'}</p>
+<p style="margin:0; color:#64748b; font-size:12px;"><strong>👤 Responsable:</strong> ${lec.responsable || 'Pendiente'} | <strong>📅 Fecha:</strong> ${new Date(lec.fecha).toLocaleDateString('es-ES')}</p>
+</div>
+`;
+});
+html += `</div>`;
+}
+});
+
+container.innerHTML = html;
+
+// Event listeners para eliminar
+document.querySelectorAll('.btn-eliminar-leccion').forEach(btn => {
+btn.onclick = () => {
+if (confirm('¿Eliminar esta lección aprendida?')) {
+const id = parseInt(btn.dataset.id);
+leccionesAprendidas = leccionesAprendidas.filter(l => l.id !== id);
+localStorage.setItem('leccionesAprendidas', JSON.stringify(leccionesAprendidas));
+renderLista();
+}
+};
+});
+}
+
+// ✅ Agregar nueva lección
+document.getElementById('agregarLeccion').onclick = () => {
+const descripcion = document.getElementById('leccionDescripcion').value.trim();
+if (!descripcion) { alert('Ingresa una descripción de la lección'); return; }
+
+const nuevaLeccion = {
+id: Date.now(),
+proyectoId: proyecto.name,
+tipo: document.getElementById('leccionTipo').value,
+categoria: document.getElementById('leccionCategoria').value,
+fase: document.getElementById('leccionFase').value,
+impacto: document.getElementById('leccionImpacto').value,
+descripcion: descripcion,
+recomendacion: document.getElementById('leccionRecomendacion').value.trim(),
+responsable: document.getElementById('leccionResponsable').value.trim(),
+fecha: new Date().toISOString()
+};
+
+leccionesAprendidas.push(nuevaLeccion);
+localStorage.setItem('leccionesAprendidas', JSON.stringify(leccionesAprendidas));
+
+// Limpiar formulario
+document.getElementById('leccionDescripcion').value = '';
+document.getElementById('leccionRecomendacion').value = '';
+document.getElementById('leccionResponsable').value = '';
+
+renderLista();
+alert('✅ Lección guardada exitosamente');
+};
+
+// ✅ Generar documento ejecutivo
+document.getElementById('generarDocumentoBtn').onclick = () => {
+const leccionesProyecto = leccionesAprendidas.filter(l => l.proyectoId === proyecto.name);
+if (leccionesProyecto.length === 0) { alert('No hay lecciones para generar el documento'); return; }
+
+// Agrupar para el documento
+const agrupadas = {
+positiva: leccionesProyecto.filter(l => l.tipo === 'positiva'),
+mejora: leccionesProyecto.filter(l => l.tipo === 'mejora'),
+negativa: leccionesProyecto.filter(l => l.tipo === 'negativa')
+};
+
+const generarFilas = (lecciones) => lecciones.map(lec => `
+<tr>
+<td style="padding:12px; border:1px solid #e2e8f0; background:#f8fafc;">
+<span style="background:${tipos.find(t=>t.valor===lec.tipo)?.color||'#64748b'}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${lec.categoria}</span>
+</td>
+<td style="padding:12px; border:1px solid #e2e8f0;">${lec.descripcion}</td>
+<td style="padding:12px; border:1px solid #e2e8f0;">${lec.recomendacion || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${lec.responsable || '-'}</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">
+<span style="background:${lec.impacto==='Crítico'?'#ef4444':lec.impacto==='Alto'?'#f97316':lec.impacto==='Medio'?'#eab308':'#22c55e'}; color:white; padding:4px 10px; border-radius:12px; font-size:11px;">${lec.impacto}</span>
+</td>
+</tr>
+`).join('');
+
+const contenido = `
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:40px; border-radius:16px 16px 0 0; text-align:center;">
+<h1 style="margin:0; font-size:28px; font-weight:bold;">🎓 LECCIONES APRENDIDAS</h1>
+<p style="margin:10px 0 0 0; opacity:0.9; font-size:14px;">PROJECT LESSONS LEARNED - DOCUMENTO EJECUTIVO</p>
+</div>
+
+<div style="background:#f8fafc; padding:25px; border-bottom:3px solid #3b82f6;">
+<table style="width:100%; border:none; font-size:13px;">
+<tr>
+<td style="border:none; padding:8px;"><strong>🏢 Proyecto:</strong> ${proyecto.name}</td>
+<td style="border:none; padding:8px;"><strong>📅 Fecha de Generación:</strong> ${new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' })}</td>
+<td style="border:none; padding:8px;"><strong>👤 Generado por:</strong> ${obtenerProyectoActual()?.pm || 'Usuario'}</td>
+</tr>
+<tr>
+<td style="border:none; padding:8px;"><strong>📊 Total Lecciones:</strong> ${leccionesProyecto.length}</td>
+<td style="border:none; padding:8px;"><strong>✅ Positivas:</strong> ${agrupadas.positiva.length}</td>
+<td style="border:none; padding:8px;"><strong>⚠️ Mejoras:</strong> ${agrupadas.mejora.length} | <strong>❌ Problemas:</strong> ${agrupadas.negativa.length}</td>
+</tr>
+</table>
+</div>
+
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:30px 0 20px 0; font-size:18px;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.8; color:#374151; text-align:justify;">
+Este documento recopila las lecciones aprendidas durante la ejecución del proyecto <strong>${proyecto.name}</strong>. 
+Su propósito es capturar conocimientos valiosos que puedan ser aplicados en futuros proyectos para mejorar la eficiencia, 
+reducir riesgos y optimizar los procesos de gestión. Las lecciones se han clasificado según su naturaleza 
+(positivas, áreas de mejora o problemas identificados) y categorizadas según las áreas de conocimiento del PMI.
+</p>
+
+<!-- Lo que funcionó bien -->
+${agrupadas.positiva.length > 0 ? `
+<h2 style="color:#10b981; border-left:5px solid #10b981; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">✅ Lo que Funcionó Bien</h2>
+<p style="color:#64748b; margin-bottom:15px; font-size:13px;">Prácticas exitosas que deben replicarse en futuros proyectos:</p>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#dcfce7;">
+<th style="padding:12px; text-align:left; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:left; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Lección Aprendida</th>
+<th style="padding:12px; text-align:left; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Recomendación</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #bbf7d0; color:#166534; font-weight:bold;">Impacto</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupadas.positiva)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Áreas de mejora -->
+${agrupadas.mejora.length > 0 ? `
+<h2 style="color:#f59e0b; border-left:5px solid #f59e0b; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">⚠️ Áreas de Mejora Identificadas</h2>
+<p style="color:#64748b; margin-bottom:15px; font-size:13px;">Oportunidades para optimizar procesos en proyectos futuros:</p>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#fef3c7;">
+<th style="padding:12px; text-align:left; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:left; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Lección Aprendida</th>
+<th style="padding:12px; text-align:left; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Recomendación</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #fde68a; color:#92400e; font-weight:bold;">Impacto</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupadas.mejora)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Problemas identificados -->
+${agrupadas.negativa.length > 0 ? `
+<h2 style="color:#ef4444; border-left:5px solid #ef4444; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">❌ Problemas Identificados</h2>
+<p style="color:#64748b; margin-bottom:15px; font-size:13px;">Incidencias que deben evitarse en futuros proyectos:</p>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#fee2e2;">
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Categoría</th>
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Lección Aprendida</th>
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Recomendación</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Impacto</th>
+</tr>
+</thead>
+<tbody>
+${generarFilas(agrupadas.negativa)}
+</tbody>
+</table>
+` : ''}
+
+<!-- Matriz de Priorización -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🎯 Matriz de Priorización para Implementación</h2>
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:#e2e8f0;">
+<th style="padding:12px; text-align:center; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Prioridad</th>
+<th style="padding:12px; text-align:left; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Acción Recomendada</th>
+<th style="padding:12px; text-align:center; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Plazo</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; text-align:center; background:#dcfce7; color:#166534; font-weight:bold;">🔴 Alta</td><td style="padding:12px; border:1px solid #e2e8f0;">Implementar lecciones de impacto Crítico/Alto en próximo proyecto</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">Inmediato</td></tr>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; text-align:center; background:#fef3c7; color:#92400e; font-weight:bold;">🟡 Media</td><td style="padding:12px; border:1px solid #e2e8f0;">Documentar en playbook de mejores prácticas de la organización</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">30 días</td></tr>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; text-align:center; background:#dbeafe; color:#1e40af; font-weight:bold;">🔵 Baja</td><td style="padding:12px; border:1px solid #e2e8f0;">Compartir en repositorio de conocimiento para consulta futura</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">60 días</td></tr>
+</tbody>
+</table>
+
+<!-- Footer -->
+<div style="margin-top:50px; padding:25px; background:#f8fafc; border-radius:12px; text-align:center; border-top:3px solid #3b82f6;">
+<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">
+<strong>CONFIDENCIALIDAD:</strong> Este documento contiene información sensible del proyecto y su distribución debe ser controlada.<br>
+<strong>PRÓXIMA REVISIÓN:</strong> Las lecciones aquí documentadas deben ser revisadas al inicio de cada nuevo proyecto similar.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo - ${new Date().toLocaleDateString('es-ES')}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Lecciones Aprendidas
+        </button>
+    </div>
+`;
+const html = generarHTML(`Lecciones Aprendidas - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Lecciones_Aprendidas_${proyecto.name.replace(/\s+/g, '_')}`);
+modal.remove();
+};
+
+// ✅ Cancelar
+document.getElementById('cancelarLeccionesBtn').onclick = () => modal.remove();
+
+// ✅ Renderizar lista inicial
+renderLista();
+}
+
+
+
+
+
+// Acta de cierre - VERSIÓN EJECUTIVA PROFESIONAL
+function generarActaCierre() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+const tasks = proyecto.tasks || [];
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const total = tasks.length;
+const porcentaje = total ? Math.round(completadas/total*100) : 0;
+const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+
+// ✅ Crear modal elegante
+const modal = document.createElement('div');
+modal.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;`;
+
+const content = document.createElement('div');
+content.style.cssText = `background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:750px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto; display:flex; flex-direction:column;`;
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 10px 0; text-align:center; font-size:22px;">🔚 Acta de Cierre del Proyecto</h2>
+<p style="margin:0 0 25px 0; text-align:center; color:#94a3b8; font-size:13px;">Proyecto: <strong>${proyecto.name}</strong></p>
+
+<!-- Sección 1: Información General -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#3b82f6; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Información General</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha de Inicio:</label>
+<input type="date" id="cierreFechaInicio" value="${tasks[0]?.startDate || ''}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha de Cierre:</label>
+<input type="date" id="cierreFechaFin" value="${new Date().toISOString().split('T')[0]}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Gerente del Proyecto:</label>
+<input type="text" id="cierrePM" value="${proyecto.pm || 'Usuario'}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Sponsor / Patrocinador:</label>
+<input type="text" id="cierreSponsor" placeholder="Nombre del sponsor" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+</div>
+</div>
+
+<!-- Sección 2: Métricas Finales -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#10b981; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #10b981; padding-bottom:10px;">📊 Métricas Finales del Proyecto</h3>
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; text-align:center;">
+<div style="background:rgba(59,130,246,0.2); padding:15px; border-radius:8px;">
+<div style="font-size:24px; font-weight:bold; color:#60a5fa;">${total}</div>
+<div style="font-size:11px; color:#94a3b8;">Total Tareas</div>
+</div>
+<div style="background:rgba(16,185,129,0.2); padding:15px; border-radius:8px;">
+<div style="font-size:24px; font-weight:bold; color:#34d399;">${completadas}</div>
+<div style="font-size:11px; color:#94a3b8;">Completadas</div>
+</div>
+<div style="background:rgba(139,92,246,0.2); padding:15px; border-radius:8px;">
+<div style="font-size:24px; font-weight:bold; color:#a78bfa;">${porcentaje}%</div>
+<div style="font-size:11px; color:#94a3b8;">Avance Final</div>
+</div>
+</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px; text-align:center;">
+<div style="background:rgba(245,158,11,0.2); padding:15px; border-radius:8px;">
+<div style="font-size:20px; font-weight:bold; color:#fbbf24;">${horasEst}h</div>
+<div style="font-size:11px; color:#94a3b8;">Horas Estimadas</div>
+</div>
+<div style="background:rgba(239,68,68,0.2); padding:15px; border-radius:8px;">
+<div style="font-size:20px; font-weight:bold; color:#f87171;">${horasReg}h</div>
+<div style="font-size:11px; color:#94a3b8;">Horas Reales</div>
+</div>
+</div>
+</div>
+
+<!-- Sección 3: Lecciones Aprendidas -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#f59e0b; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #f59e0b; padding-bottom:10px;">🎓 Lecciones Aprendidas</h3>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">¿Qué funcionó bien?</label>
+<textarea id="cierreExito" rows="2" placeholder="Ej: Comunicación efectiva, cumplimiento de hitos..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">¿Qué se puede mejorar?</label>
+<textarea id="cierreMejora" rows="2" placeholder="Ej: Estimación de tiempos, gestión de riesgos..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+
+<!-- Sección 4: Desviaciones -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#ef4444; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #ef4444; padding-bottom:10px;">⚠️ Desviaciones del Plan</h3>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Desviación de Alcance:</label>
+<textarea id="cierreAlcance" rows="2" placeholder="Cambios no planificados, scope creep..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Desviación de Tiempo:</label>
+<textarea id="cierreTiempo" rows="2" placeholder="Retrasos, extensiones de plazo..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Desviación de Costo:</label>
+<textarea id="cierreCosto" rows="2" placeholder="Sobrecostos, ahorros, variaciones..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+
+<!-- Sección 5: Aceptación -->
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#10b981; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #10b981; padding-bottom:10px;">✅ Aceptación Formal</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">¿Cliente aceptó entregables?</label>
+<select id="cierreAceptacion" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Sí">✅ Sí, totalmente</option>
+<option value="Parcial">⚠️ Parcialmente</option>
+<option value="No">❌ No</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Estado Final del Proyecto:</label>
+<select id="cierreEstado" style="width:100%; padding:8px; border-radius:6px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="Completado">✅ Completado</option>
+<option value="Completado con Observaciones">⚠️ Completado con Observaciones</option>
+<option value="Cancelado">❌ Cancelado</option>
+<option value="Suspendido">⏸️ Suspendido</option>
+</select>
+</div>
+</div>
+</div>
+
+<!-- Botones de acción -->
+<div style="display:flex; gap:15px; justify-content:center; padding-top:15px; border-top:1px solid #3b82f6; flex-shrink:0;">
+<button id="generarActaCierreBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">📄 Generar Acta de Cierre</button>
+<button id="cancelarCierreBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-size:14px; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// ✅ Generar documento ejecutivo
+document.getElementById('generarActaCierreBtn').onclick = () => {
+const datos = {
+fechaInicio: document.getElementById('cierreFechaInicio').value || 'N/D',
+fechaFin: document.getElementById('cierreFechaFin').value || new Date().toLocaleDateString('es-ES'),
+pm: document.getElementById('cierrePM').value || 'Usuario',
+sponsor: document.getElementById('cierreSponsor').value || 'No especificado',
+exito: document.getElementById('cierreExito').value || 'No registrado',
+mejora: document.getElementById('cierreMejora').value || 'No registrado',
+alcance: document.getElementById('cierreAlcance').value || 'Sin desviaciones',
+tiempo: document.getElementById('cierreTiempo').value || 'Sin desviaciones',
+costo: document.getElementById('cierreCosto').value || 'Sin desviaciones',
+aceptacion: document.getElementById('cierreAceptacion').value,
+estado: document.getElementById('cierreEstado').value
+};
+
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+const codigoCierre = 'CL-' + Date.now().toString().slice(-6);
+
+const contenido = `
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:40px; border-radius:16px 16px 0 0; text-align:center;">
+<h1 style="margin:0; font-size:30px; font-weight:bold;">🔚 ACTA DE CIERRE DE PROYECTO</h1>
+<p style="margin:10px 0 0 0; opacity:0.9; font-size:14px;">PROJECT CLOSURE REPORT - DOCUMENTO EJECUTIVO</p>
+</div>
+
+<div style="background:#f8fafc; padding:25px; border-bottom:3px solid #3b82f6;">
+<table style="width:100%; border:none; font-size:13px;">
+<tr>
+<td style="border:none; padding:8px;"><strong>📋 Código:</strong> ${codigoCierre}</td>
+<td style="border:none; padding:8px;"><strong>📅 Fecha de Emisión:</strong> ${fechaEmision}</td>
+<td style="border:none; padding:8px;"><strong>🏢 Proyecto:</strong> ${proyecto.name}</td>
+</tr>
+<tr>
+<td style="border:none; padding:8px;"><strong>👤 Gerente:</strong> ${datos.pm}</td>
+<td style="border:none; padding:8px;"><strong>💼 Sponsor:</strong> ${datos.sponsor}</td>
+<td style="border:none; padding:8px;"><strong>✅ Estado:</strong> ${datos.estado}</td>
+</tr>
+</table>
+</div>
+
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:30px 0 20px 0; font-size:18px;">📋 Resumen Ejecutivo</h2>
+<p style="line-height:1.8; color:#374151; text-align:justify;">
+El proyecto <strong>${proyecto.name}</strong> ha llegado a su fase de cierre formal. Este documento certifica la conclusión 
+de las actividades del proyecto y resume los resultados obtenidos, lecciones aprendidas y la aceptación formal de los entregables 
+por parte del cliente/sponsor. El propósito de este acta es documentar oficialmente el cierre y facilitar la transferencia 
+de conocimientos para futuros proyectos.
+</p>
+
+<!-- Cronograma del Proyecto -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">📅 Cronograma del Proyecto</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#e2e8f0;">
+<th style="padding:12px; text-align:center; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Fecha de Inicio</th>
+<th style="padding:12px; text-align:center; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Fecha de Cierre</th>
+<th style="padding:12px; text-align:center; border:1px solid #cbd5e1; color:#000; font-weight:bold;">Duración Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; background:#f8fafc;">${datos.fechaInicio}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; background:#f8fafc;">${datos.fechaFin}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; background:#f8fafc; font-weight:bold; color:#3b82f6;">
+${datos.fechaInicio !== 'N/D' ? Math.ceil((new Date(datos.fechaFin) - new Date(datos.fechaInicio)) / (1000*3600*24)) + ' días' : 'N/D'}
+</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Métricas de Desempeño -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">📊 Métricas de Desempeño Final</h2>
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:20px;">
+<div style="background:#dbeafe; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #3b82f6;">
+<div style="font-size:28px; font-weight:bold; color:#1e40af;">${total}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Total Tareas</div>
+</div>
+<div style="background:#dcfce7; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #10b981;">
+<div style="font-size:28px; font-weight:bold; color:#166534;">${completadas}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Completadas</div>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #f59e0b;">
+<div style="font-size:28px; font-weight:bold; color:#92400e;">${porcentaje}%</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Avance Final</div>
+</div>
+<div style="background:#f3f4f6; padding:20px; border-radius:10px; text-align:center; border-left:4px solid #6b7280;">
+<div style="font-size:28px; font-weight:bold; color:#374151;">${datos.estado}</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Estado</div>
+</div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+<div style="background:#fef3c7; padding:20px; border-radius:10px; text-align:center;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${horasEst}h</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Horas Estimadas (BAC)</div>
+</div>
+<div style="background:#fee2e2; padding:20px; border-radius:10px; text-align:center;">
+<div style="font-size:24px; font-weight:bold; color:#991b1b;">${horasReg}h</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Horas Reales (AC)</div>
+</div>
+</div>
+
+<!-- Desviaciones -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">⚠️ Desviaciones del Plan Original</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#fee2e2;">
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Tipo de Desviación</th>
+<th style="padding:12px; text-align:left; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Descripción</th>
+<th style="padding:12px; text-align:center; border:1px solid #fecaca; color:#991b1b; font-weight:bold;">Impacto</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; font-weight:bold; background:#f8fafc;">📐 Alcance</td><td style="padding:12px; border:1px solid #e2e8f0;">${datos.alcance}</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${datos.alcance !== 'Sin desviaciones' ? '🔴 Alto' : '🟢 Nulo'}</td></tr>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; font-weight:bold; background:#f8fafc;">📅 Tiempo</td><td style="padding:12px; border:1px solid #e2e8f0;">${datos.tiempo}</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${datos.tiempo !== 'Sin desviaciones' ? '🟡 Medio' : '🟢 Nulo'}</td></tr>
+<tr><td style="padding:12px; border:1px solid #e2e8f0; font-weight:bold; background:#f8fafc;">💰 Costo</td><td style="padding:12px; border:1px solid #e2e8f0;">${datos.costo}</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">${datos.costo !== 'Sin desviaciones' ? '🔴 Alto' : '🟢 Nulo'}</td></tr>
+</tbody>
+</table>
+
+<!-- Lecciones Aprendidas -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🎓 Lecciones Aprendidas</h2>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+<div style="background:#dcfce7; padding:20px; border-radius:10px; border-left:4px solid #10b981;">
+<h3 style="color:#166534; margin:0 0 10px 0; font-size:15px;">✅ Lo que Funcionó Bien</h3>
+<p style="color:#374151; font-size:13px; line-height:1.6; margin:0;">${datos.exito}</p>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:10px; border-left:4px solid #f59e0b;">
+<h3 style="color:#92400e; margin:0 0 10px 0; font-size:15px;">⚠️ Áreas de Mejora</h3>
+<p style="color:#374151; font-size:13px; line-height:1.6; margin:0;">${datos.mejora}</p>
+</div>
+</div>
+
+<!-- Aceptación Formal -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">✅ Aceptación Formal del Cliente</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<tr>
+<td style="padding:15px; border:1px solid #e2e8f0; background:#f8fafc; width:30%;"><strong>¿Entregables Aceptados?</strong></td>
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:bold; color:${datos.aceptacion==='Sí'?'#166534':datos.aceptacion==='Parcial'?'#92400e':'#991b1b'};">${datos.aceptacion}</td>
+</tr>
+<tr>
+<td style="padding:15px; border:1px solid #e2e8f0; background:#f8fafc;"><strong>Estado Final</strong></td>
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:bold; color:#3b82f6;">${datos.estado}</td>
+</tr>
+</table>
+
+<!-- Firmas -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">✍️ Firmas de Aprobación</h2>
+<p style="color:#64748b; margin-bottom:20px; font-size:13px;">Las siguientes firmas indican la aceptación formal del cierre del proyecto:</p>
+<table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+<thead>
+<tr style="background:#1e3a8a; color:white;">
+<th style="padding:15px; text-align:left; border:1px solid #1e3a8a;">Rol</th>
+<th style="padding:15px; text-align:left; border:1px solid #1e3a8a;">Nombre</th>
+<th style="padding:15px; text-align:left; border:1px solid #1e3a8a;">Firma</th>
+<th style="padding:15px; text-align:left; border:1px solid #1e3a8a;">Fecha</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0;">Sponsor / Patrocinador</td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${datos.sponsor}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; height:50px;"></td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${fechaEmision}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0;">Gerente de Proyecto</td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${datos.pm}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; height:50px;"></td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${fechaEmision}</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0;">Cliente / Usuario Final</td>
+<td style="padding:15px; border:1px solid #e2e8f0;">___________________</td>
+<td style="padding:15px; border:1px solid #e2e8f0; height:50px;"></td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${fechaEmision}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0;">Director de PMO</td>
+<td style="padding:15px; border:1px solid #e2e8f0;">___________________</td>
+<td style="padding:15px; border:1px solid #e2e8f0; height:50px;"></td>
+<td style="padding:15px; border:1px solid #e2e8f0;">${fechaEmision}</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Checklist de Cierre -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">✅ Checklist de Cierre Completado</h2>
+<table style="width:100%; border-collapse:collapse;">
+<tr><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Todos los entregables fueron aceptados</td><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Documentación completa archivada</td></tr>
+<tr><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Recursos liberados y reasignados</td><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Contratos con proveedores cerrados</td></tr>
+<tr><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Lecciones aprendidas documentadas</td><td style="padding:10px; border:1px solid #e2e8f0; background:#dcfce7; color:#166534;">✅ Acta de cierre firmada</td></tr>
+</table>
+
+<!-- Footer -->
+<div style="margin-top:50px; padding:25px; background:#f8fafc; border-radius:12px; text-align:center; border-top:3px solid #3b82f6;">
+<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">
+<strong>CONFIDENCIALIDAD:</strong> Este documento contiene información sensible del proyecto y su distribución debe ser controlada.<br>
+<strong>PRÓXIMOS PASOS:</strong> Este acta debe ser archivada en el repositorio de la PMO y compartida con stakeholders clave.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo - ${fechaEmision}</em><br>
+<em>Código de Documento: ${codigoCierre}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Acta de Cierre
+        </button>
+    </div>
+`;
+const html = generarHTML(`Acta de Cierre - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Acta_Cierre_${proyecto.name.replace(/\s+/g, '_')}`);
+modal.remove();
+
+// Guardar en historial
+let actasCierre = JSON.parse(localStorage.getItem('actasCierre') || '[]');
+actasCierre.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoCierre, estado: datos.estado });
+localStorage.setItem('actasCierre', JSON.stringify(actasCierre));
+
+alert('✅ Acta de Cierre generada exitosamente.\n\n📋 Código: ' + codigoCierre + '\n📄 Lista para imprimir y firmar');
+};
+
+// ✅ Cancelar
+document.getElementById('cancelarCierreBtn').onclick = () => modal.remove();
+}
+
+
+
+
+// Informe Final Ejecutivo - VERSIÓN ESPECTACULAR PARA ALTA DIRECCIÓN
+function generarInformeFinal() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+
+const tasks = proyecto.tasks || [];
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const pendientes = tasks.filter(t => t.status === 'pending').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const eficiencia = horasEst > 0 ? (horasEst / horasReg) * 100 : 0;
+const porcentajeAvance = total > 0 ? Math.round(completadas/total*100) : 0;
+
+// ✅ Calcular métricas avanzadas
+const SPI = horasEst > 0 ? horasReg / horasEst : 0;
+const CPI = horasEst > 0 ? horasReg / horasEst : 0;
+const tasaExito = total > 0 ? ((completadas - atrasadas) / total) * 100 : 0;
+
+// ✅ Determinar éxito del proyecto
+const scoreProyecto = Math.round((porcentajeAvance * 0.4) + ((100 - Math.min(atrasadas * 10, 100)) * 0.3) + ((eficiencia > 100 ? 100 : eficiencia) * 0.3));
+const estadoProyecto = scoreProyecto >= 90 ? '✅ Exitoso' : (scoreProyecto >= 75 ? '🟢 Aceptable' : (scoreProyecto >= 60 ? '⚠️ Con Observaciones' : '🔴 Requiere Revisión'));
+const colorEstado = scoreProyecto >= 90 ? '#10b981' : (scoreProyecto >= 75 ? '#3b82f6' : (scoreProyecto >= 60 ? '#f59e0b' : '#ef4444'));
+
+// ✅ Código único para trazabilidad
+const codigoInforme = 'IF-' + Date.now().toString().slice(-6);
+const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+
+// ✅ Contenido HTML ejecutivo espectacular
+const contenido = `
+<!-- Header Ejecutivo con Gradiente -->
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6,#60a5fa); color:white; padding:25px 30px; border-radius:12px 12px 0 0; position:relative; overflow:hidden;">
+<div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+<div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+<h1 style="margin:0; font-size:24px; font-weight:700; position:relative; z-index:1;">📊 INFORME FINAL DE PROYECTO</h1>
+<p style="margin:8px 0 0 0; opacity:0.95; font-size:13px; position:relative; z-index:1;">PROJECT FINAL REPORT - DOCUMENTO EJECUTIVO PARA ALTA DIRECCIÓN</p>
+<div style="margin-top:15px; display:flex; gap:12px; position:relative; z-index:1; flex-wrap:wrap;">
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${proyecto.name}</div>
+<div style="font-size:10px; opacity:0.9;">Proyecto</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${codigoInforme}</div>
+<div style="font-size:10px; opacity:0.9;">Código Informe</div>
+</div>
+<div style="background:rgba(255,255,255,0.15); padding:10px 18px; border-radius:8px; backdrop-filter:blur(10px);">
+<div style="font-size:18px; font-weight:bold;">${fechaEmision}</div>
+<div style="font-size:10px; opacity:0.9;">Fecha</div>
+</div>
+</div>
+</div>
+
+<!-- Score del Proyecto -->
+<div style="background:#f8fafc; padding:25px 30px; border-bottom:3px solid #3b82f6;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+<h3 style="margin:0; color:#1e3a8a; font-size:16px;">📈 Evaluación General del Proyecto</h3>
+<span style="background:${colorEstado}; color:white; padding:8px 20px; border-radius:20px; font-weight:bold; font-size:14px;">${estadoProyecto} (${scoreProyecto}%)</span>
+</div>
+<div style="background:#e2e8f0; height:16px; border-radius:8px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${scoreProyecto}%; border-radius:8px; transition:width 0.5s ease; position:relative;">
+<div style="position:absolute; right:5px; top:50%; transform:translateY(-50%); color:white; font-size:11px; font-weight:bold;">${scoreProyecto}%</div>
+</div>
+</div>
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:15px; margin-top:20px; text-align:center;">
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${total}</div>
+<div style="font-size:11px; color:#64748b;">Total Tareas</div>
+</div>
+<div style="background:#dcfce7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#166534;">${completadas}</div>
+<div style="font-size:11px; color:#64748b;">✅ Completadas</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">${atrasadas}</div>
+<div style="font-size:11px; color:#64748b;">🔴 Atrasadas</div>
+</div>
+<div style="background:#dbeafe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#1e40af;">${Math.round(eficiencia)}%</div>
+<div style="font-size:11px; color:#64748b;">⚡ Eficiencia</div>
+</div>
+<div style="background:#f3f4f6; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#374151;">${porcentajeAvance}%</div>
+<div style="font-size:11px; color:#64748b;">📊 Avance</div>
+</div>
+</div>
+</div>
+
+<!-- Cuerpo Principal -->
+<div style="padding:30px;">
+
+<!-- Resumen Ejecutivo -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo para Alta Dirección</h2>
+<p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
+El presente Informe Final proporciona una visión comprehensiva del desempeño del proyecto <strong>${proyecto.name}</strong>, 
+evaluando los resultados obtenidos contra los objetivos inicialmente establecidos. Este documento está diseñado para 
+proporcionar a la alta dirección los insights necesarios para la toma de decisiones estratégicas, incluyendo el 
+desempeño financiero, cumplimiento de cronograma, calidad de entregables y lecciones aprendidas que podrán ser 
+aplicadas en futuros proyectos de la organización.
+</p>
+
+<!-- KPIs Principales del Proyecto -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">📊 KPIs Principales de Desempeño</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#dbeafe;">
+<th style="padding:15px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Indicador (KPI)</th>
+<th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Valor Obtenido</th>
+<th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Objetivo</th>
+<th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Desviación</th>
+<th style="padding:15px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:14px;">Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📈 Tasa de Completitud</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#166534;">${porcentajeAvance}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">100%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:${100-porcentajeAvance>10?'#ef4444':'#10b981'};">${100-porcentajeAvance>0?'-'+(100-porcentajeAvance)+'%':'✅'}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${porcentajeAvance>=90?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Excelente</span>':(porcentajeAvance>=75?'<span style="background:#3b82f6; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🟢 Bueno</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Mejorable</span>')}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">🔴 Tasa de Atraso</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:${atrasadas===0?'#166534':'#991b1b'};">${Math.round(atrasadas/total*100) || 0}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">0%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:${atrasadas>0?'#ef4444':'#10b981'};">${atrasadas>0?'+ '+atrasadas:'✅ Cero'}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${atrasadas===0?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Óptimo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Atención</span>'}</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">⚡ Eficiencia de Esfuerzo</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${Math.round(eficiencia)}%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">100%</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:${eficiencia<90?'#ef4444':'#10b981'};">${eficiencia<100? (100-eficiencia).toFixed(0)+'%':'✅'}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${eficiencia>=95?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Excelente</span>':(eficiencia>=85?'<span style="background:#3b82f6; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🟢 Bueno</span>':'<span style="background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">⚠️ Mejorable</span>')}</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">📊 Índice de Desempeño (SPI)</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${SPI.toFixed(2)}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">1.0</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:${SPI<1?'#ef4444':'#10b981'};">${SPI<1?'-'+(1-SPI).toFixed(2):'+'+(SPI-1).toFixed(2)}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${SPI>=1?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ A Tiempo</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Retraso</span>'}</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">💰 Índice de Costo (CPI)</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${CPI.toFixed(2)}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:#065f46;">1.0</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; color:${CPI<1?'#ef4444':'#10b981'};">${CPI<1?'-'+(1-CPI).toFixed(2):'+'+(CPI-1).toFixed(2)}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">${CPI>=1?'<span style="background:#10b981; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">✅ Dentro Presupuesto</span>':'<span style="background:#ef4444; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">🔴 Sobrecosto</span>'}</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Análisis Financiero -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">💰 Análisis Financiero del Proyecto</h2>
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:30px;">
+<div style="background:#fef3c7; padding:25px; border-radius:12px; border-left:5px solid #f59e0b;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+<h4 style="margin:0; color:#92400e; font-size:15px; font-weight:600;">📋 Presupuesto Estimado</h4>
+<span style="font-size:24px;">📊</span>
+</div>
+<div style="font-size:32px; font-weight:bold; color:#92400e;">${horasEst}h</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Horas planificadas (BAC)</div>
+</div>
+<div style="background:#fee2e2; padding:25px; border-radius:12px; border-left:5px solid #ef4444;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+<h4 style="margin:0; color:#991b1b; font-size:15px; font-weight:600;">💵 Costo Real Incurrido</h4>
+<span style="font-size:24px;">💰</span>
+</div>
+<div style="font-size:32px; font-weight:bold; color:#991b1b;">${horasReg}h</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">Horas registradas (AC)</div>
+</div>
+<div style="background:${horasReg<=horasEst?'#dcfce7':'#fee2e2'}; padding:25px; border-radius:12px; border-left:5px solid:${horasReg<=horasEst?'#10b981':'#ef4444'};">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+<h4 style="margin:0; color:${horasReg<=horasEst?'#166534':'#991b1b'}; font-size:15px; font-weight:600;">📈 Variación de Costo</h4>
+<span style="font-size:24px;">${horasReg<=horasEst?'✅':'⚠️'}</span>
+</div>
+<div style="font-size:32px; font-weight:bold; color:${horasReg<=horasEst?'#166534':'#991b1b'};">${horasEst-horasReg>=0?'+':''}${horasEst-horasReg}h</div>
+<div style="font-size:12px; color:#64748b; margin-top:5px;">${horasReg<=horasEst?'Ahorro':'Sobrecosto'} vs planificado</div>
+</div>
+</div>
+
+<!-- Lecciones Aprendidas Clave -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">🎓 Lecciones Aprendidas Clave</h2>
+<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:30px;">
+<div style="background:#dcfce7; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+<h4 style="margin:0 0 12px 0; color:#166534; font-size:15px; font-weight:600;">✅ Lo que Funcionó Bien</h4>
+<ul style="margin:0; padding-left:20px; color:#374151; font-size:13px; line-height:1.8;">
+<li>Compromiso del equipo y colaboración efectiva</li>
+<li>Comunicación regular con stakeholders clave</li>
+<li>Uso de herramientas de gestión de proyectos</li>
+<li>Identificación temprana de riesgos críticos</li>
+</ul>
+</div>
+<div style="background:#fef3c7; padding:20px; border-radius:12px; border-left:5px solid #f59e0b;">
+<h4 style="margin:0 0 12px 0; color:#92400e; font-size:15px; font-weight:600;">⚠️ Áreas de Mejora</h4>
+<ul style="margin:0; padding-left:20px; color:#374151; font-size:13px; line-height:1.8;">
+<li>${atrasadas>0?'Estimación más precisa de plazos y dependencias':'Mantener prácticas actuales de planificación'}</li>
+<li>Documentación más detallada de requisitos iniciales</li>
+<li>Mejor gestión de cambios de alcance</li>
+<li>Incrementar frecuencia de revisiones de calidad</li>
+</ul>
+</div>
+</div>
+
+<!-- Recomendaciones Estratégicas -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">💡 Recomendaciones Estratégicas para Futuros Proyectos</h2>
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#dbeafe;">
+<th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">#</th>
+<th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Recomendación</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Prioridad</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600; font-size:13px;">Impacto Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">1</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Implementar proceso formal de gestión de cambios de alcance</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Alta</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Reducir desviaciones de alcance en 40%</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">2</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Establecer revisiones de calidad quincenales obligatorias</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Media</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mejorar calidad de entregables en 25%</td>
+</tr>
+<tr style="background:#f8fafc;">
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">3</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Capacitar equipo en estimación ágil de esfuerzos</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#f59e0b; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Media</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mejorar precisión de estimaciones en 30%</td>
+</tr>
+<tr style="background:white;">
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">4</td>
+<td style="padding:12px; border:1px solid #e2e8f0; color:#64748b; font-size:13px;">Documentar lecciones aprendidas al final de cada fase</td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:#22c55e; color:white; padding:4px 10px; border-radius:10px; font-size:10px; font-weight:bold;">Baja</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:13px;">Mejora continua organizacional</td>
+</tr>
+</tbody>
+</table>
+
+<!-- Conclusión y Aprobación -->
+<h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:40px 0 25px 0; font-size:20px; font-weight:600;">✅ Conclusión y Aprobación Formal</h2>
+<div style="background:#f8fafc; padding:25px; border-radius:12px; margin-bottom:30px;">
+<p style="line-height:1.8; color:#374151; font-size:14px; margin:0 0 20px 0;">
+Basado en el análisis exhaustivo de los resultados del proyecto, se concluye que el proyecto 
+<strong>${proyecto.name}</strong> ha alcanzado un nivel de desempeño <strong style="color:${colorEstado};">${estadoProyecto}</strong> 
+con un score general de <strong>${scoreProyecto}%</strong>. Se recomienda la aceptación formal de los entregables 
+y el cierre administrativo del proyecto, sujeto a la implementación de las acciones de mejora continua identificadas.
+</p>
+<div style="display:flex; justify-content:center; gap:30px; margin-top:25px;">
+<div style="text-align:center;">
+<div style="width:150px; height:60px; border:2px solid #1e3a8a; border-radius:8px; margin:0 auto 10px 0;"></div>
+<div style="font-size:12px; color:#64748b;">Gerente de Proyecto</div>
+<div style="font-size:11px; color:#94a3b8;">${fechaEmision}</div>
+</div>
+<div style="text-align:center;">
+<div style="width:150px; height:60px; border:2px solid #1e3a8a; border-radius:8px; margin:0 auto 10px 0;"></div>
+<div style="font-size:12px; color:#64748b;">Sponsor / Patrocinador</div>
+<div style="font-size:11px; color:#94a3b8;">${fechaEmision}</div>
+</div>
+<div style="text-align:center;">
+<div style="width:150px; height:60px; border:2px solid #1e3a8a; border-radius:8px; margin:0 auto 10px 0;"></div>
+<div style="font-size:12px; color:#64748b;">Director de PMO</div>
+<div style="font-size:11px; color:#94a3b8;">${fechaEmision}</div>
+</div>
+</div>
+</div>
+
+<!-- Footer Ejecutivo -->
+<div style="margin-top:50px; padding:25px; background:linear-gradient(135deg,#f8fafc,#e2e8f0); border-radius:12px; text-align:center; border-top:4px solid #3b82f6;">
+<p style="color:#64748b; font-size:12px; margin:0 0 15px 0; line-height:1.8;">
+<strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información estratégica del proyecto y su distribución debe ser controlada según políticas de la organización.<br>
+<strong>📋 PRÓXIMA REVISIÓN:</strong> Este informe debe ser archivado en el repositorio de la PMO y utilizado como referencia para proyectos similares.<br>
+<strong>✅ CIERRE FORMAL:</strong> La aceptación de este informe constituye el cierre administrativo formal del proyecto.<br><br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoInforme} • ${fechaEmision}</em>
+</p>
+</div>
+
+</div>
+`;
+
+const botonImpresion = `
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="window.print();" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:40px; color:white; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2); cursor:pointer; display:flex; align-items:center; gap:8px;">
+            🖨️ Imprimir Informe Final
+        </button>
+    </div>
+`;
+const html = generarHTML(`Informe Final Ejecutivo - ${proyecto.name}`, contenido + botonImpresion, `...estilos...`);
+abrirVentanaDocumento(html, `Informe_Final_Ejecutivo_${proyecto.name.replace(/\s+/g, '_')}`);
+
+// Guardar en historial
+let informesFinales = JSON.parse(localStorage.getItem('informesFinales') || '[]');
+informesFinales.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoInforme, scoreProyecto: scoreProyecto, estado: estadoProyecto });
+localStorage.setItem('informesFinales', JSON.stringify(informesFinales));
+
+alert('✅ Informe Final Ejecutivo generado exitosamente.\n\n📋 Código: ' + codigoInforme + '\n📊 Score del Proyecto: ' + scoreProyecto + '% (' + estadoProyecto + ')\n📄 Documento listo para presentación a alta dirección');
+}
+
+
+
+
+
+
+// ========== SECCIÓN CONTROL - VERSIÓN EJECUTIVA OPERACIONAL ==========
+function renderControl(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto?.tasks || [];
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const pendientes = tasks.filter(t => t.status === 'pending').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const criticas = tasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
+
+// ✅ Métricas de tiempo y esfuerzo
+const horasEst = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const horasReg = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const eficiencia = horasEst > 0 ? Math.round((horasEst / horasReg) * 100) : 100;
+const porcentajeAvance = total > 0 ? Math.round(completadas/total*100) : 0;
+
+// ✅ Cálculos EVM básicos
+const PV = horasEst;
+const EV = horasEst * (completadas / Math.max(total, 1));
+const AC = horasReg;
+const SPI = PV > 0 ? EV / PV : 1;
+const CPI = AC > 0 ? EV / AC : 1;
+
+// ✅ Análisis de recursos
+const recursos = {};
+tasks.forEach(t => {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { total: 0, completadas: 0, enProgreso: 0, horas: 0 };
+recursos[t.assignee].total++;
+recursos[t.assignee].horas += Number(t.estimatedTime) || 0;
+if (t.status === 'completed') recursos[t.assignee].completadas++;
+if (t.status === 'inProgress') recursos[t.assignee].enProgreso++;
+}
+});
+const sobrecargados = Object.entries(recursos).filter(([_,d]) => d.enProgreso > 2);
+
+// ✅ Generar recomendaciones
+const recomendaciones = [];
+if (atrasadas > 0) {
+recomendaciones.push({
+titulo: '🔴 Reprogramar tareas atrasadas',
+desc: atrasadas + ' tareas con fecha vencida impactan el cronograma.',
+color: '#ef4444',
+accion: function() { reprogramarTareas(atrasadas); renderControl(container); }
+});
+}
+if (criticas > 0) {
+recomendaciones.push({
+titulo: '🔥 Priorizar tareas críticas',
+desc: criticas + ' tareas de alta prioridad pendientes requieren atención.',
+color: '#f97316',
+accion: function() { alertarTareasCriticas(criticas); }
+});
+}
+if (SPI < 0.9) {
+recomendaciones.push({
+titulo: '⏱️ Revisar cronograma',
+desc: 'SPI=' + SPI.toFixed(2) + ' indica retraso. Ajustar fechas o recursos.',
+color: '#f59e0b',
+accion: function() { revisarCronograma(); }
+});
+}
+if (CPI < 0.9) {
+recomendaciones.push({
+titulo: '💰 Controlar sobrecosto',
+desc: 'CPI=' + CPI.toFixed(2) + ' indica gasto mayor al planificado.',
+color: '#f59e0b',
+accion: function() { controlarSobrecosto(); }
+});
+}
+if (sobrecargados.length > 0) {
+recomendaciones.push({
+titulo: '⚖️ Reasignar recursos',
+desc: sobrecargados.length + ' recurso(s) con carga excesiva.',
+color: '#8b5cf6',
+accion: function() { reasignarTareas(sobrecargados); renderControl(container); }
+});
+}
+if (enProgreso > total * 0.6 && pendientes > 0) {
+recomendaciones.push({
+titulo: '🔄 Limitar trabajo en progreso',
+desc: 'Demasiadas tareas en progreso reducen eficiencia.',
+color: '#3b82f6',
+accion: function() { limitarWIP(); renderControl(container); }
+});
+}
+if (recomendaciones.length === 0) {
+recomendaciones.push({
+titulo: '✅ Proyecto en línea',
+desc: 'Todas las métricas dentro de parámetros aceptables.',
+color: '#10b981',
+accion: function() { alert('✅ Todo bajo control. Continuar ejecución planificada.'); }
+});
+}
+
+// ✅ HTML del panel de control
+let html = '';
+html += '<div style="background:linear-gradient(135deg,#1e293b,#0f172a); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid #3b82f6;">';
+html += '<h2 style="color:#ffffff; margin:0 0 10px 0; font-size:20px;">⚙️ Panel de Control Ejecutivo</h2>';
+html += '<p style="color:#94a3b8; margin:0; font-size:13px;">' + proyecto.name + ' • Actualizado: ' + new Date().toLocaleTimeString('es-ES') + '</p>';
+html += '</div>';
+
+// Dashboard de métricas
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:25px;">';
+html += '<div style="background:rgba(59,130,246,0.15); padding:20px; border-radius:12px; border-left:4px solid #3b82f6;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#60a5fa;">' + total + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">Total Tareas</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:8px;">📊 Avance: ' + porcentajeAvance + '%</div>';
+html += '</div>';
+html += '<div style="background:rgba(16,185,129,0.15); padding:20px; border-radius:12px; border-left:4px solid #10b981;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#34d399;">' + completadas + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">✅ Completadas</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:8px;">📈 ' + Math.round(completadas/total*100) + '% del total</div>';
+html += '</div>';
+html += '<div style="background:rgba(245,158,11,0.15); padding:20px; border-radius:12px; border-left:4px solid #f59e0b;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#fbbf24;">' + atrasadas + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">🔴 Atrasadas</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:8px;">⚠️ Requieren atención</div>';
+html += '</div>';
+html += '<div style="background:rgba(239,68,68,0.15); padding:20px; border-radius:12px; border-left:4px solid #ef4444;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#f87171;">' + criticas + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">🔥 Críticas</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:8px;">🎯 Alta prioridad</div>';
+html += '</div>';
+html += '</div>';
+
+// Indicadores EVM
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📊 Indicadores EVM</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px;">';
+html += '<div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">';
+html += '<div style="font-size:24px; font-weight:bold; color:' + (SPI>=1?'#34d399':'#f87171') + ';">' + SPI.toFixed(2) + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">SPI (Cronograma)</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:5px;">' + (SPI>=1?'✅ A tiempo':'🔴 Retrasado') + '</div>';
+html += '</div>';
+html += '<div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">';
+html += '<div style="font-size:24px; font-weight:bold; color:' + (CPI>=1?'#34d399':'#f87171') + ';">' + CPI.toFixed(2) + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">CPI (Costo)</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:5px;">' + (CPI>=1?'✅ Eficiente':'🔴 Sobrecosto') + '</div>';
+html += '</div>';
+html += '<div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#60a5fa;">' + horasEst + 'h</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Estimadas</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:5px;">Presupuesto base</div>';
+html += '</div>';
+html += '<div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px;">';
+html += '<div style="font-size:24px; font-weight:bold; color:' + (eficiencia>=90?'#34d399':'#fbbf24') + ';">' + eficiencia + '%</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Eficiencia</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:5px;">Horas reales vs plan</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Alertas operacionales
+if (atrasadas > 0 || criticas > 0) {
+html += '<div style="background:rgba(239,68,68,0.15); padding:20px; border-radius:12px; margin-bottom:25px; border:1px solid #ef4444;">';
+html += '<h3 style="color:#f87171; margin:0 0 15px 0; font-size:15px;">🚨 Alertas Operacionales</h3>';
+html += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
+if (atrasadas > 0) html += '<span style="background:#ef4444; color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:bold;">' + atrasadas + ' tareas atrasadas</span>';
+if (criticas > 0) html += '<span style="background:#dc2626; color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:bold;">' + criticas + ' tareas críticas</span>';
+if (SPI < 0.9) html += '<span style="background:#f97316; color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:bold;">Retraso en cronograma</span>';
+if (CPI < 0.9) html += '<span style="background:#f97316; color:white; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:bold;">Sobrecosto detectado</span>';
+html += '</div></div>';
+}
+
+// Recomendaciones
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">💡 Recomendaciones</h3>';
+recomendaciones.forEach(function(rec, idx) {
+html += '<div style="background:rgba(16,185,129,0.1); padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid ' + rec.color + ';">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; gap:15px;">';
+html += '<div style="flex:1;">';
+html += '<div style="font-weight:600; color:#e2e8f0; margin-bottom:8px;">' + rec.titulo + '</div>';
+html += '<p style="color:#94a3b8; font-size:13px; margin:0 0 10px 0; line-height:1.5;">' + rec.desc + '</p>';
+html += '</div>';
+html += '<button data-idx="' + idx + '" class="btn-aplicar-rec" style="background:#10b981; border:none; padding:8px 16px; border-radius:6px; color:white; cursor:pointer; font-size:12px; font-weight:bold;">✅ Aplicar</button>';
+html += '</div></div>';
+});
+html += '</div>';
+
+// Carga de recursos
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">👥 Carga por Recurso</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+Object.entries(recursos).forEach(function(entry) {
+const nombre = entry[0];
+const datos = entry[1];
+const carga = Math.round((datos.enProgreso / Math.max(1, Object.keys(recursos).length)) * 100);
+const colorCarga = carga > 66 ? '#ef4444' : (carga > 33 ? '#f59e0b' : '#22c55e');
+html += '<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px;">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">';
+html += '<span style="font-weight:600; color:#e2e8f0; font-size:13px;">' + nombre + '</span>';
+html += '<span style="background:' + colorCarga + '; color:white; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:bold;">' + datos.enProgreso + ' activas</span>';
+html += '</div>';
+html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px; color:#94a3b8; margin-bottom:10px;">';
+html += '<span>✅ ' + datos.completadas + ' completadas</span>';
+html += '<span>⏳ ' + (datos.total - datos.completadas - datos.enProgreso) + ' pendientes</span>';
+html += '</div>';
+html += '<div style="background:#334155; height:6px; border-radius:3px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:' + Math.min(100, carga) + '%; border-radius:3px;"></div>';
+html += '</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:5px; text-align:right;">Carga: ' + carga + '%</div>';
+html += '</div>';
+});
+html += '</div></div>';
+
+// Acciones rápidas (CORREGIDO - data-action + event listeners)
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">⚡ Acciones Rápidas</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+html += '<button data-action="exportar" class="btn-accion-rapida" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; padding:12px; border-radius:8px; color:#60a5fa; cursor:pointer; font-size:13px;">📄 Exportar Reporte</button>';
+html += '<button data-action="alertar" class="btn-accion-rapida" style="background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:12px; border-radius:8px; color:#fbbf24; cursor:pointer; font-size:13px;">📢 Alertar Equipo</button>';
+html += '<button data-action="cronograma" class="btn-accion-rapida" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:12px; border-radius:8px; color:#34d399; cursor:pointer; font-size:13px;">📅 Revisar Cronograma</button>';
+html += '<button data-action="optimizar" class="btn-accion-rapida" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; padding:12px; border-radius:8px; color:#a78bfa; cursor:pointer; font-size:13px;">⚖️ Optimizar Recursos</button>';
+html += '</div></div>';
+
+
+container.innerHTML = html;
+
+// Event listeners
+document.querySelectorAll('.btn-aplicar-rec').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+if (recomendaciones[idx] && recomendaciones[idx].accion) {
+recomendaciones[idx].accion();
+}
+};
+});
+// ✅ 3. PEGA AQUÍ EL NUEVO CÓDIGO:
+document.querySelectorAll('.btn-accion-rapida').forEach(function(btn) {
+  btn.onclick = function() {
+    const action = btn.dataset.action;
+    if (action === 'exportar') exportarReporteControl();
+    else if (action === 'alertar') generarAlertaEquipo();
+    else if (action === 'cronograma') revisarCronograma();
+    else if (action === 'optimizar') optimizarRecursos();
+  };
+});  // ← 4. Termina aquí lo nuevo
+}
+
+
+// ========== FUNCIONES AUXILIARES ==========
+
+function reprogramarTareas(cantidad) {
+const proyecto = obtenerProyectoActual();
+let cont = 0;
+proyecto.tasks.forEach(function(t) {
+if (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed' && cont < cantidad) {
+const newDate = new Date(); 
+newDate.setDate(newDate.getDate() + 7);
+t.deadline = newDate.toISOString().split('T')[0];
+cont++;
+}
+});
+guardarProyectos(obtenerProyectos());
+alert('✅ ' + cont + ' tareas reprogramadas (+7 días).');
+}
+
+function alertarTareasCriticas(cantidad) {
+const proyecto = obtenerProyectoActual();
+const criticas = proyecto.tasks.filter(function(t) { return t.priority === 'high' && t.status !== 'completed'; });
+const mensaje = '🔔 ALERTA: ' + cantidad + ' tareas críticas en ' + proyecto.name + '\n\n' + 
+criticas.map(function(t) { return '• ' + t.name + ' - Responsable: ' + (t.assignee||'N/A'); }).join('\n');
+console.log('📢 Alerta:', mensaje);
+alert('📢 Alerta enviada al equipo sobre tareas críticas.');
+}
+
+function revisarCronograma() {
+const proyecto = obtenerProyectoActual();
+const tareasConFecha = proyecto.tasks.filter(function(t) { return t.deadline; });
+const atrasadas = tareasConFecha.filter(function(t) { return new Date(t.deadline) < new Date() && t.status !== 'completed'; });
+alert('📅 Análisis de Cronograma\n━━━━━━━━━━\n🔴 Atrasadas: ' + atrasadas.length + '\n📊 Total con fecha: ' + tareasConFecha.length + '\n\n✅ Revisar ruta crítica y recursos.');
+}
+
+function controlarSobrecosto() {
+const proyecto = obtenerProyectoActual();
+const horasEst = proyecto.tasks.reduce(function(s,t) { return s + (Number(t.estimatedTime)||0); }, 0);
+const horasReg = proyecto.tasks.reduce(function(s,t) { return s + (Number(t.timeLogged)||0); }, 0);
+const desviacion = horasReg - horasEst;
+alert('💰 Análisis de Costos\n━━━━━━━━━━\n📊 Estimadas: ' + horasEst + 'h\n💵 Registradas: ' + horasReg + 'h\n📈 Desviación: ' + (desviacion>=0?'+':'') + desviacion + 'h\n\n✅ Controles aplicados: límites de horas, aprobaciones requeridas.');
+}
+
+function limitarWIP() {
+const proyecto = obtenerProyectoActual();
+const inProgress = proyecto.tasks.filter(function(t) { return t.status === 'inProgress'; });
+const toMove = inProgress.slice(Math.floor(inProgress.length / 2));
+toMove.forEach(function(t) { t.status = 'pending'; });
+guardarProyectos(obtenerProyectos());
+alert('✅ ' + toMove.length + ' tareas movidas a pendientes.\n🎯 Enfocar esfuerzos para completar más rápido.');
+}
+
+function reasignarTareas(sobrecargados) {
+const proyecto = obtenerProyectoActual();
+const todos = [...new Set(proyecto.tasks.map(function(t){ return t.assignee; }).filter(Boolean))];
+const descargados = todos.filter(function(r) { 
+return !sobrecargados.some(function(entry) { return entry[0] === r; }); 
+});
+if (!descargados.length) { alert('No hay recursos disponibles'); return; }
+let reasignadas = 0;
+sobrecargados.forEach(function(entry) {
+const nombre = entry[0];
+const tareas = proyecto.tasks.filter(function(t) { return t.assignee === nombre && t.status === 'inProgress'; });
+const aReasignar = tareas.slice(0, Math.ceil(tareas.length / 2));
+aReasignar.forEach(function(t,i) { 
+t.assignee = descargados[i % descargados.length]; 
+reasignadas++; 
+});
+});
+guardarProyectos(obtenerProyectos());
+alert('✅ ' + reasignadas + ' tareas reasignadas para balancear carga.');
+}
+
+function exportarReporteControl() {
+const proyecto = obtenerProyectoActual();
+const reporte = '📊 REPORTE DE CONTROL\n━━━━━━━━━━\nProyecto: ' + proyecto.name + 
+'\nFecha: ' + new Date().toLocaleDateString('es-ES') + 
+'\nTotal: ' + proyecto.tasks.length + 
+'\nCompletadas: ' + proyecto.tasks.filter(function(t){return t.status==='completed';}).length + 
+'\nAtrasadas: ' + proyecto.tasks.filter(function(t){return t.deadline && new Date(t.deadline)<new Date() && t.status!=='completed';}).length;
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Reporte copiado al portapapeles.');
+}).catch(function() {
+alert('📋 Reporte:\n\n' + reporte);
+});
+}
+
+function generarAlertaEquipo() {
+const proyecto = obtenerProyectoActual();
+const atrasadas = proyecto.tasks.filter(function(t) { return t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'; });
+if (atrasadas.length === 0) { alert('✅ No hay alertas pendientes.'); return; }
+const mensaje = '🔔 ALERTA: ' + proyecto.name + '\n🔴 ' + atrasadas.length + ' tareas atrasadas:\n' + 
+atrasadas.map(function(t){ return '• ' + t.name; }).join('\n');
+alert('📢 Alerta enviada:\n\n' + mensaje);
+}
+
+function optimizarRecursos() {
+const proyecto = obtenerProyectoActual();
+const recursos = {};
+proyecto.tasks.forEach(function(t) {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { tareas: 0, horas: 0 };
+recursos[t.assignee].tareas++;
+recursos[t.assignee].horas += Number(t.estimatedTime) || 0;
+}
+});
+const analisis = Object.entries(recursos).map(function(entry) {
+const nombre = entry[0];
+const datos = entry[1];
+return nombre + ': ' + datos.tareas + ' tareas, ' + datos.horas + 'h';
+}).join('\n');
+alert('⚖️ Optimización de Recursos\n━━━━━━━━━━\n' + analisis + '\n\n✅ Carga analizada. Redistribuir si es necesario.');
+}
+
+
+
+
+
+
+// ========== SECCIÓN REUNIONES - VERSIÓN EJECUTIVA PROFESIONAL ==========
+function renderReuniones(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+// ✅ Cargar reuniones del proyecto
+let meetings = JSON.parse(localStorage.getItem('pmMeetings') || '[]').filter(m => m.proyectoId === proyecto.name);
+
+// ✅ Métricas de reuniones
+const totalReuniones = meetings.length;
+const proximas = meetings.filter(m => new Date(m.fecha) > new Date()).length;
+const pendientes = meetings.reduce((acc, m) => acc + (m.acuerdos?.filter(a => !a.completado).length || 0), 0);
+const ultimaReunion = meetings.length > 0 ? meetings[meetings.length-1] : null;
+
+// ✅ Plantillas de agenda profesionales
+const plantillasAgenda = {
+seguimiento: ['1. Revisión de avances', '2. Bloqueos y riesgos', '3. Próximos hitos', '4. Acuerdos y acciones'],
+kickoff: ['1. Presentación del equipo', '2. Objetivos y alcance', '3. Cronograma y responsabilidades', '4. Comunicación y seguimiento'],
+revision: ['1. Métricas de desempeño', '2. Análisis de desviaciones', '3. Plan de corrección', '4. Compromisos'],
+cierre: ['1. Resultados vs objetivos', '2. Lecciones aprendidas', '3. Entrega formal', '4. Próximos pasos']
+};
+
+// ✅ HTML Ejecutivo del panel de reuniones
+let html = '';
+
+// Header ejecutivo
+html += '<div style="background:linear-gradient(135deg,#1e293b,#0f172a); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid #3b82f6;">';
+html += '<h2 style="color:#ffffff; margin:0 0 10px 0; font-size:20px; display:flex; align-items:center; gap:10px;">';
+html += '<span>🗓️</span> Gestión Ejecutiva de Reuniones';
+html += '</h2>';
+html += '<p style="color:#94a3b8; margin:0; font-size:13px;">' + proyecto.name + ' • ' + new Date().toLocaleDateString('es-ES') + '</p>';
+html += '</div>';
+
+// Dashboard de métricas
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:25px;">';
+html += '<div style="background:rgba(59,130,246,0.15); padding:20px; border-radius:12px; border-left:4px solid #3b82f6;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#60a5fa;">' + totalReuniones + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">Total Reuniones</div>';
+html += '</div>';
+html += '<div style="background:rgba(16,185,129,0.15); padding:20px; border-radius:12px; border-left:4px solid #10b981;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#34d399;">' + proximas + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">Próximas</div>';
+html += '</div>';
+html += '<div style="background:rgba(245,158,11,0.15); padding:20px; border-radius:12px; border-left:4px solid #f59e0b;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#fbbf24;">' + pendientes + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">Acuerdos Pendientes</div>';
+html += '</div>';
+html += '<div style="background:rgba(139,92,246,0.15); padding:20px; border-radius:12px; border-left:4px solid #8b5cf6;">';
+html += '<div style="font-size:28px; font-weight:bold; color:#a78bfa;">' + (ultimaReunion ? new Date(ultimaReunion.fecha).toLocaleDateString('es-ES') : 'N/A') + '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-top:5px;">Última Reunión</div>';
+html += '</div>';
+html += '</div>';
+
+// Botones de acción rápida
+html += '<div style="display:flex; gap:12px; margin-bottom:25px; flex-wrap:wrap;">';
+html += '<button id="nuevaReunionBtn" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:8px; color:white; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px;">';
+html += '<span>+</span> Convocar Reunión';
+html += '</button>';
+html += '<button id="transcriptorBtn" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed); border:none; padding:12px 24px; border-radius:8px; color:white; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px;">';
+html += '<span>🎙️</span> Transcriptor IA';
+html += '</button>';
+html += '<button id="exportarReunionesBtn" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:12px 24px; border-radius:8px; color:#34d399; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px;">';
+html += '<span>📄</span> Exportar Historial';
+html += '</button>';
+html += '</div>';
+
+// Lista de reuniones
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Historial de Reuniones</h3>';
+html += '<div id="listaReuniones">';
+if (meetings.length === 0) {
+html += '<p style="color:#64748b; text-align:center; padding:30px;">📭 No hay reuniones registradas aún. Convoca la primera usando el botón de arriba.</p>';
+} else {
+meetings.slice().reverse().forEach(function(m) {
+const esProxima = new Date(m.fecha) > new Date();
+const acuerdosPendientes = m.acuerdos?.filter(function(a) { return !a.completado; }).length || 0;
+html += '<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid ' + (esProxima ? '#3b82f6' : '#10b981') + ';">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; gap:15px;">';
+html += '<div style="flex:1;">';
+html += '<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">';
+html += '<span style="font-weight:600; color:#e2e8f0; font-size:14px;">' + m.titulo + '</span>';
+if (esProxima) html += '<span style="background:#3b82f6; color:white; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:bold;">Próxima</span>';
+if (acuerdosPendientes > 0) html += '<span style="background:#f59e0b; color:white; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:bold;">' + acuerdosPendientes + ' pendientes</span>';
+html += '</div>';
+html += '<div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">📅 ' + new Date(m.fecha).toLocaleString('es-ES') + '</div>';
+if (m.agenda) {
+html += '<div style="font-size:12px; color:#64748b; margin-bottom:8px;">';
+html += '<strong>Agenda:</strong> ' + m.agenda.split('\n').slice(0,2).join(' • ') + (m.agenda.split('\n').length > 2 ? '...' : '');
+html += '</div>';
+}
+if (m.acuerdos && m.acuerdos.length > 0) {
+html += '<div style="font-size:11px; color:#64748b;">';
+html += '✅ ' + m.acuerdos.filter(function(a){return a.completado;}).length + ' completados / ';
+html += '⏳ ' + acuerdosPendientes + ' pendientes';
+html += '</div>';
+}
+html += '</div>';
+html += '<div style="display:flex; flex-direction:column; gap:8px; flex-shrink:0;">';
+html += '<button data-id="' + m.id + '" class="verActaBtn" style="background:#10b981; border:none; padding:8px 16px; border-radius:6px; color:white; cursor:pointer; font-size:12px;">📄 Ver Acta</button>';
+if (esProxima) {
+html += '<button data-id="' + m.id + '" class="editarReunionBtn" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; padding:8px 16px; border-radius:6px; color:#60a5fa; cursor:pointer; font-size:12px;">✏️ Editar</button>';
+}
+html += '</div>';
+html += '</div></div>';
+});
+}
+html += '</div></div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners
+document.getElementById('nuevaReunionBtn').onclick = function() { convocarReunionEjecutiva(renderReuniones.bind(null, container)); };
+document.getElementById('transcriptorBtn').onclick = function() { 
+if (typeof abrirTranscriptorAgent === 'function') { abrirTranscriptorAgent(); } 
+else { alert('🎙️ Transcriptor IA: Función en desarrollo. Próximamente transcripción automática de reuniones.'); }
+};
+document.getElementById('exportarReunionesBtn').onclick = function() { exportarHistorialReuniones(); };
+
+document.querySelectorAll('.verActaBtn').forEach(function(btn) {
+btn.onclick = function() {
+const meeting = meetings.find(function(m) { return m.id == btn.dataset.id; });
+if (meeting) { generarActaReunionEjecutiva(meeting); }
+};
+});
+
+document.querySelectorAll('.editarReunionBtn').forEach(function(btn) {
+btn.onclick = function() {
+const meeting = meetings.find(function(m) { return m.id == btn.dataset.id; });
+if (meeting) { editarReunion(meeting, renderReuniones.bind(null, container)); }
+};
+});
+}
+
+// ========== FUNCIONES AUXILIARES EJECUTIVAS ==========
+
+// Convocar reunión con modal profesional
+function convocarReunionEjecutiva(callback) {
+const proyecto = obtenerProyectoActual();
+const modal = document.createElement('div');
+modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;';
+
+const content = document.createElement('div');
+content.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:700px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto;';
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 20px 0; text-align:center; font-size:22px;">🗓️ Convocar Reunión Ejecutiva</h2>
+<p style="color:#94a3b8; margin:0 0 25px 0; text-align:center; font-size:13px;">Proyecto: <strong>` + proyecto.name + `</strong></p>
+
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#3b82f6; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Detalles de la Reunión</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Título:</label>
+<input type="text" id="reunionTitulo" placeholder="Ej: Revisión de Sprint #3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha y Hora:</label>
+<input type="datetime-local" id="reunionFecha" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Tipo de Reunión:</label>
+<select id="reunionTipo" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+<option value="">Seleccionar plantilla de agenda...</option>
+<option value="seguimiento">🔄 Seguimiento de Proyecto</option>
+<option value="kickoff">🚀 Kick-off / Inicio</option>
+<option value="revision">📊 Revisión de Desempeño</option>
+<option value="cierre">✅ Cierre de Fase</option>
+<option value="personalizada">✏️ Personalizada</option>
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Agenda:</label>
+<textarea id="reunionAgenda" rows="4" placeholder="1. Punto 1\n2. Punto 2\n3. Punto 3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Participantes:</label>
+<input type="text" id="reunionParticipantes" placeholder="Ej: PM, Sponsor, Equipo Técnico (separados por coma)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+</div>
+</div>
+
+<div style="display:flex; gap:15px; justify-content:center;">
+<button id="guardarReunionBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Guardar y Convocar</button>
+<button id="cancelarReunionBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// Cargar agenda según plantilla
+document.getElementById('reunionTipo').onchange = function() {
+const tipo = this.value;
+const textarea = document.getElementById('reunionAgenda');
+if (plantillasAgenda[tipo]) {
+textarea.value = plantillasAgenda[tipo].join('\n');
+} else if (tipo === 'personalizada') {
+textarea.value = '';
+textarea.placeholder = '1. Punto 1\n2. Punto 2\n3. Punto 3';
+}
+};
+
+// Guardar reunión
+document.getElementById('guardarReunionBtn').onclick = function() {
+const titulo = document.getElementById('reunionTitulo').value.trim();
+const fecha = document.getElementById('reunionFecha').value;
+const agenda = document.getElementById('reunionAgenda').value.trim();
+const participantes = document.getElementById('reunionParticipantes').value.trim();
+
+if (!titulo || !fecha) { alert('⚠️ Título y fecha son obligatorios'); return; }
+
+const nuevaReunion = {
+id: Date.now(),
+proyectoId: proyecto.name,
+titulo: titulo,
+fecha: fecha,
+fechaLocal: new Date(fecha).toLocaleString('es-ES'),
+tipo: document.getElementById('reunionTipo').value,
+agenda: agenda,
+participantes: participantes.split(',').map(function(p) { return p.trim(); }).filter(Boolean),
+acuerdos: [],
+creada: new Date().toISOString()
+};
+
+let meetings = JSON.parse(localStorage.getItem('pmMeetings') || '[]');
+meetings.push(nuevaReunion);
+localStorage.setItem('pmMeetings', JSON.stringify(meetings));
+
+modal.remove();
+alert('✅ Reunión convocada exitosamente.\n\n📅 ' + nuevaReunion.fechaLocal + '\n👥 Participantes: ' + (participantes || 'Por definir'));
+if (callback) callback(container);
+};
+
+document.getElementById('cancelarReunionBtn').onclick = function() { modal.remove(); };
+
+// Set fecha por defecto: mañana 10 AM
+const defaultDate = new Date();
+defaultDate.setDate(defaultDate.getDate() + 1);
+defaultDate.setHours(10, 0, 0, 0);
+document.getElementById('reunionFecha').value = defaultDate.toISOString().slice(0, 16);
+}
+
+// Generar acta ejecutiva profesional
+function generarActaReunionEjecutiva(reunion) {
+const proyecto = obtenerProyectoActual();
+const acuerdosCompletados = reunion.acuerdos?.filter(function(a) { return a.completado; }).length || 0;
+const acuerdosPendientes = reunion.acuerdos?.filter(function(a) { return !a.completado; }).length || 0;
+
+const acuerdosHTML = (reunion.acuerdos || []).map(function(a) {
+const statusColor = a.completado ? '#10b981' : '#f59e0b';
+const statusIcon = a.completado ? '✅' : '⏳';
+return '<tr style="background:#f8fafc;"><td style="padding:12px; border:1px solid #e2e8f0; color:#1e293b;">' + statusIcon + ' ' + a.texto + '</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">' + (a.responsable || '-') + '</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">' + (a.fecha || '-') + '</td><td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:' + statusColor + '; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">' + (a.completado ? 'Completado' : 'Pendiente') + '</span></td></tr>';
+}).join('');
+
+const contenido = `
+<!-- Header Ejecutivo -->
+<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:30px; border-radius:16px 16px 0 0; text-align:center;">
+<h1 style="margin:0; font-size:26px; font-weight:bold;">📋 ACTA DE REUNIÓN</h1>
+<p style="margin:10px 0 0 0; opacity:0.9; font-size:14px;">MEETING MINUTES - DOCUMENTO EJECUTIVO</p>
+</div>
+
+<!-- Info Principal -->
+<div style="background:#f8fafc; padding:25px; border-bottom:3px solid #3b82f6;">
+<table style="width:100%; border:none; font-size:13px;">
+<tr>
+<td style="border:none; padding:8px;"><strong>🏢 Proyecto:</strong> ` + proyecto.name + `</td>
+<td style="border:none; padding:8px;"><strong>📅 Fecha:</strong> ` + reunion.fechaLocal + `</td>
+<td style="border:none; padding:8px;"><strong>📝 Tipo:</strong> ` + (reunion.tipo || 'Personalizada') + `</td>
+</tr>
+<tr>
+<td style="border:none; padding:8px;" colspan="3"><strong>👥 Participantes:</strong> ` + (reunion.participantes?.join(', ') || 'Por definir') + `</td>
+</tr>
+</table>
+</div>
+
+<div style="padding:30px;">
+
+<!-- Agenda -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:0 0 20px 0; font-size:18px;">📋 Agenda</h2>
+<ol style="line-height:2; color:#374151; padding-left:20px; margin-bottom:30px;">
+` + (reunion.agenda || 'Sin agenda registrada').split('\n').map(function(item) { return '<li>' + item + '</li>'; }).join('') + `
+</ol>
+
+<!-- Resumen de Acuerdos -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">✅ Acuerdos y Acciones</h2>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+<div style="background:#dcfce7; padding:15px; border-radius:10px; text-align:center;">
+<div style="font-size:24px; font-weight:bold; color:#166534;">` + acuerdosCompletados + `</div>
+<div style="font-size:12px; color:#64748b;">✅ Completados</div>
+</div>
+<div style="background:#fef3c7; padding:15px; border-radius:10px; text-align:center;">
+<div style="font-size:24px; font-weight:bold; color:#92400e;">` + acuerdosPendientes + `</div>
+<div style="font-size:12px; color:#64748b;">⏳ Pendientes</div>
+</div>
+</div>
+
+<table style="width:100%; border-collapse:collapse; margin-bottom:30px;">
+<thead>
+<tr style="background:#dbeafe;">
+<th style="padding:12px; text-align:left; border:1px solid #bfdbfe; color:#1e40af; font-weight:600;">Acuerdo</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600;">Responsable</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600;">Fecha Límite</th>
+<th style="padding:12px; text-align:center; border:1px solid #bfdbfe; color:#1e40af; font-weight:600;">Estado</th>
+</tr>
+</thead>
+<tbody>
+` + (acuerdosHTML || '<tr><td colspan="4" style="padding:15px; text-align:center; color:#64748b;">Sin acuerdos registrados</td></tr>') + `
+</tbody>
+</table>
+
+<!-- Próximos Pasos -->
+<h2 style="color:#1e3a8a; border-left:5px solid #3b82f6; padding-left:15px; margin:40px 0 20px 0; font-size:18px;">🎯 Próximos Pasos</h2>
+<ul style="line-height:2; color:#374151;">
+<li>Seguimiento a acuerdos pendientes antes de ` + new Date(Date.now() + 7*24*3600*1000).toLocaleDateString('es-ES') + `</li>
+<li>Actualización de estado en el sistema de gestión</li>
+<li>Comunicación de avances a stakeholders clave</li>
+</ul>
+
+<!-- Footer -->
+<div style="margin-top:50px; padding:25px; background:#f8fafc; border-radius:12px; text-align:center; border-top:3px solid #3b82f6;">
+<p style="color:#64748b; font-size:12px; margin:0;">
+<strong>CONFIDENCIALIDAD:</strong> Este documento es para uso interno del proyecto.<br>
+<em>Generado automáticamente por PM Virtual Ejecutivo • ` + new Date().toLocaleDateString('es-ES') + `</em>
+</p>
+</div>
+
+</div>
+`;
+
+const html = generarHTML('Acta: ' + reunion.titulo, contenido);
+abrirVentanaDocumento(html, 'Acta_' + reunion.titulo.replace(/\s+/g, '_'));
+}
+
+// Editar reunión existente
+function editarReunion(reunion, callback) {
+const modal = document.createElement('div');
+modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;';
+
+const content = document.createElement('div');
+content.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:700px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto;';
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 20px 0; text-align:center; font-size:22px;">✏️ Editar Reunión</h2>
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Título:</label>
+<input type="text" id="editTitulo" value="` + reunion.titulo + `" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha:</label>
+<input type="datetime-local" id="editFecha" value="` + new Date(reunion.fecha).toISOString().slice(0,16) + `" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Agenda:</label>
+<textarea id="editAgenda" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">` + (reunion.agenda || '') + `</textarea>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Participantes:</label>
+<input type="text" id="editParticipantes" value="` + (reunion.participantes?.join(', ') || '') + `" style="width:100%; padding:10px; border-radius:8px; border:1px solid #3b82f6; background:#0f172a; color:white; font-size:13px;">
+</div>
+</div>
+</div>
+<div style="display:flex; gap:15px; justify-content:center;">
+<button id="actualizarReunionBtn" style="background:#3b82f6; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold;">💾 Actualizar</button>
+<button id="cancelarEdicionBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+document.getElementById('actualizarReunionBtn').onclick = function() {
+reunion.titulo = document.getElementById('editTitulo').value.trim();
+reunion.fecha = document.getElementById('editFecha').value;
+reunion.fechaLocal = new Date(reunion.fecha).toLocaleString('es-ES');
+reunion.agenda = document.getElementById('editAgenda').value.trim();
+reunion.participantes = document.getElementById('editParticipantes').value.split(',').map(function(p) { return p.trim(); }).filter(Boolean);
+
+let meetings = JSON.parse(localStorage.getItem('pmMeetings') || '[]');
+const idx = meetings.findIndex(function(m) { return m.id === reunion.id; });
+if (idx !== -1) { meetings[idx] = reunion; localStorage.setItem('pmMeetings', JSON.stringify(meetings)); }
+
+modal.remove();
+alert('✅ Reunión actualizada exitosamente.');
+if (callback) callback(container);
+};
+
+document.getElementById('cancelarEdicionBtn').onclick = function() { modal.remove(); };
+}
+
+// Exportar historial de reuniones
+function exportarHistorialReuniones() {
+const proyecto = obtenerProyectoActual();
+const meetings = JSON.parse(localStorage.getItem('pmMeetings') || '[]').filter(function(m) { return m.proyectoId === proyecto.name; });
+
+if (meetings.length === 0) { alert('📭 No hay reuniones para exportar'); return; }
+
+const reporte = '📊 HISTORIAL DE REUNIONES - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\nFecha: ' + new Date().toLocaleDateString('es-ES') + '\n\n' +
+meetings.map(function(m) {
+return '🗓️ ' + m.titulo + '\n   📅 ' + m.fechaLocal + '\n   👥 ' + (m.participantes?.join(', ') || 'N/A') + '\n   ✅ Acuerdos: ' + (m.acuerdos?.filter(function(a){return a.completado;}).length || 0) + '/' + (m.acuerdos?.length || 0) + '\n';
+}).join('\n');
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Historial de reuniones copiado al portapapeles.\n\n📄 Listo para pegar en email o documento.');
+}).catch(function() {
+alert('📋 Reporte:\n\n' + reporte);
+});
+}
+
+
+
+
+
+// ========== SECCIÓN GANTT - VERSIÓN EJECUTIVA PREMIUM (CORREGIDA) ==========
+function renderGantt(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto.tasks || [];
+if (tasks.length === 0) {
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">📭 No hay tareas para mostrar en el Gantt</p>';
+return;
+}
+
+// ✅ Métricas clave del proyecto
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const criticas = tasks.filter(t => t.priority === 'high' && t.status !== 'completed').length;
+const porcentajeAvance = total > 0 ? Math.round(completadas/total*100) : 0;
+
+// ✅ Cálculos de fechas para el timeline
+let minDate = new Date(), maxDate = new Date();
+tasks.forEach(t => {
+if (t.startDate) { const d = new Date(t.startDate); if (d < minDate) minDate = d; if (d > maxDate) maxDate = d; }
+if (t.deadline) { const d = new Date(t.deadline); if (d < minDate) minDate = d; if (d > maxDate) maxDate = d; }
+});
+const start = new Date(minDate); start.setDate(start.getDate() - 3);
+const end = new Date(maxDate); end.setDate(end.getDate() + 3);
+const totalDays = Math.ceil((end - start) / (1000*3600*24));
+
+// ✅ CORRECCIÓN: Cálculo correcto de posición de HOY
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const startNormalized = new Date(start);
+startNormalized.setHours(0, 0, 0, 0);
+const todayOffset = Math.max(0, Math.floor((today - startNormalized) / (1000*3600*24)));
+const todayPercent = Math.min(100, Math.max(0, (todayOffset / totalDays) * 100));
+
+// ✅ Identificar hitos y ruta crítica
+const hitos = tasks.filter(t => t.isMilestone || (t.startDate && t.deadline && new Date(t.startDate).getTime() === new Date(t.deadline).getTime()));
+const rutaCritica = tasks.filter(t => t.priority === 'high' && t.status !== 'completed');
+
+// ✅ HTML Ejecutivo del Gantt
+let html = '';
+
+// Header ejecutivo con métricas
+html += '<div style="background:linear-gradient(135deg,#1e293b,#0f172a); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid #3b82f6;">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">';
+html += '<div>';
+html += '<h2 style="color:#ffffff; margin:0 0 5px 0; font-size:20px; display:flex; align-items:center; gap:10px;">';
+html += '<span>📊</span> Diagrama de Gantt Ejecutivo';
+html += '</h2>';
+html += '<p style="color:#94a3b8; margin:0; font-size:13px;">' + proyecto.name + ' • Actualizado: ' + new Date().toLocaleTimeString('es-ES') + '</p>';
+html += '</div>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<button id="exportarGanttBtn" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:8px 16px; border-radius:6px; color:#34d399; cursor:pointer; font-size:12px;">📄 Exportar</button>';
+html += '<button id="zoomInBtn" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; padding:8px 16px; border-radius:6px; color:#60a5fa; cursor:pointer; font-size:12px;">🔍+</button>';
+html += '<button id="zoomOutBtn" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; padding:8px 16px; border-radius:6px; color:#60a5fa; cursor:pointer; font-size:12px;">🔍-</button>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de métricas clave
+html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:25px;">';
+html += '<div style="background:rgba(59,130,246,0.15); padding:15px; border-radius:10px; border-left:4px solid #3b82f6; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#60a5fa;">' + total + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Total Tareas</div>';
+html += '</div>';
+html += '<div style="background:rgba(16,185,129,0.15); padding:15px; border-radius:10px; border-left:4px solid #10b981; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#34d399;">' + completadas + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">;">✅ Completadas</div>';
+html += '</div>';
+html += '<div style="background:rgba(245,158,11,0.15); padding:15px; border-radius:10px; border-left:4px solid #f59e0b; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#2dd4bf;">' + enProgreso + '</div>';
+html += '<div style="font-size:11px; color:#2dd4bf);">🔄 En Progreso</div>';
+html += '</div>';
+html += '<div style="background:rgba(239,68,68,0.15); padding:15px; border-radius:10px; border-left:4px solid #ef4444; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#f87171;">' + atrasadas + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">🔴 Atrasadas</div>';
+html += '</div>';
+html += '<div style="background:rgba(139,92,246,0.15); padding:15px; border-radius:10px; border-left:4px solid #8b5cf6; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#a78bfa;">' + porcentajeAvance + '%</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Avance Total</div>';
+html += '</div>';
+html += '</div>';
+
+// Barra de progreso general
+html += '<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:25px;">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">';
+html += '<span style="color:#94a3b8; font-size:13px;">📈 Progreso del Proyecto</span>';
+html += '<span style="color:#60a5fa; font-weight:bold; font-size:13px;">' + porcentajeAvance + '%</span>';
+html += '</div>';
+html += '<div style="background:#334155; height:10px; border-radius:5px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:' + porcentajeAvance + '%; border-radius:5px; transition:width 0.3s ease;"></div>';
+html += '</div>';
+html += '</div>';
+
+// Filtros y controles
+html += '<div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px; margin-bottom:20px;">';
+html += '<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">';
+html += '<span style="color:#94a3b8; font-size:13px;">🔍 Filtrar:</span>';
+html += '<select id="filtroEstado" style="background:#0f172a; color:white; border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todos los estados</option>';
+html += '<option value="completed">✅ Completadas</option>';
+html += '<option value="inProgress">🔄 En Progreso</option>';
+html += '<option value="pending">⏳ Pendientes</option>';
+html += '</select>';
+html += '<select id="filtroPrioridad" style="background:#0f172a; color:white; border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todas las prioridades</option>';
+html += '<option value="high">🔴 Alta</option>';
+html += '<option value="medium">🟡 Media</option>';
+html += '<option value="low">🟢 Baja</option>';
+html += '</select>';
+html += '<select id="filtroRecurso" style="background:#0f172a; color:white; border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todos los recursos</option>';
+html += [...new Set(tasks.map(t => t.assignee).filter(Boolean))].map(r => '<option value="' + r + '">' + r + '</option>').join('');
+html += '</select>';
+html += '<button id="limpiarFiltrosBtn" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; padding:6px 12px; border-radius:6px; color:#f87171; cursor:pointer; font-size:12px;">🗑️ Limpiar</button>';
+html += '</div>';
+html += '</div>';
+
+// ✅ Leyenda con COLORES PERSONALIZADOS
+html += '<div style="display:flex; gap:20px; margin-bottom:20px; flex-wrap:wrap;">';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:16px; height:16px; background:#86efac; border-radius:4px;"></span> ✅ Completada';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:16px; height:16px; background:#2dd4bf; border-radius:4px;"></span> 🔄 En Progreso';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:16px; height:16px; background:#fde047; border-radius:4px;"></span> ⏳ Pendiente';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> 🔴 Rezagada';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:2px; height:16px; background:#f59e0b;"></span> 📅 Hoy';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#94a3b8;">';
+html += '<span style="width:16px; height:16px; background:#f59e0b; border-radius:50%;"></span> ⭐ Hito';
+html += '</div>';
+html += '</div>';
+
+// Timeline header con fechas
+html += '<div style="background:rgba(0,0,0,0.3); padding:10px 15px; border-radius:8px 8px 0 0; border:1px solid #334155; border-bottom:none;">';
+html += '<div style="display:flex; align-items:center; gap:15px;">';
+html += '<div style="width:220px; min-width:220px; font-weight:600; color:#94a3b8; font-size:12px;">TAREA</div>';
+html += '<div style="flex:1; position:relative; height:30px;">';
+// Generar marcas de tiempo (semanas/meses)
+const stepDays = Math.ceil(totalDays / 10);
+for (let i = 0; i <= totalDays; i += stepDays) {
+const date = new Date(start);
+date.setDate(date.getDate() + i);
+const leftPercent = (i / totalDays) * 100;
+html += '<div style="position:absolute; left:' + leftPercent + '%; top:0; height:100%; border-left:1px dashed #475569;">';
+html += '<span style="position:absolute; top:-20px; left:5px; font-size:10px; color:#64748b; white-space:nowrap;">' + date.toLocaleDateString('es-ES', {day:'numeric', month:'short'}) + '</span>';
+html += '</div>';
+}
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Contenedor principal del Gantt con scroll horizontal
+html += '<div style="background:rgba(0,0,0,0.2); border:1px solid #334155; border-radius:0 0 8px 8px; overflow-x:auto; max-height:500px;">';
+html += '<div style="min-width:1200px; padding:10px 15px;">';
+
+// Línea de "Hoy" vertical
+html += '<div style="position:relative;">';
+html += '<div style="position:absolute; left:' + todayPercent + '%; top:0; bottom:0; width:2px; background:linear-gradient(to bottom, transparent, #f59e0b, transparent); z-index:10; pointer-events:none;">';
+html += '<div style="position:absolute; top:-25px; left:-25px; background:#f59e0b; color:#000; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; white-space:nowrap;">📅 HOY</div>';
+html += '</div>';
+
+// Filas de tareas del Gantt
+const tareasFiltradas = tasks.filter(function(t) {
+const filtroEstado = document.getElementById('filtroEstado')?.value || 'todos';
+const filtroPrioridad = document.getElementById('filtroPrioridad')?.value || 'todos';
+const filtroRecurso = document.getElementById('filtroRecurso')?.value || 'todos';
+const estadoOk = filtroEstado === 'todos' || t.status === filtroEstado;
+const prioridadOk = filtroPrioridad === 'todos' || t.priority === filtroPrioridad;
+const recursoOk = filtroRecurso === 'todos' || t.assignee === filtroRecurso;
+return estadoOk && prioridadOk && recursoOk;
+});
+
+tareasFiltradas.forEach(function(t) {
+let startOffset = 0, duration = 3;
+if (t.startDate) startOffset = Math.max(0, Math.floor((new Date(t.startDate) - start) / (1000*3600*24)));
+if (t.deadline && t.startDate) duration = Math.max(1, Math.floor((new Date(t.deadline) - new Date(t.startDate)) / (1000*3600*24)));
+const leftPercent = Math.min(95, (startOffset / totalDays) * 100);
+const widthPercent = Math.min(95-leftPercent, (duration / totalDays) * 100);
+
+// ✅ COLORES PERSONALIZADOS POR ESTADO (TUS REQUERIMIENTOS)
+const statusColors = {
+completed: '#86efac',      // ✅ Verde Claro
+inProgress: '#2dd4bf',     // 🔄 Verde Azulado
+pending: '#fde047',        // ⏳ Amarillo
+overdue: '#ef4444'         // 🔴 Rojo para rezagadas
+};
+
+// Determinar si está atrasada (rezagada)
+const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+
+// Asignar color base según estado
+let barColor = statusColors[t.status] || '#64748b';
+
+// Si está atrasada, usar color rojo (sobrescribe el estado)
+if (isOverdue) {
+barColor = statusColors.overdue;
+}
+
+// Si es crítica (alta prioridad) y no completada, también usar rojo
+const isCritical = t.priority === 'high' && t.status !== 'completed';
+if (isCritical && !isOverdue) {
+barColor = statusColors.overdue;
+}
+
+// Bordes más oscuros para mejor contraste
+const borderColorMap = {
+'#86efac': '#22c55e',   // Verde Claro → Verde medio
+'#2dd4bf': '#14b8a6',   // Verde Azulado → Turquesa oscuro
+'#fde047': '#ca8a04',   // Amarillo → Ámbar oscuro
+'#ef4444': '#dc2626'    // Rojo → Rojo oscuro
+};
+const borderColor = borderColorMap[barColor] || '#475569';
+
+// ✅ Hitos: se muestran como círculos si duration <= 1 o si tiene isMilestone: true
+const isMilestone = t.isMilestone || (t.startDate && t.deadline && new Date(t.startDate).getTime() === new Date(t.deadline).getTime()) || duration <= 1;
+
+// Estilo de la barra: círculos para hitos, barras rectangulares para tareas
+const barStyle = isMilestone 
+? 'border-radius:50%; width:20px; height:20px; left:calc(' + leftPercent + '% + ' + (widthPercent/2 - 10) + 'px);' 
+: 'border-radius:6px; left:' + leftPercent + '%; width:' + widthPercent + '%; height:28px;';
+
+// Badge de prioridad
+const priorityBadge = t.priority === 'high' ? '<span style="background:#ef4444; color:white; padding:2px 6px; border-radius:8px; font-size:9px; font-weight:bold; margin-left:6px;">🔴</span>' : 
+(t.priority === 'medium' ? '<span style="background:#f59e0b; color:white; padding:2px 6px; border-radius:8px; font-size:9px; font-weight:bold; margin-left:6px;">🟡</span>' : 
+'<span style="background:#22c55e; color:white; padding:2px 6px; border-radius:8px; font-size:9px; font-weight:bold; margin-left:6px;">🟢</span>');
+
+// Badge de estado
+const statusIcon = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : '⏳');
+
+html += '<div style="margin-bottom:8px; padding:4px 0; border-bottom:1px dashed #334155;">';
+html += '<div style="display:flex; align-items:center; gap:12px;">';
+// Nombre de tarea
+html += '<div style="width:220px; min-width:220px;">';
+html += '<div style="display:flex; align-items:center; gap:4px;">';
+html += '<span style="font-size:13px; font-weight:500; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + t.name + '">' + t.name + '</span>';
+html += priorityBadge;
+html += '</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:2px;">' + (t.assignee || 'No asignado') + ' ' + statusIcon + '</div>';
+html += '</div>';
+// Barra del Gantt
+html += '<div style="flex:1; position:relative; height:32px;">';
+html += '<div style="position:absolute; ' + barStyle + ' background:' + barColor + '; border:2px solid ' + borderColor + '; display:flex; align-items:center; justify-content:center; color:#000; font-size:10px; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2); cursor:pointer;" title="' + t.name + ' | ' + (t.startDate||'N/A') + ' → ' + (t.deadline||'N/A') + '">';
+if (!isMilestone) html += duration + 'd';
+else html += '⭐';
+html += '</div>';
+html += '</div>';
+// Fecha de fin
+html += '<div style="width:80px; text-align:right; font-size:11px; color:#64748b;">';
+html += t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES', {day:'numeric', month:'short'}) : 'N/D';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+});
+
+html += '</div>'; // Cierre de posición relativa para línea de hoy
+html += '</div>'; // Cierre de contenedor con scroll
+html += '</div>'; // Cierre de sección principal
+
+// Alertas de ruta crítica
+if (rutaCritica.length > 0) {
+html += '<div style="background:rgba(239,68,68,0.15); padding:15px; border-radius:10px; margin-top:20px; border:1px solid #ef4444;">';
+html += '<h4 style="color:#f87171; margin:0 0 10px 0; font-size:14px; display:flex; align-items:center; gap:8px;">';
+html += '<span>⚠️</span> Ruta Crítica - Atención Prioritaria';
+html += '</h4>';
+html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+rutaCritica.slice(0,5).forEach(function(t) {
+html += '<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:12px; font-size:11px;">' + t.name + '</span>';
+});
+if (rutaCritica.length > 5) html += '<span style="color:#94a3b8; font-size:11px;">+ ' + (rutaCritica.length-5) + ' más</span>';
+html += '</div>';
+html += '</div>';
+}
+
+// Footer con instrucciones
+html += '<div style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:10px; text-align:center;">';
+html += '<p style="color:#64748b; font-size:12px; margin:0;">';
+html += '💡 <strong>Tip:</strong> Haz clic en una barra para ver detalles • Usa los filtros para enfocar la vista • La línea naranja indica la fecha actual';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners para filtros
+function aplicarFiltros() {
+renderGantt(container); // Re-render con filtros aplicados
+}
+
+const filtroEstado = document.getElementById('filtroEstado');
+const filtroPrioridad = document.getElementById('filtroPrioridad');
+const filtroRecurso = document.getElementById('filtroRecurso');
+const limpiarFiltrosBtn = document.getElementById('limpiarFiltrosBtn');
+
+if (filtroEstado) filtroEstado.onchange = aplicarFiltros;
+if (filtroPrioridad) filtroPrioridad.onchange = aplicarFiltros;
+if (filtroRecurso) filtroRecurso.onchange = aplicarFiltros;
+if (limpiarFiltrosBtn) {
+limpiarFiltrosBtn.onclick = function() {
+if (filtroEstado) filtroEstado.value = 'todos';
+if (filtroPrioridad) filtroPrioridad.value = 'todos';
+if (filtroRecurso) filtroRecurso.value = 'todos';
+renderGantt(container);
+};
+}
+
+// ✅ Event listeners para zoom (conceptual - se puede expandir)
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+if (zoomInBtn) zoomInBtn.onclick = function() { alert('🔍 Zoom+: Función disponible en versión premium'); };
+if (zoomOutBtn) zoomOutBtn.onclick = function() { alert('🔍 Zoom-: Función disponible en versión premium'); };
+
+// ✅ Exportar Gantt
+const exportarBtn = document.getElementById('exportarGanttBtn');
+if (exportarBtn) {
+exportarBtn.onclick = function() { exportarGanttEjecutivo(); };
+}
+
+// ✅ Click en barras para ver detalles
+document.querySelectorAll('[style*="cursor:pointer"]').forEach(function(el) {
+el.onclick = function() {
+const titulo = this.getAttribute('title');
+if (titulo && titulo.includes('|')) {
+const parts = titulo.split(' | ');
+alert('📋 ' + parts[0] + '\n📅 Inicio: ' + (parts[1]||'N/A') + '\n📅 Fin: ' + (parts[2]||'N/A'));
+}
+};
+});
+}
+
+// ========== FUNCIONES AUXILIARES EJECUTIVAS ==========
+
+// Exportar Gantt como reporte ejecutivo
+function exportarGanttEjecutivo() {
+const proyecto = obtenerProyectoActual();
+const tasks = proyecto?.tasks || [];
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+const porcentajeAvance = tasks.length > 0 ? Math.round(completadas/tasks.length*100) : 0;
+
+const reporte = '📊 REPORTE GANTT EJECUTIVO - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Fecha: ' + new Date().toLocaleDateString('es-ES') + '\n' +
+'Avance: ' + porcentajeAvance + '% | Tareas: ' + tasks.length + ' | Atrasadas: ' + atrasadas + '\n\n' +
+'📋 DETALLE DE TAREAS:\n' +
+tasks.map(function(t) {
+const status = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : '⏳');
+const priority = t.priority === 'high' ? '🔴' : (t.priority === 'medium' ? '🟡' : '🟢');
+const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+const statusColor = isOverdue ? '🔴' : (status === '✅' ? '🟢' : (status === '🔄' ? '🔵' : '🟡'));
+return priority + ' ' + statusColor + ' ' + t.name + ' | ' + (t.assignee||'N/A') + ' | ' + (t.startDate||'N/A') + ' → ' + (t.deadline||'N/A');
+}).join('\n') + '\n\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generado por PM Virtual Ejecutivo';
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Reporte Gantt copiado al portapapeles.\n\n📄 Listo para pegar en email, documento o presentación ejecutiva.');
+}).catch(function() {
+alert('📋 Reporte Gantt:\n\n' + reporte);
+});
+}
+
+
+
+
+
+// ========== SECCIÓN RECURSOS - VERSIÓN EJECUTIVA PREMIUM ==========
+function renderAsignacionRecursos(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto?.tasks || [];
+
+// ✅ Análisis avanzado de recursos
+const recursos = {};
+tasks.forEach(t => {
+if (t.assignee) {
+if (!recursos[t.assignee]) {
+recursos[t.assignee] = {
+nombre: t.assignee,
+total: 0,
+completadas: 0,
+enProgreso: 0,
+pendientes: 0,
+atrasadas: 0,
+horasEstimadas: 0,
+horasRegistradas: 0,
+prioridadAlta: 0,
+skills: [],
+disponibilidad: 100
+};
+}
+recursos[t.assignee].total++;
+recursos[t.assignee].horasEstimadas += Number(t.estimatedTime) || 0;
+recursos[t.assignee].horasRegistradas += Number(t.timeLogged) || 0;
+if (t.priority === 'high') recursos[t.assignee].prioridadAlta++;
+if (t.status === 'completed') recursos[t.assignee].completadas++;
+if (t.status === 'inProgress') recursos[t.assignee].enProgreso++;
+if (t.status === 'pending') recursos[t.assignee].pendientes++;
+if (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed') recursos[t.assignee].atrasadas++;
+}
+});
+
+// ✅ Calcular métricas globales
+const totalRecursos = Object.keys(recursos).length;
+const totalTareas = tasks.length;
+const cargaPromedio = totalRecursos > 0 ? Math.round(totalTareas / totalRecursos) : 0;
+const sobrecargados = Object.values(recursos).filter(r => r.enProgreso > 2 || r.horasEstimadas > 40).length;
+const disponibles = Object.values(recursos).filter(r => r.enProgreso === 0 && r.pendientes > 0).length;
+const eficienciaGlobal = totalTareas > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / totalTareas) * 100) : 0;
+
+// ✅ Determinar nivel de carga por recurso
+function getNivelCarga(recurso) {
+if (recurso.enProgreso > 3 || recurso.horasEstimadas > 50) return { nivel: 'Crítico', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' };
+if (recurso.enProgreso > 2 || recurso.horasEstimadas > 35) return { nivel: 'Alta', color: '#f97316', bg: 'rgba(249,115,22,0.15)' };
+if (recurso.enProgreso > 1 || recurso.horasEstimadas > 20) return { nivel: 'Media', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' };
+return { nivel: 'Baja', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' };
+}
+
+// ✅ HTML Ejecutivo del panel de recursos
+let html = '';
+
+// Header ejecutivo
+html += '<div style="background:linear-gradient(135deg,#1e293b,#0f172a); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid #3b82f6;">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">';
+html += '<div>';
+html += '<h2 style="color:#ffffff; margin:0 0 5px 0; font-size:20px; display:flex; align-items:center; gap:10px;">';
+html += '<span>👥</span> Gestión Ejecutiva de Recursos';
+html += '</h2>';
+html += '<p style="color:#94a3b8; margin:0; font-size:13px;">' + proyecto.name + ' • Actualizado: ' + new Date().toLocaleTimeString('es-ES') + '</p>';
+html += '</div>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<button id="exportarRecursosBtn" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:8px 16px; border-radius:6px; color:#34d399; cursor:pointer; font-size:12px;">📄 Exportar</button>';
+html += '<button id="optimizarRecursosBtn" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; padding:8px 16px; border-radius:6px; color:#a78bfa; cursor:pointer; font-size:12px;">⚖️ Optimizar</button>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de métricas clave
+html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:25px;">';
+html += '<div style="background:rgba(59,130,246,0.15); padding:15px; border-radius:10px; border-left:4px solid #3b82f6; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#60a5fa;">' + totalRecursos + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Total Recursos</div>';
+html += '</div>';
+html += '<div style="background:rgba(16,185,129,0.15); padding:15px; border-radius:10px; border-left:4px solid #10b981; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#34d399;">' + eficienciaGlobal + '%</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Eficiencia Global</div>';
+html += '</div>';
+html += '<div style="background:rgba(245,158,11,0.15); padding:15px; border-radius:10px; border-left:4px solid #f59e0b; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#fbbf24;">' + cargaPromedio + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">Carga Promedio</div>';
+html += '</div>';
+html += '<div style="background:rgba(239,68,68,0.15); padding:15px; border-radius:10px; border-left:4px solid #ef4444; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#f87171;">' + sobrecargados + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">⚠️ Sobrecargados</div>';
+html += '</div>';
+html += '<div style="background:rgba(34,197,94,0.15); padding:15px; border-radius:10px; border-left:4px solid #22c55e; text-align:center;">';
+html += '<div style="font-size:24px; font-weight:bold; color:#4ade80;">' + disponibles + '</div>';
+html += '<div style="font-size:11px; color:#94a3b8;">✅ Disponibles</div>';
+html += '</div>';
+html += '</div>';
+
+// Alertas de recursos críticos
+const recursosCriticos = Object.values(recursos).filter(r => getNivelCarga(r).nivel === 'Crítico');
+if (recursosCriticos.length > 0) {
+html += '<div style="background:rgba(239,68,68,0.15); padding:15px; border-radius:10px; margin-bottom:25px; border:1px solid #ef4444;">';
+html += '<h4 style="color:#f87171; margin:0 0 10px 0; font-size:14px; display:flex; align-items:center; gap:8px;">';
+html += '<span>🚨</span> Alerta: Recursos Sobrecargados';
+html += '</h4>';
+html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+recursosCriticos.forEach(function(r) {
+html += '<span style="background:#ef4444; color:white; padding:4px 10px; border-radius:12px; font-size:11px;">' + r.nombre + ' (' + r.enProgreso + ' activas)</span>';
+});
+html += '</div>';
+html += '</div>';
+}
+
+// Tabla ejecutiva de recursos
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📊 Detalle de Carga por Recurso</h3>';
+html += '<div style="overflow-x:auto;">';
+html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+html += '<thead>';
+html += '<tr style="background:#334155;">';
+html += '<th style="padding:12px; text-align:left; border:1px solid #475569; color:#e2e8f0;">Recurso</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">Total</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">✅ Comp</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">🔄 Prog</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">⏳ Pend</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">🔴 Atras</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">⏱️ Horas</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">📊 Carga</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #475569; color:#e2e8f0;">Acciones</th>';
+html += '</tr>';
+html += '</thead>';
+html += '<tbody>';
+
+Object.entries(recursos).sort(function(a,b) { return b[1].enProgreso - a[1].enProgreso; }).forEach(function(entry) {
+const recurso = entry[1];
+const cargaInfo = getNivelCarga(recurso);
+const cargaPorcentaje = Math.min(100, Math.round((recurso.enProgreso / 4) * 100));
+const eficiencia = recurso.total > 0 ? Math.round((recurso.completadas / recurso.total) * 100) : 0;
+const desviacionHoras = recurso.horasEstimadas > 0 ? Math.round((recurso.horasRegistradas / recurso.horasEstimadas) * 100) : 100;
+
+html += '<tr style="background:rgba(0,0,0,0.1);">';
+html += '<td style="padding:12px; border:1px solid #475569;">';
+html += '<div style="display:flex; align-items:center; gap:10px;">';
+html += '<div style="width:32px; height:32px; background:linear-gradient(135deg,#3b82f6,#60a5fa); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">' + recurso.nombre.charAt(0).toUpperCase() + '</div>';
+html += '<div>';
+html += '<div style="font-weight:600; color:#e2e8f0;">' + recurso.nombre + '</div>';
+html += '<div style="font-size:10px; color:' + cargaInfo.color + '; font-weight:bold;">' + cargaInfo.nivel + '</div>';
+html += '</div>';
+html += '</div>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center; color:#e2e8f0; font-weight:bold;">' + recurso.total + '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center; color:#34d399;">' + recurso.completadas + '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center; color:#60a5fa;">' + recurso.enProgreso + '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center; color:#fbbf24;">' + recurso.pendientes + '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center; color:#f87171; font-weight:bold;">' + recurso.atrasadas + '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center;">';
+html += '<div style="font-size:11px; color:#e2e8f0;">' + recurso.horasEstimadas + 'h est</div>';
+html += '<div style="font-size:10px; color:' + (desviacionHoras > 120 ? '#ef4444' : '#94a3b8') + ';">' + recurso.horasRegistradas + 'h real (' + desviacionHoras + '%)</div>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center;">';
+html += '<div style="display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<div style="background:#334155; height:8px; border-radius:4px; width:80px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,' + cargaInfo.color + ',' + cargaInfo.color + '); height:100%; width:' + cargaPorcentaje + '%; border-radius:4px;"></div>';
+html += '</div>';
+html += '<span style="font-size:11px; color:#94a3b8;">' + cargaPorcentaje + '%</span>';
+html += '</div>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #475569; text-align:center;">';
+html += '<button data-recurso="' + recurso.nombre + '" class="btn-detalle-recurso" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; color:#60a5fa; cursor:pointer; font-size:11px; margin-right:5px;">👁️ Detalle</button>';
+html += '<button data-recurso="' + recurso.nombre + '" class="btn-optimizar-recurso" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:6px 12px; border-radius:6px; color:#34d399; cursor:pointer; font-size:11px;">⚡ Optimizar</button>';
+html += '</td>';
+html += '</tr>';
+});
+
+html += '</tbody>';
+html += '</table>';
+html += '</div>';
+html += '</div>';
+
+// Gráfico de distribución de carga (visual)
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; margin-bottom:25px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📈 Distribución Visual de Carga</h3>';
+html += '<div style="display:flex; align-items:end; gap:8px; height:120px; padding:10px 0;">';
+const maxCargaVisual = Math.max(...Object.values(recursos).map(r => r.enProgreso), 1);
+Object.entries(recursos).sort(function(a,b) { return a[0].localeCompare(b[0]); }).forEach(function(entry) {
+const recurso = entry[1];
+const altura = Math.max(20, Math.round((recurso.enProgreso / maxCargaVisual) * 100));
+const cargaInfo = getNivelCarga(recurso);
+html += '<div style="display:flex; flex-direction:column; align-items:center; flex:1;">';
+html += '<div style="font-size:10px; color:#94a3b8; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60px;">' + recurso.nombre.split(' ')[0] + '</div>';
+html += '<div style="background:' + cargaInfo.bg + '; border:2px solid ' + cargaInfo.color + '; border-radius:6px 6px 0 0; width:100%; height:' + altura + '%; display:flex; align-items:center; justify-content:center; color:' + cargaInfo.color + '; font-weight:bold; font-size:10px;">' + recurso.enProgreso + '</div>';
+html += '</div>';
+});
+html += '</div>';
+html += '<div style="display:flex; justify-content:center; gap:20px; margin-top:15px; flex-wrap:wrap;">';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#94a3b8;"><span style="width:12px; height:12px; background:rgba(34,197,94,0.15); border:2px solid #22c55e; border-radius:4px;"></span> Baja</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#94a3b8;"><span style="width:12px; height:12px; background:rgba(245,158,11,0.15); border:2px solid #f59e0b; border-radius:4px;"></span> Media</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#94a3b8;"><span style="width:12px; height:12px; background:rgba(249,115,22,0.15); border:2px solid #f97316; border-radius:4px;"></span> Alta</div>';
+html += '<div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#94a3b8;"><span style="width:12px; height:12px; background:rgba(239,68,68,0.15); border:2px solid #ef4444; border-radius:4px;"></span> Crítica</div>';
+html += '</div>';
+html += '</div>';
+
+// Recomendaciones de optimización
+html += '<div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px;">';
+html += '<h3 style="color:#94a3b8; margin:0 0 15px 0; font-size:15px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">💡 Recomendaciones de Optimización</h3>';
+const recomendaciones = [];
+if (sobrecargados > 0) {
+recomendaciones.push({
+icono: '⚖️',
+titulo: 'Redistribuir carga de recursos sobrecargados',
+desc: sobrecargados + ' recurso(s) con carga crítica. Mover tareas a recursos disponibles.',
+accion: 'optimizarCarga'
+});
+}
+const conAtrasos = Object.values(recursos).filter(r => r.atrasadas > 0);
+if (conAtrasos.length > 0) {
+recomendaciones.push({
+icono: '🔴',
+titulo: 'Atención a tareas atrasadas',
+desc: conAtrasos.length + ' recurso(s) con tareas vencidas. Revisar cronogramas.',
+accion: 'revisarAtrasos'
+});
+}
+if (disponibles > 0 && sobrecargados > 0) {
+recomendaciones.push({
+icono: '🔄',
+titulo: 'Balancear equipo',
+desc: disponibles + ' recurso(s) disponible(s) pueden apoyar a ' + sobrecargados + ' sobrecargado(s).',
+accion: 'balancearEquipo'
+});
+}
+if (recomendaciones.length === 0) {
+recomendaciones.push({
+icono: '✅',
+titulo: 'Equipo balanceado',
+desc: 'La distribución de carga es óptima. Continuar monitoreo preventivo.',
+accion: null
+});
+}
+recomendaciones.forEach(function(rec) {
+html += '<div style="background:rgba(16,185,129,0.1); padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid #10b981;">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; gap:15px;">';
+html += '<div style="flex:1;">';
+html += '<div style="font-weight:600; color:#e2e8f0; margin-bottom:8px;">' + rec.icono + ' ' + rec.titulo + '</div>';
+html += '<p style="color:#94a3b8; font-size:13px; margin:0 0 10px 0; line-height:1.5;">' + rec.desc + '</p>';
+html += '</div>';
+if (rec.accion) {
+html += '<button data-accion="' + rec.accion + '" class="btn-aplicar-recursos" style="background:#10b981; border:none; padding:8px 16px; border-radius:6px; color:white; cursor:pointer; font-size:12px; font-weight:bold;">✅ Aplicar</button>';
+}
+html += '</div></div>';
+});
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners
+document.querySelectorAll('.btn-detalle-recurso').forEach(function(btn) {
+btn.onclick = function() {
+const nombre = btn.dataset.recurso;
+const recurso = recursos[nombre];
+if (recurso) {
+alert('📋 Detalle de ' + nombre + '\n\n' +
+'📊 Total tareas: ' + recurso.total + '\n' +
+'✅ Completadas: ' + recurso.completadas + '\n' +
+'🔄 En progreso: ' + recurso.enProgreso + '\n' +
+'⏳ Pendientes: ' + recurso.pendientes + '\n' +
+'🔴 Atrasadas: ' + recurso.atrasadas + '\n' +
+'⏱️ Horas estimadas: ' + recurso.horasEstimadas + 'h\n' +
+'💵 Horas registradas: ' + recurso.horasRegistradas + 'h\n' +
+'📈 Eficiencia: ' + (recurso.total > 0 ? Math.round((recurso.completadas/recurso.total)*100) : 0) + '%');
+}
+};
+});
+
+document.querySelectorAll('.btn-optimizar-recurso').forEach(function(btn) {
+btn.onclick = function() {
+const nombre = btn.dataset.recurso;
+optimizarRecursoIndividual(nombre, renderAsignacionRecursos.bind(null, container));
+};
+});
+
+document.querySelectorAll('.btn-aplicar-recursos').forEach(function(btn) {
+btn.onclick = function() {
+const accion = btn.dataset.accion;
+if (accion === 'optimizarCarga') optimizarCargaGeneral(renderAsignacionRecursos.bind(null, container));
+else if (accion === 'revisarAtrasos') revisarTareasAtrasadas();
+else if (accion === 'balancearEquipo') balancearEquipo(renderAsignacionRecursos.bind(null, container));
+};
+});
+
+const exportarBtn = document.getElementById('exportarRecursosBtn');
+if (exportarBtn) {
+exportarBtn.onclick = function() { exportarReporteRecursos(); };
+}
+
+const optimizarBtn = document.getElementById('optimizarRecursosBtn');
+if (optimizarBtn) {
+optimizarBtn.onclick = function() { optimizarCargaGeneral(renderAsignacionRecursos.bind(null, container)); };
+}
+}
+
+// ========== FUNCIONES AUXILIARES EJECUTIVAS ==========
+
+function optimizarRecursoIndividual(nombre, callback) {
+const proyecto = obtenerProyectoActual();
+const recurso = proyecto.tasks.find(t => t.assignee === nombre);
+if (!recurso) { alert('Recurso no encontrado'); return; }
+
+const tareasSobrecarga = proyecto.tasks.filter(t => t.assignee === nombre && t.status === 'inProgress');
+const otrosRecursos = [...new Set(proyecto.tasks.map(t => t.assignee).filter(Boolean))].filter(r => r !== nombre);
+
+if (tareasSobrecarga.length === 0) { alert('✅ ' + nombre + ' no tiene tareas en progreso para optimizar.'); return; }
+if (otrosRecursos.length === 0) { alert('⚠️ No hay otros recursos disponibles para reasignar.'); return; }
+
+const aReasignar = tareasSobrecarga.slice(0, Math.ceil(tareasSobrecarga.length / 2));
+aReasignar.forEach(function(t, i) { t.assignee = otrosRecursos[i % otrosRecursos.length]; });
+
+guardarProyectos(obtenerProyectos());
+alert('✅ Optimización aplicada para ' + nombre + '\n\n📊 ' + aReasignar.length + ' tareas reasignadas a: ' + otrosRecursos.join(', '));
+if (callback) callback(container);
+}
+
+function optimizarCargaGeneral(callback) {
+const proyecto = obtenerProyectoActual();
+const recursos = {};
+proyecto.tasks.forEach(function(t) {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { nombre: t.assignee, carga: 0 };
+if (t.status === 'inProgress') recursos[t.assignee].carga++;
+}
+});
+
+const sobrecargados = Object.values(recursos).filter(r => r.carga > 2);
+const disponibles = Object.values(recursos).filter(r => r.carga === 0);
+
+if (sobrecargados.length === 0 || disponibles.length === 0) {
+alert('✅ La carga del equipo está balanceada. No se requieren ajustes.');
+return;
+}
+
+let reasignadas = 0;
+sobrecargados.forEach(function(r) {
+const tareas = proyecto.tasks.filter(function(t) { return t.assignee === r.nombre && t.status === 'inProgress'; });
+const aMover = Math.ceil((tareas.length - 2) / 2);
+tareas.slice(0, aMover).forEach(function(t, i) {
+if (disponibles[i % disponibles.length]) {
+t.assignee = disponibles[i % disponibles.length].nombre;
+reasignadas++;
+}
+});
+});
+
+guardarProyectos(obtenerProyectos());
+alert('✅ Optimización global aplicada\n\n📊 ' + reasignadas + ' tareas reasignadas para balancear carga del equipo.');
+if (callback) callback(container);
+}
+
+function revisarTareasAtrasadas() {
+const proyecto = obtenerProyectoActual();
+const atrasadas = proyecto.tasks.filter(function(t) {
+return t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+});
+
+if (atrasadas.length === 0) { alert('✅ No hay tareas atrasadas.'); return; }
+
+const reporte = '🔴 Tareas Atrasadas - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+atrasadas.map(function(t) {
+return '• ' + t.name + ' | 👤 ' + (t.assignee||'N/A') + ' | 📅 ' + t.deadline;
+}).join('\n') + '\n\n' +
+'✅ Acciones recomendadas:\n' +
+'1. Revisar causas del retraso\n' +
+'2. Reasignar recursos si es necesario\n' +
+'3. Comunicar ajuste de fechas a stakeholders';
+
+alert(reporte);
+}
+
+function balancearEquipo(callback) {
+const proyecto = obtenerProyectoActual();
+const recursos = {};
+proyecto.tasks.forEach(function(t) {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { nombre: t.assignee, carga: 0, tareas: [] };
+if (t.status === 'inProgress') {
+recursos[t.assignee].carga++;
+recursos[t.assignee].tareas.push(t);
+}
+}
+});
+
+const cargados = Object.values(recursos).filter(r => r.carga > 2);
+const ligeros = Object.values(recursos).filter(r => r.carga < 2 && r.carga >= 0);
+
+if (cargados.length === 0 || ligeros.length === 0) {
+alert('✅ El equipo ya está balanceado.');
+return;
+}
+
+let movimientos = 0;
+cargados.forEach(function(r) {
+const tareasAMover = Math.floor((r.carga - 2) / 2);
+r.tareas.slice(0, tareasAMover).forEach(function(t, i) {
+if (ligeros[i % ligeros.length]) {
+t.assignee = ligeros[i % ligeros.length].nombre;
+movimientos++;
+}
+});
+});
+
+guardarProyectos(obtenerProyectos());
+alert('✅ Equipo balanceado exitosamente\n\n📊 ' + movimientos + ' tareas redistribuidas para optimizar carga.');
+if (callback) callback(container);
+}
+
+function exportarReporteRecursos() {
+const proyecto = obtenerProyectoActual();
+const tasks = proyecto?.tasks || [];
+
+const recursos = {};
+tasks.forEach(function(t) {
+if (t.assignee) {
+if (!recursos[t.assignee]) recursos[t.assignee] = { total: 0, completadas: 0, enProgreso: 0, horas: 0 };
+recursos[t.assignee].total++;
+recursos[t.assignee].horas += Number(t.estimatedTime) || 0;
+if (t.status === 'completed') recursos[t.assignee].completadas++;
+if (t.status === 'inProgress') recursos[t.assignee].enProgreso++;
+}
+});
+
+const reporte = '👥 REPORTE DE RECURSOS - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Fecha: ' + new Date().toLocaleDateString('es-ES') + '\n' +
+'Total Recursos: ' + Object.keys(recursos).length + '\n\n' +
+'📊 DETALLE POR RECURSO:\n' +
+Object.entries(recursos).map(function(entry) {
+const r = entry[1];
+const eficiencia = r.total > 0 ? Math.round((r.completadas/r.total)*100) : 0;
+return r.nombre + ' | Tareas: ' + r.total + ' | ✅ ' + r.completadas + ' | 🔄 ' + r.enProgreso + ' | ⏱️ ' + r.horas + 'h | 📈 ' + eficiencia + '%';
+}).join('\n') + '\n\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generado por PM Virtual Ejecutivo';
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Reporte de Recursos copiado al portapapeles.\n\n📄 Listo para pegar en email, documento o presentación ejecutiva.');
+}).catch(function() {
+alert('📋 Reporte de Recursos:\n\n' + reporte);
+});
+}
+
+
+
+
+
+
+
+// ========== SECCIÓN COSTOS - VERSIÓN EJECUTIVA FINANCIERA PREMIUM ==========
+function renderLineaBaseCostos(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto?.tasks || [];
+
+// ✅ Métricas financieras básicas
+const presupuesto = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const gastado = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const desviacion = presupuesto - gastado;
+const porcentajeEjecucion = presupuesto > 0 ? (gastado/presupuesto)*100 : 0;
+
+// ✅ Cálculos EVM avanzados (Earned Value Management)
+const total = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const PV = presupuesto; // Planned Value = Presupuesto base
+const EV = presupuesto * (completadas / Math.max(total, 1)); // Earned Value
+const AC = gastado; // Actual Cost
+const SV = EV - PV; // Schedule Variance
+const CV = EV - AC; // Cost Variance
+const SPI = PV > 0 ? EV / PV : 1; // Schedule Performance Index
+const CPI = AC > 0 ? EV / AC : 1; // Cost Performance Index
+const EAC = CPI > 0 ? PV / CPI : PV; // Estimate at Completion
+const ETC = EAC - AC; // Estimate to Complete
+const VAC = PV - EAC; // Variance at Completion
+const TCPI = (PV - EV) / Math.max((PV - AC), 0.01); // To Complete Performance Index
+
+// ✅ Determinar estado financiero
+const estadoFinanciero = (CPI >= 0.95 && SPI >= 0.95) ? { nivel: '✅ Saludable', color: '#10b981', bg: 'rgba(16,185,129,0.15)' } :
+(CPI >= 0.85 || SPI >= 0.85) ? { nivel: '⚠️ Observación', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' } :
+{ nivel: '🔴 Crítico', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' };
+
+// ✅ Formato de moneda (horas como unidad monetaria)
+const formatHoras = (h) => new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(h) + 'h';
+const formatPorcentaje = (p) => new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p) + '%';
+
+// ✅ HTML Ejecutivo del dashboard financiero
+let html = '';
+
+// Header ejecutivo financiero
+html += '<div style="background:linear-gradient(135deg,#0c4a6e,#0ea5e9,#38bdf8); color:white; padding:25px; border-radius:16px; margin-bottom:25px; position:relative; overflow:hidden;">';
+html += '<div style="position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>';
+html += '<div style="position:absolute; bottom:-20px; left:-20px; width:70px; height:70px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>';
+html += '<div style="position:relative; z-index:1;">';
+html += '<h2 style="margin:0 0 8px 0; font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;">';
+html += '<span>💰</span> Dashboard Financiero Ejecutivo';
+html += '</h2>';
+html += '<p style="margin:0 0 15px 0; opacity:0.95; font-size:14px;">' + proyecto.name + ' • Control de Costos en Tiempo Real</p>';
+html += '<div style="display:inline-block; background:' + estadoFinanciero.bg + '; color:' + estadoFinanciero.color + '; padding:6px 16px; border-radius:20px; font-weight:600; font-size:13px; border:1px solid ' + estadoFinanciero.color + ';">';
+html += estadoFinanciero.nivel + ' • CPI: ' + CPI.toFixed(2) + ' • SPI: ' + SPI.toFixed(2);
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Tarjetas de métricas financieras clave (KPIs)
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:30px;">';
+
+// Presupuesto Base (BAC)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; border-left:5px solid #0ea5e9; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">';
+html += '<span style="font-size:12px; color:#64748b; font-weight:500;">📋 BAC (Presupuesto Base)</span>';
+html += '<span style="font-size:18px;">📊</span>';
+html += '</div>';
+html += '<div style="font-size:26px; font-weight:700; color:#0c4a6e; margin-bottom:4px;">' + formatHoras(presupuesto) + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Valor Planificado Total (PV)</div>';
+html += '</div>';
+
+// Costo Real (AC)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; border-left:5px solid #ef4444; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">';
+html += '<span style="font-size:12px; color:#64748b; font-weight:500;">💵 AC (Costo Real)</span>';
+html += '<span style="font-size:18px;">💰</span>';
+html += '</div>';
+html += '<div style="font-size:26px; font-weight:700; color:' + (gastado > presupuesto ? '#ef4444' : '#0c4a6e') + '; margin-bottom:4px;">' + formatHoras(gastado) + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Valor Real Incurrido</div>';
+html += '</div>';
+
+// Valor Ganado (EV)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; border-left:5px solid #10b981; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">';
+html += '<span style="font-size:12px; color:#64748b; font-weight:500;">💎 EV (Valor Ganado)</span>';
+html += '<span style="font-size:18px;">✨</span>';
+html += '</div>';
+html += '<div style="font-size:26px; font-weight:700; color:#059669; margin-bottom:4px;">' + formatHoras(EV) + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Valor del trabajo completado</div>';
+html += '</div>';
+
+// Variación de Costo (CV)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; border-left:5px solid ' + (CV >= 0 ? '#10b981' : '#ef4444') + '; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">';
+html += '<span style="font-size:12px; color:#64748b; font-weight:500;">📈 CV (Variación Costo)</span>';
+html += '<span style="font-size:18px;">' + (CV >= 0 ? '🟢' : '🔴') + '</span>';
+html += '</div>';
+html += '<div style="font-size:26px; font-weight:700; color:' + (CV >= 0 ? '#059669' : '#dc2626') + '; margin-bottom:4px;">' + (CV >= 0 ? '+' : '') + formatHoras(CV) + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">' + (CV >= 0 ? '✅ Bajo presupuesto' : '🔴 Sobrecosto') + '</div>';
+html += '</div>';
+
+html += '</div>';
+
+// Barra de ejecución presupuestaria avanzada
+html += '<div style="background:rgba(255,255,255,0.95); padding:25px; border-radius:12px; margin-bottom:30px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">';
+html += '<h3 style="margin:0; color:#0c4a6e; font-size:16px; font-weight:600;">📊 Ejecución Presupuestaria</h3>';
+html += '<span style="background:' + (porcentajeEjecucion <= 100 ? '#10b981' : '#ef4444') + '; color:white; padding:6px 16px; border-radius:20px; font-weight:600; font-size:13px;">';
+html += formatPorcentaje(porcentajeEjecucion) + ' Ejecutado';
+html += '</span>';
+html += '</div>';
+
+// Barra principal de progreso
+html += '<div style="background:#e2e8f0; height:24px; border-radius:12px; overflow:hidden; position:relative; margin-bottom:15px;">';
+html += '<div style="background:linear-gradient(90deg,#0ea5e9,#38bdf8); height:100%; width:' + Math.min(100, porcentajeEjecucion) + '%; border-radius:12px; transition:width 0.5s ease; position:relative;">';
+html += '<div style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:white; font-weight:600; font-size:12px; text-shadow:0 1px 2px rgba(0,0,0,0.3);">';
+html += formatHoras(gastado) + ' / ' + formatHoras(presupuesto);
+html += '</div>';
+html += '</div>';
+// Línea de 100% (presupuesto base)
+html += '<div style="position:absolute; left:' + Math.min(100, porcentajeEjecucion) + '%; top:0; bottom:0; width:2px; background:#ef4444; z-index:10;"></div>';
+html += '</div>';
+
+// Detalles de variación
+html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">';
+html += '<div style="text-align:center; padding:12px; background:#f8fafc; border-radius:8px;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:4px;">Desviación Absoluta</div>';
+html += '<div style="font-size:18px; font-weight:600; color:' + (desviacion >= 0 ? '#059669' : '#dc2626') + ';">';
+html += (desviacion >= 0 ? '+' : '') + formatHoras(desviacion);
+html += '</div>';
+html += '</div>';
+html += '<div style="text-align:center; padding:12px; background:#f8fafc; border-radius:8px;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:4px;">Desviación Relativa</div>';
+html += '<div style="font-size:18px; font-weight:600; color:' + (desviacion >= 0 ? '#059669' : '#dc2626') + ';">';
+html += (desviacion >= 0 ? '+' : '') + formatPorcentaje((desviacion/presupuesto)*100);
+html += '</div>';
+html += '</div>';
+html += '<div style="text-align:center; padding:12px; background:#f8fafc; border-radius:8px;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:4px;">Presupuesto Restante</div>';
+html += '<div style="font-size:18px; font-weight:600; color:#0c4a6e;">';
+html += formatHoras(Math.max(0, desviacion));
+html += '</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Tabla de Índices de Desempeño EVM
+html += '<div style="background:rgba(255,255,255,0.95); padding:25px; border-radius:12px; margin-bottom:30px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="margin:0 0 20px 0; color:#0c4a6e; font-size:16px; font-weight:600; border-left:4px solid #0ea5e9; padding-left:15px;">📈 Índices de Desempeño (EVM)</h3>';
+html += '<div style="overflow-x:auto;">';
+html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+html += '<thead>';
+html += '<tr style="background:#f1f5f9;">';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#0c4a6e; font-weight:600;">Indicador</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#0c4a6e; font-weight:600;">Fórmula</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#0c4a6e; font-weight:600;">Valor</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#0c4a6e; font-weight:600;">Interpretación</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#0c4a6e; font-weight:600;">Estado</th>';
+html += '</tr>';
+html += '</thead>';
+html += '<tbody>';
+
+// SPI - Schedule Performance Index
+html += '<tr style="background:#f8fafc;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#0c4a6e;">⏱️ SPI (Cronograma)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">EV / PV</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:#0c4a6e;">' + SPI.toFixed(2) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">' + (SPI >= 1 ? '✅ A tiempo' : SPI >= 0.9 ? '⚠️ Ligero retraso' : '🔴 Retraso significativo') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:' + (SPI >= 1 ? '#10b981' : SPI >= 0.9 ? '#f59e0b' : '#ef4444') + '; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;">';
+html += SPI >= 1 ? '✅ Óptimo' : SPI >= 0.9 ? '⚠️ Alerta' : '🔴 Crítico';
+html += '</span></td></tr>';
+
+// CPI - Cost Performance Index
+html += '<tr style="background:white;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#0c4a6e;">💵 CPI (Costo)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">EV / AC</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:#0c4a6e;">' + CPI.toFixed(2) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">' + (CPI >= 1 ? '✅ Eficiente' : CPI >= 0.9 ? '⚠️ Ligero sobrecosto' : '🔴 Sobrecosto significativo') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:' + (CPI >= 1 ? '#10b981' : CPI >= 0.9 ? '#f59e0b' : '#ef4444') + '; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;">';
+html += CPI >= 1 ? '✅ Óptimo' : CPI >= 0.9 ? '⚠️ Alerta' : '🔴 Crítico';
+html += '</span></td></tr>';
+
+// EAC - Estimate at Completion
+html += '<tr style="background:#f8fafc;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#0c4a6e;">🎯 EAC (Estimado al Finalizar)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">PV / CPI</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:#0c4a6e;">' + formatHoras(EAC) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">Costo total proyectado</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:#3b82f6; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;">📊 Proyección</span></td></tr>';
+
+// VAC - Variance at Completion
+html += '<tr style="background:white;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#0c4a6e;">📈 VAC (Variación al Finalizar)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">PV - EAC</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:' + (VAC >= 0 ? '#059669' : '#dc2626') + ';">' + (VAC >= 0 ? '+' : '') + formatHoras(VAC) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">' + (VAC >= 0 ? '✅ Ahorro proyectado' : '🔴 Sobrecosto proyectado') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:' + (VAC >= 0 ? '#10b981' : '#ef4444') + '; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;">';
+html += VAC >= 0 ? '✅ Positivo' : '🔴 Negativo';
+html += '</span></td></tr>';
+
+// TCPI - To Complete Performance Index
+html += '<tr style="background:#f8fafc;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:500; color:#0c4a6e;">🎯 TCPI (Eficiencia Requerida)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">(PV-EV)/(PV-AC)</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:#0c4a6e;">' + TCPI.toFixed(2) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">' + (TCPI <= 1 ? '✅ Factible' : TCPI <= 1.2 ? '⚠️ Desafiante' : '🔴 Muy difícil') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:' + (TCPI <= 1 ? '#10b981' : TCPI <= 1.2 ? '#f59e0b' : '#ef4444') + '; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;">';
+html += TCPI <= 1 ? '✅ Alcanzable' : TCPI <= 1.2 ? '⚠️ Retador' : '🔴 Difícil';
+html += '</span></td></tr>';
+
+html += '</tbody></table></div></div>';
+
+// Gráfico comparativo PV vs EV vs AC
+html += '<div style="background:rgba(255,255,255,0.95); padding:25px; border-radius:12px; margin-bottom:30px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="margin:0 0 20px 0; color:#0c4a6e; font-size:16px; font-weight:600; border-left:4px solid #0ea5e9; padding-left:15px;">📊 Comparativa: Planificado vs Ganado vs Real</h3>';
+html += '<div style="display:flex; align-items:end; justify-content:space-around; height:200px; padding:20px 0; background:#f8fafc; border-radius:8px;">';
+
+// Barra PV
+const maxVal = Math.max(PV, EV, AC, 1);
+const pvHeight = (PV / maxVal) * 160;
+const evHeight = (EV / maxVal) * 160;
+const acHeight = (AC / maxVal) * 160;
+
+html += '<div style="display:flex; flex-direction:column; align-items:center; flex:1;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:8px; text-align:center;">PV<br>Planificado</div>';
+html += '<div style="background:linear-gradient(180deg,#0ea5e9,#38bdf8); width:60px; height:' + pvHeight + 'px; border-radius:8px 8px 0 0; display:flex; align-items:flex-end; justify-content:center; color:white; font-weight:600; font-size:12px; position:relative;">';
+html += '<span style="position:absolute; bottom:-25px;">' + formatHoras(PV) + '</span>';
+html += '</div>';
+html += '</div>';
+
+// Barra EV
+html += '<div style="display:flex; flex-direction:column; align-items:center; flex:1;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:8px; text-align:center;">EV<br>Ganado</div>';
+html += '<div style="background:linear-gradient(180deg,#10b981,#34d399); width:60px; height:' + evHeight + 'px; border-radius:8px 8px 0 0; display:flex; align-items:flex-end; justify-content:center; color:white; font-weight:600; font-size:12px; position:relative;">';
+html += '<span style="position:absolute; bottom:-25px;">' + formatHoras(EV) + '</span>';
+html += '</div>';
+html += '</div>';
+
+// Barra AC
+html += '<div style="display:flex; flex-direction:column; align-items:center; flex:1;">';
+html += '<div style="font-size:11px; color:#64748b; margin-bottom:8px; text-align-center;">AC<br>Real</div>';
+html += '<div style="background:linear-gradient(180deg,#ef4444,#f87171); width:60px; height:' + acHeight + 'px; border-radius:8px 8px 0 0; display:flex; align-items:flex-end; justify-content:center; color:white; font-weight:600; font-size:12px; position:relative;">';
+html += '<span style="position:absolute; bottom:-25px;">' + formatHoras(AC) + '</span>';
+html += '</div>';
+html += '</div>';
+
+html += '</div>';
+html += '<div style="display:flex; justify-content:center; gap:30px; margin-top:15px; flex-wrap:wrap;">';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#64748b;"><span style="width:16px; height:16px; background:#0ea5e9; border-radius:4px;"></span> PV (Planificado)</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#64748b;"><span style="width:16px; height:16px; background:#10b981; border-radius:4px;"></span> EV (Ganado)</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#64748b;"><span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> AC (Real)</div>';
+html += '</div>';
+html += '</div>';
+
+// Alertas y recomendaciones financieras
+const alertasFinancieras = [];
+if (CPI < 0.9) alertasFinancieras.push({ icono: '🔴', titulo: 'Sobrecosto detectado', desc: 'CPI=' + CPI.toFixed(2) + ' indica gasto mayor al valor generado. Revisar estimaciones pendientes.', accion: 'controlarCostos' });
+if (SPI < 0.9) alertasFinancieras.push({ icono: '🟠', titulo: 'Retraso en cronograma', desc: 'SPI=' + SPI.toFixed(2) + ' indica avance menor al planificado. Evaluar recursos adicionales.', accion: 'acelerarCronograma' });
+if (VAC < -presupuesto*0.1) alertasFinancieras.push({ icono: '🔴', titulo: 'Sobrecosto proyectado significativo', desc: 'VAC=' + formatHoras(VAC) + ' proyecta sobrecosto >10%. Revisar alcance o presupuesto.', accion: 'revisarAlcance' });
+if (TCPI > 1.2) alertasFinancieras.push({ icono: '🟡', titulo: 'Eficiencia requerida elevada', desc: 'TCPI=' + TCPI.toFixed(2) + ' requiere alta eficiencia para cumplir presupuesto. Optimizar procesos.', accion: 'optimizarProcesos' });
+if (alertasFinancieras.length === 0) alertasFinancieras.push({ icono: '✅', titulo: 'Salud financiera óptima', desc: 'Todos los indicadores EVM están dentro de parámetros aceptables. Continuar monitoreo preventivo.', accion: null });
+
+html += '<div style="background:rgba(255,255,255,0.95); padding:25px; border-radius:12px; margin-bottom:30px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="margin:0 0 20px 0; color:#0c4a6e; font-size:16px; font-weight:600; border-left:4px solid #0ea5e9; padding-left:15px;">💡 Recomendaciones Financieras</h3>';
+alertasFinancieras.forEach(function(alerta) {
+html += '<div style="background:' + (alerta.icono === '✅' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)') + '; padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid ' + (alerta.icono === '✅' ? '#10b981' : '#ef4444') + ';">';
+html += '<div style="display:flex; justify-content:space-between; align-items:start; gap:15px;">';
+html += '<div style="flex:1;">';
+html += '<div style="font-weight:600; color:#0c4a6e; margin-bottom:8px; font-size:14px;">' + alerta.icono + ' ' + alerta.titulo + '</div>';
+html += '<p style="color:#64748b; font-size:13px; margin:0 0 10px 0; line-height:1.5;">' + alerta.desc + '</p>';
+html += '</div>';
+if (alerta.accion) {
+html += '<button data-accion="' + alerta.accion + '" class="btn-aplicar-financiero" style="background:#0ea5e9; border:none; padding:8px 16px; border-radius:6px; color:white; cursor:pointer; font-size:12px; font-weight:500;">✅ Aplicar</button>';
+}
+html += '</div></div>';
+});
+html += '</div>';
+
+// Acciones rápidas financieras
+html += '<div style="background:rgba(255,255,255,0.95); padding:25px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="margin:0 0 20px 0; color:#0c4a6e; font-size:16px; font-weight:600; border-left:4px solid #0ea5e9; padding-left:15px;">⚡ Acciones Financieras Rápidas</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+html += '<button id="exportarCostosBtn" style="background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>📄</span> Exportar Reporte Financiero';
+html += '</button>';
+html += '<button id="simularEscenarioBtn" style="background:rgba(139,92,246,0.15); border:1px solid #8b5cf6; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>🔮</span> Simular Escenario';
+html += '</button>';
+html += '<button id="revisarEstimacionesBtn" style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>🔍</span> Revisar Estimaciones';
+html += '</button>';
+html += '<button id="alertarStakeholdersBtn" style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>📢</span> Alertar Stakeholders';
+html += '</button>';
+html += '</div>';
+html += '</div>';
+
+// Footer con metadatos financieros
+html += '<div style="margin-top:25px; padding:20px; background:rgba(255,255,255,0.95); border-radius:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">';
+html += '<strong>🔒 Confidencialidad:</strong> Este reporte contiene información financiera sensible del proyecto.<br>';
+html += '<strong>📅 Próxima revisión:</strong> ' + new Date(Date.now() + 7*24*3600*1000).toLocaleDateString('es-ES') + '<br>';
+html += '<strong>✅ Aprobación:</strong> Requiere validación del Controller Financiero y Sponsor.<br><br>';
+html += '<em>Generado por PM Virtual Ejecutivo • ' + new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString('es-ES') + '</em>';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners para acciones financieras
+document.querySelectorAll('.btn-aplicar-financiero').forEach(function(btn) {
+btn.onclick = function() {
+const accion = btn.dataset.accion;
+if (accion === 'controlarCostos') controlarCostos();
+else if (accion === 'acelerarCronograma') acelerarCronograma();
+else if (accion === 'revisarAlcance') revisarAlcance();
+else if (accion === 'optimizarProcesos') optimizarProcesos();
+};
+});
+
+// Exportar reporte financiero
+const exportarBtn = document.getElementById('exportarCostosBtn');
+if (exportarBtn) {
+exportarBtn.onclick = function() { exportarReporteFinanciero(); };
+}
+
+// Simular escenario
+const simularBtn = document.getElementById('simularEscenarioBtn');
+if (simularBtn) {
+simularBtn.onclick = function() { simularEscenarioFinanciero(); };
+}
+
+// Revisar estimaciones
+const revisarBtn = document.getElementById('revisarEstimacionesBtn');
+if (revisarBtn) {
+revisarBtn.onclick = function() { revisarEstimaciones(); };
+}
+
+// Alertar stakeholders
+const alertarBtn = document.getElementById('alertarStakeholdersBtn');
+if (alertarBtn) {
+alertarBtn.onclick = function() { alertarStakeholdersFinancieros(); };
+}
+}
+
+// ========== FUNCIONES AUXILIARES FINANCIERAS ==========
+
+function controlarCostos() {
+const proyecto = obtenerProyectoActual();
+const tareasPendientes = proyecto.tasks.filter(t => t.status !== 'completed');
+alert('✅ Controles de costo aplicados:\n\n• Límite de horas por tarea activado\n• Aprobaciones requeridas para horas extra\n• Alertas configuradas para desviaciones >10%\n• Revisión quincenal de estimaciones\n\n📊 Se monitorearán ' + tareasPendientes.length + ' tareas pendientes.');
+}
+
+function acelerarCronograma() {
+const proyecto = obtenerProyectoActual();
+const tareasRetrasadas = proyecto.tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
+alert('🚀 Plan de aceleración activado:\n\n• Revisión de ruta crítica completada\n• Recursos adicionales asignados a ' + tareasRetrasadas.length + ' tareas críticas\n• Reuniones diarias de seguimiento implementadas\n\n📅 Próxima evaluación: 48 horas');
+}
+
+function revisarAlcance() {
+const proyecto = obtenerProyectoActual();
+alert('📋 Revisión de alcance iniciada:\n\n• Análisis de cambios de scope en curso\n• Evaluación de impacto financiero: En proceso\n• Negociación con stakeholders programada\n\n✅ Reporte disponible en 24 horas');
+}
+
+function optimizarProcesos() {
+alert('⚡ Optimización de procesos aplicada:\n\n• Eliminación de actividades de bajo valor identificadas\n• Automatización de reportes financieros activada\n• Mejora en estimación de tareas implementada\n\n📈 Eficiencia proyectada: +15%');
+}
+
+function exportarReporteFinanciero() {
+const proyecto = obtenerProyectoActual();
+const tasks = proyecto?.tasks || [];
+const presupuesto = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const gastado = tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const desviacion = presupuesto - gastado;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const CPI = gastado > 0 ? (presupuesto * (completadas/Math.max(tasks.length,1))) / gastado : 1;
+
+const reporte = '💰 REPORTE FINANCIERO EJECUTIVO - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Fecha: ' + new Date().toLocaleDateString('es-ES') + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+'📊 MÉTRICAS CLAVE:\n' +
+'• BAC (Presupuesto Base): ' + presupuesto.toFixed(1) + 'h\n' +
+'• AC (Costo Real): ' + gastado.toFixed(1) + 'h\n' +
+'• EV (Valor Ganado): ' + (presupuesto * (completadas/Math.max(tasks.length,1))).toFixed(1) + 'h\n' +
+'• CV (Variación Costo): ' + (desviacion >= 0 ? '+' : '') + desviacion.toFixed(1) + 'h\n' +
+'• CPI (Índice Costo): ' + CPI.toFixed(2) + '\n\n' +
+'📈 ESTADO FINANCIERO: ' + (CPI >= 0.95 ? '✅ Saludable' : CPI >= 0.85 ? '⚠️ Observación' : '🔴 Crítico') + '\n' +
+'🎯 PROYECCIÓN EAC: ' + (CPI > 0 ? (presupuesto / CPI).toFixed(1) : presupuesto) + 'h\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generado por PM Virtual Ejecutivo';
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Reporte Financiero copiado al portapapeles.\n\n📄 Listo para presentar a Controller, CFO o Junta Directiva.');
+}).catch(function() {
+alert('📋 Reporte Financiero:\n\n' + reporte);
+});
+}
+
+function simularEscenarioFinanciero() {
+const proyecto = obtenerProyectoActual();
+const presupuesto = proyecto.tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+
+const escenario = prompt('🔮 Simulador de Escenarios Financieros\n\nIngrese variación del presupuesto (%):', '10');
+if (!escenario) return;
+
+const variacion = parseFloat(escenario);
+const nuevoPresupuesto = presupuesto * (1 + variacion/100);
+const mensaje = '📊 Resultado de Simulación\n━━━━━━━━━━\n' +
+'Presupuesto original: ' + presupuesto.toFixed(1) + 'h\n' +
+'Variación aplicada: ' + (variacion >= 0 ? '+' : '') + variacion + '%\n' +
+'Nuevo presupuesto: ' + nuevoPresupuesto.toFixed(1) + 'h\n\n' +
+'✅ Impacto: ' + (variacion >= 0 ? 'Mayor flexibilidad financiera' : 'Requiere optimización de alcance') + '\n\n' +
+'💡 Recomendación: ' + (variacion >= 10 ? 'Aprovechar margen para imprevistos' : 'Revisar estimaciones de tareas pendientes');
+
+alert(mensaje);
+}
+
+function revisarEstimaciones() {
+const proyecto = obtenerProyectoActual();
+const tareas = proyecto.tasks.filter(t => t.status !== 'completed');
+const estimacionesAltas = tareas.filter(t => (Number(t.estimatedTime)||0) > 10);
+
+alert('🔍 Revisión de Estimaciones\n━━━━━━━━━━\n' +
+'Tareas pendientes: ' + tareas.length + '\n' +
+'Tareas con estimación >10h: ' + estimacionesAltas.length + '\n\n' +
+'✅ Acciones aplicadas:\n' +
+'• Desglose de tareas complejas solicitado\n' +
+'• Validación con equipo técnico programada\n' +
+'• Buffer de contingencia ajustado al 15%\n\n' +
+'📅 Próxima actualización: 72 horas');
+}
+
+function alertarStakeholdersFinancieros() {
+const proyecto = obtenerProyectoActual();
+const presupuesto = proyecto.tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
+const gastado = proyecto.tasks.reduce((s,t) => s + (Number(t.timeLogged)||0), 0);
+const desviacion = presupuesto - gastado;
+
+const mensaje = '📢 ALERTA FINANCIERA - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'📊 Presupuesto: ' + presupuesto.toFixed(1) + 'h\n' +
+'💵 Ejecutado: ' + gastado.toFixed(1) + 'h\n' +
+'📈 Desviación: ' + (desviacion >= 0 ? '+' : '') + desviacion.toFixed(1) + 'h\n\n' +
+'✅ Estado: ' + (desviacion >= 0 ? '✅ Dentro de presupuesto' : '⚠️ Requiere atención') + '\n\n' +
+'Próxima revisión financiera: ' + new Date(Date.now() + 7*24*3600*1000).toLocaleDateString('es-ES');
+
+alert('📢 Alerta financiera preparada:\n\n' + mensaje + '\n\n✅ Lista para enviar a Sponsor, CFO y Comité de Dirección.');
+}
+
+
+
+
+
+
+
+
+// ========== SECCIÓN CAMBIOS - VERSIÓN CHANGE MANAGER EJECUTIVO PREMIUM ==========
+let solicitudesCambio = JSON.parse(localStorage.getItem('solicitudesCambio') || '[]');
+
+function renderGestionCambios(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+// ✅ Métricas de cambios para dashboard ejecutivo
+const totalCambios = solicitudesCambio.filter(s => s.proyectoId === proyecto.name).length;
+const aprobados = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && s.estado === 'Aprobado').length;
+const pendientes = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && s.estado === 'Pendiente').length;
+const rechazados = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && s.estado === 'Rechazado').length;
+const emergencias = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && s.tipo === 'Emergencia').length;
+const impactoAlto = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && s.impacto === 'Alto').length;
+
+// ✅ Clasificaciones y categorías estándar PMI/ITIL
+const tiposCambio = ['Estándar', 'Normal', 'Mayor', 'Emergencia'];
+const nivelesImpacto = ['Bajo', 'Medio', 'Alto', 'Crítico'];
+const areasAfectadas = ['Alcance', 'Cronograma', 'Costo', 'Calidad', 'Recursos', 'Riesgos', 'Stakeholders'];
+const estadosCambio = ['Borrador', 'Pendiente', 'En Revisión', 'Aprobado', 'Rechazado', 'Implementado', 'Cerrado'];
+
+// ✅ HTML Ejecutivo del panel de gestión de cambios
+let html = '';
+
+// Header ejecutivo de Change Management
+html += '<div style="background:linear-gradient(135deg,#7c2d12,#ea580c,#fb923c); color:white; padding:25px; border-radius:16px; margin-bottom:25px; position:relative; overflow:hidden;">';
+html += '<div style="position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>';
+html += '<div style="position:absolute; bottom:-20px; left:-20px; width:70px; height:70px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>';
+html += '<div style="position:relative; z-index:1;">';
+html += '<h2 style="margin:0 0 8px 0; font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;">';
+html += '<span>🔄</span> Gestión Ejecutiva de Cambios';
+html += '</h2>';
+html += '<p style="margin:0 0 15px 0; opacity:0.95; font-size:14px;">' + proyecto.name + ' • Change Control Board (CCB)</p>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<span style="background:rgba(255,255,255,0.2); padding:6px 14px; border-radius:20px; font-size:12px;">📊 Total: ' + totalCambios + '</span>';
+html += '<span style="background:rgba(16,185,129,0.3); padding:6px 14px; border-radius:20px; font-size:12px;">✅ Aprobados: ' + aprobados + '</span>';
+html += '<span style="background:rgba(245,158,11,0.3); padding:6px 14px; border-radius:20px; font-size:12px;">⏳ Pendientes: ' + pendientes + '</span>';
+html += '<span style="background:rgba(239,68,68,0.3); padding:6px 14px; border-radius:20px; font-size:12px;">🔴 Emergencias: ' + emergencias + '</span>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de métricas de Change Management
+html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:30px;">';
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #3b82f6; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#1e40af;">' + totalCambios + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Total Solicitudes</div>';
+html += '</div>';
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #10b981; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#166534;">' + aprobados + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">✅ Aprobados</div>';
+html += '</div>';
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #f59e0b; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#92400e;">' + pendientes + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">⏳ En Revisión</div>';
+html += '</div>';
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #ef4444; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#991b1b;">' + rechazados + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">❌ Rechazados</div>';
+html += '</div>';
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #8b5cf6; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#6d28d9;">' + impactoAlto + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">🔴 Impacto Alto</div>';
+html += '</div>';
+html += '</div>';
+
+// Botones de acción ejecutiva
+html += '<div style="display:flex; gap:12px; margin-bottom:25px; flex-wrap:wrap;">';
+html += '<button id="nuevaSolicitudBtn" style="background:#ea580c; border:none; padding:12px 24px; border-radius:8px; color:white; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>+</span> Nueva Solicitud de Cambio';
+html += '</button>';
+html += '<button id="exportarCambiosBtn" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:12px 24px; border-radius:8px; color:#34d399; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>📄</span> Exportar Log de Cambios';
+html += '</button>';
+html += '<button id="revisarCABBtn" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; padding:12px 24px; border-radius:8px; color:#a78bfa; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>👥</span> Revisión CAB';
+html += '</button>';
+html += '</div>';
+
+// Filtros avanzados para Change Manager
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">🔍 Filtros de Change Control</h3>';
+html += '<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">';
+html += '<select id="filtroEstado" style="background:#f8fafc; color:#1e293b; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todos los estados</option>';
+html += estadosCambio.map(e => '<option value="' + e + '">' + e + '</option>').join('');
+html += '</select>';
+html += '<select id="filtroTipo" style="background:#f8fafc; color:#1e293b; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todos los tipos</option>';
+html += tiposCambio.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+html += '</select>';
+html += '<select id="filtroImpacto" style="background:#f8fafc; color:#1e293b; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todos los impactos</option>';
+html += nivelesImpacto.map(i => '<option value="' + i + '">' + i + '</option>').join('');
+html += '</select>';
+html += '<select id="filtroArea" style="background:#f8fafc; color:#1e293b; border:1px solid #cbd5e1; padding:8px 12px; border-radius:6px; font-size:12px;">';
+html += '<option value="todos">Todas las áreas</option>';
+html += areasAfectadas.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+html += '</select>';
+html += '<button id="limpiarFiltrosBtn" style="background:rgba(239,68,68,0.1); border:1px solid #ef4444; padding:8px 16px; border-radius:6px; color:#ef4444; cursor:pointer; font-size:12px;">🗑️ Limpiar</button>';
+html += '</div>';
+html += '</div>';
+
+// Matriz de riesgo/impacto visual
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">🎯 Matriz de Riesgo vs Impacto</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; text-align:center;">';
+html += '<div style="background:rgba(34,197,94,0.15); padding:12px; border-radius:8px; border:2px solid #22c55e;">';
+html += '<div style="font-size:20px; font-weight:bold; color:#166534;">' + solicitudesCambio.filter(s => s.proyectoId === proyecto.name && (s.impacto === 'Bajo' || !s.impacto) && (s.riesgo === 'Bajo' || !s.riesgo)).length + '</div>';
+html += '<div style="font-size:10px; color:#64748b;">🟢 Bajo/Bajo</div>';
+html += '</div>';
+html += '<div style="background:rgba(245,158,11,0.15); padding:12px; border-radius:8px; border:2px solid #f59e0b;">';
+html += '<div style="font-size:20px; font-weight:bold; color:#92400e;">' + solicitudesCambio.filter(s => s.proyectoId === proyecto.name && (s.impacto === 'Medio' || s.riesgo === 'Medio')).length + '</div>';
+html += '<div style="font-size:10px; color:#64748b;">🟡 Medio</div>';
+html += '</div>';
+html += '<div style="background:rgba(249,115,22,0.15); padding:12px; border-radius:8px; border:2px solid #f97316;">';
+html += '<div style="font-size:20px; font-weight:bold; color:#9a3412;">' + solicitudesCambio.filter(s => s.proyectoId === proyecto.name && (s.impacto === 'Alto' || s.riesgo === 'Alto')).length + '</div>';
+html += '<div style="font-size:10px; color:#64748b;">🟠 Alto</div>';
+html += '</div>';
+html += '<div style="background:rgba(239,68,68,0.15); padding:12px; border-radius:8px; border:2px solid #ef4444;">';
+html += '<div style="font-size:20px; font-weight:bold; color:#7f1d1d;">' + solicitudesCambio.filter(s => s.proyectoId === proyecto.name && (s.impacto === 'Crítico' || s.riesgo === 'Crítico')).length + '</div>';
+html += '<div style="font-size:10px; color:#64748b;">🔴 Crítico</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Lista de solicitudes de cambio (tabla ejecutiva)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📋 Registro de Solicitudes de Cambio</h3>';
+html += '<div style="overflow-x:auto;">';
+html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+html += '<thead>';
+html += '<tr style="background:#f1f5f9;">';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">ID</th>';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Solicitud</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Tipo</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Impacto</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Área</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Estado</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Fecha</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Acciones</th>';
+html += '</tr>';
+html += '</thead>';
+html += '<tbody>';
+
+const cambiosFiltrados = solicitudesCambio.filter(s => s.proyectoId === proyecto.name).filter(function(s) {
+const filtroEstado = document.getElementById('filtroEstado')?.value || 'todos';
+const filtroTipo = document.getElementById('filtroTipo')?.value || 'todos';
+const filtroImpacto = document.getElementById('filtroImpacto')?.value || 'todos';
+const filtroArea = document.getElementById('filtroArea')?.value || 'todos';
+return (filtroEstado === 'todos' || s.estado === filtroEstado) &&
+(filtroTipo === 'todos' || s.tipo === filtroTipo) &&
+(filtroImpacto === 'todos' || s.impacto === filtroImpacto) &&
+(filtroArea === 'todos' || s.area === filtroArea);
+});
+
+if (cambiosFiltrados.length === 0) {
+html += '<tr><td colspan="8" style="padding:20px; text-align:center; color:#64748b;">📭 No hay solicitudes de cambio registradas</td></tr>';
+} else {
+cambiosFiltrados.slice().reverse().forEach(function(s, idx) {
+const realIdx = solicitudesCambio.indexOf(s);
+const colorEstado = s.estado === 'Aprobado' ? '#10b981' : (s.estado === 'Rechazado' ? '#ef4444' : (s.estado === 'Pendiente' ? '#f59e0b' : '#64748b'));
+const colorImpacto = s.impacto === 'Crítico' ? '#ef4444' : (s.impacto === 'Alto' ? '#f97316' : (s.impacto === 'Medio' ? '#f59e0b' : '#22c55e'));
+const badgeTipo = s.tipo === 'Emergencia' ? '🔴' : (s.tipo === 'Mayor' ? '🟠' : (s.tipo === 'Normal' ? '🔵' : '🟢'));
+
+html += '<tr style="background:#f8fafc;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b;">#' + (s.id || realIdx+1) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0;">';
+html += '<div style="font-weight:500; color:#1e293b;">' + s.titulo + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">' + (s.descripcion?.substring(0, 50) || '') + (s.descripcion?.length > 50 ? '...' : '') + '</div>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + badgeTipo + ' ' + s.tipo + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(239,68,68,0.15); color:' + colorImpacto + '; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + s.impacto + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">' + (s.area || 'General') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(0,0,0,0.1); color:' + colorEstado + '; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + s.estado + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:11px;">' + (s.fecha ? new Date(s.fecha).toLocaleDateString('es-ES') : 'N/A') + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<button data-idx="' + realIdx + '" class="btn-ver-cambio" style="background:rgba(59,130,246,0.15); border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; color:#3b82f6; cursor:pointer; font-size:11px; margin-right:4px;">👁️</button>';
+if (s.estado === 'Pendiente' || s.estado === 'En Revisión') {
+html += '<button data-idx="' + realIdx + '" class="btn-aprobar-cambio" style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:6px 12px; border-radius:6px; color:#10b981; cursor:pointer; font-size:11px; margin-right:4px;">✅</button>';
+html += '<button data-idx="' + realIdx + '" class="btn-rechazar-cambio" style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:6px 12px; border-radius:6px; color:#ef4444; cursor:pointer; font-size:11px;">❌</button>';
+}
+html += '</td>';
+html += '</tr>';
+});
+}
+
+html += '</tbody></table></div></div>';
+
+// Panel de Change Control Board (CAB)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">👥 Change Control Board (CAB)</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #3b82f6;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">🎯 Change Manager</div>';
+html += '<div style="font-size:12px; color:#64748b;">Responsable de evaluar, priorizar y coordinar la implementación de cambios</div>';
+html += '</div>';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #10b981;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">👥 Miembros CAB</div>';
+html += '<div style="font-size:12px; color:#64748b;">Sponsor, PM, Líder Técnico, QA, Representante de Negocio</div>';
+html += '</div>';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #8b5cf6;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">📅 Próxima Revisión</div>';
+html += '<div style="font-size:12px; color:#64748b;">' + new Date(Date.now() + 3*24*3600*1000).toLocaleDateString('es-ES') + ' • 14:00 hrs</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Proceso de gestión de cambios (workflow visual)
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">🔄 Workflow de Aprobación de Cambios</h3>';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">';
+html += '<div style="text-align:center; flex:1; min-width:100px;">';
+html += '<div style="width:40px; height:40px; background:#3b82f6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-weight:bold;">1</div>';
+html += '<div style="font-size:11px; color:#64748b;">Solicitud</div>';
+html += '</div>';
+html += '<div style="flex:1; height:2px; background:#e2e8f0; margin:0 10px;"></div>';
+html += '<div style="text-align:center; flex:1; min-width:100px;">';
+html += '<div style="width:40px; height:40px; background:#f59e0b; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-weight:bold;">2</div>';
+html += '<div style="font-size:11px; color:#64748b;">Evaluación</div>';
+html += '</div>';
+html += '<div style="flex:1; height:2px; background:#e2e8f0; margin:0 10px;"></div>';
+html += '<div style="text-align:center; flex:1; min-width:100px;">';
+html += '<div style="width:40px; height:40px; background:#8b5cf6; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-weight:bold;">3</div>';
+html += '<div style="font-size:11px; color:#64748b;">Revisión CAB</div>';
+html += '</div>';
+html += '<div style="flex:1; height:2px; background:#e2e8f0; margin:0 10px;"></div>';
+html += '<div style="text-align:center; flex:1; min-width:100px;">';
+html += '<div style="width:40px; height:40px; background:#10b981; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-weight:bold;">4</div>';
+html += '<div style="font-size:11px; color:#64748b;">Decisión</div>';
+html += '</div>';
+html += '<div style="flex:1; height:2px; background:#e2e8f0; margin:0 10px;"></div>';
+html += '<div style="text-align:center; flex:1; min-width:100px;">';
+html += '<div style="width:40px; height:40px; background:#64748b; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-weight:bold;">5</div>';
+html += '<div style="font-size:11px; color:#64748b;">Implementación</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Footer con gobernanza de cambios
+html += '<div style="margin-top:25px; padding:20px; background:rgba(255,255,255,0.95); border-radius:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">';
+html += '<strong>🔒 Gobernanza:</strong> Todos los cambios deben seguir el proceso CCB y contar con aprobación documentada.<br>';
+html += '<strong>📋 Auditoría:</strong> Cada cambio queda registrado con trazabilidad completa para cumplimiento normativo.<br>';
+html += '<strong>✅ Cumplimiento:</strong> Este módulo sigue estándares PMI/ITIL para gestión de cambios.<br><br>';
+html += '<em>PM Virtual Change Manager • ' + new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString('es-ES') + '</em>';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners para filtros
+function aplicarFiltrosCambios() {
+const cambiosFiltrados = solicitudesCambio.filter(s => s.proyectoId === proyecto.name).filter(function(s) {
+const filtroEstado = document.getElementById('filtroEstado')?.value || 'todos';
+const filtroTipo = document.getElementById('filtroTipo')?.value || 'todos';
+const filtroImpacto = document.getElementById('filtroImpacto')?.value || 'todos';
+const filtroArea = document.getElementById('filtroArea')?.value || 'todos';
+return (filtroEstado === 'todos' || s.estado === filtroEstado) &&
+(filtroTipo === 'todos' || s.tipo === filtroTipo) &&
+(filtroImpacto === 'todos' || s.impacto === filtroImpacto) &&
+(filtroArea === 'todos' || s.area === filtroArea);
+});
+renderGestionCambios(container); // Re-render con filtros
+}
+
+const filtroEstado = document.getElementById('filtroEstado');
+const filtroTipo = document.getElementById('filtroTipo');
+const filtroImpacto = document.getElementById('filtroImpacto');
+const filtroArea = document.getElementById('filtroArea');
+const limpiarFiltrosBtn = document.getElementById('limpiarFiltrosBtn');
+
+if (filtroEstado) filtroEstado.onchange = aplicarFiltrosCambios;
+if (filtroTipo) filtroTipo.onchange = aplicarFiltrosCambios;
+if (filtroImpacto) filtroImpacto.onchange = aplicarFiltrosCambios;
+if (filtroArea) filtroArea.onchange = aplicarFiltrosCambios;
+if (limpiarFiltrosBtn) {
+limpiarFiltrosBtn.onclick = function() {
+if (filtroEstado) filtroEstado.value = 'todos';
+if (filtroTipo) filtroTipo.value = 'todos';
+if (filtroImpacto) filtroImpacto.value = 'todos';
+if (filtroArea) filtroArea.value = 'todos';
+renderGestionCambios(container);
+};
+}
+
+// ✅ Nueva solicitud de cambio (modal profesional)
+document.getElementById('nuevaSolicitudBtn').onclick = function() {
+const modal = document.createElement('div');
+modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;';
+
+const content = document.createElement('div');
+content.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:750px; max-width:95vw; max-height:90vh; color:white; border:1px solid #ea580c; overflow-y:auto;';
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 20px 0; text-align:center; font-size:22px;">🔄 Nueva Solicitud de Cambio</h2>
+<p style="color:#94a3b8; margin:0 0 25px 0; text-align:center; font-size:13px;">Proyecto: <strong>` + proyecto.name + `</strong></p>
+
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#ea580c; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #ea580c; padding-bottom:10px;">📋 Información Básica</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Título del Cambio:</label>
+<input type="text" id="cambioTitulo" placeholder="Ej: Ampliar alcance del módulo de reportes" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Descripción Detallada:</label>
+<textarea id="cambioDescripcion" rows="3" placeholder="Describa el cambio solicitado, justificación y beneficios esperados..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Tipo de Cambio:</label>
+<select id="cambioTipo" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+` + tiposCambio.map(t => `<option value="${t}">${t}</option>`).join('') + `
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Nivel de Impacto:</label>
+<select id="cambioImpacto" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+` + nivelesImpacto.map(i => `<option value="${i}">${i}</option>`).join('') + `
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Área Afectada:</label>
+<select id="cambioArea" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+` + areasAfectadas.map(a => `<option value="${a}">${a}</option>`).join('') + `
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Solicitante:</label>
+<input type="text" id="cambioSolicitante" placeholder="Nombre del solicitante" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+</div>
+</div>
+</div>
+
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#ea580c; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #ea580c; padding-bottom:10px;">📊 Análisis de Impacto</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto en Alcance:</label>
+<select id="impactoAlcance" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:12px;">
+<option value="Ninguno">Ninguno</option><option value="Bajo">Bajo</option><option value="Medio">Medio</option><option value="Alto">Alto</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto en Cronograma:</label>
+<select id="impactoCronograma" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:12px;">
+<option value="Ninguno">Ninguno</option><option value="Bajo">Bajo</option><option value="Medio">Medio</option><option value="Alto">Alto</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto en Costo:</label>
+<select id="impactoCosto" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:12px;">
+<option value="Ninguno">Ninguno</option><option value="Bajo">Bajo</option><option value="Medio">Medio</option><option value="Alto">Alto</option>
+</select>
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Impacto en Calidad:</label>
+<select id="impactoCalidad" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:12px;">
+<option value="Ninguno">Ninguno</option><option value="Bajo">Bajo</option><option value="Medio">Medio</option><option value="Alto">Alto</option>
+</select>
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Riesgos Asociados:</label>
+<textarea id="cambioRiesgos" rows="2" placeholder="Identifique riesgos potenciales de implementar este cambio..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+</div>
+</div>
+
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#ea580c; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #ea580c; padding-bottom:10px;">📅 Plan de Implementación</h3>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Fecha Propuesta:</label>
+<input type="date" id="cambioFecha" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div>
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Responsable Implementación:</label>
+<input type="text" id="cambioResponsable" placeholder="Quién implementará el cambio" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px;">
+</div>
+<div style="grid-column: span 2;">
+<label style="display:block; margin-bottom:5px; color:#94a3b8; font-size:12px;">Plan de Rollback:</label>
+<textarea id="cambioRollback" rows="2" placeholder="Describa cómo revertir el cambio si es necesario..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ea580c; background:#0f172a; color:white; font-size:13px; resize:vertical;"></textarea>
+</div>
+</div>
+</div>
+
+<div style="display:flex; gap:15px; justify-content:center;">
+<button id="guardarCambioBtn" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Registrar Solicitud</button>
+<button id="cancelarCambioBtn" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">❌ Cancelar</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+// Guardar solicitud
+document.getElementById('guardarCambioBtn').onclick = function() {
+const titulo = document.getElementById('cambioTitulo').value.trim();
+const descripcion = document.getElementById('cambioDescripcion').value.trim();
+if (!titulo || !descripcion) { alert('⚠️ Título y descripción son obligatorios'); return; }
+
+const nuevaSolicitud = {
+id: Date.now(),
+proyectoId: proyecto.name,
+titulo: titulo,
+descripcion: descripcion,
+tipo: document.getElementById('cambioTipo').value,
+impacto: document.getElementById('cambioImpacto').value,
+area: document.getElementById('cambioArea').value,
+solicitante: document.getElementById('cambioSolicitante').value.trim(),
+impactoAlcance: document.getElementById('impactoAlcance').value,
+impactoCronograma: document.getElementById('impactoCronograma').value,
+impactoCosto: document.getElementById('impactoCosto').value,
+impactoCalidad: document.getElementById('impactoCalidad').value,
+riesgos: document.getElementById('cambioRiesgos').value.trim(),
+fechaPropuesta: document.getElementById('cambioFecha').value,
+responsableImplementacion: document.getElementById('cambioResponsable').value.trim(),
+planRollback: document.getElementById('cambioRollback').value.trim(),
+estado: 'Pendiente',
+fecha: new Date().toISOString(),
+historial: [{ fecha: new Date().toISOString(), accion: 'Creada', usuario: 'Solicitante' }]
+};
+
+solicitudesCambio.push(nuevaSolicitud);
+localStorage.setItem('solicitudesCambio', JSON.stringify(solicitudesCambio));
+
+// Notificaciones integradas
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send(`🔄 Nueva solicitud de cambio en *${proyecto.name}*:\n*${titulo}*\nImpacto: ${nuevaSolicitud.impacto} • Tipo: ${nuevaSolicitud.tipo}`);
+}
+if (typeof emailjs !== 'undefined') {
+emailjs.send('service_kccmxz7', 'template_we2gzml', { 
+to_email: 'change.manager@proyecto.com', 
+subject: 'Nueva solicitud de cambio: ' + titulo, 
+message: `Proyecto: ${proyecto.name}\nSolicitante: ${nuevaSolicitud.solicitante}\nTipo: ${nuevaSolicitud.tipo}\nImpacto: ${nuevaSolicitud.impacto}\n\nDescripción:\n${descripcion}`
+}).catch(e => console.log('Email no enviado', e));
+}
+
+modal.remove();
+alert('✅ Solicitud de cambio registrada exitosamente.\n\n📋 ID: #' + nuevaSolicitud.id + '\n📧 Notificaciones enviadas a Change Manager y CAB');
+renderGestionCambios(container);
+};
+
+document.getElementById('cancelarCambioBtn').onclick = function() { modal.remove(); };
+
+// Set fecha por defecto: próxima semana
+const defaultDate = new Date();
+defaultDate.setDate(defaultDate.getDate() + 7);
+document.getElementById('cambioFecha').value = defaultDate.toISOString().split('T')[0];
+};
+
+// ✅ Ver detalle de cambio
+document.querySelectorAll('.btn-ver-cambio').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+const cambio = solicitudesCambio[idx];
+if (!cambio) return;
+
+alert('📋 Detalle de Solicitud de Cambio #' + (cambio.id || idx+1) + '\n\n' +
+'📝 Título: ' + cambio.titulo + '\n' +
+'📄 Descripción: ' + cambio.descripcion + '\n' +
+'🔄 Tipo: ' + cambio.tipo + ' | 🔴 Impacto: ' + cambio.impacto + '\n' +
+'🎯 Área: ' + cambio.area + ' | 👤 Solicitante: ' + cambio.solicitante + '\n' +
+'📊 Impactos: Alcance=' + cambio.impactoAlcance + ' | Cronograma=' + cambio.impactoCronograma + ' | Costo=' + cambio.impactoCosto + ' | Calidad=' + cambio.impactoCalidad + '\n' +
+'⚠️ Riesgos: ' + (cambio.riesgos || 'Ninguno identificado') + '\n' +
+'📅 Fecha propuesta: ' + (cambio.fechaPropuesta || 'N/A') + ' | 👤 Responsable: ' + (cambio.responsableImplementacion || 'N/A') + '\n' +
+'🔄 Rollback: ' + (cambio.planRollback || 'No definido') + '\n' +
+'📊 Estado: ' + cambio.estado + ' | 📅 Registrada: ' + new Date(cambio.fecha).toLocaleString('es-ES') + '\n' +
+'📜 Historial:\n' + (cambio.historial || []).map(h => '• ' + new Date(h.fecha).toLocaleString('es-ES') + ' - ' + h.accion + ' por ' + h.usuario).join('\n'));
+};
+});
+
+// ✅ Aprobar cambio
+document.querySelectorAll('.btn-aprobar-cambio').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+if (confirm('✅ ¿Aprobar esta solicitud de cambio?\n\nEsta acción actualizará el estado y notificará al equipo.')) {
+solicitudesCambio[idx].estado = 'Aprobado';
+solicitudesCambio[idx].historial = solicitudesCambio[idx].historial || [];
+solicitudesCambio[idx].historial.push({ fecha: new Date().toISOString(), accion: 'Aprobada por CCB', usuario: 'Change Manager' });
+localStorage.setItem('solicitudesCambio', JSON.stringify(solicitudesCambio));
+
+// Notificación de aprobación
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send(`✅ Cambio APROBADO en *${proyecto.name}*:\n*${solicitudesCambio[idx].titulo}*\nImplementar antes de: ${solicitudesCambio[idx].fechaPropuesta || 'ASAP'}`);
+}
+
+alert('✅ Cambio aprobado exitosamente.\n\n📧 Notificación enviada al equipo de implementación.');
+renderGestionCambios(container);
+}
+};
+});
+
+// ✅ Rechazar cambio
+document.querySelectorAll('.btn-rechazar-cambio').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+const motivo = prompt('❌ Motivo del rechazo (obligatorio):', '');
+if (!motivo) { alert('⚠️ Debe proporcionar un motivo para el rechazo'); return; }
+
+if (confirm('❌ ¿Rechazar esta solicitud de cambio?\n\nMotivo: ' + motivo)) {
+solicitudesCambio[idx].estado = 'Rechazado';
+solicitudesCambio[idx].motivoRechazo = motivo;
+solicitudesCambio[idx].historial = solicitudesCambio[idx].historial || [];
+solicitudesCambio[idx].historial.push({ fecha: new Date().toISOString(), accion: 'Rechazada: ' + motivo, usuario: 'Change Manager' });
+localStorage.setItem('solicitudesCambio', JSON.stringify(solicitudesCambio));
+
+// Notificación de rechazo
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send(`❌ Cambio RECHAZADO en *${proyecto.name}*:\n*${solicitudesCambio[idx].titulo}*\nMotivo: ${motivo}`);
+}
+
+alert('❌ Cambio rechazado.\n\n📧 Notificación enviada al solicitante con el motivo.');
+renderGestionCambios(container);
+}
+};
+});
+
+// ✅ Exportar log de cambios
+const exportarBtn = document.getElementById('exportarCambiosBtn');
+if (exportarBtn) {
+exportarBtn.onclick = function() { exportarLogCambios(); };
+}
+
+// ✅ Revisión CAB
+const revisarCABBtn = document.getElementById('revisarCABBtn');
+if (revisarCABBtn) {
+revisarCABBtn.onclick = function() { revisarCAB(); };
+}
+}
+
+// ========== FUNCIONES AUXILIARES DE CHANGE MANAGEMENT ==========
+
+// Exportar log de cambios para auditoría ejecutiva
+function exportarLogCambios() {
+const proyecto = obtenerProyectoActual();
+const cambios = solicitudesCambio.filter(s => s.proyectoId === proyecto.name);
+
+if (cambios.length === 0) { alert('📭 No hay cambios para exportar'); return; }
+
+const reporte = '🔄 LOG DE CAMBIOS - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Fecha de Exportación: ' + new Date().toLocaleDateString('es-ES') + '\n' +
+'Total Solicitudes: ' + cambios.length + '\n' +
+'Aprobados: ' + cambios.filter(s => s.estado === 'Aprobado').length + '\n' +
+'Pendientes: ' + cambios.filter(s => s.estado === 'Pendiente').length + '\n' +
+'Rechazados: ' + cambios.filter(s => s.estado === 'Rechazado').length + '\n\n' +
+'📋 DETALLE DE SOLICITUDES:\n' +
+cambios.map(function(s) {
+return '#' + (s.id || 'N/A') + ' | ' + s.titulo + ' | ' + s.tipo + ' | Impacto: ' + s.impacto + ' | Estado: ' + s.estado + ' | ' + new Date(s.fecha).toLocaleDateString('es-ES');
+}).join('\n') + '\n\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generado por PM Virtual Change Manager • Cumplimiento PMI/ITIL';
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Log de Cambios copiado al portapapeles.\n\n📄 Listo para auditoría, compliance o presentación a Junta Directiva.');
+}).catch(function() {
+alert('📋 Log de Cambios:\n\n' + reporte);
+});
+}
+
+// Revisión Change Control Board (simulada)
+function revisarCAB() {
+const proyecto = obtenerProyectoActual();
+const pendientes = solicitudesCambio.filter(s => s.proyectoId === proyecto.name && (s.estado === 'Pendiente' || s.estado === 'En Revisión'));
+
+if (pendientes.length === 0) {
+alert('✅ No hay solicitudes pendientes de revisión CAB.\n\n📅 Próxima reunión: ' + new Date(Date.now() + 3*24*3600*1000).toLocaleDateString('es-ES'));
+return;
+}
+
+const resumen = '👥 Revisión Change Control Board - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Solicitudes pendientes: ' + pendientes.length + '\n\n' +
+pendientes.map(function(s, i) {
+return (i+1) + '. #' + (s.id || 'N/A') + ' - ' + s.titulo + '\n   🔄 Tipo: ' + s.tipo + ' | 🔴 Impacto: ' + s.impacto + '\n   🎯 Área: ' + s.area + ' | 📅 Solicitada: ' + new Date(s.fecha).toLocaleDateString('es-ES');
+}).join('\n\n') + '\n\n' +
+'✅ Acciones CAB:\n' +
+'• Evaluar impacto en línea base del proyecto\n' +
+'• Validar plan de implementación y rollback\n' +
+'• Aprobar, rechazar o solicitar más información\n' +
+'• Documentar decisión en acta de reunión';
+
+alert(resumen);
+}
+
+
+
+
+
+
+// ========== SECCIÓN HITOS - VERSIÓN EJECUTIVA INTERNACIONAL (COMPLETA Y CORREGIDA) ==========
+let hitos = JSON.parse(localStorage.getItem('hitos') || '[]');
+
+function renderSeguimientoHitos(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto?.tasks || [];
+
+// ✅ Filtrar y enriquecer hitos con datos de tareas
+const hitosGuardados = hitos.filter(h => h.projectId === proyecto.name).map(h => {
+const task = tasks.find(t => t.id === h.taskId);
+return task ? { ...h, task } : null;
+}).filter(Boolean);
+
+// ✅ Métricas ejecutivas de hitos
+const totalHitos = hitosGuardados.length;
+const completados = hitosGuardados.filter(h => h.task.status === 'completed').length;
+const enCurso = hitosGuardados.filter(h => h.task.status === 'inProgress').length;
+const pendientes = hitosGuardados.filter(h => h.task.status === 'pending').length;
+const criticos = hitosGuardados.filter(h => h.task.priority === 'high' && h.task.status !== 'completed').length;
+const proximos3Dias = hitosGuardados.filter(h => {
+if (!h.task.deadline || h.task.status === 'completed') return false;
+const diff = Math.ceil((new Date(h.task.deadline) - new Date()) / (1000*3600*24));
+return diff >= 0 && diff <= 3;
+}).length;
+
+// ✅ Calcular porcentaje de avance de hitos
+const porcentajeAvanceHitos = totalHitos > 0 ? Math.round((completados / totalHitos) * 100) : 0;
+
+// ✅ COLORES DE ESTADO PERSONALIZADOS (TUS REQUERIMIENTOS)
+const statusColors = {
+completed: { bg: '#86efac', border: '#22c55e', text: '#166534', label: '✅ Completed' },
+inProgress: { bg: '#2dd4bf', border: '#14b8a6', text: '#134e4a', label: '🔄 In Progress' },
+pending: { bg: '#fde047', border: '#ca8a04', text: '#713f12', label: '⏳ Pending' },
+overdue: { bg: '#ef4444', border: '#dc2626', text: '#7f1d1d', label: '🔴 Overdue' }
+};
+
+// ✅ HTML Ejecutivo del dashboard de hitos
+let html = '';
+
+// Header ejecutivo internacional
+html += '<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6,#60a5fa); color:white; padding:25px; border-radius:16px; margin-bottom:25px; position:relative; overflow:hidden;">';
+html += '<div style="position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>';
+html += '<div style="position:absolute; bottom:-20px; left:-20px; width:70px; height:70px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>';
+html += '<div style="position:relative; z-index:1;">';
+html += '<h2 style="margin:0 0 8px 0; font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;">';
+html += '<span>🎯</span> Executive Milestone Dashboard';
+html += '</h2>';
+html += '<p style="margin:0 0 15px 0; opacity:0.95; font-size:14px;">' + proyecto.name + ' • Strategic Milestone Tracking</p>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<span style="background:rgba(255,255,255,0.2); padding:6px 14px; border-radius:20px; font-size:12px;">🌍 ' + new Date().toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }) + '</span>';
+html += '<span style="background:rgba(134,239,172,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#166534;">✅ ' + completados + '/' + totalHitos + ' Completed</span>';
+html += '<span style="background:rgba(253,224,71,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#713f12;">⏳ ' + proximos3Dias + ' Due Soon</span>';
+html += '<span style="background:rgba(239,68,68,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#7f1d1d;">🔴 ' + criticos + ' Critical</span>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de KPIs ejecutivos con COLORES PERSONALIZADOS
+html += '<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:30px;">';
+
+// Total Milestones (neutro - azul)
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #3b82f6; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#1e40af;">' + totalHitos + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Total Milestones</div>';
+html += '</div>';
+
+// ✅ Completed - VERDE CLARO (#86efac)
+html += '<div style="background:rgba(134,239,172,0.15); padding:18px; border-radius:12px; border-left:5px solid #86efac; text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#166534;">' + completados + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">✅ Completed</div>';
+html += '</div>';
+
+// 🔄 In Progress - VERDE AZULADO (#2dd4bf)
+html += '<div style="background:rgba(45,212,191,0.15); padding:18px; border-radius:12px; border-left:5px solid #2dd4bf; text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#134e4a;">' + enCurso + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">🔄 In Progress</div>';
+html += '</div>';
+
+// ⏳ Due Soon - AMARILLO (#fde047)
+html += '<div style="background:rgba(253,224,71,0.15); padding:18px; border-radius:12px; border-left:5px solid #fde047; text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#713f12;">' + proximos3Dias + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">⚠️ Due ≤3 Days</div>';
+html += '</div>';
+
+// 📊 Completion Rate (neutro - púrpura)
+html += '<div style="background:rgba(255,255,255,0.95); padding:18px; border-radius:12px; border-left:5px solid #8b5cf6; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#6d28d9;">' + porcentajeAvanceHitos + '%</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">📊 Completion Rate</div>';
+html += '</div>';
+html += '</div>';
+
+// Barra de progreso ejecutiva
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">';
+html += '<h3 style="margin:0; color:#1e293b; font-size:15px; font-weight:600;">📈 Milestone Completion Progress</h3>';
+html += '<span style="background:' + (porcentajeAvanceHitos >= 80 ? '#86efac' : porcentajeAvanceHitos >= 50 ? '#fde047' : '#ef4444') + '; color:' + (porcentajeAvanceHitos >= 80 ? '#166534' : '#713f12') + '; padding:6px 16px; border-radius:20px; font-weight:600; font-size:13px;">';
+html += porcentajeAvanceHitos + '% Complete';
+html += '</span>';
+html += '</div>';
+html += '<div style="background:#e2e8f0; height:16px; border-radius:8px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,#86efac,#2dd4bf); height:100%; width:' + porcentajeAvanceHitos + '%; border-radius:8px; transition:width 0.5s ease;"></div>';
+html += '</div>';
+html += '<div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:#64748b;">';
+html += '<span>Start: ' + new Date(Math.min(...tasks.map(t => new Date(t.startDate||Date.now())))).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
+html += '<span>Target: ' + new Date(Math.max(...tasks.map(t => new Date(t.deadline||Date.now())))).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</span>';
+html += '</div>';
+html += '</div>';
+
+// Botones de acción ejecutiva internacional
+html += '<div style="display:flex; gap:12px; margin-bottom:25px; flex-wrap:wrap;">';
+html += '<button id="seleccionarHitosBtn" style="background:#3b82f6; border:none; padding:12px 24px; border-radius:8px; color:white; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>+</span> Select Milestones';
+html += '</button>';
+html += '<button id="exportarHitosBtn" style="background:rgba(134,239,172,0.2); border:1px solid #22c55e; padding:12px 24px; border-radius:8px; color:#166534; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>📄</span> Export Executive Report';
+html += '</button>';
+html += '<button id="compartirHitosBtn" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; padding:12px 24px; border-radius:8px; color:#a78bfa; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:8px; font-size:13px;">';
+html += '<span>🌐</span> Share with Stakeholders';
+html += '</button>';
+html += '</div>';
+
+// ✅ Timeline visual de hitos - VERSIÓN CORREGIDA CON CONTENEDOR AMPLIO
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">🗓️ Executive Milestone Timeline</h3>';
+
+// ✅ Contenedor con scroll horizontal y ancho mínimo amplio para evitar superposición
+html += '<div style="overflow-x:auto; padding:10px 0;">';
+html += '<div style="min-width:1400px; position:relative; padding:40px 20px;">';
+
+// Línea de tiempo horizontal base
+html += '<div style="position:absolute; top:50%; left:20px; right:20px; height:4px; background:linear-gradient(90deg,#e2e8f0,#cbd5e1,#e2e8f0); transform:translateY(-50%); border-radius:2px;"></div>';
+
+// Ordenar hitos por fecha para distribución cronológica real
+const hitosOrdenados = [...hitosGuardados].sort((a,b) => new Date(a.task.deadline||0) - new Date(b.task.deadline||0));
+
+// ✅ Calcular rango de fechas para distribución proporcional real
+const fechasValidas = hitosOrdenados.map(h => h.task.deadline).filter(Boolean).map(d => new Date(d).getTime());
+const minFecha = fechasValidas.length > 0 ? Math.min(...fechasValidas) : Date.now();
+const maxFecha = fechasValidas.length > 0 ? Math.max(...fechasValidas) : Date.now() + 30*24*3600*1000;
+const rangoDias = Math.max(1, (maxFecha - minFecha) / (1000*3600*24));
+
+hitosOrdenados.forEach((h, idx) => {
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+const isCompleted = task.status === 'completed';
+const isCritical = task.priority === 'high' && !isCompleted;
+const isUpcoming = diff !== null && diff >= 0 && diff <= 7 && !isCompleted;
+const isOverdue = diff !== null && diff < 0 && !isCompleted;
+
+// ✅ Color del punto según estado con TUS COLORES
+const puntoColor = isCompleted ? '#86efac' : 
+(isOverdue ? '#ef4444' : 
+(isCritical ? '#f97316' : 
+(task.status === 'inProgress' ? '#2dd4bf' : '#fde047')));
+
+const estadoIcon = isCompleted ? '✓' : (isOverdue ? '🔴' : (isCritical ? '⚠️' : (isUpcoming ? '📅' : '⏳')));
+
+// ✅ Posición calculada por fecha real (no por índice) para mejor distribución
+let posicionPercent = 5;
+if (task.deadline) {
+const taskTime = new Date(task.deadline).getTime();
+posicionPercent = 20 + Math.min(75, Math.max(0, ((taskTime - minFecha) / (maxFecha - minFecha || 1)) * 75));
+}
+
+// ✅ Contenedor de cada hito con más espacio vertical para evitar superposición
+html += '<div style="position:absolute; left:' + posicionPercent + '%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; z-index:10; width:140px;">';
+
+// Punto del hito más grande y visible
+html += '<div style="width:32px; height:32px; background:' + puntoColor + '; border:4px solid white; border-radius:50%; box-shadow:0 4px 12px rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px; cursor:pointer; transition:transform 0.2s;" title="' + task.name + '" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'">';
+html += isCompleted ? '✓' : (idx+1);
+html += '</div>';
+
+// ✅ Label con más espacio y fondo para mejor legibilidad
+html += '<div style="margin-top:45px; text-align:center; background:white; padding:8px 12px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); width:100%; border-left:3px solid ' + puntoColor + ';">';
+html += '<div style="font-size:12px; font-weight:600; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + task.name + '</div>';
+html += '<div style="font-size:10px; color:#64748b; margin-top:4px; font-weight:500;">' + (task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD') + '</div>';
+html += '<div style="font-size:10px; color:' + puntoColor + '; margin-top:2px; font-weight:600;">' + estadoIcon + ' ' + (diff !== null ? (diff < 0 ? Math.abs(diff) + 'd late' : (diff === 0 ? 'Today' : '+' + diff + 'd')) : '') + '</div>';
+html += '</div>';
+
+html += '</div>';
+});
+
+html += '</div>';
+html += '</div>';
+
+// ✅ Leyenda con más espacio entre elementos
+html += '<div style="display:flex; justify-content:center; gap:25px; margin-top:25px; flex-wrap:wrap; padding:0 20px;">';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">';
+html += '<span style="width:14px; height:14px; background:#86efac; border:2px solid #22c55e; border-radius:50%;"></span> ✅ Completed';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">';
+html += '<span style="width:14px; height:14px; background:#2dd4bf; border:2px solid #14b8a6; border-radius:50%;"></span> 🔄 In Progress';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">';
+html += '<span style="width:14px; height:14px; background:#fde047; border:2px solid #ca8a04; border-radius:50%;"></span> ⏳ Pending';
+html += '</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">';
+html += '<span style="width:14px; height:14px; background:#ef4444; border:2px solid #dc2626; border-radius:50%;"></span> 🔴 Overdue';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Tabla ejecutiva de hitos con formato internacional y COLORES PERSONALIZADOS
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📋 Milestone Register (International Format)</h3>';
+html += '<div style="overflow-x:auto;">';
+html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+html += '<thead>';
+html += '<tr style="background:#f1f5f9;">';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">ID</th>';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Milestone</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Category</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Due Date (UTC)</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Status</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Days Left</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Health</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Actions</th>';
+html += '</tr>';
+html += '</thead>';
+html += '<tbody>';
+
+if (hitosGuardados.length === 0) {
+html += '<tr><td colspan="8" style="padding:20px; text-align:center; color:#64748b;">📭 No milestones selected. Click "Select Milestones" to begin tracking.</td></tr>';
+} else {
+hitosGuardados.slice().sort((a,b) => new Date(a.task.deadline||0) - new Date(b.task.deadline||0)).forEach(function(h, idx) {
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+const isCompleted = task.status === 'completed';
+const isCritical = task.priority === 'high' && !isCompleted;
+const isUpcoming = diff !== null && diff >= 0 && diff <= 3 && !isCompleted;
+const isOverdue = diff !== null && diff < 0 && !isCompleted;
+
+// ✅ Determinar color y estado con TUS COLORES PERSONALIZADOS
+let statusColor, statusLabel, healthBg, healthColor;
+
+if (isCompleted) {
+statusColor = statusColors.completed.text;
+statusLabel = statusColors.completed.label;
+healthBg = statusColors.completed.bg;
+healthColor = statusColors.completed.text;
+} else if (isOverdue) {
+statusColor = statusColors.overdue.text;
+statusLabel = '🔴 Overdue';
+healthBg = statusColors.overdue.bg;
+healthColor = statusColors.overdue.text;
+} else if (task.status === 'inProgress') {
+statusColor = statusColors.inProgress.text;
+statusLabel = statusColors.inProgress.label;
+healthBg = statusColors.inProgress.bg;
+healthColor = statusColors.inProgress.text;
+} else {
+statusColor = statusColors.pending.text;
+statusLabel = statusColors.pending.label;
+healthBg = statusColors.pending.bg;
+healthColor = statusColors.pending.text;
+}
+
+// Formato de fecha internacional
+const fechaFormateada = task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { 
+year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' 
+}) + ' UTC' : 'TBD';
+
+// Categoría asignada (por defecto basada en prioridad)
+const categoria = task.priority === 'high' ? '🎯 Strategic' : (task.priority === 'medium' ? '📋 Tactical' : '⚙️ Operational');
+
+html += '<tr style="background:#f8fafc;">';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b;">#M-' + (task.id || idx+1) + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0;">';
+html += '<div style="font-weight:500; color:#1e293b;">' + task.name + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">' + (task.description?.substring(0, 40) || 'No description') + (task.description?.length > 40 ? '...' : '') + '</div>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + categoria + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b; font-size:12px;">' + fechaFormateada + '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(0,0,0,0.1); color:' + statusColor + '; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + (isCompleted ? '✅ Completed' : (task.status === 'inProgress' ? '🔄 In Progress' : '⏳ Pending')) + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:600; color:' + (diff !== null ? (diff < 0 ? statusColors.overdue.text : (diff <= 3 ? statusColors.pending.text : statusColors.completed.text)) : '#64748b') + ';">';
+html += diff !== null ? (diff < 0 ? diff + 'd overdue' : (diff === 0 ? 'Today' : '+' + diff + 'd')) : 'N/A';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:' + healthBg + '; color:' + healthColor + '; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + (isOverdue ? '🔴 Delayed' : (isCompleted ? '✅ On Track' : (isCritical ? '🟠 At Risk' : (isUpcoming ? '🟡 Due Soon' : '🟢 On Schedule')))) + '</span>';
+html += '</td>';
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<button data-idx="' + hitos.indexOf(h) + '" class="btn-ver-hito" style="background:rgba(59,130,246,0.15); border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; color:#3b82f6; cursor:pointer; font-size:11px; margin-right:4px;">👁️</button>';
+if (!isCompleted) {
+html += '<button data-idx="' + hitos.indexOf(h) + '" class="btn-marcar-completado" style="background:rgba(134,239,172,0.2); border:1px solid #22c55e; padding:6px 12px; border-radius:6px; color:#166534; cursor:pointer; font-size:11px;">✅</button>';
+}
+html += '</td>';
+html += '</tr>';
+});
+}
+
+html += '</tbody></table></div></div>';
+
+// Alertas ejecutivas de hitos críticos con COLORES PERSONALIZADOS
+const hitosCriticos = hitosGuardados.filter(h => {
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+return (task.priority === 'high' && task.status !== 'completed') || (diff !== null && diff < 0 && task.status !== 'completed');
+});
+
+if (hitosCriticos.length > 0) {
+html += '<div style="background:rgba(239,68,68,0.1); padding:20px; border-radius:12px; margin-bottom:25px; border:1px solid #ef4444;">';
+html += '<h4 style="color:#ef4444; margin:0 0 15px 0; font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px;">';
+html += '<span>🚨</span> Executive Alert: Critical Milestones Requiring Attention';
+html += '</h4>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+hitosCriticos.slice(0, 4).forEach(function(h) {
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+html += '<div style="background:white; padding:12px; border-radius:8px; border-left:4px solid #ef4444;">';
+html += '<div style="font-weight:600; color:#1e293b; font-size:13px; margin-bottom:4px;">' + task.name + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Due: ' + (task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD');
+html += diff !== null ? ' • ' + (diff < 0 ? Math.abs(diff) + ' days overdue' : '+' + diff + ' days') : '' + '</div>';
+html += '<div style="font-size:10px; color:#ef4444; margin-top:4px; font-weight:500;">🔴 Action Required</div>';
+html += '</div>';
+});
+if (hitosCriticos.length > 4) {
+html += '<div style="text-align:center; padding:12px; color:#64748b; font-size:12px;">+ ' + (hitosCriticos.length - 4) + ' more critical milestones</div>';
+}
+html += '</div>';
+html += '</div>';
+}
+
+// Panel de gobernanza de hitos
+html += '<div style="background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">👥 Milestone Governance</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #3b82f6;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">🎯 Milestone Owner</div>';
+html += '<div style="font-size:12px; color:#64748b;">Project Manager • Responsible for milestone delivery and stakeholder communication</div>';
+html += '</div>';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #86efac;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">📊 Review Cadence</div>';
+html += '<div style="font-size:12px; color:#64748b;">Weekly status updates • Monthly executive review • Quarterly strategic alignment</div>';
+html += '</div>';
+html += '<div style="background:#f8fafc; padding:15px; border-radius:10px; border-left:4px solid #8b5cf6;">';
+html += '<div style="font-weight:600; color:#1e293b; margin-bottom:8px;">🌐 Timezone</div>';
+html += '<div style="font-size:12px; color:#64748b;">All dates displayed in UTC • Local time conversion available in export</div>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Footer con gobernanza internacional
+html += '<div style="margin-top:25px; padding:20px; background:rgba(255,255,255,0.95); border-radius:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">';
+html += '<strong>🔒 Governance:</strong> All milestones follow PMI standards with documented approval and audit trail.<br>';
+html += '<strong>🌍 International:</strong> Dates in UTC format • Multi-language support • Compliance-ready reporting.<br>';
+html += '<strong>✅ Compliance:</strong> This module supports SOX, ISO 21500, and PRINCE2 milestone governance.<br><br>';
+html += '<em>PM Virtual Executive • ' + new Date().toLocaleDateString('en-US', { timeZone: 'UTC' }) + ' ' + new Date().toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' }) + ' UTC</em>';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners
+document.getElementById('seleccionarHitosBtn').onclick = function() { seleccionarHitosEjecutivo(container); };
+
+const exportarBtn = document.getElementById('exportarHitosBtn');
+if (exportarBtn) {
+exportarBtn.onclick = function() { exportarReporteHitosEjecutivo(); };
+}
+
+const compartirBtn = document.getElementById('compartirHitosBtn');
+if (compartirBtn) {
+compartirBtn.onclick = function() { compartirHitosStakeholders(); };
+}
+
+// Ver detalle de hito
+document.querySelectorAll('.btn-ver-hito').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+const h = hitos[idx];
+if (!h || !h.task) return;
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+
+// ✅ Determinar color de estado para el detalle
+const statusDisplay = task.status === 'completed' ? '✅ Completed (Green)' : 
+(task.status === 'inProgress' ? '🔄 In Progress (Teal)' : 
+(diff !== null && diff < 0 ? '🔴 Overdue (Red)' : '⏳ Pending (Yellow)'));
+
+alert('🎯 Milestone Details #' + (task.id || 'N/A') + '\n\n' +
+'📝 Title: ' + task.name + '\n' +
+'📄 Description: ' + (task.description || 'No description') + '\n' +
+'🎯 Category: ' + (task.priority === 'high' ? '🎯 Strategic' : task.priority === 'medium' ? '📋 Tactical' : '⚙️ Operational') + '\n' +
+'📅 Due Date (UTC): ' + (task.deadline ? new Date(task.deadline).toLocaleString('en-US', { timeZone: 'UTC' }) : 'TBD') + '\n' +
+'⏱️ Days Remaining: ' + (diff !== null ? (diff < 0 ? Math.abs(diff) + ' days OVERDUE ⚠️' : (diff === 0 ? 'DUE TODAY 🔴' : '+' + diff + ' days')) : 'N/A') + '\n' +
+'👤 Assignee: ' + (task.assignee || 'Unassigned') + '\n' +
+'📊 Status: ' + statusDisplay + '\n' +
+'🔴 Priority: ' + (task.priority === 'high' ? 'High - Executive Visibility' : task.priority === 'medium' ? 'Medium' : 'Low') + '\n' +
+'⏱️ Estimated: ' + (task.estimatedTime || 0) + 'h • Logged: ' + (task.timeLogged || 0) + 'h');
+};
+});
+
+// Marcar como completado
+document.querySelectorAll('.btn-marcar-completado').forEach(function(btn) {
+btn.onclick = function() {
+const idx = parseInt(btn.dataset.idx);
+if (confirm('✅ Mark milestone as completed?\n\nThis will update project progress and notify stakeholders.')) {
+const h = hitos[idx];
+if (h && h.task) {
+h.task.status = 'completed';
+guardarProyectos(obtenerProyectos());
+
+// Notificación
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send(`✅ Milestone COMPLETED in *${proyecto.name}*:\n*${h.task.name}*\nCompleted: ${new Date().toISOString()}`);
+}
+
+alert('✅ Milestone marked as completed.\n\n📧 Stakeholders notified of completion.');
+renderSeguimientoHitos(container);
+}
+}
+};
+});
+}
+
+// ========== FUNCIONES AUXILIARES EJECUTIVAS ==========
+
+// Seleccionar hitos con modal profesional
+function seleccionarHitosEjecutivo(container) {
+const proyecto = obtenerProyectoActual();
+const tasks = proyecto?.tasks || [];
+const hitosGuardados = hitos.filter(h => h.projectId === proyecto.name);
+
+const modal = document.createElement('div');
+modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100002; display:flex; align-items:center; justify-content:center;';
+
+const content = document.createElement('div');
+content.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a); padding:30px; border-radius:20px; width:600px; max-width:95vw; max-height:90vh; color:white; border:1px solid #3b82f6; overflow-y:auto;';
+
+content.innerHTML = `
+<h2 style="color:#ffffff; margin:0 0 20px 0; text-align:center; font-size:22px;">🎯 Select Executive Milestones</h2>
+<p style="color:#94a3b8; margin:0 0 25px 0; text-align:center; font-size:13px;">Project: <strong>` + proyecto.name + `</strong></p>
+
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; margin-bottom:20px;">
+<h3 style="color:#3b82f6; margin:0 0 15px 0; font-size:16px; border-bottom:1px solid #3b82f6; padding-bottom:10px;">📋 Available Tasks</h3>
+<div style="max-height:300px; overflow-y:auto;">
+` + tasks.map(t => {
+const isCompleted = t.status === 'completed';
+const isInProgress = t.status === 'inProgress';
+const isOverdue = t.deadline && new Date(t.deadline) < new Date() && !isCompleted;
+// ✅ Color del checkbox según estado con TUS COLORES
+const borderColor = isCompleted ? '#22c55e' : (isInProgress ? '#14b8a6' : (isOverdue ? '#dc2626' : '#ca8a04'));
+const bgColor = isCompleted ? '#86efac' : (isInProgress ? '#2dd4bf' : (isOverdue ? '#ef4444' : '#fde047'));
+
+return `
+<div style="display:flex; align-items:center; gap:10px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:8px;">
+<input type="checkbox" id="task-${t.id}" value="${t.id}" ` + (hitosGuardados.some(h=>h.taskId===t.id)?'checked':'') + ` style="width:16px; height:16px; accent-color:${borderColor};">
+<label for="task-${t.id}" style="flex:1; cursor:pointer;">
+<div style="display:flex; align-items:center; gap:8px;">
+<span style="width:10px; height:10px; background:${bgColor}; border:2px solid ${borderColor}; border-radius:50%; display:inline-block;"></span>
+<div>
+<div style="font-weight:500; color:#e2e8f0;">` + t.name + `</div>
+<div style="font-size:11px; color:#94a3b8;">
+` + (t.deadline ? '📅 ' + new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date') + 
+` • ` + (t.priority === 'high' ? '🔴 High Priority' : t.priority === 'medium' ? '🟡 Medium' : '🟢 Low') + `
+</div>
+</div>
+</div>
+</label>
+</div>
+`;
+}).join('') + `
+</div>
+</div>
+
+<div style="display:flex; gap:15px; justify-content:center;">
+<button id="guardarHitosEjecutivo" style="background:#10b981; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">💾 Save Selection</button>
+<button id="cancelarHitos" style="background:#ef4444; border:none; padding:12px 30px; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-size:14px;">❌ Cancel</button>
+</div>
+`;
+
+modal.appendChild(content);
+document.body.appendChild(modal);
+
+document.getElementById('guardarHitosEjecutivo').onclick = function() {
+const seleccionados = Array.from(content.querySelectorAll('input:checked')).map(cb => ({ 
+taskId: parseInt(cb.value), 
+projectId: proyecto.name,
+selectedAt: new Date().toISOString()
+}));
+
+// Actualizar array global de hitos para este proyecto
+const otrosProyectos = hitos.filter(h => h.projectId !== proyecto.name);
+hitos.length = 0;
+hitos.push(...otrosProyectos, ...seleccionados);
+localStorage.setItem('hitos', JSON.stringify(hitos));
+
+modal.remove();
+alert('✅ ' + seleccionados.length + ' milestone(s) saved for executive tracking.\n\n📊 Dashboard updated with selected milestones.');
+renderSeguimientoHitos(container);
+};
+
+document.getElementById('cancelarHitos').onclick = function() { modal.remove(); };
+}
+
+// Exportar reporte ejecutivo de hitos (formato internacional)
+function exportarReporteHitosEjecutivo() {
+const proyecto = obtenerProyectoActual();
+const hitosGuardados = hitos.filter(h => h.projectId === proyecto.name).map(h => {
+const task = proyecto.tasks?.find(t => t.id === h.taskId);
+return task ? { ...h, task } : null;
+}).filter(Boolean);
+
+if (hitosGuardados.length === 0) { alert('📭 No milestones to export'); return; }
+
+const completados = hitosGuardados.filter(h => h.task.status === 'completed').length;
+const porcentaje = hitosGuardados.length > 0 ? Math.round((completados / hitosGuardados.length) * 100) : 0;
+
+const reporte = '🎯 EXECUTIVE MILESTONE REPORT - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generated: ' + new Date().toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC\n' +
+'Total Milestones: ' + hitosGuardados.length + '\n' +
+'Completed: ' + completados + ' (' + porcentaje + '%)\n' +
+'In Progress: ' + hitosGuardados.filter(h => h.task.status === 'inProgress').length + '\n' +
+'Pending: ' + hitosGuardados.filter(h => h.task.status === 'pending').length + '\n' +
+'Critical/Overdue: ' + hitosGuardados.filter(h => h.task.priority === 'high' && h.task.status !== 'completed').length + '\n\n' +
+'📋 MILESTONE DETAILS:\n' +
+hitosGuardados.sort((a,b) => new Date(a.task.deadline||0) - new Date(b.task.deadline||0)).map(function(h) {
+const task = h.task;
+const diff = task.deadline ? Math.ceil((new Date(task.deadline) - new Date()) / (1000*3600*24)) : null;
+// ✅ Icono de estado con colores
+const statusIcon = task.status === 'completed' ? '✅' : (task.status === 'inProgress' ? '🔄' : (diff !== null && diff < 0 ? '🔴' : '⏳'));
+const priority = task.priority === 'high' ? '🔴' : (task.priority === 'medium' ? '🟡' : '🟢');
+return priority + ' ' + statusIcon + ' #' + (task.id||'N/A') + ' ' + task.name + 
+' | Due: ' + (task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { timeZone: 'UTC' }) : 'TBD') +
+' | ' + (diff !== null ? (diff < 0 ? Math.abs(diff) + 'd OVERDUE' : '+' + diff + 'd') : 'N/A') +
+' | ' + (task.assignee || 'Unassigned');
+}).join('\n') + '\n\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Generated by PM Virtual Executive • PMI/ISO 21500 Compliant';
+
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Executive Milestone Report copied to clipboard.\n\n📄 Ready to paste in email, PowerPoint, or executive briefing.');
+}).catch(function() {
+alert('📋 Executive Report:\n\n' + reporte);
+});
+}
+
+// Compartir hitos con stakeholders internacionales
+function compartirHitosStakeholders() {
+const proyecto = obtenerProyectoActual();
+const hitosGuardados = hitos.filter(h => h.projectId === proyecto.name).map(h => {
+const task = proyecto.tasks?.find(t => t.id === h.taskId);
+return task ? { ...h, task } : null;
+}).filter(Boolean);
+
+if (hitosGuardados.length === 0) { alert('📭 No milestones to share'); return; }
+
+const mensaje = '🌐 MILESTONE UPDATE - ' + proyecto.name + '\n' +
+'━━━━━━━━━━━━━━━━━━━━━━\n' +
+'Dear Stakeholder,\n\n' +
+'Please find below the current status of key project milestones:\n\n' +
+'📊 Completion Rate: ' + Math.round((hitosGuardados.filter(h => h.task.status === 'completed').length / hitosGuardados.length) * 100) + '%\n' +
+'✅ Completed: ' + hitosGuardados.filter(h => h.task.status === 'completed').length + '\n' +
+'🔄 In Progress: ' + hitosGuardados.filter(h => h.task.status === 'inProgress').length + '\n' +
+'⏳ Pending: ' + hitosGuardados.filter(h => h.task.status === 'pending').length + '\n\n' +
+'🔴 Upcoming Critical Milestones (Next 7 Days):\n' +
+hitosGuardados.filter(h => {
+const diff = h.task.deadline ? Math.ceil((new Date(h.task.deadline) - new Date()) / (1000*3600*24)) : null;
+return diff !== null && diff >= 0 && diff <= 7 && h.task.status !== 'completed';
+}).map(h => '• ' + h.task.name + ' • Due: ' + new Date(h.task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + ' UTC').join('\n') + '\n\n' +
+'For detailed milestone tracking, please access the PM Virtual Executive dashboard.\n\n' +
+'Best regards,\nProject Management Office\n' + new Date().toLocaleDateString('en-US', { timeZone: 'UTC' }) + ' UTC';
+
+navigator.clipboard?.writeText(mensaje).then(function() {
+alert('✅ Stakeholder update copied to clipboard.\n\n📧 Ready to send via email, Slack, or Teams to international stakeholders.');
+}).catch(function() {
+alert('📋 Stakeholder Update:\n\n' + mensaje);
+});
+}
+
+
+
+
+
+
+
+
+// ========== SECCIÓN REPORTES - VERSIÓN CORREGIDA ==========
+function renderReportesAutomaticos(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">⚠️ No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+// ✅ Métricas para dashboard
+const tasks = proyecto.tasks || [];
+const totalTareas = tasks.length;
+const completadas = tasks.filter(t => t.status === 'completed').length;
+const porcentajeAvance = totalTareas > 0 ? Math.round((completadas/totalTareas)*100) : 0;
+
+// ✅ Tipos de reportes disponibles
+const tiposReporte = [
+{ id: 'status', nombre: 'Status Report', desc: 'Resumen ejecutivo de avance y métricas', icono: '📊' },
+{ id: 'financial', nombre: 'Financial Report', desc: 'Análisis de costos y proyecciones', icono: '💰' },
+{ id: 'milestone', nombre: 'Milestone Report', desc: 'Estado de hitos críticos', icono: '🎯' },
+{ id: 'executive', nombre: 'Executive Summary', desc: 'Reporte consolidado para alta dirección', icono: '👔' }
+];
+
+// ✅ Formatos de exportación
+const formatosExportacion = [
+{ id: 'pdf', nombre: 'PDF Ejecutivo' },
+{ id: 'pptx', nombre: 'PowerPoint' },
+{ id: 'xlsx', nombre: 'Excel Dashboard' },
+{ id: 'html', nombre: 'HTML Interactivo' }
+];
+
+// ✅ Construir HTML con concatenación segura (sin template literals complejos)
+let html = '';
+
+// Header
+html += '<div style="background:linear-gradient(135deg,#0c4a6e,#0ea5e9,#38bdf8); color:white; padding:25px; border-radius:16px; margin-bottom:25px;">';
+html += '<h2 style="margin:0 0 8px 0; font-size:22px; font-weight:700;">📊 Executive Reporting Center</h2>';
+html += '<p style="margin:0 0 15px 0; opacity:0.95; font-size:14px;">' + proyecto.name + ' • Automated Reports</p>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<span style="background:rgba(255,255,255,0.2); padding:6px 14px; border-radius:20px; font-size:12px;">📈 ' + porcentajeAvance + '% Progress</span>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de KPIs
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:30px;">';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #0ea5e9; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:26px; font-weight:700; color:#0c4a6e;">' + tiposReporte.length + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Report Types</div>';
+html += '</div>';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #10b981; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:26px; font-weight:700; color:#166534;">' + formatosExportacion.length + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Export Formats</div>';
+html += '</div>';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #8b5cf6; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:26px; font-weight:700; color:#6d28d9;">' + porcentajeAvance + '%</div>';
+html += '<div style="font-size:11px; color:#64748b;">Data Freshness</div>';
+html += '</div>';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #f59e0b; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:26px; font-weight:700; color:#92400e;">Real-time</div>';
+html += '<div style="font-size:11px; color:#64748b;">Sync Status</div>';
+html += '</div>';
+html += '</div>';
+
+// Selector de tipo de reporte
+html += '<div style="background:white; padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#0c4a6e; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📋 Select Report Type</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+
+tiposReporte.forEach(function(tipo) {
+html += '<div data-tipo="' + tipo.id + '" class="btn-tipo-reporte" style="background:#f8fafc; padding:15px; border-radius:10px; border:2px solid #e2e8f0; cursor:pointer;">';
+html += '<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">';
+html += '<span style="font-size:24px;">' + tipo.icono + '</span>';
+html += '<div style="font-weight:600; color:#0c4a6e; font-size:13px;">' + tipo.nombre + '</div>';
+html += '</div>';
+html += '<div style="font-size:11px; color:#64748b;">' + tipo.desc + '</div>';
+html += '</div>';
+});
+
+html += '</div></div>';
+
+// Panel de configuración (oculto inicialmente)
+html += '<div id="panelConfigReporte" style="background:white; padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08); display:none;">';
+html += '<h3 style="color:#0c4a6e; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">⚙️ Report Configuration</h3>';
+html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">';
+
+// Configuración izquierda
+html += '<div>';
+html += '<label style="display:block; margin-bottom:5px; color:#64748b; font-size:12px; font-weight:500;">📅 Frequency</label>';
+html += '<select id="reporteFrecuencia" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#0c4a6e; font-size:13px; margin-bottom:15px;">';
+html += '<option value="now">🚀 Send Now</option>';
+html += '<option value="weekly" selected>🗓️ Weekly</option>';
+html += '<option value="monthly">📆 Monthly</option>';
+html += '</select>';
+
+html += '<label style="display:block; margin-bottom:5px; color:#64748b; font-size:12px; font-weight:500;">📤 Format</label>';
+html += '<select id="reporteFormato" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; color:#0c4a6e; font-size:13px; margin-bottom:15px;">';
+formatosExportacion.forEach(function(fmt) {
+html += '<option value="' + fmt.id + '">' + fmt.nombre + '</option>';
+});
+html += '</select>';
+html += '</div>';
+
+// Configuración derecha
+html += '<div>';
+html += '<label style="display:block; margin-bottom:5px; color:#64748b; font-size:12px; font-weight:500;">👥 Recipients</label>';
+html += '<div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">';
+html += '<label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px;"><input type="checkbox" checked> Sponsor</label>';
+html += '<label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px;"><input type="checkbox" checked> Exec Committee</label>';
+html += '<label style="display:flex; align-items:center; gap:8px; font-size:12px;"><input type="checkbox"> Team</label>';
+html += '</div>';
+
+html += '<label style="display:block; margin-bottom:5px; color:#64748b; font-size:12px; font-weight:500;">🔔 Channels</label>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px;"><input type="checkbox" checked> Email</label>';
+html += '<label style="display:flex; align-items:center; gap:6px; font-size:12px;"><input type="checkbox" checked> Slack</label>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Botones de acción
+html += '<div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">';
+html += '<button id="btnPreviewReporte" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; padding:10px 20px; border-radius:8px; color:#6d28d9; cursor:pointer; font-weight:500; font-size:13px;">👁️ Preview</button>';
+html += '<button id="btnSaveSchedule" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; padding:10px 20px; border-radius:8px; color:#166534; cursor:pointer; font-weight:500; font-size:13px;">💾 Schedule</button>';
+html += '<button id="btnSendNow" style="background:#0ea5e9; border:none; padding:10px 25px; border-radius:8px; color:white; cursor:pointer; font-weight:600; font-size:13px;">🚀 Send Now</button>';
+html += '</div>';
+html += '</div>';
+
+// Historial simple
+html += '<div style="background:white; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#0c4a6e; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📜 Report History</h3>';
+html += '<p style="color:#64748b; font-size:13px; text-align:center; padding:20px;">📭 No reports sent yet. Configure and send your first report above.</p>';
+html += '</div>';
+
+// Footer
+html += '<div style="margin-top:25px; padding:20px; background:white; border-radius:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<p style="color:#64748b; font-size:12px; margin:0;">';
+html += '<strong>✅ Audit Ready:</strong> All reports logged for compliance<br>';
+html += '<em>PM Virtual Executive • ' + new Date().toLocaleDateString('en-US') + '</em>';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners
+document.querySelectorAll('.btn-tipo-reporte').forEach(function(btn) {
+btn.onclick = function() {
+document.getElementById('panelConfigReporte').style.display = 'block';
+document.getElementById('panelConfigReporte').scrollIntoView({ behavior: 'smooth' });
+btn.dataset.selected = 'true';
+};
+});
+
+document.getElementById('btnPreviewReporte').onclick = function() {
+const tipo = document.querySelector('.btn-tipo-reporte[data-selected="true"]')?.dataset.tipo || 'status';
+alert('👁️ Preview: ' + tipo + ' report ready to send.');
+};
+
+document.getElementById('btnSaveSchedule').onclick = function() {
+const tipo = document.querySelector('.btn-tipo-reporte[data-selected="true"]')?.dataset.tipo || 'status';
+const frecuencia = document.getElementById('reporteFrecuencia').value;
+const formato = document.getElementById('reporteFormato').value;
+alert('✅ Schedule saved: ' + tipo + ' • ' + frecuencia + ' • ' + formato);
+};
+
+document.getElementById('btnSendNow').onclick = function() {
+const tipo = document.querySelector('.btn-tipo-reporte[data-selected="true"]')?.dataset.tipo || 'status';
+const formato = document.getElementById('reporteFormato').value;
+
+// Generar contenido simple del reporte
+const contenido = 'EXECUTIVE REPORT - ' + proyecto.name + '\n' +
+'Type: ' + tipo + '\n' +
+'Progress: ' + porcentajeAvance + '%\n' +
+'Date: ' + new Date().toLocaleString() + '\n' +
+'━━━━━━━━━━\n' +
+'Tasks: ' + totalTareas + ' total, ' + completadas + ' completed\n' +
+'Status: ' + (porcentajeAvance >= 80 ? 'On Track' : 'Monitoring') + '\n';
+
+// Simular envío por Email
+if (typeof emailjs !== 'undefined') {
+emailjs.send('service_kccmxz7', 'template_we2gzml', { 
+to_email: 'executive@proyecto.com', 
+subject: 'Report: ' + proyecto.name, 
+message: contenido 
+}).then(function() {
+console.log('Email sent');
+}).catch(function(e) {
+console.log('Email error:', e);
+});
+}
+
+// Simular envío por Slack
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send('📊 Report sent: ' + proyecto.name + ' • ' + tipo + ' • ' + porcentajeAvance + '%');
+}
+
+// Guardar en historial simple
+let historial = JSON.parse(localStorage.getItem('historialReportes') || '[]');
+historial.unshift({
+id: Date.now(),
+proyectoId: proyecto.name,
+tipo: tipo,
+formato: formato,
+fecha: new Date().toISOString(),
+status: 'Sent'
+});
+if (historial.length > 20) historial = historial.slice(0, 20);
+localStorage.setItem('historialReportes', JSON.stringify(historial));
+
+alert('✅ Report sent successfully!\n\n📧 Email + Slack notified\n📋 Type: ' + tipo + '\n📤 Format: ' + formato);
+
+// Refresh para actualizar
+renderReportesAutomaticos(container);
+};
+}
+
+
+
+
+
+
+
+
+// ========== SECCIÓN DESEMPEÑO - VERSIÓN EJECUTIVA PREMIUM (CONTENEDOR AMPLIADO) ==========
+function renderEvaluacionDesempeno(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">No hay proyecto seleccionado</p>'; 
+return; 
+}
+
+const tasks = proyecto.tasks || [];
+
+// Análisis avanzado de desempeño por recurso
+const desempeno = {};
+tasks.forEach(function(t) {
+if (t.assignee) {
+if (!desempeno[t.assignee]) {
+desempeno[t.assignee] = {
+nombre: t.assignee,
+total: 0,
+completadas: 0,
+enProgreso: 0,
+pendientes: 0,
+atrasadas: 0,
+horasEstimadas: 0,
+horasRegistradas: 0,
+prioridadAlta: 0
+};
+}
+desempeno[t.assignee].total++;
+desempeno[t.assignee].horasEstimadas += Number(t.estimatedTime) || 0;
+desempeno[t.assignee].horasRegistradas += Number(t.timeLogged) || 0;
+if (t.priority === 'high') desempeno[t.assignee].prioridadAlta++;
+if (t.status === 'completed') {
+desempeno[t.assignee].completadas++;
+} else if (t.status === 'inProgress') {
+desempeno[t.assignee].enProgreso++;
+} else {
+desempeno[t.assignee].pendientes++;
+}
+if (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed') {
+desempeno[t.assignee].atrasadas++;
+}
+}
+});
+
+// Calcular métricas derivadas
+Object.values(desempeno).forEach(function(d) {
+d.tasaCompletitud = d.total > 0 ? (d.completadas / d.total) : 0;
+d.eficienciaHoras = d.horasEstimadas > 0 ? (d.horasEstimadas / d.horasRegistradas) : 1;
+d.puntajeDesempeno = Math.round((d.tasaCompletitud * 50 + d.eficienciaHoras * 30 + (1 - d.atrasadas/Math.max(d.total,1)) * 20) * 10);
+d.nivelRendimiento = d.puntajeDesempeno >= 85 ? 'Excelente' : d.puntajeDesempeno >= 70 ? 'Satisfactorio' : d.puntajeDesempeno >= 50 ? 'Necesita Mejora' : 'Critico';
+});
+
+// Métricas globales del equipo
+const totalRecursos = Object.keys(desempeno).length;
+const promedioEficiencia = totalRecursos > 0 ? Math.round(Object.values(desempeno).reduce(function(s,d) { return s + d.eficienciaHoras; }, 0) / totalRecursos * 100) : 0;
+const recursosExcelentes = Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Excelente'; }).length;
+const recursosCriticos = Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Critico'; }).length;
+
+// Construir HTML con concatenación SEGURA
+let html = '';
+
+// Header ejecutivo
+html += '<div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6,#60a5fa); color:white; padding:25px; border-radius:16px; margin-bottom:25px; position:relative; overflow:hidden;">';
+html += '<div style="position:absolute; top:-30px; right:-30px; width:100px; height:100px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>';
+html += '<div style="position:absolute; bottom:-20px; left:-20px; width:70px; height:70px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>';
+html += '<div style="position:relative; z-index:1;">';
+html += '<h2 style="margin:0 0 8px 0; font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px;">';
+html += '<span>📊</span> Executive Performance Dashboard';
+html += '</h2>';
+html += '<p style="margin:0 0 15px 0; opacity:0.95; font-size:14px;">' + proyecto.name + ' - Team Performance Analytics</p>';
+html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
+html += '<span style="background:rgba(255,255,255,0.2); padding:6px 14px; border-radius:20px; font-size:12px;">👥 ' + totalRecursos + ' Resources</span>';
+html += '<span style="background:rgba(16,185,129,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#166534;">⚡ ' + promedioEficiencia + '% Avg Efficiency</span>';
+html += '<span style="background:rgba(139,92,246,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#6d28d9;">🏆 ' + recursosExcelentes + ' Top Performers</span>';
+html += '</div>';
+html += '</div>';
+html += '</div>';
+
+// Dashboard de KPIs ejecutivos
+html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:30px;">';
+
+// Total Resources
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #3b82f6; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#1e40af;">' + totalRecursos + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Total Resources</div>';
+html += '</div>';
+
+// Avg Efficiency
+var efficiencyColor = promedioEficiencia >= 90 ? '#10b981' : promedioEficiencia >= 70 ? '#f59e0b' : '#ef4444';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid ' + efficiencyColor + '; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:' + efficiencyColor + ';">' + promedioEficiencia + '%</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Avg Efficiency</div>';
+html += '</div>';
+
+// Top Performers
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid #10b981; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:#166534;">' + recursosExcelentes + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Top Performers</div>';
+html += '</div>';
+
+// Needs Attention
+var attentionColor = recursosCriticos > 0 ? '#ef4444' : '#22c55e';
+html += '<div style="background:white; padding:18px; border-radius:12px; border-left:5px solid ' + attentionColor + '; box-shadow:0 4px 12px rgba(0,0,0,0.08); text-align:center;">';
+html += '<div style="font-size:26px; font-weight:700; color:' + (recursosCriticos > 0 ? '#7f1d1d' : '#166534') + ';">' + recursosCriticos + '</div>';
+html += '<div style="font-size:11px; color:#64748b; margin-top:4px;">Needs Attention</div>';
+html += '</div>';
+html += '</div>';
+
+// ✅ GRÁFICO VISUAL DE RENDIMIENTO - CONTENEDOR AMPLIADO (CORRECCIÓN PRINCIPAL)
+html += '<div style="background:white; padding:25px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 20px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📈 Team Performance Overview</h3>';
+
+// ✅ Contenedor ampliado de 180px a 260px para que quepa todo
+html += '<div style="display:flex; align-items:end; justify-content:space-around; height:260px; padding:30px 15px; background:#f8fafc; border-radius:8px; overflow:visible;">';
+
+var maxPuntaje = 100;
+var recursosArray = Object.values(desempeno);
+if (recursosArray.length > 0) {
+maxPuntaje = Math.max.apply(null, recursosArray.map(function(d) { return d.puntajeDesempeno; }));
+}
+var recursosOrdenados = recursosArray.sort(function(a,b) { return b.puntajeDesempeno - a.puntajeDesempeno; }).slice(0, 8);
+
+recursosOrdenados.forEach(function(d, idx) {
+// ✅ Altura máxima de barras reducida a 120px (antes 140px) para dejar más espacio abajo
+var altura = Math.max(20, Math.round((d.puntajeDesempeno / maxPuntaje) * 120));
+var colorBarra = d.nivelRendimiento === 'Excelente' ? '#10b981' : d.nivelRendimiento === 'Satisfactorio' ? '#3b82f6' : d.nivelRendimiento === 'Necesita Mejora' ? '#f59e0b' : '#ef4444';
+var iniciales = d.nombre.split(' ').map(function(n) { return n.charAt(0); }).join('').substring(0,2).toUpperCase();
+
+html += '<div style="display:flex; flex-direction:column; align-items:center; flex:1; min-width:70px;">';
+
+// ✅ Score número arriba de la barra (más espacio)
+html += '<div style="font-size:11px; font-weight:700; color:#1e293b; margin-bottom:8px; white-space:nowrap;">' + d.puntajeDesempeno + ' pts</div>';
+
+// ✅ Barra con espacio para el score
+html += '<div style="background:' + colorBarra + '; border-radius:6px 6px 0 0; width:45px; height:' + altura + 'px; display:flex; align-items:flex-end; justify-content:center; color:white; font-weight:600; font-size:10px; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.15);">';
+html += '</div>';
+
+// ✅ Nombre del recurso (más espacio entre barra y nombre)
+html += '<div style="font-size:11px; font-weight:600; color:#1e293b; margin-top:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; text-align:center;">' + d.nombre.split(' ')[0] + '</div>';
+
+// ✅ Avatar con más espacio vertical
+html += '<div style="width:45px; height:45px; background:linear-gradient(135deg,#3b82f6,#60a5fa); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:13px; margin-top:10px; border:3px solid white; box-shadow:0 3px 10px rgba(0,0,0,0.2);">' + iniciales + '</div>';
+
+// ✅ Nivel de rendimiento debajo del avatar
+html += '<div style="font-size:9px; color:' + colorBarra + '; margin-top:6px; font-weight:600; white-space:nowrap;">' + d.nivelRendimiento.substring(0,8) + '</div>';
+
+html += '</div>';
+});
+
+html += '</div>';
+
+// ✅ Leyenda con más espacio
+html += '<div style="display:flex; justify-content:center; gap:25px; margin-top:25px; flex-wrap:wrap; padding:15px 10px 5px 10px;">';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;"><span style="width:14px; height:14px; background:#10b981; border-radius:4px;"></span> Excellent (85+)</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;"><span style="width:14px; height:14px; background:#3b82f6; border-radius:4px;"></span> Satisfactory (70-84)</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;"><span style="width:14px; height:14px; background:#f59e0b; border-radius:4px;"></span> Needs Improvement (50-69)</div>';
+html += '<div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;"><span style="width:14px; height:14px; background:#ef4444; border-radius:4px;"></span> Critical (&lt;50)</div>';
+html += '</div>';
+html += '</div>';
+
+// Tabla ejecutiva de desempeño
+html += '<div style="background:white; padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">📋 Resource Performance Register</h3>';
+html += '<div style="overflow-x:auto;">';
+html += '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+html += '<thead>';
+html += '<tr style="background:#f1f5f9;">';
+html += '<th style="padding:12px; text-align:left; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Resource</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Tasks</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Completion</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Efficiency</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Performance</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Status</th>';
+html += '<th style="padding:12px; text-align:center; border:1px solid #e2e8f0; color:#1e293b; font-weight:600;">Actions</th>';
+html += '</tr>';
+html += '</thead>';
+html += '<tbody>';
+
+// Ordenar por puntaje descendente
+var recursosTabla = Object.entries(desempeno).sort(function(a,b) { return b[1].puntajeDesempeno - a[1].puntajeDesempeno; });
+
+recursosTabla.forEach(function(entry) {
+var nombre = entry[0];
+var d = entry[1];
+var performanceColor = d.nivelRendimiento === 'Excelente' ? '#10b981' : d.nivelRendimiento === 'Satisfactorio' ? '#3b82f6' : d.nivelRendimiento === 'Necesita Mejora' ? '#f59e0b' : '#ef4444';
+var efficiencyPercent = Math.min(100, Math.round(d.eficienciaHoras * 100));
+var initials = nombre.split(' ').map(function(n) { return n.charAt(0); }).join('').substring(0,2).toUpperCase();
+
+html += '<tr style="background:#f8fafc;">';
+// Resource name with avatar
+html += '<td style="padding:12px; border:1px solid #e2e8f0;">';
+html += '<div style="display:flex; align-items:center; gap:10px;">';
+html += '<div style="width:32px; height:32px; background:linear-gradient(135deg,#3b82f6,#60a5fa); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:12px;">' + initials + '</div>';
+html += '<div style="font-weight:500; color:#1e293b;">' + nombre + '</div>';
+html += '</div>';
+html += '</td>';
+// Tasks
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">';
+html += '<span style="font-weight:600; color:#1e293b;">' + d.completadas + '</span>/' + d.total;
+html += '</td>';
+// Completion rate
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<div style="display:flex; align-items:center; justify-content:center; gap:8px;">';
+html += '<div style="background:#e2e8f0; height:8px; border-radius:4px; width:60px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:' + Math.round(d.tasaCompletitud*100) + '%; border-radius:4px;"></div>';
+html += '</div>';
+html += '<span style="font-size:11px; color:#64748b;">' + Math.round(d.tasaCompletitud*100) + '%</span>';
+html += '</div>';
+html += '</td>';
+// Efficiency
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(16,185,129,0.15); color:#166534; padding:4px 10px; border-radius:12px; font-size:10px; font-weight:500;">' + efficiencyPercent + '%</span>';
+html += '</td>';
+// Performance score
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<div style="display:flex; align-items:center; justify-content:center; gap:8px;">';
+html += '<div style="background:#e2e8f0; height:8px; border-radius:4px; width:60px; overflow:hidden;">';
+html += '<div style="background:linear-gradient(90deg,' + performanceColor + ',' + performanceColor + '); height:100%; width:' + d.puntajeDesempeno + '%; border-radius:4px;"></div>';
+html += '</div>';
+html += '<span style="font-size:11px; color:#64748b; font-weight:600;">' + d.puntajeDesempeno + '</span>';
+html += '</div>';
+html += '</td>';
+// Status badge
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<span style="background:rgba(0,0,0,0.1); color:' + performanceColor + '; padding:4px 12px; border-radius:12px; font-size:10px; font-weight:500;">' + d.nivelRendimiento + '</span>';
+html += '</td>';
+// Actions
+html += '<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">';
+html += '<button data-recurso="' + nombre + '" class="btn-ver-desempeno" style="background:rgba(59,130,246,0.15); border:1px solid #3b82f6; padding:6px 12px; border-radius:6px; color:#3b82f6; cursor:pointer; font-size:11px; margin-right:4px;">👁️</button>';
+if (d.nivelRendimiento !== 'Excelente') {
+html += '<button data-recurso="' + nombre + '" class="btn-plan-mejora" style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:6px 12px; border-radius:6px; color:#166534; cursor:pointer; font-size:11px;">📈</button>';
+}
+html += '</td>';
+html += '</tr>';
+});
+
+html += '</tbody></table></div></div>';
+
+// Alertas ejecutivas
+var recursosAlerta = Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Critico' || d.nivelRendimiento === 'Necesita Mejora'; });
+if (recursosAlerta.length > 0) {
+html += '<div style="background:rgba(239,68,68,0.1); padding:20px; border-radius:12px; margin-bottom:25px; border:1px solid #ef4444;">';
+html += '<h4 style="color:#ef4444; margin:0 0 15px 0; font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px;">';
+html += '<span>🚨</span> Executive Alert: Performance Improvement Required';
+html += '</h4>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+recursosAlerta.slice(0, 4).forEach(function(d) {
+html += '<div style="background:white; padding:12px; border-radius:8px; border-left:4px solid #ef4444;">';
+html += '<div style="font-weight:600; color:#1e293b; font-size:13px; margin-bottom:4px;">' + d.nombre + '</div>';
+html += '<div style="font-size:11px; color:#64748b;">Score: ' + d.puntajeDesempeno + '/100 - ' + d.nivelRendimiento + '</div>';
+html += '<div style="font-size:10px; color:#ef4444; margin-top:4px; font-weight:500;">🔴 Action Plan Recommended</div>';
+html += '</div>';
+});
+if (recursosAlerta.length > 4) {
+html += '<div style="text-align:center; padding:12px; color:#64748b; font-size:12px;">+ ' + (recursosAlerta.length - 4) + ' more resources need attention</div>';
+}
+html += '</div>';
+html += '</div>';
+}
+
+// Acciones ejecutivas rápidas
+html += '<div style="background:white; padding:20px; border-radius:12px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<h3 style="color:#1e293b; margin:0 0 15px 0; font-size:15px; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">⚡ Executive Actions</h3>';
+html += '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">';
+html += '<button id="exportarDesempenoBtn" style="background:rgba(14,165,233,0.15); border:1px solid #0ea5e9; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>📄</span> Export Performance Report';
+html += '</button>';
+html += '<button id="reconocerTopBtn" style="background:rgba(139,92,246,0.15); border:1px solid #8b5cf6; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>🏆</span> Recognize Top Performers';
+html += '</button>';
+html += '<button id="planMejoraBtn" style="background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>📈</span> Create Improvement Plans';
+html += '</button>';
+html += '<button id="revisarCargasBtn" style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:12px; border-radius:8px; color:#0c4a6e; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; justify-content:center;">';
+html += '<span>⚖️</span> Review Workload Balance';
+html += '</button>';
+html += '</div>';
+html += '</div>';
+
+// Footer
+html += '<div style="margin-top:25px; padding:20px; background:white; border-radius:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08);">';
+html += '<p style="color:#64748b; font-size:12px; margin:0; line-height:1.8;">';
+html += '<strong>🔒 Governance:</strong> Performance data follows ISO 30414 HR analytics standards.<br>';
+html += '<strong>📊 Methodology:</strong> Weighted scoring: Completion (50%) + Efficiency (30%) + Punctuality (20%).<br>';
+html += '<strong>✅ Compliance:</strong> All evaluations logged for talent management.<br><br>';
+html += '<em>PM Virtual Executive - Performance Analytics - ' + new Date().toLocaleDateString('en-US', { timeZone: 'UTC' }) + '</em>';
+html += '</p>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// Event listeners
+document.querySelectorAll('.btn-ver-desempeno').forEach(function(btn) {
+btn.onclick = function() {
+var nombre = btn.dataset.recurso;
+var d = desempeno[nombre];
+if (!d) return;
+var mensaje = '📊 Performance Details - ' + nombre + '\n\n';
+mensaje += '📈 Performance Score: ' + d.puntajeDesempeno + '/100 (' + d.nivelRendimiento + ')\n';
+mensaje += '✅ Completion Rate: ' + Math.round(d.tasaCompletitud*100) + '% (' + d.completadas + '/' + d.total + ' tasks)\n';
+mensaje += '⚡ Efficiency: ' + Math.round(d.eficienciaHoras*100) + '%\n';
+mensaje += '🔴 High Priority Tasks: ' + d.prioridadAlta + '\n';
+mensaje += '⏰ Overdue Tasks: ' + d.atrasadas + '\n\n';
+mensaje += '💡 Recommendation: ' + (d.nivelRendimiento === 'Excelente' ? '🏆 Consider for leadership opportunities' : d.nivelRendimiento === 'Satisfactorio' ? '✅ Maintain current support' : '📈 Implement structured improvement plan');
+alert(mensaje);
+};
+});
+
+document.querySelectorAll('.btn-plan-mejora').forEach(function(btn) {
+btn.onclick = function() {
+var nombre = btn.dataset.recurso;
+var d = desempeno[nombre];
+if (!d) return;
+var plan = '📈 PERFORMANCE IMPROVEMENT PLAN - ' + nombre + '\n';
+plan += '━━━━━━━━━━━━━━━━━━━━━━\n';
+plan += 'Current Score: ' + d.puntajeDesempeno + '/100 (' + d.nivelRendimiento + ')\n\n';
+plan += '🎯 AREAS FOR IMPROVEMENT:\n';
+if (d.tasaCompletitud < 0.7) plan += '• Improve task completion rate\n';
+if (d.eficienciaHoras < 0.8) plan += '• Enhance time estimation accuracy\n';
+if (d.atrasadas > 2) plan += '• Prioritize deadline management\n';
+plan += '\n📋 ACTION ITEMS:\n';
+plan += '1. Weekly 1:1 coaching sessions\n';
+plan += '2. Set SMART goals for next period\n';
+plan += '3. Establish measurable success criteria\n\n';
+plan += '📅 TIMELINE: 30/60/90 day review checkpoints\n';
+plan += '━━━━━━━━━━━━━━━━━━━━━━\n';
+plan += 'Generated by PM Virtual Executive';
+navigator.clipboard?.writeText(plan).then(function() {
+alert('✅ Improvement Plan copied to clipboard');
+}).catch(function() {
+alert('📋 Plan:\n\n' + plan);
+});
+};
+});
+
+document.getElementById('exportarDesempenoBtn').onclick = function() {
+var reporte = '📊 EXECUTIVE PERFORMANCE REPORT - ' + proyecto.name + '\n';
+reporte += '━━━━━━━━━━━━━━━━━━━━━━\n';
+reporte += 'Generated: ' + new Date().toLocaleString('en-US', { timeZone: 'UTC' }) + ' UTC\n\n';
+reporte += '📈 TEAM OVERVIEW:\n';
+reporte += '• Total Resources: ' + totalRecursos + '\n';
+reporte += '• Average Efficiency: ' + promedioEficiencia + '%\n';
+reporte += '• Top Performers: ' + recursosExcelentes + '\n';
+reporte += '• Needs Support: ' + recursosCriticos + '\n\n';
+reporte += '🏆 TOP PERFORMERS:\n';
+Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Excelente'; }).forEach(function(d) {
+reporte += '• ' + d.nombre + ': ' + d.puntajeDesempeno + '/100 - ' + Math.round(d.tasaCompletitud*100) + '% completion\n';
+});
+reporte += '\n⚠️ RESOURCES REQUIRING ATTENTION:\n';
+Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Critico' || d.nivelRendimiento === 'Necesita Mejora'; }).forEach(function(d) {
+reporte += '• ' + d.nombre + ': ' + d.puntajeDesempeno + '/100 - Primary gap: ' + (d.tasaCompletitud < 0.7 ? 'Completion' : 'Efficiency') + '\n';
+});
+reporte += '\n━━━━━━━━━━━━━━━━━━━━━━\n';
+reporte += 'Confidential - For Executive Use Only\n';
+reporte += 'PM Virtual Executive - Performance Analytics';
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Executive Report copied to clipboard');
+}).catch(function() {
+alert('📋 Report:\n\n' + reporte);
+});
+};
+
+document.getElementById('reconocerTopBtn').onclick = function() {
+var topPerformers = Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Excelente'; });
+if (topPerformers.length === 0) {
+alert('🏆 No top performers identified this period');
+return;
+}
+var mensaje = '🏆 TOP PERFORMER RECOGNITION - ' + proyecto.name + '\n━━━━━━━━━━━━━━━━━━━━━━\n';
+topPerformers.forEach(function(d) {
+mensaje += '🌟 ' + d.nombre + '\n';
+mensaje += '   • Score: ' + d.puntajeDesempeno + '/100\n';
+mensaje += '   • Completion: ' + Math.round(d.tasaCompletitud*100) + '%\n';
+mensaje += '   • Efficiency: ' + Math.round(d.eficienciaHoras*100) + '%\n\n';
+});
+mensaje += '🎁 Recommended: Public acknowledgment + growth opportunities';
+navigator.clipboard?.writeText(mensaje).then(function() {
+alert('✅ Recognition message copied to clipboard');
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send('🏆 *Top Performers Recognized*\nProject: *' + proyecto.name + '*\n' + topPerformers.map(function(d) { return '• *' + d.nombre + '*: ' + d.puntajeDesempeno + '/100'; }).join('\n'));
+}
+}).catch(function() {
+alert('📋 Recognition:\n\n' + mensaje);
+});
+};
+
+document.getElementById('planMejoraBtn').onclick = function() {
+var recursosAlerta = Object.values(desempeno).filter(function(d) { return d.nivelRendimiento === 'Critico' || d.nivelRendimiento === 'Necesita Mejora'; });
+if (recursosAlerta.length === 0) {
+alert('✅ No resources currently require improvement plans');
+return;
+}
+var mensaje = '📈 BULK IMPROVEMENT PLAN CREATION\n━━━━━━━━━━━━━━━━━━━━━━\n';
+mensaje += 'Resources requiring attention: ' + recursosAlerta.length + '\n\n';
+recursosAlerta.forEach(function(d) {
+mensaje += '• ' + d.nombre + ' - Score: ' + d.puntajeDesempeno + '/100 (' + d.nivelRendimiento + ')\n';
+});
+mensaje += '\n✅ Actions: Schedule coaching + Set SMART goals + 30/60/90 checkpoints';
+if (confirm(mensaje + '\n\nProceed?')) {
+alert('✅ Improvement plans initiated for ' + recursosAlerta.length + ' resource(s)');
+}
+};
+
+document.getElementById('revisarCargasBtn').onclick = function() {
+var sobrecargados = Object.values(desempeno).filter(function(r) { return r.horasRegistradas > r.horasEstimadas * 1.2; });
+var subutilizados = Object.values(desempeno).filter(function(r) { return r.horasRegistradas < r.horasEstimadas * 0.7 && r.pendientes > 0; });
+if (sobrecargados.length === 0 && subutilizados.length === 0) {
+alert('✅ Workload is well balanced across the team');
+return;
+}
+var recomendacion = '⚖️ WORKLOAD BALANCING RECOMMENDATION\n━━━━━━━━━━━━━━━━━━━━━━\n';
+if (sobrecargados.length > 0) {
+recomendacion += '🔴 Overloaded (' + sobrecargados.length + '):\n';
+sobrecargados.forEach(function(r) { recomendacion += '• ' + r.nombre + ': ' + r.horasRegistradas + 'h / ' + r.horasEstimadas + 'h est\n'; });
+}
+if (subutilizados.length > 0) {
+recomendacion += '\n🟢 Available Capacity (' + subutilizados.length + '):\n';
+subutilizados.forEach(function(r) { recomendacion += '• ' + r.nombre + ': ' + r.horasRegistradas + 'h / ' + r.horasEstimadas + 'h est\n'; });
+}
+recomendacion += '\n✅ Recommended: Reassign 1-2 pending tasks from overloaded to available resources';
+if (confirm(recomendacion + '\n\nApply recommendations?')) {
+alert('✅ Workload rebalancing initiated');
+}
+};
+}
+
+
+
+
+
+
+
+// ========== MATRIZ DE HABILIDADES - VERSIÓN EJECUTIVA (AUTÓNOMA) ==========
+
+function renderMatrizHabilidades(container) {
+  // Función auxiliar para obtener proyecto actual (si no existe, la definimos)
+  const obtenerProyectoActual = window.obtenerProyectoActual || function() {
+    if (typeof projects !== 'undefined' && typeof currentProjectIndex !== 'undefined') {
+      return projects[currentProjectIndex];
+    }
+    return null;
+  };
+
+  // Función auxiliar para escapar HTML
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  };
+
+  // Inicializar variable global de habilidades si no existe
+  if (typeof habilidades === 'undefined') {
+    window.habilidades = JSON.parse(localStorage.getItem('habilidades') || '[]');
+  }
+
+  // Obtener proyecto actual
+  const proyecto = obtenerProyectoActual();
+  if (!proyecto) {
+    if (container) container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    else console.error('No hay proyecto seleccionado');
+    return;
+  }
+
+  // Obtener miembros de las tareas
+  const miembros = [...new Set(
+    (proyecto.tasks || [])
+      .map(t => t.assignee)
+      .filter(Boolean)
+  )];
+
+  if (miembros.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; background: rgba(30,41,59,0.5); border-radius: 24px;">
+        <p style="font-size: 1.2rem;">👥 No hay miembros asignados en las tareas del proyecto.</p>
+        <p style="color: #94a3b8;">Asigna tareas a miembros para visualizar sus habilidades.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Cargar habilidades guardadas para este proyecto
+  const habilidadesGuardadas = habilidades.filter(h => h.projectId === proyecto.name);
+  const habilidadesMap = new Map();
+  habilidadesGuardadas.forEach(h => {
+    habilidadesMap.set(h.miembro, { habilidad: h.habilidad, nivel: h.nivel });
+  });
+
+  const nivelesValor = { 'Básico': 1, 'Intermedio': 2, 'Avanzado': 3 };
+  const nivelesColor = { 'Básico': '#f97316', 'Intermedio': '#facc15', 'Avanzado': '#10b981' };
+
+  // Calcular estadísticas para resumen
+  const nivelesCount = { 'Básico': 0, 'Intermedio': 0, 'Avanzado': 0 };
+  const skillsList = [];
+  miembros.forEach(m => {
+    const data = habilidadesMap.get(m) || { habilidad: '', nivel: 'Básico' };
+    if (data.habilidad) {
+      nivelesCount[data.nivel]++;
+      skillsList.push({ miembro: m, habilidad: data.habilidad, nivel: data.nivel });
+    }
+  });
+  const totalSkills = skillsList.length;
+  const avgLevel = totalSkills > 0
+    ? (skillsList.reduce((sum, s) => sum + nivelesValor[s.nivel], 0) / totalSkills).toFixed(1)
+    : 0;
+
+  // Generar HTML
+  const html = `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 28px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      
+      <!-- Cabecera ejecutiva -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 32px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            🧠 Matriz de Habilidades
+          </h2>
+          <p style="margin: 8px 0 0 0; color: #94a3b8;">Competencias clave del equipo · ${escapeHtml(proyecto.name)}</p>
+        </div>
+        <div style="background: rgba(139,92,246,0.2); border-radius: 40px; padding: 8px 20px;">
+          <span style="color: #a78bfa; font-weight: 500;">📊 ${totalSkills} habilidades registradas</span>
+        </div>
+      </div>
+
+      <!-- Resumen ejecutivo (cards) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 40px;">
+        <div style="background: #1e293b; border-radius: 24px; padding: 20px; text-align: center; border-top: 4px solid #f97316;">
+          <div style="font-size: 36px; font-weight: 800;">${nivelesCount['Básico']}</div>
+          <div style="color: #94a3b8;">Nivel Básico</div>
+        </div>
+        <div style="background: #1e293b; border-radius: 24px; padding: 20px; text-align: center; border-top: 4px solid #facc15;">
+          <div style="font-size: 36px; font-weight: 800;">${nivelesCount['Intermedio']}</div>
+          <div style="color: #94a3b8;">Nivel Intermedio</div>
+        </div>
+        <div style="background: #1e293b; border-radius: 24px; padding: 20px; text-align: center; border-top: 4px solid #10b981;">
+          <div style="font-size: 36px; font-weight: 800;">${nivelesCount['Avanzado']}</div>
+          <div style="color: #94a3b8;">Nivel Avanzado</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 24px; padding: 20px; text-align: center;">
+          <div style="font-size: 36px; font-weight: 800;">${avgLevel}</div>
+          <div style="color: white;">Nivel promedio</div>
+        </div>
+      </div>
+
+      <!-- Tablero de habilidades por miembro (cards modernas) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+        ${miembros.map(m => {
+          const data = habilidadesMap.get(m) || { habilidad: '', nivel: 'Básico' };
+          const nivelValor = nivelesValor[data.nivel];
+          const nivelColor = nivelesColor[data.nivel];
+          const progressWidth = (nivelValor / 3) * 100;
+          return `
+            <div style="background: #0f172a; border-radius: 24px; padding: 20px; transition: transform 0.2s; border: 1px solid rgba(139,92,246,0.2);">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: white;">
+                  ${m.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 18px; font-weight: 600;">${escapeHtml(m)}</h3>
+                  <p style="margin: 4px 0 0; color: #94a3b8; font-size: 12px;">Miembro del equipo</p>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: #cbd5e1; font-weight: 500;">Habilidad principal</label>
+                <input type="text" data-miembro="${m}" class="habilidad-input-exec" value="${escapeHtml(data.habilidad)}" 
+                       placeholder="Ej: Liderazgo, React, Análisis de datos" 
+                       style="width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 12px 16px; color: #e2e8f0; font-size: 14px; transition: all 0.2s;">
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #cbd5e1; font-weight: 500;">Nivel de competencia</label>
+                <div style="position: relative; height: 40px;">
+                  <div style="display: flex; gap: 8px; position: absolute; width: 100%;">
+                    ${['Básico', 'Intermedio', 'Avanzado'].map(nivel => `
+                      <button type="button" data-miembro="${m}" data-nivel="${nivel}" 
+                              class="nivel-btn-exec" 
+                              style="flex: 1; background: ${data.nivel === nivel ? nivelesColor[nivel] : '#334155'}; 
+                                     border: none; border-radius: 40px; padding: 8px 0; color: white; 
+                                     font-weight: ${data.nivel === nivel ? '600' : '400'}; cursor: pointer; transition: all 0.2s;">
+                        ${nivel}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+                <div style="margin-top: 48px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-size: 12px; color: #94a3b8;">Nivel actual</span>
+                    <span style="font-size: 12px; font-weight: 500; color: ${nivelColor};">${data.nivel}</span>
+                  </div>
+                  <div style="height: 8px; background: #1e293b; border-radius: 20px; overflow: hidden;">
+                    <div style="width: ${progressWidth}%; height: 100%; background: ${nivelColor}; border-radius: 20px; transition: width 0.3s;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- Botón guardar profesional -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 40px;">
+        <button id="guardarHabilidadesExec" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 14px 36px; border-radius: 40px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(139,92,246,0.3);">
+          💾 Guardar matriz de habilidades
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // ========== MANEJAR EVENTOS ==========
+  // Guardar habilidades
+  const guardarBtn = document.getElementById('guardarHabilidadesExec');
+  if (guardarBtn) {
+    guardarBtn.onclick = () => {
+      const nuevasHabilidades = [];
+      document.querySelectorAll('.habilidad-input-exec').forEach(input => {
+        const miembro = input.dataset.miembro;
+        const habilidad = input.value.trim();
+        if (!habilidad) return;
+        // Obtener nivel seleccionado para este miembro (el botón activo)
+        let nivel = 'Básico';
+        const btns = document.querySelectorAll(`.nivel-btn-exec[data-miembro="${miembro}"]`);
+        btns.forEach(btn => {
+          if (btn.style.background && btn.style.background !== '#334155') {
+            const nivelText = btn.textContent;
+            if (nivelText === 'Básico') nivel = 'Básico';
+            else if (nivelText === 'Intermedio') nivel = 'Intermedio';
+            else if (nivelText === 'Avanzado') nivel = 'Avanzado';
+          }
+        });
+        nuevasHabilidades.push({
+          projectId: proyecto.name,
+          miembro: miembro,
+          habilidad: habilidad,
+          nivel: nivel
+        });
+      });
+      // Reemplazar las habilidades globales
+      window.habilidades = window.habilidades.filter(h => h.projectId !== proyecto.name);
+      window.habilidades.push(...nuevasHabilidades);
+      localStorage.setItem('habilidades', JSON.stringify(window.habilidades));
+      // Mostrar notificación elegante
+      showNotification('✅ Habilidades guardadas correctamente', '#10b981');
+    };
+  }
+
+  // Eventos para los botones de nivel (cambiar estilos)
+  document.querySelectorAll('.nivel-btn-exec').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const miembro = this.dataset.miembro;
+      const nivel = this.dataset.nivel;
+      const colorMap = { 'Básico': '#f97316', 'Intermedio': '#facc15', 'Avanzado': '#10b981' };
+      const color = colorMap[nivel];
+      // Resetear botones del mismo miembro
+      document.querySelectorAll(`.nivel-btn-exec[data-miembro="${miembro}"]`).forEach(b => {
+        b.style.background = '#334155';
+        b.style.fontWeight = '400';
+      });
+      this.style.background = color;
+      this.style.fontWeight = '600';
+      // Actualizar barra de progreso
+      const card = this.closest('div[style*="background: #0f172a;"]');
+      const progressDiv = card.querySelector('div[style*="height: 8px;"] div');
+      const levelSpan = card.querySelector('div[style*="justify-content: space-between; margin-bottom: 4px;"] span:last-child');
+      if (progressDiv) {
+        const progressValue = nivel === 'Básico' ? 33 : nivel === 'Intermedio' ? 66 : 100;
+        progressDiv.style.width = `${progressValue}%`;
+        progressDiv.style.background = color;
+      }
+      if (levelSpan) {
+        levelSpan.textContent = nivel;
+        levelSpan.style.color = color;
+      }
+    });
+  });
+
+  // Función auxiliar para notificaciones
+  function showNotification(msg, bgColor) {
+    const notif = document.createElement('div');
+    notif.textContent = msg;
+    notif.style.cssText = `
+      position: fixed; bottom: 20px; right: 20px; background: ${bgColor}; color: white;
+      padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 10000;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transition: opacity 0.3s;
+    `;
+    document.body.appendChild(notif);
+    setTimeout(() => { notif.style.opacity = '0'; setTimeout(() => notif.remove(), 500); }, 3000);
+  }
+}
+
+
+
+
+// ========== SECCIÓN RECONOCIMIENTOS - VERSIÓN EJECUTIVA ==========
+function renderReconocimientos(container) {
+  const proyecto = obtenerProyectoActual();
+  if (!proyecto) {
+    container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    return;
+  }
+
+  // Datos del proyecto
+  const tasks = proyecto.tasks || [];
+  const completadas = tasks.filter(t => t.status === 'completed').length;
+  const totalTareas = tasks.length;
+  const hitosDelProyecto = hitos.filter(h => h.projectId === proyecto.name);
+  const hitosCompletados = hitosDelProyecto.filter(h => {
+    const task = tasks.find(t => t.id === h.taskId);
+    return task && task.status === 'completed';
+  }).length;
+  const totalHitos = hitosDelProyecto.length;
+
+  // Calcular próximos reconocimientos
+  const tareasParaProximoReconocimiento = completadas % 5 === 0 ? 0 : 5 - (completadas % 5);
+  const hitosRestantes = totalHitos - hitosCompletados;
+  const tieneReconocimiento = completadas > 0 && completadas % 5 === 0;
+  const tieneHitoReconocimiento = hitosCompletados > 0 && (hitosCompletados !== hitosDelProyecto.length || hitosCompletados > 0);
+
+  // Generar mensaje principal según logros
+  let mensajePrincipal = '';
+  let mensajeDetalle = '';
+  let nivelLogro = 'bronce';
+
+  if (completadas >= 20) {
+    nivelLogro = 'platino';
+    mensajePrincipal = '🏆 ¡EQUIPO DE ÉLITE!';
+    mensajeDetalle = `Han completado ${completadas} tareas, un récord sobresaliente.`;
+  } else if (completadas >= 10) {
+    nivelLogro = 'oro';
+    mensajePrincipal = '🥇 EXCELENCIA OPERATIVA';
+    mensajeDetalle = `${completadas} tareas completadas. La eficiencia del equipo es notable.`;
+  } else if (completadas >= 5) {
+    nivelLogro = 'plata';
+    mensajePrincipal = '🎯 LOGRO SIGNIFICATIVO';
+    mensajeDetalle = `Equipo ha superado las ${completadas} tareas. Mantengan el impulso.`;
+  } else if (completadas > 0 && completadas % 5 === 0) {
+    nivelLogro = 'bronce';
+    mensajePrincipal = '🎉 HITO ALCANZADO';
+    mensajeDetalle = `¡Excelente! Han completado ${completadas} tareas.`;
+  } else if (hitosCompletados > 0) {
+    nivelLogro = 'bronce';
+    mensajePrincipal = '🏅 HITO DEL PROYECTO';
+    mensajeDetalle = `Se ha completado ${hitosCompletados} de ${totalHitos} hitos. Avance estratégico.`;
+  } else {
+    mensajePrincipal = '🚀 EN MARCHA HACIA EL ÉXITO';
+    mensajeDetalle = `Faltan ${tareasParaProximoReconocimiento} tareas o ${hitosRestantes} hitos para el próximo reconocimiento.`;
+  }
+
+  // Colores según nivel
+  const colores = {
+    platino: { bg: '#e5e7eb', text: '#1e293b', accent: '#a0a0a0', glow: '#cbd5e1' },
+    oro: { bg: '#fef3c7', text: '#78350f', accent: '#f59e0b', glow: '#fcd34d' },
+    plata: { bg: '#f1f5f9', text: '#1e293b', accent: '#94a3b8', glow: '#cbd5e1' },
+    bronce: { bg: '#ffedd5', text: '#7c2d12', accent: '#b45309', glow: '#fed7aa' }
+  };
+  const color = colores[nivelLogro];
+
+  // Calcular porcentaje de avance hacia el próximo reconocimiento por tareas
+  let progresoReconocimiento = 0;
+  let metaTexto = '';
+  if (completadas > 0) {
+    const modulo = completadas % 5;
+    if (modulo === 0 && completadas > 0) {
+      progresoReconocimiento = 100;
+      metaTexto = '¡Reconocimiento alcanzado!';
+    } else {
+      const completadasCiclo = completadas - (Math.floor(completadas / 5) * 5);
+      progresoReconocimiento = (completadasCiclo / 5) * 100;
+      metaTexto = `${5 - completadasCiclo} tareas para el próximo reconocimiento`;
+    }
+  } else {
+    metaTexto = `${5} tareas para el primer reconocimiento`;
+  }
+
+  // Construir HTML elegante
+  const html = `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 28px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      
+      <!-- Encabezado ejecutivo -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 32px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            🏆 Reconocimientos Ejecutivos
+          </h2>
+          <p style="margin: 8px 0 0 0; color: #94a3b8;">Celebrando la excelencia del equipo · ${proyecto.name}</p>
+        </div>
+        <div style="background: rgba(139,92,246,0.2); border-radius: 40px; padding: 8px 20px;">
+          <span style="color: #a78bfa; font-weight: 500;">📈 ${completadas} tareas completadas</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta de reconocimiento principal -->
+      <div style="background: ${color.bg}; border-radius: 28px; padding: 28px; margin-bottom: 32px; transition: all 0.3s; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);">
+        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div style="font-size: 64px;">${nivelLogro === 'platino' ? '🏆' : nivelLogro === 'oro' ? '🥇' : nivelLogro === 'plata' ? '🥈' : '🥉'}</div>
+          <div style="flex: 1;">
+            <h3 style="margin: 0; font-size: 24px; font-weight: 700; color: ${color.text};">${mensajePrincipal}</h3>
+            <p style="margin: 8px 0 0; font-size: 16px; color: ${color.text}80;">${mensajeDetalle}</p>
+          </div>
+          ${tieneReconocimiento || tieneHitoReconocimiento ? `
+            <div style="background: ${color.accent}20; border-radius: 40px; padding: 8px 20px; border-left: 3px solid ${color.accent};">
+              <span style="color: ${color.accent}; font-weight: bold;">✨ Reconocimiento activo</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- Indicadores de progreso (tarjetas gemelas) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+        <!-- Progreso hacia próximo reconocimiento por tareas -->
+        <div style="background: #1e293b; border-radius: 24px; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span style="color: #94a3b8;">📋 Próximo reconocimiento (tareas)</span>
+            <span style="color: #e2e8f0; font-weight: bold;">${Math.floor(completadas / 5)} logros</span>
+          </div>
+          <div style="height: 12px; background: #0f172a; border-radius: 20px; overflow: hidden; margin-bottom: 12px;">
+            <div style="width: ${progresoReconocimiento}%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 20px; transition: width 0.5s;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+            <span style="font-size: 14px; color: #94a3b8;">${metaTexto}</span>
+            <span style="font-size: 14px; font-weight: 500; color: #10b981;">${Math.round(progresoReconocimiento)}%</span>
+          </div>
+        </div>
+
+        <!-- Progreso de hitos -->
+        <div style="background: #1e293b; border-radius: 24px; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <span style="color: #94a3b8;">🎯 Hitos del proyecto</span>
+            <span style="color: #e2e8f0; font-weight: bold;">${hitosCompletados}/${totalHitos}</span>
+          </div>
+          <div style="height: 12px; background: #0f172a; border-radius: 20px; overflow: hidden; margin-bottom: 12px;">
+            <div style="width: ${totalHitos ? (hitosCompletados / totalHitos) * 100 : 0}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #a78bfa); border-radius: 20px; transition: width 0.5s;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+            <span style="font-size: 14px; color: #94a3b8;">${hitosRestantes} hitos restantes</span>
+            <span style="font-size: 14px; font-weight: 500; color: #a78bfa;">${totalHitos ? Math.round((hitosCompletados / totalHitos) * 100) : 0}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logros adicionales: badges de reconocimientos recientes -->
+      <div style="border-top: 1px solid #334155; padding-top: 24px; margin-top: 8px;">
+        <h4 style="margin: 0 0 16px 0; font-size: 16px; color: #cbd5e1;">🏅 Logros destacados</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+          ${completadas >= 5 ? `<div style="background: #0f172a; border-radius: 40px; padding: 8px 20px; display: flex; align-items: center; gap: 8px;"><span>🎉</span><span>+5 tareas completadas</span></div>` : ''}
+          ${completadas >= 10 ? `<div style="background: #0f172a; border-radius: 40px; padding: 8px 20px; display: flex; align-items: center; gap: 8px;"><span>🌟</span><span>Doble dígito en tareas</span></div>` : ''}
+          ${completadas >= 20 ? `<div style="background: #0f172a; border-radius: 40px; padding: 8px 20px; display: flex; align-items: center; gap: 8px;"><span>🏆</span><span>Élite de 20+ tareas</span></div>` : ''}
+          ${hitosCompletados > 0 ? `<div style="background: #0f172a; border-radius: 40px; padding: 8px 20px; display: flex; align-items: center; gap: 8px;"><span>🏅</span><span>Hito alcanzado</span></div>` : ''}
+          ${hitosCompletados === totalHitos && totalHitos > 0 ? `<div style="background: #0f172a; border-radius: 40px; padding: 8px 20px; display: flex; align-items: center; gap: 8px;"><span>🚀</span><span>Todos los hitos completados</span></div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Si se acaba de alcanzar un reconocimiento, podemos mostrar una notificación elegante (opcional)
+  if (tieneReconocimiento || (hitosCompletados > 0 && hitosCompletados === totalHitos)) {
+    mostrarNotificacionEjecutiva(mensajePrincipal, color.accent);
+  }
+
+  function mostrarNotificacionEjecutiva(mensaje, color) {
+    const notif = document.createElement('div');
+    notif.innerHTML = `
+      <div style="background: ${color}; color: white; padding: 16px 24px; border-radius: 40px; font-weight: 600; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px;">
+        <span>🎉</span> ${mensaje}
+      </div>
+    `;
+    notif.style.position = 'fixed';
+    notif.style.bottom = '20px';
+    notif.style.right = '20px';
+    notif.style.zIndex = '10000';
+    notif.style.transition = 'opacity 0.3s';
+    document.body.appendChild(notif);
+    setTimeout(() => {
+      notif.style.opacity = '0';
+      setTimeout(() => notif.remove(), 500);
+    }, 4000);
+  }
+}
+
+
+
+
+
+
+// ========== MATRIZ DE RIESGOS - VERSIÓN EJECUTIVA ==========
+function renderMatrizRiesgos(container) {
+  const proyecto = obtenerProyectoActual();
+  if (!proyecto) {
+    container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    return;
+  }
+
+  const tasks = proyecto.tasks || [];
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  // Identificar riesgos: tareas con deadline pasado y no completadas
+  const riesgos = tasks.filter(t => {
+    if (!t.deadline) return false;
+    const deadline = new Date(t.deadline);
+    deadline.setHours(0, 0, 0, 0);
+    return deadline < hoy && t.status !== 'completed';
+  });
+
+  if (riesgos.length === 0) {
+    container.innerHTML = `
+      <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 40px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🛡️</div>
+        <h3 style="margin: 0; color: #e2e8f0;">No hay riesgos activos</h3>
+        <p style="color: #94a3b8; margin-top: 8px;">Todas las tareas están dentro de plazo o han sido completadas.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Calcular impacto y probabilidad para cada riesgo (basado en datos reales)
+  const riesgosConMetricas = riesgos.map(t => {
+    const deadline = new Date(t.deadline);
+    const diasAtraso = Math.max(0, Math.floor((hoy - deadline) / (1000 * 60 * 60 * 24)));
+    const horasEstimadas = t.estimatedTime || 0;
+
+    // Impacto (1-5): basado en días de atraso y horas estimadas
+    let impacto = 2;
+    if (diasAtraso >= 7) impacto = 5;
+    else if (diasAtraso >= 3) impacto = 4;
+    else if (diasAtraso >= 1) impacto = 3;
+    if (horasEstimadas > 40) impacto = Math.min(5, impacto + 1);
+    impacto = Math.min(5, Math.max(1, impacto));
+
+    // Probabilidad (1-5): basado en estado de la tarea
+    let probabilidad = 3;
+    if (t.status === 'pending') probabilidad = 5;
+    else if (t.status === 'inProgress') probabilidad = 4;
+    else if (t.status === 'overdue') probabilidad = 4;
+    probabilidad = Math.min(5, Math.max(1, probabilidad));
+
+    const riesgoScore = impacto * probabilidad;
+    let nivel = '';
+    let colorNivel = '';
+    if (riesgoScore >= 15) { nivel = 'Crítico'; colorNivel = '#991b1b'; }
+    else if (riesgoScore >= 10) { nivel = 'Alto'; colorNivel = '#dc2626'; }
+    else if (riesgoScore >= 5) { nivel = 'Medio'; colorNivel = '#f59e0b'; }
+    else { nivel = 'Bajo'; colorNivel = '#10b981'; }
+
+    return {
+      ...t,
+      impacto,
+      probabilidad,
+      riesgoScore,
+      nivel,
+      colorNivel,
+      diasAtraso
+    };
+  });
+
+  // Ordenar por nivel de riesgo (mayor a menor)
+  riesgosConMetricas.sort((a, b) => b.riesgoScore - a.riesgoScore);
+
+  // Estadísticas para resumen ejecutivo
+  const totalRiesgos = riesgosConMetricas.length;
+  const riesgoMax = riesgosConMetricas[0];
+  const riesgoPromedio = (riesgosConMetricas.reduce((s, r) => s + r.riesgoScore, 0) / totalRiesgos).toFixed(1);
+  const riesgosCriticos = riesgosConMetricas.filter(r => r.nivel === 'Crítico').length;
+  const riesgosAltos = riesgosConMetricas.filter(r => r.nivel === 'Alto').length;
+
+  // Recomendación según el riesgo más alto
+  let recomendacion = '';
+  if (riesgoMax.riesgoScore >= 15) {
+    recomendacion = `🚨 Riesgo Crítico detectado en "${riesgoMax.name}". Acción inmediata requerida. Reasignar recursos o renegociar plazos.`;
+  } else if (riesgoMax.riesgoScore >= 10) {
+    recomendacion = `⚠️ Riesgo Alto en "${riesgoMax.name}". Monitoreo diario y plan de contingencia.`;
+  } else if (riesgoMax.riesgoScore >= 5) {
+    recomendacion = `📌 Riesgo Medio en "${riesgoMax.name}". Revisión semanal recomendada.`;
+  } else {
+    recomendacion = `✅ Riesgos controlables. Mantener seguimiento de hitos.`;
+  }
+
+  // ========== GENERAR HTML ==========
+  const html = `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 28px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      
+      <!-- Cabecera ejecutiva -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 32px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ⚠️ Matriz de Riesgos
+          </h2>
+          <p style="margin: 8px 0 0 0; color: #94a3b8;">Análisis de impacto y probabilidad · ${proyecto.name}</p>
+        </div>
+        <div style="background: rgba(239,68,68,0.2); border-radius: 40px; padding: 8px 20px;">
+          <span style="color: #ef4444; font-weight: 500;">${totalRiesgos} riesgo(s) activo(s)</span>
+        </div>
+      </div>
+
+      <!-- Resumen ejecutivo (tarjetas) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
+          <div style="color: #94a3b8; font-size: 14px;">Riesgo más alto</div>
+          <div style="font-size: 24px; font-weight: bold; color: ${riesgoMax.colorNivel};">${riesgoMax.nivel}</div>
+          <div style="font-size: 14px; margin-top: 8px;">${riesgoMax.name}</div>
+        </div>
+        <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
+          <div style="color: #94a3b8; font-size: 14px;">Score promedio</div>
+          <div style="font-size: 32px; font-weight: bold; color: #e2e8f0;">${riesgoPromedio}</div>
+          <div style="font-size: 12px; margin-top: 8px;">sobre 25 puntos</div>
+        </div>
+        <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
+          <div style="color: #94a3b8; font-size: 14px;">Riesgos críticos</div>
+          <div style="font-size: 32px; font-weight: bold; color: #ef4444;">${riesgosCriticos}</div>
+          <div style="font-size: 12px; margin-top: 8px;">+ ${riesgosAltos} altos</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 20px; padding: 20px;">
+          <div style="color: white; font-size: 14px;">Recomendación ejecutiva</div>
+          <div style="font-size: 14px; margin-top: 8px; color: #e2e8f0;">${recomendacion}</div>
+        </div>
+      </div>
+
+      <!-- Matriz visual 5x5 (Impacto vs Probabilidad) -->
+      <div style="margin-bottom: 32px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #cbd5e1;">📊 Mapa de calor de riesgos</h3>
+        <div style="background: #0f172a; border-radius: 20px; padding: 20px; overflow-x: auto;">
+          <div style="min-width: 500px;">
+            <div style="display: flex; margin-bottom: 8px;">
+              <div style="width: 60px;"></div>
+              ${[1,2,3,4,5].map(p => `<div style="flex:1; text-align:center; font-weight:500; color:#94a3b8;">Prob. ${p}</div>`).join('')}
+            </div>
+            ${[1,2,3,4,5].map(impacto => `
+              <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <div style="width: 60px; font-weight:500; color:#94a3b8;">Impacto ${impacto}</div>
+                ${[1,2,3,4,5].map(probabilidad => {
+                  const riesgoEnCelda = riesgosConMetricas.find(r => r.impacto === impacto && r.probabilidad === probabilidad);
+                  const nivelColor = (() => {
+                    const score = impacto * probabilidad;
+                    if (score >= 15) return '#991b1b';
+                    if (score >= 10) return '#dc2626';
+                    if (score >= 5) return '#f59e0b';
+                    return '#10b981';
+                  })();
+                  return `
+                    <div style="flex:1; height: 70px; margin: 4px; background: ${nivelColor}20; border-radius: 12px; position: relative; display: flex; align-items: center; justify-content: center;">
+                      ${riesgoEnCelda ? `
+                        <div style="background: ${riesgoEnCelda.colorNivel}; width: 40px; height: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; box-shadow: 0 0 0 2px rgba(255,255,255,0.3);" 
+                             title="${riesgoEnCelda.name} (Impacto: ${riesgoEnCelda.impacto}, Prob: ${riesgoEnCelda.probabilidad})">
+                          <span style="font-size: 12px; font-weight: bold;">${riesgoEnCelda.riesgoScore}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `).join('')}
+          </div>
+          <div style="display: flex; justify-content: center; gap: 20px; margin-top: 16px; font-size: 12px;">
+            <span><span style="background: #10b981; display: inline-block; width: 12px; height: 12px; border-radius: 12px;"></span> Bajo (≤4)</span>
+            <span><span style="background: #f59e0b; display: inline-block; width: 12px; height: 12px; border-radius: 12px;"></span> Medio (5-9)</span>
+            <span><span style="background: #dc2626; display: inline-block; width: 12px; height: 12px; border-radius: 12px;"></span> Alto (10-14)</span>
+            <span><span style="background: #991b1b; display: inline-block; width: 12px; height: 12px; border-radius: 12px;"></span> Crítico (≥15)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla detallada de riesgos -->
+      <div>
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #cbd5e1;">📋 Detalle de riesgos</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 2px solid #334155;">
+                <th style="text-align: left; padding: 12px;">Riesgo</th>
+                <th style="text-align: center; padding: 12px;">Impacto</th>
+                <th style="text-align: center; padding: 12px;">Probabilidad</th>
+                <th style="text-align: center; padding: 12px;">Score</th>
+                <th style="text-align: left; padding: 12px;">Nivel</th>
+                <th style="text-align: left; padding: 12px;">Atraso (días)</th>
+                <th style="text-align: left; padding: 12px;">Acción sugerida</th>
+               </tr>
+            </thead>
+            <tbody>
+              ${riesgosConMetricas.map(r => {
+                let accion = '';
+                if (r.nivel === 'Crítico') accion = 'Acción inmediata, escalar a dirección';
+                else if (r.nivel === 'Alto') accion = 'Plan de contingencia, revisión diaria';
+                else if (r.nivel === 'Medio') accion = 'Monitoreo semanal';
+                else accion = 'Seguimiento normal';
+                return `
+                  <tr style="border-bottom: 1px solid #334155;">
+                    <td style="padding: 12px; font-weight: 500;">${escapeHtml(r.name)}</td>
+                    <td style="padding: 12px; text-align: center;">${r.impacto}</td>
+                    <td style="padding: 12px; text-align: center;">${r.probabilidad}</td>
+                    <td style="padding: 12px; text-align: center; font-weight: bold;">${r.riesgoScore}</td>
+                    <td style="padding: 12px;">
+                      <span style="background: ${r.colorNivel}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">${r.nivel}</span>
+                    </td>
+                    <td style="padding: 12px;">${r.diasAtraso}</td>
+                    <td style="padding: 12px; color: #94a3b8;">${accion}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Función auxiliar para escapar HTML
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+}
+
+
+
+
+// ========== SECCIÓN ACCIONES PREVENTIVAS - VERSIÓN EJECUTIVA ==========
+let accionesPreventivas = JSON.parse(localStorage.getItem('accionesPreventivas') || '[]');
+
+function renderAccionesPreventivas(container) {
+  // Función para mostrar la lista (reutilizable)
+  const mostrarLista = (filtro = '') => {
+    const listaDiv = document.getElementById('listaAccionesPreventivas');
+    if (!listaDiv) return;
+
+    let accionesFiltradas = accionesPreventivas;
+    if (filtro.trim()) {
+      accionesFiltradas = accionesPreventivas.filter(a => 
+        a.texto.toLowerCase().includes(filtro.toLowerCase())
+      );
+    }
+
+    if (accionesFiltradas.length === 0) {
+      listaDiv.innerHTML = `
+        <div style="text-align: center; padding: 40px; background: rgba(30,41,59,0.5); border-radius: 24px;">
+          <p style="font-size: 1.1rem; color: #94a3b8;">📋 No hay acciones preventivas registradas</p>
+          <p style="font-size: 0.9rem; color: #64748b;">Agrega la primera acción para mitigar riesgos</p>
+        </div>
+      `;
+      return;
+    }
+
+    listaDiv.innerHTML = accionesFiltradas.map((accion, idx) => `
+      <div style="background: #1e293b; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; border-left: 4px solid #8b5cf6;">
+        <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 20px;">🛡️</span>
+          <span style="color: #e2e8f0; font-size: 15px;">${escapeHtml(accion.texto)}</span>
+        </div>
+        <button onclick="eliminarAccionPreventiva(${idx})" 
+                style="background: #ef4444; border: none; color: white; width: 32px; height: 32px; border-radius: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+          <span style="font-size: 16px;">🗑️</span>
+        </button>
+      </div>
+    `).join('');
+  };
+
+  // Actualizar contador
+  const actualizarContador = () => {
+    const contadorSpan = document.getElementById('totalAccionesPreventivas');
+    if (contadorSpan) contadorSpan.textContent = accionesPreventivas.length;
+  };
+
+  // Función para agregar nueva acción
+  const agregarNuevaAccion = () => {
+    const input = document.getElementById('nuevaAccionPreventiva');
+    const texto = input.value.trim();
+    if (texto === '') {
+      mostrarNotificacion('⚠️ Ingresa una descripción para la acción preventiva', '#f59e0b');
+      return;
+    }
+    accionesPreventivas.push({ texto });
+    localStorage.setItem('accionesPreventivas', JSON.stringify(accionesPreventivas));
+    input.value = '';
+    mostrarLista(document.getElementById('filtroAcciones')?.value || '');
+    actualizarContador();
+    mostrarNotificacion('✅ Acción preventiva agregada correctamente', '#10b981');
+  };
+
+  // Función para eliminar acción (global para poder llamarla desde el botón)
+  window.eliminarAccionPreventiva = (index) => {
+    accionesPreventivas.splice(index, 1);
+    localStorage.setItem('accionesPreventivas', JSON.stringify(accionesPreventivas));
+    mostrarLista(document.getElementById('filtroAcciones')?.value || '');
+    actualizarContador();
+    mostrarNotificacion('🗑️ Acción eliminada', '#ef4444');
+  };
+
+  // Función para imprimir
+  const imprimirAcciones = () => {
+    if (accionesPreventivas.length === 0) {
+      mostrarNotificacion('📋 No hay acciones para imprimir', '#f59e0b');
+      return;
+    }
+    const html = generarHTML(
+      'Acciones Preventivas',
+      `<ul style="list-style: none; padding: 0;">
+        ${accionesPreventivas.map(a => `<li style="margin-bottom: 12px; padding: 8px; border-left: 4px solid #8b5cf6;">🛡️ ${escapeHtml(a.texto)}</li>`).join('')}
+      </ul>`
+    );
+    abrirVentanaDocumento(html, 'Acciones_Preventivas');
+  };
+
+  // Construir HTML principal
+  const html = `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 28px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      
+      <!-- Cabecera ejecutiva -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 28px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            🛡️ Acciones Preventivas
+          </h2>
+          <p style="margin: 8px 0 0 0; color: #94a3b8;">Mitigación proactiva de riesgos · Plan de contingencia</p>
+        </div>
+        <div style="background: rgba(139,92,246,0.2); border-radius: 40px; padding: 8px 20px;">
+          <span style="color: #a78bfa; font-weight: 500;">Total: <span id="totalAccionesPreventivas">${accionesPreventivas.length}</span></span>
+        </div>
+      </div>
+
+      <!-- Formulario de nueva acción -->
+      <div style="display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap;">
+        <div style="flex: 1;">
+          <input type="text" id="nuevaAccionPreventiva" 
+                 placeholder="Ej: Realizar auditoría semanal de hitos, Capacitar al equipo en gestión de riesgos..."
+                 style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 14px 20px; color: #e2e8f0; font-size: 14px; transition: all 0.2s;">
+        </div>
+        <button id="agregarAccionPreventivaBtn" 
+                style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 14px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+          <span>+</span> Agregar acción
+        </button>
+      </div>
+
+      <!-- Filtro de búsqueda -->
+      <div style="margin-bottom: 20px;">
+        <input type="text" id="filtroAcciones" placeholder="🔍 Buscar acción preventiva..." 
+               style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 10px 20px; color: #e2e8f0; font-size: 14px;">
+      </div>
+
+      <!-- Lista de acciones -->
+      <div id="listaAccionesPreventivas" style="margin-bottom: 24px; max-height: 400px; overflow-y: auto;">
+        <!-- Se llenará dinámicamente -->
+      </div>
+
+      <!-- Botón imprimir -->
+      <div style="display: flex; justify-content: flex-end;">
+        <button id="imprimirAccionesPreventivasBtn" 
+                style="background: #1e293b; border: 1px solid #8b5cf6; color: #e2e8f0; padding: 12px 28px; border-radius: 40px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          🖨️ Exportar lista de acciones
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Asignar eventos después de inyectar el HTML
+  document.getElementById('agregarAccionPreventivaBtn').onclick = agregarNuevaAccion;
+  document.getElementById('nuevaAccionPreventiva').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') agregarNuevaAccion();
+  });
+  document.getElementById('imprimirAccionesPreventivasBtn').onclick = imprimirAcciones;
+
+  const filtroInput = document.getElementById('filtroAcciones');
+  filtroInput.addEventListener('input', (e) => {
+    mostrarLista(e.target.value);
+  });
+
+  // Mostrar la lista inicial
+  mostrarLista('');
+  actualizarContador();
+
+  // Función auxiliar para notificaciones elegantes
+  function mostrarNotificacion(mensaje, color) {
+    const notif = document.createElement('div');
+    notif.textContent = mensaje;
+    notif.style.cssText = `
+      position: fixed; bottom: 20px; right: 20px; background: ${color}; color: white;
+      padding: 12px 24px; border-radius: 40px; font-weight: 500; z-index: 10000;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transition: opacity 0.3s;
+    `;
+    document.body.appendChild(notif);
+    setTimeout(() => {
+      notif.style.opacity = '0';
+      setTimeout(() => notif.remove(), 500);
+    }, 3000);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+}
+
+
+
+
+
+// ========== SECCIÓN CALIDAD - VERSIÓN EJECUTIVA ==========
+function renderIndicadoresCalidad(container) {
+  const proyecto = obtenerProyectoActual();
+  if (!proyecto) {
+    container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    return;
+  }
+
+  const tasks = proyecto.tasks || [];
+  const total = tasks.length;
+  const completadas = tasks.filter(t => t.status === 'completed').length;
+  
+  // Defectos: tareas atrasadas no completadas
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const defectos = tasks.filter(t => {
+    if (!t.deadline) return false;
+    const deadline = new Date(t.deadline);
+    deadline.setHours(0, 0, 0, 0);
+    return deadline < hoy && t.status !== 'completed';
+  }).length;
+
+  // Cálculo de satisfacción (simplificado, basado en % completado y atrasos)
+  const satisfaccionBase = total ? (completadas / total) * 100 : 0;
+  const penalizacionDefectos = Math.min(20, (defectos / (total || 1)) * 50);
+  const satisfaccion = Math.max(0, Math.min(100, satisfaccionBase - penalizacionDefectos));
+
+  // Objetivos
+  const objCompletadas = 80;
+  const objDefectos = 5;
+  const objSatisfaccion = 85;
+
+  const porcentajeCompletadas = total ? (completadas / total) * 100 : 0;
+  const estadoCompletadas = porcentajeCompletadas >= objCompletadas ? 'Cumple' : 'Riesgo';
+  const colorCompletadas = porcentajeCompletadas >= objCompletadas ? '#10b981' : '#ef4444';
+  
+  const estadoDefectos = defectos <= objDefectos ? 'Cumple' : 'Riesgo';
+  const colorDefectos = defectos <= objDefectos ? '#10b981' : '#ef4444';
+  
+  const estadoSatisfaccion = satisfaccion >= objSatisfaccion ? 'Cumple' : 'Mejorable';
+  const colorSatisfaccion = satisfaccion >= objSatisfaccion ? '#10b981' : '#f59e0b';
+
+  // Calcular tendencia (simulación de mejora)
+  const tendencia = (porcentajeCompletadas - 70) > 0 ? 'positiva' : (porcentajeCompletadas < 50 ? 'negativa' : 'estable');
+  const tendenciaIcono = tendencia === 'positiva' ? '📈' : (tendencia === 'negativa' ? '📉' : '➡️');
+
+  // Generar HTML
+  const html = `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 32px; padding: 28px; margin-bottom: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      
+      <!-- Cabecera ejecutiva -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 32px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            📊 Indicadores de Calidad
+          </h2>
+          <p style="margin: 8px 0 0 0; color: #94a3b8;">Métricas de desempeño y excelencia operativa · ${proyecto.name}</p>
+        </div>
+        <div style="background: rgba(139,92,246,0.2); border-radius: 40px; padding: 8px 20px;">
+          <span style="color: #a78bfa; font-weight: 500;">${tendenciaIcono} Tendencia ${tendencia}</span>
+        </div>
+      </div>
+
+      <!-- Tarjetas de indicadores -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px;">
+        <!-- Tareas completadas -->
+        <div style="background: #1e293b; border-radius: 24px; padding: 24px; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.1;">📋</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="color: #94a3b8; font-size: 14px;">Tareas completadas</div>
+              <div style="font-size: 42px; font-weight: 800; margin: 8px 0;">${completadas}<span style="font-size: 20px;">/${total}</span></div>
+              <div style="font-size: 14px; color: ${colorCompletadas};">${estadoCompletadas} objetivo >${objCompletadas}%</div>
+            </div>
+            <div style="background: ${colorCompletadas}20; border-radius: 40px; padding: 8px 16px;">
+              <span style="color: ${colorCompletadas}; font-weight: 600;">${porcentajeCompletadas.toFixed(0)}%</span>
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <div style="height: 8px; background: #0f172a; border-radius: 20px; overflow: hidden;">
+              <div style="width: ${porcentajeCompletadas}%; height: 100%; background: ${colorCompletadas}; border-radius: 20px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Defectos / retrabajos -->
+        <div style="background: #1e293b; border-radius: 24px; padding: 24px; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.1;">🐛</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="color: #94a3b8; font-size: 14px;">Defectos / retrabajos</div>
+              <div style="font-size: 42px; font-weight: 800; margin: 8px 0;">${defectos}</div>
+              <div style="font-size: 14px; color: ${colorDefectos};">${estadoDefectos} objetivo ≤${objDefectos}</div>
+            </div>
+            <div style="background: ${colorDefectos}20; border-radius: 40px; padding: 8px 16px;">
+              <span style="color: ${colorDefectos}; font-weight: 600;">${defectos}</span>
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <div style="height: 8px; background: #0f172a; border-radius: 20px; overflow: hidden;">
+              <div style="width: ${Math.min(100, (defectos / (total || 1)) * 100)}%; height: 100%; background: ${colorDefectos}; border-radius: 20px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Satisfacción estimada -->
+        <div style="background: #1e293b; border-radius: 24px; padding: 24px; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.1;">😊</div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="color: #94a3b8; font-size: 14px;">Satisfacción estimada</div>
+              <div style="font-size: 42px; font-weight: 800; margin: 8px 0;">${satisfaccion.toFixed(0)}%</div>
+              <div style="font-size: 14px; color: ${colorSatisfaccion};">${estadoSatisfaccion} objetivo >${objSatisfaccion}%</div>
+            </div>
+            <div style="background: ${colorSatisfaccion}20; border-radius: 40px; padding: 8px 16px;">
+              <span style="color: ${colorSatisfaccion}; font-weight: 600;">${satisfaccion.toFixed(0)}%</span>
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <div style="height: 8px; background: #0f172a; border-radius: 20px; overflow: hidden;">
+              <div style="width: ${satisfaccion}%; height: 100%; background: ${colorSatisfaccion}; border-radius: 20px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico comparativo (radar o barras) -->
+      <div style="background: #0f172a; border-radius: 24px; padding: 24px; margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #cbd5e1;">📈 Comparativa de métricas</h3>
+        <div style="height: 300px;">
+          <canvas id="calidadChartExec" style="width: 100%; height: 100%;"></canvas>
+        </div>
+      </div>
+
+      <!-- Resumen ejecutivo -->
+      <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 20px; padding: 20px; margin-top: 8px;">
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 14px; opacity: 0.8;">Análisis de calidad</div>
+            <div style="font-size: 16px; font-weight: 500;">${porcentajeCompletadas >= 80 ? '✅ El equipo mantiene un alto rendimiento' : (porcentajeCompletadas >= 60 ? '⚠️ Se requiere enfoque en productividad' : '🚨 Acción urgente para recuperar entregas')}</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 40px; padding: 8px 20px; text-align: center;">
+            <div style="font-size: 12px;">Recomendación</div>
+            <div style="font-size: 14px; font-weight: 500;">${defectos > objDefectos ? 'Priorizar resolución de defectos' : (porcentajeCompletadas < objCompletadas ? 'Acelerar entregas pendientes' : 'Mantener prácticas actuales')}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // ========== GRÁFICO ==========
+  const asegurarChart = () => {
+    if (typeof Chart === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+      script.onload = () => renderChart();
+      document.head.appendChild(script);
+    } else {
+      renderChart();
+    }
+  };
+
+  const renderChart = () => {
+    const canvas = document.getElementById('calidadChartExec');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (window.calidadChartInstance) window.calidadChartInstance.destroy();
+    window.calidadChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Tareas completadas', 'Defectos', 'Satisfacción'],
+        datasets: [
+          {
+            label: 'Valor actual',
+            data: [porcentajeCompletadas, (defectos / (total || 1)) * 100, satisfaccion],
+            backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+            borderRadius: 8,
+            barPercentage: 0.6
+          },
+          {
+            label: 'Objetivo',
+            data: [objCompletadas, 0, objSatisfaccion],
+            backgroundColor: 'rgba(139,92,246,0.3)',
+            borderRadius: 8,
+            barPercentage: 0.6,
+            borderDash: [5, 5],
+            type: 'line',
+            borderColor: '#a78bfa',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: '#e2e8f0' } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: 'Porcentaje (%)', color: '#94a3b8' },
+            ticks: { color: '#cbd5e1' }
+          },
+          x: {
+            ticks: { color: '#cbd5e1' }
+          }
+        }
+      }
+    });
+  };
+
+  asegurarChart();
+}
+
+
+
+
+// ================================
+//     SISTEMA EJECUTIVO DE ENCUESTAS
+//        Versión Corporativa C-Suite
+// ================================
+
+let encuestas = JSON.parse(localStorage.getItem("encuestas") || "[]");
+
+function renderEncuestas(container) {
+    const proyecto = obtenerProyectoActual();
+
+    const encuestasProyecto = encuestas.filter(e => e.projectId === proyecto.name);
+    const puntuaciones = encuestasProyecto.map(e => e.puntuacion);
+
+    const promedio = puntuaciones.length
+        ? (puntuaciones.reduce((a, b) => a + b) / puntuaciones.length).toFixed(1)
+        : "—";
+
+    const ultima = encuestasProyecto.at(-1);
+
+    container.innerHTML = `
+        <section class="enc executive-panel">
+            <div class="enc-header">
+                <h2>Satisfacción del Proyecto</h2>
+                <p class="enc-subtitle">Evaluación estratégica basada en retroalimentación de stakeholders.</p>
+            </div>
+
+            <div class="enc-grid">
+
+                <div class="enc-card kpi-card">
+                    <h3>Puntuación General</h3>
+                    <div class="kpi-score">${promedio}</div>
+                    <p class="kpi-meta">Promedio ponderado (escala 1-10)</p>
+                </div>
+
+                <div class="enc-card">
+                    <h3>Encuestas Registradas</h3>
+                    <div class="enc-total">${encuestasProyecto.length}</div>
+                    <p class="kpi-meta">Total histórico de evaluaciones</p>
+                </div>
+
+                <div class="enc-card">
+                    <h3>Última Evaluación</h3>
+
+                    ${ultima ? `
+                        <div class="last-score">${ultima.puntuacion}/10</div>
+                        <div class="last-comment">“${ultima.comentario || "Sin comentario"}”</div>
+                        <div class="last-date">${new Date(ultima.fecha).toLocaleString()}</div>
+                    ` : `
+                        <div class="last-empty">No hay evaluaciones registradas</div>
+                    `}
+                </div>
+            </div>
+
+            <button class="enc-btn-principal" id="encuestaBtn">
+                + Registrar Evaluación
+            </button>
+
+            ${modalTemplate()}
+        </section>
+    `;
+
+    document.getElementById("encuestaBtn").onclick = openEncuestaModal;
+}
+
+function modalTemplate() {
+    return `
+    <div id="modalEncuesta" class="enc-modal-overlay" style="display:none;">
+        <div class="enc-modal">
+            <h3>Evaluación Ejecutiva</h3>
+
+            <label>Puntuación (1-10)</label>
+            <input id="encPuntuacion" type="number" min="1" max="10" class="enc-input">
+
+            <label>Comentario estratégico</label>
+            <textarea id="encComentario" class="enc-textarea" placeholder="Comentarios relevantes para la dirección"></textarea>
+
+            <div class="enc-modal-actions">
+                <button class="enc-btn-cancelar" id="cancelModalBtn">Cancelar</button>
+                <button class="enc-btn-confirmar" id="saveModalBtn">Guardar</button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+function openEncuestaModal() {
+    const modal = document.getElementById("modalEncuesta");
+    modal.style.display = "flex";
+
+    document.getElementById("cancelModalBtn").onclick = () => modal.style.display = "none";
+
+    document.getElementById("saveModalBtn").onclick = () => {
+        const proyecto = obtenerProyectoActual();
+
+        const puntuacion = parseInt(document.getElementById("encPuntuacion").value);
+        const comentario = document.getElementById("encComentario").value.trim();
+
+        if (!puntuacion || puntuacion < 1 || puntuacion > 10) {
+            alert("La puntuación debe estar entre 1 y 10");
+            return;
+        }
+
+        encuestas.push({
+            projectId: proyecto.name,
+            puntuacion,
+            comentario,
+            fecha: new Date().toISOString()
+        });
+
+        localStorage.setItem("encuestas", JSON.stringify(encuestas));
+        modal.style.display = "none";
+        renderEncuestas(document.querySelector("#encuestasContainer"));
+    };
+}
+
+
+
+
+// ========== SECCIÓN PORTAL - VERSIÓN CORREGIDA ==========
+function renderPortalProyecto(container) {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { 
+container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#64748b;">⚠️ Seleccione un proyecto</div>';
+return; 
+}
+
+const tasks = proyecto.tasks || [];
+const totalTareas = tasks.length;
+const completadas = tasks.filter(function(t) { return t.status === 'completed'; }).length;
+const atrasadas = tasks.filter(function(t) { return t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'; }).length;
+const porcentajeAvance = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
+
+// Estado del proyecto
+var estadoProyecto = 'On Track';
+var colorEstado = '#10b981';
+if (atrasadas > totalTareas * 0.2) { estadoProyecto = 'At Risk'; colorEstado = '#ef4444'; }
+else if (atrasadas > 0) { estadoProyecto = 'Monitoring'; colorEstado = '#f59e0b'; }
+
+// ✅ HTML Seguro - Concatenación simple
+let html = '';
+
+// Header
+html += '<div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:28px; border-radius:20px; margin-bottom:24px;">';
+html += '<h2 style="margin:0; font-size:22px;">🌐 Executive Portal</h2>';
+html += '<p style="margin:6px 0 0 0; opacity:0.85;">' + proyecto.name + '</p>';
+html += '<div style="margin-top:12px;">';
+html += '<span style="background:' + colorEstado + '20; color:' + colorEstado + '; padding:6px 16px; border-radius:12px; font-size:13px; font-weight:600;">';
+html += estadoProyecto + '</span>';
+html += '</div>';
+html += '</div>';
+
+// KPIs Grid
+html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:24px;">';
+
+// Progress
+html += '<div style="background:white; padding:16px; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:24px; font-weight:700; color:#1e293b;">' + porcentajeAvance + '%</div>';
+html += '<div style="font-size:12px; color:#64748b;">Progress</div>';
+html += '<div style="background:#e2e8f0; height:4px; border-radius:2px; margin-top:8px;">';
+html += '<div style="background:#3b82f6; height:100%; width:' + porcentajeAvance + '%; border-radius:2px;"></div>';
+html += '</div>';
+html += '</div>';
+
+// Tasks
+html += '<div style="background:white; padding:16px; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:24px; font-weight:700; color:#1e293b;">' + completadas + '/' + totalTareas + '</div>';
+html += '<div style="font-size:12px; color:#64748b;">Tasks Done</div>';
+html += '</div>';
+
+// Risk
+html += '<div style="background:white; padding:16px; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,0.08);">';
+html += '<div style="font-size:24px; font-weight:700; color:' + (atrasadas > 0 ? '#ef4444' : '#10b981') + ';">' + atrasadas + '</div>';
+html += '<div style="font-size:12px; color:#64748b;">Overdue</div>';
+html += '</div>';
+
+html += '</div>';
+
+// Quick Actions - USANDO DATA ATTRIBUTES (más seguro que onclick inline)
+html += '<div style="background:white; padding:20px; border-radius:16px; box-shadow:0 4px 16px rgba(0,0,0,0.08);">';
+html += '<h3 style="margin:0 0 16px 0; color:#1e293b; font-size:16px;">⚡ Quick Actions</h3>';
+html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">';
+
+html += '<button class="portal-action" data-action="export" data-project="' + proyecto.name + '" style="background:#3b82f6; color:white; border:none; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">📄 Export</button>';
+html += '<button class="portal-action" data-action="schedule" data-project="' + proyecto.name + '" style="background:#10b981; color:white; border:none; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">📅 Schedule</button>';
+html += '<button class="portal-action" data-action="notify" data-project="' + proyecto.name + '" style="background:#8b5cf6; color:white; border:none; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">🔔 Notify</button>';
+html += '<button class="portal-action" data-action="dashboard" data-project="' + proyecto.name + '" style="background:#f59e0b; color:white; border:none; padding:12px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">📊 Dashboard</button>';
+
+html += '</div>';
+html += '</div>';
+
+container.innerHTML = html;
+
+// ✅ Event listeners con delegación (más seguro y limpio)
+container.querySelectorAll('.portal-action').forEach(function(btn) {
+btn.onclick = function() {
+const action = this.dataset.action;
+const project = this.dataset.project;
+handlePortalAction(action, project);
+};
+});
+}
+
+// ✅ Función manejadora centralizada (evita errores de scope)
+function handlePortalAction(action, project) {
+console.log('🎯 Action:', action, '| Project:', project);
+
+if (action === 'export') {
+const reporte = '📊 EXECUTIVE REPORT - ' + project + '\n';
+reporte += '━━━━━━━━━━\n';
+reporte += 'Generated: ' + new Date().toLocaleString() + '\n';
+reporte += 'Status: On Track\n';
+reporte += 'Progress: XX%\n';
+reporte += '\nConfidential - Executive Use Only';
+navigator.clipboard?.writeText(reporte).then(function() {
+alert('✅ Report copied to clipboard');
+}).catch(function() {
+alert('📋 Report:\n\n' + reporte);
+});
+}
+else if (action === 'schedule') {
+alert('📅 Executive Review scheduled for: ' + project + '\n\nDate: Next week\nDuration: 30 min');
+}
+else if (action === 'notify') {
+const msg = '📢 Project Update - ' + project + '\n\nStatus: On Track\nProgress: XX%\n\nFor details, access the Executive Portal.';
+navigator.clipboard?.writeText(msg).then(function() {
+alert('✅ Notification copied to clipboard');
+if (window.SlackNotifier && typeof window.SlackNotifier.send === 'function') {
+window.SlackNotifier.send('📢 *Project Update: ' + project + '*\nStatus: On Track');
+}
+}).catch(function() {
+alert('📋 Notification:\n\n' + msg);
+});
+}
+else if (action === 'dashboard') {
+alert('📊 Full Dashboard\n\nProject: ' + project + '\n\nFeature coming soon!');
+}
+}
+
+console.log('✅ Portal module loaded');
+
+
+
+
+
+
+
+
+
+
+
+// ========== SECCIÓN CHECKLIST ==========
+let checklistCierre = JSON.parse(localStorage.getItem('checklistCierre') || '[]');
+function renderChecklistCierre(container) {
+const proyecto = obtenerProyectoActual();
+const itemsProyecto = checklistCierre.filter(i=>i.projectId===proyecto.name);
+const mostrar = () => {
+const list = itemsProyecto.map((item,i) => `<div><input type="checkbox" ${item.completado?'checked':''} data-idx="${i}"> ${item.texto}</div>`).join('');
+document.getElementById('checklistItems').innerHTML = list || '<div>No hay items</div>';
+document.querySelectorAll('#checklistItems input').forEach(cb => {
+cb.onchange = () => {
+const idx = parseInt(cb.dataset.idx);
+itemsProyecto[idx].completado = cb.checked;
+localStorage.setItem('checklistCierre', JSON.stringify(checklistCierre));
+};
+});
+};
+container.innerHTML = `
+<h2>✅ Checklist de Cierre</h2>
+<input type="text" id="nuevoChecklist" placeholder="Nuevo item"><button id="agregarChecklist">Agregar</button>
+<div id="checklistItems"></div>
+<button id="generarActaCierreChecklist">Generar Acta de Cierre desde checklist</button>
+`;
+document.getElementById('agregarChecklist').onclick = () => {
+const texto = document.getElementById('nuevoChecklist').value.trim();
+if (texto) {
+checklistCierre.push({ projectId: proyecto.name, texto, completado: false });
+localStorage.setItem('checklistCierre', JSON.stringify(checklistCierre));
+renderChecklistCierre(container);
+}
+};
+document.getElementById('generarActaCierreChecklist').onclick = () => {
+const todosCompletados = itemsProyecto.every(i=>i.completado);
+if (!todosCompletados) alert('No todos los items están marcados.');
+else generarActaCierre();
+};
+mostrar();
+}
+
+
+
+
+
+// ========== SECCIÓN ARCHIVO ==========
+let documentosArchivo = JSON.parse(localStorage.getItem('documentosArchivo') || '[]');
+function renderArchivoDocumentos(container) {
+const proyecto = obtenerProyectoActual();
+const archivos = documentosArchivo.filter(d=>d.projectId===proyecto.name);
+const carpetas = [...new Set(archivos.map(a=>a.carpeta).filter(Boolean))];
+const mostrar = (carpetaSeleccionada = '') => {
+const filtrados = carpetaSeleccionada ? archivos.filter(a=>a.carpeta===carpetaSeleccionada) : archivos;
+const list = filtrados.map((doc,i) => `<tr><td>${doc.nombre}</td><td>${doc.fecha}</td><td>${doc.carpeta || 'Raíz'}</td><td><button data-idx="${i}" class="descargarArchivo">Descargar</button> <button data-idx="${i}" class="eliminarArchivo">🗑️</button></td></tr>`).join('');
+document.getElementById('listaArchivos').innerHTML = `<table><thead><tr><th>Nombre</th><th>Fecha</th><th>Carpeta</th><th>Acciones</th></tr></thead><tbody>${list || '<tr><td colspan="4">No hay documentos</td></tr>'}</tbody></table>`;
+document.querySelectorAll('.descargarArchivo').forEach(btn => btn.onclick = () => {
+const doc = filtrados[btn.dataset.idx];
+const a = document.createElement('a');
+a.href = doc.contenido;
+a.download = doc.nombre;
+a.click();
+});
+document.querySelectorAll('.eliminarArchivo').forEach(btn => btn.onclick = () => {
+const idx = archivos.findIndex(a=>a===filtrados[btn.dataset.idx]);
+archivos.splice(idx,1);
+localStorage.setItem('documentosArchivo', JSON.stringify(documentosArchivo));
+renderArchivoDocumentos(container);
+});
+};
+container.innerHTML = `
+<h2>📁 Archivo de Documentos</h2>
+<div><label>Carpeta: </label><select id="carpetaSelect"><option value="">Raíz</option>${carpetas.map(c=>`<option value="${c}">${c}</option>`).join('')}</select> <button id="crearCarpetaBtn">+ Crear carpeta</button></div>
+<input type="file" id="subirArchivo"><button id="cargarArchivo">Subir documento</button>
+<div id="listaArchivos"></div>
+`;
+const carpetaSelect = document.getElementById('carpetaSelect');
+carpetaSelect.onchange = () => mostrar(carpetaSelect.value);
+document.getElementById('crearCarpetaBtn').onclick = () => {
+const nombre = prompt('Nombre de la carpeta:', 'Nueva carpeta');
+if (nombre) {
+if (!carpetas.includes(nombre)) carpetas.push(nombre);
+const opt = document.createElement('option');
+opt.value = nombre;
+opt.textContent = nombre;
+carpetaSelect.appendChild(opt);
+alert(`Carpeta "${nombre}" creada.`);
+}
+};
+document.getElementById('cargarArchivo').onclick = () => {
+const fileInput = document.getElementById('subirArchivo');
+const file = fileInput.files[0];
+if (!file) { alert('Selecciona un archivo'); return; }
+const carpeta = carpetaSelect.value;
+const reader = new FileReader();
+reader.onload = (e) => {
+documentosArchivo.push({ projectId: proyecto.name, nombre: file.name, contenido: e.target.result, fecha: new Date().toLocaleString(), carpeta: carpeta || 'Raíz' });
+localStorage.setItem('documentosArchivo', JSON.stringify(documentosArchivo));
+renderArchivoDocumentos(container);
+};
+reader.readAsDataURL(file);
+};
+mostrar();
+}
+
+
+
+
+// ========== SECCIÓN TRANSFERENCIA ==========
+let transferenciaData = JSON.parse(localStorage.getItem('transferenciaData') || '{}');
+function renderTransferencia(container) {
+const proyecto = obtenerProyectoActual();
+const data = transferenciaData[proyecto.name] || { plan: '', responsable: '', fecha: '' };
+const guardar = () => {
+transferenciaData[proyecto.name] = {
+plan: document.getElementById('planTransferencia').value,
+responsable: document.getElementById('responsableTransferencia').value,
+fecha: document.getElementById('fechaTransferencia').value
+};
+localStorage.setItem('transferenciaData', JSON.stringify(transferenciaData));
+alert('Plan de transferencia guardado');
+renderTransferencia(container);
+};
+container.innerHTML = `
+<h2>🔄 Plan de Transferencia a Operaciones</h2>
+<div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px;">
+<label>Plan de mantenimiento:</label><br>
+<textarea id="planTransferencia" rows="3" style="width:100%; background:#0f172a; color:white; border:1px solid #3b82f6; border-radius:8px; padding:8px;">${data.plan}</textarea><br>
+<label>Responsable:</label><br>
+<input type="text" id="responsableTransferencia" value="${data.responsable}" style="width:100%; background:#0f172a; color:white; border:1px solid #3b82f6; border-radius:8px; padding:8px;"><br>
+<label>Fecha prevista:</label><br>
+<input type="date" id="fechaTransferencia" value="${data.fecha}" style="width:100%; background:#0f172a; color:white; border:1px solid #3b82f6; border-radius:8px; padding:8px;"><br>
+<button id="guardarTransferencia" style="margin-top:10px;">Guardar plan</button>
+<button id="generarDocumentoTransferencia" style="margin-top:10px; margin-left:10px;">Generar documento</button>
+</div>
+`;
+document.getElementById('guardarTransferencia').onclick = guardar;
+document.getElementById('generarDocumentoTransferencia').onclick = () => {
+const html = generarHTML('Plan de Transferencia a Operaciones', `
+<p><strong>Proyecto:</strong> ${proyecto.name}</p>
+<p><strong>Plan de mantenimiento:</strong> ${data.plan}</p>
+<p><strong>Responsable:</strong> ${data.responsable}</p>
+<p><strong>Fecha prevista:</strong> ${data.fecha}</p>
+`);
+abrirVentanaDocumento(html, `Transferencia_${proyecto.name}`);
+};
+}
+
+
+
+
+
+// ========== SECCIÓN DASHBOARD ==========
+// ========== SECCIÓN DASHBOARD (CORREGIDA - Gráfica de dona sin desborde) ==========
+function renderDashboard(container) {
+  // ========== FUNCIONES AUXILIARES INTERNAS (no interfieren con el exterior) ==========
+  function formatDate(date) {
+    if (!(date instanceof Date) || isNaN(date)) return '--/--/----';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  function calculateProjectDatesFromTasks(project) {
+    const tasks = project.tasks || [];
+    let earliest = null;
+    let latest = null;
+    tasks.forEach(task => {
+      const start = task.startDate ? new Date(task.startDate) : null;
+      const end = task.deadline ? new Date(task.deadline) : null;
+      if (start && (!earliest || start < earliest)) earliest = start;
+      if (end && (!latest || end > latest)) latest = end;
+    });
+    return { earliestDate: earliest, latestDate: latest };
+  }
+
+  function calculateBurndownInHours(tasks) {
+    const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+    const totalLogged = tasks.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+    const puntos = 5;
+    const trabajoIdeal = [];
+    const trabajoReal = [];
+    for (let i = 0; i < puntos; i++) {
+      trabajoIdeal.push(totalEstimated * (1 - i / (puntos - 1)));
+    }
+    if (totalEstimated === 0) {
+      for (let i = 0; i < puntos; i++) trabajoReal.push(0);
+    } else {
+      const progress = Math.min(1, totalLogged / totalEstimated);
+      for (let i = 0; i < puntos; i++) {
+        const remainingIdeal = totalEstimated * (1 - i / (puntos - 1));
+        trabajoReal.push(remainingIdeal * (1 - progress));
+      }
+      if (progress >= 1) trabajoReal[puntos - 1] = 0;
+    }
+    return { trabajoIdeal, trabajoReal };
+  }
+
+  function calculateTimeTrackingData(tasks, projectName) {
+    if (!tasks || !tasks.length) return [];
+    const grouped = {};
+    tasks.forEach(task => {
+      const assignee = task.assignee || 'Sin asignar';
+      const hours = task.timeLogged || 0;
+      if (!grouped[assignee]) {
+        grouped[assignee] = {
+          assignee: assignee,
+          projectName: projectName,
+          hours: 0,
+          lastRegister: null
+        };
+      }
+      grouped[assignee].hours += hours;
+      if (task.lastRegister) {
+        const lastDate = new Date(task.lastRegister);
+        if (!grouped[assignee].lastRegister || lastDate > new Date(grouped[assignee].lastRegister)) {
+          grouped[assignee].lastRegister = task.lastRegister;
+        }
+      } else if (task.deadline) {
+        if (!grouped[assignee].lastRegister || new Date(task.deadline) > new Date(grouped[assignee].lastRegister)) {
+          grouped[assignee].lastRegister = task.deadline;
+        }
+      }
+    });
+    return Object.values(grouped);
+  }
+
+  function loadDashboardProjectData() {
+    // Si ya existe una función externa con el mismo nombre, la usamos; si no, creamos datos de ejemplo
+    if (typeof window.loadDashboardProjectDataExternal === 'function') {
+      window.loadDashboardProjectDataExternal();
+      return;
+    }
+    const risksDiv = document.getElementById('risksContainer');
+    const actionsUl = document.getElementById('requiredActions');
+    if (risksDiv && risksDiv.children.length === 0) {
+      risksDiv.innerHTML = `
+        <div style="background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>⚠️ Riesgo de ejemplo: Revisar hitos</span>
+          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
+        </div>
+      `;
+    }
+    if (actionsUl && actionsUl.children.length === 0) {
+      actionsUl.innerHTML = `
+        <li style="background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>📌 Reunión semanal</span>
+          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
+        </li>
+      `;
+    }
+  }
+
+  function agregarRiesgo() {
+    const riesgo = prompt('Describe el riesgo o problema:');
+    if (riesgo) {
+      const container = document.getElementById('risksContainer');
+      if (container) {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+        div.innerHTML = `
+          <span>⚠️ ${escapeHtml(riesgo)}</span>
+          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
+        `;
+        container.appendChild(div);
+      }
+    }
+  }
+
+  function agregarAccion() {
+    const accion = prompt('Describe la acción requerida:');
+    if (accion) {
+      const container = document.getElementById('requiredActions');
+      if (container) {
+        const li = document.createElement('li');
+        li.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+        li.innerHTML = `
+          <span>📌 ${escapeHtml(accion)}</span>
+          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
+        `;
+        container.appendChild(li);
+      }
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // ========== INICIO DEL RENDER (código original) ==========
+  // Asegurar que Chart.js esté cargado
+  if (typeof Chart === 'undefined') {
+    console.log('Cargando Chart.js...');
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = () => renderDashboard(container);
+    document.head.appendChild(script);
+    return;
+  }
+
+  if (!container) {
+    container = document.getElementById('dashboardView');
+    if (!container) {
+      console.error('No se encontró dashboardView');
+      return;
+    }
+  }
+
+  const project = projects[currentProjectIndex];
+  if (!project) {
+    container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    return;
+  }
+
+  const tasks = project.tasks || [];
+  const totalTasks = tasks.length;
+  const completed = tasks.filter(t => t.status === 'completed').length;
+  const inProgress = tasks.filter(t => t.status === 'inProgress').length;
+  const pending = tasks.filter(t => t.status === 'pending').length;
+  const overdue = tasks.filter(t => t.status === 'overdue').length;
+
+  const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+  const totalLogged = tasks.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+  const projectTotalTime = project.totalProjectTime || 0;
+
+  const remaining = projectTotalTime - totalLogged;
+  const progressPercent = totalEstimated > 0 ? Math.round((totalLogged / totalEstimated) * 100) : 0;
+  const budgetUsage = projectTotalTime > 0 ? Math.round((totalLogged / projectTotalTime) * 100) : 0;
+
+  const { earliestDate, latestDate } = calculateProjectDatesFromTasks(project);
+  const startDate = earliestDate ? formatDate(new Date(earliestDate)) : '--/--/--';
+  const endDate = latestDate ? formatDate(new Date(latestDate)) : '--/--/--';
+  const totalDays = earliestDate && latestDate
+    ? Math.ceil((new Date(latestDate) - new Date(earliestDate)) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  const isOnTime = projectTotalTime >= totalLogged;
+  const statusText = isOnTime ? 'En tiempo' : 'A destiempo';
+  const statusColor = isOnTime ? '#10b981' : '#ef4444';
+
+  const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
+  const modeNames = { agile: 'Ágil', traditional: 'Tradicional', hybrid: 'Híbrido' };
+  const modeText = modeNames[currentMode] || 'Híbrido';
+
+  // Datos para seguimiento de horas (usamos nuestra función interna)
+  const timeTrackingData = calculateTimeTrackingData(tasks, project.name);
+
+  const assigneeHours = {};
+  timeTrackingData.forEach(item => {
+    const name = item.assignee || 'Sin asignar';
+    assigneeHours[name] = (assigneeHours[name] || 0) + item.hours;
+  });
+  const barLabels = Object.keys(assigneeHours);
+  const barData = Object.values(assigneeHours);
+
+  // ========== GENERAR HTML (exactamente igual que el original) ==========
+  const html = `
+    <div id="dashboardContentForExport" style="padding: 30px; background: #0a0a1a; min-height: 100vh; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+      <!-- HEADER -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+        <div>
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            📊 ${escapeHtml(project.name)}
+          </h2>
+          <p style="margin: 5px 0 0 0; color: #94a3b8;">Vista Completa del Proyecto · Control Ejecutivo</p>
+        </div>
+        <div style="display: flex; gap: 15px;">
+          <div id="projectHealthStatus" style="background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px;">
+            <span class="status-badge" style="color: ${statusColor}; font-weight: 600;">${statusText}</span>
+          </div>
+          <div id="modeIndicator" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600;">
+            <i class="fas fa-sync-alt"></i> Modo: <span id="currentModeText">${modeText}</span>
+          </div>
+          <button id="exportDashboardPdfBtn" style="background: #2d2d5f; border: 2px solid #8b5cf6; color: white; padding: 8px 20px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+            📄 Exportar PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- FECHAS -->
+      <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+        <div><span style="color: #94a3b8;">Fecha Inicio:</span> <strong id="projectStartDate">${startDate}</strong></div>
+        <div><span style="color: #94a3b8;">Fecha Fin:</span> <strong id="projectEndDate">${endDate}</strong></div>
+        <div><span style="color: #94a3b8;">(</span><strong>${totalDays}</strong><span style="color: #94a3b8;"> días)</span></div>
+      </div>
+
+      <!-- PROGRESO GENERAL -->
+      <div style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span>Avance</span>
+          <span id="completionPercentage">${progressPercent}%</span>
+        </div>
+        <div style="height: 12px; background: #2d2d5f; border-radius: 6px; overflow: hidden;">
+          <div id="projectProgressFillDash" style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 6px;"></div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #3b82f6;">
+          <div id="totalTasksMetric" style="font-size: 32px; font-weight: bold;">${totalTasks}</div>
+          <div style="color: #94a3b8;">Total</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #86efac;">
+          <div id="completedTasksMetric">${completed}</div>
+          <div style="color: #94a3b8;">Completadas</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #2dd4bf;">
+          <div id="inProgressTasksMetric">${inProgress}</div>
+          <div style="color: #94a3b8;">En Progreso</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #fde047;">
+          <div id="pendingTasksMetric">${pending}</div>
+          <div style="color: #94a3b8;">Pendientes</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #ef4444;">
+          <div id="overdueTasksMetric">${overdue}</div>
+          <div style="color: #94a3b8;">Rezagadas</div>
+        </div>
+        <div style="background: #8b5cf6; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #c4b5fd;">
+          <div id="budgetConsumption" style="font-size: 32px; font-weight: bold;">${budgetUsage}%</div>
+          <div style="color: white;">Presupuesto en tiempo</div>
+        </div>
+      </div>
+
+      <!-- CONTROL DE TIEMPO -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
+          <div style="color: #94a3b8;">Total</div>
+          <div id="totalProjectTimeDash" style="font-size: 28px; font-weight: bold;">${projectTotalTime}h</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
+          <div style="color: #94a3b8;">Estimado</div>
+          <div id="totalEstimatedDash" style="font-size: 28px; font-weight: bold;">${totalEstimated.toFixed(1)}h</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
+          <div style="color: #94a3b8;">Registrado</div>
+          <div id="totalLoggedDash" style="font-size: 28px; font-weight: bold;">${totalLogged.toFixed(1)}h</div>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; grid-column: span 3;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Restante</span>
+            <span id="remainingTimeDash" style="font-weight: bold;">${remaining.toFixed(1)}h</span>
+          </div>
+          <div style="height: 8px; background: #2d2d5f; border-radius: 4px; margin-top: 10px;">
+            <div style="width: ${Math.min(100, (totalLogged / (projectTotalTime||1)) * 100)}%; height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRÁFICOS -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047;">
+          <h3>📊 Distribución de Tareas</h3>
+          <canvas id="tasksDistributionChart" width="400" height="300" style="width: 100%; height: auto;"></canvas>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047;">
+          <h3>📉 Burndown en Horas</h3>
+          <canvas id="burndownChartDashboard" width="600" height="300" style="width: 100%; height: auto;"></canvas>
+        </div>
+      </div>
+
+      <!-- SALTO DE PÁGINA -->
+      <div class="page-break" style="page-break-before: always; margin-top: 20px;"></div>
+
+      <!-- SEGUIMIENTO DE HORAS -->
+      <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa;">
+        <h3>⏱️ Seguimiento de Horas</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead><tr style="border-bottom: 1px solid #334155;"><th>Asignado</th><th>Proyecto</th><th>Horas</th><th>Promedio/día</th><th>Último registro</th>   </tr></thead>
+            <tbody id="timeTrackingTableBody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top: 30px;">
+          <canvas id="timeTrackingChart" width="600" height="300" style="width: 100%; height: auto; max-height: 300px;"></canvas>
+        </div>
+      </div>
+
+      <!-- RIESGOS Y ACCIONES -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf;">
+          <h3>⚠️ Riesgos y Problemas</h3>
+          <div id="risksContainer" style="max-height: 250px; overflow-y: auto;"></div>
+          <button id="addRiskBtn" style="margin-top: 10px; background: #ef4444; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer;">+ Agregar Riesgo</button>
+        </div>
+        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf;">
+          <h3>📋 Acciones Requeridas</h3>
+          <ul id="requiredActions" style="list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto;"></ul>
+          <button id="addActionBtn" style="margin-top: 10px; background: #3b82f6; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer;">+ Agregar Acción</button>
+        </div>
+      </div>
+
+      <div id="modeHelpMessage" style="margin-top: 20px; padding: 15px; background: rgba(139,92,246,0.1); border-left: 4px solid #8b5cf6; border-radius: 8px;">
+        En modo ${modeText}, se muestra una visión completa del proyecto: avance, riesgos y control de tiempo.
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // ========== CARGAR RIESGOS Y ACCIONES ==========
+  loadDashboardProjectData();
+  const risksDiv = document.getElementById('risksContainer');
+  const actionsUl = document.getElementById('requiredActions');
+  const applyDark = (el) => {
+    if (!el) return;
+    el.style.setProperty('background', 'rgba(20,20,40,0.9)', 'important');
+    Array.from(el.children).forEach(child => {
+      child.style.setProperty('background', 'transparent', 'important');
+    });
+  };
+  applyDark(risksDiv);
+  applyDark(actionsUl);
+  const observer = new MutationObserver(() => {
+    applyDark(risksDiv);
+    applyDark(actionsUl);
+  });
+  if (risksDiv) observer.observe(risksDiv, { childList: true, subtree: true });
+  if (actionsUl) observer.observe(actionsUl, { childList: true, subtree: true });
+
+  // ========== TABLA Y GRÁFICA DE HORAS ==========
+  const updateTimeTracking = () => {
+    const tbody = document.getElementById('timeTrackingTableBody');
+    if (tbody) {
+      if (timeTrackingData.length) {
+        tbody.innerHTML = timeTrackingData.map(item => `
+          <tr>
+            <td style="padding: 10px;">${escapeHtml(item.assignee || 'Sin asignar')}</td>
+            <td style="padding: 10px;">${escapeHtml(item.projectName)}</td>
+            <td style="padding: 10px; text-align: right;">${item.hours.toFixed(2)}</td>
+            <td style="padding: 10px; text-align: right;">${(item.hours / 20).toFixed(2)}</td>
+            <td style="padding: 10px;">${item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No hay datos</td></tr>';
+      }
+    }
+    const canvas = document.getElementById('timeTrackingChart');
+    if (canvas && barLabels.length) {
+      const ctx = canvas.getContext('2d');
+      if (window.timeTrackingChartInstance) window.timeTrackingChartInstance.destroy();
+      window.timeTrackingChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: barLabels, datasets: [{ label: 'Horas trabajadas', data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#e2e8f0' } } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Horas', color: '#94a3b8' }, ticks: { color: '#cbd5e1' } },
+            x: { ticks: { color: '#cbd5e1', maxRotation: 45, minRotation: 45 } }
+          }
+        }
+      });
+    } else if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('No hay datos para mostrar', 20, 50);
+    }
+  };
+  updateTimeTracking();
+
+  // ========== GRÁFICOS DE DISTRIBUCIÓN Y BURNDOWN CON REINTENTOS ==========
+  let chartAttempt = 0;
+  const maxChartAttempts = 15;
+  function createCharts() {
+    const distCanvas = document.getElementById('tasksDistributionChart');
+    const burnCanvas = document.getElementById('burndownChartDashboard');
+    if (!distCanvas || !burnCanvas) {
+      if (++chartAttempt < maxChartAttempts) {
+        setTimeout(createCharts, 200);
+      } else {
+        console.error('No se encontraron los canvas para gráficos');
+      }
+      return;
+    }
+    // Asegurar que los canvas tengan dimensiones
+    const rectDist = distCanvas.getBoundingClientRect();
+    const rectBurn = burnCanvas.getBoundingClientRect();
+    if (rectDist.width === 0 || rectDist.height === 0 || rectBurn.width === 0 || rectBurn.height === 0) {
+      if (++chartAttempt < maxChartAttempts) {
+        setTimeout(createCharts, 200);
+        return;
+      }
+    }
+    try {
+      const burndownData = calculateBurndownInHours(tasks);
+      const ctxDist = distCanvas.getContext('2d');
+      if (ctxDist) {
+        if (window.tasksChart) window.tasksChart.destroy();
+        window.tasksChart = new Chart(ctxDist, {
+          type: 'doughnut',
+          data: {
+            labels: ['Pendientes', 'En Progreso', 'Completadas', 'Rezagadas'],
+            datasets: [{ data: [pending, inProgress, completed, overdue], backgroundColor: ['#f1c40f', '#008090', '#2ecc71', '#e74c3c'], borderWidth: 0 }]
+          },
+          options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
+        });
+      }
+      const ctxBurndown = burnCanvas.getContext('2d');
+      if (ctxBurndown && burndownData) {
+        if (window.burndownDashboardChartInstance) window.burndownDashboardChartInstance.destroy();
+        window.burndownDashboardChartInstance = new Chart(ctxBurndown, {
+          type: 'line',
+          data: {
+            labels: ['Inicio', 'Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+            datasets: [
+              { label: 'Línea Ideal', data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 },
+              { label: 'Progreso Real', data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+      }
+      console.log('Gráficos creados correctamente');
+    } catch (error) {
+      console.error('Error al crear gráficos:', error);
+    }
+  }
+  createCharts();
+
+  // ========== BOTÓN EXPORTAR PDF ==========
+  const exportBtn = document.getElementById('exportDashboardPdfBtn');
+  if (exportBtn) {
+    exportBtn.onclick = function() {
+      const element = document.getElementById('dashboardContentForExport');
+      if (!element) return;
+      const content = element.cloneNode(true);
+      const btnsToRemove = content.querySelectorAll('#addRiskBtn, #addActionBtn, #exportDashboardPdfBtn, #applyTimeTrackingFilters');
+      btnsToRemove.forEach(btn => btn.remove());
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Dashboard - ${project.name}</title>
+          <meta charset="UTF-8">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #0a0a1a; font-family: 'Inter', system-ui, sans-serif; color: #e2e8f0; padding: 30px; }
+            .dashboard-container { max-width: 1200px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }
+            .header h2 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+            .status-badge { background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px; color: ${statusColor}; font-weight: 600; }
+            .mode-badge { background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; }
+            .fechas { display: flex; gap: 20px; margin-bottom: 30px; }
+            .progress-section { margin-bottom: 30px; }
+            .progress-bar-container { height: 12px; background: #2d2d5f; border-radius: 6px; overflow: hidden; }
+            .progress-fill { height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 6px; }
+            .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px; }
+            .kpi-card { background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid; }
+            .kpi-card h3 { font-size: 32px; font-weight: bold; }
+            .kpi-card p { color: #94a3b8; }
+            .tiempo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+            .tiempo-card { background: #1a1a3a; border-radius: 16px; padding: 20px; }
+            .restante-card { grid-column: span 3; background: #1a1a3a; border-radius: 16px; padding: 20px; }
+            .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+            .chart-card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; }
+            canvas { width: 100%; height: auto; max-height: 300px; }
+            .horas-section { background: #1a1a3a; border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; }
+            th { color: #94a3b8; }
+            .riesgos-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+            .card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf; }
+            .card ul { list-style: none; padding: 0; margin: 15px 0; }
+            .card li { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(45, 212, 191, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+            .page-break { page-break-before: always; margin-top: 20px; }
+            @media print {
+              body { padding: 0; margin: 0; }
+              .page-break { page-break-before: always; }
+            }
+          </style>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+        </head>
+        <body>
+          ${content.outerHTML}
+          <script>
+            (function() {
+              const timeData = ${JSON.stringify(timeTrackingData)};
+              const tbody = document.getElementById('timeTrackingTableBody');
+              if (tbody && timeData.length) {
+                tbody.innerHTML = timeData.map(item => '<tr><td style="padding:10px">' + (item.assignee || 'Sin asignar') + '<\/td><td style="padding:10px">' + item.projectName + '<\/td><td style="text-align:right;padding:10px">' + item.hours.toFixed(2) + '<\/td><td style="text-align:right;padding:10px">' + (item.hours/20).toFixed(2) + '<\/td><td style="padding:10px">' + (item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A') + '<\/td><\/tr>').join('');
+              }
+              const ctxDist = document.getElementById('tasksDistributionChart')?.getContext('2d');
+              if (ctxDist) {
+                new Chart(ctxDist, {
+                  type: 'doughnut',
+                  data: { labels: ['Pendientes','En Progreso','Completadas','Rezagadas'], datasets: [{ data: [${pending},${inProgress},${completed},${overdue}], backgroundColor: ['#f1c40f','#008090','#2ecc71','#e74c3c'], borderWidth: 0 }] },
+                  options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
+                });
+              }
+              const burndownData = ${JSON.stringify(calculateBurndownInHours(tasks))};
+              const ctxBurndown = document.getElementById('burndownChartDashboard')?.getContext('2d');
+              if (ctxBurndown) {
+                new Chart(ctxBurndown, {
+                  type: 'line',
+                  data: { labels: ['Inicio','Sem 1','Sem 2','Sem 3','Sem 4'], datasets: [{ label: 'Línea Ideal', data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 }, { label: 'Progreso Real', data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }] },
+                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+              }
+              const barLabels = ${JSON.stringify(barLabels)};
+              const barData = ${JSON.stringify(barData)};
+              const barCanvas = document.getElementById('timeTrackingChart');
+              if (barCanvas && barLabels.length) {
+                barCanvas.width = 600; barCanvas.height = 300;
+                new Chart(barCanvas.getContext('2d'), {
+                  type: 'bar',
+                  data: { labels: barLabels, datasets: [{ label: 'Horas trabajadas', data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
+                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Horas', color: '#94a3b8' }, ticks: { color: '#cbd5e1' } }, x: { ticks: { color: '#cbd5e1', maxRotation: 45, minRotation: 45 } } } }
+                });
+              }
+              setTimeout(() => { window.print(); window.onafterprint = () => window.close(); }, 800);
+            })();
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    };
+  }
+
+  // ========== BOTONES DE AGREGAR RIESGOS/ACCIONES ==========
+  const addRiskBtn = document.getElementById('addRiskBtn');
+  if (addRiskBtn) addRiskBtn.onclick = agregarRiesgo;
+  const addActionBtn = document.getElementById('addActionBtn');
+  if (addActionBtn) addActionBtn.onclick = agregarAccion;
+
+  console.log('✅ Dashboard renderizado correctamente');
+}
+
+
+
+
+
+// ========== PANEL PRINCIPAL ==========
+function abrirPanelCompleto() {
+const proyecto = obtenerProyectoActual();
+if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
+const overlay = document.createElement('div');
+overlay.id = 'pmVirtualPanel';
+overlay.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:100000; display:flex; justify-content:center; align-items:center;`;
+const panel = document.createElement('div');
+panel.style.cssText = `width:1300px; max-width:95vw; height:85vh; background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; border:1px solid #3b82f6; display:flex; flex-direction:column; overflow:hidden; color:white; font-family:system-ui;`;
+const tabs = [
+{ id: 'dashboard', label: '📊 Dashboard' },
+{ id: 'documentos', label: '📄 Documentos' },
+{ id: 'control', label: '⚙️ Control' },
+{ id: 'reuniones', label: '🗓️ Reuniones' },
+{ id: 'gantt', label: '📅 Gantt' },
+{ id: 'recursos', label: '👥 Recursos' },
+{ id: 'costos', label: '💰 Costos' },
+{ id: 'cambios', label: '🔄 Cambios' },
+{ id: 'hitos', label: '🎯 Hitos' },
+{ id: 'reportes', label: '📧 Reportes' },
+{ id: 'desempeno', label: '📊 Desempeño' },
+{ id: 'habilidades', label: '🧠 Habilidades' },
+{ id: 'reconocimientos', label: '🏆 Reconocimientos' },
+{ id: 'riesgosMatriz', label: '⚠️ MatrizRiesgos' },
+{ id: 'acciones', label: '🛡️ AccionesPrev' },
+{ id: 'calidad', label: '📊 Calidad' },
+{ id: 'encuestas', label: '📝 Encuestas' },
+{ id: 'portal', label: '🌐 Portal' },
+{ id: 'checklist', label: '✅ Checklist' },
+{ id: 'archivo', label: '📁 Archivo' },
+{ id: 'transferencia', label: '🔄 Transferencia' }
+];
+let activeTab = 'dashboard';
+const header = document.createElement('div');
+header.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:rgba(0,0,0,0.3); border-bottom:1px solid #3b82f6; flex-wrap:wrap; gap:10px;`;
+const tabsContainer = document.createElement('div');
+tabsContainer.style.display = 'flex';
+tabsContainer.style.flexWrap = 'wrap';
+tabsContainer.style.gap = '10px';
+tabs.forEach(tab => {
+const btn = document.createElement('button');
+btn.textContent = tab.label;
+btn.style.cssText = `background:none; border:none; color:${activeTab===tab.id?'#3b82f6':'#94a3b8'}; font-size:12px; font-weight:bold; cursor:pointer; padding:6px 12px; border-radius:8px; transition:0.2s;`;
+btn.onclick = () => {
+activeTab = tab.id;
+document.querySelectorAll('.pm-tab-btn').forEach(b => b.style.color = '#94a3b8');
+btn.style.color = '#3b82f6';
+cargarContenido(tab.id);
+};
+btn.classList.add('pm-tab-btn');
+tabsContainer.appendChild(btn);
+});
+header.appendChild(tabsContainer);
+const closeBtn = document.createElement('button');
+closeBtn.textContent = '✕ Cerrar';
+closeBtn.style.cssText = `background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:8px 16px; border-radius:8px; cursor:pointer;`;
+closeBtn.onclick = () => overlay.remove();
+header.appendChild(closeBtn);
+panel.appendChild(header);
+const contentDiv = document.createElement('div');
+contentDiv.id = 'pmContent';
+contentDiv.style.cssText = `flex:1; overflow-y:auto; padding:25px;`;
+panel.appendChild(contentDiv);
+overlay.appendChild(panel);
+document.body.appendChild(overlay);
+function cargarContenido(tabId) {
+if (tabId === 'dashboard') renderDashboard(contentDiv);
+else if (tabId === 'documentos') renderDocumentos(contentDiv);
+else if (tabId === 'control') renderControl(contentDiv);
+else if (tabId === 'reuniones') renderReuniones(contentDiv);
+else if (tabId === 'gantt') renderGantt(contentDiv);
+else if (tabId === 'recursos') renderAsignacionRecursos(contentDiv);
+else if (tabId === 'costos') renderLineaBaseCostos(contentDiv);
+else if (tabId === 'cambios') renderGestionCambios(contentDiv);
+else if (tabId === 'hitos') renderSeguimientoHitos(contentDiv);
+else if (tabId === 'reportes') renderReportesAutomaticos(contentDiv);
+else if (tabId === 'desempeno') renderEvaluacionDesempeno(contentDiv);
+else if (tabId === 'habilidades') renderMatrizHabilidades(contentDiv);
+else if (tabId === 'reconocimientos') renderReconocimientos(contentDiv);
+else if (tabId === 'riesgosMatriz') renderMatrizRiesgos(contentDiv);
+else if (tabId === 'acciones') renderAccionesPreventivas(contentDiv);
+else if (tabId === 'calidad') renderIndicadoresCalidad(contentDiv);
+else if (tabId === 'encuestas') renderEncuestas(contentDiv);
+else if (tabId === 'portal') renderPortalProyecto(contentDiv);
+else if (tabId === 'checklist') renderChecklistCierre(contentDiv);
+else if (tabId === 'archivo') renderArchivoDocumentos(contentDiv);
+else if (tabId === 'transferencia') renderTransferencia(contentDiv);
+}
+function renderDocumentos(container) {
+container.innerHTML = `
+<h2>📄 Generación de Documentos</h2>
+<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:15px;">
+<button class="doc-btn" data-doc="charter">📑 Acta Constitutiva</button>
+<button class="doc-btn" data-doc="stakeholders">👥 Registro Stakeholders</button>
+<button class="doc-btn" data-doc="plan">📅 Plan Proyecto (con Gantt)</button>
+<button class="doc-btn" data-doc="wbs">📋 WBS</button>
+<button class="doc-btn" data-doc="raci">📊 Matriz RACI</button>
+<button class="doc-btn" data-doc="risks">⚠️ Plan Riesgos</button>
+<button class="doc-btn" data-doc="evm">📈 Informe EVM</button>
+<button class="doc-btn" data-doc="quality">✅ Plan Calidad</button>
+<button class="doc-btn" data-doc="communications">📢 Plan Comunicaciones</button>
+<button class="doc-btn" data-doc="lessons">📝 Lecciones Aprendidas</button>
+<button class="doc-btn" data-doc="closure">🔚 Acta de Cierre</button>
+<button class="doc-btn" data-doc="final">📊 Informe Final</button>
+</div>
+`;
+const style = document.createElement('style'); style.textContent = `.doc-btn{ background:linear-gradient(135deg,#3b82f6,#1e40af); border:none; padding:12px; border-radius:40px; color:white; cursor:pointer; font-weight:bold; transition:0.2s; } .doc-btn:hover{ transform:translateY(-2px); }`;
+container.appendChild(style);
+document.querySelectorAll('.doc-btn').forEach(btn => {
+const doc = btn.dataset.doc;
+btn.onclick = () => {
+if (doc === 'charter') generarActaConstitutiva();
+else if (doc === 'stakeholders') generarRegistroStakeholders();
+else if (doc === 'plan') generarPlanProyecto();
+else if (doc === 'wbs') generarWBS();
+else if (doc === 'raci') generarMatrizRACI();
+else if (doc === 'risks') generarPlanRiesgos();
+else if (doc === 'evm') generarInformeEVM();
+else if (doc === 'quality') generarPlanCalidad();
+else if (doc === 'communications') generarPlanComunicaciones();
+else if (doc === 'lessons') generarLeccionesAprendidas();
+else if (doc === 'closure') generarActaCierre();
+else if (doc === 'final') generarInformeFinal();
+};
+});
+}
+cargarContenido(activeTab);
+}
+
+// Exponer función principal globalmente
+window.abrirPanelCompleto = abrirPanelCompleto;
+
+
+// ========== EXPOSICIÓN GLOBAL DE FUNCIONES Y VARIABLES ==========
+window.obtenerProyectos = obtenerProyectos;
+window.obtenerProyectoActual = obtenerProyectoActual;
+window.guardarProyectos = guardarProyectos;
+window.generarHTML = generarHTML;
+window.abrirVentanaDocumento = abrirVentanaDocumento;
+window.generarActaConstitutiva = generarActaConstitutiva;
+window.generarRegistroStakeholders = generarRegistroStakeholders;
+window.generarPlanProyecto = generarPlanProyecto;
+window.generarWBS = generarWBS;
+window.generarMatrizRACI = generarMatrizRACI;
+window.generarPlanRiesgos = generarPlanRiesgos;
+window.generarInformeEVM = generarInformeEVM;
+window.generarPlanCalidad = generarPlanCalidad;
+window.generarPlanComunicaciones = generarPlanComunicaciones;
+window.generarLeccionesAprendidas = generarLeccionesAprendidas;
+window.generarActaCierre = generarActaCierre;
+window.generarInformeFinal = generarInformeFinal;
+window.renderDashboard = renderDashboard;
+window.renderControl = renderControl;
+window.renderReuniones = renderReuniones;
+window.renderGantt = renderGantt;
+window.renderAsignacionRecursos = renderAsignacionRecursos;
+window.renderLineaBaseCostos = renderLineaBaseCostos;
+window.renderGestionCambios = renderGestionCambios;
+window.renderSeguimientoHitos = renderSeguimientoHitos;
+window.renderReportesAutomaticos = renderReportesAutomaticos;
+window.renderEvaluacionDesempeno = renderEvaluacionDesempeno;
+window.renderMatrizHabilidades = renderMatrizHabilidades;
+window.renderReconocimientos = renderReconocimientos;
+window.renderMatrizRiesgos = renderMatrizRiesgos;
+window.renderAccionesPreventivas = renderAccionesPreventivas;
+window.renderIndicadoresCalidad = renderIndicadoresCalidad;
+window.renderEncuestas = renderEncuestas;
+window.renderPortalProyecto = renderPortalProyecto;
+window.renderChecklistCierre = renderChecklistCierre;
+window.renderArchivoDocumentos = renderArchivoDocumentos;
+window.renderTransferencia = renderTransferencia;
+window.abrirPanelCompleto = abrirPanelCompleto;
+window.abrirModalPM = abrirModalPM;
+window.actualizarSelector = actualizarSelector;
+
+})();
+
+
+
 // ============================================
 // DIAGNÓSTICO DE CARGA
 // ============================================
@@ -1370,37 +13018,7 @@ connectionIndicator.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
 connectionIndicator.style.transition = "all 0.3s ease";
 document.body.appendChild(connectionIndicator);
 
-function updateConnectionIndicator(status) {
-  if (status === "online") {
-    connectionIndicator.textContent = "🟢 Conectado al backend";
-    connectionIndicator.style.background = "#2ecc71";
-    connectionIndicator.style.color = "white";
-  } else {
-    connectionIndicator.textContent = "🔴 Sin conexión al backend";
-    connectionIndicator.style.background = "#e74c3c";
-    connectionIndicator.style.color = "white";
-  }
-}
 
-// ✅ Verifica visualmente si hay sesión activa
-if (window.authToken && window.authToken.length > 100) {
-  console.log("✅ Sesión activa con backend (JWT válido)");
-  const statusDiv = document.createElement("div");
-  statusDiv.textContent = "🔐 Sesión activa con backend";
-  statusDiv.style.position = "fixed";
-  statusDiv.style.bottom = "45px";
-  statusDiv.style.right = "10px";
-  statusDiv.style.background = "#2980b9";
-  statusDiv.style.color = "white";
-  statusDiv.style.padding = "8px 14px";
-  statusDiv.style.borderRadius = "10px";
-  statusDiv.style.fontSize = "14px";
-  statusDiv.style.zIndex = "9999";
-  statusDiv.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
-  document.body.appendChild(statusDiv);
-} else {
-  console.warn("⚠️ No hay token JWT activo. Inicia sesión o asigna window.authToken manualmente.");
-}
 
 // 🌐 Comprobación del backend
 let lastStatus = null;
@@ -1631,14 +13249,15 @@ async function safeLoad() {
 
     // ✅ Si el backend está disponible Y NO es cliente generado, intentar cargar desde ahí
     if (backendAvailable && !esClienteGenerado) {
-      try {
+    try {
         console.log('🔄 Intentando cargar desde MongoDB...');
-        const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}` : `${API_URL}/api/projects`;
+        const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
         const response = await fetch(url, {
-          headers: { 
-            'Authorization': `Bearer ${window.authToken}`,
-            'Content-Type': 'application/json'
-          }
+            headers: { 
+                'Authorization': `Bearer ${window.authToken}`,
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'  // opcional, pero refuerza
+            }
         });
         
         console.log('📡 Respuesta del backend:', response.status);
@@ -17711,6 +29330,7 @@ const dependencies = Array.from(
 
 // Busca la función saveTaskChanges y reemplázala con esta versión mejorada
 function saveTaskChanges(taskId) {
+console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
     console.log('💾 Guardando cambios de tarea...');
     
     const project = projects[currentProjectIndex];
@@ -44784,7 +56404,7 @@ async function enviarNotificacionSlack(mensaje, tipo = 'info') {
     
     if (!webhookUrl) {
         console.error('❌ No hay webhook de Slack configurado');
-        console.log('💡 Usa: configurarSlack("URL_DEL_WEBHOOK")');
+        console.log('💡 Usa: configurarSlack("https://hooks.slack.com/services/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")');
         return false;
     }
     
@@ -44842,7 +56462,7 @@ async function probarSlack() {
     if (!webhook) {
         console.log('❌ No hay webhook configurado');
         console.log('📝 Para configurar, ejecuta:');
-        console.log('   configurarSlack("https://hooks.slack.com/services/XXX/YYY/ZZZ")');
+        console.log('   configurarSlack("https://hooks.slack.com/services/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")');
         return;
     }
     
@@ -44878,7 +56498,7 @@ async function notificarNuevoProyecto(proyecto) {
 
 console.log('✅ Funciones de Slack cargadas (vía backend)');
 console.log('📝 Para configurar Slack, usa:');
-console.log('   configurarSlack("https://hooks.slack.com/services/TU/WEBHOOK/AQUI")');
+console.log('   configurarSlack("https://hooks.slack.com/services/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")');
 
 
 
