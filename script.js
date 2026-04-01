@@ -1095,7 +1095,6 @@ function abrirVentanaDocumento(html, nombre) {
 }
 
 // ========== SECCIÓN DOCUMENTOS ==========
-// ========== FUNCIÓN MEJORADA: GENERAR ACTA CONSTITUTIVA EJECUTIVA ==========
 // ========================
 // GENERAR ACTA CONSTITUTIVA (sin cambios en esta parte, la dejo igual)
 // ========================
@@ -11462,8 +11461,6 @@ function renderDashboard(container) {
 
   console.log('✅ Dashboard renderizado correctamente');
 }
-
-
 
 
 
