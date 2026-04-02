@@ -1,3 +1,8 @@
+
+
+
+
+
 // Sincronizar webhook de Slack con la clave que espera SlackNotifier
 const webhook = localStorage.getItem('slack_webhook');
 if (webhook) {
@@ -689,6 +694,7 @@ if (webhook) {
     div[style*="background: #2d2d5f"] {
       background: #334155 !important;
     }
+
   `;
   document.head.appendChild(style);
   console.log('✅ Estilos CSS azul profesional inyectados (versión completa con Status)');
@@ -11464,6 +11470,118 @@ function renderDashboard(container) {
 
 
 
+// ========== MÓDULO DE ESTADÍSTICAS PARA EL PM VIRTUAL (sin gráficos) ==========
+function renderPmVirtualStats(container) {
+  if (!container) return;
+  const project = projects[currentProjectIndex];
+  if (!project) {
+    container.innerHTML = '<div class="error">No hay proyecto seleccionado</div>';
+    return;
+  }
+  const tasks = project.tasks || [];
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.status === 'completed').length;
+  const inProgress = tasks.filter(t => t.status === 'inProgress').length;
+  const pending = tasks.filter(t => t.status === 'pending').length;
+  const overdue = tasks.filter(t => t.status === 'overdue').length;
+  const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
+  const totalLogged = tasks.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
+  const projectBudget = project.totalProjectTime || 0;
+  const budgetUsage = projectBudget > 0 ? Math.round((totalLogged / projectBudget) * 100) : 0;
+
+  // Calcular fechas
+  let startDate = '—', endDate = '—', totalDays = 0;
+  const startDates = tasks.map(t => t.startDate).filter(Boolean);
+  const endDates = tasks.map(t => t.deadline).filter(Boolean);
+  if (startDates.length) {
+    const min = new Date(Math.min(...startDates.map(d => new Date(d))));
+    startDate = min.toLocaleDateString('es-ES');
+  }
+  if (endDates.length) {
+    const max = new Date(Math.max(...endDates.map(d => new Date(d))));
+    endDate = max.toLocaleDateString('es-ES');
+    if (startDates.length) {
+      totalDays = Math.ceil((max - new Date(Math.min(...startDates.map(d => new Date(d))))) / (1000*60*60*24));
+    }
+  }
+
+  const isOnTime = totalLogged <= (totalEstimated || projectBudget);
+  const statusColor = isOnTime ? '#10b981' : '#ef4444';
+  const statusText = isOnTime ? 'En tiempo' : 'A destiempo';
+
+  const html = `
+    <div style="padding: 20px; background: #1e1e2f; color: #e2e8f0; border-radius: 16px;">
+      <h2 style="margin: 0 0 20px 0;">📊 Estadísticas del Proyecto (PM Virtual)</h2>
+      <p><strong>Proyecto:</strong> ${escapeHtml(project.name)}</p>
+      <hr style="border-color: #334155;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0;">
+        <div style="background: #2d2d5f; padding: 15px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${total}</div>
+          <div>Total tareas</div>
+        </div>
+        <div style="background: #2d2d5f; padding: 15px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${completed}</div>
+          <div>Completadas</div>
+        </div>
+        <div style="background: #2d2d5f; padding: 15px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${pending}</div>
+          <div>Pendientes</div>
+        </div>
+        <div style="background: #2d2d5f; padding: 15px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 28px; font-weight: bold;">${overdue}</div>
+          <div>Rezagadas</div>
+        </div>
+      </div>
+      <div style="margin: 20px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span>Progreso</span>
+          <span>${progress}%</span>
+        </div>
+        <div style="height: 10px; background: #3b3b5f; border-radius: 5px;">
+          <div style="width: ${progress}%; height: 100%; background: #10b981; border-radius: 5px;"></div>
+        </div>
+      </div>
+      <div style="background: #2d2d5f; border-radius: 12px; padding: 15px; margin: 20px 0;">
+        <h3 style="margin: 0 0 10px 0;">⏱️ Control de tiempo</h3>
+        <p><strong>Estimado:</strong> ${totalEstimated.toFixed(1)} h</p>
+        <p><strong>Registrado:</strong> ${totalLogged.toFixed(1)} h</p>
+        <p><strong>Presupuesto:</strong> ${projectBudget} h</p>
+        <p><strong>Consumo:</strong> ${budgetUsage}%</p>
+        <div style="height: 8px; background: #3b3b5f; border-radius: 4px;">
+          <div style="width: ${Math.min(100, budgetUsage)}%; height: 100%; background: #8b5cf6; border-radius: 4px;"></div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 20px; background: #2d2d5f; border-radius: 12px; padding: 15px;">
+        <div><strong>Inicio:</strong> ${startDate}</div>
+        <div><strong>Fin:</strong> ${endDate}</div>
+        <div><strong>Días:</strong> ${totalDays}</div>
+      </div>
+      <div style="padding: 12px; background: ${statusColor}20; border-left: 4px solid ${statusColor}; border-radius: 8px; margin-top: 20px;">
+        Estado: <strong style="color: ${statusColor};">${statusText}</strong>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+}
+
+
+
+
+
+
 // ========== PANEL PRINCIPAL ==========
 function abrirPanelCompleto() {
 const proyecto = obtenerProyectoActual();
@@ -11530,7 +11648,7 @@ panel.appendChild(contentDiv);
 overlay.appendChild(panel);
 document.body.appendChild(overlay);
 function cargarContenido(tabId) {
-if (tabId === 'dashboard') renderDashboard(contentDiv);
+if (tabId === 'dashboard') renderPmVirtualStats(contentDiv);
 else if (tabId === 'documentos') renderDocumentos(contentDiv);
 else if (tabId === 'control') renderControl(contentDiv);
 else if (tabId === 'reuniones') renderReuniones(contentDiv);
@@ -24360,6 +24478,36 @@ function initWebSocket() {
         window.socketConnected = false;
         socketConnected = false;
     }
+
+
+socket.on('project-updated', async (data) => {
+    console.log('📡 Evento project-updated recibido', data);
+    
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    
+    try {
+        const res = await fetch(`${API_URL}/api/projects?clienteId=${clienteId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        
+        if (json.projects) {
+            window.projects = json.projects;
+            localStorage.setItem('projects', JSON.stringify(json.projects));
+            
+            // Forzar actualización de la vista actual
+            if (typeof window.renderKanbanTasks === 'function') {
+                window.renderKanbanTasks();
+            }
+            console.log('✅ Vista actualizada automáticamente');
+        }
+    } catch (err) {
+        console.error('Error actualizando proyectos:', err);
+    }
+});
+
+
 }
 
 // Función para forzar refresco desde backend
@@ -34434,7 +34582,7 @@ function initPersistenceSystem() {
     console.group('🚀 INICIANDO SISTEMA DE PERSISTENCIA');
     
     // 1. Agregar botón de sincronización
-    addSyncButton();
+   // addSyncButton();
     
     // 2. Iniciar auto-sincronización
     startAutoSync();
@@ -37023,154 +37171,160 @@ window.SystemAssistant = {
     },
     
     createAssistantUI: function() {
-        if (document.getElementById('systemAssistant')) return;
-        
-        const assistantHTML = `
-            <div id="systemAssistant" style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 350px;
-                background: white;
-                border-radius: 20px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                z-index: 10000;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                border: 2px solid #e0e0e0;
-                overflow: hidden;
-                transform: translateY(100px);
-                opacity: 0;
-                transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    if (document.getElementById('systemAssistant')) return;
+    
+    const assistantHTML = `
+        <div id="systemAssistant" style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            background: #0f172a;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            z-index: 10000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border: 2px solid #3b82f6;
+            overflow: hidden;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        ">
+            <!-- Header -->
+            <div style="
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                padding: 20px;
+                color: white;
+                position: relative;
             ">
-                <!-- Header -->
-                <div style="
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px;
-                    color: white;
-                    position: relative;
-                ">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div id="assistantAvatar" style="
-                            font-size: 40px;
-                            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-                            cursor: pointer;
-                        ">🤖</div>
-                        <div>
-                            <div style="font-size: 18px; font-weight: bold;" id="assistantName">Oxi</div>
-                            <div style="font-size: 12px; opacity: 0.8;" id="assistantStatus">Conectado</div>
-                        </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="assistantAvatar" style="
+                        font-size: 40px;
+                        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+                        cursor: pointer;
+                    ">🤖</div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold;" id="assistantName">Oxi</div>
+                        <div style="font-size: 12px; opacity: 0.8;" id="assistantStatus">Conectado</div>
                     </div>
-                    <button onclick="window.SystemAssistant.toggleAssistant()" style="
-                        position: absolute;
-                        top: 15px;
-                        right: 15px;
-                        background: rgba(255,255,255,0.2);
+                </div>
+                <button onclick="window.SystemAssistant.toggleAssistant()" style="
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    color: white;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">−</button>
+            </div>
+            
+            <!-- Chat Container -->
+            <div id="assistantChat" style="
+                height: 300px;
+                overflow-y: auto;
+                padding: 20px;
+                background: #0a0a1a;
+            ">
+                <div id="chatMessages">
+                    <!-- Mensajes aparecerán aquí -->
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div style="padding: 15px; border-top: 1px solid #334155;">
+                <div style="display: flex; gap: 10px;">
+                    <input 
+                        type="text" 
+                        id="assistantInput" 
+                        placeholder="Escribe tu pregunta o comando..."
+                        style="
+                            flex: 1;
+                            padding: 12px 15px;
+                            border: 1px solid #3b82f6;
+                            border-radius: 25px;
+                            outline: none;
+                            font-size: 14px;
+                            background: #1e293b;
+                            color: #e2e8f0;
+                        "
+                        onkeypress="if(event.key === 'Enter') window.SystemAssistant.sendMessage()"
+                    >
+                    <button onclick="window.SystemAssistant.sendMessage()" style="
+                        background: #3b82f6;
                         border: none;
                         color: white;
                         border-radius: 50%;
-                        width: 30px;
-                        height: 30px;
+                        width: 45px;
+                        height: 45px;
                         cursor: pointer;
-                        font-size: 16px;
-                    ">−</button>
+                        font-size: 18px;
+                    ">➤</button>
                 </div>
                 
-                <!-- Chat Container -->
-                <div id="assistantChat" style="
-                    height: 300px;
-                    overflow-y: auto;
-                    padding: 20px;
-                    background: #f8f9fa;
+                <!-- Quick Actions -->
+                <div id="quickActions" style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                    margin-top: 10px;
                 ">
-                    <div id="chatMessages">
-                        <!-- Mensajes aparecerán aquí -->
-                    </div>
-                </div>
-                
-                <!-- Input Area -->
-                <div style="padding: 15px; border-top: 1px solid #e0e0e0;">
-                    <div style="display: flex; gap: 10px;">
-                        <input 
-                            type="text" 
-                            id="assistantInput" 
-                            placeholder="Escribe tu pregunta o comando..."
-                            style="
-                                flex: 1;
-                                padding: 12px 15px;
-                                border: 1px solid #ddd;
-                                border-radius: 25px;
-                                outline: none;
-                                font-size: 14px;
-                            "
-                            onkeypress="if(event.key === 'Enter') window.SystemAssistant.sendMessage()"
-                        >
-                        <button onclick="window.SystemAssistant.sendMessage()" style="
-                            background: #667eea;
-                            border: none;
-                            color: white;
-                            border-radius: 50%;
-                            width: 45px;
-                            height: 45px;
-                            cursor: pointer;
-                            font-size: 18px;
-                        ">➤</button>
-                    </div>
-                    
-                    <!-- Quick Actions -->
-                    <div id="quickActions" style="
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 8px;
-                        margin-top: 10px;
-                    ">
-                        <button onclick="window.SystemAssistant.quickAction('cambiar vista')" style="
-                            padding: 8px 12px;
-                            border: 1px solid #ddd;
-                            background: white;
-                            border-radius: 15px;
-                            font-size: 11px;
-                            cursor: pointer;
-                        ">🔄 Cambiar Vista</button>
-                        <button onclick="window.SystemAssistant.quickAction('estadísticas')" style="
-                            padding: 8px 12px;
-                            border: 1px solid #ddd;
-                            background: white;
-                            border-radius: 15px;
-                            font-size: 11px;
-                            cursor: pointer;
-                        ">📊 Estadísticas</button>
-                        <button onclick="window.SystemAssistant.quickAction('crear proyecto')" style="
-                            padding: 8px 12px;
-                            border: 1px solid #ddd;
-                            background: white;
-                            border-radius: 15px;
-                            font-size: 11px;
-                            cursor: pointer;
-                        ">➕ Nuevo Proyecto</button>
-                        <button onclick="window.SystemAssistant.quickAction('ayuda')" style="
-                            padding: 8px 12px;
-                            border: 1px solid #ddd;
-                            background: white;
-                            border-radius: 15px;
-                            font-size: 11px;
-                            cursor: pointer;
-                        ">❓ Ayuda</button>
-                    </div>
+                    <button onclick="window.SystemAssistant.quickAction('cambiar vista')" style="
+                        padding: 8px 12px;
+                        border: 1px solid #3b82f6;
+                        background: #1e293b;
+                        color: #e2e8f0;
+                        border-radius: 15px;
+                        font-size: 11px;
+                        cursor: pointer;
+                    ">🔄 Cambiar Vista</button>
+                    <button onclick="window.SystemAssistant.quickAction('estadísticas')" style="
+                        padding: 8px 12px;
+                        border: 1px solid #3b82f6;
+                        background: #1e293b;
+                        color: #e2e8f0;
+                        border-radius: 15px;
+                        font-size: 11px;
+                        cursor: pointer;
+                    ">📊 Estadísticas</button>
+                    <button onclick="window.SystemAssistant.quickAction('crear proyecto')" style="
+                        padding: 8px 12px;
+                        border: 1px solid #3b82f6;
+                        background: #1e293b;
+                        color: #e2e8f0;
+                        border-radius: 15px;
+                        font-size: 11px;
+                        cursor: pointer;
+                    ">➕ Nuevo Proyecto</button>
+                    <button onclick="window.SystemAssistant.quickAction('ayuda')" style="
+                        padding: 8px 12px;
+                        border: 1px solid #3b82f6;
+                        background: #1e293b;
+                        color: #e2e8f0;
+                        border-radius: 15px;
+                        font-size: 11px;
+                        cursor: pointer;
+                    ">❓ Ayuda</button>
                 </div>
             </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', assistantHTML);
-        
-        // Animación de entrada
-        setTimeout(() => {
-            const assistant = document.getElementById('systemAssistant');
-            if (assistant) {
-                assistant.style.transform = 'translateY(0)';
-                assistant.style.opacity = '1';
-            }
-        }, 100);
-    },
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', assistantHTML);
+    
+    // Animación de entrada
+    setTimeout(() => {
+        const assistant = document.getElementById('systemAssistant');
+        if (assistant) {
+            assistant.style.transform = 'translateY(0)';
+            assistant.style.opacity = '1';
+        }
+    }, 100);
+},
     
     toggleAssistant: function() {
         const assistant = document.getElementById('systemAssistant');
@@ -37229,7 +37383,7 @@ window.SystemAssistant = {
                     margin-top: 5px;
                 ">${this.personalities[this.personality].avatar}</div>
                 <div style="
-                    background: white;
+                    background:#1e293b;
                     padding: 12px 15px;
                     border-radius: 18px;
                     max-width: 80%;
@@ -39526,6 +39680,7 @@ window.checkAutoRetrain = function () {
   }
 };
 
+/*
 // === PANEL DE INTELIGENCIA (IA DASHBOARD v6: modo colapsado con icono animado) ===
 // === PANEL DE INTELIGENCIA (IA DASHBOARD v6: modo colapsado con icono animado) ===
 function calcularPrecisionModelo() {
@@ -39687,7 +39842,7 @@ window.retrainDurationModel = async function() {
     window.showNotification(`🧠 Modelo actualizado con tus datos reales (${date})`);
   }
 };
-
+*/
 
 // === 🔧 Reparación de botones principales ===
 window.addEventListener('load', () => {
@@ -40250,7 +40405,7 @@ function forceSync() {
     localStorage.setItem('projects', JSON.stringify(projects));
     if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
     if (typeof updateStatistics === 'function') updateStatistics();
-    showNotification('✅ Sincronización manual completada');
+    // showNotification('✅ Sincronización manual completada');  // COMENTADO: no mostrar notificación
 }
 
 // Inicializar después de que todo esté listo
@@ -40268,10 +40423,6 @@ window.forceSync = forceSync;
 window.restartWebSockets = initWebSocketEnhanced;
 
 console.log('🎯 Sistema de sincronización cargado - Usa forceSync() en consola');
-
-
-
-
 
 // =============================================
 // BARRA DE PROGRESO DE SUBTAREAS - OBSERVER
@@ -58925,6 +59076,95 @@ function renderKanbanTasks(tasks = null) {
 })();
 
 console.log('✅ Código de reporte ejecutivo cargado correctamente');
+
+
+
+
+
+
+
+
+
+
+
+
+// ==================================================
+// SISTEMA DE SINCRONIZACIÓN AUTOMÁTICA (FINAL)
+// ==================================================
+(function autoSync() {
+  console.log('🔄 Iniciando sistema de sincronización automática...');
+
+  // Función que recarga datos desde el servidor y actualiza la interfaz
+  window.forceFullRefresh = async function() {
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    if (!token || !clienteId) return;
+    try {
+      const res = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.projects) {
+        const oldProjects = window.projects;
+        window.projects = data.projects;
+        localStorage.setItem('projects', JSON.stringify(data.projects));
+        // Si los datos cambiaron, refrescar la vista actual
+        if (JSON.stringify(oldProjects) !== JSON.stringify(data.projects)) {
+          console.log('🔄 Datos actualizados desde servidor');
+          // Refrescar la vista activa
+          if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+          else if (typeof refreshCurrentView === 'function') refreshCurrentView();
+          else if (typeof renderDashboard === 'function') renderDashboard();
+        }
+      }
+    } catch (e) {
+      // Silenciar errores de red para no molestar
+    }
+  };
+
+  // 1. Polling cada 5 segundos (garantiza sincronización)
+  setInterval(() => window.forceFullRefresh(), 5000);
+
+  // 2. Escuchar eventos WebSocket si están disponibles
+  if (window.tiempoRealSocket) {
+    window.tiempoRealSocket.on('task-changed', () => window.forceFullRefresh());
+    window.tiempoRealSocket.on('project-updated', () => window.forceFullRefresh());
+    console.log('✅ WebSocket conectado');
+  }
+
+  // 3. Sobrescribir funciones clave para forzar recarga después de acciones locales
+  const originalCreate = window.createNewTask;
+  const originalSave = window.saveTaskChanges;
+  const originalDelete = window.deleteTask;
+  const originalDrop = window.handleDrop;
+
+  window.createNewTask = function(e) {
+    const result = originalCreate ? originalCreate(e) : null;
+    setTimeout(() => window.forceFullRefresh(), 500);
+    return result;
+  };
+  window.saveTaskChanges = function(taskId) {
+    const result = originalSave ? originalSave(taskId) : null;
+    setTimeout(() => window.forceFullRefresh(), 500);
+    return result;
+  };
+  window.deleteTask = function(taskStr) {
+    const result = originalDelete ? originalDelete(taskStr) : null;
+    setTimeout(() => window.forceFullRefresh(), 500);
+    return result;
+  };
+  window.handleDrop = function(e) {
+    const result = originalDrop ? originalDrop(e) : null;
+    setTimeout(() => window.forceFullRefresh(), 500);
+    return result;
+  };
+
+  console.log('✅ Sincronización activada (polling cada 5s + WebSocket)');
+})();
+
+
+
+
 
 
 
