@@ -1,6 +1,19 @@
 
 
 
+// ✅ AGREGA ESTO AL INICIO DE TU script.js (antes de cualquier llamada)
+if (typeof updateConnectionIndicator !== 'function') {
+  window.updateConnectionIndicator = function(status = 'online') {
+    console.log('🔌 Indicador de conexión:', status);
+    // Opcional: actualizar UI si existe el elemento
+    const indicator = document.getElementById('connectionIndicator');
+    if (indicator) {
+      indicator.className = `connection-status ${status}`;
+      indicator.textContent = status === 'online' ? '🟢 Conectado' : '🔴 Desconectado';
+    }
+  };
+}
+
 
 
 // Sincronizar webhook de Slack con la clave que espera SlackNotifier
@@ -15,9 +28,6 @@ if (webhook) {
   console.log('🎨🚀 INICIANDO ESTILOS EJECUTIVOS AZUL - LOGO BLANCO');
 
   let initializationComplete = false;
-
-
-
 
   // ==================== 1. INYECTAR ESTILOS CSS ====================
  function injectStyles() {
@@ -241,7 +251,7 @@ if (webhook) {
     #inProgressTasks h3,
     #completedTasks h3,
     #overdueTasks h3 {
-      background: linear-gradient(135deg, #1E293B, #0F172A) !important;
+    background: #2563EB !important;
       color: white !important;
       padding: 15px !important;
       border-radius: 8px !important;
@@ -598,6 +608,26 @@ if (webhook) {
       cursor: pointer !important;
     }
 
+
+
+#listView .task-list-table th,
+#listView table thead tr th {
+  background: linear-gradient(135deg, #3B82F6, #1E40AF) !important;
+  color: white !important;
+}
+
+
+
+/* Mejora visual para la barra de subtareas en el Board */
+.subtasks-progress-container {
+    animation: fadeIn 0.3s ease;
+}
+.task-card:hover .subtasks-progress-container .progress-fill {
+    filter: brightness(1.2);
+}
+
+
+
     /* ===== NOMBRE DEL PROYECTO EN VISTA LISTA ===== */
     #projectNameList {
       background: linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4) !important;
@@ -695,6 +725,36 @@ if (webhook) {
       background: #334155 !important;
     }
 
+/* ===== COLORES DE PRIORIDAD EN VISTA LISTA Y KANBAN ===== */
+.priority-baja {
+    background: #2ecc71 !important;  /* verde */
+    color: white !important;
+}
+.priority-media {
+    background: #f39c12 !important;  /* naranja */
+    color: white !important;
+}
+.priority-alta {
+    background: #e74c3c !important;  /* rojo */
+    color: white !important;
+}
+ /* ===== AQUÍ DEBES AGREGAR EL NUEVO BLOQUE ===== */
+    .list-view-header .results-counter {
+        background: none !important;
+        -webkit-background-clip: unset !important;
+        background-clip: unset !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        text-shadow: none !important;
+        font-weight: 500 !important;
+    }
+
+/* ===== CAMBIAR ICONO DE CALENDARIO A BLANCO EN VISTA LISTA ===== */
+#listView input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(100%);  /* 🔥 Convierte el icono oscuro a BLANCO */
+    cursor: pointer;
+}
+
   `;
   document.head.appendChild(style);
   console.log('✅ Estilos CSS azul profesional inyectados (versión completa con Status)');
@@ -723,6 +783,7 @@ if (webhook) {
           background: transparent !important;
           text-shadow: none !important;
           -webkit-text-fill-color: #ffffff !important;
+
         `;
         
         logo.querySelectorAll('*').forEach(child => {
@@ -11705,8 +11766,10 @@ else if (doc === 'communications') generarPlanComunicaciones();
 else if (doc === 'lessons') generarLeccionesAprendidas();
 else if (doc === 'closure') generarActaCierre();
 else if (doc === 'final') generarInformeFinal();
+
 };
 });
+
 }
 cargarContenido(activeTab);
 }
@@ -25468,6 +25531,9 @@ function renderKanbanTasks(tasks = null) {
             }
             document.dispatchEvent(new Event('tasksRendered'));
         }, 50);
+
+
+
         // ========== FIN NUEVO ==========
         
         return;
@@ -25555,65 +25621,85 @@ function renderKanbanTasks(tasks = null) {
         card.style.borderLeft = `4px solid ${priorityColor}`;
         
         // HTML con NUEVA ESTRUCTURA
-        card.innerHTML = `
-            <div class="task-card-header">
-                <h4 class="task-title">
-                    ${statusIcon} ${task.name || 'Tarea sin nombre'}
-                </h4>
-                <div class="task-controls">
-                    <!-- FLECHAS DE DESPLAZAMIENTO -->
-                    <div class="move-buttons">
-                        <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
-                        <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
-                    </div>
-                    <!-- MENÚ DE TRES PUNTITOS -->
-                    <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">
-                        ⋮
-                    </div>
-                </div>
+        // ... dentro de renderKanbanTasks, dentro del forEach de tareas ...
+
+    // ✅ CÁLCULO DE PROGRESO DE SUBTAREAS
+    const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
+    const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
+    const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+    const hasSubtasks = totalSubtasks > 0;
+
+    // ... (código anterior de colores y estados) ...
+
+    card.innerHTML = `
+    <div class="task-card-header">
+        <h4 class="task-title">
+            ${statusIcon} ${task.name || 'Tarea sin nombre'}
+        </h4>
+        <div class="task-controls">
+            <!-- FLECHAS DE DESPLAZAMIENTO -->
+            <div class="move-buttons">
+                <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
+                <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
             </div>
-            
-            <div class="task-card-body">
-                <!-- ASIGNADO ARRIBA de las banderas -->
-                ${task.assignee ? `
-                    <div class="task-assignee">
-                        <i class="fas fa-user"></i> Asignado a: ${task.assignee}
-                    </div>
-                ` : ''}
-                
-                <!-- CONTENEDOR CENTRADO PARA BANDERAS -->
-                <div class="badges-container">
-                    <!-- BANDERA DE PRIORIDAD -->
-                    <span class="task-badge priority-badge ${task.priority || 'media'}">
-                        ${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}
-                    </span>
-                    
-                    <!-- BANDERA DE STATUS -->
-                    <span class="task-badge status-badge status-${task.status}">
-                        ${task.status === 'pending' ? 'Pendiente' : 
-                          task.status === 'inProgress' ? 'En Progreso' : 
-                          task.status === 'completed' ? 'Completado' : 
-                          task.status === 'overdue' ? 'Rezagado' : task.status}
-                    </span>
-                </div>
-                
-                <!-- FECHA LÍMITE DEBAJO de las banderas -->
-                ${task.deadline ? `
-                    <div class="task-deadline">
-                        <i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}
-                    </div>
-                ` : ''}
+            <!-- MENÚ DE TRES PUNTITOS -->
+            <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
+        </div>
+    </div>
+    <div class="task-card-body">
+        <!-- ASIGNADO ARRIBA de las banderas -->
+        ${task.assignee ? `
+        <div class="task-assignee">
+            <i class="fas fa-user"></i> Asignado a: ${task.assignee}
+        </div>
+        ` : ''}
+        
+        <!-- ✅ NUEVO: BARRA DE PROGRESO DE SUBTAREAS (VISIBLE EN EL BOARD) -->
+        ${hasSubtasks ? `
+        <div class="subtasks-progress-container" style="margin-top: 10px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
+                <span>📋 Subtareas</span>
+                <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
             </div>
-            
-            <div class="task-context-menu" id="task-menu-${task.id}">
-                <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
-                    <i class="fas fa-edit"></i> Editar
-                </div>
-                <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
-                    <i class="fas fa-trash"></i> Eliminar
-                </div>
+            <div class="progress-bar" style="background:#2d2d5f; height:6px; border-radius:3px; overflow:hidden;">
+                <div class="progress-fill" style="width: ${subtaskProgress}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:3px; transition: width 0.3s ease;"></div>
             </div>
-        `;
+        </div>
+        ` : ''}
+        <!-- FIN NUEVO -->
+
+        <!-- CONTENEDOR CENTRADO PARA BANDERAS -->
+        <div class="badges-container">
+            <!-- BANDERA DE PRIORIDAD -->
+            <span class="task-badge priority-badge ${task.priority || 'media'}">
+                ${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}
+            </span>
+            <!-- BANDERA DE STATUS -->
+            <span class="task-badge status-badge status-${task.status}">
+                ${task.status === 'pending' ? 'Pendiente' :
+                task.status === 'inProgress' ? 'En Progreso' :
+                task.status === 'completed' ? 'Completado' :
+                task.status === 'overdue' ? 'Rezagado' : task.status}
+            </span>
+        </div>
+        <!-- FECHA LÍMITE DEBAJO de las banderas -->
+        ${task.deadline ? `
+        <div class="task-deadline">
+            <i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}
+        </div>
+        ` : ''}
+    </div>
+    <div class="task-context-menu" id="task-menu-${task.id}">
+        <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+            <i class="fas fa-edit"></i> Editar
+        </div>
+        <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
+            <i class="fas fa-trash"></i> Eliminar
+        </div>
+    </div>
+    `;
+
+// ... (el resto de la función sigue igual) ...
 
         // Event listener para clicks
         card.addEventListener('click', function(e) {
@@ -25623,6 +25709,8 @@ function renderKanbanTasks(tasks = null) {
                 showTaskDetails(task);
             }
         });
+
+
 
         // Agregar a la columna
         targetColumn.appendChild(card);
@@ -25661,6 +25749,9 @@ function renderKanbanTasks(tasks = null) {
     }, 100);
     // ========== FIN NUEVO ==========
 }
+
+
+
 
 
 
@@ -25834,6 +25925,22 @@ function renderListTasks(tasks = null) {
     
     taskTableBody.appendChild(row);
   });
+
+
+// Aplicar degradado al título "Proyecto:" en la vista lista
+const listHeader = document.querySelector('.list-view-header h2');
+if (listHeader) {
+    listHeader.style.background = "linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4)";
+    listHeader.style.backgroundSize = "200% auto";
+    listHeader.style.webkitBackgroundClip = "text";
+    listHeader.style.backgroundClip = "text";
+    listHeader.style.color = "transparent";
+    listHeader.style.webkitTextFillColor = "transparent";
+    listHeader.style.textShadow = "0 2px 10px rgba(59, 130, 246, 0.3)";
+    listHeader.style.display = "inline-block";
+    listHeader.style.width = "auto";
+}
+
 }
 
 /******************************
@@ -28541,6 +28648,7 @@ function setupAIEstimation() {
     
     console.log('✅ IA configurada con detección mejorada de complejidades');
 }
+
 
 
 
@@ -32424,6 +32532,7 @@ function calculateResourceAllocation(tasks) {
     const resources = {};
     
     tasks.forEach(task => {
+
         // Usar 'assignee' o 'Asignado a:' según tu estructura
         const assignee = task.assignee || task['Asignado a:'] || 'Sin asignar';
         const estimatedTime = parseFloat(task.estimatedTime) || 0;
@@ -35260,8 +35369,12 @@ function recalculateDependencyLines() {
                 border-radius: 12px;
                 font-size: 0.8em;
                 margin-left: 8px;
+
             }
         `;
+
+
+
         document.head.appendChild(style);
 
         // Aplicar colores de prioridad
@@ -40399,30 +40512,8 @@ function initWebSocketEnhanced() {
 }
 
 
-// Sincronización manual
-function forceSync() {
-    console.log('🔧 Forzando sincronización...');
-    localStorage.setItem('projects', JSON.stringify(projects));
-    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-    if (typeof updateStatistics === 'function') updateStatistics();
-    // showNotification('✅ Sincronización manual completada');  // COMENTADO: no mostrar notificación
-}
 
-// Inicializar después de que todo esté listo
-setTimeout(() => {
-    initSyncSystem();
-    
-    // Iniciar WebSockets si está en modo backend
-    if (window.authMode === 'backend') {
-        setTimeout(initWebSocketEnhanced, 2000);
-    }
-}, 3000);
 
-// Comandos de consola
-window.forceSync = forceSync;
-window.restartWebSockets = initWebSocketEnhanced;
-
-console.log('🎯 Sistema de sincronización cargado - Usa forceSync() en consola');
 
 // =============================================
 // BARRA DE PROGRESO DE SUBTAREAS - OBSERVER
@@ -53371,6 +53462,67 @@ let transcriptorAgent = { activo: true, reunionesProcesadas: [] };
 let analistaAgent = { activo: true, metricas: {} };
 let asistenteAgent = { activo: true, conversaciones: [] };
 
+
+
+// ==================================================
+// SOBRESCRITURA DEFINITIVA DE renderKanbanTasks (FILTROS PERSISTENTES)
+// ==================================================
+(function() {
+    if (window.__kanbanPatched) return;
+    window.__kanbanPatched = true;
+    
+    // Guardar la función original si existe (por si acaso)
+    const originalRender = window.renderKanbanTasks;
+    
+    // Nueva implementación
+    window.renderKanbanTasks = function(tasksParam) {
+        console.log('🟢 [PATCH] renderKanbanTasks con filtros persistentes');
+        
+        if (!projects || currentProjectIndex === undefined) {
+            if (originalRender) return originalRender(tasksParam);
+            return;
+        }
+        
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) {
+            if (originalRender) return originalRender(tasksParam);
+            return;
+        }
+        
+        // Determinar tareas a renderizar
+        let tasks = tasksParam;
+        if (!tasks) {
+            // Leer valores actuales de los filtros
+            const assigneeFilter = document.getElementById('filterAssignee')?.value?.trim() || '';
+            const priorityFilter = document.getElementById('filterPriority')?.value?.trim() || '';
+            const statusFilter = document.getElementById('filterStatus')?.value?.trim() || '';
+            
+            console.log(`[PATCH] Filtros: asignado="${assigneeFilter}", prioridad="${priorityFilter}", estado="${statusFilter}"`);
+            
+            tasks = project.tasks.filter(task => {
+                const tAssignee = (task.assignee || '').trim();
+                const tPriority = (task.priority || '').trim();
+                const tStatus = (task.status || '').trim();
+                if (assigneeFilter && tAssignee !== assigneeFilter) return false;
+                if (priorityFilter && tPriority !== priorityFilter) return false;
+                if (statusFilter && tStatus !== statusFilter) return false;
+                return true;
+            });
+            console.log(`[PATCH] Mostrando ${tasks.length} tareas de ${project.tasks.length}`);
+        }
+        
+        // Si existe la función original, llamarla con las tareas filtradas
+        if (originalRender) {
+            return originalRender(tasks);
+        }
+        
+        // Si no existe original, implementar renderizado básico (opcional)
+        // (Aquí iría tu código de renderizado si no existiera originalRender)
+    };
+    
+    console.log('✅ renderKanbanTasks parcheada permanentemente');
+})();
+
 // ============================================
 // 3. ESTILOS GLOBALES 4D
 // ============================================
@@ -56792,7 +56944,7 @@ setInterval(function() {
         })
         .catch(() => {}); // Ignorar errores silenciosamente
     }
-}, 10000); // Cada 10 segundos
+}, 3000); // Cada 10 segundos
 
 
 // ============================================
@@ -58894,6 +59046,8 @@ function generarReporteBoard() {
 // Modifica tu función renderKanbanTasks para que incluya este bloque al principio.
 // Si ya tienes tu propia función, asegúrate de que contenga este código.
 // Te proporciono una versión completa que puedes usar directamente.
+
+
 function renderKanbanTasks(tasks = null) {
     console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CORREGIDA');
 
@@ -59087,7 +59241,6 @@ console.log('✅ Código de reporte ejecutivo cargado correctamente');
 
 
 
-
 // ==================================================
 // SISTEMA DE SINCRONIZACIÓN AUTOMÁTICA (FINAL)
 // ==================================================
@@ -59161,17 +59314,3 @@ console.log('✅ Código de reporte ejecutivo cargado correctamente');
 
   console.log('✅ Sincronización activada (polling cada 5s + WebSocket)');
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
