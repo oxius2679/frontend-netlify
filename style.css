@@ -14555,3 +14555,203 @@ justify-content: center !important; /* ⬅️ AÑADE ESTA LÍNEA */
 
 
 
+@media print {
+    .header h2 {
+        background: none !important;
+        -webkit-text-fill-color: black !important;
+        color: black !important;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== FONDO GENERAL NEGRO ===== */
+html, body {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  background-attachment: fixed !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===== HEADER NEGRO SÓLIDO ===== */
+header {
+  background: #000000 !important;
+  background-image: none !important;
+}
+
+/* ===== CONTENEDORES PRINCIPALES CON FONDO #1a1a3a ===== */
+.container, .report-container, .dashboard-card, .glass-card-4d,
+.kanban-column, .task-card, .modal-content, .fc, .fc .fc-view,
+.gantt-container, .gantt-header, .section, .kpi-card-4d,
+.kpi-card, .stat-card, .evm-card, .card, .list-view,
+.board-view, .calendar-view, .gantt-view, .reports-view,
+.profitability-view, .dashboard-view, .time-allocation-view,
+.inicio-view, #taskDetailsModal .task-details-container,
+.executive-modal, .dependency-modal,
+.modal-content, .fc .fc-daygrid-day, .fc .fc-timegrid-slot,
+.tasks, .filter-bar,
+.filter-bar select, .filter-bar label, .filter-bar button,
+.time-allocation-table-container, .time-allocation-table,
+.time-allocation-table thead, .time-allocation-table tbody,
+.time-allocation-table tr, .time-allocation-table th,
+.time-allocation-table td, #timeAllocationTableBody,
+.time-allocation-chart-container,
+.task-data-row, .task-name-cell, .date-cell, .status-cell,
+.assignee-cell, .priority-cell, .task-name-content, .date-content,
+.assignee-content,
+.controls, .project-selector, .upload-section, .upload-btn,
+.tab-container, .tabs, .tab, .tab-content,
+.dashboard, .metric, .progress-bar, .progress-fill,
+.details-section, .chart-container,
+#activities-table, #delayed-activities-table, #high-risk-activities,
+.risk-indicator,
+#total-budget, #total-expense, #profitability, #profit-percentage,
+#scheduled-hours, #used-hours, #time-efficiency,
+#completed-activities, #total-activities, #progress-percentage,
+#high-risks, #medium-risks, #low-risks, #total-overcost, #total-extra-hours,
+#expected-profit, #current-profit, #risk-loss,
+.view-content, .kanban-board, .board-container, .list-container,
+.calendar-container, .reports-container, .profitability-container,
+.dashboard-container, .time-allocation-container, .inicio-container,
+.gantt-view-container, .executive-dashboard, .report-container,
+aside, .sidebar, .side-menu, .left-menu, .nav-sidebar, .sidenav {
+  background: #1a1a3a !important;
+  background-color: #1a1a3a !important;
+  border-color: #2d2d5f !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===== COLUMNAS DEL KANBAN CON FONDO NEGRO ===== */
+.column,
+.kanban-column,
+#pendingTasks,
+#inProgressTasks,
+#completedTasks,
+#overdueTasks {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* ===== TÍTULOS DE COLUMNAS EN BLANCO CON FORMATO ===== */
+.column h3,
+.kanban-column h3,
+#pendingTasks h3,
+#inProgressTasks h3,
+#completedTasks h3,
+#overdueTasks h3 {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+/* ===== TEXTO EN BLANCO PARA TÍTULOS GENERALES ===== */
+h1, h2, h3, h4, h5, h6,
+.section-title, .card-title,
+.task-title, h4.task-title,
+.tab, .tab.active {
+  color: #ffffff !important;
+}
+
+/* ===== BOTONES Y SELECTORES ===== */
+.filter-bar button, .filter-bar select, .filter-bar option,
+.upload-btn, .tab,
+button:not(.btn-4d):not(.blue-btn):not(.premium-btn) {
+  background: #2d2d5f !important;
+  color: white !important;
+  border: 1px solid #3b3b7a !important;
+}
+
+.tab.active {
+  background: #3b3b7a !important;
+  border-bottom: 2px solid #8b5cf6 !important;
+}
+
+/* ===== INPUTS Y TEXTAREAS ===== */
+input, textarea, select {
+  background: #0f0f1f !important;
+  color: white !important;
+  border-color: #2d2d5f !important;
+}
+
+/* ===== BADGES DE ESTADO Y PRIORIDAD ===== */
+.status-pill, .priority-pill {
+  display: inline-block !important;
+}
+.status-pending, .priority-baja {
+  background: #f1c40f !important;
+  color: #2c3e50 !important;
+}
+.status-inProgress, .priority-media {
+  background: #008090 !important;
+  color: white !important;
+}
+.status-completed {
+  background: #2ecc71 !important;
+  color: white !important;
+}
+.status-overdue, .priority-alta {
+  background: #e74c3c !important;
+  color: white !important;
+}
+
+/* ===== INDICADORES DE RIESGO ===== */
+.risk-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.risk-high { background-color: #e74c3c !important; }
+.risk-medium { background-color: #f39c12 !important; }
+.risk-low { background-color: #2ecc71 !important; }
+
+/* ===== MODALES Y OVERLAYS ===== */
+.modal-backdrop, .overlay, .executive-overlay, .modal, .modal-content,
+.fc-overlay, .fc-popover, .fc-backdrop, .modal-dialog, .modal-container,
+.popup, .dialog, .dialog-overlay {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* ===== VISTA BOARD ACTIVA (fondo negro) ===== */
+#boardView.view-content.active {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
