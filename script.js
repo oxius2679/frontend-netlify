@@ -1,18 +1,7 @@
-
-
-
-// ✅ AGREGA ESTO AL INICIO DE TU script.js (antes de cualquier llamada)
-if (typeof updateConnectionIndicator !== 'function') {
-  window.updateConnectionIndicator = function(status = 'online') {
-    console.log('🔌 Indicador de conexión:', status);
-    // Opcional: actualizar UI si existe el elemento
-    const indicator = document.getElementById('connectionIndicator');
-    if (indicator) {
-      indicator.className = `connection-status ${status}`;
-      indicator.textContent = status === 'online' ? '🟢 Conectado' : '🔴 Desconectado';
-    }
-  };
-}
+// Desactivar WebSocket (usamos polling)
+window.initWebSocket = function() { 
+    console.log('WebSocket desactivado - usando polling'); 
+};
 
 
 
@@ -24408,6 +24397,7 @@ let tiempoRealSocket = window.tiempoRealSocket;
 let socketConnected = window.socketConnected;
 
 function initWebSocket() {
+
     try {
         if (typeof io === 'undefined') {
             console.warn('⚠️ Socket.io no cargado, esperando...');
@@ -24636,6 +24626,73 @@ socket.on('project-updated', async (data) => {
         console.error('Error actualizando proyectos:', err);
     }
 });
+
+
+
+        // ========== MANEJADORES DE EVENTOS DE TAREAS ==========
+        socket.on('task-created', (data) => {
+            console.log('📢 Evento recibido: task-created', data);
+            if (data.projectId != currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            if (project.tasks.some(t => t.id === data.task.id)) return;
+            project.tasks.push(data.task);
+            updateLocalStorage();
+            refreshCurrentView();
+            if (typeof showNotification === 'function') {
+                showNotification(`📡 Nueva tarea "${data.task.name}" agregada`, 'info');
+            }
+        });
+
+        socket.on('task-updated', (data) => {
+            console.log('📢 Evento recibido: task-updated', data);
+            if (data.projectId != currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const idx = project.tasks.findIndex(t => t.id === data.task.id);
+            if (idx !== -1) {
+                project.tasks[idx] = data.task;
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${data.task.name}" actualizada`, 'info');
+                }
+            }
+        });
+
+        socket.on('task-deleted', (data) => {
+            console.log('📢 Evento recibido: task-deleted', data);
+            if (data.projectId != currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const idx = project.tasks.findIndex(t => t.id === data.taskId);
+            if (idx !== -1) {
+                const taskName = project.tasks[idx].name;
+                project.tasks.splice(idx, 1);
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${taskName}" eliminada`, 'info');
+                }
+            }
+        });
+
+        socket.on('task-moved', (data) => {
+            console.log('📢 Evento recibido: task-moved', data);
+            if (data.projectId != currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const task = project.tasks.find(t => t.id === data.taskId);
+            if (task && task.status !== data.newStatus) {
+                task.status = data.newStatus;
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${task.name}" movida a ${data.newStatus}`, 'info');
+                }
+            }
+        });
+
 
 
 }
@@ -37366,7 +37423,7 @@ window.SystemAssistant = {
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         ">
-            <!-- Header -->
+           <!-- Header -->
             <div style="
                 background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
                 padding: 20px;
@@ -37398,6 +37455,7 @@ window.SystemAssistant = {
                     font-size: 16px;
                 ">−</button>
             </div>
+
             
             <!-- Chat Container -->
             <div id="assistantChat" style="

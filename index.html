@@ -1524,16 +1524,19 @@
 
 
 
-<!-- PRIMERO: Slack Integration (debe ir ANTES de script.js) -->
+<!-- PRIMERO: Slack Integration -->
 <script src="slack-notifier.js"></script>
 
-<script src="https://mi-sistema-proyectos-backend-4.onrender.com/socket.io/socket.io.js"></script>
-
-<!-- 3. ÚLTIMO: Tu script principal -->
+<!-- SEGUNDO: Socket.io Client (desde tu backend) -->
+<script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+<!-- TERCERO: Tu script principal -->
 <script src="script.js"></script>
 
 
 <script>
+
+
+
 // ===== FUNCIONES PARA ELIMINAR TRANSCRIPCIONES =====
 window.eliminarTranscripcion = async function(id) {
     if (!confirm('¿Eliminar esta transcripción?')) return;
