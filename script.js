@@ -24480,6 +24480,73 @@ function initWebSocket() {
            refreshCurrentView();
         });
         
+
+        // ========== MANEJADORES DE EVENTOS DE TAREAS ==========
+        socket.on('task-created', (data) => {
+            console.log('📢 Evento recibido: task-created', data);
+            if (data.projectId !== currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            // Evitar duplicados por ID
+            if (project.tasks.some(t => t.id === data.task.id)) return;
+            project.tasks.push(data.task);
+            updateLocalStorage();
+            refreshCurrentView();
+            if (typeof showNotification === 'function') {
+                showNotification(`📡 Nueva tarea "${data.task.name}" agregada por otro usuario`, 'info');
+            }
+        });
+
+        socket.on('task-updated', (data) => {
+            console.log('📢 Evento recibido: task-updated', data);
+            if (data.projectId !== currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const taskIndex = project.tasks.findIndex(t => t.id === data.task.id);
+            if (taskIndex !== -1) {
+                project.tasks[taskIndex] = data.task;
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${data.task.name}" actualizada`, 'info');
+                }
+            }
+        });
+
+        socket.on('task-deleted', (data) => {
+            console.log('📢 Evento recibido: task-deleted', data);
+            if (data.projectId !== currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const taskIndex = project.tasks.findIndex(t => t.id === data.taskId);
+            if (taskIndex !== -1) {
+                const taskName = project.tasks[taskIndex].name;
+                project.tasks.splice(taskIndex, 1);
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${taskName}" eliminada por otro usuario`, 'info');
+                }
+            }
+        });
+
+        socket.on('task-moved', (data) => {
+            console.log('📢 Evento recibido: task-moved', data);
+            if (data.projectId !== currentProjectIndex) return;
+            const project = projects[currentProjectIndex];
+            if (!project) return;
+            const task = project.tasks.find(t => t.id === data.taskId);
+            if (task && task.status !== data.newStatus) {
+                task.status = data.newStatus;
+                updateLocalStorage();
+                refreshCurrentView();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${task.name}" movida a ${data.newStatus}`, 'info');
+                }
+            }
+        });
+
+
         // Evento: cuando alguien se une
         socket.on('user-joined', function(data) {
             console.log('👤 Usuario unido:', data);
@@ -25791,7 +25858,7 @@ if (window.syncManager) window.syncManager.notifyChange('task-deleted', {
 
     // 🔥 PRIMERO NOTIFICAR la eliminación
     if (tiempoRealSocket && tiempoRealSocket.connected) {
-      tiempoRealSocket.emit('task-changed', {
+      tiempoRealSocket.emit('task-created', {
         projectId: currentProjectIndex,
         taskId: taskId,
         taskName: task.name,
@@ -28254,14 +28321,10 @@ function createNewTask(e) {
         
         // 🔥 NOTIFICAR A OTROS USUARIOS
         if (tiempoRealSocket && tiempoRealSocket.connected) {
-            tiempoRealSocket.emit('task-changed', {
-                projectId: currentProjectIndex,
-                taskId: task.id,
-                taskName: task.name,
-                userName: 'Usuario actual',
-                type: 'task-created',
-                timestamp: new Date().toISOString()
-            });
+            tiempoRealSocket.emit('task-created', {
+    projectId: currentProjectIndex,
+    task: task
+});
         }
 
         actualizarAsignados();
