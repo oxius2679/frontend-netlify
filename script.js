@@ -1,7 +1,15 @@
-// Desactivar WebSocket (usamos polling)
-window.initWebSocket = function() { 
-    console.log('WebSocket desactivado - usando polling'); 
-};
+
+
+
+
+
+
+
+function updateConnectionIndicator(status) {
+    console.log('🟢 Estado de conexión:', status);
+}
+
+
 
 
 
@@ -1151,6 +1159,388 @@ function abrirVentanaDocumento(html, nombre) {
 }
 
 // ========== SECCIÓN DOCUMENTOS ==========
+
+
+
+// ========== DOCUMENTO KICKOFF CON MODAL DE EDICIÓN ==========
+function generarKickoffDocument() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const tasks = proyecto.tasks || [];
+    const hoy = new Date();
+    const fechaActual = hoy.toISOString().split('T')[0];
+
+    // Valores por defecto extraídos del proyecto
+    const defaultSponsor = proyecto.sponsor || 'Por definir';
+    const defaultPM = proyecto.pm || 'Usuario';
+    const defaultInicio = tasks.length && tasks[0].startDate ? tasks[0].startDate : fechaActual;
+    const defaultFin = tasks.length && tasks[tasks.length-1].deadline ? tasks[tasks.length-1].deadline : new Date(hoy.getTime() + 30*24*3600*1000).toISOString().split('T')[0];
+    const defaultObjetivo = proyecto.description || `Completar el proyecto "${proyecto.name}" dentro del plazo y presupuesto establecidos.`;
+
+    // Extraer stakeholders únicos de las tareas
+    const miembros = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+    let stakeholdersHTML = '';
+    if (miembros.length) {
+        stakeholdersHTML = miembros.map(m => `<div class="stakeholder-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="stakeholder-nombre" value="${m}" placeholder="Nombre" style="flex:2; padding:6px;">
+            <input type="text" class="stakeholder-rol" value="Equipo técnico" placeholder="Rol" style="flex:2; padding:6px;">
+            <select class="stakeholder-influencia" style="flex:1; padding:6px;"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+            <select class="stakeholder-interes" style="flex:1; padding:6px;"><option selected>Alto</option><option>Medio</option><option>Bajo</option></select>
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`).join('');
+    } else {
+        stakeholdersHTML = `<div class="stakeholder-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="stakeholder-nombre" value="Sponsor" placeholder="Nombre" style="flex:2; padding:6px;">
+            <input type="text" class="stakeholder-rol" value="Patrocinador" placeholder="Rol" style="flex:2; padding:6px;">
+            <select class="stakeholder-influencia" style="flex:1; padding:6px;"><option selected>Alta</option><option>Media</option><option>Baja</option></select>
+            <select class="stakeholder-interes" style="flex:1; padding:6px;"><option selected>Alto</option><option>Medio</option><option>Bajo</option></select>
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    }
+
+    // Hitos por defecto (tomar tareas críticas o con prioridad alta)
+    let hitosDefault = tasks.filter(t => t.priority === 'alta' || t.critical).slice(0, 5).map(t => ({ nombre: t.name, fecha: t.deadline || '', responsable: t.assignee || '' }));
+    if (hitosDefault.length === 0 && tasks.length) {
+        hitosDefault = [{ nombre: 'Inicio del proyecto', fecha: defaultInicio, responsable: defaultPM }];
+    }
+    let hitosHTML = '';
+    hitosDefault.forEach(h => {
+        hitosHTML += `<div class="hito-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="hito-nombre" value="${h.nombre.replace(/"/g, '&quot;')}" placeholder="Hito" style="flex:3; padding:6px;">
+            <input type="date" class="hito-fecha" value="${h.fecha}" style="flex:1; padding:6px;">
+            <input type="text" class="hito-responsable" value="${h.responsable}" placeholder="Responsable" style="flex:2; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    });
+    if (hitosHTML === '') {
+        hitosHTML = `<div class="hito-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="hito-nombre" value="Kickoff oficial" placeholder="Hito" style="flex:3; padding:6px;">
+            <input type="date" class="hito-fecha" value="${fechaActual}" style="flex:1; padding:6px;">
+            <input type="text" class="hito-responsable" value="${defaultPM}" placeholder="Responsable" style="flex:2; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    }
+
+    // Riesgos por defecto (basados en tareas atrasadas o críticas)
+    const hoyDate = new Date();
+    hoyDate.setHours(0,0,0,0);
+    const tareasAtrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < hoyDate && t.status !== 'completed').length;
+    const criticas = tasks.filter(t => t.priority === 'alta' || t.critical).length;
+    let riesgosHTML = '';
+    if (tareasAtrasadas > 0) {
+        riesgosHTML += `<div class="riesgo-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="riesgo-desc" value="Retraso en ${tareasAtrasadas} tarea(s)" style="flex:3; padding:6px;">
+            <select class="riesgo-impacto" style="flex:1; padding:6px;"><option>Alto</option><option>Medio</option><option>Bajo</option></select>
+            <input type="text" class="riesgo-mitigacion" value="Revisar asignación de recursos" style="flex:3; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    }
+    if (criticas > 0) {
+        riesgosHTML += `<div class="riesgo-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="riesgo-desc" value="${criticas} tarea(s) crítica(s) pendiente(s)" style="flex:3; padding:6px;">
+            <select class="riesgo-impacto" style="flex:1; padding:6px;"><option>Alto</option><option>Medio</option><option>Bajo</option></select>
+            <input type="text" class="riesgo-mitigacion" value="Priorizar y asignar recursos senior" style="flex:3; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    }
+    if (riesgosHTML === '') {
+        riesgosHTML = `<div class="riesgo-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="riesgo-desc" value="Sin riesgos identificados inicialmente" style="flex:3; padding:6px;">
+            <select class="riesgo-impacto" style="flex:1; padding:6px;"><option>Bajo</option><option>Medio</option><option>Alto</option></select>
+            <input type="text" class="riesgo-mitigacion" value="Monitoreo continuo" style="flex:3; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+    }
+
+    // Próximos pasos por defecto
+    const pasosHTML = `<div class="paso-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="paso-accion" value="Kickoff meeting con el equipo" style="flex:3; padding:6px;">
+            <input type="date" class="paso-fecha" value="${new Date(hoy.getTime() + 2*24*3600*1000).toISOString().split('T')[0]}" style="flex:1; padding:6px;">
+            <input type="text" class="paso-responsable" value="${defaultPM}" placeholder="Responsable" style="flex:2; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>
+        <div class="paso-row" style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="text" class="paso-accion" value="Definición detallada de fases" style="flex:3; padding:6px;">
+            <input type="date" class="paso-fecha" value="${new Date(hoy.getTime() + 5*24*3600*1000).toISOString().split('T')[0]}" style="flex:1; padding:6px;">
+            <input type="text" class="paso-responsable" value="${defaultPM}" style="flex:2; padding:6px;">
+            <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+        </div>`;
+
+    // Construir el modal de configuración
+    const modalHTML = `
+    <div id="kickoffModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #8b5cf6; padding:30px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <h2 style="margin:0; font-size:24px;">🚀 Configuración del Kickoff Meeting</h2>
+                <button id="closeKickoffModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div>
+                    <label>Nombre del Proyecto:</label>
+                    <input type="text" id="kickoffNombre" value="${proyecto.name.replace(/"/g, '&quot;')}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">
+                    <label>Sponsor / Patrocinador:</label>
+                    <input type="text" id="kickoffSponsor" value="${defaultSponsor}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">
+                    <label>Gerente de Proyecto:</label>
+                    <input type="text" id="kickoffPM" value="${defaultPM}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">
+                    <label>Fecha Inicio:</label>
+                    <input type="date" id="kickoffInicio" value="${defaultInicio}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">
+                    <label>Fecha Fin Estimada:</label>
+                    <input type="date" id="kickoffFin" value="${defaultFin}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">
+                </div>
+                <div>
+                    <label>Objetivo SMART:</label>
+                    <textarea id="kickoffObjetivo" rows="4" style="width:100%; padding:8px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">${defaultObjetivo}</textarea>
+                    <label>Incluye (Alcance):</label>
+                    <textarea id="kickoffIncluye" rows="3" placeholder="Lista de entregables incluidos" style="width:100%; padding:8px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">- Gestión completa del proyecto\n- Documentación ejecutiva\n- Reuniones de seguimiento</textarea>
+                    <label>Excluye (Fuera de alcance):</label>
+                    <textarea id="kickoffExcluye" rows="3" placeholder="Lo que no está incluido" style="width:100%; padding:8px; background:#0f172a; border:1px solid #3b82f6; border-radius:8px; color:white;">- Mantenimiento post-implementación\n- Capacitación masiva\n- Cambios no aprobados</textarea>
+                </div>
+            </div>
+
+            <hr style="margin:20px 0; border-color:#334155;">
+
+            <h3>👥 Stakeholders Clave</h3>
+            <div id="stakeholdersContainer">${stakeholdersHTML}</div>
+            <button id="addStakeholderRow" style="background:#3b82f6; border:none; color:white; padding:6px 12px; border-radius:6px; margin-top:10px;">+ Agregar stakeholder</button>
+
+            <h3 style="margin-top:20px;">📅 Hitos del Proyecto</h3>
+            <div id="hitosContainer">${hitosHTML}</div>
+            <button id="addHitoRow" style="background:#3b82f6; border:none; color:white; padding:6px 12px; border-radius:6px; margin-top:10px;">+ Agregar hito</button>
+
+            <h3 style="margin-top:20px;">⚠️ Riesgos y Mitigación</h3>
+            <div id="riesgosContainer">${riesgosHTML}</div>
+            <button id="addRiesgoRow" style="background:#3b82f6; border:none; color:white; padding:6px 12px; border-radius:6px; margin-top:10px;">+ Agregar riesgo</button>
+
+            <h3 style="margin-top:20px;">📌 Próximos Pasos</h3>
+            <div id="pasosContainer">${pasosHTML}</div>
+            <button id="addPasoRow" style="background:#3b82f6; border:none; color:white; padding:6px 12px; border-radius:6px; margin-top:10px;">+ Agregar acción</button>
+
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelKickoffBtn" style="background:#475569; border:none; color:white; padding:12px 24px; border-radius:8px; cursor:pointer;">Cancelar</button>
+                <button id="generateKickoffBtn" style="background:#10b981; border:none; color:white; padding:12px 24px; border-radius:8px; cursor:pointer;">✅ Generar Documento Kickoff</button>
+            </div>
+        </div>
+    </div>`;
+
+    // Insertar modal en el body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('kickoffModal');
+
+    // Funciones para agregar filas dinámicas
+    function addRow(containerId, templateFn) {
+        const container = document.getElementById(containerId);
+        const newRow = templateFn();
+        container.insertAdjacentHTML('beforeend', newRow);
+        attachRemoveEvents(container);
+    }
+
+    function attachRemoveEvents(container) {
+        container.querySelectorAll('.remove-row').forEach(btn => {
+            btn.removeEventListener('click', removeHandler);
+            btn.addEventListener('click', removeHandler);
+        });
+    }
+    function removeHandler(e) {
+        e.target.closest('.stakeholder-row, .hito-row, .riesgo-row, .paso-row').remove();
+    }
+
+    // Template para stakeholder
+    const stakeholderTemplate = () => `<div class="stakeholder-row" style="display:flex; gap:10px; margin-bottom:8px;">
+        <input type="text" class="stakeholder-nombre" placeholder="Nombre" style="flex:2; padding:6px;">
+        <input type="text" class="stakeholder-rol" placeholder="Rol" style="flex:2; padding:6px;">
+        <select class="stakeholder-influencia" style="flex:1; padding:6px;"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+        <select class="stakeholder-interes" style="flex:1; padding:6px;"><option selected>Alto</option><option>Medio</option><option>Bajo</option></select>
+        <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+    </div>`;
+    const hitoTemplate = () => `<div class="hito-row" style="display:flex; gap:10px; margin-bottom:8px;">
+        <input type="text" class="hito-nombre" placeholder="Hito" style="flex:3; padding:6px;">
+        <input type="date" class="hito-fecha" style="flex:1; padding:6px;">
+        <input type="text" class="hito-responsable" placeholder="Responsable" style="flex:2; padding:6px;">
+        <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+    </div>`;
+    const riesgoTemplate = () => `<div class="riesgo-row" style="display:flex; gap:10px; margin-bottom:8px;">
+        <input type="text" class="riesgo-desc" placeholder="Descripción del riesgo" style="flex:3; padding:6px;">
+        <select class="riesgo-impacto" style="flex:1; padding:6px;"><option>Alto</option><option>Medio</option><option selected>Bajo</option></select>
+        <input type="text" class="riesgo-mitigacion" placeholder="Plan de mitigación" style="flex:3; padding:6px;">
+        <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+    </div>`;
+    const pasoTemplate = () => `<div class="paso-row" style="display:flex; gap:10px; margin-bottom:8px;">
+        <input type="text" class="paso-accion" placeholder="Acción" style="flex:3; padding:6px;">
+        <input type="date" class="paso-fecha" style="flex:1; padding:6px;">
+        <input type="text" class="paso-responsable" placeholder="Responsable" style="flex:2; padding:6px;">
+        <button type="button" class="remove-row" style="background:#ef4444; color:white; border:none; border-radius:4px; width:30px;">✕</button>
+    </div>`;
+
+    document.getElementById('addStakeholderRow').onclick = () => addRow('stakeholdersContainer', stakeholderTemplate);
+    document.getElementById('addHitoRow').onclick = () => addRow('hitosContainer', hitoTemplate);
+    document.getElementById('addRiesgoRow').onclick = () => addRow('riesgosContainer', riesgoTemplate);
+    document.getElementById('addPasoRow').onclick = () => addRow('pasosContainer', pasoTemplate);
+    attachRemoveEvents(document.getElementById('stakeholdersContainer'));
+    attachRemoveEvents(document.getElementById('hitosContainer'));
+    attachRemoveEvents(document.getElementById('riesgosContainer'));
+    attachRemoveEvents(document.getElementById('pasosContainer'));
+
+    // Cerrar modal
+    const closeModal = () => modal.remove();
+    document.getElementById('closeKickoffModal').onclick = closeModal;
+    document.getElementById('cancelKickoffBtn').onclick = closeModal;
+
+    // Generar documento
+    document.getElementById('generateKickoffBtn').onclick = () => {
+        // Recoger valores
+        const nombre = document.getElementById('kickoffNombre').value.trim();
+        const sponsor = document.getElementById('kickoffSponsor').value.trim() || 'No definido';
+        const pm = document.getElementById('kickoffPM').value.trim() || 'Usuario';
+        const fechaInicio = document.getElementById('kickoffInicio').value;
+        const fechaFin = document.getElementById('kickoffFin').value;
+        const objetivo = document.getElementById('kickoffObjetivo').value.trim();
+        const incluye = document.getElementById('kickoffIncluye').value.trim().split('\n').filter(l => l.trim());
+        const excluye = document.getElementById('kickoffExcluye').value.trim().split('\n').filter(l => l.trim());
+
+        // Stakeholders
+        const stakeholders = [];
+        document.querySelectorAll('#stakeholdersContainer .stakeholder-row').forEach(row => {
+            const nombre = row.querySelector('.stakeholder-nombre')?.value.trim();
+            const rol = row.querySelector('.stakeholder-rol')?.value.trim();
+            const influencia = row.querySelector('.stakeholder-influencia')?.value;
+            const interes = row.querySelector('.stakeholder-interes')?.value;
+            if (nombre) stakeholders.push({ nombre, rol, influencia, interes });
+        });
+
+        // Hitos
+        const hitos = [];
+        document.querySelectorAll('#hitosContainer .hito-row').forEach(row => {
+            const nombre = row.querySelector('.hito-nombre')?.value.trim();
+            const fecha = row.querySelector('.hito-fecha')?.value;
+            const responsable = row.querySelector('.hito-responsable')?.value.trim();
+            if (nombre) hitos.push({ nombre, fecha, responsable });
+        });
+
+        // Riesgos
+        const riesgos = [];
+        document.querySelectorAll('#riesgosContainer .riesgo-row').forEach(row => {
+            const desc = row.querySelector('.riesgo-desc')?.value.trim();
+            const impacto = row.querySelector('.riesgo-impacto')?.value;
+            const mitigacion = row.querySelector('.riesgo-mitigacion')?.value.trim();
+            if (desc) riesgos.push({ descripcion: desc, impacto, mitigacion });
+        });
+
+        // Próximos pasos
+        const pasos = [];
+        document.querySelectorAll('#pasosContainer .paso-row').forEach(row => {
+            const accion = row.querySelector('.paso-accion')?.value.trim();
+            const fecha = row.querySelector('.paso-fecha')?.value;
+            const responsable = row.querySelector('.paso-responsable')?.value.trim();
+            if (accion) pasos.push({ accion, fecha, responsable });
+        });
+
+        if (!nombre) {
+            alert('El nombre del proyecto es obligatorio');
+            return;
+        }
+
+        // Calcular métricas del proyecto (opcional, para mostrar en el documento)
+        const totalTareas = tasks.length;
+        const completadas = tasks.filter(t => t.status === 'completed').length;
+        const horasTotales = tasks.reduce((s,t) => s + (Number(t.estimatedTime) || 0), 0);
+        const recursos = new Set(tasks.map(t => t.assignee).filter(Boolean)).size;
+
+        // Generar HTML del documento
+        const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+        const codigoKickoff = 'KO-' + Date.now().toString().slice(-6);
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); color:white; padding:40px; border-radius:24px 24px 0 0; text-align:center;">
+            <div style="font-size:64px;">🚀</div>
+            <h1 style="margin:0; font-size:36px;">KICKOFF MEETING</h1>
+            <p style="margin:10px 0 0;">Documento de Inicio del Proyecto</p>
+            <div style="margin-top:30px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+                <div style="background:rgba(255,255,255,0.1); padding:12px 24px; border-radius:16px;"><div>Código</div><div style="font-weight:bold;">${codigoKickoff}</div></div>
+                <div style="background:rgba(255,255,255,0.1); padding:12px 24px; border-radius:16px;"><div>Fecha</div><div style="font-weight:bold;">${fechaEmision}</div></div>
+                <div style="background:rgba(255,255,255,0.1); padding:12px 24px; border-radius:16px;"><div>Versión</div><div style="font-weight:bold;">1.0</div></div>
+            </div>
+        </div>
+        <div style="padding:40px; background:#ffffff; color:#1e293b;">
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">📋 Resumen Ejecutivo</h2>
+                <p>El presente documento formaliza el inicio del proyecto <strong>${nombre}</strong>. Se definen los objetivos estratégicos, el alcance, los stakeholders clave, el cronograma de alto nivel, los riesgos principales y los acuerdos de gobierno.</p>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:40px;">
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><div style="color:#64748b;">🏢 Proyecto</div><div style="font-size:20px; font-weight:700;">${nombre}</div></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><div style="color:#64748b;">👤 Gerente de Proyecto</div><div style="font-size:20px; font-weight:700;">${pm}</div></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><div style="color:#64748b;">💼 Sponsor</div><div style="font-size:20px; font-weight:700;">${sponsor}</div></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><div style="color:#64748b;">📅 Período</div><div style="font-size:20px; font-weight:700;">${fechaInicio} → ${fechaFin || 'Por definir'}</div></div>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">🎯 Objetivo SMART</h2>
+                <div style="background:#f0f9ff; padding:25px; border-radius:16px; border-left:4px solid #0284c7;">${objetivo}</div>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">📐 Alcance</h2>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div style="background:#f0fdf4; padding:20px; border-radius:16px;"><strong style="color:#166534;">✅ INCLUYE</strong><ul>${incluye.map(i => `<li>${i}</li>`).join('')}</ul></div>
+                    <div style="background:#fef2f2; padding:20px; border-radius:16px;"><strong style="color:#991b1b;">❌ EXCLUYE</strong><ul>${excluye.map(e => `<li>${e}</li>`).join('')}</ul></div>
+                </div>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">👥 Stakeholders Clave</h2>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="background:#e2e8f0;"><th>Stakeholder</th><th>Rol</th><th>Influencia</th><th>Interés</th></tr></thead>
+                    <tbody>${stakeholders.map(s => `<tr><td>${s.nombre}</td><td>${s.rol || '-'}</td><td style="text-align:center;">${s.influencia}</td><td style="text-align:center;">${s.interes}</td></tr>`).join('')}</tbody>
+                </table>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">📅 Hitos del Proyecto</h2>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="background:#e2e8f0;"><th>Hito</th><th>Fecha</th><th>Responsable</th></tr></thead>
+                    <tbody>${hitos.map(h => `<tr><td>⭐ ${h.nombre}</td><td>${h.fecha || 'Por definir'}</td><td>${h.responsable || '-'}</td></tr>`).join('')}</tbody>
+                </table>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">⚠️ Riesgos y Mitigación</h2>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="background:#e2e8f0;"><th>Riesgo</th><th>Impacto</th><th>Mitigación</th></tr></thead>
+                    <tbody>${riesgos.map(r => `<tr><td>${r.descripcion}</td><td style="text-align:center;"><span style="background:${r.impacto==='Alto'?'#fee2e2':r.impacto==='Medio'?'#fef3c7':'#dcfce7'}; padding:4px 12px; border-radius:20px;">${r.impacto}</span></td><td>${r.mitigacion}</td></tr>`).join('')}</tbody>
+                </table>
+            </div>
+            <div style="margin-bottom:40px;">
+                <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px;">📌 Próximos Pasos</h2>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr style="background:#e2e8f0;"><th>Acción</th><th>Fecha Límite</th><th>Responsable</th></tr></thead>
+                    <tbody>${pasos.map(p => `<tr><td>${p.accion}</td><td>${p.fecha || 'Por definir'}</td><td>${p.responsable || '-'}</td></tr>`).join('')}</tbody>
+                </table>
+            </div>
+            <div style="margin-top:50px; padding:30px; background:#f8fafc; border-radius:16px; text-align:center;">
+                <h3>✍️ Aprobación y Compromiso</h3>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+                    <div><div style="height:60px; border-bottom:2px solid #cbd5e1;"></div><strong>Sponsor</strong><br>${sponsor}</div>
+                    <div><div style="height:60px; border-bottom:2px solid #cbd5e1;"></div><strong>Gerente de Proyecto</strong><br>${pm}</div>
+                    <div><div style="height:60px; border-bottom:2px solid #cbd5e1;"></div><strong>Director PMO</strong><br>_________________</div>
+                </div>
+                <p style="margin-top:30px; color:#64748b; font-size:12px;">Este documento es oficial y marca el inicio formal del proyecto.</p>
+            </div>
+        </div>`;
+
+        const html = generarHTML(`Kickoff Meeting - ${nombre}`, contenido);
+        abrirVentanaDocumento(html, `Kickoff_${nombre.replace(/\s+/g, '_')}`);
+        closeModal();
+
+        // Guardar en historial
+        let kickoffs = JSON.parse(localStorage.getItem('kickoffDocumentos') || '[]');
+        kickoffs.push({ proyecto: nombre, fecha: new Date().toISOString(), codigo: codigoKickoff });
+        localStorage.setItem('kickoffDocumentos', JSON.stringify(kickoffs));
+        alert(`✅ Documento Kickoff generado exitosamente.\n📋 Código: ${codigoKickoff}`);
+    };
+}
+
+
+
+
+
 // ========================
 // GENERAR ACTA CONSTITUTIVA (sin cambios en esta parte, la dejo igual)
 // ========================
@@ -2774,6 +3164,907 @@ function generarMatrizRACI() {
         alert('❌ Error en Matriz RACI:\n\n' + error.message + '\n\nRevisa la consola (F12) para detalles.');
     }
 }
+
+
+
+
+
+
+
+
+
+// =============================================
+// 1. BUSINESS CASE (CASO DE NEGOCIO)
+// =============================================
+function generarBusinessCase() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const tasks = proyecto.tasks || [];
+    const totalHoras = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+    const costoHora = 50; // Costo por hora por defecto, podría ser configurable
+    const costoTotal = totalHoras * costoHora;
+
+    // Valores por defecto
+    const defaultInversion = costoTotal;
+    const defaultBeneficio = Math.round(costoTotal * 1.5);
+    const defaultVAN = defaultBeneficio - defaultInversion;
+    const defaultTIR = 18; // porcentaje
+    const defaultROI = ((defaultBeneficio - defaultInversion) / defaultInversion) * 100;
+
+    const modalHTML = `
+    <div id="businessCaseModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:800px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #f59e0b; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:25px;">
+                <h2 style="margin:0;">📊 Business Case - Caso de Negocio</h2>
+                <button id="closeBCModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div>
+                    <label>Nombre del Proyecto:</label>
+                    <input type="text" id="bcNombre" value="${proyecto.name.replace(/"/g, '&quot;')}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>Inversión Estimada (€):</label>
+                    <input type="number" id="bcInversion" value="${defaultInversion}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>Beneficio Estimado (€):</label>
+                    <input type="number" id="bcBeneficio" value="${defaultBeneficio}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>VAN (€):</label>
+                    <input type="number" id="bcVAN" value="${defaultVAN}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                </div>
+                <div>
+                    <label>TIR (%):</label>
+                    <input type="number" id="bcTIR" value="${defaultTIR}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>ROI (%):</label>
+                    <input type="number" id="bcROI" value="${defaultROI.toFixed(1)}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>Plazo de Retorno (meses):</label>
+                    <input type="number" id="bcPayback" value="12" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;">
+                    <label>Justificación / Alineamiento Estratégico:</label>
+                    <textarea id="bcJustificacion" rows="3" placeholder="Alineación con objetivos de negocio..." style="width:100%; padding:8px; background:#0f172a; border:1px solid #f59e0b; border-radius:8px; color:white;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelBCBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateBCBtn" style="background:#f59e0b; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Business Case</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('businessCaseModal');
+
+    const closeModal = () => modal.remove();
+    document.getElementById('closeBCModal').onclick = closeModal;
+    document.getElementById('cancelBCBtn').onclick = closeModal;
+
+    document.getElementById('generateBCBtn').onclick = () => {
+        const nombre = document.getElementById('bcNombre').value.trim();
+        const inversion = parseFloat(document.getElementById('bcInversion').value) || 0;
+        const beneficio = parseFloat(document.getElementById('bcBeneficio').value) || 0;
+        const van = parseFloat(document.getElementById('bcVAN').value) || 0;
+        const tir = parseFloat(document.getElementById('bcTIR').value) || 0;
+        const roi = parseFloat(document.getElementById('bcROI').value) || 0;
+        const payback = parseFloat(document.getElementById('bcPayback').value) || 0;
+        const justificacion = document.getElementById('bcJustificacion').value.trim() || 'Sin justificación detallada.';
+
+        const fecha = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
+        const codigo = 'BC-' + Date.now().toString().slice(-6);
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">📊</div>
+            <h1 style="margin:0;">BUSINESS CASE</h1>
+            <p>Caso de Negocio del Proyecto</p>
+            <div style="margin-top:20px; display:flex; justify-content:center; gap:20px;">
+                <div style="background:rgba(255,255,255,0.1); padding:8px 16px; border-radius:12px;">Código: ${codigo}</div>
+                <div style="background:rgba(255,255,255,0.1); padding:8px 16px; border-radius:12px;">Fecha: ${fecha}</div>
+            </div>
+        </div>
+        <div style="padding:40px; background:white; color:#1e293b;">
+            <h2 style="color:#1e3a8a;">📋 Resumen Ejecutivo</h2>
+            <p>El presente Business Case justifica la inversión en el proyecto <strong>${nombre}</strong>. Se presentan los análisis financieros y estratégicos que respaldan su ejecución.</p>
+            <h2 style="color:#1e3a8a; margin-top:30px;">💰 Análisis Financiero</h2>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin:20px 0;">
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>Inversión Estimada</strong><br><span style="font-size:28px;">€ ${inversion.toLocaleString()}</span></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>Beneficio Estimado</strong><br><span style="font-size:28px;">€ ${beneficio.toLocaleString()}</span></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>VAN</strong><br><span style="font-size:28px;">€ ${van.toLocaleString()}</span></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>TIR</strong><br><span style="font-size:28px;">${tir}%</span></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>ROI</strong><br><span style="font-size:28px;">${roi.toFixed(1)}%</span></div>
+                <div style="background:#f8fafc; padding:20px; border-radius:16px;"><strong>Payback</strong><br><span style="font-size:28px;">${payback} meses</span></div>
+            </div>
+            <h2 style="color:#1e3a8a;">🎯 Alineamiento Estratégico</h2>
+            <div style="background:#fef3c7; padding:20px; border-radius:16px;">${justificacion}</div>
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; text-align:center; border-radius:16px;">
+                <p><strong>Conclusión:</strong> ${van > 0 && tir > 12 ? 'El proyecto es financieramente viable y se recomienda su aprobación.' : 'Se requiere revisión adicional de los supuestos financieros.'}</p>
+            </div>
+        </div>`;
+        const html = generarHTML(`Business Case - ${nombre}`, contenido);
+        abrirVentanaDocumento(html, `Business_Case_${nombre.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert(`✅ Business Case generado. Código: ${codigo}`);
+    };
+}
+
+// =============================================
+// 2. STATUS REPORT (INFORME DE ESTADO PERIÓDICO)
+// =============================================
+function generarStatusReport() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const tasks = proyecto.tasks || [];
+    const total = tasks.length;
+    const completadas = tasks.filter(t => t.status === 'completed').length;
+    const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+    const pendientes = tasks.filter(t => t.status === 'pending').length;
+    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+    const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+    // Calcular EVM
+    const horasEst = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+    const horasLog = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+    const ev = horasEst * (progreso / 100);
+    const cpi = horasLog > 0 ? ev / horasLog : 1;
+    const spi = horasEst > 0 ? ev / horasEst : 1;
+
+    const modalHTML = `
+    <div id="statusReportModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:700px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #10b981; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:25px;">
+                <h2 style="margin:0;">📊 Status Report - Informe de Estado</h2>
+                <button id="closeSRModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div>
+                <label>Período (ej. Semana 12, Marzo 2025):</label>
+                <input type="text" id="srPeriodo" value="Semana ${Math.floor((new Date() - new Date(proyecto.startDate || Date.now())) / (7*24*3600*1000)) + 1}" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;">
+                <label>Logros clave del período:</label>
+                <textarea id="srLogros" rows="3" placeholder="Ej: Se completó el diseño de arquitectura..." style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;"></textarea>
+                <label>Próximos pasos (próximo período):</label>
+                <textarea id="srProximos" rows="3" placeholder="Ej: Desarrollo de módulo X..." style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;"></textarea>
+                <label>Riesgos / Problemas actuales:</label>
+                <textarea id="srRiesgos" rows="2" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;"></textarea>
+                <label>Acciones correctivas propuestas:</label>
+                <textarea id="srAcciones" rows="2" style="width:100%; padding:8px; margin-bottom:10px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelSRBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateSRBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Status Report</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('statusReportModal');
+    const closeModal = () => modal.remove();
+    document.getElementById('closeSRModal').onclick = closeModal;
+    document.getElementById('cancelSRBtn').onclick = closeModal;
+
+    document.getElementById('generateSRBtn').onclick = () => {
+        const periodo = document.getElementById('srPeriodo').value.trim() || 'Actual';
+        const logros = document.getElementById('srLogros').value.trim() || 'No se registraron logros específicos.';
+        const proximos = document.getElementById('srProximos').value.trim() || 'Por definir.';
+        const riesgos = document.getElementById('srRiesgos').value.trim() || 'Sin riesgos nuevos.';
+        const acciones = document.getElementById('srAcciones').value.trim() || 'Sin acciones correctivas.';
+
+        const fecha = new Date().toLocaleDateString('es-ES');
+        const codigo = 'SR-' + Date.now().toString().slice(-6);
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">📊</div>
+            <h1>STATUS REPORT</h1>
+            <p>Informe de Estado del Proyecto</p>
+            <div style="margin-top:20px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+                <div style="background:rgba(255,255,255,0.1); padding:8px 16px; border-radius:12px;">Proyecto: ${proyecto.name}</div>
+                <div style="background:rgba(255,255,255,0.1); padding:8px 16px; border-radius:12px;">Período: ${periodo}</div>
+                <div style="background:rgba(255,255,255,0.1); padding:8px 16px; border-radius:12px;">Código: ${codigo}</div>
+            </div>
+        </div>
+        <div style="padding:40px; background:white; color:#1e293b;">
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:30px;">
+                <div style="background:#f8fafc; padding:20px; text-align:center; border-radius:12px;"><strong>Progreso</strong><br><span style="font-size:28px;">${progreso}%</span></div>
+                <div style="background:#f8fafc; padding:20px; text-align:center; border-radius:12px;"><strong>CPI</strong><br><span style="font-size:28px;">${cpi.toFixed(2)}</span></div>
+                <div style="background:#f8fafc; padding:20px; text-align:center; border-radius:12px;"><strong>SPI</strong><br><span style="font-size:28px;">${spi.toFixed(2)}</span></div>
+                <div style="background:#f8fafc; padding:20px; text-align:center; border-radius:12px;"><strong>Tareas Atrasadas</strong><br><span style="font-size:28px;">${atrasadas}</span></div>
+            </div>
+            <h2>✅ Logros Clave</h2>
+            <div style="background:#f0fdf4; padding:20px; border-radius:12px;">${logros}</div>
+            <h2 style="margin-top:30px;">📌 Próximos Pasos</h2>
+            <div style="background:#fef3c7; padding:20px; border-radius:12px;">${proximos}</div>
+            <h2 style="margin-top:30px;">⚠️ Riesgos y Problemas</h2>
+            <div style="background:#fee2e2; padding:20px; border-radius:12px;">${riesgos}</div>
+            <h2 style="margin-top:30px;">🛠️ Acciones Correctivas</h2>
+            <div style="background:#e0f2fe; padding:20px; border-radius:12px;">${acciones}</div>
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; text-align:center; border-radius:16px;">
+                <p><strong>Estado General:</strong> ${spi >= 0.9 && cpi >= 0.9 ? '🟢 En línea' : (spi >= 0.8 && cpi >= 0.8 ? '🟡 Con observaciones' : '🔴 Requiere atención')}</p>
+                <p>Generado: ${fecha}</p>
+            </div>
+        </div>`;
+        const html = generarHTML(`Status Report - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Status_Report_${proyecto.name.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert(`✅ Status Report generado. Código: ${codigo}`);
+    };
+}
+
+// =============================================
+// 3. ISSUE LOG (REGISTRO DE INCIDENCIAS) - CON PERSISTENCIA
+// =============================================
+let issueLog = JSON.parse(localStorage.getItem('issueLog') || '[]');
+
+function generarIssueLog() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    // Filtrar issues del proyecto actual
+    const issuesProyecto = issueLog.filter(i => i.projectId === proyecto.name);
+
+    const modalHTML = `
+    <div id="issueLogModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #ef4444; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2 style="margin:0;">⚠️ Issue Log - Registro de Incidencias</h2>
+                <button id="closeILModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div id="issueList">
+                ${issuesProyecto.length === 0 ? '<p style="color:#94a3b8;">No hay incidencias registradas.</p>' : ''}
+                ${issuesProyecto.map((issue, idx) => `
+                    <div class="issue-item" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid ${issue.estado === 'Cerrada' ? '#10b981' : '#ef4444'};">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>#${issue.id}</strong>
+                            <select data-idx="${idx}" class="issue-status" style="background:#0f172a; border:1px solid #ef4444; border-radius:6px; padding:4px;">
+                                <option ${issue.estado === 'Abierta' ? 'selected' : ''}>Abierta</option>
+                                <option ${issue.estado === 'En progreso' ? 'selected' : ''}>En progreso</option>
+                                <option ${issue.estado === 'Cerrada' ? 'selected' : ''}>Cerrada</option>
+                            </select>
+                        </div>
+                        <p><strong>Descripción:</strong> ${issue.descripcion}</p>
+                        <p><strong>Impacto:</strong> ${issue.impacto} | <strong>Responsable:</strong> ${issue.responsable}</p>
+                        <p><strong>Fecha:</strong> ${issue.fecha} | <strong>Fecha solución:</strong> ${issue.fechaSolucion || 'Pendiente'}</p>
+                        <button data-idx="${idx}" class="delete-issue" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                    </div>
+                `).join('')}
+            </div>
+            <hr style="margin:20px 0; border-color:#334155;">
+            <h3>➕ Nueva Incidencia</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" id="issueDesc" placeholder="Descripción" style="background:#0f172a; border:1px solid #ef4444; border-radius:8px; padding:8px; color:white;">
+                <select id="issueImpacto" style="background:#0f172a; border:1px solid #ef4444; border-radius:8px; padding:8px; color:white;">
+                    <option>Bajo</option><option>Medio</option><option>Alto</option><option>Crítico</option>
+                </select>
+                <input type="text" id="issueResponsable" placeholder="Responsable" style="background:#0f172a; border:1px solid #ef4444; border-radius:8px; padding:8px; color:white;">
+                <input type="date" id="issueFechaSol" placeholder="Fecha solución" style="background:#0f172a; border:1px solid #ef4444; border-radius:8px; padding:8px; color:white;">
+            </div>
+            <button id="addIssueBtn" style="background:#3b82f6; border:none; color:white; padding:8px 16px; border-radius:8px; margin-top:15px;">+ Agregar Incidencia</button>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelILBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateILBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Issue Log</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('issueLogModal');
+
+    const refreshList = () => {
+        const listDiv = document.getElementById('issueList');
+        const newIssues = issueLog.filter(i => i.projectId === proyecto.name);
+        if (newIssues.length === 0) {
+            listDiv.innerHTML = '<p style="color:#94a3b8;">No hay incidencias registradas.</p>';
+        } else {
+            listDiv.innerHTML = newIssues.map((issue, idx) => `
+                <div class="issue-item" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid ${issue.estado === 'Cerrada' ? '#10b981' : '#ef4444'};">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>#${issue.id}</strong>
+                        <select data-idx="${idx}" class="issue-status" style="background:#0f172a; border:1px solid #ef4444; border-radius:6px; padding:4px;">
+                            <option ${issue.estado === 'Abierta' ? 'selected' : ''}>Abierta</option>
+                            <option ${issue.estado === 'En progreso' ? 'selected' : ''}>En progreso</option>
+                            <option ${issue.estado === 'Cerrada' ? 'selected' : ''}>Cerrada</option>
+                        </select>
+                    </div>
+                    <p><strong>Descripción:</strong> ${issue.descripcion}</p>
+                    <p><strong>Impacto:</strong> ${issue.impacto} | <strong>Responsable:</strong> ${issue.responsable}</p>
+                    <p><strong>Fecha:</strong> ${issue.fecha} | <strong>Fecha solución:</strong> ${issue.fechaSolucion || 'Pendiente'}</p>
+                    <button data-idx="${idx}" class="delete-issue" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                </div>
+            `).join('');
+        }
+        attachIssueEvents();
+    };
+
+    function attachIssueEvents() {
+        document.querySelectorAll('.issue-status').forEach(sel => {
+            sel.removeEventListener('change', statusChangeHandler);
+            sel.addEventListener('change', statusChangeHandler);
+        });
+        document.querySelectorAll('.delete-issue').forEach(btn => {
+            btn.removeEventListener('click', deleteHandler);
+            btn.addEventListener('click', deleteHandler);
+        });
+    }
+
+    function statusChangeHandler(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        const projectIssues = issueLog.filter(i => i.projectId === proyecto.name);
+        const realIdx = issueLog.findIndex(i => i.id === projectIssues[idx].id);
+        if (realIdx !== -1) {
+            issueLog[realIdx].estado = e.target.value;
+            localStorage.setItem('issueLog', JSON.stringify(issueLog));
+            refreshList();
+        }
+    }
+
+    function deleteHandler(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        const projectIssues = issueLog.filter(i => i.projectId === proyecto.name);
+        const realIdx = issueLog.findIndex(i => i.id === projectIssues[idx].id);
+        if (realIdx !== -1) {
+            issueLog.splice(realIdx, 1);
+            localStorage.setItem('issueLog', JSON.stringify(issueLog));
+            refreshList();
+        }
+    }
+
+    document.getElementById('addIssueBtn').onclick = () => {
+        const desc = document.getElementById('issueDesc').value.trim();
+        const impacto = document.getElementById('issueImpacto').value;
+        const responsable = document.getElementById('issueResponsable').value.trim();
+        const fechaSol = document.getElementById('issueFechaSol').value;
+        if (!desc) {
+            alert('La descripción es obligatoria');
+            return;
+        }
+        const newIssue = {
+            id: Date.now(),
+            projectId: proyecto.name,
+            descripcion: desc,
+            impacto: impacto,
+            responsable: responsable || 'No asignado',
+            fecha: new Date().toLocaleDateString('es-ES'),
+            fechaSolucion: fechaSol || '',
+            estado: 'Abierta'
+        };
+        issueLog.push(newIssue);
+        localStorage.setItem('issueLog', JSON.stringify(issueLog));
+        document.getElementById('issueDesc').value = '';
+        document.getElementById('issueResponsable').value = '';
+        document.getElementById('issueFechaSol').value = '';
+        refreshList();
+    };
+
+    document.getElementById('closeILModal').onclick = () => modal.remove();
+    document.getElementById('cancelILBtn').onclick = () => modal.remove();
+
+    document.getElementById('generateILBtn').onclick = () => {
+        const issuesProyecto = issueLog.filter(i => i.projectId === proyecto.name);
+        const abiertas = issuesProyecto.filter(i => i.estado !== 'Cerrada').length;
+        const cerradas = issuesProyecto.filter(i => i.estado === 'Cerrada').length;
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">⚠️</div>
+            <h1>ISSUE LOG</h1>
+            <p>Registro de Incidencias del Proyecto</p>
+            <div style="margin-top:20px;">Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <div style="display:flex; gap:20px; margin-bottom:30px;">
+                <div style="background:#f8fafc; padding:20px; border-radius:12px; flex:1; text-align:center;"><strong>Total Incidencias</strong><br><span style="font-size:32px;">${issuesProyecto.length}</span></div>
+                <div style="background:#fee2e2; padding:20px; border-radius:12px; flex:1; text-align:center;"><strong>Abiertas</strong><br><span style="font-size:32px;">${abiertas}</span></div>
+                <div style="background:#dcfce7; padding:20px; border-radius:12px; flex:1; text-align:center;"><strong>Cerradas</strong><br><span style="font-size:32px;">${cerradas}</span></div>
+            </div>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead><tr style="background:#e2e8f0;"><th>ID</th><th>Descripción</th><th>Impacto</th><th>Responsable</th><th>Fecha</th><th>Estado</th><th>Fecha Solución</th></tr></thead>
+                <tbody>
+                    ${issuesProyecto.map(i => `<tr><td>${i.id}</td><td>${i.descripcion}</td><td>${i.impacto}</td><td>${i.responsable}</td><td>${i.fecha}</td><td>${i.estado}</td><td>${i.fechaSolucion || '-'}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+        const html = generarHTML(`Issue Log - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Issue_Log_${proyecto.name.replace(/\s+/g, '_')}`);
+    };
+    refreshList();
+}
+
+// =============================================
+// 4. DECISION LOG (REGISTRO DE DECISIONES)
+// =============================================
+let decisionLog = JSON.parse(localStorage.getItem('decisionLog') || '[]');
+
+function generarDecisionLog() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const decisionesProyecto = decisionLog.filter(d => d.projectId === proyecto.name);
+
+    const modalHTML = `
+    <div id="decisionLogModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #8b5cf6; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2 style="margin:0;">📝 Decision Log - Registro de Decisiones</h2>
+                <button id="closeDLModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div id="decisionList">
+                ${decisionesProyecto.length === 0 ? '<p style="color:#94a3b8;">No hay decisiones registradas.</p>' : ''}
+                ${decisionesProyecto.map((dec, idx) => `
+                    <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid #8b5cf6;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>#${dec.id}</strong>
+                            <button data-idx="${idx}" class="delete-decision" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                        </div>
+                        <p><strong>Decisión:</strong> ${dec.decision}</p>
+                        <p><strong>Justificación:</strong> ${dec.justificacion}</p>
+                        <p><strong>Responsable:</strong> ${dec.responsable} | <strong>Fecha:</strong> ${dec.fecha}</p>
+                    </div>
+                `).join('')}
+            </div>
+            <hr style="margin:20px 0; border-color:#334155;">
+            <h3>➕ Nueva Decisión</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" id="decisionDesc" placeholder="Decisión tomada" style="background:#0f172a; border:1px solid #8b5cf6; border-radius:8px; padding:8px; color:white;">
+                <input type="text" id="decisionJust" placeholder="Justificación" style="background:#0f172a; border:1px solid #8b5cf6; border-radius:8px; padding:8px; color:white;">
+                <input type="text" id="decisionResp" placeholder="Responsable" style="background:#0f172a; border:1px solid #8b5cf6; border-radius:8px; padding:8px; color:white;">
+            </div>
+            <button id="addDecisionBtn" style="background:#3b82f6; border:none; color:white; padding:8px 16px; border-radius:8px; margin-top:15px;">+ Agregar Decisión</button>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelDLBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateDLBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Decision Log</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('decisionLogModal');
+
+    function refreshDecisionList() {
+        const listDiv = document.getElementById('decisionList');
+        const nuevas = decisionLog.filter(d => d.projectId === proyecto.name);
+        if (nuevas.length === 0) {
+            listDiv.innerHTML = '<p style="color:#94a3b8;">No hay decisiones registradas.</p>';
+        } else {
+            listDiv.innerHTML = nuevas.map((dec, idx) => `
+                <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid #8b5cf6;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>#${dec.id}</strong>
+                        <button data-idx="${idx}" class="delete-decision" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                    </div>
+                    <p><strong>Decisión:</strong> ${dec.decision}</p>
+                    <p><strong>Justificación:</strong> ${dec.justificacion}</p>
+                    <p><strong>Responsable:</strong> ${dec.responsable} | <strong>Fecha:</strong> ${dec.fecha}</p>
+                </div>
+            `).join('');
+        }
+        attachDecisionEvents();
+    }
+
+    function attachDecisionEvents() {
+        document.querySelectorAll('.delete-decision').forEach(btn => {
+            btn.removeEventListener('click', deleteDecisionHandler);
+            btn.addEventListener('click', deleteDecisionHandler);
+        });
+    }
+
+    function deleteDecisionHandler(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        const projectDecisions = decisionLog.filter(d => d.projectId === proyecto.name);
+        const realIdx = decisionLog.findIndex(d => d.id === projectDecisions[idx].id);
+        if (realIdx !== -1) {
+            decisionLog.splice(realIdx, 1);
+            localStorage.setItem('decisionLog', JSON.stringify(decisionLog));
+            refreshDecisionList();
+        }
+    }
+
+    document.getElementById('addDecisionBtn').onclick = () => {
+        const decision = document.getElementById('decisionDesc').value.trim();
+        const justificacion = document.getElementById('decisionJust').value.trim();
+        const responsable = document.getElementById('decisionResp').value.trim();
+        if (!decision) {
+            alert('La decisión es obligatoria');
+            return;
+        }
+        const newDecision = {
+            id: Date.now(),
+            projectId: proyecto.name,
+            decision: decision,
+            justificacion: justificacion || 'Sin justificación',
+            responsable: responsable || 'No asignado',
+            fecha: new Date().toLocaleDateString('es-ES')
+        };
+        decisionLog.push(newDecision);
+        localStorage.setItem('decisionLog', JSON.stringify(decisionLog));
+        document.getElementById('decisionDesc').value = '';
+        document.getElementById('decisionJust').value = '';
+        document.getElementById('decisionResp').value = '';
+        refreshDecisionList();
+    };
+
+    document.getElementById('closeDLModal').onclick = () => modal.remove();
+    document.getElementById('cancelDLBtn').onclick = () => modal.remove();
+
+    document.getElementById('generateDLBtn').onclick = () => {
+        const decisiones = decisionLog.filter(d => d.projectId === proyecto.name);
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">📝</div>
+            <h1>DECISION LOG</h1>
+            <p>Registro de Decisiones del Proyecto</p>
+            <div>Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead><tr style="background:#e2e8f0;"><th>ID</th><th>Decisión</th><th>Justificación</th><th>Responsable</th><th>Fecha</th></tr></thead>
+                <tbody>
+                    ${decisiones.map(d => `<tr><td>${d.id}</td><td>${d.decision}</td><td>${d.justificacion}</td><td>${d.responsable}</td><td>${d.fecha}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+        const html = generarHTML(`Decision Log - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Decision_Log_${proyecto.name.replace(/\s+/g, '_')}`);
+    };
+    refreshDecisionList();
+}
+
+// =============================================
+// 5. RESOURCE MANAGEMENT PLAN (PLAN DE RECURSOS)
+// =============================================
+function generarResourcePlan() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const tasks = proyecto.tasks || [];
+    const miembros = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+    const habilidades = JSON.parse(localStorage.getItem('habilidades') || '[]').filter(h => h.projectId === proyecto.name);
+    const reconocimientos = JSON.parse(localStorage.getItem('reconocimientos') || '[]').filter(r => r.projectId === proyecto.name);
+
+    const modalHTML = `
+    <div id="rpModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:700px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #10b981; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2>👥 Resource Management Plan</h2>
+                <button id="closeRPModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <label>Estrategia de Adquisición de Recursos:</label>
+            <textarea id="rpAdquisicion" rows="2" placeholder="Ej: Personal interno + contratación de consultoría..." style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;">Personal interno del departamento de TI, complementado con consultoría especializada para el módulo de IA.</textarea>
+            <label>Plan de Capacitación:</label>
+            <textarea id="rpCapacitacion" rows="2" placeholder="Ej: Curso de metodologías ágiles..." style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;">Capacitación en Scrum y uso de herramientas de gestión de proyectos.</textarea>
+            <label>Plan de Reconocimiento y Retención:</label>
+            <textarea id="rpReconocimiento" rows="2" style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #10b981; border-radius:8px; color:white;">Bonos por hitos, reconocimiento público, oportunidades de crecimiento.</textarea>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:20px;">
+                <button id="cancelRPBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateRPBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Plan</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('rpModal');
+    const closeModal = () => modal.remove();
+    document.getElementById('closeRPModal').onclick = closeModal;
+    document.getElementById('cancelRPBtn').onclick = closeModal;
+
+    document.getElementById('generateRPBtn').onclick = () => {
+        const adquisicion = document.getElementById('rpAdquisicion').value.trim();
+        const capacitacion = document.getElementById('rpCapacitacion').value.trim();
+        const reconocimiento = document.getElementById('rpReconocimiento').value.trim();
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">👥</div>
+            <h1>RESOURCE MANAGEMENT PLAN</h1>
+            <p>Plan de Gestión de Recursos</p>
+            <div>Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <h2>📋 Estructura del Equipo</h2>
+            <ul>${miembros.map(m => `<li>${m}</li>`).join('')}</ul>
+            <h2>📊 Habilidades Clave</h2>
+            <ul>${habilidades.map(h => `<li>${h.miembro} - ${h.habilidad} (${h.nivel})</li>`).join('') || '<li>No se han registrado habilidades.</li>'}</ul>
+            <h2>🛠️ Estrategia de Adquisición</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${adquisicion}</div>
+            <h2>🎓 Plan de Capacitación</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${capacitacion}</div>
+            <h2>🏆 Reconocimiento y Retención</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${reconocimiento}</div>
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; text-align:center;">Este plan será revisado trimestralmente.</div>
+        </div>`;
+        const html = generarHTML(`Resource Plan - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Resource_Plan_${proyecto.name.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert('✅ Resource Management Plan generado');
+    };
+}
+
+// =============================================
+// 6. PROCUREMENT PLAN (PLAN DE ADQUISICIONES)
+// =============================================
+let procurementItems = JSON.parse(localStorage.getItem('procurementItems') || '[]');
+
+function generarProcurementPlan() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const itemsProyecto = procurementItems.filter(p => p.projectId === proyecto.name);
+
+    const modalHTML = `
+    <div id="procModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:900px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #f59e0b; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2>📦 Procurement Plan - Adquisiciones</h2>
+                <button id="closeProcModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <div id="procList">
+                ${itemsProyecto.length === 0 ? '<p>No hay adquisiciones registradas.</p>' : ''}
+                ${itemsProyecto.map((item, idx) => `
+                    <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>${item.nombre}</strong>
+                            <button data-idx="${idx}" class="delete-proc" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                        </div>
+                        <p>Proveedor: ${item.proveedor} | Monto: €${item.monto} | Fecha: ${item.fecha} | Estado: ${item.estado}</p>
+                    </div>
+                `).join('')}
+            </div>
+            <hr>
+            <h3>➕ Nueva Adquisición</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" id="procNombre" placeholder="Concepto" style="background:#0f172a; border:1px solid #f59e0b; border-radius:8px; padding:8px; color:white;">
+                <input type="text" id="procProveedor" placeholder="Proveedor" style="background:#0f172a; border:1px solid #f59e0b; border-radius:8px; padding:8px; color:white;">
+                <input type="number" id="procMonto" placeholder="Monto (€)" style="background:#0f172a; border:1px solid #f59e0b; border-radius:8px; padding:8px; color:white;">
+                <input type="date" id="procFecha" style="background:#0f172a; border:1px solid #f59e0b; border-radius:8px; padding:8px; color:white;">
+                <select id="procEstado" style="background:#0f172a; border:1px solid #f59e0b; border-radius:8px; padding:8px; color:white;">
+                    <option>Pendiente</option><option>En cotización</option><option>Adjudicado</option><option>Entregado</option>
+                </select>
+            </div>
+            <button id="addProcBtn" style="background:#3b82f6; border:none; color:white; padding:8px 16px; border-radius:8px; margin-top:15px;">+ Agregar</button>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:30px;">
+                <button id="cancelProcBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateProcBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Plan</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('procModal');
+
+    function refreshProcList() {
+        const listDiv = document.getElementById('procList');
+        const items = procurementItems.filter(p => p.projectId === proyecto.name);
+        if (items.length === 0) {
+            listDiv.innerHTML = '<p>No hay adquisiciones registradas.</p>';
+        } else {
+            listDiv.innerHTML = items.map((item, idx) => `
+                <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>${item.nombre}</strong>
+                        <button data-idx="${idx}" class="delete-proc" style="background:#ef4444; border:none; color:white; padding:4px 12px; border-radius:6px;">Eliminar</button>
+                    </div>
+                    <p>Proveedor: ${item.proveedor} | Monto: €${item.monto} | Fecha: ${item.fecha} | Estado: ${item.estado}</p>
+                </div>
+            `).join('');
+        }
+        attachProcEvents();
+    }
+
+    function attachProcEvents() {
+        document.querySelectorAll('.delete-proc').forEach(btn => {
+            btn.removeEventListener('click', deleteProcHandler);
+            btn.addEventListener('click', deleteProcHandler);
+        });
+    }
+    function deleteProcHandler(e) {
+        const idx = parseInt(e.target.dataset.idx);
+        const projectItems = procurementItems.filter(p => p.projectId === proyecto.name);
+        const realIdx = procurementItems.findIndex(p => p.id === projectItems[idx].id);
+        if (realIdx !== -1) {
+            procurementItems.splice(realIdx, 1);
+            localStorage.setItem('procurementItems', JSON.stringify(procurementItems));
+            refreshProcList();
+        }
+    }
+
+    document.getElementById('addProcBtn').onclick = () => {
+        const nombre = document.getElementById('procNombre').value.trim();
+        const proveedor = document.getElementById('procProveedor').value.trim();
+        const monto = parseFloat(document.getElementById('procMonto').value) || 0;
+        const fecha = document.getElementById('procFecha').value;
+        const estado = document.getElementById('procEstado').value;
+        if (!nombre) {
+            alert('El concepto es obligatorio');
+            return;
+        }
+        const newItem = {
+            id: Date.now(),
+            projectId: proyecto.name,
+            nombre: nombre,
+            proveedor: proveedor || 'No definido',
+            monto: monto,
+            fecha: fecha || new Date().toISOString().split('T')[0],
+            estado: estado
+        };
+        procurementItems.push(newItem);
+        localStorage.setItem('procurementItems', JSON.stringify(procurementItems));
+        document.getElementById('procNombre').value = '';
+        document.getElementById('procProveedor').value = '';
+        document.getElementById('procMonto').value = '';
+        refreshProcList();
+    };
+
+    document.getElementById('closeProcModal').onclick = () => modal.remove();
+    document.getElementById('cancelProcBtn').onclick = () => modal.remove();
+
+    document.getElementById('generateProcBtn').onclick = () => {
+        const items = procurementItems.filter(p => p.projectId === proyecto.name);
+        const total = items.reduce((s, i) => s + i.monto, 0);
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">📦</div>
+            <h1>PROCUREMENT PLAN</h1>
+            <p>Plan de Adquisiciones</p>
+            <div>Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <div style="background:#f8fafc; padding:20px; margin-bottom:20px;"><strong>Presupuesto total de adquisiciones:</strong> € ${total.toLocaleString()}</div>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead><tr style="background:#e2e8f0;"><th>Concepto</th><th>Proveedor</th><th>Monto</th><th>Fecha</th><th>Estado</th></tr></thead>
+                <tbody>${items.map(i => `<tr><td>${i.nombre}</td><td>${i.proveedor}</td><td>€${i.monto.toLocaleString()}</td><td>${i.fecha}</td><td>${i.estado}</td></tr>`).join('')}</tbody>
+            </table>
+        </div>`;
+        const html = generarHTML(`Procurement Plan - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Procurement_Plan_${proyecto.name.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert('✅ Procurement Plan generado');
+    };
+    refreshProcList();
+}
+
+// =============================================
+// 7. CHANGE MANAGEMENT PLAN (PLAN DE GESTIÓN DE CAMBIOS)
+// =============================================
+function generarChangeManagementPlan() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const modalHTML = `
+    <div id="cmpModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:700px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #ec4899; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2>🔄 Change Management Plan</h2>
+                <button id="closeCMPModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <label>Proceso de Solicitud de Cambio:</label>
+            <textarea id="cmpProceso" rows="3" placeholder="Descripción del flujo..." style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #ec4899; border-radius:8px; color:white;">1. El solicitante completa el formulario de cambio.\n2. El PM evalúa impacto y costo.\n3. El CCB (Change Control Board) revisa y aprueba/rechaza.\n4. Se comunica la decisión y se actualiza la documentación.</textarea>
+            <label>Composición del CCB:</label>
+            <textarea id="cmpCCB" rows="2" style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #ec4899; border-radius:8px; color:white;">Sponsor, Gerente de Proyecto, Líder Técnico, Representante de Negocio.</textarea>
+            <label>Plazos de Respuesta:</label>
+            <textarea id="cmpPlazos" rows="2" style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #ec4899; border-radius:8px; color:white;">Cambios menores: 48h. Cambios mayores: 5 días hábiles.</textarea>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:20px;">
+                <button id="cancelCMPBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateCMPBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Plan</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('cmpModal');
+    const closeModal = () => modal.remove();
+    document.getElementById('closeCMPModal').onclick = closeModal;
+    document.getElementById('cancelCMPBtn').onclick = closeModal;
+
+    document.getElementById('generateCMPBtn').onclick = () => {
+        const proceso = document.getElementById('cmpProceso').value.trim();
+        const ccb = document.getElementById('cmpCCB').value.trim();
+        const plazos = document.getElementById('cmpPlazos').value.trim();
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">🔄</div>
+            <h1>CHANGE MANAGEMENT PLAN</h1>
+            <p>Plan de Gestión de Cambios</p>
+            <div>Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <h2>📋 Proceso de Solicitud de Cambio</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${proceso}</div>
+            <h2>👥 Change Control Board (CCB)</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${ccb}</div>
+            <h2>⏱️ Plazos de Respuesta</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${plazos}</div>
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; text-align:center;">Este plan aplica a todas las solicitudes de cambio del proyecto.</div>
+        </div>`;
+        const html = generarHTML(`Change Management Plan - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Change_Management_Plan_${proyecto.name.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert('✅ Change Management Plan generado');
+    };
+}
+
+// =============================================
+// 8. BENEFITS REALIZATION PLAN (PLAN DE REALIZACIÓN DE BENEFICIOS)
+// =============================================
+function generarBenefitsPlan() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) {
+        alert('No hay proyecto seleccionado');
+        return;
+    }
+
+    const modalHTML = `
+    <div id="bpModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:1000000; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:20px;">
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:700px; max-width:95vw; max-height:90vh; overflow-y:auto; color:white; border:1px solid #2dd4bf; padding:30px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2>🏆 Benefits Realization Plan</h2>
+                <button id="closeBPModal" style="background:#ef4444; border:none; color:white; width:40px; height:40px; border-radius:20px; cursor:pointer;">✕</button>
+            </div>
+            <label>Beneficios Esperados:</label>
+            <textarea id="bpBeneficios" rows="3" placeholder="Ej: Reducción de costes, aumento de productividad..." style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #2dd4bf; border-radius:8px; color:white;">Reducción del 20% en tiempo de procesamiento, mejora en satisfacción del cliente.</textarea>
+            <label>Indicadores de Medición (KPIs):</label>
+            <textarea id="bpKPIs" rows="2" style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #2dd4bf; border-radius:8px; color:white;">Tiempo medio de respuesta, NPS, ROI</textarea>
+            <label>Fechas de Medición Post-Proyecto:</label>
+            <textarea id="bpFechas" rows="2" style="width:100%; padding:8px; margin-bottom:15px; background:#0f172a; border:1px solid #2dd4bf; border-radius:8px; color:white;">3 meses después del cierre, 6 meses, 12 meses.</textarea>
+            <div style="display:flex; justify-content:flex-end; gap:15px; margin-top:20px;">
+                <button id="cancelBPBtn" style="background:#475569; border:none; color:white; padding:10px 20px; border-radius:8px;">Cancelar</button>
+                <button id="generateBPBtn" style="background:#10b981; border:none; color:white; padding:10px 20px; border-radius:8px;">✅ Generar Plan</button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('bpModal');
+    const closeModal = () => modal.remove();
+    document.getElementById('closeBPModal').onclick = closeModal;
+    document.getElementById('cancelBPBtn').onclick = closeModal;
+
+    document.getElementById('generateBPBtn').onclick = () => {
+        const beneficios = document.getElementById('bpBeneficios').value.trim();
+        const kpis = document.getElementById('bpKPIs').value.trim();
+        const fechas = document.getElementById('bpFechas').value.trim();
+
+        const contenido = `
+        <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; padding:40px; text-align:center; border-radius:24px 24px 0 0;">
+            <div style="font-size:64px;">🏆</div>
+            <h1>BENEFITS REALIZATION PLAN</h1>
+            <p>Plan de Realización de Beneficios</p>
+            <div>Proyecto: ${proyecto.name} | Fecha: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div style="padding:40px; background:white;">
+            <h2>🎯 Beneficios Esperados</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${beneficios}</div>
+            <h2>📊 KPIs de Medición</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${kpis}</div>
+            <h2>📅 Calendario de Medición Post-Proyecto</h2>
+            <div style="background:#f8fafc; padding:20px; border-radius:12px;">${fechas}</div>
+            <div style="margin-top:40px; padding:20px; background:#f1f5f9; text-align:center;">Este plan será ejecutado por la Oficina de Proyectos (PMO).</div>
+        </div>`;
+        const html = generarHTML(`Benefits Plan - ${proyecto.name}`, contenido);
+        abrirVentanaDocumento(html, `Benefits_Plan_${proyecto.name.replace(/\s+/g, '_')}`);
+        closeModal();
+        alert('✅ Benefits Realization Plan generado');
+    };
+}
+
+
+
+
 
 
 
@@ -10929,6 +12220,698 @@ abrirVentanaDocumento(html, `Transferencia_${proyecto.name}`);
 
 
 
+/**
+ * VPI PLATINUM MASTER v21.0 - FINAL EXECUTIVE
+ * 1. CABECERA | 2. KPIs | 3. KANBAN | 4-7. GRÁFICAS | 8. GESTIÓN SPRINTS | 9. MATRIZ
+ */
+function renderScrum(container) {
+  container.setAttribute('style', `background:#020617!important; color:#f8fafc!important; font-family:'Inter',sans-serif; width:100%; height:100%; overflow-y:auto; padding:0;`);
+
+  const storageKey = 'vpi_master_v21_final';
+  let scrumData = JSON.parse(localStorage.getItem(storageKey)) || { requirements: [], sprintsHistory: [] };
+
+  const save = () => { localStorage.setItem(storageKey, JSON.stringify(scrumData)); render(); };
+  const colors = { todo: '#fde047', doing: '#0d9488', done: '#10b981', overdue: '#ef4444', ideal: '#3b82f6' };
+
+  // --- MÉTODOS DE ELIMINACIÓN Y GESTIÓN ---
+  window.deleteStory = (id) => {
+    if(confirm(`¿Desea eliminar la tarea ${id}?`)) {
+      scrumData.requirements = scrumData.requirements.filter(r => r.id !== id);
+      save();
+    }
+  };
+
+  window.deleteSprint = (id) => {
+    if(confirm(`¿Desea eliminar este Sprint? Se desvincularán las tareas asociadas.`)) {
+      scrumData.sprintsHistory = scrumData.sprintsHistory.filter(s => s.id !== id);
+      save();
+    }
+  };
+
+  window.addStory = () => {
+    const t = prompt('Título:'); if(!t) return;
+    const sp = parseInt(prompt('Story Points:', '5')) || 0;
+    const resp = prompt('Asignado a:', 'Sin Asignar');
+    const dEnd = prompt('Fecha Fin:', '31/12/2026');
+    scrumData.requirements.push({ 
+      id: `REQ-${Date.now().toString().slice(-4)}`, title: t, status: 'todo', 
+      storyPoints: sp, responsible: resp, endDate: dEnd, sprint: 'Backlog' 
+    });
+    save();
+  };
+
+  window.addSprint = () => {
+    const n = prompt('Nombre Sprint:'); if(!n) return;
+    scrumData.sprintsHistory.push({ id: Date.now(), name: n, planned: 30 });
+    save();
+  };
+
+  window.assignSprintToTask = (id) => {
+    const opts = scrumData.sprintsHistory.map(s => s.name).join(' | ');
+    const target = prompt(`Asignar a Sprint (${opts}):`);
+    const r = scrumData.requirements.find(x => x.id === id);
+    if(r && target) { r.sprint = target; save(); }
+  };
+
+  window.updateStatus = (id, newStatus) => {
+    const r = scrumData.requirements.find(x => x.id === id);
+    if(r) { r.status = newStatus; save(); }
+  };
+
+  function render() {
+    const totalSP = scrumData.requirements.reduce((acc, r) => acc + r.storyPoints, 0);
+    const doneSP = scrumData.requirements.filter(r => r.status === 'done').reduce((acc, r) => acc + r.storyPoints, 0);
+
+    const sprintStats = scrumData.sprintsHistory.map(s => {
+        const completed = scrumData.requirements.filter(r => r.sprint === s.name && r.status === 'done').reduce((acc, curr) => acc + curr.storyPoints, 0);
+        return { ...s, completed };
+    });
+
+    const teamData = {};
+    scrumData.requirements.forEach(r => { if(r.status === 'done') teamData[r.responsible] = (teamData[r.responsible] || 0) + r.storyPoints; });
+
+    container.innerHTML = `
+      <style>
+        #vpi-root { padding: 40px; background: #020617; max-width: 1500px; margin: 0 auto; }
+        .vpi-navbar { background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 25px 40px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; position: sticky; top: 10px; z-index: 1000; backdrop-filter: blur(10px); }
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: #0f172a; border: 1px solid #1e293b; padding: 30px; border-radius: 20px; text-align: center; }
+        .exec-section { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 40px; margin-bottom: 40px; }
+        .chart-layout { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 50px; align-items: center; }
+        .kanban-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .kanban-col { background: #020617; border-radius: 12px; padding: 15px; border: 1px solid #1e293b; min-height: 350px; }
+        .story-card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 5px solid #3b82f6; position: relative; }
+        .delete-btn { position: absolute; top: 8px; right: 8px; color: #ef4444; cursor: pointer; font-size: 14px; opacity: 0.5; }
+        .delete-btn:hover { opacity: 1; }
+        .vpi-table { width: 100%; border-collapse: collapse; }
+        .vpi-table th { background: #1e293b; padding: 18px; text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .vpi-table td { padding: 18px; border-bottom: 1px solid #1e293b; color: #cbd5e1; font-size: 14px; }
+        .btn-vpi { background: #3b82f6; color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+      </style>
+
+      <div id="vpi-root">
+        <div class="vpi-navbar">
+          <h2 style="margin:0; letter-spacing:-1px;">VPI <span style="color:#3b82f6">PLATINUM MASTER</span></h2>
+          <div style="display:flex; gap:15px;">
+            <button class="btn-vpi" onclick="addStory()">+ Historia</button>
+            <button class="btn-vpi" onclick="addSprint()">+ Sprint</button>
+            <button class="btn-vpi" style="background:#10b981" onclick="exportExecutivePDF()">📄 Exportar BI PDF</button>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><span style="color:#64748b; font-size:12px;">PUNTOS TOTALES</span><div style="font-size:32px; font-weight:900;">${totalSP}</div></div>
+          <div class="kpi-card"><span style="color:#10b981; font-size:12px;">PUNTOS DONE</span><div style="font-size:32px; font-weight:900;">${doneSP}</div></div>
+          <div class="kpi-card"><span style="color:#fde047; font-size:12px;">PENDIENTES</span><div style="font-size:32px; font-weight:900;">${totalSP - doneSP}</div></div>
+          <div class="kpi-card"><span style="color:#3b82f6; font-size:12px;">EFICIENCIA</span><div style="font-size:32px; font-weight:900;">${totalSP > 0 ? Math.round((doneSP/totalSP)*100) : 0}%</div></div>
+        </div>
+
+        <div class="exec-section">
+          <h3 style="margin:0 0 25px 0;">Tablero Kanban</h3>
+          <div class="kanban-grid">
+            ${['todo', 'doing', 'done', 'overdue'].map(s => `
+              <div class="kanban-col">
+                <div style="font-size:11px; color:#64748b; font-weight:900; text-align:center; margin-bottom:15px;">${s.toUpperCase()}</div>
+                <div id="list-${s}" style="min-height:300px;">
+                  ${scrumData.requirements.filter(r => r.status === s).map(r => `
+                    <div class="story-card" data-id="${r.id}" style="border-left-color:${colors[s]}">
+                      <span class="delete-btn" onclick="deleteStory('${r.id}')">✕</span>
+                      <div style="font-weight:700; font-size:14px;">${r.title}</div>
+                      <div style="font-size:10px; color:#64748b; margin-top:8px;">${r.id} | ${r.responsible}</div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="exec-section chart-layout" id="pdf-health">
+          <div style="height:400px;"><canvas id="chartHealth"></canvas></div>
+          <div style="border-left:4px solid #3b82f6; padding-left:35px;">
+            <h3>Salud del Backlog</h3>
+            <p>Representación porcentual de la madurez del proyecto. Esta gráfica analiza cuántos requerimientos se encuentran estancados frente a los completados. Permite identificar cuellos de botella preventivos.</p>
+          </div>
+        </div>
+
+        <div class="exec-section chart-layout" id="pdf-velocity">
+          <div style="height:400px;"><canvas id="chartVelocity"></canvas></div>
+          <div style="border-left:4px solid #3b82f6; padding-left:35px;">
+            <h3>Velocidad por Sprint</h3>
+            <p>Métrica de rendimiento histórico. Evalúa la capacidad real de entrega del equipo en cada iteración basándose en evidencia empírica.</p>
+          </div>
+        </div>
+
+        <div class="exec-section chart-layout" id="pdf-team">
+          <div style="height:400px;"><canvas id="chartTeam"></canvas></div>
+          <div style="border-left:4px solid #3b82f6; padding-left:35px;">
+            <h3>Desempeño por Equipos</h3>
+            <p>Auditoría de productividad por responsable. Identifica la carga de trabajo y el cumplimiento de cada célula técnica.</p>
+          </div>
+        </div>
+
+        <div class="exec-section chart-layout" id="pdf-burndown">
+          <div style="height:400px;"><canvas id="chartBurndown"></canvas></div>
+          <div style="border-left:4px solid #3b82f6; padding-left:35px;">
+            <h3>Gráfico de Burndown</h3>
+            <p>Control predictivo diario. Compara la trayectoria ideal de trabajo restante contra la ejecución real del sprint actual.</p>
+          </div>
+        </div>
+
+        <div class="exec-section">
+          <h3>Gestión de Sprint y Velocidad</h3>
+          <table class="vpi-table">
+            <thead><tr><th>Sprint</th><th>Planeado</th><th>Realizado</th><th>Velocidad</th><th>Eficiencia</th><th>Acción</th></tr></thead>
+            <tbody>
+              ${sprintStats.map(s => `
+                <tr>
+                  <td><strong>${s.name}</strong></td>
+                  <td>${s.planned} SP</td><td>${s.completed} SP</td>
+                  <td style="color:#3b82f6;">${(s.completed/5).toFixed(1)} SP/D</td>
+                  <td>${Math.round((s.completed/s.planned)*100)}%</td>
+                  <td><button onclick="deleteSprint(${s.id})" style="background:none; border:none; color:#ef4444; cursor:pointer;">Eliminar</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="exec-section">
+          <h3>Matriz de Control de Requerimientos</h3>
+          <table class="vpi-table">
+            <thead><tr><th>ID</th><th>Título</th><th>Status</th><th>Puntos</th><th>Entrega</th><th>Sprint</th><th>Responsable</th><th>Acción</th></tr></thead>
+            <tbody>
+              ${scrumData.requirements.map(r => `
+                <tr>
+                  <td style="color:#3b82f6; font-family:monospace;">${r.id}</td>
+                  <td><strong>${r.title}</strong></td>
+                  <td><span style="color:${colors[r.status]}; font-weight:800; font-size:10px;">${r.status.toUpperCase()}</span></td>
+                  <td>${r.storyPoints} SP</td>
+                  <td style="color:#fde047;">${r.endDate}</td>
+                  <td style="color:#3b82f6;">${r.sprint}</td>
+                  <td><strong>${r.responsible}</strong></td>
+                  <td style="display:flex; gap:10px;">
+                    <button class="btn-vpi" style="font-size:9px; padding:5px;" onclick="assignSprintToTask('${r.id}')">Sprint</button>
+                    <button onclick="deleteStory('${r.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;">✕</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    initCharts(totalSP, doneSP, sprintStats, teamData);
+    initSortable();
+  }
+
+  function initCharts(total, done, sprintStats, teamData) {
+    const sC = ['todo', 'doing', 'done', 'overdue'].map(s => scrumData.requirements.filter(r => r.status === s).length);
+    new Chart(document.getElementById('chartHealth'), {
+      type: 'doughnut',
+      data: { labels: [`ToDo (${sC[0]})`, `Doing (${sC[1]})`, `Done (${sC[2]})`, `Overdue (${sC[3]})`], datasets: [{ data: sC, backgroundColor: Object.values(colors), borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } } }
+    });
+    new Chart(document.getElementById('chartVelocity'), {
+      type: 'bar',
+      data: { labels: sprintStats.map(s => s.name), datasets: [{ label: 'Puntos Reales', data: sprintStats.map(s => s.completed), backgroundColor: colors.doing }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    new Chart(document.getElementById('chartTeam'), {
+      type: 'bar',
+      data: { labels: Object.keys(teamData).length ? Object.keys(teamData) : ['N/A'], datasets: [{ label: 'SP Finalizados', data: Object.values(teamData).length ? Object.values(teamData) : [0], backgroundColor: colors.ideal }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+    });
+    new Chart(document.getElementById('chartBurndown'), {
+      type: 'line',
+      data: { labels: ['D1','D2','D3','D4','D5'], datasets: [{ label: 'Ideal', data: [total, total*0.5, 0], borderColor: colors.ideal, borderDash:[5,5] }, { label: 'Real', data: [total, total-done], borderColor: colors.done, fill: true, backgroundColor: colors.done+'11' }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  function initSortable() {
+    ['todo', 'doing', 'done', 'overdue'].forEach(s => {
+      new Sortable(document.getElementById(`list-${s}`), { group: 'vpi', animation: 200, onEnd: (e) => window.updateStatus(e.item.getAttribute('data-id'), e.to.id.replace('list-', '')) });
+    });
+  }
+
+ window.exportExecutivePDF = async () => {
+    const { jsPDF } = window.jspdf;
+    const btn = document.querySelector('button[onclick*="PDF"]');
+    if (btn) {
+        btn.innerHTML = '<span>📊 Generando Reporte Ejecutivo...</span>';
+        btn.disabled = true;
+    }
+
+    try {
+        const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4', compress: true });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 18;
+        let yOffset = margin;
+
+        const colors = {
+            primary: [0, 102, 204],
+            secondary: [13, 148, 136],
+            accent: [255, 193, 7],
+            darkBg: [10, 25, 47],
+            cardBg: [15, 30, 55],
+            textLight: [255, 255, 255],
+            textMuted: [148, 163, 184],
+            success: [16, 185, 129],
+            danger: [239, 68, 68],
+            warning: [245, 158, 11],
+            info: [59, 130, 246]
+        };
+
+        function drawText(text, x, y, size, style = 'normal', color = colors.textLight, align = 'left') {
+            doc.setFont('helvetica', style);
+            doc.setFontSize(size);
+            doc.setTextColor(color[0], color[1], color[2]);
+            if (align === 'center') doc.text(text, x, y, { align: 'center' });
+            else if (align === 'right') doc.text(text, x, y, { align: 'right' });
+            else doc.text(text, x, y);
+        }
+
+        function drawBox(x, y, w, h, bgColor, borderColor = null) {
+            doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+            if (borderColor) doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+            doc.roundedRect(x, y, w, h, 3, 3, borderColor ? 'FD' : 'F');
+        }
+
+        function drawSimpleTable(headers, rows, startY, colWidths) {
+            let y = startY;
+            const rowH = 7;
+            const headerH = 9;
+            doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+            doc.rect(margin, y, pageWidth - margin * 2, headerH, 'F');
+            let x = margin;
+            headers.forEach((h, i) => {
+                drawText(h, x + 3, y + 6, 8, 'bold', colors.textLight);
+                x += colWidths[i];
+            });
+            y += headerH;
+            for (let i = 0; i < rows.length; i++) {
+                const bg = i % 2 === 0 ? [20, 35, 60] : [15, 30, 55];
+                doc.setFillColor(bg[0], bg[1], bg[2]);
+                doc.rect(margin, y, pageWidth - margin * 2, rowH, 'F');
+                x = margin;
+                for (let j = 0; j < rows[i].length; j++) {
+                    let txt = String(rows[i][j]);
+                    if (txt.length > 20) txt = txt.slice(0, 17) + '...';
+                    drawText(txt, x + 3, y + 5, 7, 'normal', colors.textLight);
+                    x += colWidths[j];
+                }
+                y += rowH;
+                if (y > pageHeight - 25 && i !== rows.length - 1) {
+                    doc.addPage();
+                    y = margin;
+                    doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+                    doc.rect(margin, y, pageWidth - margin * 2, headerH, 'F');
+                    x = margin;
+                    headers.forEach((h, i) => {
+                        drawText(h, x + 3, y + 6, 8, 'bold', colors.textLight);
+                        x += colWidths[i];
+                    });
+                    y += headerH;
+                }
+            }
+            return y + 5;
+        }
+
+        function drawHorizontalStackedBar(labels, data, colorsList, x, y, width, height, title) {
+            drawText(title, x + width / 2, y - 5, 11, 'bold', colors.textLight, 'center');
+            const total = data.reduce((a, b) => a + b, 0);
+            if (total === 0) return;
+            let startX = x;
+            for (let i = 0; i < data.length; i++) {
+                const barWidth = (data[i] / total) * width;
+                doc.setFillColor(colorsList[i][0], colorsList[i][1], colorsList[i][2]);
+                doc.rect(startX, y, barWidth, height, 'F');
+                if (barWidth > 15) {
+                    const percent = Math.round((data[i] / total) * 100);
+                    drawText(`${percent}%`, startX + barWidth / 2, y + height / 2 + 1, 7, 'bold', colors.textLight, 'center');
+                }
+                startX += barWidth;
+            }
+            let legendY = y + height + 5;
+            for (let i = 0; i < labels.length; i++) {
+                doc.setFillColor(colorsList[i][0], colorsList[i][1], colorsList[i][2]);
+                doc.rect(x + i * 35, legendY, 4, 4, 'F');
+                drawText(`${labels[i]} (${data[i]})`, x + i * 35 + 6, legendY + 3, 7, 'normal', colors.textMuted);
+            }
+        }
+
+        function drawVerticalBarChart(labels, data, title, x, y, width, height) {
+            drawText(title, x + width / 2, y - 5, 11, 'bold', colors.textLight, 'center');
+            const maxVal = Math.max(...data, 1);
+            const barWidth = (width / data.length) * 0.7;
+            const spacing = (width / data.length) * 0.3;
+            let startX = x;
+            for (let i = 0; i < data.length; i++) {
+                const barHeight = (data[i] / maxVal) * height;
+                doc.setFillColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+                doc.rect(startX, y + height - barHeight, barWidth, barHeight, 'F');
+                drawText(data[i].toString(), startX + barWidth / 2, y + height - barHeight - 2, 7, 'bold', colors.accent, 'center');
+                let label = labels[i];
+                if (label.length > 12) label = label.slice(0, 10) + '..';
+                drawText(label, startX + barWidth / 2, y + height + 4, 7, 'normal', colors.textMuted, 'center');
+                startX += barWidth + spacing;
+            }
+            doc.setDrawColor(80, 80, 100);
+            doc.line(x, y + height, x + width, y + height);
+            doc.line(x, y, x, y + height);
+        }
+
+        function drawBurndown(ideal, real, labels, x, y, width, height) {
+            drawText("Burndown - Puntos Restantes", x + width / 2, y - 5, 11, 'bold', colors.textLight, 'center');
+            const maxVal = Math.max(...ideal, ...real, 1);
+            const stepX = width / (labels.length - 1);
+            doc.setDrawColor(100, 100, 120);
+            doc.line(x, y, x, y + height);
+            doc.line(x, y + height, x + width, y + height);
+            doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+            doc.setLineWidth(0.5);
+            let prevX = x, prevY = y + height - (ideal[0] / maxVal) * height;
+            for (let i = 1; i < ideal.length; i++) {
+                let currX = x + i * stepX;
+                let currY = y + height - (ideal[i] / maxVal) * height;
+                doc.line(prevX, prevY, currX, currY);
+                prevX = currX; prevY = currY;
+            }
+            doc.setDrawColor(colors.success[0], colors.success[1], colors.success[2]);
+            prevX = x; prevY = y + height - (real[0] / maxVal) * height;
+            for (let i = 1; i < real.length; i++) {
+                let currX = x + i * stepX;
+                let currY = y + height - (real[i] / maxVal) * height;
+                doc.line(prevX, prevY, currX, currY);
+                prevX = currX; prevY = currY;
+            }
+            doc.setFillColor(colors.success[0], colors.success[1], colors.success[2]);
+            for (let i = 0; i < real.length; i++) {
+                let cx = x + i * stepX;
+                let cy = y + height - (real[i] / maxVal) * height;
+                doc.circle(cx, cy, 1, 'F');
+            }
+            for (let i = 0; i < labels.length; i++) {
+                drawText(labels[i], x + i * stepX - 3, y + height + 4, 6, 'normal', colors.textMuted);
+            }
+            drawText("Ideal", x + width - 45, y - 8, 7, 'bold', colors.primary);
+            drawText("Real", x + width - 20, y - 8, 7, 'bold', colors.success);
+        }
+
+        function drawRadar(metrics, values, title, x, y, radius) {
+            drawText(title, x, y - radius - 5, 11, 'bold', colors.textLight, 'center');
+            const n = metrics.length;
+            const angleStep = (2 * Math.PI) / n;
+            doc.setDrawColor(colors.textMuted[0], colors.textMuted[1], colors.textMuted[2]);
+            doc.setLineWidth(0.2);
+            for (let level = 1; level <= 5; level++) {
+                const r = (level / 5) * radius;
+                doc.circle(x, y, r, 'D');
+            }
+            for (let level = 0; level <= 5; level++) {
+                const val = level * 20;
+                const r = (level / 5) * radius;
+                drawText(val.toString(), x - r - 5, y, 5, 'normal', colors.textMuted);
+            }
+            for (let i = 0; i < n; i++) {
+                const angle = i * angleStep - Math.PI / 2;
+                const x2 = x + radius * Math.cos(angle);
+                const y2 = y + radius * Math.sin(angle);
+                doc.line(x, y, x2, y2);
+                const labelX = x + (radius + 6) * Math.cos(angle);
+                const labelY = y + (radius + 2) * Math.sin(angle);
+                drawText(`${metrics[i]} ${Math.round(values[i])}%`, labelX - 6, labelY, 6, 'normal', colors.textMuted);
+            }
+            const points = [];
+            for (let i = 0; i < n; i++) {
+                const angle = i * angleStep - Math.PI / 2;
+                const r = (Math.min(100, Math.max(0, values[i])) / 100) * radius;
+                const px = x + r * Math.cos(angle);
+                const py = y + r * Math.sin(angle);
+                points.push([px, py]);
+            }
+            doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+            doc.path(points, 'F');
+            doc.setDrawColor(colors.accent[0], colors.accent[1], colors.accent[2]);
+            doc.setLineWidth(0.5);
+            for (let i = 0; i < points.length; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                doc.line(p1[0], p1[1], p2[0], p2[1]);
+            }
+            doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
+            points.forEach(p => doc.circle(p[0], p[1], 1.2, 'F'));
+        }
+
+        // DATOS (igual que antes)
+        const totalSP = scrumData.requirements.reduce((a, r) => a + r.storyPoints, 0);
+        const doneSP = scrumData.requirements.filter(r => r.status === 'done').reduce((a, r) => a + r.storyPoints, 0);
+        const pendingSP = totalSP - doneSP;
+        const efficiency = totalSP ? Math.round((doneSP / totalSP) * 100) : 0;
+
+        const statusCounts = {
+            todo: scrumData.requirements.filter(r => r.status === 'todo').length,
+            doing: scrumData.requirements.filter(r => r.status === 'doing').length,
+            done: scrumData.requirements.filter(r => r.status === 'done').length,
+            overdue: scrumData.requirements.filter(r => r.status === 'overdue').length
+        };
+        const statusLabels = ['Pendiente', 'En Progreso', 'Completado', 'Vencido'];
+        const statusData = [statusCounts.todo, statusCounts.doing, statusCounts.done, statusCounts.overdue];
+        const statusColors = [colors.warning, colors.info, colors.success, colors.danger];
+
+        const sprintStats = scrumData.sprintsHistory.map(s => {
+            const completed = scrumData.requirements.filter(r => r.sprint === s.name && r.status === 'done').reduce((a, r) => a + r.storyPoints, 0);
+            return { name: s.name, planned: s.planned, completed, efficiency: s.planned ? Math.round((completed / s.planned) * 100) : 0 };
+        });
+
+        const teamData = {};
+        scrumData.requirements.forEach(r => {
+            if (r.status === 'done') teamData[r.responsible] = (teamData[r.responsible] || 0) + r.storyPoints;
+        });
+        const teamEntries = Object.entries(teamData).sort((a, b) => b[1] - a[1]);
+        const teamLabels = teamEntries.map(e => e[0]);
+        const teamValues = teamEntries.map(e => e[1]);
+
+        const avgVelocity = sprintStats.length ? sprintStats.reduce((a, s) => a + s.completed, 0) / sprintStats.length : 0;
+        const maxVelocity = Math.max(...sprintStats.map(s => s.completed), 1);
+        const velocityScore = Math.min(100, (avgVelocity / maxVelocity) * 100);
+        const totalTasks = scrumData.requirements.length;
+        const overdueTasks = scrumData.requirements.filter(r => r.status === 'overdue').length;
+        const qualityScore = totalTasks ? Math.max(0, 100 - (overdueTasks / totalTasks) * 100) : 100;
+        const assignedTasks = scrumData.requirements.filter(r => r.responsible && r.responsible !== 'Sin Asignar').length;
+        const coverageScore = totalTasks ? (assignedTasks / totalTasks) * 100 : 100;
+        let predictabilityScore = 100;
+        if (sprintStats.length) {
+            let totalDiff = 0;
+            sprintStats.forEach(s => totalDiff += Math.abs(s.planned - s.completed));
+            const avgDiff = totalDiff / sprintStats.length;
+            const avgPlanned = sprintStats.reduce((a, s) => a + s.planned, 0) / sprintStats.length;
+            predictabilityScore = avgPlanned ? Math.max(0, 100 - (avgDiff / avgPlanned) * 100) : 100;
+        }
+        const backlogHealth = totalTasks ? ((statusCounts.todo + statusCounts.doing) / totalTasks) * 100 : 0;
+        const radarMetrics = ['Eficiencia', 'Velocidad', 'Calidad', 'Cobertura', 'Predictibilidad', 'Salud Backlog'];
+        const radarValues = [efficiency, velocityScore, qualityScore, coverageScore, predictabilityScore, backlogHealth];
+
+        // PORTADA (sin cambios)
+        doc.setFillColor(colors.darkBg[0], colors.darkBg[1], colors.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        doc.setDrawColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+        doc.setLineWidth(2);
+        doc.line(margin, 60, pageWidth - margin, 60);
+        doc.line(margin, 140, pageWidth - margin, 140);
+        drawText("VPI PLATINUM MASTER", pageWidth / 2, 85, 28, 'bold', colors.textLight, 'center');
+        drawText("REPORTE EJECUTIVO DE DASHBOARD", pageWidth / 2, 100, 18, 'bold', colors.accent, 'center');
+        drawText(`Generado: ${new Date().toLocaleString()} · Confidencial`, pageWidth / 2, 120, 11, 'normal', colors.textMuted, 'center');
+        drawText("Métricas Scrum · Análisis de Velocidad · Rendimiento del Equipo", pageWidth / 2, 130, 11, 'normal', colors.textMuted, 'center');
+        drawText("v21.0 · Estándar Certificado VPI", pageWidth - margin, pageHeight - margin, 8, 'normal', colors.textMuted, 'right');
+
+        // ======================= PÁGINA 2: ESTADO DEL PROYECTO (desplazada +15mm) =======================
+        doc.addPage();
+        yOffset = margin + 15;  // <<--- desplazamiento hacia abajo
+        drawText("DISTRIBUCIÓN DEL ESTADO DEL PROYECTO", margin, yOffset, 14, 'bold', colors.primary);
+        yOffset += 10;
+        const chartX = margin;
+        const chartY = yOffset;
+        const chartW = 120;
+        const chartH = 25;
+        drawHorizontalStackedBar(statusLabels, statusData, statusColors, chartX, chartY, chartW, chartH, "Distribución de Tareas por Estado");
+        const explainX = margin + chartW + 15;
+        const explainY = yOffset;
+        drawBox(explainX, explainY, pageWidth - explainX - margin, 50, colors.cardBg);
+        drawText("ANÁLISIS", explainX + 5, explainY + 8, 10, 'bold', colors.accent);
+        drawText("Este gráfico muestra la distribución actual de", explainX + 5, explainY + 18, 7, 'normal', colors.textMuted);
+        drawText("las tareas en el flujo de trabajo. Un alto porcentaje", explainX + 5, explainY + 26, 7, 'normal', colors.textMuted);
+        drawText("en 'Completado' indica un progreso saludable. Los", explainX + 5, explainY + 34, 7, 'normal', colors.textMuted);
+        drawText("elementos vencidos requieren atención inmediata.", explainX + 5, explainY + 42, 7, 'normal', colors.textMuted);
+        yOffset += 70;
+        const statusRows = statusLabels.map((l, i) => [l, statusData[i], `${Math.round((statusData[i] / (totalTasks || 1)) * 100)}%`]);
+        drawSimpleTable(["Estado", "Cantidad", "%"], statusRows, yOffset, [40, 30, 30]);
+
+        // ======================= PÁGINA 3: RADAR (desplazada +15mm) =======================
+        doc.addPage();
+        yOffset = margin + 15;  // desplazamiento
+        drawText("RADAR DE SALUD DEL PROYECTO", margin, yOffset, 14, 'bold', colors.primary);
+        yOffset += 5;
+        const radarX = margin + 80;
+        const radarY = yOffset + 50;
+        drawRadar(radarMetrics, radarValues, "MÉTRICAS DE SALUD", radarX, radarY, 45);
+        const radarExplainX = margin + 180;
+        const radarExplainY = yOffset - 5;
+        drawBox(radarExplainX, radarExplainY, pageWidth - radarExplainX - margin, 70, colors.cardBg);
+        drawText("INTERPRETACIÓN", radarExplainX + 5, radarExplainY + 8, 10, 'bold', colors.accent);
+        drawText("El radar evalúa 6 dimensiones clave:", radarExplainX + 5, radarExplainY + 18, 7, 'normal', colors.textMuted);
+        drawText("• Eficiencia: SP completados / total", radarExplainX + 5, radarExplainY + 26, 7, 'normal', colors.textMuted);
+        drawText("• Velocidad: SP promedio por sprint", radarExplainX + 5, radarExplainY + 34, 7, 'normal', colors.textMuted);
+        drawText("• Calidad: % de tareas no vencidas", radarExplainX + 5, radarExplainY + 42, 7, 'normal', colors.textMuted);
+        drawText("• Cobertura: % de tareas asignadas", radarExplainX + 5, radarExplainY + 50, 7, 'normal', colors.textMuted);
+        drawText("• Predictibilidad: precisión del sprint", radarExplainX + 5, radarExplainY + 58, 7, 'normal', colors.textMuted);
+        drawText("• Salud del Backlog: % de tareas pendientes", radarExplainX + 5, radarExplainY + 66, 7, 'normal', colors.textMuted);
+
+        // ======================= PÁGINA 4: VELOCIDAD (desplazada +15mm) =======================
+        if (sprintStats.length > 0) {
+            doc.addPage();
+            yOffset = margin + 15;
+            drawText("ANÁLISIS DE VELOCIDAD POR SPRINT", margin, yOffset, 14, 'bold', colors.primary);
+            yOffset += 10;
+            const barW = pageWidth - margin * 2;
+            const barH = 55;
+            drawVerticalBarChart(sprintStats.map(s => s.name), sprintStats.map(s => s.completed), "Puntos de Historia Completados por Sprint", margin, yOffset, barW, barH);
+            yOffset += barH + 15;
+            const sprintRows = sprintStats.map(s => [s.name, s.planned, s.completed, `${s.efficiency}%`, (s.completed / 5).toFixed(1)]);
+            drawSimpleTable(["Sprint", "Planificado", "Completado", "Eficiencia", "Velocidad (SP/Día)"], sprintRows, yOffset, [45, 35, 35, 35, 45]);
+            yOffset += 40;
+            drawBox(margin, yOffset, pageWidth - margin * 2, 30, colors.cardBg);
+            drawText("CONCLUSIONES DE VELOCIDAD", margin + 5, yOffset + 8, 9, 'bold', colors.accent);
+            drawText("La velocidad mide la capacidad de entrega del equipo por sprint. Valores consistentes", margin + 5, yOffset + 18, 7, 'normal', colors.textMuted);
+            drawText("indican un rendimiento predecible. Compare lo real vs lo planificado para evaluar la precisión.", margin + 5, yOffset + 26, 7, 'normal', colors.textMuted);
+        }
+
+        // ======================= PÁGINA 5: BURNDOWN (desplazada +15mm) =======================
+        doc.addPage();
+        yOffset = margin + 15;
+        drawText("GRÁFICO DE BURNDOWN", margin, yOffset, 14, 'bold', colors.primary);
+        yOffset += 10;
+        const ideal = [totalSP, totalSP * 0.75, totalSP * 0.5, totalSP * 0.25, 0];
+        const real = [totalSP, totalSP - doneSP * 0.5, totalSP - doneSP, pendingSP, pendingSP];
+        const days = ["Día 1", "Día 2", "Día 3", "Día 4", "Día 5"];
+        const burndownW = pageWidth - margin * 2;
+        const burndownH = 60;
+        drawBurndown(ideal, real, days, margin, yOffset, burndownW, burndownH);
+        yOffset += burndownH + 15;
+        drawBox(margin, yOffset, pageWidth - margin * 2, 35, colors.cardBg);
+        drawText("INTERPRETACIÓN DEL BURNDOWN", margin + 5, yOffset + 8, 9, 'bold', colors.accent);
+        drawText("El gráfico de burndown rastrea el trabajo restante a lo largo del tiempo. La línea ideal muestra el", margin + 5, yOffset + 18, 7, 'normal', colors.textMuted);
+        drawText("progreso esperado. Si la línea real está por encima de la ideal, el equipo está retrasado.", margin + 5, yOffset + 26, 7, 'normal', colors.textMuted);
+        drawText("Por debajo indica un progreso adelantado. Úselo para ajustar la planificación del sprint.", margin + 5, yOffset + 34, 7, 'normal', colors.textMuted);
+
+                          // ======================= PÁGINA 6: RENDIMIENTO DEL EQUIPO (con gráfico de barras vertical ajustado) =======================
+        if (teamEntries.length > 0) {
+            doc.addPage();
+            yOffset = margin + 15;
+            drawText("RENDIMIENTO DEL EQUIPO", margin, yOffset, 14, 'bold', colors.primary);
+            yOffset += 10;
+            
+            // ---- Gráfico de barras horizontales (izquierda) ----
+            const maxTeam = Math.max(...teamValues, 1);
+            const barWidthTotal = 110; // Reducido para dar más espacio
+            const barH = 7;
+            let startY = yOffset;
+            for (let i = 0; i < teamLabels.length; i++) {
+                const w = (teamValues[i] / maxTeam) * barWidthTotal;
+                doc.setFillColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
+                doc.rect(margin, startY + i * (barH + 5), w, barH, 'F');
+                drawText(`${teamLabels[i]} (${teamValues[i]} SP)`, margin + 5, startY + i * (barH + 5) + 5, 8, 'bold', colors.textLight);
+            }
+            
+            // ---- Gráfico de barras vertical (derecha) ----
+            const barChartX = margin + barWidthTotal + 20; // Separación
+            const barChartY = yOffset;
+            const barChartWidth = 80;  // Un poco más ancho
+            const barChartHeight = 50; // Altura fija
+            const maxSP = Math.max(...teamValues, 1);
+            const barWidthV = (barChartWidth / teamLabels.length) * 0.7;
+            const barSpacing = (barChartWidth / teamLabels.length) * 0.3;
+            let startXV = barChartX;
+            drawText("SP por Miembro", barChartX + barChartWidth/2, barChartY - 3, 9, 'bold', colors.textLight, 'center');
+            for (let i = 0; i < teamValues.length; i++) {
+                const barHeightV = (teamValues[i] / maxSP) * barChartHeight;
+                doc.setFillColor(colors.info[0], colors.info[1], colors.info[2]);
+                doc.rect(startXV, barChartY + barChartHeight - barHeightV, barWidthV, barHeightV, 'F');
+                // Valor sobre la barra
+                drawText(teamValues[i].toString(), startXV + barWidthV/2, barChartY + barChartHeight - barHeightV - 2, 7, 'bold', colors.accent, 'center');
+                // Etiqueta del eje X (abreviada)
+                let label = teamLabels[i];
+                if (label.length > 10) label = label.slice(0,8)+'..';
+                drawText(label, startXV + barWidthV/2, barChartY + barChartHeight + 4, 6, 'normal', colors.textMuted, 'center');
+                startXV += barWidthV + barSpacing;
+            }
+            // Ejes
+            doc.setDrawColor(100,100,120);
+            doc.line(barChartX, barChartY + barChartHeight, barChartX + barChartWidth, barChartY + barChartHeight);
+            doc.line(barChartX, barChartY, barChartX, barChartY + barChartHeight);
+            
+            // Calcular la altura máxima usada por ambas gráficas
+            const maxHeight = Math.max(teamLabels.length * (barH + 5), barChartHeight + 15);
+            yOffset = startY + maxHeight + 15; // Espaciado antes de top performers
+            
+            // ---- Top performers ----
+            const top3 = teamEntries.slice(0, 3);
+            drawBox(margin, yOffset, pageWidth - margin * 2, 40, colors.cardBg);
+            drawText("MEJORES RENDIMIENTOS", margin + 5, yOffset + 8, 9, 'bold', colors.accent);
+            top3.forEach(([name, sp], idx) => {
+                drawText(`${idx + 1}. ${name} — ${sp} SP`, margin + 10, yOffset + 20 + idx * 8, 8, 'normal', colors.textLight);
+            });
+            yOffset += 50;
+            
+            // ---- Explicación final ----
+            drawText("Este gráfico muestra el total de Puntos de Historia completados por cada miembro del equipo.", margin, yOffset, 8, 'normal', colors.textMuted);
+        }
+
+        // ======================= PÁGINA 7: MATRIZ (desplazada +15mm) =======================
+        if (scrumData.requirements.length > 0) {
+            doc.addPage();
+            yOffset = margin + 15;
+            drawText("MATRIZ DE CONTROL DE REQUERIMIENTOS", margin, yOffset, 14, 'bold', colors.primary);
+            yOffset += 10;
+            const reqHeaders = ["ID", "Título", "Estado", "SP", "Responsable", "Sprint", "Fecha Fin"];
+            const reqRows = scrumData.requirements.map(r => [
+                r.id, r.title.length > 25 ? r.title.slice(0, 22) + "..." : r.title,
+                r.status.toUpperCase(), r.storyPoints, r.responsible, r.sprint, r.endDate
+            ]);
+            drawSimpleTable(reqHeaders, reqRows, yOffset, [25, 55, 25, 15, 35, 35, 30]);
+        }
+
+        // PIE DE PÁGINA (sin cambios)
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 2; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setDrawColor(40, 40, 60);
+            doc.line(margin, pageHeight - 8, pageWidth - margin, pageHeight - 8);
+            drawText("VPI PLATINUM MASTER · CONFIDENCIAL · GENERADO POR MOTOR SCRUM INTELLIGENCE", margin, pageHeight - 4, 6, 'normal', colors.textMuted);
+            drawText(`Página ${i - 1} de ${totalPages - 1}`, pageWidth - margin - 15, pageHeight - 4, 6, 'normal', colors.textMuted, 'right');
+        }
+
+        doc.save(`VPI_Reporte_Ejecutivo_${Date.now()}.pdf`);
+
+    } catch (err) {
+        console.error("Error al generar PDF:", err);
+        alert("Error al generar el reporte. Revise la consola.");
+    } finally {
+        if (btn) {
+            btn.innerHTML = '📄 Exportar BI PDF';
+            btn.disabled = false;
+        }
+    }
+};
+
+  render();
+}
+
+
+
 // ========== SECCIÓN DASHBOARD ==========
 // ========== SECCIÓN DASHBOARD (CORREGIDA - Gráfica de dona sin desborde) ==========
 function renderDashboard(container) {
@@ -11662,7 +13645,8 @@ const tabs = [
 { id: 'portal', label: '🌐 Portal' },
 { id: 'checklist', label: '✅ Checklist' },
 { id: 'archivo', label: '📁 Archivo' },
-{ id: 'transferencia', label: '🔄 Transferencia' }
+{ id: 'transferencia', label: '🔄 Transferencia' },
+{ id: 'scrum', label: '📊 Scrum' }
 ];
 let activeTab = 'dashboard';
 const header = document.createElement('div');
@@ -11719,12 +13703,14 @@ else if (tabId === 'portal') renderPortalProyecto(contentDiv);
 else if (tabId === 'checklist') renderChecklistCierre(contentDiv);
 else if (tabId === 'archivo') renderArchivoDocumentos(contentDiv);
 else if (tabId === 'transferencia') renderTransferencia(contentDiv);
+else if (tabId === 'scrum') renderScrum(contentDiv);
 }
 function renderDocumentos(container) {
 container.innerHTML = `
 <h2>📄 Generación de Documentos</h2>
 <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:15px;">
-<button class="doc-btn" data-doc="charter">📑 Acta Constitutiva</button>
+ <button class="doc-btn" data-doc="kickoff">🚀 Kickoff Meeting</button>
+ <button class="doc-btn" data-doc="charter">📑 Acta Constitutiva</button>
 <button class="doc-btn" data-doc="stakeholders">👥 Registro Stakeholders</button>
 <button class="doc-btn" data-doc="plan">📅 Plan Proyecto (con Gantt)</button>
 <button class="doc-btn" data-doc="wbs">📋 WBS</button>
@@ -11736,6 +13722,19 @@ container.innerHTML = `
 <button class="doc-btn" data-doc="lessons">📝 Lecciones Aprendidas</button>
 <button class="doc-btn" data-doc="closure">🔚 Acta de Cierre</button>
 <button class="doc-btn" data-doc="final">📊 Informe Final</button>
+
+
+<!-- Nuevos documentos -->
+            <button class="doc-btn" data-doc="businesscase">📊 Business Case</button>
+            <button class="doc-btn" data-doc="statusreport">📈 Status Report</button>
+            <button class="doc-btn" data-doc="issuelog">⚠️ Issue Log</button>
+            <button class="doc-btn" data-doc="decisionlog">📝 Decision Log</button>
+            <button class="doc-btn" data-doc="resourceplan">👥 Resource Plan</button>
+            <button class="doc-btn" data-doc="procurement">📦 Procurement Plan</button>
+            <button class="doc-btn" data-doc="changemgmt">🔄 Change Management</button>
+            <button class="doc-btn" data-doc="benefits">🏆 Benefits Plan</button>
+
+
 </div>
 `;
 const style = document.createElement('style'); style.textContent = `.doc-btn{ background:linear-gradient(135deg,#3b82f6,#1e40af); border:none; padding:12px; border-radius:40px; color:white; cursor:pointer; font-weight:bold; transition:0.2s; } .doc-btn:hover{ transform:translateY(-2px); }`;
@@ -11745,18 +13744,25 @@ const doc = btn.dataset.doc;
 btn.onclick = () => {
 if (doc === 'charter') generarActaConstitutiva();
 else if (doc === 'stakeholders') generarRegistroStakeholders();
-else if (doc === 'plan') generarPlanProyecto();
-else if (doc === 'wbs') generarWBS();
-else if (doc === 'raci') generarMatrizRACI();
-else if (doc === 'risks') generarPlanRiesgos();
-else if (doc === 'evm') generarInformeEVM();
-else if (doc === 'quality') generarPlanCalidad();
-else if (doc === 'communications') generarPlanComunicaciones();
-else if (doc === 'lessons') generarLeccionesAprendidas();
-else if (doc === 'closure') generarActaCierre();
-else if (doc === 'final') generarInformeFinal();
-
-};
+            else if (doc === 'plan') generarPlanProyecto();
+            else if (doc === 'wbs') generarWBS();
+            else if (doc === 'raci') generarMatrizRACI();
+            else if (doc === 'risks') generarPlanRiesgos();
+            else if (doc === 'evm') generarInformeEVM();
+            else if (doc === 'quality') generarPlanCalidad();
+            else if (doc === 'communications') generarPlanComunicaciones();
+            else if (doc === 'lessons') generarLeccionesAprendidas();
+            else if (doc === 'closure') generarActaCierre();
+            else if (doc === 'final') generarInformeFinal();
+            else if (doc === 'kickoff') generarKickoffDocument();
+            else if (doc === 'businesscase') generarBusinessCase();
+            else if (doc === 'statusreport') generarStatusReport();
+            else if (doc === 'issuelog') generarIssueLog();
+            else if (doc === 'decisionlog') generarDecisionLog();
+            else if (doc === 'resourceplan') generarResourcePlan();
+            else if (doc === 'procurement') generarProcurementPlan();
+            else if (doc === 'changemgmt') generarChangeManagementPlan();
+            else if (doc === 'benefits') generarBenefitsPlan();};
 });
 
 }
@@ -11810,6 +13816,7 @@ window.abrirModalPM = abrirModalPM;
 window.actualizarSelector = actualizarSelector;
 
 })();
+
 
 
 
@@ -12395,6 +14402,114 @@ window.API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
  const API_URL = window.API_URL;  
 console.log("🌐 API_URL cargado:", API_URL);
+
+// ============================================
+// 🔔 SISTEMA DE NOTIFICACIONES A SLACK
+// ============================================
+window.SlackNotifier = {
+  // Enviar notificación genérica
+  async send(mensaje, tipo = 'info', color = null) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.warn('⚠️ No hay token, no se puede enviar notificación a Slack');
+      return false;
+    }
+
+    const colores = {
+      info: '#3498db',
+      success: '#2ecc71',
+      warning: '#f39c12',
+      error: '#e74c3c'
+    };
+    const colorFinal = color || colores[tipo] || colores.info;
+
+    try {
+      const response = await fetch(`${API_URL}/api/slack-notify-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ mensaje: mensaje, tipo: tipo, color: colorFinal })
+      });
+
+      if (response.ok) {
+        console.log('✅ Notificación enviada a Slack');
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('❌ Error enviando a Slack:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error de red al enviar a Slack:', error);
+      return false;
+    }
+  },
+
+  // Notificar tarea creada
+  taskCreated(task, projectName) {
+    const mensaje = `📌 *Nueva tarea creada*\n📋 *${task.name}*\n📂 Proyecto: ${projectName}\n👤 Responsable: ${task.assignee || 'No asignado'}\n⏱️ Estimado: ${task.estimatedTime || 0}h\n🔗 Prioridad: ${task.priority || 'media'}`;
+    this.send(mensaje, 'info');
+  },
+
+  // Notificar tarea completada
+  taskCompleted(task, projectName) {
+    const mensaje = `✅ *Tarea completada*\n📋 *${task.name}*\n📂 Proyecto: ${projectName}\n👤 Responsable: ${task.assignee || 'No asignado'}\n⏱️ Horas registradas: ${task.timeLogged || 0}h\n📊 Progreso: ${task.progress || 100}%`;
+    this.send(mensaje, 'success');
+  },
+
+  // Notificar tarea movida (cambio de estado)
+  taskMoved(task, oldStatus, newStatus, projectName) {
+    const mensaje = `🔄 *Tarea movida*\n📋 *${task.name}*\n📂 Proyecto: ${projectName}\n🔄 Estado: ${oldStatus} → ${newStatus}\n👤 Responsable: ${task.assignee || 'No asignado'}`;
+    this.send(mensaje, 'warning');
+  },
+
+  // Notificar tarea actualizada
+  taskUpdated(task, projectName, changes) {
+    const mensaje = `✏️ *Tarea actualizada*\n📋 *${task.name}*\n📂 Proyecto: ${projectName}\n👤 Responsable: ${task.assignee || 'No asignado'}\n📝 Cambios: ${changes}`;
+    this.send(mensaje, 'info');
+  },
+
+  // Notificar tarea eliminada
+  taskDeleted(taskName, projectName) {
+    const mensaje = `🗑️ *Tarea eliminada*\n📋 *${taskName}*\n📂 Proyecto: ${projectName}`;
+    this.send(mensaje, 'error');
+  },
+
+  // Notificar tareas atrasadas
+  overdueTasks(tasks, projectName) {
+    if (!tasks || tasks.length === 0) return;
+    const lista = tasks.map(t => `• ${t.name} (vencía ${t.deadline ? new Date(t.deadline).toLocaleDateString() : 'sin fecha'})`).join('\n');
+    const mensaje = `⚠️ *Tareas atrasadas*\n📂 Proyecto: ${projectName}\n${lista}`;
+    this.send(mensaje, 'error');
+  },
+
+  // Notificar riesgo agregado
+  riskAdded(riskName, projectName) {
+    const mensaje = `⚠️ *Nuevo riesgo registrado*\n📂 Proyecto: ${projectName}\n🔍 Riesgo: ${riskName}`;
+    this.send(mensaje, 'warning');
+  },
+
+  // Notificar reporte generado
+  reportGenerated(projectName, reportType) {
+    const mensaje = `📄 *Reporte generado*\n📂 Proyecto: ${projectName}\n📑 Tipo: ${reportType}`;
+    this.send(mensaje, 'info');
+  },
+
+  // Notificar nuevo proyecto
+  projectCreated(project) {
+    const mensaje = `🚀 *Nuevo proyecto creado*\n📌 ${project.name}\n⏱️ Tiempo total: ${project.totalProjectTime || 0}h`;
+    this.send(mensaje, 'success');
+  },
+
+  // Prueba de conexión
+  test() {
+    console.log('🧪 Probando Slack...');
+    this.send('🔔 *Prueba de conexión*\nSistema conectado a Slack.', 'info');
+  }
+};
+
 
 // 🔐 Cargar token global SOLO UNA VEZ
 window.authToken = localStorage.getItem("authToken") || "";
@@ -13368,13 +15483,27 @@ async function safeSave(clienteId) {
       // console.warn silenciado
     }
   }
-
+localStorage.setItem('lastSaveTimestamp', Date.now().toString());
   console.groupEnd();
   return true;
 }
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
+
+
+const lastSave = localStorage.getItem('lastSaveTimestamp');
+const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
+if (forceLocal) {
+    console.log('🔄 Usando localStorage porque hubo un guardado reciente');
+    const saved = localStorage.getItem('projects');
+    if (saved) {
+        projects = JSON.parse(saved);
+        return true;
+    }
+}
+
+
   console.group('📥 Cargando datos desde backend o localStorage');
   console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
 
@@ -13863,7 +15992,8 @@ function syncTaskProgress(task) {
 
 
 
-
+// Canal de comunicación entre pestañas
+const syncChannel = new BroadcastChannel('task_sync');
 
 
 
@@ -24456,20 +26586,28 @@ function initWebSocket() {
         });
         
         // Evento: RECIBIR actualizaciones
-        socket.on('project-updated', function(data) {
-            console.log('🎯 RECIBIDO: project-updated', data);
-            console.log('📦 Datos del evento:', data);
+socket.on('project-updated', function(data) {
+    console.log('🎯 RECIBIDO: project-updated - Recargando datos', data);
+    
+    // Recargar proyectos desde el backend
+    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=' + localStorage.getItem('clienteId'), {
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.projects) {
+            // Reemplazar los proyectos en memoria
+            window.projects = data.projects;
+            window.currentProjectIndex = data.currentProjectIndex;
+            localStorage.setItem('projects', JSON.stringify(data.projects));
             
-            // Mostrar quién hizo el cambio
-            const userName = data.userName || 'Otro usuario';
-            if (typeof showNotification === 'function') {
-                showNotification(`📢 ${userName} actualizó el proyecto`, 'info');
-            }
-            
-            // Forzar actualización desde backend
-           refreshCurrentView();
-        });
-        
+            // Refrescar la vista actual
+            if (typeof refreshCurrentView === 'function') refreshCurrentView();
+            console.log('✅ Datos recargados y vista actualizada');
+        }
+    })
+    .catch(err => console.error('❌ Error recargando proyectos:', err));
+});        
 
         // ========== MANEJADORES DE EVENTOS DE TAREAS ==========
         socket.on('task-created', (data) => {
@@ -25427,18 +27565,7 @@ if (typeof updateProjectStatusLabel !== 'function') {
         console.log('✅ deleteTask parcheada');
     }
     
-    // Sobrescribir handleDrop (drag & drop)
-    if (typeof handleDrop === 'function') {
-        window.handleDrop = function(e) {
-            const result = originalHandleDrop(e);
-            setTimeout(() => {
-                console.log('📊 Tarea movida - Actualizando vistas...');
-                refreshAllViews();
-            }, 200);
-            return result;
-        };
-        console.log('✅ handleDrop parcheada');
-    }
+    
     
     // También observar cambios en el modal de edición de tareas
     const observer = new MutationObserver(function(mutations) {
@@ -26051,6 +28178,7 @@ function renderListTasks(tasks = null) {
   });
 
 
+
 // Aplicar degradado al título "Proyecto:" en la vista lista
 const listHeader = document.querySelector('.list-view-header h2');
 if (listHeader) {
@@ -26064,6 +28192,8 @@ if (listHeader) {
     listHeader.style.display = "inline-block";
     listHeader.style.width = "auto";
 }
+
+
 
 }
 
@@ -27899,11 +30029,7 @@ function createNewProject() {
   updateLocalStorage();
 
 
-// 🔥 NOTIFICAR A SLACK - PROYECTO CREADO
-if (window.SlackNotifier && typeof window.SlackNotifier.projectCreated === 'function') {
-  window.SlackNotifier.projectCreated(newProject);
-}
-
+if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 
   // === AGREGAR ESTA LÍNEA ===
   if (window.syncManager) window.syncManager.notifyChange('project-changed', { 
@@ -28041,11 +30167,12 @@ function selectProject(index) {
   // Guardar en localStorage el índice seleccionado
   localStorage.setItem('currentProjectIndex', index);
 
-  // 🔌 SOCKET → unir al proyecto para sincronización en tiempo real
-  if (window.rtSocket && project._id) {
-    console.log("🔌 Uniéndose al proyecto en tiempo real:", project._id);
-    window.rtSocket.emit("join-project", project._id);
-  }
+// 🔌 SOCKET → unir al proyecto usando el índice (currentProjectIndex)
+if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
+    console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
+    window.tiempoRealSocket.emit("join-project", currentProjectIndex);
+}
+
 
   // 📝 Actualizar nombres del proyecto en todas las vistas
   const projectNameDisplay = document.getElementById('projectName');
@@ -28075,7 +30202,7 @@ function selectProject(index) {
   if (typeof updateStatistics === 'function') updateStatistics();
   if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
   if (typeof updateProjectProgress === 'function') updateProjectProgress();
-  if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
+ // if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
 
   // 📊 Reportes
   if (typeof generateReports === 'function') generateReports();
@@ -28370,11 +30497,8 @@ function createNewTask(e) {
         console.log('✅ Tarea agregada al proyecto:', task.name);
         
         updateLocalStorage();
-
-        // 🔥 NOTIFICAR A SLACK
-        if (window.SlackNotifier && typeof window.SlackNotifier.taskCreated === 'function') {
-            window.SlackNotifier.taskCreated(task, currentProject.name);
-        }        
+if (window.SlackNotifier) SlackNotifier.taskCreated(task, projects[currentProjectIndex].name);
+             
         
         // 🔥 NOTIFICAR A OTROS USUARIOS
         if (tiempoRealSocket && tiempoRealSocket.connected) {
@@ -28469,7 +30593,9 @@ function deleteTask(taskStr) {
         // Eliminar tarea
         projects[currentProjectIndex].tasks = projects[currentProjectIndex].tasks.filter(t => t.id !== task.id);
         updateLocalStorage();
-        
+        if (window.SlackNotifier) SlackNotifier.taskDeleted(task.name, projects[currentProjectIndex].name);
+
+
         // Actualizar vistas
         actualizarAsignados();
         aplicarFiltros();
@@ -29751,10 +31877,7 @@ console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
         updateProjectProgress();
         actualizarAsignados();
         
-        // 🔥 NOTIFICAR A SLACK - TAREA ACTUALIZADA
-        if (window.SlackNotifier && changes.length > 0) {
-            window.SlackNotifier.taskUpdated(editedTask, project.name, changes.join(', '));
-        }
+        if (window.SlackNotifier && changes.length) SlackNotifier.taskUpdated(editedTask, projects[currentProjectIndex].name, changes.join(', '));
         
         // 🔥 NOTIFICAR A OTROS USUARIOS
         if (tiempoRealSocket && tiempoRealSocket.connected) {
@@ -29954,11 +32077,45 @@ function handleDrop(e) {
       date: new Date().toISOString()
     });
 
+    const oldStatus = task.status;  // ⬅️ captura el estado anterior
     // 🔁 CAMBIO REAL DE ESTADO
     task.status = newStatus;
 
     checkTaskOverdue(task);
     updateLocalStorage();
+
+
+syncChannel.postMessage({
+    type: 'TASK_MOVED',
+    projectIndex: currentProjectIndex,
+    taskId: taskId,
+    newStatus: newStatus,
+    timestamp: Date.now()
+});
+
+
+// Notificar a otras pestañas que hubo un movimiento
+localStorage.setItem('task-moved', Date.now().toString());
+
+// Notificar a otras pestañas
+window.postMessage({
+    type: 'TASK_MOVED',
+    projectIndex: currentProjectIndex,
+    taskId: taskId,
+    newStatus: newStatus,
+    timestamp: Date.now()
+}, '*');
+
+    // ========== 🚨 NOTIFICACIÓN A SLACK (AQUÍ DEBE ESTAR) ==========
+    console.log('🚨 Vamos a llamar a SlackNotifier.taskMoved');
+    if (window.SlackNotifier) {
+      console.log('✅ SlackNotifier existe, enviando...');
+      SlackNotifier.taskMoved(task, oldStatus, newStatus, projects[currentProjectIndex].name);
+    } else {
+      console.warn('❌ SlackNotifier NO existe');
+    }
+    // =============================================================
+
     renderKanbanTasks();
     updateStatistics();
     updateProjectProgress();
@@ -30029,7 +32186,6 @@ function handleDrop(e) {
 
   e.currentTarget.style.backgroundColor = '';
 }
-
 
 
 function checkTaskOverdue(task) {
@@ -30252,10 +32408,8 @@ function checkOverdueTasks() {
            actualizarAsignados();
     showNotification('Tareas actualizadas: algunas han sido marcadas como "Rezagadas"');
 
-// 🔥 NOTIFICAR A SLACK - TAREAS ATRASADAS
-    if (window.SlackNotifier && overdueTasksList.length > 0) {
-      window.SlackNotifier.overdueTasks(overdueTasksList, projects[currentProjectIndex].name);
-  }
+if (window.SlackNotifier && overdueTasks.length) SlackNotifier.overdueTasks(overdueTasks, projects[currentProjectIndex].name);
+
 }
 }
 /***********************
@@ -35584,13 +37738,40 @@ function recalculateDependencyLines() {
     }
 
     // =============== INICIALIZACIÓN ===============
-    function init() {
-        console.log('🎯 Iniciando Project Enhancer Definitivo');
-        protectActionButtons(); // PRIMERO - proteger botones
-        initARSystem();
-        applySafe3DEffects();
-   
-    }
+   function init() {
+    console.log('🎯 Iniciando Project Enhancer Definitivo');
+    
+    // Escuchar mensajes del canal BroadcastChannel
+    syncChannel.onmessage = (event) => {
+        const data = event.data;
+        if (data.type === 'TASK_MOVED') {
+            console.log('📨 Sincronización recibida:', data);
+            if (data.projectIndex !== currentProjectIndex) {
+                console.log(`🔄 Cambiando al proyecto ${data.projectIndex}`);
+                selectProject(data.projectIndex);
+            } else {
+                if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            }
+        }
+    };
+    
+    // === NUEVO: Polling cada 3 segundos para sincronizar ===
+    setInterval(() => {
+        console.log('🔄 Polling: refrescando datos...');
+        if (typeof forceRefreshFromBackend === 'function') {
+            forceRefreshFromBackend().catch(() => {
+                location.reload();
+            });
+        } else {
+            location.reload();
+        }
+    }, 3000);
+    // ===================================================
+    
+    protectActionButtons();
+    initARSystem();
+    applySafe3DEffects();
+}
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -37393,6 +39574,7 @@ window.SystemAssistant = {
     
     init: function() {
         console.log('🧠 Inicializando Asistente General...');
+         console.log('🧠 Inicializando Asistente General...');
         this.createAssistantUI();
         this.loadConversationHistory();
         this.setupGlobalHotkey();
@@ -37423,7 +39605,10 @@ window.SystemAssistant = {
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         ">
-           <!-- Header -->
+
+        
+             <!-- Header -->
+
             <div style="
                 background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
                 padding: 20px;
@@ -37729,6 +39914,7 @@ else if (lowerMessage.includes('crear proyecto') || lowerMessage.includes('nuevo
         this.addMessage('assistant', "❌ No pude procesar el mensaje, inténtalo de nuevo.");
     }
 },
+
 
 
     
@@ -53866,13 +56052,63 @@ function handleDrop(e) {
     const task = project.tasks.find(t => String(t.id) === String(taskId));
     if (!task || task.status === newStatus) return;
     
+    // Cambiar estado de la tarea
     task.status = newStatus;
     if (newStatus === 'completed') task.progress = 100;
     else if (newStatus === 'inProgress' && (!task.progress || task.progress < 50)) task.progress = 50;
     else if (newStatus === 'pending') task.progress = 0;
     
+    // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
+    if (window.tiempoRealSocket && window.tiempoRealSocket.emit) {
+        window.tiempoRealSocket.emit('task-moved', {
+            projectId: project.id,
+            taskId: task.id,
+            newStatus: newStatus,
+            timestamp: new Date().toISOString()
+        });
+        console.log('📤 Emitido task-moved:', { projectId: project.id, taskId: task.id, newStatus: newStatus });
+    }
+    
+    // Guardar en localStorage y refrescar vista local
     localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // === NUEVA LÍNEA: Forzar sincronización entre pestañas ===
+    localStorage.setItem('sync-flag', Date.now().toString());
+    // ======================================================
+    
     if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    
+    // FORZAR SINCRONIZACIÓN CON EL BACKEND para que las otras ventanas reciban project-updated
+    if (typeof forceSync === 'function') {
+        forceSync();
+        console.log('🔄 Sincronización forzada con backend (forceSync)');
+    } else if (typeof saveProjectsToBackend === 'function') {
+        saveProjectsToBackend();
+        console.log('🔄 Sincronización forzada con backend (saveProjectsToBackend)');
+    } else {
+        // Fallback: guardar manualmente con fetch
+        const token = localStorage.getItem('token');
+        const clienteId = localStorage.getItem('clienteId');
+        if (token && clienteId) {
+            fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    projects: projects,
+                    currentProjectIndex: currentProjectIndex,
+                    clienteId: clienteId
+                })
+            })
+            .then(response => response.json())
+            .then(data => console.log('✅ Guardado manual en backend exitoso', data))
+            .catch(err => console.error('❌ Error en guardado manual:', err));
+        } else {
+            console.warn('⚠️ No se pudo sincronizar con backend: faltan token o clienteId');
+        }
+    }
 }
 
 function forzarDragDrop() {
@@ -59362,6 +61598,7 @@ console.log('✅ Código de reporte ejecutivo cargado correctamente');
 
 
 
+
 // ==================================================
 // SISTEMA DE SINCRONIZACIÓN AUTOMÁTICA (FINAL)
 // ==================================================
@@ -59402,9 +61639,32 @@ console.log('✅ Código de reporte ejecutivo cargado correctamente');
   // 2. Escuchar eventos WebSocket si están disponibles
   if (window.tiempoRealSocket) {
     window.tiempoRealSocket.on('task-changed', () => window.forceFullRefresh());
-    window.tiempoRealSocket.on('project-updated', () => window.forceFullRefresh());
+    // window.tiempoRealSocket.on('project-updated', () => window.forceFullRefresh());
     console.log('✅ WebSocket conectado');
   }
+
+
+// Manejador definitivo para project-updated
+window.tiempoRealSocket.on('project-updated', (data) => {
+    console.log('📡 Evento project-updated recibido:', data);
+    if (data.projectId !== currentProjectIndex) return;
+    fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${localStorage.getItem('clienteId')}`, {
+        headers: { 'Authorization': 'Bearer ' + (window.authToken || localStorage.getItem('token')) }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.projects) {
+            projects.length = 0;
+            projects.push(...data.projects);
+            currentProjectIndex = data.currentProjectIndex;
+            localStorage.setItem('projects', JSON.stringify(projects));
+            localStorage.setItem('currentProjectIndex', currentProjectIndex);
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            console.log('✅ Vista actualizada');
+        }
+    })
+    .catch(err => console.error('Error:', err));
+});
 
   // 3. Sobrescribir funciones clave para forzar recarga después de acciones locales
   const originalCreate = window.createNewTask;
@@ -59435,3 +61695,25 @@ console.log('✅ Código de reporte ejecutivo cargado correctamente');
 
   console.log('✅ Sincronización activada (polling cada 5s + WebSocket)');
 })();
+
+
+
+
+
+// Conectar WebSocket automáticamente al cargar
+if (typeof initWebSocket === 'function') {
+    initWebSocket();
+} else {
+    console.warn('initWebSocket no definida');
+}
+
+
+
+
+// Sincronización entre pestañas mediante localStorage
+window.addEventListener('storage', function(e) {
+    if (e.key === 'task-moved') {
+        console.log('🔄 Sincronización: recargando página');
+        location.reload();
+    }
+});
