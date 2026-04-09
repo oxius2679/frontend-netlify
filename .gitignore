@@ -2,3 +2,4 @@
 node_modules
 *.log
 "slackintegration.js" 
+integrations.js 
