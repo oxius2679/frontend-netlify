@@ -26609,22 +26609,6 @@ socket.on('project-updated', function(data) {
     .catch(err => console.error('❌ Error recargando proyectos:', err));
 });        
 
-
-
-socket.on('project-created', (data) => {
-    console.log('🆕 Nuevo proyecto creado:', data);
-    projects.push(data.project);
-    localStorage.setItem('projects', JSON.stringify(projects));
-    if (typeof getProyectosPermitidos === 'function') {
-        getProyectosPermitidos();
-    } else {
-        location.reload();
-    }
-});
-
-
-
-
         // ========== MANEJADORES DE EVENTOS DE TAREAS ==========
         socket.on('task-created', (data) => {
             console.log('📢 Evento recibido: task-created', data);
