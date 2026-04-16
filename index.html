@@ -12,7 +12,8 @@
 
 
 <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="logo-jackson.png">
+    <link rel="shortcut icon" type="image/png" href="logo-jackson.png">
 
 
   <!-- Font Awesome -->
@@ -547,18 +548,24 @@
 </head>
 
 <body>
-  <!-- Encabezado -->
-  <header>
-    <div class="logo">Zacky by Jackson </div>
+  <header style="display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; padding: 10px 20px;">
+    
+    <div class="logo" style="display: inline-flex !important; align-items: center !important; white-space: nowrap !important; gap: 0 !important;">
+      <!-- Forzamos el crecimiento con múltiples propiedades -->
+      <img src="logo-jackson.png" alt="Logo" style="height: 70px !important; width: auto !important; min-width: 0px !important; max-width: none !important; display: inline-block !important; vertical-align: middle !important; margin: 0 1px 0 0 !important; padding: 0 !important; object-fit: contain !important;">
+      
+      <span style="display: inline-block !important; vertical-align: middle !important; font-size: 24px !important; font-weight: bold !important; color: #A6CAEC !important; -webkit-text-fill-color: #A6CAEC !important; line-height: 1 !important; margin-left: -10px !important; margin-top: 0 !important; margin-bottom: 0 !important; padding: 0 !important;">
+  Zacky Gantt Executive Pro
+</span>
+    </div>
 
-    <div class="header-actions">
-  <button id="toggleSidebarBtn" class="blue-btn">☰ Menú</button>
-  <button id="newProjectBtn" class="blue-btn">+ Nuevo Proyecto</button>
-  
-  <!-- === BOTÓN DE VOZ ACTUALIZADO === -->
-  <button id="voiceAssistantButton" class="blue-btn" title="Comando de voz - También activa el asistente" style="background:#9b59b6;">
-    🎤 Comando de Voz
-  </button>
+    <div class="header-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
+      <button id="toggleSidebarBtn" class="blue-btn">☰ Menú</button>
+      <button id="newProjectBtn" class="blue-btn">+ Nuevo Proyecto</button>
+      
+      <button id="voiceAssistantButton" class="blue-btn" title="Comando de voz - También activa el asistente" style="background:#9b59b6;">
+        🎤 Comando de Voz
+      </button>
 
 
 
