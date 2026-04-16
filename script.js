@@ -20289,6 +20289,245 @@ const padding = '10px 4px';
   addPremiumStyles();
 
 
+
+  // ========== PINTAR TAREAS CRÍTICAS ==========
+  setTimeout(() => {
+    const criticalTaskIds = yourTasks
+      .filter(t => t.critical === true || t.priority === 'alta')
+      .map(t => String(t.id));
+    
+    document.querySelectorAll('.premium-task').forEach(row => {
+      const taskId = row.getAttribute('data-task-id');
+      if (criticalTaskIds.includes(taskId)) {
+        row.style.backgroundColor = '#ff0000';
+        row.style.border = '3px solid #ff0000';
+        row.style.position = 'relative';
+        
+        if (!row.querySelector('.critica-badge-permanente')) {
+          const badge = document.createElement('div');
+          badge.className = 'critica-badge-permanente';
+          badge.textContent = '🔥 CRÍTICA';
+          badge.style.cssText = `
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: black;
+            color: red;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+          `;
+          row.appendChild(badge);
+        }
+      }
+    });
+  }, 300);
+
+
+
+
+
+
+
+  // ========== OBSERVADOR PARA ACTUALIZAR TAREAS CRÍTICAS EN TIEMPO REAL ==========
+  // Función para actualizar el pintado de tareas críticas
+  // ========== PINTAR Y DESPINTAR TAREAS CRÍTICAS ==========
+
+  function actualizarPintadoCritico() {
+    console.log('🎨 Actualizando pintado de tareas críticas...');
+    
+    // Obtener IDs de tareas que SON críticas AHORA MISMO
+    const criticalTaskIds = yourProject.tasks
+      .filter(t => t.critical === true || t.priority === 'alta')
+      .map(t => String(t.id));
+    
+    console.log('📋 IDs críticos actuales:', criticalTaskIds);
+    
+    // Recorrer todas las filas del Gantt
+    document.querySelectorAll('.premium-task').forEach(row => {
+      const taskId = row.getAttribute('data-task-id');
+      const isCurrentlyCritical = criticalTaskIds.includes(taskId);
+      
+      // Buscar badge existente
+      let badge = row.querySelector('.critica-badge-permanente');
+      
+      if (isCurrentlyCritical) {
+        // ES CRÍTICA - pintar de rojo
+        row.style.backgroundColor = '#ff0000';
+        row.style.border = '3px solid #ff0000';
+        row.style.position = 'relative';
+        
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'critica-badge-permanente';
+          badge.textContent = '🔥 CRÍTICA';
+          badge.style.cssText = `
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: black;
+            color: red;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+          `;
+          row.appendChild(badge);
+        }
+      } else {
+        // NO ES CRÍTICA - restaurar estilo NORMAL
+        row.style.backgroundColor = '';
+        row.style.border = '';
+        row.style.position = '';
+        if (badge) {
+          badge.remove();
+        }
+      }
+    });
+  }
+
+  // Ejecutar pintado inicial
+  setTimeout(actualizarPintadoCritico, 500);
+
+  // ========== INTERCEPTAR GUARDADO PARA ACTUALIZAR ==========
+  const guardarSafeSaveOriginal = window.safeSave;
+  if (typeof guardarSafeSaveOriginal === 'function') {
+    window.safeSave = async function(clienteId) {
+      const result = await guardarSafeSaveOriginal(clienteId);
+      setTimeout(actualizarPintadoCritico, 200);
+      return result;
+    };
+  }
+
+  // ========== INTERCEPTAR SAVE CRITICAL PATH ==========
+  const guardarCriticalPathOriginal = window.saveCriticalPath;
+  if (typeof guardarCriticalPathOriginal === 'function') {
+    window.saveCriticalPath = function(projectIndex) {
+      const result = guardarCriticalPathOriginal(projectIndex);
+      setTimeout(actualizarPintadoCritico, 300);
+      return result;
+    };
+  }
+
+  // ========== ESCUCHAR EVENTOS DE WEBSOCKET ==========
+  if (window.tiempoRealSocket) {
+    window.tiempoRealSocket.on('task-changed', () => {
+      setTimeout(actualizarPintadoCritico, 300);
+    });
+    window.tiempoRealSocket.on('project-updated', () => {
+      setTimeout(actualizarPintadoCritico, 300);
+    });
+  }
+
+  // ========== ESCUCHAR CAMBIOS EN LOCALSTORAGE (otras pestañas) ==========
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'projects') {
+      // Recargar datos del proyecto
+      try {
+        const updatedProjects = JSON.parse(e.newValue);
+        const updatedProject = updatedProjects[currentProjectIndex];
+        if (updatedProject) {
+          yourProject.tasks = updatedProject.tasks;
+          setTimeout(actualizarPintadoCritico, 200);
+        }
+      } catch(err) {
+        console.warn('Error actualizando desde storage:', err);
+      }
+    }
+  });
+
+
+
+
+
+
+  // ========== DIAGNÓSTICO - VER QUÉ PASA AL GUARDAR ==========
+  // Esta función se ejecutará cuando guardes cambios
+  function diagnosticarGuardado() {
+    console.log('🔍 === DIAGNÓSTICO POST-GUARDADO ===');
+    const projectActual = projects[currentProjectIndex];
+    console.log('Tareas después de guardar:');
+    projectActual?.tasks.forEach(t => {
+      console.log(`  - "${t.name}": critical=${t.critical}, priority=${t.priority}`);
+    });
+  }
+
+  // Interceptar saveCriticalPath para diagnosticar
+  const diagnosticarCriticalPathOriginal = window.saveCriticalPath;
+  if (typeof diagnosticarCriticalPathOriginal === 'function') {
+    window.saveCriticalPath = function(projectIndex) {
+      console.log('💾 saveCriticalPath ejecutándose...');
+      const antes = projects[projectIndex]?.tasks.map(t => ({ name: t.name, critical: t.critical }));
+      console.log('ANTES de guardar:', antes);
+      
+      const result = diagnosticarCriticalPathOriginal(projectIndex);
+      
+      setTimeout(() => {
+        const despues = projects[projectIndex]?.tasks.map(t => ({ name: t.name, critical: t.critical }));
+        console.log('DESPUÉS de guardar:', despues);
+        diagnosticarGuardado();
+        actualizarPintadoCritico();
+      }, 500);
+      
+      return result;
+    };
+  }
+
+
+
+
+
+
+
+
+
+
+  // Ejecutar cada vez que se guardan cambios (después de safeSave)
+  const originalSafeSave = window.safeSave;
+  if (typeof originalSafeSave === 'function') {
+    window.safeSave = async function(clienteId) {
+      const result = await originalSafeSave(clienteId);
+      setTimeout(actualizarPintadoCritico, 100);
+      return result;
+    };
+  }
+
+  // También actualizar cuando se recibe un evento de WebSocket
+  if (window.tiempoRealSocket) {
+    window.tiempoRealSocket.on('task-changed', () => {
+      setTimeout(actualizarPintadoCritico, 200);
+    });
+    window.tiempoRealSocket.on('project-updated', () => {
+      setTimeout(actualizarPintadoCritico, 200);
+    });
+  }
+  
+  // Actualizar también cuando cambia la vista (por si acaso)
+  const originalShowView = window.showView;
+  if (typeof originalShowView === 'function') {
+    window.showView = function(view) {
+      originalShowView(view);
+      if (view === 'ganttPro' || view === 'gantt') {
+        setTimeout(actualizarPintadoCritico, 300);
+      }
+    };
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 // =====================================================
 // 🔒 FIX FINAL SEGURO — GANTT TIPO JIRA
 // =====================================================
@@ -25679,6 +25918,8 @@ console.log("🌐 currentDependencies cargadas:", window.currentDependencies);
   
   document.body.appendChild(overlay);
   document.body.appendChild(modal);
+modal.style.zIndex = '1000002';
+modal.style.display = 'block';
 };
 
 // ========== FUNCIONES PARA EL MODAL DE DEPENDENCIAS ==========
@@ -26144,369 +26385,211 @@ window.clearAllDependencies = function() {
 
 
 window.markAsCriticalPath = function() {
-  const ganttContainer = document.getElementById('premiumExecutiveGantt');
-  if (!ganttContainer) return;
-  
-  // OBTENER EL PROYECTO ACTUAL CORRECTAMENTE
-  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
-  
-  // Verificar que el proyecto existe
-  if (projectIndex >= projects.length || projectIndex < 0) {
-    alert('Error: Proyecto no válido.');
-    return;
-  }
-  
-  const currentProject = projects[projectIndex];
-  const currentTasks = currentProject.tasks || [];
-  
-  if (currentTasks.length === 0) {
-    alert('No hay tareas para marcar como críticas.');
-    return;
-  }
-  
-  const overlay = document.createElement('div');
-  overlay.className = 'dependency-overlay';
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(5px);
-    z-index: 1000000;
-  `;
-  
-  const modal = document.createElement('div');
-  modal.className = 'dependency-modal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 500px;
-    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
-    border-radius: 20px;
-    padding: 30px;
-    z-index: 1000001;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-    border: 2px solid rgba(231, 76, 60, 0.4);
-    color: white;
-  `;
-  
-  // Determinar qué tareas son críticas actualmente
-  const criticalStatus = currentTasks.map(task => ({
-    id: task.id,
-    name: task.name,
-    isCritical: task.priority === 'alta' || task.status === 'overdue',
-    currentPriority: task.priority || 'media'
-  }));
-  
-  modal.innerHTML = `
-    <h3 style="color: #e74c3c; margin-top: 0; margin-bottom: 20px; text-align: center;">
-      🔥 Marcador de Ruta Crítica
-    </h3>
+    console.log('🔥 Abriendo selector de Ruta Crítica...');
     
-    <div style="margin-bottom: 15px; color: #95a5a6; text-align: center;">
-      Proyecto: <strong style="color: #2ecc71;">${currentProject.name}</strong>
-      <br>Selecciona las tareas que forman parte de la ruta crítica:
-    </div>
+    const ganttContainer = document.getElementById('premiumExecutiveGantt');
+    if (!ganttContainer) {
+        alert('Primero abre el Gantt Ejecutivo');
+        return;
+    }
     
-    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 25px;">
-      ${criticalStatus.map((task, index) => `
-        <div style="
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 15px;
-          background: rgba(255,255,255,0.05);
-          border-radius: 8px;
-          margin-bottom: 8px;
-          border: 1px solid ${task.isCritical ? 'rgba(231, 76, 60, 0.5)' : 'rgba(255,255,255,0.1)'};
-        ">
-          <input 
-            type="checkbox" 
-            id="critical_${task.id}" 
-            ${task.isCritical ? 'checked' : ''}
-            style="transform: scale(1.2);"
-            onchange="toggleCriticalTaskSelection('${task.id}', this.checked, ${projectIndex})"
-          >
-          <label for="critical_${task.id}" style="flex: 1; color: white; cursor: pointer;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="
-                width: 30px;
-                height: 30px;
-                background: ${task.isCritical ? '#e74c3c' : '#3498db'};
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: 13px;
-              ">
-                ${index + 1}
-              </div>
-              <span>${task.name}</span>
-            </div>
-          </label>
-          ${task.isCritical ? '<span style="color: #e74c3c; font-size: 12px;">🔥 CRÍTICA</span>' : ''}
+    const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+    
+    if (projectIndex >= projects.length || projectIndex < 0) {
+        alert('Error: Proyecto no válido.');
+        return;
+    }
+    
+    const currentProject = projects[projectIndex];
+    const currentTasks = currentProject.tasks || [];
+    
+    if (currentTasks.length === 0) {
+        alert('No hay tareas para marcar como críticas.');
+        return;
+    }
+    
+    // Crear modal
+    const overlay = document.createElement('div');
+    overlay.className = 'dependency-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(10px);
+        z-index: 1000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    const modal = document.createElement('div');
+    modal.className = 'dependency-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 550px;
+        max-height: 80vh;
+        background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+        border-radius: 20px;
+        padding: 30px;
+        z-index: 1000001;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+        border: 2px solid #e74c3c;
+        color: white;
+        overflow-y: auto;
+    `;
+    
+    // 🔥 IMPORTANTE: Leer el estado ACTUAL de las tareas
+    const criticalStatus = currentTasks.map(task => ({
+        id: task.id,
+        name: task.name,
+        isCritical: task.critical === true || task.priority === 'alta',
+        status: task.status
+    }));
+    
+    console.log('📋 Estado actual de tareas críticas:', criticalStatus.filter(t => t.isCritical).map(t => t.name));
+    
+    modal.innerHTML = `
+        <h3 style="color: #e74c3c; margin-top: 0; margin-bottom: 20px; text-align: center;">
+            🔥 Marcar Ruta Crítica
+        </h3>
+        
+        <div style="margin-bottom: 15px; color: #95a5a6; text-align: center;">
+            Proyecto: <strong style="color: #2ecc71;">${currentProject.name}</strong>
+            <br>Selecciona las tareas que forman parte de la ruta crítica:
         </div>
-      `).join('')}
-    </div>
+        
+        <div style="max-height: 400px; overflow-y: auto; margin-bottom: 25px;">
+            ${criticalStatus.map((task, index) => `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px 15px;
+                    background: ${task.isCritical ? 'rgba(231, 76, 60, 0.2)' : 'rgba(255,255,255,0.05)'};
+                    border-radius: 8px;
+                    margin-bottom: 8px;
+                    border: 1px solid ${task.isCritical ? 'rgba(231, 76, 60, 0.5)' : 'rgba(255,255,255,0.1)'};
+                ">
+                    <input 
+                        type="checkbox" 
+                        id="critical_${task.id}" 
+                        ${task.isCritical ? 'checked' : ''}
+                        style="transform: scale(1.2); width: 20px; height: 20px; cursor: pointer;"
+                    >
+                    <label for="critical_${task.id}" style="flex: 1; color: white; cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="
+                                width: 30px;
+                                height: 30px;
+                                background: ${task.isCritical ? '#e74c3c' : '#3498db'};
+                                border-radius: 8px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-weight: bold;
+                                font-size: 13px;
+                            ">
+                                ${index + 1}
+                            </div>
+                            <span>${task.name}</span>
+                            ${task.status === 'completed' ? '<span style="color: #2ecc71; font-size: 11px;">✅ Completada</span>' : ''}
+                        </div>
+                    </label>
+                    ${task.isCritical ? '<span style="color: #e74c3c; font-size: 12px;">🔥 CRÍTICA</span>' : ''}
+                </div>
+            `).join('')}
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeCriticalModal()" style="
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.3);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                cursor: pointer;
+            ">
+                Cancelar
+            </button>
+            <button id="saveCriticalPathBtn" style="
+                background: linear-gradient(45deg, #e74c3c, #c0392b);
+                border: none;
+                color: white;
+                padding: 10px 30px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+            ">
+                💾 Guardar Ruta Crítica
+            </button>
+        </div>
+    `;
     
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button onclick="closeCriticalModal()" style="
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-      ">
-        Cancelar
-      </button>
-      <button onclick="saveCriticalPath(${projectIndex})" style="
-        background: linear-gradient(45deg, #e74c3c, #c0392b);
-        border: none;
-        color: white;
-        padding: 10px 30px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-      ">
-        💾 Guardar Ruta Crítica
-      </button>
-    </div>
-  `;
-  
-  // Guardar datos en el modal
-  modal.dataset.projectIndex = projectIndex;
-  modal.dataset.criticalStatus = JSON.stringify(criticalStatus);
-  
-  overlay.onclick = closeCriticalModal;
-  
-  document.body.appendChild(overlay);
-  document.body.appendChild(modal);
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeCriticalModal();
+    };
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+    
+    // Conectar el botón guardar
+    document.getElementById('saveCriticalPathBtn').onclick = () => {
+        const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+        const selectedTaskIds = [];
+        
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                const taskId = cb.id.replace('critical_', '');
+                selectedTaskIds.push(taskId);
+            }
+        });
+        
+        console.log('📋 Tareas seleccionadas para crítica:', selectedTaskIds);
+        
+        // Resetear todas las tareas
+        currentProject.tasks.forEach(task => {
+            task.critical = false;
+            task.priority = 'baja';
+        });
+        
+        // Marcar las seleccionadas
+        let cambios = 0;
+        selectedTaskIds.forEach(taskId => {
+            const task = currentProject.tasks.find(t => String(t.id) === String(taskId));
+            if (task) {
+                task.critical = true;
+                task.priority = 'alta';
+                cambios++;
+                console.log(`✅ Marcada: ${task.name}`);
+            }
+        });
+        
+        // Guardar
+        localStorage.setItem('projects', JSON.stringify(projects));
+        if (typeof safeSave === 'function') safeSave();
+        
+        closeCriticalModal();
+        
+        // Refrescar Gantt
+        setTimeout(() => {
+            if (typeof refreshGanttView === 'function') {
+                refreshGanttView();
+            } else if (typeof createCompleteGanttForCurrentProject === 'function') {
+                createCompleteGanttForCurrentProject();
+            }
+        }, 300);
+        
+        showNotification(`✅ ${cambios} tarea(s) marcada(s) como críticas`);
+    };
 };
-
-
-// ========== FUNCIONES PARA EL MODAL DE RUTA CRÍTICA ==========
-// ========== FUNCIONES PARA EL MODAL DE RUTA CRÍTICA ==========
-window.closeCriticalModal = function() {
-  const overlay = document.querySelector('.dependency-overlay');
-  const modal = document.querySelector('.dependency-modal');
-  if (overlay) overlay.remove();
-  if (modal) modal.remove();
-  console.log('✅ Modal de ruta crítica cerrado');
-};
-
-window.toggleCriticalTaskSelection = function(taskId, isCritical, projectIndex) {
-  const modal = document.querySelector('.dependency-modal');
-  if (!modal) return;
-  
-  console.log(`📝 Cambiando estado crítico de tarea ${taskId}: ${isCritical}`);
-  
-  // Actualizar el estado en el modal
-  let criticalStatus = JSON.parse(modal.dataset.criticalStatus || '[]');
-  const taskIndex = criticalStatus.findIndex(t => t.id.toString() === taskId.toString());
-  
-  if (taskIndex !== -1) {
-    criticalStatus[taskIndex].isCritical = isCritical;
-    modal.dataset.criticalStatus = JSON.stringify(criticalStatus);
-    console.log(`✅ Estado guardado en dataset:`, criticalStatus[taskIndex]);
-  } else {
-    console.warn(`⚠️ No se encontró la tarea ${taskId} en criticalStatus`);
-  }
-};
-
-window.saveCriticalPath = function(projectIndex) {
-  console.log('=== SAVE CRITICAL PATH ===');
-  console.log('Project index:', projectIndex);
-  
-  const modal = document.querySelector('.dependency-modal');
-  if (!modal) {
-    console.error('❌ Modal not found');
-    return;
-  }
-  
-  console.log('Modal found, dataset:', modal.dataset);
-  
-  const globalProjects = window.projects || projects;
-  if (!globalProjects || !globalProjects.length) {
-    console.error('❌ Projects array not found');
-    alert('Error: No se encontraron proyectos. Recargue la página.');
-    return;
-  }
-  
-  console.log('Projects array length:', globalProjects.length);
-  
-  if (projectIndex >= globalProjects.length || projectIndex < 0) {
-    alert('Error: Proyecto no válido.');
-    return;
-  }
-  
-  const currentProject = globalProjects[projectIndex];
-  console.log('Current project:', currentProject.name);
-  
-  const checkboxes = document.querySelectorAll('.dependency-modal input[type="checkbox"]');
-  console.log(`Found ${checkboxes.length} checkboxes`);
-  
-  // Resetear todas a 'media'
-  currentProject.tasks.forEach(task => {
-    task.priority = 'media';
-  });
-  
-  // Aplicar cambios
-  let cambios = 0;
-  checkboxes.forEach(cb => {
-    if (cb.checked) {
-      const taskId = cb.id.replace('critical_', '');
-      const task = currentProject.tasks.find(t => t.id && t.id.toString() === taskId);
-      if (task) {
-        task.priority = 'alta';
-        cambios++;
-        console.log(`✅ Set "${task.name}" to ALTA`);
-      }
-    }
-  });
-  
-  if (cambios === 0) {
-    alert('⚠️ No se realizaron cambios');
-    closeCriticalModal();
-    return;
-  }
-  
-  console.log(`Total changes: ${cambios}`);
-  
-  // Guardar cambios
-  console.log('💾 Saving changes...');
-  safeSave().then((success) => {
-    if (success) {
-      console.log('✅ Changes saved successfully');
-      closeCriticalModal();
-      
-      // ✅ USAR refreshGanttView (sin eliminar el Gantt)
-      setTimeout(() => {
-        if (typeof refreshGanttView === 'function') {
-          refreshGanttView();
-        } else {
-          // Fallback seguro
-          const ganttContainer = document.getElementById('premiumExecutiveGantt');
-          if (ganttContainer) {
-            createCompleteGanttForCurrentProject(ganttContainer);
-          }
-        }
-      }, 300);
-      
-      showNotification(`✅ ${cambios} tareas marcadas como críticas`);
-    } else {
-      console.error('❌ safeSave returned false');
-      alert('Error al guardar los cambios');
-    }
-  }).catch(error => {
-    console.error('❌ Error in safeSave:', error);
-    showNotification('❌ Error al guardar la ruta crítica');
-  });
-};
-// ========== FUNCIÓN PARA TOGGLE DE TAREA CRÍTICA - CORREGIDA ==========
-window.toggleCriticalTaskSelection = function(taskId, isCritical, projectIndex) {
-  const modal = document.querySelector('.dependency-modal');
-  if (!modal) return;
-  
-  // Actualizar el estado en el modal
-  let criticalStatus = JSON.parse(modal.dataset.criticalStatus || '[]');
-  const taskIndex = criticalStatus.findIndex(t => t.id.toString() === taskId.toString());
-  
-  if (taskIndex !== -1) {
-    criticalStatus[taskIndex].isCritical = isCritical;
-    modal.dataset.criticalStatus = JSON.stringify(criticalStatus);
-  }
-};
-
-// ========== FUNCIÓN PARA GUARDAR RUTA CRÍTICA - CORREGIDA ==========
-// ========== FUNCIÓN PARA GUARDAR RUTA CRÍTICA - CORREGIDA ==========
-window.saveCriticalPath = function(projectIndex) {
-  console.log('=== SAVE CRITICAL PATH ===');
-  console.log('Project index:', projectIndex);
-  
-  const modal = document.querySelector('.dependency-modal');
-  if (!modal) {
-    console.error('❌ Modal not found');
-    return;
-  }
-  
-  console.log('Modal found, dataset:', modal.dataset);
-  
-  const globalProjects = window.projects || projects;
-  if (!globalProjects || !globalProjects.length) {
-    alert('Error: No se encontraron proyectos. Recargue la página.');
-    return;
-  }
-  
-  if (projectIndex >= globalProjects.length || projectIndex < 0) {
-    alert('Error: Proyecto no válido.');
-    return;
-  }
-  
-  const currentProject = globalProjects[projectIndex];
-  const checkboxes = document.querySelectorAll('.dependency-modal input[type="checkbox"]');
-  
-  // Resetear todas a 'media'
-  currentProject.tasks.forEach(task => {
-    task.priority = 'media';
-  });
-  
-  // Aplicar cambios
-  let cambios = 0;
-  checkboxes.forEach(cb => {
-    if (cb.checked) {
-      const taskId = cb.id.replace('critical_', '');
-      const task = currentProject.tasks.find(t => t.id && t.id.toString() === taskId);
-      if (task) {
-        task.priority = 'alta';
-        cambios++;
-      }
-    }
-  });
-  
-  if (cambios === 0) {
-    alert('⚠️ No se realizaron cambios');
-    closeCriticalModal();
-    return;
-  }
-  
-  console.log(`Total changes: ${cambios}`);
-  
-  // Guardar cambios
-  console.log('💾 Saving changes...');
-  safeSave().then((success) => {
-    if (success) {
-      console.log('✅ Changes saved successfully');
-      closeCriticalModal();
-      
-      // ✅ USAR refreshGanttView (sin eliminar el contenedor)
-      setTimeout(() => {
-        if (typeof refreshGanttView === 'function') {
-          refreshGanttView();
-        } else {
-          // Fallback seguro: reutilizar contenedor existente
-          const ganttContainer = document.getElementById('premiumExecutiveGantt');
-          if (ganttContainer) {
-            createCompleteGanttForCurrentProject(ganttContainer);
-          }
-        }
-      }, 300);
-      
-      showNotification(`✅ ${cambios} tareas marcadas como críticas`);
-    } else {
-      alert('Error al guardar los cambios');
-    }
-  }).catch(error => {
-    console.error('❌ Error in safeSave:', error);
-    showNotification('❌ Error al guardar la ruta crítica');
-  });
-};// ========== INICIAR SISTEMA ==========
+// ========== INICIAR SISTEMA ==========
 console.log('✅ Sistema Gantt Premium cargado con Burndown y Valor Ganado');
 console.log('📋 Comando para iniciar: createPremiumGanttWithYourData()');
 
@@ -43630,49 +43713,52 @@ function loadFileFromStorage(fileKey) {
 function closeCriticalModal() {
   console.log('🔒 Cerrando modal de Ruta Crítica...');
   
-  // Buscar por varios posibles IDs
-  const modalIds = ['criticalPathModal', 'criticalModal', 'modalCriticalPath'];
-  let modal = null;
-  
-  for (const id of modalIds) {
-    modal = document.getElementById(id);
-    if (modal) break;
-  }
-  
-  // También buscar por clase
-  if (!modal) {
-    modal = document.querySelector('.modal.critical-path-modal, [class*="critical"]');
-  }
+  // Buscar el modal de dependencias (el que usas para la ruta crítica)
+  const modal = document.querySelector('.dependency-modal');
+  const overlay = document.querySelector('.dependency-overlay');
   
   if (modal) {
-    modal.style.display = 'none';
-    modal.classList.remove('show');
+    modal.remove();
+    console.log('✅ Modal eliminado');
+  }
+  
+  if (overlay) {
+    overlay.remove();
+    console.log('✅ Overlay eliminado');
+  }
+  
+  // Si no se encontró por clase, buscar por otros selectores comunes
+  if (!modal && !overlay) {
+    // Buscar por ID alternativos
+    const modalIds = ['criticalPathModal', 'criticalModal', 'modalCriticalPath'];
+    for (const id of modalIds) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.style.display = 'none';
+        m.classList.remove('show');
+        console.log(`✅ Modal ${id} cerrado`);
+        break;
+      }
+    }
     
-    // Remover backdrop
-    const backdrop = document.querySelector('.modal-backdrop');
-    if (backdrop) backdrop.remove();
-    
-    // Habilitar scroll
-    document.body.style.overflow = 'auto';
-    
-    console.log('✅ Modal de Ruta Crítica cerrado');
-  } else {
-    console.warn('⚠️ Modal de Ruta Crítica no encontrado, buscando todos los modales...');
-    
-    // Cerrar todos los modales como fallback
-    const allModals = document.querySelectorAll('.modal[style*="block"]');
+    // Cerrar cualquier modal con estilo block como fallback
+    const allModals = document.querySelectorAll('.modal[style*="block"], [class*="modal"][style*="block"]');
     allModals.forEach(m => {
       m.style.display = 'none';
       m.classList.remove('show');
     });
-    
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(b => b.remove());
-    
-    document.body.style.overflow = 'auto';
   }
-}
-// 2. Función para cerrar el creador de dependencias
+  
+  // Eliminar cualquier backdrop residual
+  const backdrops = document.querySelectorAll('.modal-backdrop');
+  backdrops.forEach(b => b.remove());
+  
+  // Habilitar scroll del body
+  document.body.style.overflow = 'auto';
+  document.body.classList.remove('modal-open');
+  
+  console.log('✅ Modal de Ruta Crítica cerrado correctamente');
+}// 2. Función para cerrar el creador de dependencias
 function closeDependencyCreator() {
   console.log('🔒 Cerrando creador de dependencias...');
   
@@ -45380,11 +45466,20 @@ window.filterCriticalTasksPremium = function() {
     return;
   }
   
-  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
-  console.log('📋 Total tareas:', tasks.length);
+  // ✅ USAR DATOS FRESCOS DEL PROYECTO ACTUAL
+  const project = projects[currentProjectIndex];
+  if (!project || !project.tasks) {
+    notificacionFiltro('❌ No se pudieron cargar las tareas');
+    return;
+  }
   
-  const criticalTasks = tasks.filter(t => t.critical);
-  console.log('🔥 Tareas críticas encontradas:', criticalTasks.length);
+  // Obtener IDs de tareas que SON críticas AHORA MISMO
+  const criticalTaskIds = project.tasks
+    .filter(t => t.critical === true)
+    .map(t => String(t.id));
+  
+  console.log('📋 IDs de tareas críticas (actuales):', criticalTaskIds);
+  console.log('🔥 Tareas críticas encontradas:', criticalTaskIds.length);
   
   // Ocultar todas las tareas primero
   document.querySelectorAll('.premium-task').forEach(task => {
@@ -45392,8 +45487,8 @@ window.filterCriticalTasksPremium = function() {
   });
   
   // Mostrar solo tareas críticas
-  criticalTasks.forEach(task => {
-    const taskElement = document.querySelector(`.premium-task[data-task-id="${task.id}"]`);
+  criticalTaskIds.forEach(taskId => {
+    const taskElement = document.querySelector(`.premium-task[data-task-id="${taskId}"]`);
     if (taskElement) {
       taskElement.style.display = 'flex';
       taskElement.style.background = 'rgba(231, 76, 60, 0.2)';
@@ -45401,9 +45496,8 @@ window.filterCriticalTasksPremium = function() {
     }
   });
   
-  notificacionFiltro(`✅ Mostrando ${criticalTasks.length} tareas críticas`);
+  notificacionFiltro(`✅ Mostrando ${criticalTaskIds.length} tareas críticas`);
 };
-
 // 2. Filtrar tareas atrasadas - VERSIÓN MEJORADA
 window.filterDelayedTasksPremium = function() {
   console.log('⚡ Filtrando tareas atrasadas...');
@@ -61717,3 +61811,47 @@ window.addEventListener('storage', function(e) {
         location.reload();
     }
 });
+
+
+
+
+
+
+// ===== ESTO PINTA LAS CRÍTICAS CADA SEGUNDO - SIEMPRE =====
+setInterval(function() {
+    const gantt = document.getElementById('premiumExecutiveGantt');
+    if (!gantt) return;
+    
+    const tasks = projects[currentProjectIndex]?.tasks || [];
+    const filas = gantt.querySelectorAll('.premium-task');
+    
+    filas.forEach(row => {
+        const id = row.getAttribute('data-task-id');
+        const tarea = tasks.find(t => String(t.id) === String(id));
+        
+        if (tarea && tarea.critical === true) {
+            // Pintar de rojo
+            row.style.backgroundColor = '#ff0000';
+            row.style.border = '3px solid #ff0000';
+            row.style.position = 'relative';
+            
+            // Agregar badge si no tiene
+            let badge = row.querySelector('.critica-automatica-total');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'critica-automatica-total';
+                badge.textContent = '🔥 CRÍTICA';
+                badge.style.cssText = 'position:absolute;top:5px;right:10px;background:black;color:red;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:bold;z-index:9999;';
+                row.appendChild(badge);
+            }
+        } else if (tarea) {
+            // Limpiar si ya no es crítica
+            row.style.backgroundColor = '';
+            row.style.border = '';
+            const badge = row.querySelector('.critica-automatica-total');
+            if (badge) badge.remove();
+        }
+    });
+}, 500);
+
+console.log('✅ SISTEMA ACTIVADO - Las críticas se pintan solas cada medio segundo');
