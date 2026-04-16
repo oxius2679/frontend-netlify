@@ -4,7 +4,6 @@
 
 
 
-
 function updateConnectionIndicator(status) {
     console.log('🟢 Estado de conexión:', status);
 }
@@ -15459,7 +15458,7 @@ async function safeSave(clienteId) {
           var taskId = window.currentTaskId || window.taskId || 'unknown';
           
           if (projectId && taskId) {
-            tiempoRealSocket.emit('task-changed', {
+            window.tiempoRealSocket.emit('task-updated', {
               projectId: projectId,
               taskId: taskId,
               changes: { updated: new Date().toISOString() },
@@ -26708,23 +26707,99 @@ socket.on('project-updated', function(data) {
             }
         });
 
-        socket.on('task-updated', (data) => {
-            console.log('📢 Evento recibido: task-updated', data);
-            if (data.projectId !== currentProjectIndex) return;
-            const project = projects[currentProjectIndex];
-            if (!project) return;
-            const taskIndex = project.tasks.findIndex(t => t.id === data.task.id);
-            if (taskIndex !== -1) {
-                project.tasks[taskIndex] = data.task;
-                updateLocalStorage();
-                refreshCurrentView();
-                if (typeof showNotification === 'function') {
-                    showNotification(`📡 Tarea "${data.task.name}" actualizada`, 'info');
-                }
-            }
-        });
+      // Escuchar eventos de tarea actualizada
+// Escuchar eventos de tarea actualizada - VERSIÓN CORREGIDA (acepta projectId = 0)
+socket.on('task-updated', (data) => {
+    console.log('📢 Evento recibido: task-updated', data);
+    console.log('📢 Datos completos:', JSON.stringify(data, null, 2));
+    
+    // ✅ CORRECCIÓN: Validar que projectId NO sea undefined/null, PERO puede ser 0
+    if (!data || data.projectId === undefined || data.projectId === null) {
+        console.warn('⚠️ Datos inválidos: projectId es', data.projectId);
+        return;
+    }
+    
+    console.log(`📢 Comparando: data.projectId=${data.projectId}, currentProjectIndex=${currentProjectIndex}`);
+    
+    // ✅ Convertir a número para comparación segura
+    const eventProjectId = Number(data.projectId);
+    const currentProjectId = Number(currentProjectIndex);
+    
+    if (eventProjectId !== currentProjectId) {
+        console.log(`⚠️ Evento ignorado: proyecto ${eventProjectId} no es el actual (${currentProjectId})`);
+        return;
+    }
+    
+    const project = projects[currentProjectIndex];
+    if (!project) {
+        console.warn('⚠️ Proyecto no encontrado');
+        return;
+    }
+    
+    if (!project.tasks) {
+        console.warn('⚠️ project.tasks no existe');
+        return;
+    }
+    
+    // Buscar la tarea por ID
+    const taskIndex = project.tasks.findIndex(t => t.id == data.taskId);
+    console.log(`📢 Buscando tarea con ID ${data.taskId} en posición: ${taskIndex}`);
+    
+    if (taskIndex !== -1 && data.task) {
+        // Guardar el nombre viejo para el log
+        const oldName = project.tasks[taskIndex].name;
+        const oldAssignee = project.tasks[taskIndex].assignee;
+        
+        // ACTUALIZAR LA TAREA
+        project.tasks[taskIndex] = data.task;
+        
+        console.log(`✅ Tarea actualizada localmente:`);
+        console.log(`   - Nombre: "${oldName}" -> "${data.task.name}"`);
+        console.log(`   - Responsable: "${oldAssignee}" -> "${data.task.assignee}"`);
+        console.log(`   - Nuevos datos:`, data.task);
+        
+        // Guardar en localStorage
+        localStorage.setItem('projects', JSON.stringify(projects));
+        
+        // FORZAR REFRESH DEL KANBAN
+        console.log('🔄 Llamando a renderKanbanTasks...');
+        if (typeof renderKanbanTasks === 'function') {
+            renderKanbanTasks();
+            console.log('✅ renderKanbanTasks ejecutado');
+        } else {
+            console.error('❌ renderKanbanTasks NO es una función');
+        }
+        
+        // Mostrar notificación
+        if (typeof showNotification === 'function') {
+            showNotification(`📡 Tarea "${data.task.name}" actualizada en tiempo real`, 'info');
+        }
+        
+        console.log('🎉 Sincronización completada exitosamente');
+        
+    } else if (taskIndex !== -1 && !data.task) {
+        console.warn('⚠️ Datos incompletos: no hay objeto task en el evento');
+        console.log('🔄 Forzando refresh completo desde backend...');
+        if (typeof forceRefreshFromBackend === 'function') {
+            forceRefreshFromBackend();
+        }
+    } else {
+        console.warn(`⚠️ Tarea con ID ${data.taskId} no encontrada localmente`);
+        console.log('📋 IDs de tareas locales:', project.tasks.map(t => ({ id: t.id, name: t.name })));
+        console.log('🔄 Forzando refresh completo desde backend...');
+        if (typeof forceRefreshFromBackend === 'function') {
+            forceRefreshFromBackend();
+        }
+    }
+});
 
-        socket.on('task-deleted', (data) => {
+
+
+
+
+
+
+ socket.on('task-deleted', (data) => {
             console.log('📢 Evento recibido: task-deleted', data);
             if (data.projectId !== currentProjectIndex) return;
             const project = projects[currentProjectIndex];
@@ -26865,22 +26940,7 @@ socket.on('project-updated', async (data) => {
             }
         });
 
-        socket.on('task-updated', (data) => {
-            console.log('📢 Evento recibido: task-updated', data);
-            if (data.projectId != currentProjectIndex) return;
-            const project = projects[currentProjectIndex];
-            if (!project) return;
-            const idx = project.tasks.findIndex(t => t.id === data.task.id);
-            if (idx !== -1) {
-                project.tasks[idx] = data.task;
-                updateLocalStorage();
-                refreshCurrentView();
-                if (typeof showNotification === 'function') {
-                    showNotification(`📡 Tarea "${data.task.name}" actualizada`, 'info');
-                }
-            }
-        });
-
+        
         socket.on('task-deleted', (data) => {
             console.log('📢 Evento recibido: task-deleted', data);
             if (data.projectId != currentProjectIndex) return;
@@ -31912,7 +31972,7 @@ const dependencies = Array.from(
 
 // Busca la función saveTaskChanges y reemplázala con esta versión mejorada
 function saveTaskChanges(taskId) {
-console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
+    console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
     console.log('💾 Guardando cambios de tarea...');
     
     const project = projects[currentProjectIndex];
@@ -31962,19 +32022,24 @@ console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
         
         if (window.SlackNotifier && changes.length) SlackNotifier.taskUpdated(editedTask, projects[currentProjectIndex].name, changes.join(', '));
         
-        // 🔥 NOTIFICAR A OTROS USUARIOS
-        if (tiempoRealSocket && tiempoRealSocket.connected) {
-            tiempoRealSocket.emit('task-changed', {
-                projectId: currentProjectIndex,
-                taskId: taskId,
-                taskName: editedTask.name,
-                userName: 'Usuario actual',
-                type: 'task-updated',
-                changes: changes,
-                timestamp: new Date().toISOString()
-            });
-            console.log('📢 Notificando actualización de tarea');
-        }
+        // 🔥 NOTIFICAR A OTROS USUARIOS - VERSIÓN CORREGIDA CON TAREA COMPLETA
+       if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+    window.tiempoRealSocket.emit('task-updated', {
+        projectId: currentProjectIndex,
+        taskId: taskId,  // ← Asegúrate que sea el ID numérico
+        task: editedTask,  // ← La tarea completa
+        taskName: editedTask.name,
+        userName: localStorage.getItem('userName') || 'Usuario actual',
+        type: 'task-updated',
+        changes: changes,
+        timestamp: new Date().toISOString()
+    });
+    console.log('📢 Evento task-updated EMITIDO con datos:', {
+        projectId: currentProjectIndex,
+        taskId: taskId,
+        taskName: editedTask.name
+    });
+}
         
         // Cerrar el modal
         const taskDetailsModal = document.getElementById('taskDetailsModal');
@@ -32052,6 +32117,15 @@ console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
         showNotification('❌ Error: No se encontró la tarea para actualizar');
     }
 }
+
+
+
+
+
+
+
+
+
 
 /*****************
  * VISTAS (UI) *
