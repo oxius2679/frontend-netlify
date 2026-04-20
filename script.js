@@ -1,5 +1,35 @@
 
 
+// Mover Inicio al principio del menú - VERSIÓN DEFINITIVA
+(function() {
+    function moverInicio() {
+        var items = document.querySelectorAll('#sidebar li, aside li');
+        var inicioItem = null;
+        var menuContainer = null;
+        
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].textContent.trim() === 'Inicio') {
+                inicioItem = items[i];
+                menuContainer = inicioItem.parentNode;
+                break;
+            }
+        }
+        
+        if (inicioItem && menuContainer && menuContainer.firstChild !== inicioItem) {
+            menuContainer.insertBefore(inicioItem, menuContainer.firstChild);
+            console.log('✅ Inicio movido al principio');
+        }
+    }
+    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(moverInicio, 500);
+        });
+    } else {
+        setTimeout(moverInicio, 500);
+    }
+})();
 
 
 
@@ -1005,13 +1035,20 @@ if (webhook) {
 // ============================================================
 (function ultimateFloatingButton(){
 function spawn() {
-let btn = document.getElementById("boardUltimateBtn");
-if (!btn) {
-btn = document.createElement("button");
-btn.id = "boardUltimateBtn";
-btn.textContent = "PM Virtual";                    // Cambia el texto
-btn.title = "Abrir PM Virtual";
-btn.style.cssText = `
+    // 🔒 VERIFICAR PLAN - NO CREAR BOTÓN SI ES FREE
+    var userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan === 'free') {
+        console.log('🔒 PM Virtual no disponible en plan FREE');
+        return;
+    }
+    
+    let btn = document.getElementById("boardUltimateBtn");
+    if (!btn) {
+        btn = document.createElement("button");
+        btn.id = "boardUltimateBtn";
+        btn.textContent = "PM Virtual";                    // Cambia el texto
+        btn.title = "Abrir PM Virtual";
+        btn.style.cssText = `
 position: static !important;
 bottom: auto !important;
 left: auto !important;
@@ -1035,26 +1072,26 @@ box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
 transition: all 0.3s ease !important;
 font-family: system-ui, 'Segoe UI', sans-serif !important;
 letter-spacing: 0.5px !important;
-`;btn.onclick = () => {
-console.log("✔ Botón Ultimate presionado");
-if (typeof abrirModalPM === "function") {
-abrirModalPM();
-} else {
-alert("abrirModalPM no existe todavía");
-}
-};
-let header = document.querySelector('header, header#mainHeader, .main-header');
-if (header) { header.appendChild(btn); }
-else { document.body.appendChild(btn); }
-console.log("✔ Botón Ultimate generado");
-}
+`;
+        btn.onclick = () => {
+            console.log("✔ Botón Ultimate presionado");
+            if (typeof abrirModalPM === "function") {
+                abrirModalPM();
+            } else {
+                alert("abrirModalPM no existe todavía");
+            }
+        };
+        let header = document.querySelector('header, header#mainHeader, .main-header');
+        if (header) { header.appendChild(btn); }
+        else { document.body.appendChild(btn); }
+        console.log("✔ Botón Ultimate generado");
+    }
 }
 // Crear inmediatamente
 document.addEventListener("DOMContentLoaded", spawn);
-// Re-crear si lo eliminan
+// Re-crear si lo eliminan (pero verificará plan cada vez)
 setInterval(spawn, 800);
 })();
-
 // ============================================================
 // PM VIRTUAL EJECUTIVO - VERSIÓN COMPLETA CORREGIDA
 // ============================================================
@@ -1075,11 +1112,11 @@ console.log("✔ Selector actualizado");
 
 // ✅ FUNCIÓN: abrirModalPM (llamada desde script.js - línea 405)
 function abrirModalPM() {
-console.log("✔ Abrir Modal PM");
-actualizarSelector();
-abrirPanelCompleto();
+       
+    console.log("✔ Abrir Modal PM");
+    actualizarSelector();
+    abrirPanelCompleto();
 }
-
 // Exponer funciones globalmente para acceso desde script.js externo
 window.actualizarSelector = actualizarSelector;
 window.abrirModalPM = abrirModalPM;
@@ -33430,7 +33467,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 const currentUserEmail = localStorage.getItem('userEmail');
 if (currentUserEmail === 'ajackson2672@gmail.com') {
   localStorage.setItem('userPlan', 'premium');
-  console.log('👑 Acceso premium activado para desarrollador');
+  // console.log('👑 Acceso premium activado para desarrollador'); // COMENTADO PARA PRUEBA FREE
+localStorage.setItem('userPlan', 'free'); // Forzamos free para prueba
 }
 
 
@@ -44134,49 +44172,41 @@ if (typeof refreshGanttView === 'undefined') {
 }
 
 // 4. Función auxiliar para notificaciones
-function showNotification(message, type = 'info') {
-  console.log(`📢 Notificación [${type}]: ${message}`);
-  
-  const colors = {
-    success: '#10b981',
-    error: '#ef4444',
-    warning: '#f59e0b',
-    info: '#3b82f6'
-  };
-  
-  // Crear notificación
-  const notification = document.createElement('div');
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    background: ${colors[type] || colors.info};
-    color: white;
-    border-radius: 8px;
-    z-index: 999999;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    animation: slideIn 0.3s ease;
-  `;
-  
-  // Agregar animación CSS si no existe
-  if (!document.querySelector('#notification-styles')) {
-    const style = document.createElement('style');
+function showNotification(message, type) {
+    type = type || 'info';
+    var colors = {
+        info: '#3498db',
+        success: '#2ecc71',
+        warning: '#f39c12',
+        error: '#e74c3c'
+    };
+    var color = colors[type] || colors.info;
+    
+    var oldNotification = document.getElementById('temp-notification');
+    if (oldNotification) oldNotification.remove();
+    
+    var notification = document.createElement('div');
+    notification.id = 'temp-notification';
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: ' + color + '; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 999999; font-weight: 500; animation: slideIn 0.3s ease-out;';
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(function() {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(function() { notification.remove(); }, 300);
+        }
+    }, 3000);
+}
+
+// Agregar estilos si no existen
+if (!document.getElementById('notification-styles')) {
+    var style = document.createElement('style');
     style.id = 'notification-styles';
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-      }
-    `;
+    style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } } @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }';
     document.head.appendChild(style);
-  }
-  
+}  
   document.body.appendChild(notification);
   
   // Auto-eliminar después de 5 segundos
@@ -44184,7 +44214,7 @@ function showNotification(message, type = 'info') {
     notification.style.animation = 'fadeOut 0.3s ease';
     setTimeout(() => notification.remove(), 300);
   }, 5000);
-}
+
 
 // 5. Función para actualizar visualización de dependencias
 function updateDependencyVisualization(sourceId, targetId, type) {
@@ -54676,22 +54706,6 @@ case "inicio":
 window.showView = showView;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ===== SOBRESCRITURA FINAL =====
 // Esto se ejecuta al final y sobrescribe cualquier función vieja
 
@@ -56209,6 +56223,18 @@ const originalShowViewFn = window.showView;
 window.showView = function(view) {
     console.log('🧭 Navegando a vista:', view);
     
+    // 🔒 VERIFICACIÓN DE LICENCIA
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
+    
+    // Si es FREE y la vista no está permitida, bloquear
+    if (userPlan === 'free' && !vistasFree.includes(view)) {
+        showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
+        console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
+        return;
+    }
+    
+    // Vista de inicio (Centro de Comando IA)
     if (view === 'inicio') {
         renderCentroComandoIA();
         setTimeout(() => {
@@ -56224,7 +56250,6 @@ window.showView = function(view) {
         }
     }
 };
-
 // ============================================
 // 5. FUNCIONES DE DRAG & DROP MEJORADAS
 // ============================================
@@ -61989,3 +62014,70 @@ setInterval(function() {
 }, 500);
 
 console.log('✅ SISTEMA ACTIVADO - Las críticas se pintan solas cada medio segundo');
+
+
+
+
+
+
+
+
+
+// Agrega esto al FINAL de tu script.js
+function actualizarMenuPorLicencia() {
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    const vistasPremium = ['gantt', 'ganttPro', 'dashboard', 'dashboard4d', 'profitability', 'timeAllocation', 
+                           'cambios', 'hitos', 'recursos', 'costos', 'control', 'reuniones', 'archivo', 
+                           'transferencia', 'checklist', 'portal', 'encuestas', 'calidad', 'acciones', 
+                           'riesgosMatriz', 'desempeno', 'habilidades', 'reconocimientos', 'scrum', 'reportes'];
+    
+    if (userPlan === 'free') {
+        // Ocultar botones de vistas premium
+        vistasPremium.forEach(vista => {
+            const nombreBoton = `show${vista.charAt(0).toUpperCase() + vista.slice(1)}View`;
+            const btn = document.getElementById(nombreBoton);
+            if (btn) {
+                btn.style.display = 'none';
+                const parentLi = btn.closest('li');
+                if (parentLi) parentLi.style.display = 'none';
+            }
+        });
+        console.log('🔒 Modo FREE activado - Vistas premium ocultas');
+    } else {
+        // Mostrar todas las vistas
+        vistasPremium.forEach(vista => {
+            const nombreBoton = `show${vista.charAt(0).toUpperCase() + vista.slice(1)}View`;
+            const btn = document.getElementById(nombreBoton);
+            if (btn) {
+                btn.style.display = '';
+                const parentLi = btn.closest('li');
+                if (parentLi) parentLi.style.display = '';
+            }
+        });
+        console.log(`✅ Modo ${userPlan.toUpperCase()} activado - Todas las vistas disponibles`);
+    }
+}
+
+// Ejecutar al cargar
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(actualizarMenuPorLicencia, 500);
+    });
+} else {
+    setTimeout(actualizarMenuPorLicencia, 500);
+}
+
+// Escuchar cambios en localStorage (cuando se actualiza el plan)
+window.addEventListener('storage', function(e) {
+    if (e.key === 'userPlan') {
+        actualizarMenuPorLicencia();
+    }
+});
+
+
+
+
+
+
+
+
