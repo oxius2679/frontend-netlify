@@ -27043,7 +27043,7 @@ async function forceRefreshFromBackend() {
                 refreshCurrentView();
                 
                 if (typeof showNotification === 'function') {
-                    showNotification('🔄 Datos sincronizados', 'success');
+                    // showNotification('🔄 Datos sincronizados', 'success'); // COMENTADO - ya no molesta
                 }
             }
         } else {
