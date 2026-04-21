@@ -15657,17 +15657,31 @@ if (forceLocal) {
   }
 
   // Inicializar datos si no hay nada
-  if (loadedData && loadedData.projects) {
+   // Inicializar datos si no hay nada
+   if (loadedData && loadedData.projects) {
     projects = loadedData.projects;
     currentProjectIndex = loadedData.currentProjectIndex || 0;
     console.log(`✅ ${projects.length} proyectos cargados`);
+    
+    // 🔥 FILTRO PLAN FREE - LIMITAR A 1 PROYECTO
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan === 'free' && projects.length > 1) {
+      console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
+      projects = [projects[0]];
+      currentProjectIndex = 0;
+      loadedData.projects = projects;
+      // Actualizar localStorage con el proyecto único
+      localStorage.setItem('projects', JSON.stringify(projects));
+    }
     
     // 🔥 NUEVO: Verificación final
     console.log('📋 Resumen de proyectos:');
     projects.forEach((p, i) => {
       console.log(`   ${i+1}. "${p.name}" - clienteId: ${p.clienteId || 'NO DEFINIDO'}`);
     });
-  } else {
+  }
+
+else {
     console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
   }
 
