@@ -15658,7 +15658,7 @@ if (forceLocal) {
 
   // Inicializar datos si no hay nada
    // Inicializar datos si no hay nada
-   if (loadedData && loadedData.projects) {
+  if (loadedData && loadedData.projects) {
     projects = loadedData.projects;
     currentProjectIndex = loadedData.currentProjectIndex || 0;
     console.log(`✅ ${projects.length} proyectos cargados`);
@@ -15670,9 +15670,22 @@ if (forceLocal) {
       projects = [projects[0]];
       currentProjectIndex = 0;
       loadedData.projects = projects;
-      // Actualizar localStorage con el proyecto único
       localStorage.setItem('projects', JSON.stringify(projects));
     }
+    
+    // 🔥 NUEVO: Verificar si la prueba FREE expiró (SOLO si es FREE)
+    if (userPlan === 'free') {
+      const pruebaActiva = verificarPruebaFree();
+      if (!pruebaActiva) {
+        console.error('❌ Período de prueba FREE expirado');
+        if (typeof showNotification === 'function') {
+          showNotification('⚠️ Tu período de prueba de 15 días ha expirado. Actualiza a Professional para continuar.', 'error');
+        }
+      }
+    }
+    
+    // 🔥 NUEVO: Mostrar contador de días restantes
+    mostrarDiasRestantesFree();
     
     // 🔥 NUEVO: Verificación final
     console.log('📋 Resumen de proyectos:');
@@ -15680,7 +15693,6 @@ if (forceLocal) {
       console.log(`   ${i+1}. "${p.name}" - clienteId: ${p.clienteId || 'NO DEFINIDO'}`);
     });
   }
-
 else {
     console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
   }
@@ -27180,7 +27192,7 @@ async function register() {
   const name = document.getElementById('registerName').value.trim();
   const email = document.getElementById('registerEmail').value.trim();
   const password = document.getElementById('registerPassword').value;
-  const empresa = document.getElementById('registerEmpresa').value.trim(); // 👈 NUEVO
+  const empresa = document.getElementById('registerEmpresa').value.trim();
   
   if (!name || !email || !password || !empresa) {
     document.getElementById('registerError').textContent = 'Completa todos los campos';
@@ -27191,11 +27203,15 @@ async function register() {
     const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, empresa }) // 👈 ENVIAR EMPRESA
+      body: JSON.stringify({ name, email, password, empresa })
     });
     
     const data = await res.json();
     if (res.ok) {
+      // 🔥 NUEVO: Guardar fecha de inicio de prueba FREE
+      localStorage.setItem('freeTrialStart', new Date().toISOString());
+      localStorage.setItem('userPlan', 'free');
+      
       alert('✅ Cuenta creada. Ahora inicia sesión.');
       showLoginForm();
     } else {
@@ -30223,6 +30239,19 @@ setTimeout(() => {
  *************************/
 // ==================== CREAR NUEVO PROYECTO CORREGIDO ====================
 function createNewProject() {
+
+
+ // 🔥 NUEVO: Verificar si la prueba FREE expiró
+  const userPlan = localStorage.getItem('userPlan') || 'free';
+  if (userPlan === 'free') {
+    const pruebaActiva = verificarPruebaFree();  // <-- LLAMADA AQUÍ
+    if (!pruebaActiva) {
+      showNotification('⚠️ Tu período de prueba de 15 días ha expirado. Actualiza a Professional para continuar.', 'error');
+      return;
+    }
+  }
+
+
   // 👇 AÑADE ESTAS LÍNEAS AL INICIO 👇
   const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
   if (localStorage.getItem('userPlan') === 'free' && savedProjects.length >= 1) {
@@ -62094,4 +62123,118 @@ window.addEventListener('storage', function(e) {
 
 
 
+// ============================================
+// 🔒 VERIFICAR PRUEBA FREE DE 15 DÍAS
+// ============================================
+function verificarPruebaFree() {
+  const userPlan = localStorage.getItem('userPlan') || 'free';
+  
+  // Solo aplicar a usuarios FREE
+  if (userPlan !== 'free') return true;
+  
+  // Obtener fecha de inicio de prueba
+  let freeTrialStart = localStorage.getItem('freeTrialStart');
+  
+  // Si no hay fecha registrada, crearla AHORA
+  if (!freeTrialStart) {
+    freeTrialStart = new Date().toISOString();
+    localStorage.setItem('freeTrialStart', freeTrialStart);
+    console.log('📅 Inicio de prueba free registrado:', new Date(freeTrialStart).toLocaleDateString());
+    return true;
+  }
+  
+  // Calcular días transcurridos
+  const startDate = new Date(freeTrialStart);
+  const today = new Date();
+  const diffTime = today - startDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const diasRestantes = 15 - diffDays;
+  
+  console.log(`📅 Días de prueba: ${diffDays}/15 transcurridos. Restan: ${diasRestantes} días`);
+  
+  // Si pasaron más de 15 días, bloquear
+  if (diffDays > 15) {
+    console.warn('⚠️ PERÍODO DE PRUEBA FREE EXPIRADO');
+    return false;
+  }
+  
+  // Mostrar advertencia si quedan pocos días
+  if (diasRestantes <= 3 && diasRestantes > 0) {
+    console.warn(`⚠️ Tu prueba free termina en ${diasRestantes} días. Actualiza a Professional.`);
+    if (typeof showNotification === 'function') {
+      showNotification(`⚠️ Tu prueba free termina en ${diasRestantes} días. Actualiza a Professional para continuar.`, 'warning');
+    }
+  }
+  
+  return true;
+}
 
+
+
+
+
+// ============================================
+// 📅 MOSTRAR DÍAS RESTANTES DE PRUEBA FREE
+// ============================================
+function mostrarDiasRestantesFree() {
+  const userPlan = localStorage.getItem('userPlan') || 'free';
+  
+  if (userPlan !== 'free') return;
+  
+  const freeTrialStart = localStorage.getItem('freeTrialStart');
+  if (!freeTrialStart) return;
+  
+  const startDate = new Date(freeTrialStart);
+  const today = new Date();
+  const diffDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+  const diasRestantes = Math.max(0, 15 - diffDays);
+  
+  // Buscar o crear elemento para mostrar días restantes
+  let contadorElement = document.getElementById('freeTrialCounter');
+  if (!contadorElement) {
+    contadorElement = document.createElement('div');
+    contadorElement.id = 'freeTrialCounter';
+    contadorElement.style.cssText = `
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 9999;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+    `;
+    contadorElement.onclick = () => {
+      alert(`🔒 Plan FREE\n━━━━━━━━━━━━━━━━━━━━━━\n📅 Período de prueba: 15 días\n⏳ Días restantes: ${diasRestantes}\n💡 Actualiza a Professional para continuar usando el sistema sin límites.`);
+    };
+    document.body.appendChild(contadorElement);
+  }
+  
+  if (diasRestantes <= 0) {
+    contadorElement.innerHTML = '⚠️ PRUEBA EXPIRADA - ACTUALIZA';
+    contadorElement.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+    contadorElement.style.animation = 'pulse 1s infinite';
+  } else {
+    contadorElement.innerHTML = `🔒 PRUEBA FREE: ${diasRestantes} días restantes`;
+    contadorElement.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+  }
+}
+
+// Agregar animación pulse si no existe
+if (!document.querySelector('#pulseAnimation')) {
+  const style = document.createElement('style');
+  style.id = 'pulseAnimation';
+  style.textContent = `
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
+}
