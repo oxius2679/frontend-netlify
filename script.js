@@ -14753,7 +14753,7 @@ function showLicensesView() {
             POPULAR
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€19.99/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€12/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
             <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
@@ -14775,7 +14775,7 @@ function showLicensesView() {
             EMPRESAS
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€39.99/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€19/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
             <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
