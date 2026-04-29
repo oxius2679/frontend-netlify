@@ -16059,6 +16059,55 @@ const syncChannel = new BroadcastChannel('task_sync');
 
 
 
+
+// ============================================
+// 🔥 BOTÓN FLOTANTE DE ACTUALIZACIÓN (EJECUCIÓN SEGURA)
+// ============================================
+(function crearBotonActualizarSeguro() {
+  // Función que crea el botón
+  function crearBoton() {
+    if (document.getElementById('btnActualizarFlotante')) return;
+    
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan !== 'free') return;
+    
+    const btn = document.createElement('button');
+    btn.id = 'btnActualizarFlotante';
+    btn.innerHTML = '💎 ACTUALIZAR PLAN';
+    btn.onclick = () => {
+      if (typeof showLicensesView === 'function') {
+        showLicensesView();
+      } else {
+        console.error('showLicensesView no disponible');
+      }
+    };
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 24px;border-radius:50px;font-weight:bold;border:none;cursor:pointer;z-index:999999;box-shadow:0 4px 15px rgba(245,158,11,0.4);font-size:14px;';
+    document.body.appendChild(btn);
+    console.log('✅ Botón flotante de actualización creado (desde inicio)');
+  }
+  
+  // Intentar crear inmediatamente
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', crearBoton);
+  } else {
+    // Si el DOM ya está listo, crear después de un pequeño delay
+    setTimeout(crearBoton, 1000);
+  }
+  
+  // También intentar cada 3 segundos por si acaso (hasta que aparezca)
+  const interval = setInterval(() => {
+    if (document.getElementById('btnActualizarFlotante')) {
+      clearInterval(interval);
+    } else {
+      crearBoton();
+    }
+  }, 3000);
+})();
+
+
+
+
+
 // ================= TASK STATUS CON HISTORIA =================
 
 
@@ -62238,6 +62287,12 @@ if (!document.querySelector('#pulseAnimation')) {
   `;
   document.head.appendChild(style);
 }
+
+
+
+
+
+
 
 
 
