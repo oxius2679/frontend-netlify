@@ -1,0 +1,64 @@
+document.addEventListener('DOMContentLoaded', function() {
+  // Eliminar cualquier estilo anterior para evitar duplicados
+  const oldStyle = document.querySelector('style[data-theme="dark-final"]');
+  if (oldStyle) oldStyle.remove();
+
+  const style = document.createElement('style');
+  style.setAttribute('data-theme', 'dark-final');
+  style.textContent = `
+    /* Fondo global */
+    html, body {
+      background: #000000 !important;
+      background-color: #000000 !important;
+    }
+
+    /* Header */
+    header {
+      background: #000000 !important;
+      background-image: none !important;
+    }
+
+    /* Todas las vistas activas fondo negro */
+    .view-content.active {
+      background: #000000 !important;
+    }
+
+    /* Columnas Kanban fondo negro (forzado) */
+    .column, .kanban-column,
+    #pendingTasks, #inProgressTasks, #completedTasks, #overdueTasks {
+      background: #000000 !important;
+    }
+
+    /* Títulos de columnas blancos */
+    .column h3, .kanban-column h3,
+    #pendingTasks h3, #inProgressTasks h3,
+    #completedTasks h3, #overdueTasks h3 {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 1px !important;
+    }
+
+    /* Contenedores internos con fondo #1a1a3a */
+    .task-card, .filter-bar, .tasks, .modal-content,
+    .fc, .fc .fc-view, .gantt-container, .card, .section,
+    .time-allocation-table-container, .time-allocation-table,
+    .task-data-row, .task-name-cell, .date-cell, .status-cell,
+    .assignee-cell, .priority-cell, .controls, .tab-container,
+    .dashboard, .metric, .progress-bar, .progress-fill,
+    aside, .sidebar, .side-menu {
+      background: #1a1a3a !important;
+      background-color: #1a1a3a !important;
+      border-color: #2d2d5f !important;
+      color: #e2e8f0 !important;
+    }
+
+    /* Badges de estado */
+    .status-pending { background: #f1c40f !important; color: #2c3e50 !important; }
+    .status-inProgress { background: #008090 !important; color: white !important; }
+    .status-completed { background: #2ecc71 !important; color: white !important; }
+    .status-overdue { background: #e74c3c !important; color: white !important; }
+  `;
+  document.head.appendChild(style);
+  console.log('✅ Estilos oscuros aplicados correctamente');
+});

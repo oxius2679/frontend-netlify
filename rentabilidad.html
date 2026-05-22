@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Rentabilidad de Proyectos</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .project-selector {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .project-selector select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        .upload-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .upload-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+        }
+        
+        .positive {
+            color: var(--success);
+        }
+        
+        .negative {
+            color: var(--danger);
+        }
+        
+        .neutral {
+            color: var(--warning);
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        .details-section {
+            margin-top: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .status-completed {
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .status-delayed {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            color: var(--warning);
+            font-weight: bold;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .risk-high {
+            background-color: var(--danger);
+        }
+        
+        .risk-medium {
+            background-color: var(--warning);
+        }
+        
+        .risk-low {
+            background-color: var(--success);
+        }
+        
+        .risk-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .risk-high-item {
+            border-left-color: var(--danger);
+        }
+        
+        .risk-medium-item {
+            border-left-color: var(--warning);
+        }
+        
+        .risk-low-item {
+            border-left-color: var(--success);
+        }
+        
+        .risk-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .risk-description {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Sistema de Rentabilidad de Proyectos</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="project-selector">
+                <label for="project-select">Seleccionar Proyecto:</label>
+                <select id="project-select">
+                    <option value="">Todos los proyectos</option>
+                </select>
+            </div>
+            
+            <div class="upload-section">
+                <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                <button class="upload-btn" id="upload-btn">Cargar Nuevo Excel</button>
+            </div>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="dashboard">Dashboard</div>
+                <div class="tab" data-tab="activities">Actividades</div>
+                <div class="tab" data-tab="risks">Análisis de Riesgos</div>
+            </div>
+            
+            <div class="tab-content active" id="dashboard-tab">
+                <div class="dashboard">
+                    <div class="card">
+                        <h3>Resumen Financiero</h3>
+                        <div class="metric">
+                            <span>Presupuesto Total:</span>
+                            <span class="metric-value" id="total-budget">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Gasto Total:</span>
+                            <span class="metric-value" id="total-expense">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Rentabilidad:</span>
+                            <span class="metric-value" id="profitability">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Porcentaje de Rentabilidad:</span>
+                            <span class="metric-value" id="profit-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="profit-bar" style="width: 0%; background-color: var(--success);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Análisis de Tiempos</h3>
+                        <div class="metric">
+                            <span>Horas Programadas:</span>
+                            <span class="metric-value" id="scheduled-hours">0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Horas Utilizadas:</span>
+                            <span class="metric-value" id="used-hours">0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Eficiencia de Tiempo:</span>
+                            <span class="metric-value" id="time-efficiency">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="time-bar" style="width: 0%; background-color: var(--secondary);"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Estado del Proyecto</h3>
+                        <div class="metric">
+                            <span>Actividades Completadas:</span>
+                            <span class="metric-value" id="completed-activities">0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Actividades Totales:</span>
+                            <span class="metric-value" id="total-activities">0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Porcentaje de Avance:</span>
+                            <span class="metric-value" id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-bar" style="width: 0%; background-color: var(--warning);"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="details-section">
+                    <div class="card">
+                        <h3>Distribución de Costos por Proyecto</h3>
+                        <div class="chart-container">
+                            <canvas id="cost-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="activities-tab">
+                <div class="card">
+                    <h3>Detalles de Actividades - TODAS LAS ACTIVIDADES</h3>
+                    <table id="activities-table">
+                        <thead>
+                            <tr>
+                                <th>Proyecto</th>
+                                <th>Acción</th>
+                                <th>Actividad</th>
+                                <th>Coordinador</th>
+                                <th>Horas Prog.</th>
+                                <th>Horas Usadas</th>
+                                <th>Horas Restantes</th>
+                                <th>Presupuesto</th>
+                                <th>Gasto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Los datos se llenarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="risks-tab">
+                <div class="dashboard">
+                    <div class="card">
+                        <h3>Indicadores de Riesgo</h3>
+                        <div class="metric">
+                            <span><span class="risk-indicator risk-high"></span>Riesgos Altos:</span>
+                            <span class="metric-value negative" id="high-risks">0</span>
+                        </div>
+                        <div class="metric">
+                            <span><span class="risk-indicator risk-medium"></span>Riesgos Medios:</span>
+                            <span class="metric-value neutral" id="medium-risks">0</span>
+                        </div>
+                        <div class="metric">
+                            <span><span class="risk-indicator risk-low"></span>Riesgos Bajos:</span>
+                            <span class="metric-value positive" id="low-risks">0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Sobrecosto Total:</span>
+                            <span class="metric-value negative" id="total-overcost">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Horas Extra:</span>
+                            <span class="metric-value negative" id="total-extra-hours">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Impacto en Rentabilidad</h3>
+                        <div class="metric">
+                            <span>Meta de Rentabilidad (15%):</span>
+                            <span class="metric-value" id="expected-profit">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Rentabilidad Actual:</span>
+                            <span class="metric-value" id="current-profit">$0</span>
+                        </div>
+                        <div class="metric">
+                            <span>Desviación de Meta:</span>
+                            <span class="metric-value" id="risk-loss">$0</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="risk-impact-bar" style="width: 0%; background-color: var(--danger);"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="details-section">
+                    <div class="card">
+                        <h3>Actividades con Mayor Riesgo</h3>
+                        <div id="high-risk-activities">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Actividades con Problemas</h3>
+                        <table id="delayed-activities-table">
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Acción</th>
+                                    <th>Actividad</th>
+                                    <th>Coordinador</th>
+                                    <th>Días de Retraso</th>
+                                    <th>Horas Restantes</th>
+                                    <th>Sobrecosto</th>
+                                    <th>Nivel de Riesgo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Los datos se llenarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir las librerías necesarias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Variables globales
+        let projectData = [];
+        let currentProject = "";
+        let costChart = null;
+
+        // FUNCIONES DE NORMALIZACIÓN
+        function normalizeStatus(status) {
+            if (!status) return 'en progreso';
+            
+            const statusLower = status.toString().toLowerCase().trim();
+            
+            if (statusLower.includes('complet') || 
+                statusLower === 'completado' || 
+                statusLower === 'terminado' ||
+                statusLower === 'finalizado' ||
+                statusLower === 'concluido' ||
+                statusLower === 'hecho' ||
+                statusLower === 'realizado') {
+                return 'completado';
+            } 
+            else if (statusLower.includes('progreso') || 
+                     statusLower === 'en progreso' || 
+                     statusLower === 'pendiente' ||
+                     statusLower === 'en curso' ||
+                     statusLower === 'en proceso' ||
+                     statusLower === 'en desarrollo') {
+                return 'en progreso';
+            } 
+            else if (statusLower.includes('retras') || 
+                     statusLower === 'retrasado' ||
+                     statusLower === 'atrasado') {
+                return 'retrasado';
+            } 
+            else {
+                return 'en progreso';
+            }
+        }
+
+        function calculateRemainingHours(item) {
+            const status = normalizeStatus(item.status);
+            
+            if (status !== 'completado' && item.horasRestantes !== undefined && item.horasRestantes !== null) {
+                const horasFromExcel = parseFloat(item.horasRestantes);
+                if (!isNaN(horasFromExcel)) {
+                    return horasFromExcel;
+                }
+            }
+            
+            if (status === 'completado') return 0;
+            
+            const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+            const horasUsadas = parseFloat(item.horasUsadas) || 0;
+            
+            if (horasProgramadas === 0 && horasUsadas === 0) return 0;
+            
+            if (horasUsadas >= horasProgramadas) return 0;
+            
+            return Math.max(0, horasProgramadas - horasUsadas);
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('project-select').addEventListener('change', updateDashboard);
+            document.getElementById('upload-btn').addEventListener('click', triggerFileUpload);
+            document.getElementById('file-input').addEventListener('change', handleFileUpload);
+            
+            setupTabs();
+        });
+
+        // Configurar sistema de pestañas
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        // Actualizar el dashboard según el proyecto seleccionado
+        function updateDashboard() {
+            if (projectData.length === 0) {
+                document.querySelector('#activities-table tbody').innerHTML = 
+                    '<tr><td colspan="10" style="text-align: center;">No hay datos cargados. Por favor, carga un archivo Excel.</td></tr>';
+                return;
+            }
+
+            currentProject = document.getElementById('project-select').value;
+            const filteredData = currentProject ? 
+                projectData.filter(item => item.proyecto === currentProject) : 
+                projectData;
+            
+            const financialMetrics = calculateFinancialMetrics(filteredData);
+            const timeMetrics = calculateTimeMetrics(filteredData);
+            const progressMetrics = calculateProgressMetrics(filteredData);
+            const riskMetrics = calculateRiskMetrics(filteredData);
+            
+            updateFinancialMetrics(financialMetrics);
+            updateTimeMetrics(timeMetrics);
+            updateProgressMetrics(progressMetrics);
+            updateActivitiesTable(filteredData);
+            updateCostChart(filteredData);
+            updateRiskMetrics(riskMetrics, filteredData);
+        }
+
+        // Calcular métricas financieras
+        function calculateFinancialMetrics(data) {
+            const totalBudget = data.reduce((sum, item) => sum + (parseFloat(item.presupuesto) || 0), 0);
+            const totalExpense = data.reduce((sum, item) => sum + (parseFloat(item.gasto) || 0), 0);
+            const profitability = totalBudget - totalExpense;
+            const profitPercentage = totalBudget > 0 ? (profitability / totalBudget) * 100 : 0;
+            
+            return {
+                totalBudget,
+                totalExpense,
+                profitability,
+                profitPercentage
+            };
+        }
+
+        // Calcular métricas de tiempo
+        function calculateTimeMetrics(data) {
+            const scheduledHours = data.reduce((sum, item) => sum + (parseFloat(item.horasProgramadas) || 0), 0);
+            const usedHours = data.reduce((sum, item) => sum + (parseFloat(item.horasUsadas) || 0), 0);
+            const remainingHours = data.reduce((sum, item) => sum + (parseFloat(item.horasRestantes) || 0), 0);
+            const timeEfficiency = scheduledHours > 0 ? ((scheduledHours - usedHours) / scheduledHours) * 100 : 0;
+            
+            return {
+                scheduledHours,
+                usedHours,
+                remainingHours,
+                timeEfficiency
+            };
+        }
+
+        // Calcular métricas de progreso
+        function calculateProgressMetrics(data) {
+            const completedActivities = data.filter(item => normalizeStatus(item.status) === 'completado').length;
+            const delayedActivities = data.filter(item => normalizeStatus(item.status) === 'retrasado').length;
+            const totalActivities = data.length;
+            const progressPercentage = totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0;
+            
+            return {
+                completedActivities,
+                delayedActivities,
+                totalActivities,
+                progressPercentage
+            };
+        }
+
+        // Actualizar métricas financieras en la UI
+        function updateFinancialMetrics(metrics) {
+            document.getElementById('total-budget').textContent = `$${metrics.totalBudget.toFixed(2)}`;
+            document.getElementById('total-expense').textContent = `$${metrics.totalExpense.toFixed(2)}`;
+            
+            const profitabilityElement = document.getElementById('profitability');
+            profitabilityElement.textContent = `$${metrics.profitability.toFixed(2)}`;
+            profitabilityElement.className = `metric-value ${metrics.profitability >= 0 ? 'positive' : 'negative'}`;
+            
+            const profitPercentageElement = document.getElementById('profit-percentage');
+            profitPercentageElement.textContent = `${metrics.profitPercentage.toFixed(1)}%`;
+            profitPercentageElement.className = `metric-value ${metrics.profitPercentage >= 0 ? 'positive' : 'negative'}`;
+            
+            const profitBar = document.getElementById('profit-bar');
+            if (metrics.profitPercentage >= 0) {
+                profitBar.style.width = `${Math.min(metrics.profitPercentage, 100)}%`;
+                profitBar.style.backgroundColor = 'var(--success)';
+            } else {
+                profitBar.style.width = `${Math.min(Math.abs(metrics.profitPercentage), 100)}%`;
+                profitBar.style.backgroundColor = 'var(--danger)';
+            }
+        }
+
+        // Actualizar métricas de tiempo en la UI
+        function updateTimeMetrics(metrics) {
+            document.getElementById('scheduled-hours').textContent = metrics.scheduledHours.toFixed(1);
+            document.getElementById('used-hours').textContent = metrics.usedHours.toFixed(1);
+            
+            const timeEfficiencyElement = document.getElementById('time-efficiency');
+            timeEfficiencyElement.textContent = `${metrics.timeEfficiency.toFixed(1)}%`;
+            timeEfficiencyElement.className = `metric-value ${metrics.timeEfficiency >= 0 ? 'positive' : 'negative'}`;
+            
+            const timeBar = document.getElementById('time-bar');
+            if (metrics.timeEfficiency >= 0) {
+                timeBar.style.width = `${Math.min(metrics.timeEfficiency, 100)}%`;
+                timeBar.style.backgroundColor = 'var(--success)';
+            } else {
+                timeBar.style.width = `${Math.min(Math.abs(metrics.timeEfficiency), 100)}%`;
+                timeBar.style.backgroundColor = 'var(--danger)';
+            }
+        }
+
+        // Actualizar métricas de progreso en la UI
+        function updateProgressMetrics(metrics) {
+            document.getElementById('completed-activities').textContent = metrics.completedActivities;
+            document.getElementById('total-activities').textContent = metrics.totalActivities;
+            
+            const progressPercentageElement = document.getElementById('progress-percentage');
+            progressPercentageElement.textContent = `${metrics.progressPercentage.toFixed(1)}%`;
+            
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = `${metrics.progressPercentage}%`;
+            
+            if (metrics.progressPercentage >= 80) {
+                progressBar.style.backgroundColor = 'var(--success)';
+            } else if (metrics.progressPercentage >= 50) {
+                progressBar.style.backgroundColor = 'var(--warning)';
+            } else {
+                progressBar.style.backgroundColor = 'var(--danger)';
+            }
+        }
+
+        // CALCULAR MÉTRICAS DE RIESGO - CORREGIDO
+        function calculateRiskMetrics(data) {
+            const normalizedData = data.map(item => ({
+                ...item,
+                status: normalizeStatus(item.status),
+                horasRestantes: calculateRemainingHours(item)
+            }));
+            
+            const totalBudget = normalizedData.reduce((sum, item) => sum + (parseFloat(item.presupuesto) || 0), 0);
+            const totalExpense = normalizedData.reduce((sum, item) => sum + (parseFloat(item.gasto) || 0), 0);
+            const currentProfit = totalBudget - totalExpense;
+            
+            // CÁLCULO CORRECTO DE HORAS EXTRA
+            const totalExtraHours = normalizedData.reduce((sum, item) => {
+                const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+                const horasUsadas = parseFloat(item.horasUsadas) || 0;
+                
+                // Solo contar si se usaron MÁS horas de las programadas
+                if (horasUsadas > horasProgramadas) {
+                    return sum + (horasUsadas - horasProgramadas);
+                }
+                return sum;
+            }, 0);
+
+            const expectedProfit = totalBudget * 0.15;
+            
+            const riskyActivities = normalizedData.filter(item => {
+                const presupuesto = parseFloat(item.presupuesto) || 0;
+                const gasto = parseFloat(item.gasto) || 0;
+                
+                if (item.status === 'completado') {
+                    const costOverrun = presupuesto > 0 ? 
+                        ((gasto - presupuesto) / presupuesto) * 100 : 999;
+                    return costOverrun > 10;
+                }
+                
+                const costOverrun = presupuesto > 0 ? 
+                    ((gasto - presupuesto) / presupuesto) * 100 : 999;
+                if (costOverrun > 5) return true;
+                
+                const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+                const horasUsadas = parseFloat(item.horasUsadas) || 0;
+                const hourOverrun = horasProgramadas > 0 ? 
+                    ((horasUsadas - horasProgramadas) / horasProgramadas) * 100 : 999;
+                if (hourOverrun > 10) return true;
+                
+                if (presupuesto === 0 && gasto > 0) return true;
+                
+                if (item.horasRestantes > 0) return true;
+                
+                if (item.status === 'retrasado') return true;
+                
+                return false;
+            });
+            
+            const highRisks = riskyActivities.filter(item => {
+                const presupuesto = parseFloat(item.presupuesto) || 0;
+                const gasto = parseFloat(item.gasto) || 0;
+                const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+                const horasUsadas = parseFloat(item.horasUsadas) || 0;
+                
+                const costOverrun = presupuesto > 0 ? 
+                    ((gasto - presupuesto) / presupuesto) * 100 : 999;
+                const hourOverrun = horasProgramadas > 0 ? 
+                    ((horasUsadas - horasProgramadas) / horasProgramadas) * 100 : 999;
+                const overcost = Math.max(0, gasto - presupuesto);
+                
+                return costOverrun > 20 || 
+                       hourOverrun > 30 || 
+                       overcost > 50 ||
+                       (presupuesto === 0 && gasto > 100) ||
+                       item.status === 'retrasado';
+            });
+            
+            const mediumRisks = riskyActivities.filter(item => {
+                if (highRisks.includes(item)) return false;
+                
+                const presupuesto = parseFloat(item.presupuesto) || 0;
+                const gasto = parseFloat(item.gasto) || 0;
+                const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+                const horasUsadas = parseFloat(item.horasUsadas) || 0;
+                
+                const costOverrun = presupuesto > 0 ? 
+                    ((gasto - presupuesto) / presupuesto) * 100 : 999;
+                const hourOverrun = horasProgramadas > 0 ? 
+                    ((horasUsadas - horasProgramadas) / horasProgramadas) * 100 : 999;
+                const overcost = Math.max(0, gasto - presupuesto);
+                
+                return (costOverrun > 10 && costOverrun <= 20) || 
+                       (hourOverrun > 15 && hourOverrun <= 30) ||
+                       (overcost > 10 && overcost <= 50) ||
+                       (presupuesto === 0 && gasto > 0);
+            });
+            
+            const lowRisks = riskyActivities.filter(item => {
+                if (highRisks.includes(item) || mediumRisks.includes(item)) return false;
+                
+                const presupuesto = parseFloat(item.presupuesto) || 0;
+                const gasto = parseFloat(item.gasto) || 0;
+                const horasProgramadas = parseFloat(item.horasProgramadas) || 0;
+                const horasUsadas = parseFloat(item.horasUsadas) || 0;
+                
+                const costOverrun = presupuesto > 0 ? 
+                    ((gasto - presupuesto) / presupuesto) * 100 : 999;
+                const hourOverrun = horasProgramadas > 0 ? 
+                    ((horasUsadas - horasProgramadas) / horasProgramadas) * 100 : 999;
+                
+                return (costOverrun > 5 && costOverrun <= 10) || 
+                       (hourOverrun > 10 && hourOverrun <= 15) ||
+                       item.horasRestantes > 0;
+            });
+            
+            const totalOvercost = normalizedData.reduce((sum, item) => {
+                const presupuesto = parseFloat(item.presupuesto) || 0;
+                const gasto = parseFloat(item.gasto) || 0;
+                return sum + Math.max(0, gasto - presupuesto);
+            }, 0);
+            
+            const deviationFromTarget = currentProfit - expectedProfit;
+            
+            return {
+                highRisks: highRisks.length,
+                mediumRisks: mediumRisks.length,
+                lowRisks: lowRisks.length,
+                totalOvercost,
+                totalExtraHours, // INCLUIR HORAS EXTRA CORREGIDAS
+                expectedProfit,
+                currentProfit,
+                deviationFromTarget,
+                riskyActivities,
+                highRisksList: highRisks,
+                mediumRisksList: mediumRisks,
+                lowRisksList: lowRisks
+            };
+        }
+
+        // Calcular días de retraso
+        function calculateDelayDays(activity) {
+            const status = normalizeStatus(activity.status);
+            
+            if (status === 'completado') return 0;
+            
+            if (!activity.fin) return 0;
+            
+            const plannedEnd = new Date(activity.fin);
+            const today = new Date();
+            
+            if (plannedEnd < today) {
+                const diffTime = today - plannedEnd;
+                return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+            }
+            
+            return 0;
+        }
+
+        // Actualizar tabla de actividades
+        function updateActivitiesTable(data) {
+            const tableBody = document.querySelector('#activities-table tbody');
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No hay datos para mostrar</td></tr>';
+                return;
+            }
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const normalizedStatus = normalizeStatus(item.status);
+                const horasRestantes = calculateRemainingHours(item);
+                
+                const hourEfficiency = item.horasProgramadas > 0 ? 
+                    ((item.horasProgramadas - item.horasUsadas) / item.horasProgramadas) * 100 : 0;
+                
+                const costEfficiency = item.presupuesto > 0 ? 
+                    ((item.presupuesto - item.gasto) / item.presupuesto) * 100 : 0;
+                
+                let statusClass = 'status-completed';
+                if (normalizedStatus === 'retrasado') {
+                    statusClass = 'status-delayed';
+                } else if (normalizedStatus === 'en progreso') {
+                    statusClass = 'status-pending';
+                }
+                
+                row.innerHTML = `
+                    <td>${item.proyecto}</td>
+                    <td>${item.accion}</td>
+                    <td>${item.actividad}</td>
+                    <td>${item.coordinador}</td>
+                    <td>${item.horasProgramadas || 0}</td>
+                    <td>
+                        ${item.horasUsadas || 0}
+                        ${hourEfficiency >= 0 ? 
+                            `<span class="positive">(-${hourEfficiency.toFixed(1)}%)</span>` : 
+                            `<span class="negative">(+${Math.abs(hourEfficiency).toFixed(1)}%)</span>`}
+                    </td>
+                    <td>${horasRestantes}</td>
+                    <td>$${(item.presupuesto || 0).toFixed(2)}</td>
+                    <td>
+                        $${(item.gasto || 0).toFixed(2)}
+                        ${costEfficiency >= 0 ? 
+                            `<span class="positive">(-${costEfficiency.toFixed(1)}%)</span>` : 
+                            `<span class="negative">(+${Math.abs(costEfficiency).toFixed(1)}%)</span>`}
+                    </td>
+                    <td class="${statusClass}">${normalizedStatus}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // ACTUALIZAR MÉTRICAS DE RIESGO - CORREGIDO
+        function updateRiskMetrics(metrics, data) {
+            document.getElementById('high-risks').textContent = metrics.highRisks;
+            document.getElementById('medium-risks').textContent = metrics.mediumRisks;
+            document.getElementById('low-risks').textContent = metrics.lowRisks;
+            document.getElementById('total-overcost').textContent = `$${metrics.totalOvercost.toFixed(2)}`;
+            
+            // MOSTRAR HORAS EXTRA CORREGIDAS
+            const horasExtraElement = document.getElementById('total-extra-hours');
+            horasExtraElement.textContent = metrics.totalExtraHours.toFixed(1);
+            horasExtraElement.className = `metric-value ${metrics.totalExtraHours > 0 ? 'negative' : 'positive'}`;
+            
+            document.getElementById('expected-profit').textContent = `$${metrics.expectedProfit.toFixed(2)}`;
+            document.getElementById('current-profit').textContent = `$${metrics.currentProfit.toFixed(2)}`;
+            
+            const riskLossElement = document.getElementById('risk-loss');
+            if (metrics.deviationFromTarget >= 0) {
+                riskLossElement.textContent = `+$${metrics.deviationFromTarget.toFixed(2)}`;
+                riskLossElement.className = 'metric-value positive';
+            } else {
+                riskLossElement.textContent = `-$${Math.abs(metrics.deviationFromTarget).toFixed(2)}`;
+                riskLossElement.className = 'metric-value negative';
+            }
+            
+            const riskImpactBar = document.getElementById('risk-impact-bar');
+            const achievementPercentage = metrics.expectedProfit > 0 ? 
+                (metrics.currentProfit / metrics.expectedProfit) * 100 : 0;
+            riskImpactBar.style.width = `${Math.min(achievementPercentage, 100)}%`;
+            riskImpactBar.style.backgroundColor = achievementPercentage >= 100 ? 'var(--success)' : 
+                                           achievementPercentage >= 80 ? 'var(--warning)' : 'var(--danger)';
+            
+            updateHighRiskActivities(metrics.highRisksList);
+            updateDelayedActivitiesTable(metrics.riskyActivities);
+        }
+
+        // Actualizar lista de actividades de alto riesgo
+        function updateHighRiskActivities(highRiskActivities) {
+            const container = document.getElementById('high-risk-activities');
+            container.innerHTML = '';
+            
+            if (highRiskActivities.length === 0) {
+                container.innerHTML = '<p>No hay actividades de alto riesgo identificadas.</p>';
+                return;
+            }
+            
+            highRiskActivities.forEach(activity => {
+                const costOverrun = activity.presupuesto > 0 ? 
+                    ((activity.gasto - activity.presupuesto) / activity.presupuesto) * 100 : 999;
+                const hourOverrun = activity.horasProgramadas > 0 ? 
+                    ((activity.horasUsadas - activity.horasProgramadas) / activity.horasProgramadas) * 100 : 999;
+                
+                const riskItem = document.createElement('div');
+                riskItem.className = 'risk-item risk-high-item';
+                
+                riskItem.innerHTML = `
+                    <div class="risk-title">${activity.actividad}</div>
+                    <div class="risk-description">
+                        <strong>Proyecto:</strong> ${activity.proyecto} | 
+                        <strong>Acción:</strong> ${activity.accion} | 
+                        <strong>Coordinador:</strong> ${activity.coordinador} | 
+                        <strong>Sobrecosto:</strong> ${costOverrun > 100 ? '∞' : costOverrun.toFixed(1)}% | 
+                        <strong>Horas extra:</strong> ${hourOverrun > 100 ? '∞' : hourOverrun.toFixed(1)}% | 
+                        <strong>Horas restantes:</strong> ${activity.horasRestantes} | 
+                        <strong>Estado:</strong> ${activity.status}
+                    </div>
+                `;
+                
+                container.appendChild(riskItem);
+            });
+        }
+
+        // Actualizar tabla de actividades con problemas
+        function updateDelayedActivitiesTable(riskyActivities) {
+            const tableBody = document.querySelector('#delayed-activities-table tbody');
+            tableBody.innerHTML = '';
+            
+            if (riskyActivities.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="8" style="text-align: center;">No hay actividades con problemas identificados.</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            riskyActivities.sort((a, b) => {
+                const overcostA = Math.max(0, (a.gasto || 0) - (a.presupuesto || 0));
+                const overcostB = Math.max(0, (b.gasto || 0) - (b.presupuesto || 0));
+                return overcostB - overcostA;
+            });
+            
+            riskyActivities.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const delayDays = calculateDelayDays(item);
+                const overcost = Math.max(0, (item.gasto || 0) - (item.presupuesto || 0));
+                const overcostPercentage = item.presupuesto > 0 ? 
+                    (overcost / item.presupuesto) * 100 : overcost > 0 ? 999 : 0;
+                
+                const hourOverrun = item.horasProgramadas > 0 ? 
+                    ((item.horasUsadas - item.horasProgramadas) / item.horasProgramadas) * 100 : 
+                    item.horasUsadas > 0 ? 999 : 0;
+                
+                // Determinar nivel de riesgo
+                let riskLevel = "Bajo";
+                let riskClass = "risk-low";
+                
+                if (overcostPercentage > 20 || hourOverrun > 30 || overcost > 50 || delayDays > 7) {
+                    riskLevel = "Alto";
+                    riskClass = "risk-high";
+                } else if (overcostPercentage > 10 || hourOverrun > 15 || overcost > 10 || delayDays > 3) {
+                    riskLevel = "Medio";
+                    riskClass = "risk-medium";
+                }
+                
+                row.innerHTML = `
+                    <td>${item.proyecto}</td>
+                    <td>${item.accion}</td>
+                    <td>${item.actividad}</td>
+                    <td>${item.coordinador}</td>
+                    <td>${delayDays}</td>
+                    <td>${item.horasRestantes}</td>
+                    <td class="negative">$${overcost.toFixed(2)} ${overcostPercentage > 0 ? `(${overcostPercentage > 100 ? '∞' : overcostPercentage.toFixed(1)}%)` : ''}</td>
+                    <td><span class="risk-indicator ${riskClass}"></span> ${riskLevel}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Actualizar gráfico de costos
+        function updateCostChart(data) {
+            const ctx = document.getElementById('cost-chart').getContext('2d');
+            
+            if (costChart) {
+                costChart.destroy();
+            }
+            
+            let labels, budgetData, expenseData;
+            
+            if (!currentProject) {
+                const projects = [...new Set(data.map(item => item.proyecto))];
+                labels = projects;
+                budgetData = projects.map(project => 
+                    data.filter(item => item.proyecto === project)
+                        .reduce((sum, item) => sum + (item.presupuesto || 0), 0)
+                );
+                expenseData = projects.map(project => 
+                    data.filter(item => item.proyecto === project)
+                        .reduce((sum, item) => sum + (item.gasto || 0), 0)
+                );
+            } else {
+                const actions = [...new Set(data.map(item => item.accion))];
+                labels = actions;
+                budgetData = actions.map(action => 
+                    data.filter(item => item.accion === action)
+                        .reduce((sum, item) => sum + (item.presupuesto || 0), 0)
+                );
+                expenseData = actions.map(action => 
+                    data.filter(item => item.accion === action)
+                        .reduce((sum, item) => sum + (item.gasto || 0), 0)
+                );
+            }
+            
+            costChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Presupuesto',
+                            data: budgetData,
+                            backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Gasto Real',
+                            data: expenseData,
+                            backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Monto ($)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: currentProject ? 
+                                `Distribución de Costos por Acción - ${currentProject}` : 
+                                'Distribución de Costos por Proyecto'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Procesar datos de Excel
+        function processExcelData(workbook) {
+            try {
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                if (!jsonData || jsonData.length < 2) {
+                    throw new Error('El archivo no contiene datos válidos');
+                }
+                
+                const headers = jsonData[0];
+                
+                const findColumnIndexFlexible = (possibleNames) => {
+                    for (let name of possibleNames) {
+                        const index = headers.findIndex(header => 
+                            header && header.toString().toLowerCase().trim() === name.toLowerCase().trim()
+                        );
+                        if (index !== -1) return index;
+                    }
+                    
+                    for (let name of possibleNames) {
+                        const index = headers.findIndex(header => 
+                            header && header.toString().toLowerCase().includes(name.toLowerCase())
+                        );
+                        if (index !== -1) return index;
+                    }
+                    return -1;
+                };
+                
+                const proyectoIndex = findColumnIndexFlexible(['Proyecto', 'PROYECTO']);
+                const accionIndex = findColumnIndexFlexible(['Accion', 'Acción', 'ACCION']);
+                const actividadIndex = findColumnIndexFlexible(['Actividad', 'ACTIVIDAD']);
+                const coordinadorIndex = findColumnIndexFlexible(['Coordinador', 'COORDINADOR']);
+                const horasProgramadasIndex = findColumnIndexFlexible(['Horas Programadas', 'HorasProgramadas']);
+                const horasUsadasIndex = findColumnIndexFlexible(['Horas usadas', 'HorasUsadas']);
+                const horasRestantesIndex = findColumnIndexFlexible(['Horas restantes', 'HorasRestantes']);
+                const presupuestoIndex = findColumnIndexFlexible(['Presupuesto', 'PRESUPUESTO']);
+                const gastoIndex = findColumnIndexFlexible(['Gasto', 'GASTO']);
+                const statusIndex = findColumnIndexFlexible(['Status', 'Estado', 'STATUS']);
+                
+                const newProjectData = [];
+                
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (!row || row.length === 0) continue;
+
+                    const getSafeValue = (index, defaultValue = '') => {
+                        if (index === -1 || index >= row.length) return defaultValue;
+                        const value = row[index];
+                        return value !== undefined && value !== null ? value : defaultValue;
+                    };
+
+                    const parseNumber = (value) => {
+                        if (value === undefined || value === null || value === '') return 0;
+                        const strValue = value.toString().trim();
+                        const normalized = strValue.replace(',', '.');
+                        const parsed = parseFloat(normalized);
+                        return isNaN(parsed) ? 0 : parsed;
+                    };
+
+                    const item = {
+                        proyecto: getSafeValue(proyectoIndex, 'Sin proyecto'),
+                        accion: getSafeValue(accionIndex, 'Sin acción'),
+                        actividad: getSafeValue(actividadIndex, 'Sin actividad'),
+                        coordinador: getSafeValue(coordinadorIndex, 'Sin coordinador'),
+                        horasProgramadas: parseNumber(getSafeValue(horasProgramadasIndex)),
+                        horasUsadas: parseNumber(getSafeValue(horasUsadasIndex)),
+                        horasRestantes: parseNumber(getSafeValue(horasRestantesIndex)),
+                        presupuesto: parseNumber(getSafeValue(presupuestoIndex)),
+                        gasto: parseNumber(getSafeValue(gastoIndex)),
+                        status: getSafeValue(statusIndex, 'en progreso')
+                    };
+                    
+                    newProjectData.push(item);
+                }
+                
+                projectData = newProjectData.map(item => ({
+                    ...item,
+                    status: normalizeStatus(item.status),
+                    horasRestantes: calculateRemainingHours(item)
+                }));
+
+                const projectSelect = document.getElementById('project-select');
+                projectSelect.innerHTML = '<option value="">Todos los proyectos</option>';
+                
+                const projects = [...new Set(projectData.map(item => item.proyecto))];
+                projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    projectSelect.appendChild(option);
+                });
+                
+                updateDashboard();
+                
+                alert(`Archivo cargado correctamente. Se procesaron ${newProjectData.length} actividades.`);
+                
+            } catch (error) {
+                console.error('Error procesando el archivo:', error);
+                alert('Error al procesar el archivo: ' + error.message);
+            }
+        }
+
+        // Manejar carga de archivos Excel
+        function triggerFileUpload() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                processExcelData(workbook);
+                document.getElementById('file-input').value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>

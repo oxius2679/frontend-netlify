@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Slack</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a1a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 90%;
+            margin: 40px auto;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .status-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #8b5cf6, #6d28d9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.6);
+        }
+        
+        .btn-secondary {
+            background: #4b5563;
+            box-shadow: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #6b7280;
+            transform: translateY(-2px);
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .warning {
+            color: #f59e0b;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+        
+        .info-text {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        
+        .benefits {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #8b5cf6;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .manual-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 2px solid #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- CARD PRINCIPAL -->
+        <div class="card">
+            <h1>🔔 Configuración de Slack</h1>
+            <p class="subtitle">Conecta tu espacio de trabajo de Slack para recibir notificaciones automáticas de tus proyectos.</p>
+            
+            <div id="slack-status" class="status-box">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Verificando configuración...</span>
+                </div>
+            </div>
+            
+            <button id="connect-slack-btn" class="btn" style="display: none;">
+                🔗 Conectar con Slack
+            </button>
+            
+            <div class="benefits">
+                <h3 style="color: white; margin-bottom: 15px;">📋 ¿Qué recibirás en Slack?</h3>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">📝</span>
+                    <span>Creación de tareas</span>
+                </div>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">✅</span>
+                    <span>Tareas completadas</span>
+                </div>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">🔄</span>
+                    <span>Cambios de estado</span>
+                </div>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">🚀</span>
+                    <span>Nuevos proyectos</span>
+                </div>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">⚠️</span>
+                    <span>Alertas de tareas atrasadas</span>
+                </div>
+                <div class="benefit-item">
+                    <span style="font-size: 20px;">📊</span>
+                    <span>Reportes generados</span>
+                </div>
+            </div>
+            
+            <p class="info-text">
+                Al conectar Slack, autorizas a nuestra aplicación a enviar notificaciones al canal que selecciones. 
+                Puedes desconectar en cualquier momento contactando al administrador.
+            </p>
+        </div>
+        
+        <!-- SECCIÓN MANUAL - PARA PEGAR EL WEBHOOK -->
+        <div class="manual-section">
+            <h3 style="color: #10b981; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <span>📋</span> ¿Ya tienes la URL de Slack?
+            </h3>
+            <p style="color: #94a3b8; margin-bottom: 15px; font-size: 14px;">
+                Si ya tienes la URL del webhook de Slack, pégala aquí y haz clic en guardar.
+            </p>
+            <input type="text" id="manualWebhookUrl" 
+                   placeholder="https://hooks.slack.com/services/..." 
+                   style="width: 100%; padding: 15px; border-radius: 8px; border: 2px solid #10b981; background: #0a0a1a; color: white; margin-bottom: 15px; box-sizing: border-box;">
+            <button id="saveManualWebhookBtn" class="btn" style="background: #10b981;">
+                💾 Guardar Webhook Manualmente
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================
+        // CONFIGURACIÓN DE SLACK - VERSIÓN COMPLETA
+        // ===================================================
+
+        const API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
+
+        // Función para conectar Slack (redirección OAuth)
+        function connectSlack() {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                alert('❌ Debes iniciar sesión primero');
+                window.location.href = '/';
+                return;
+            }
+
+            window.location.href = `https://mi-sistema-proyectos-backend-4.onrender.com/api/slack/install?token=${encodeURIComponent(token)}`;
+        }
+
+        // Función para guardar webhook manualmente usando /api/slack-notify
+        async function saveManualWebhook() {
+            const webhookUrl = document.getElementById('manualWebhookUrl').value.trim();
+            const token = localStorage.getItem('authToken');
+            
+            if (!webhookUrl) {
+                alert('❌ Por favor pega la URL del webhook');
+                return;
+            }
+            
+            if (!webhookUrl.includes('hooks.slack.com')) {
+                alert('❌ La URL no parece válida. Debe contener "hooks.slack.com"');
+                return;
+            }
+            
+            try {
+                // Mostrar estado de carga
+                const btn = document.getElementById('saveManualWebhookBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '🔄 Guardando...';
+                btn.disabled = true;
+
+                // Usar el endpoint que SÍ existe
+                const response = await fetch(`${API_URL}/api/slack-notify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        webhookUrl: webhookUrl,
+                        mensaje: "🔔 Webhook configurado correctamente desde la interfaz",
+                        tipo: "success"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Guardar en localStorage como respaldo
+                    localStorage.setItem('slackWebhook', webhookUrl);
+                    
+                    alert('✅ Webhook guardado correctamente');
+                    document.getElementById('manualWebhookUrl').value = '';
+                    checkSlackStatus(); // Actualizar la vista
+                } else {
+                    alert('❌ Error al guardar: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error de conexión');
+            } finally {
+                // Restaurar botón
+                const btn = document.getElementById('saveManualWebhookBtn');
+                btn.innerHTML = '💾 Guardar Webhook Manualmente';
+                btn.disabled = false;
+            }
+        }
+
+        // Verificar estado de Slack (usando localStorage)
+        async function checkSlackStatus() {
+            const statusDiv = document.getElementById('slack-status');
+            const connectBtn = document.getElementById('connect-slack-btn');
+            
+            const token = localStorage.getItem('authToken');
+            const webhookGuardado = localStorage.getItem('slackWebhook');
+            
+            if (!token) {
+                statusDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <p style="color: #f59e0b; font-size: 16px;">⚠️ Sesión no iniciada</p>
+                        <p style="color: #94a3b8; margin-top: 10px;">Para configurar Slack, primero inicia sesión.</p>
+                        <button onclick="window.location.href='/'" style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                            Ir al inicio
+                        </button>
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+                return;
+            }
+
+            // Verificar primero localStorage (más rápido)
+            if (webhookGuardado) {
+                statusDiv.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                        <h3 style="color: #10b981; margin: 0 0 10px 0;">Slack Conectado</h3>
+                        <p style="color: white; margin: 10px 0;">Webhook guardado localmente</p>
+                        <p style="color: #94a3b8; margin: 5px 0;">Las notificaciones funcionan correctamente</p>
+                        <button onclick="localStorage.removeItem('slackWebhook'); checkSlackStatus();" class="btn-secondary" style="margin-top: 20px;">
+                            Desconectar
+                        </button>
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+                return;
+            }
+
+            // Si no hay en localStorage, intentar con el backend
+            try {
+                const response = await fetch(`${API_URL}/api/slack/webhook`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <p style="color: #ef4444; font-size: 16px;">❌ Sesión expirada</p>
+                            <p style="color: #94a3b8; margin-top: 10px;">Por favor, inicia sesión nuevamente.</p>
+                            <button onclick="window.location.href='/'" style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
+                                Iniciar sesión
+                            </button>
+                        </div>
+                    `;
+                    connectBtn.style.display = 'none';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.configured) {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                            <h3 style="color: #10b981; margin: 0 0 10px 0;">Slack Conectado</h3>
+                            <p style="color: white; margin: 10px 0;">Canal: <strong style="color: #8b5cf6;">${data.channel}</strong></p>
+                            <p style="color: #94a3b8; margin: 5px 0;">Equipo: ${data.teamName}</p>
+                            <button onclick="connectSlack()" class="btn-secondary" style="margin-top: 20px;">
+                                🔄 Reconectar
+                            </button>
+                        </div>
+                    `;
+                    connectBtn.style.display = 'none';
+                } else {
+                    statusDiv.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">⚡</div>
+                            <h3 style="color: #f59e0b; margin: 0 0 10px 0;">Slack no configurado</h3>
+                            <p style="color: #94a3b8;">Usa la sección manual para pegar tu webhook.</p>
+                        </div>
+                    `;
+                    connectBtn.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                // Si hay error, mostrar opción manual
+                statusDiv.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚡</div>
+                        <h3 style="color: #f59e0b; margin: 0 0 10px 0;">Usa la opción manual</h3>
+                        <p style="color: #94a3b8;">Pega tu webhook en la sección verde.</p>
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+            }
+        }
+
+        // Asignar eventos
+        document.getElementById('connect-slack-btn')?.addEventListener('click', connectSlack);
+        document.getElementById('saveManualWebhookBtn')?.addEventListener('click', saveManualWebhook);
+
+        // Verificar parámetros de retorno
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('slack') === 'success') {
+                alert('✅ Slack conectado exitosamente');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                checkSlackStatus();
+            } else if (urlParams.get('slack') === 'error') {
+                alert('❌ Error al conectar Slack. Intenta de nuevo.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                checkSlackStatus();
+            }
+        }
+
+        // Inicializar
+        checkSlackStatus();
+        checkUrlParams();
+
+        // Exponer función global para botones
+        window.goToLogin = function() {
+            window.location.href = '/';
+        };
+    </script>
+</body>
+</html>

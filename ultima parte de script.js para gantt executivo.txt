@@ -1,0 +1,2685 @@
+// ========== GANTT EJECUTIVO COMPLETO CON TODAS LAS MEJORAS ==========
+function createPremiumGanttWithYourData() {
+  console.log('🚀 Creando Gantt ejecutivo premium completo...');
+  
+  if (typeof projects === 'undefined' || !projects || projects.length === 0) {
+    alert('❌ No hay proyectos cargados. Primero crea o importa proyectos.');
+    createSampleProjects();
+    return;
+  }
+  
+  createProjectSelector();
+}
+
+// ========== SELECTOR DE PROYECTOS ==========
+function createProjectSelector() {
+  const selectorContainer = document.createElement('div');
+  selectorContainer.id = 'projectSelectorOverlay';
+  selectorContainer.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    border-radius: 24px;
+    padding: 30px;
+    z-index: 1000000;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    border: 1px solid rgba(52, 152, 219, 0.4);
+    color: white;
+  `;
+  
+  selectorContainer.innerHTML = `
+    <div style="text-align: center; margin-bottom: 25px;">
+      <div style="font-size: 28px; color: #2ecc71; margin-bottom: 10px;">📊</div>
+      <h2 style="margin: 0 0 10px 0; color: white;">Seleccionar Proyecto</h2>
+      <p style="color: #95a5a6; margin: 0;">Elige un proyecto para visualizar en el Gantt</p>
+    </div>
+    
+    <div id="projectListContainer" style="
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 25px;
+    ">
+      ${projects.map((project, index) => `
+        <div class="project-option" data-index="${index}" style="
+          background: ${index === currentProjectIndex ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)'};
+          border: 1px solid ${index === currentProjectIndex ? '#3498db' : 'rgba(255,255,255,0.1)'};
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 10px;
+          cursor: pointer;
+          transition: all 0.3s;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: bold; margin-bottom: 5px; font-size: 16px;">${project.name}</div>
+              <div style="color: #95a5a6; font-size: 13px;">
+                ${project.tasks ? project.tasks.length : 0} tareas • 
+                ${getProjectProgress(project)}% completado
+              </div>
+            </div>
+            <div style="
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              background: ${index === currentProjectIndex ? '#3498db' : 'rgba(255,255,255,0.1)'};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: ${index === currentProjectIndex ? 'white' : 'transparent'};
+            ">
+              ✓
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: flex; gap: 15px; justify-content: center;">
+      <button onclick="closeProjectSelector()" style="
+        padding: 12px 25px;
+        background: rgba(231, 76, 60, 0.2);
+        border: 1px solid #e74c3c;
+        color: #e74c3c;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      ">
+        Cancelar
+      </button>
+      <button onclick="createGanttWithSelectedProject()" id="continueBtn" style="
+        padding: 12px 25px;
+        background: linear-gradient(45deg, #2ecc71, #27ae60);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        flex: 1;
+      ">
+        Continuar al Gantt
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(selectorContainer);
+  
+  document.querySelectorAll('.project-option').forEach(option => {
+    option.addEventListener('click', function() {
+      currentProjectIndex = parseInt(this.getAttribute('data-index'));
+      updateProjectSelector();
+    });
+  });
+}
+
+function closeProjectSelector() {
+  const selector = document.getElementById('projectSelectorOverlay');
+  if (selector) selector.remove();
+}
+
+function createGanttWithSelectedProject() {
+  closeProjectSelector();
+  createCompleteGanttForCurrentProject();
+}
+
+// ========== GANTT COMPLETO CON MENÚ LATERAL ==========
+function createCompleteGanttForCurrentProject() {
+  if (currentProjectIndex >= projects.length) {
+    alert('❌ Proyecto no válido');
+    return;
+  }
+  
+  const yourProject = projects[currentProjectIndex];
+  const yourTasks = yourProject.tasks || [];
+  
+  console.log('📂 Cargando proyecto:', yourProject.name);
+  console.log('📋 Tareas del proyecto:', yourTasks);
+  
+  // TRANSFORMAR DATOS CON FECHA REAL - CORREGIDO EL DÍA DE HOY
+  const executiveTasks = yourTasks.map((task, index) => {
+    let startDay = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (task.startDate) {
+      try {
+        const startDate = new Date(task.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        startDay = Math.floor((startDate - today) / (1000 * 60 * 60 * 24));
+      } catch (e) {
+        startDay = index * 2;
+      }
+    } else {
+      startDay = index * 2;
+    }
+    
+    let duration = 3;
+    if (task.startDate && task.deadline) {
+      try {
+        const start = new Date(task.startDate);
+        const end = new Date(task.deadline);
+        duration = Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
+      } catch (e) {
+        duration = task.estimatedTime ? Math.max(1, Math.ceil(task.estimatedTime / 8)) : 3;
+      }
+    } else if (task.estimatedTime) {
+      duration = Math.max(1, Math.ceil(task.estimatedTime / 8));
+    }
+    
+    const statusColors = {
+      'pending': '#f1c40f',
+      'inProgress': '#3498db', 
+      'completed': '#2ecc71',
+      'overdue': '#e74c3c'
+    };
+    
+    let progress = 0;
+    if (task.status === 'completed') progress = 100;
+    else if (task.timeLogged && task.estimatedTime) {
+      progress = Math.min(100, Math.round((task.timeLogged / task.estimatedTime) * 100));
+    } else if (task.status === 'inProgress') progress = 50;
+    
+    const dependencies = task.dependencies || [];
+    const isCritical = task.priority === 'alta' || task.status === 'overdue';
+    
+    // Asegurar que siempre haya un color
+    const taskColor = statusColors[task.status] || '#95a5a6';
+    
+    return {
+      id: task.id || Date.now() + index,
+      name: task.name || `Tarea ${index + 1}`,
+      progress: progress,
+      duration: duration,
+      startDay: Math.max(0, startDay),
+      color: taskColor,
+      critical: isCritical,
+      dependencies: dependencies,
+      team: task.assignee ? [task.assignee] : ['Sin asignar'],
+      status: task.status || 'pending',
+      priority: task.priority || 'media',
+      estimatedTime: task.estimatedTime || 0,
+      timeLogged: task.timeLogged || 0,
+      originalTask: task,
+      budget: task.estimatedTime ? `$${(task.estimatedTime * 50).toLocaleString()}` : 'No estimado'
+    };
+  });
+  
+  // CALCULAR KPIs
+  const totalTasks = yourTasks.length;
+  const completedTasks = executiveTasks.filter(t => t.status === 'completed').length;
+  const criticalTasks = executiveTasks.filter(t => t.critical).length;
+  const tasksWithDeps = executiveTasks.filter(t => t.dependencies.length > 0).length;
+  const avgProgress = executiveTasks.length > 0 
+    ? Math.round(executiveTasks.reduce((sum, t) => sum + t.progress, 0) / executiveTasks.length)
+    : 0;
+  
+  // FECHA ACTUAL REAL
+  const today = new Date();
+  const todayFormatted = today.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  const container = document.createElement('div');
+  container.id = 'premiumExecutiveGantt';
+  container.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95vw;
+    height: 90vh;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    border-radius: 24px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    border: 1px solid rgba(52, 152, 219, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 999999;
+  `;
+  
+  container.innerHTML = `
+    <!-- HEADER CON TODOS LOS BOTONES ACTIVOS -->
+    <div style="
+      background: linear-gradient(90deg, #0a0a1a, #1a1a3a);
+      padding: 25px 35px;
+      border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    ">
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
+          <div style="
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+          ">
+            📊
+          </div>
+          <div style="flex: 1;">
+            <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;">
+              <span style="font-weight: 700; color: #2ecc71;">${yourProject.name}</span>
+              <span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">- GANTT EXECUTIVE</span>
+            </h2>
+            <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;">
+              <span style="color: #3498db;">📅 ${todayFormatted}</span> • 
+              🔥 ${criticalTasks} críticas • 🔗 ${tasksWithDeps} dependencias • 📊 ${avgProgress}% progreso
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TODOS LOS BOTONES ACTIVOS -->
+      <div style="display: flex; gap: 12px;">
+        <button onclick="toggleMobileViewPremium()" class="premium-btn active-btn" style="
+          background: linear-gradient(45deg, #9b59b6, #8e44ad);
+          border: none;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          📱 Mobile
+        </button>
+        
+        <button onclick="showBurnDownChartPremium()" class="premium-btn active-btn" style="
+          background: linear-gradient(45deg, #f39c12, #d35400);
+          border: none;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          📉 Burndown
+        </button>
+        
+        <button onclick="showAIPredictorPremium()" class="premium-btn active-btn" style="
+          background: linear-gradient(45deg, #3498db, #2980b9);
+          border: none;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          🤖 IA Predictor
+        </button>
+        
+        <button onclick="switchProjectPremium()" class="premium-btn active-btn" style="
+          background: linear-gradient(45deg, #1abc9c, #16a085);
+          border: none;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          🔄 Cambiar Proyecto
+        </button>
+        
+        <button onclick="exportGanttData()" class="premium-btn active-btn" style="
+          background: linear-gradient(45deg, #e74c3c, #c0392b);
+          border: none;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          📤 Exportar
+        </button>
+        
+        <button onclick="this.closest('#premiumExecutiveGantt').remove()" style="
+          background: rgba(231, 76, 60, 0.2);
+          border: 1px solid #e74c3c;
+          color: #e74c3c;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 14px;
+        ">
+          × Cerrar
+        </button>
+      </div>
+    </div>
+    
+    <!-- CONTENT CON MENÚ LATERAL COMPLETO Y COLUMNA FIJA -->
+    <div style="flex: 1; display: flex; overflow: hidden;">
+      <!-- SIDEBAR COMPLETO CON TODAS LAS FUNCIONALIDADES -->
+      <div style="
+        width: 320px;
+        background: linear-gradient(180deg, #0a0a1a, #121230);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        flex-shrink: 0;
+      ">
+        <!-- KPIs -->
+        <div>
+          <h3 style="color: white; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: #3498db; font-size: 20px;">📊</span> 
+            <span>Dashboard Ejecutivo</span>
+          </h3>
+          
+          <div class="kpi-card" style="
+            background: rgba(255,255,255,0.05); 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px;
+            transition: all 0.3s;
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div style="color: #95a5a6; font-size: 14px;">Progreso General</div>
+              <div style="color: #2ecc71; font-size: 24px; font-weight: bold;">${avgProgress}%</div>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+              <div style="width: ${avgProgress}%; height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); border-radius: 4px;"></div>
+            </div>
+          </div>
+          
+          <!-- DEPENDENCIAS DETALLADAS (NUEVA SECCIÓN) -->
+          <div class="kpi-card" style="
+            background: rgba(155, 89, 182, 0.1); 
+            border: 1px solid rgba(155, 89, 182, 0.3); 
+            border-radius: 12px; 
+            padding: 18px; 
+            margin-bottom: 20px;
+            transition: all 0.3s;
+          ">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <span style="color: #9b59b6; font-size: 18px;">🔗</span>
+              <span style="color: white; font-weight: bold;">Dependencias</span>
+            </div>
+            <div style="color: #9b59b6; font-size: 12px; margin-bottom: 10px;">
+              ${tasksWithDeps} tareas con dependencias
+            </div>
+            ${generateDependenciesList(executiveTasks)}
+          </div>
+          
+          <!-- RUTA CRÍTICA -->
+          <div class="kpi-card" style="
+            background: rgba(231, 76, 60, 0.1); 
+            border: 1px solid rgba(231, 76, 60, 0.3); 
+            border-radius: 12px; 
+            padding: 18px; 
+            margin-bottom: 20px;
+            transition: all 0.3s;
+          ">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <span style="color: #e74c3c; font-size: 18px;">🔥</span>
+              <span style="color: white; font-weight: bold;">Ruta Crítica</span>
+            </div>
+            <div style="color: #e74c3c; font-size: 12px; margin-bottom: 10px;">
+              ${criticalTasks} tareas críticas identificadas
+            </div>
+            <div style="color: #95a5a6; font-size: 11px;">
+              ${getCriticalTasksDetails(executiveTasks)}
+            </div>
+          </div>
+          
+          <!-- PREDICTOR IA -->
+          <div class="kpi-card" style="
+            background: rgba(52, 152, 219, 0.1); 
+            border-radius: 12px; 
+            padding: 20px;
+            transition: all 0.3s;
+          ">
+            <div style="color: white; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+              <span style="color: #3498db;">🤖</span> IA Predictor
+            </div>
+            <div style="color: #95a5a6; font-size: 13px; margin-bottom: 15px;">
+              Predicción basada en ${totalTasks} tareas
+            </div>
+            <div style="
+              background: rgba(255,255,255,0.1);
+              border-radius: 8px;
+              padding: 15px;
+              text-align: center;
+              margin-bottom: 15px;
+            ">
+              <div style="color: #2ecc71; font-size: 20px; font-weight: bold;">${calculatePredictedEndDatePremium(executiveTasks)}</div>
+              <div style="color: #95a5a6; font-size: 12px; margin-top: 5px;">
+                Fecha estimada finalización
+              </div>
+            </div>
+            <button onclick="runAIAnalysisPremium()" class="premium-btn" style="
+              width: 100%;
+              background: linear-gradient(45deg, #3498db, #2980b9);
+              border: none;
+              color: white;
+              padding: 12px;
+              border-radius: 8px;
+              font-weight: bold;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              transition: all 0.3s;
+            ">
+              🔄 Ejecutar Análisis Predictivo
+            </button>
+          </div>
+          
+          <!-- RESOURCE ALLOCATION -->
+          <div class="kpi-card" style="
+            background: rgba(46, 204, 113, 0.1); 
+            border-radius: 12px; 
+            padding: 20px;
+            margin-top: 20px;
+            transition: all 0.3s;
+          ">
+            <div style="color: white; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+              <span style="color: #2ecc71;">👥</span> Distribución de Equipo
+            </div>
+            <div style="color: #95a5a6; font-size: 13px; margin-bottom: 15px;">
+              ${countTeamMembers(executiveTasks)} miembros asignados
+            </div>
+            ${generateTeamDistribution(executiveTasks)}
+          </div>
+        </div>
+        
+        <!-- FILTROS EJECUTIVOS -->
+        <div>
+          <h3 style="color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: #f1c40f; font-size: 20px;">⚡</span> 
+            <span>Filtros Ejecutivos</span>
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <button onclick="filterCriticalTasksPremium()" class="premium-btn" style="
+              background: rgba(231, 76, 60, 0.15);
+              border: 1px solid #e74c3c;
+              color: #e74c3c;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s;
+              font-size: 13px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              justify-content: center;
+            ">
+              🔴 Críticas
+            </button>
+            <button onclick="filterDelayedTasksPremium()" class="premium-btn" style="
+              background: rgba(243, 156, 18, 0.15);
+              border: 1px solid #f39c12;
+              color: #f39c12;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s;
+              font-size: 13px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              justify-content: center;
+            ">
+              ⚡ Atrasadas
+            </button>
+            <button onclick="filterByTeamPremium()" class="premium-btn" style="
+              background: rgba(155, 89, 182, 0.15);
+              border: 1px solid #9b59b6;
+              color: #9b59b6;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s;
+              font-size: 13px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              justify-content: center;
+            ">
+              👥 Por Equipo
+            </button>
+            <button onclick="filterByBudgetPremium()" class="premium-btn" style="
+              background: rgba(46, 204, 113, 0.15);
+              border: 1px solid #2ecc71;
+              color: #2ecc71;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s;
+              font-size: 13px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              justify-content: center;
+            ">
+              💰 Presupuesto
+            </button>
+            <button onclick="showAllTasksPremium()" class="premium-btn" style="
+              background: rgba(52, 152, 219, 0.15);
+              border: 1px solid #3498db;
+              color: #3498db;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.3s;
+              font-size: 13px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              justify-content: center;
+              grid-column: span 2;
+            ">
+              📋 Mostrar Todas
+            </button>
+          </div>
+        </div>
+        
+        <!-- GESTIÓN DE DEPENDENCIAS (NUEVA SECCIÓN) -->
+        <div>
+          <h3 style="color: white; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <span style="color: #1abc9c; font-size: 20px;">🔧</span> 
+            <span>Gestión de Dependencias</span>
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button onclick="openDependencyCreator()" class="premium-btn" style="
+              background: linear-gradient(45deg, #9b59b6, #8e44ad);
+              border: none;
+              color: white;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              justify-content: center;
+              font-weight: bold;
+            ">
+              🔗 Crear Dependencias
+            </button>
+            <button onclick="markAsCriticalPath()" class="premium-btn" style="
+              background: linear-gradient(45deg, #e74c3c, #c0392b);
+              border: none;
+              color: white;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              justify-content: center;
+              font-weight: bold;
+            ">
+              🔥 Marcar Ruta Crítica
+            </button>
+            <button onclick="clearAllDependencies()" class="premium-btn" style="
+              background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+              border: none;
+              color: white;
+              padding: 12px;
+              border-radius: 8px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              justify-content: center;
+              font-weight: bold;
+            ">
+              🗑️ Limpiar Todas
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- MAIN AREA CON SCROLL HORIZONTAL SOLO EN LAS FECHAS -->
+      <div style="
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: linear-gradient(180deg, rgba(10, 10, 26, 0.9), rgba(18, 18, 48, 0.95));
+      ">
+        <!-- TIMELINE HEADER FIJA CON SCROLL HORIZONTAL -->
+        <div style="
+          display: flex;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 12px 12px 0 0;
+          padding: 18px 0 18px 320px;
+          position: relative;
+          overflow-x: auto;
+          overflow-y: hidden;
+          flex-shrink: 0;
+          margin: 0;
+        ">
+          <!-- COLUMNA FIJA DE TÍTULO (OCULTA PERO MANTIENE ESPACIO) -->
+          <div style="
+            width: 320px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px 0 0 0;
+          ">
+            <span style="color: #3498db;">📅</span> TIMELINE
+          </div>
+          
+          <!-- FECHAS CON SCROLL -->
+          <div style="display: flex; min-width: max-content;">
+            ${Array.from({length: 31}, (_, i) => {
+              const date = new Date(today);
+              date.setDate(today.getDate() + i);
+              const dayOfWeek = date.getDay();
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+              const isToday = i === 0;
+              const isWeekStart = i % 7 === 0;
+              
+              return `
+                <div style="
+                  flex: 0 0 45px;
+                  text-align: center;
+                  padding: 12px 5px;
+                  border-right: 1px solid rgba(255,255,255,0.1);
+                  color: ${isWeekend ? '#7f8c8d' : 'white'};
+                  font-weight: ${isWeekStart ? 'bold' : 'normal'};
+                  position: relative;
+                  min-width: 45px;
+                ">
+                  ${isWeekStart ? `<div style="position: absolute; top: -18px; left: 0; right: 0; color: #3498db; font-size: 11px;">Sem ${Math.floor(i/7) + 1}</div>` : ''}
+                  ${isToday ? `<div style="position: absolute; top: -25px; left: 0; right: 0; background: #2ecc71; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; z-index: 100;">HOY</div>` : ''}
+                  <div style="font-size: 11px; color: ${isWeekend ? '#7f8c8d' : '#95a5a6'}; margin-bottom: 5px;">
+                    ${date.toLocaleDateString('es-ES', { weekday: 'short' })}
+                  </div>
+                  <div style="font-size: 16px; color: ${isToday ? '#2ecc71' : (isWeekend ? '#7f8c8d' : 'white')};">
+                    ${date.getDate()}
+                  </div>
+                  ${date.getDate() === 1 ? `<div style="position: absolute; top: -18px; left: 0; right: 0; color: #3498db; font-size: 11px;">${date.toLocaleDateString('es-ES', { month: 'short' })}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+        
+        <!-- TASKS CONTAINER CON SCROLL HORIZONTAL SOLO EN BARRAS -->
+        <div id="premiumTasksContainer" style="
+          flex: 1;
+          position: relative;
+          overflow-x: auto;
+          overflow-y: auto;
+          padding-right: 0;
+        ">
+          <div style="position: relative; min-width: max-content; min-height: 100%;">
+            ${executiveTasks.map((task, index) => `
+              <!-- TAREA CON COLUMNA FIJA Y BARRAS CON SCROLL -->
+              <div class="premium-task" data-task-id="${task.id}" style="
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
+                padding: 20px 0 20px 320px;
+                background: ${task.critical ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.03)'};
+                border-radius: 12px;
+                transition: all 0.3s;
+                border-left: 4px solid ${task.color};
+                position: relative;
+                overflow: visible;
+                height: 60px;
+                border: ${task.critical ? '1px solid rgba(231, 76, 60, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)'};
+                cursor: pointer;
+                min-width: max-content;
+              " onclick="showPremiumTaskDetails('${task.id}')">
+                
+                <!-- COLUMNA FIJA CON INFORMACIÓN DE TAREA -->
+                <div style="
+                  width: 320px;
+                  padding: 0 20px;
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  bottom: 0;
+                  display: flex;
+                  align-items: center;
+                  background: ${task.critical ? 'rgba(231, 76, 60, 0.05)' : 'transparent'};
+                  border-radius: 12px 0 0 12px;
+                ">
+                  <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                    <div style="
+                      width: 36px;
+                      height: 36px;
+                      background: ${task.color};
+                      border-radius: 10px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      color: white;
+                      font-weight: bold;
+                      box-shadow: 0 5px 15px ${task.color}40;
+                      flex-shrink: 0;
+                    ">
+                      ${index + 1}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="color: white; font-weight: bold; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis;">
+                        ${task.name}
+                        ${task.critical ? '<span style="color: #e74c3c; font-size: 12px; background: rgba(231, 76, 60, 0.2); padding: 2px 8px; border-radius: 10px; flex-shrink: 0;">CRÍTICA</span>' : ''}
+                      </div>
+                      <div style="color: #95a5a6; font-size: 12px; display: flex; gap: 15px; overflow: hidden;">
+                        <span style="flex-shrink: 0;">👤 ${task.team[0]}</span>
+                        <span style="flex-shrink: 0;">💰 ${task.budget}</span>
+                        ${task.dependencies.length > 0 ? `<span style="flex-shrink: 0;">🔗 ${task.dependencies.length} dep</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- ÁREA DE BARRAS GANTT CON SCROLL HORIZONTAL -->
+                <div style="
+                  flex: 1;
+                  height: 40px;
+                  position: relative;
+                  min-width: ${31 * 45}px;
+                ">
+                  <!-- BACKGROUND -->
+                  <div style="
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    height: 100%;
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 8px;
+                  "></div>
+                  
+                  <!-- MAIN BAR -->
+                  <div style="
+                    position: absolute;
+                    left: ${task.startDay * 45}px;
+                    width: ${task.duration * 45}px;
+                    height: 100%;
+                    background: linear-gradient(90deg, ${task.color}99, ${task.color});
+                    border-radius: 8px;
+                    box-shadow: 
+                      0 4px 20px ${task.color}40,
+                      inset 0 2px 4px rgba(255,255,255,0.2);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 13px;
+                    z-index: 10;
+                  ">
+                    <!-- PROGRESS OVERLAY -->
+                    <div style="
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      width: ${task.progress}%;
+                      height: 100%;
+                      background: linear-gradient(90deg, rgba(255,255,255,0.3), transparent);
+                      border-radius: 8px;
+                    "></div>
+                    <div style="position: relative; z-index: 2;">
+                      ${task.duration}d • ${task.progress}%
+                    </div>
+                  </div>
+                  
+                  <!-- TODAY MARKER CORREGIDO (día 0) -->
+                  <div style="
+                    position: absolute;
+                    left: ${0 * 45}px;
+                    top: -10px;
+                    bottom: -10px;
+                    width: 2px;
+                    background: #2ecc71;
+                    z-index: 5;
+                  ">
+                    <div style="
+                      position: absolute;
+                      top: -20px;
+                      left: -8px;
+                      background: #2ecc71;
+                      color: white;
+                      padding: 2px 8px;
+                      border-radius: 4px;
+                      font-size: 10px;
+                      font-weight: bold;
+                    ">
+                      HOY
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- ACCIONES (COLUMNA FIJA DERECHA) -->
+                <div style="
+                  margin-left: 20px;
+                  display: flex;
+                  gap: 8px;
+                  position: absolute;
+                  right: 20px;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  z-index: 20;
+                ">
+                  <button onclick="event.stopPropagation(); updatePremiumTaskProgress('${task.id}')" style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 10px;
+                    background: rgba(46, 204, 113, 0.2);
+                    border: 1px solid #2ecc71;
+                    color: #2ecc71;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s;
+                    font-size: 16px;
+                  " title="Actualizar progreso">
+                    📈
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- FOOTER -->
+    <div style="
+      background: rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 15px 35px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #95a5a6;
+    ">
+      <div style="display: flex; gap: 30px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 50%;"></div>
+          <span>Ruta Crítica (${criticalTasks})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #9b59b6; border-radius: 50%;"></div>
+          <span>Dependencias (${tasksWithDeps})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #2ecc71; border-radius: 50%;"></div>
+          <span>Progreso: ${avgProgress}%</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 12px; height: 12px; background: #3498db; border-radius: 50%;"></div>
+          <span>Tareas: ${totalTasks}</span>
+        </div>
+      </div>
+      <div>
+        <span>🔄 Actualizado: ${new Date().toLocaleTimeString()}</span>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(container);
+  
+  // Guardar tasks en dataset para acceso posterior - AHORA CON EL PROYECTO ACTUAL
+  container.dataset.projectIndex = currentProjectIndex;
+  container.dataset.tasks = JSON.stringify(executiveTasks);
+  container.dataset.projectName = yourProject.name;
+  
+  console.log('📊 Proyecto cargado:', yourProject.name);
+  console.log('📋 Tareas procesadas:', executiveTasks.length);
+  
+  // DIBUJAR DEPENDENCIAS
+  setTimeout(() => {
+    drawPremiumDependenciesComplete(executiveTasks);
+  }, 200);
+  
+  // AGREGAR ESTILOS DE ANIMACIÓN
+  addPremiumStyles();
+}
+
+// ========== FUNCIONES PARA DEPENDENCIAS Y RUTAS CRÍTICAS ==========
+
+// 1. FUNCIÓN PARA GENERAR LISTA DE DEPENDENCIAS DETALLADAS
+function generateDependenciesList(tasks) {
+  const dependenciesList = [];
+  
+  tasks.forEach(task => {
+    if (task.dependencies && task.dependencies.length > 0) {
+      task.dependencies.forEach(depId => {
+        const depTask = tasks.find(t => t.id.toString() === depId.toString());
+        if (depTask) {
+          dependenciesList.push({
+            from: depTask.name,
+            to: task.name,
+            fromId: depTask.id,
+            toId: task.id
+          });
+        }
+      });
+    }
+  });
+  
+  if (dependenciesList.length === 0) {
+    return '<div style="color: #95a5a6; font-size: 12px; font-style: italic;">No hay dependencias definidas</div>';
+  }
+  
+  // Limitar a mostrar 3 dependencias para no saturar
+  const displayList = dependenciesList.slice(0, 3);
+  
+  return `
+    <div style="max-height: 120px; overflow-y: auto; margin-top: 10px;">
+      ${displayList.map(dep => `
+        <div style="
+          background: rgba(255,255,255,0.05);
+          border-radius: 6px;
+          padding: 8px 10px;
+          margin-bottom: 6px;
+          border-left: 3px solid #9b59b6;
+        ">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+            <span style="color: #9b59b6; font-size: 10px;">⬅</span>
+            <span style="color: white; font-size: 11px; font-weight: bold;">${dep.from}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: #3498db; font-size: 10px;">➡</span>
+            <span style="color: #95a5a6; font-size: 11px;">${dep.to}</span>
+          </div>
+        </div>
+      `).join('')}
+      ${dependenciesList.length > 3 ? 
+        `<div style="color: #95a5a6; font-size: 11px; text-align: center; margin-top: 5px;">
+          y ${dependenciesList.length - 3} dependencias más...
+        </div>` : ''
+      }
+    </div>
+    <button onclick="showAllDependencies()" style="
+      width: 100%;
+      background: rgba(155, 89, 182, 0.2);
+      border: 1px solid #9b59b6;
+      color: #9b59b6;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    ">
+      🔍 Ver todas las dependencias
+    </button>
+  `;
+}
+
+// 2. FUNCIÓN PARA DIBUJAR DEPENDENCIAS CON CORRECCIÓN DE POSICIÓN
+function drawPremiumDependenciesComplete(tasks) {
+  const container = document.getElementById('premiumTasksContainer');
+  if (!container) return;
+  
+  const tasksDiv = container.querySelector('div > div');
+  if (!tasksDiv) return;
+  
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 320px;
+    right: 80px;
+    height: ${tasks.length * 80}px;
+    pointer-events: none;
+    z-index: 5;
+    overflow: visible;
+  `;
+  
+  tasks.forEach((task, taskIndex) => {
+    if (task.dependencies && task.dependencies.length > 0) {
+      task.dependencies.forEach(depId => {
+        const depTask = tasks.find(t => t.id.toString() === depId.toString());
+        if (depTask) {
+          const depIndex = tasks.findIndex(t => t.id.toString() === depId.toString());
+          
+          if (depIndex >= 0) {
+            // CORREGIDO: posición relativa a columna fija
+            const startX = (depTask.startDay * 45) + (depTask.duration * 45) + 22;
+            const startY = depIndex * 80 + 30;
+            const endX = (task.startDay * 45) + 22;
+            const endY = taskIndex * 80 + 30;
+            
+            // Solo dibujar si las posiciones son válidas
+            if (startX > 0 && endX > 0 && Math.abs(startX - endX) > 20) {
+              // Línea curva
+              const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              const curve = 30;
+              path.setAttribute('d', `
+                M ${startX} ${startY}
+                C ${startX + curve} ${startY},
+                  ${endX - curve} ${endY},
+                  ${endX} ${endY}
+              `);
+              path.setAttribute('stroke', task.critical ? '#e74c3c' : '#9b59b6');
+              path.setAttribute('stroke-width', task.critical ? '3' : '2');
+              path.setAttribute('fill', 'none');
+              path.setAttribute('stroke-dasharray', task.critical ? 'none' : '5,5');
+              path.style.opacity = '0.7';
+              
+              svg.appendChild(path);
+              
+              // Punto final
+              const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              dot.setAttribute('cx', endX);
+              dot.setAttribute('cy', endY);
+              dot.setAttribute('r', '4');
+              dot.setAttribute('fill', task.critical ? '#e74c3c' : '#9b59b6');
+              svg.appendChild(dot);
+            }
+          }
+        }
+      });
+    }
+  });
+  
+  tasksDiv.appendChild(svg);
+}
+
+// 3. FUNCIÓN PARA MOSTRAR TODAS LAS DEPENDENCIAS
+window.showAllDependencies = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  const allDependencies = [];
+  
+  tasks.forEach(task => {
+    if (task.dependencies && task.dependencies.length > 0) {
+      task.dependencies.forEach(depId => {
+        const depTask = tasks.find(t => t.id.toString() === depId.toString());
+        if (depTask) {
+          allDependencies.push(`${depTask.name} → ${task.name}`);
+        }
+      });
+    }
+  });
+  
+  if (allDependencies.length === 0) {
+    alert('No hay dependencias definidas en el proyecto.');
+    return;
+  }
+  
+  const dependenciesText = allDependencies.join('\n');
+  alert(`🔗 TODAS LAS DEPENDENCIAS (${allDependencies.length}):\n\n${dependenciesText}`);
+};
+
+// 4. MODAL PARA CREAR DEPENDENCIAS
+// ========== MODAL PARA CREAR DEPENDENCIAS - CORREGIDO ==========
+window.openDependencyCreator = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  // OBTENER EL PROYECTO ACTUAL CORRECTAMENTE
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  const currentTasks = currentProject.tasks || [];
+  
+  console.log('🔍 Abriendo creador de dependencias para proyecto:', currentProject.name);
+  console.log('📋 Tareas del proyecto actual:', currentTasks.length);
+  
+  if (currentTasks.length === 0) {
+    alert('No hay tareas disponibles para crear dependencias.');
+    return;
+  }
+  
+  // Crear overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'dependency-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000000;
+  `;
+  overlay.onclick = closeDependencyCreator;
+  
+  // Crear modal
+  const modal = document.createElement('div');
+  modal.className = 'dependency-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    border-radius: 20px;
+    padding: 30px;
+    z-index: 1000001;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+    border: 2px solid rgba(155, 89, 182, 0.4);
+    color: white;
+  `;
+  
+  // Transformar tareas para mostrar (igual que en el Gantt)
+  const transformedTasks = currentTasks.map((task, index) => {
+    const statusColors = {
+      'pending': '#f1c40f',
+      'inProgress': '#3498db', 
+      'completed': '#2ecc71',
+      'overdue': '#e74c3c'
+    };
+    
+    const isCritical = task.priority === 'alta' || task.status === 'overdue';
+    
+    return {
+      id: task.id || Date.now() + index,
+      name: task.name || `Tarea ${index + 1}`,
+      color: statusColors[task.status] || '#95a5a6',
+      critical: isCritical,
+      dependencies: task.dependencies || [],
+      status: task.status || 'pending',
+      priority: task.priority || 'media',
+      originalTask: task
+    };
+  });
+  
+  // Obtener dependencias existentes
+  const existingDependencies = [];
+  transformedTasks.forEach(task => {
+    if (task.dependencies && task.dependencies.length > 0) {
+      task.dependencies.forEach(depId => {
+        const depTask = transformedTasks.find(t => t.id.toString() === depId.toString());
+        if (depTask) {
+          existingDependencies.push({
+            from: depTask,
+            to: task,
+            fromId: depTask.id,
+            toId: task.id
+          });
+        }
+      });
+    }
+  });
+  
+  modal.innerHTML = `
+    <h3 style="color: #9b59b6; margin-top: 0; margin-bottom: 20px; text-align: center;">
+      🔗 Gestor de Dependencias - ${currentProject.name}
+    </h3>
+    
+    <div style="margin-bottom: 15px; color: #95a5a6; text-align: center;">
+      Proyecto actual: <strong style="color: #2ecc71;">${currentProject.name}</strong>
+      <br>Tareas disponibles: <strong>${transformedTasks.length}</strong>
+    </div>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 25px; align-items: center;">
+      <select id="fromTaskSelect" style="
+        flex: 1;
+        padding: 12px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(155, 89, 182, 0.3);
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+      ">
+        <option value="">Seleccionar tarea origen</option>
+        ${transformedTasks.map((task, index) => `
+          <option value="${task.id}">${index + 1}. ${task.name}</option>
+        `).join('')}
+      </select>
+      
+      <div style="color: #9b59b6; font-size: 18px; margin: 0 10px;">➡</div>
+      
+      <select id="toTaskSelect" style="
+        flex: 1;
+        padding: 12px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(155, 89, 182, 0.3);
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+      ">
+        <option value="">Seleccionar tarea destino</option>
+        ${transformedTasks.map((task, index) => `
+          <option value="${task.id}">${index + 1}. ${task.name}</option>
+        `).join('')}
+      </select>
+      
+      <button onclick="addNewDependency()" style="
+        background: linear-gradient(45deg, #9b59b6, #8e44ad);
+        border: none;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        ➕ Agregar
+      </button>
+    </div>
+    
+    <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid rgba(155, 89, 182, 0.2);">
+      <h4 style="color: #9b59b6; margin-top: 0; margin-bottom: 15px;">Dependencias Actuales</h4>
+      <div id="dependenciesList">
+        ${existingDependencies.length > 0 ? 
+          existingDependencies.map(dep => `
+            <div class="dependency-item" style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 10px 15px;
+              background: rgba(155, 89, 182, 0.1);
+              border-radius: 8px;
+              margin-bottom: 10px;
+            ">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="
+                  width: 24px;
+                  height: 24px;
+                  background: ${dep.from.color || '#9b59b6'};
+                  border-radius: 6px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  color: white;
+                  font-size: 12px;
+                  font-weight: bold;
+                ">
+                  ${transformedTasks.findIndex(t => t.id.toString() === dep.fromId.toString()) + 1}
+                </div>
+                <span style="font-weight: bold; color: white;">${dep.from.name}</span>
+                <span style="color: #9b59b6; font-size: 18px; margin: 0 10px;">➡</span>
+                <div style="
+                  width: 24px;
+                  height: 24px;
+                  background: ${dep.to.color || '#3498db'};
+                  border-radius: 6px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  color: white;
+                  font-size: 12px;
+                  font-weight: bold;
+                ">
+                  ${transformedTasks.findIndex(t => t.id.toString() === dep.toId.toString()) + 1}
+                </div>
+                <span style="color: white;">${dep.to.name}</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button onclick="removeExistingDependency('${dep.fromId}', '${dep.toId}', ${projectIndex})" style="
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 6px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+                  border: none;
+                  font-size: 14px;
+                  background: rgba(231, 76, 60, 0.2);
+                  color: #e74c3c;
+                " title="Eliminar">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          `).join('') : 
+          '<div style="color: #95a5a6; text-align: center; padding: 20px; font-style: italic;">No hay dependencias definidas</div>'
+        }
+      </div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="color: #95a5a6; font-size: 13px;">
+        ${existingDependencies.length} dependencia(s) definida(s)
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="closeDependencyCreator()" style="
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.3);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+        ">
+          Cancelar
+        </button>
+        <button onclick="saveDependencies(${projectIndex})" style="
+          background: linear-gradient(45deg, #2ecc71, #27ae60);
+          border: none;
+          color: white;
+          padding: 10px 30px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: bold;
+        ">
+          💾 Guardar Cambios
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Guardar datos en el modal para uso posterior
+  modal.dataset.projectIndex = projectIndex;
+  modal.dataset.tasks = JSON.stringify(transformedTasks);
+  modal.dataset.originalTasks = JSON.stringify(currentTasks);
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+};
+
+// ========== FUNCIÓN PARA AGREGAR NUEVA DEPENDENCIA - CORREGIDA ==========
+window.addNewDependency = function() {
+  const modal = document.querySelector('.dependency-modal');
+  if (!modal) return;
+  
+  const fromSelect = document.getElementById('fromTaskSelect');
+  const toSelect = document.getElementById('toTaskSelect');
+  
+  const fromId = fromSelect.value;
+  const toId = toSelect.value;
+  
+  console.log('➕ Intentando agregar dependencia:', { fromId, toId });
+  
+  if (!fromId || !toId) {
+    alert('Por favor selecciona ambas tareas.');
+    return;
+  }
+  
+  if (fromId === toId) {
+    alert('Una tarea no puede depender de sí misma.');
+    return;
+  }
+  
+  // Obtener tareas del modal
+  const tasks = JSON.parse(modal.dataset.tasks || '[]');
+  
+  // Encontrar las tareas
+  const fromTask = tasks.find(t => t.id.toString() === fromId.toString());
+  const toTask = tasks.find(t => t.id.toString() === toId.toString());
+  
+  console.log('🔍 Tareas encontradas:', { fromTask, toTask });
+  
+  if (!fromTask || !toTask) {
+    alert('Error: No se encontraron las tareas seleccionadas.');
+    return;
+  }
+  
+  // Verificar si la dependencia ya existe
+  if (toTask.dependencies && toTask.dependencies.includes(fromId)) {
+    alert('Esta dependencia ya existe.');
+    return;
+  }
+  
+  // Verificar dependencias cíclicas
+  if (checkCyclicDependency(tasks, toId, fromId)) {
+    alert('No se puede crear esta dependencia porque crearía un ciclo.');
+    return;
+  }
+  
+  const fromIndex = tasks.findIndex(t => t.id.toString() === fromId.toString()) + 1;
+  const toIndex = tasks.findIndex(t => t.id.toString() === toId.toString()) + 1;
+  
+  const dependencyItem = document.createElement('div');
+  dependencyItem.className = 'dependency-item';
+  dependencyItem.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: rgba(155, 89, 182, 0.1);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  `;
+  dependencyItem.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="
+        width: 24px;
+        height: 24px;
+        background: ${fromTask.color || '#9b59b6'};
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+      ">
+        ${fromIndex}
+      </div>
+      <span style="font-weight: bold; color: white;">${fromTask.name}</span>
+      <span style="color: #9b59b6; font-size: 18px; margin: 0 10px;">➡</span>
+      <div style="
+        width: 24px;
+        height: 24px;
+        background: ${toTask.color || '#3498db'};
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+      ">
+        ${toIndex}
+      </div>
+      <span style="color: white;">${toTask.name}</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button onclick="removeNewDependency(this)" style="
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: none;
+        font-size: 14px;
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+      " title="Eliminar">
+        🗑️
+      </button>
+    </div>
+  `;
+  
+  dependencyItem.dataset.fromId = fromId;
+  dependencyItem.dataset.toId = toId;
+  
+  const dependenciesList = document.getElementById('dependenciesList');
+  
+  // Si no hay dependencias, limpiar el mensaje
+  if (dependenciesList.firstChild && 
+      dependenciesList.firstChild.style && 
+      dependenciesList.firstChild.style.color === 'rgb(149, 165, 166)') {
+    dependenciesList.innerHTML = '';
+  }
+  
+  dependenciesList.appendChild(dependencyItem);
+  
+  console.log('✅ Dependencia agregada visualmente');
+  
+  // Limpiar selecciones
+  fromSelect.value = '';
+  toSelect.value = '';
+};
+
+// ========== FUNCIÓN PARA GUARDAR DEPENDENCIAS - CORREGIDA ==========
+window.saveDependencies = function(projectIndex) {
+  const modal = document.querySelector('.dependency-modal');
+  if (!modal) return;
+  
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  const currentTasks = currentProject.tasks || [];
+  
+  console.log('💾 Guardando dependencias para proyecto:', currentProject.name);
+  
+  // Obtener nuevas dependencias del modal
+  const dependenciesList = document.getElementById('dependenciesList');
+  const newDependencies = [];
+  
+  dependenciesList.querySelectorAll('.dependency-item').forEach(item => {
+    const fromId = item.dataset.fromId;
+    const toId = item.dataset.toId;
+    
+    if (fromId && toId) {
+      newDependencies.push({ fromId, toId });
+    }
+  });
+  
+  console.log('📋 Nuevas dependencias a guardar:', newDependencies.length);
+  
+  // LIMPIAR TODAS LAS DEPENDENCIAS EXISTENTES
+  currentTasks.forEach(task => {
+    task.dependencies = [];
+  });
+  
+  // APLICAR NUEVAS DEPENDENCIAS
+  newDependencies.forEach(({ fromId, toId }) => {
+    const toTask = currentTasks.find(t => {
+      // Buscar por ID original si existe, o por ID transformado
+      return (t.id && t.id.toString() === toId.toString()) || 
+             (t.originalTask && t.originalTask.id && t.originalTask.id.toString() === toId.toString());
+    });
+    
+    if (toTask) {
+      if (!toTask.dependencies) toTask.dependencies = [];
+      
+      // Añadir la dependencia si no existe ya
+      const fromIdToAdd = fromId;
+      if (!toTask.dependencies.includes(fromIdToAdd)) {
+        toTask.dependencies.push(fromIdToAdd);
+      }
+    }
+  });
+  
+  console.log('✅ Proyecto actualizado:', currentProject);
+  
+  // Cerrar modal
+  closeDependencyCreator();
+  
+  // Actualizar visualización del Gantt
+  refreshGanttView();
+  
+  alert('✅ Dependencias guardadas correctamente.\nEl Gantt se ha actualizado.');
+};
+
+// ========== FUNCIÓN PARA MARCAR RUTA CRÍTICA - CORREGIDA ==========
+window.markAsCriticalPath = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  // OBTENER EL PROYECTO ACTUAL CORRECTAMENTE
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  const currentTasks = currentProject.tasks || [];
+  
+  if (currentTasks.length === 0) {
+    alert('No hay tareas para marcar como críticas.');
+    return;
+  }
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'dependency-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000000;
+  `;
+  
+  const modal = document.createElement('div');
+  modal.className = 'dependency-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    border-radius: 20px;
+    padding: 30px;
+    z-index: 1000001;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+    border: 2px solid rgba(231, 76, 60, 0.4);
+    color: white;
+  `;
+  
+  // Determinar qué tareas son críticas actualmente
+  const criticalStatus = currentTasks.map(task => ({
+    id: task.id,
+    name: task.name,
+    isCritical: task.priority === 'alta' || task.status === 'overdue',
+    currentPriority: task.priority || 'media'
+  }));
+  
+  modal.innerHTML = `
+    <h3 style="color: #e74c3c; margin-top: 0; margin-bottom: 20px; text-align: center;">
+      🔥 Marcador de Ruta Crítica
+    </h3>
+    
+    <div style="margin-bottom: 15px; color: #95a5a6; text-align: center;">
+      Proyecto: <strong style="color: #2ecc71;">${currentProject.name}</strong>
+      <br>Selecciona las tareas que forman parte de la ruta crítica:
+    </div>
+    
+    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 25px;">
+      ${criticalStatus.map((task, index) => `
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 15px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 8px;
+          margin-bottom: 8px;
+          border: 1px solid ${task.isCritical ? 'rgba(231, 76, 60, 0.5)' : 'rgba(255,255,255,0.1)'};
+        ">
+          <input 
+            type="checkbox" 
+            id="critical_${task.id}" 
+            ${task.isCritical ? 'checked' : ''}
+            style="transform: scale(1.2);"
+            onchange="toggleCriticalTaskSelection('${task.id}', this.checked, ${projectIndex})"
+          >
+          <label for="critical_${task.id}" style="flex: 1; color: white; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="
+                width: 30px;
+                height: 30px;
+                background: ${task.isCritical ? '#e74c3c' : '#3498db'};
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 13px;
+              ">
+                ${index + 1}
+              </div>
+              <span>${task.name}</span>
+            </div>
+          </label>
+          ${task.isCritical ? '<span style="color: #e74c3c; font-size: 12px;">🔥 CRÍTICA</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button onclick="closeCriticalModal()" style="
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+      ">
+        Cancelar
+      </button>
+      <button onclick="saveCriticalPath(${projectIndex})" style="
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        border: none;
+        color: white;
+        padding: 10px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      ">
+        💾 Guardar Ruta Crítica
+      </button>
+    </div>
+  `;
+  
+  // Guardar datos en el modal
+  modal.dataset.projectIndex = projectIndex;
+  modal.dataset.criticalStatus = JSON.stringify(criticalStatus);
+  
+  overlay.onclick = closeCriticalModal;
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+};
+
+// ========== FUNCIÓN PARA TOGGLE DE TAREA CRÍTICA - CORREGIDA ==========
+window.toggleCriticalTaskSelection = function(taskId, isCritical, projectIndex) {
+  const modal = document.querySelector('.dependency-modal');
+  if (!modal) return;
+  
+  // Actualizar el estado en el modal
+  let criticalStatus = JSON.parse(modal.dataset.criticalStatus || '[]');
+  const taskIndex = criticalStatus.findIndex(t => t.id.toString() === taskId.toString());
+  
+  if (taskIndex !== -1) {
+    criticalStatus[taskIndex].isCritical = isCritical;
+    modal.dataset.criticalStatus = JSON.stringify(criticalStatus);
+  }
+};
+
+// ========== FUNCIÓN PARA GUARDAR RUTA CRÍTICA - CORREGIDA ==========
+window.saveCriticalPath = function(projectIndex) {
+  const modal = document.querySelector('.dependency-modal');
+  if (!modal) return;
+  
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  const criticalStatus = JSON.parse(modal.dataset.criticalStatus || '[]');
+  
+  // Actualizar prioridades en las tareas del proyecto
+  criticalStatus.forEach(taskStatus => {
+    const task = currentProject.tasks.find(t => t.id.toString() === taskStatus.id.toString());
+    if (task) {
+      task.priority = taskStatus.isCritical ? 'alta' : 'media';
+    }
+  });
+  
+  console.log('✅ Ruta crítica guardada para proyecto:', currentProject.name);
+  
+  // Cerrar modal
+  closeCriticalModal();
+  
+  // Actualizar visualización del Gantt
+  refreshGanttView();
+  
+  alert('✅ Ruta crítica guardada correctamente.\nEl Gantt se ha actualizado.');
+};
+
+// ========== FUNCIÓN PARA ELIMINAR DEPENDENCIA EXISTENTE - CORREGIDA ==========
+window.removeExistingDependency = function(fromId, toId, projectIndex) {
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  const currentTasks = currentProject.tasks || [];
+  
+  // Encontrar la tarea destino y eliminar la dependencia
+  const toTask = currentTasks.find(t => {
+    return (t.id && t.id.toString() === toId.toString()) || 
+           (t.originalTask && t.originalTask.id && t.originalTask.id.toString() === toId.toString());
+  });
+  
+  if (toTask && toTask.dependencies) {
+    toTask.dependencies = toTask.dependencies.filter(id => id.toString() !== fromId.toString());
+    
+    // Actualizar la vista del modal
+    const dependenciesList = document.getElementById('dependenciesList');
+    const itemToRemove = Array.from(dependenciesList.querySelectorAll('.dependency-item'))
+      .find(item => item.dataset.fromId === fromId && item.dataset.toId === toId);
+    
+    if (itemToRemove) {
+      itemToRemove.remove();
+    }
+    
+    // Si no quedan dependencias, mostrar mensaje
+    if (dependenciesList.children.length === 0) {
+      dependenciesList.innerHTML = '<div style="color: #95a5a6; text-align: center; padding: 20px; font-style: italic;">No hay dependencias definidas</div>';
+    }
+    
+    console.log('🗑️ Dependencia eliminada:', { fromId, toId });
+  }
+};
+
+// ========== FUNCIÓN PARA LIMPIAR TODAS LAS DEPENDENCIAS - CORREGIDA ==========
+window.clearAllDependencies = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  // OBTENER EL PROYECTO ACTUAL CORRECTAMENTE
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  
+  // Verificar que el proyecto existe
+  if (projectIndex >= projects.length || projectIndex < 0) {
+    alert('Error: Proyecto no válido.');
+    return;
+  }
+  
+  if (!confirm(`¿Estás seguro de que quieres eliminar TODAS las dependencias del proyecto "${projects[projectIndex].name}"?\nEsta acción no se puede deshacer.`)) {
+    return;
+  }
+  
+  const currentProject = projects[projectIndex];
+  
+  // Limpiar todas las dependencias del proyecto
+  currentProject.tasks.forEach(task => {
+    task.dependencies = [];
+  });
+  
+  console.log('🗑️ Todas las dependencias eliminadas del proyecto:', currentProject.name);
+  
+  // Actualizar visualización del Gantt
+  refreshGanttView();
+  
+  alert('✅ Todas las dependencias han sido eliminadas del proyecto actual.');
+};
+
+// ========== FUNCIÓN PARA REFRESCAR GANTT - CORREGIDA ==========
+function refreshGanttView() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  // Obtener el proyecto actual del dataset
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  
+  console.log('🔄 Refrescando Gantt para proyecto índice:', projectIndex);
+  
+  // Guardar temporalmente el índice del proyecto actual
+  const savedIndex = currentProjectIndex;
+  
+  // Establecer el proyecto correcto
+  if (projectIndex >= 0 && projectIndex < projects.length) {
+    currentProjectIndex = projectIndex;
+  }
+  
+  // Eliminar el Gantt actual
+  ganttContainer.remove();
+  
+  // Crear nuevo Gantt con el proyecto correcto
+  createCompleteGanttForCurrentProject();
+  
+  // Restaurar el índice original si es necesario
+  currentProjectIndex = savedIndex;
+}
+
+// Busca en el código la función `checkCyclicDependency` y asegúrate de que esté definida:
+function checkCyclicDependency(tasks, startId, checkId, visited = new Set()) {
+  if (startId.toString() === checkId.toString()) return true;
+  if (visited.has(startId.toString())) return false;
+  
+  visited.add(startId.toString());
+  
+  const task = tasks.find(t => t.id.toString() === startId.toString());
+  if (!task || !task.dependencies) return false;
+  
+  for (const depId of task.dependencies) {
+    if (checkCyclicDependency(tasks, depId.toString(), checkId, new Set(visited))) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// 7. FUNCIÓN PARA ELIMINAR DEPENDENCIA EN EL MODAL
+window.removeNewDependency = function(button) {
+  const dependencyItem = button.closest('.dependency-item');
+  if (dependencyItem) {
+    dependencyItem.remove();
+  }
+  
+  const dependenciesList = document.getElementById('dependenciesList');
+  if (dependenciesList.children.length === 0) {
+    dependenciesList.innerHTML = '<div style="color: #95a5a6; text-align: center; padding: 20px; font-style: italic;">No hay dependencias definidas</div>';
+  }
+};
+
+window.removeExistingDependency = function(fromId, toId) {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  const toTask = tasks.find(t => t.id.toString() === toId.toString());
+  if (toTask && toTask.dependencies) {
+    toTask.dependencies = toTask.dependencies.filter(id => id.toString() !== fromId.toString());
+    ganttContainer.dataset.tasks = JSON.stringify(tasks);
+    
+    // Actualizar la vista del modal
+    const dependenciesList = document.getElementById('dependenciesList');
+    const itemToRemove = Array.from(dependenciesList.querySelectorAll('.dependency-item'))
+      .find(item => item.dataset.fromId === fromId && item.dataset.toId === toId);
+    
+    if (itemToRemove) {
+      itemToRemove.remove();
+    }
+    
+    // Si no quedan dependencias, mostrar mensaje
+    if (dependenciesList.children.length === 0) {
+      dependenciesList.innerHTML = '<div style="color: #95a5a6; text-align: center; padding: 20px; font-style: italic;">No hay dependencias definidas</div>';
+    }
+  }
+};
+
+// 8. FUNCIÓN PARA GUARDAR DEPENDENCIAS
+window.saveDependencies = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  console.log('💾 Guardando dependencias para proyecto:', projects[projectIndex]?.name);
+  
+  // Obtener nuevas dependencias del modal
+  const dependenciesList = document.getElementById('dependenciesList');
+  const newDependencies = [];
+  
+  dependenciesList.querySelectorAll('.dependency-item').forEach(item => {
+    const fromId = item.dataset.fromId;
+    const toId = item.dataset.toId;
+    
+    if (fromId && toId) {
+      newDependencies.push({ fromId, toId });
+    }
+  });
+  
+  console.log('📋 Nuevas dependencias a guardar:', newDependencies.length);
+  
+  // Actualizar dependencias en todas las tareas
+  tasks.forEach(task => {
+    task.dependencies = [];
+  });
+  
+  // Aplicar nuevas dependencias
+  newDependencies.forEach(({ fromId, toId }) => {
+    const toTask = tasks.find(t => t.id.toString() === toId.toString());
+    if (toTask) {
+      if (!toTask.dependencies) toTask.dependencies = [];
+      if (!toTask.dependencies.includes(fromId)) {
+        toTask.dependencies.push(fromId);
+      }
+    }
+  });
+  
+  // Guardar cambios en el dataset
+  ganttContainer.dataset.tasks = JSON.stringify(tasks);
+  
+  // Actualizar el proyecto actual en la variable global projects
+  if (projects[projectIndex]) {
+    // Mantener las tareas originales pero actualizar dependencias
+    projects[projectIndex].tasks.forEach((originalTask, index) => {
+      const transformedTask = tasks[index];
+      if (transformedTask && originalTask) {
+        originalTask.dependencies = transformedTask.dependencies || [];
+      }
+    });
+    
+    console.log('✅ Proyecto actualizado:', projects[projectIndex]);
+  }
+  
+  // Actualizar visualización
+  refreshGanttView();
+  closeDependencyCreator();
+  
+  alert('✅ Dependencias guardadas correctamente.\nEl Gantt se ha actualizado.');
+};
+
+// 9. FUNCIÓN PARA MARCAR RUTA CRÍTICA
+window.markAsCriticalPath = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  if (tasks.length === 0) {
+    alert('No hay tareas para marcar como críticas.');
+    return;
+  }
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'dependency-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000000;
+  `;
+  
+  const modal = document.createElement('div');
+  modal.className = 'dependency-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
+    border-radius: 20px;
+    padding: 30px;
+    z-index: 1000001;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+    border: 2px solid rgba(231, 76, 60, 0.4);
+    color: white;
+  `;
+  
+  modal.innerHTML = `
+    <h3 style="color: #e74c3c; margin-top: 0; margin-bottom: 20px; text-align: center;">🔥 Marcador de Ruta Crítica</h3>
+    
+    <div style="margin-bottom: 25px; color: #95a5a6;">
+      <p>Selecciona las tareas que forman parte de la ruta crítica:</p>
+    </div>
+    
+    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 25px;">
+      ${tasks.map((task, index) => `
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 15px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 8px;
+          margin-bottom: 8px;
+          border: 1px solid ${task.critical ? 'rgba(231, 76, 60, 0.5)' : 'rgba(255,255,255,0.1)'};
+        ">
+          <input 
+            type="checkbox" 
+            id="critical_${task.id}" 
+            ${task.critical ? 'checked' : ''}
+            style="transform: scale(1.2);"
+            onchange="toggleCriticalTask('${task.id}', this.checked)"
+          >
+          <label for="critical_${task.id}" style="flex: 1; color: white; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="
+                width: 30px;
+                height: 30px;
+                background: ${task.color || '#95a5a6'};
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 13px;
+              ">
+                ${index + 1}
+              </div>
+              <span>${task.name}</span>
+            </div>
+          </label>
+          ${task.critical ? '<span style="color: #e74c3c; font-size: 12px;">🔥 CRÍTICA</span>' : ''}
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button onclick="closeCriticalModal()" style="
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+      ">
+        Cancelar
+      </button>
+      <button onclick="saveCriticalPath()" style="
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        border: none;
+        color: white;
+        padding: 10px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      ">
+        💾 Guardar Ruta Crítica
+      </button>
+    </div>
+  `;
+  
+  overlay.onclick = closeCriticalModal;
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+};
+
+// 10. FUNCIÓN PARA TOGGLE DE TAREA CRÍTICA
+window.toggleCriticalTask = function(taskId, isCritical) {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  const task = tasks.find(t => t.id.toString() === taskId.toString());
+  if (task) {
+    task.critical = isCritical;
+    ganttContainer.dataset.tasks = JSON.stringify(tasks);
+  }
+};
+
+// 11. FUNCIÓN PARA GUARDAR RUTA CRÍTICA
+window.saveCriticalPath = function() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  // Actualizar el proyecto actual
+  if (projects[projectIndex]) {
+    tasks.forEach((task, index) => {
+      const originalTask = projects[projectIndex].tasks[index];
+      if (originalTask) {
+        originalTask.priority = task.critical ? 'alta' : (originalTask.priority || 'media');
+      }
+    });
+  }
+  
+  // Cerrar modal
+  closeCriticalModal();
+  
+  // Actualizar visualización
+  refreshGanttView();
+  
+  alert('✅ Ruta crítica guardada correctamente.\nEl Gantt se ha actualizado.');
+};
+
+// 12. FUNCIÓN PARA LIMPIAR TODAS LAS DEPENDENCIAS
+window.clearAllDependencies = function() {
+  if (!confirm('¿Estás seguro de que quieres eliminar TODAS las dependencias?\nEsta acción no se puede deshacer.')) {
+    return;
+  }
+  
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  // Limpiar todas las dependencias en las tareas transformadas
+  tasks.forEach(task => {
+    task.dependencies = [];
+  });
+  
+  // Actualizar proyecto en la variable global
+  if (projects[projectIndex]) {
+    projects[projectIndex].tasks.forEach(task => {
+      task.dependencies = [];
+    });
+  }
+  
+  // Guardar cambios
+  ganttContainer.dataset.tasks = JSON.stringify(tasks);
+  
+  // Actualizar visualización
+  refreshGanttView();
+  
+  alert('✅ Todas las dependencias han sido eliminadas.');
+};
+
+// 13. FUNCIONES AUXILIARES
+function refreshDependenciesView() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const tasks = JSON.parse(ganttContainer.dataset.tasks || '[]');
+  
+  // Actualizar contador de dependencias
+  const tasksWithDeps = tasks.filter(t => t.dependencies && t.dependencies.length > 0).length;
+  const footer = ganttContainer.querySelector('div[style*="background: rgba(255, 255, 255, 0.05)"]');
+  if (footer) {
+    const depsSpan = Array.from(footer.querySelectorAll('span')).find(span => 
+      span.textContent.includes('Dependencias')
+    );
+    if (depsSpan) {
+      depsSpan.textContent = `Dependencias (${tasksWithDeps})`;
+    }
+  }
+  
+  // Actualizar sidebar (dependencias)
+  const dependenciesSection = ganttContainer.querySelector('.kpi-card[style*="background: rgba(155, 89, 182, 0.1)"]');
+  if (dependenciesSection) {
+    const depsCountSpan = dependenciesSection.querySelector('div[style*="color: #9b59b6"]');
+    if (depsCountSpan) {
+      depsCountSpan.textContent = `${tasksWithDeps} tareas con dependencias`;
+    }
+    
+    // Actualizar lista de dependencias
+    const depsList = dependenciesSection.querySelector('div[style*="max-height: 120px"]');
+    if (depsList) {
+      const newDepsHTML = generateDependenciesList(tasks);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = newDepsHTML;
+      const newContent = tempDiv.firstElementChild;
+      if (newContent) {
+        depsList.parentNode.replaceChild(newContent, depsList);
+      }
+    }
+  }
+  
+  // Volver a dibujar las líneas de dependencia
+  setTimeout(() => {
+    const oldSvg = document.querySelector('#premiumTasksContainer svg');
+    if (oldSvg) oldSvg.remove();
+    drawPremiumDependenciesComplete(tasks);
+  }, 100);
+}
+
+function refreshGanttView() {
+  const ganttContainer = document.getElementById('premiumExecutiveGantt');
+  if (!ganttContainer) return;
+  
+  const projectIndex = parseInt(ganttContainer.dataset.projectIndex) || currentProjectIndex;
+  
+  // Guardar el índice del proyecto actual
+  const savedIndex = currentProjectIndex;
+  currentProjectIndex = projectIndex;
+  
+  ganttContainer.remove();
+  createCompleteGanttForCurrentProject();
+  
+  // Restaurar el índice
+  currentProjectIndex = savedIndex;
+}
+
+function closeDependencyCreator() {
+  document.querySelector('.dependency-overlay')?.remove();
+  document.querySelector('.dependency-modal')?.remove();
+}
+
+function closeCriticalModal() {
+  document.querySelector('.dependency-overlay')?.remove();
+  document.querySelector('.dependency-modal')?.remove();
+}
+
+// 14. FUNCIONES RESTAURADAS DEL MENÚ LATERAL
+function getCriticalTasksDetails(tasks) {
+  const critical = tasks.filter(t => t.critical);
+  if (critical.length === 0) return 'No hay tareas críticas';
+  
+  const names = critical.slice(0, 3).map(t => t.name);
+  let result = names.join(', ');
+  if (critical.length > 3) result += ` y ${critical.length - 3} más`;
+  return result;
+}
+
+function calculatePredictedEndDatePremium(tasks) {
+  if (tasks.length === 0) return 'No hay datos';
+  
+  const today = new Date();
+  const maxEndDay = Math.max(...tasks.map(t => t.startDay + t.duration));
+  const predictedDate = new Date(today);
+  predictedDate.setDate(predictedDate.getDate() + maxEndDay);
+  
+  return predictedDate.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+function countTeamMembers(tasks) {
+  const members = new Set();
+  tasks.forEach(task => {
+    if (task.team && task.team.length > 0) {
+      task.team.forEach(member => members.add(member));
+    }
+  });
+  return members.size;
+}
+
+function generateTeamDistribution(tasks) {
+  const memberTasks = {};
+  tasks.forEach(task => {
+    task.team.forEach(member => {
+      if (!memberTasks[member]) memberTasks[member] = 0;
+      memberTasks[member]++;
+    });
+  });
+  
+  const topMembers = Object.entries(memberTasks)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  
+  if (topMembers.length === 0) return '<div style="color: #95a5a6; font-size: 12px;">Sin asignaciones</div>';
+  
+  return topMembers.map(([member, count]) => `
+    <div style="margin-bottom: 10px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="color: white; font-size: 13px;">${member}</span>
+        <span style="color: #3498db; font-size: 13px;">${count} tareas</span>
+      </div>
+      <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+        <div style="width: ${(count / Math.max(...Object.values(memberTasks)) * 100)}%; height: 100%; background: #3498db; border-radius: 2px;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 15. FUNCIONES DE BOTONES DEL HEADER
+window.toggleMobileViewPremium = function() {
+  const gantt = document.getElementById('premiumExecutiveGantt');
+  if (gantt) {
+    gantt.classList.toggle('mobile-view');
+    alert(gantt.classList.contains('mobile-view') ? 
+      '📱 Vista móvil activada' : '🖥️ Vista desktop activada');
+  }
+};
+
+window.showBurnDownChartPremium = function() {
+  alert('📉 Gráfico Burndown generado\n\nVisualizando progreso del proyecto vs tiempo restante.');
+};
+
+window.showAIPredictorPremium = function() {
+  alert('🤖 Predictor IA activado\n\nAnalizando:\n• Tendencias de progreso\n• Riesgos potenciales\n• Recomendaciones de optimización');
+};
+
+window.switchProjectPremium = function() {
+  const gantt = document.getElementById('premiumExecutiveGantt');
+  if (gantt) gantt.remove();
+  createProjectSelector();
+};
+
+window.exportGanttData = function() {
+  alert('📤 Exportando datos...\n\nFormatos disponibles:\n• PDF\n• Excel\n• PNG\n• JSON');
+};
+
+window.runAIAnalysisPremium = function() {
+  alert('🧠 Ejecutando análisis predictivo IA...\n\nAnalizando patrones históricos y tendencias.');
+};
+
+window.filterCriticalTasksPremium = function() {
+  alert('🔴 Filtrando tareas críticas...');
+};
+
+window.filterDelayedTasksPremium = function() {
+  alert('⚡ Filtrando tareas atrasadas...');
+};
+
+window.filterByTeamPremium = function() {
+  alert('👥 Filtrando por equipo...');
+};
+
+window.filterByBudgetPremium = function() {
+  alert('💰 Filtrando por presupuesto...');
+};
+
+window.showAllTasksPremium = function() {
+  alert('📋 Mostrando todas las tareas...');
+};
+
+window.showPremiumTaskDetails = function(taskId) {
+  const container = document.getElementById('premiumExecutiveGantt');
+  const tasks = container ? JSON.parse(container.dataset.tasks || '[]') : [];
+  const task = tasks.find(t => t.id.toString() === taskId.toString());
+  
+  if (task) {
+    alert(`📋 ${task.name}\n\n` +
+          `Progreso: ${task.progress}%\n` +
+          `Duración: ${task.duration} días\n` +
+          `Estado: ${task.status}\n` +
+          `Prioridad: ${task.priority}\n` +
+          `Asignado: ${task.team[0]}\n` +
+          `${task.critical ? '🔥 TAREA CRÍTICA' : ''}`);
+  }
+};
+
+window.updatePremiumTaskProgress = function(taskId) {
+  const newProgress = prompt('Ingrese nuevo progreso (0-100%):');
+  if (newProgress !== null && !isNaN(newProgress)) {
+    const progress = Math.min(100, Math.max(0, parseInt(newProgress)));
+    alert(`Progreso actualizado a ${progress}%`);
+  }
+};
+
+// 16. FUNCIONES AUXILIARES DE ESTILOS
+function addPremiumStyles() {
+  const styles = document.createElement('style');
+  styles.textContent = `
+    @keyframes premiumFadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    .premium-task:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4) !important;
+    }
+    
+    .premium-btn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+    }
+    
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    .active-btn {
+      opacity: 1 !important;
+      cursor: pointer !important;
+    }
+    
+    /* Estilos para scroll horizontal */
+    #premiumTasksContainer::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    
+    #premiumTasksContainer::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+    }
+    
+    #premiumTasksContainer::-webkit-scrollbar-thumb {
+      background: rgba(52, 152, 219, 0.5);
+      border-radius: 4px;
+    }
+    
+    #premiumTasksContainer::-webkit-scrollbar-thumb:hover {
+      background: rgba(52, 152, 219, 0.7);
+    }
+  `;
+  document.head.appendChild(styles);
+}
+
+function updateProjectSelector() {
+  document.querySelectorAll('.project-option').forEach((option, index) => {
+    const isSelected = index === currentProjectIndex;
+    option.style.background = isSelected ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)';
+    option.style.border = `1px solid ${isSelected ? '#3498db' : 'rgba(255,255,255,0.1)'}`;
+    const checkmark = option.querySelector('div > div:last-child');
+    checkmark.style.background = isSelected ? '#3498db' : 'rgba(255,255,255,0.1)';
+    checkmark.style.color = isSelected ? 'white' : 'transparent';
+  });
+}
+
+function getProjectProgress(project) {
+  if (!project.tasks || project.tasks.length === 0) return 0;
+  const completed = project.tasks.filter(t => t.status === 'completed').length;
+  return Math.round((completed / project.tasks.length) * 100);
+}
+
+function createSampleProjects() {
+  if (typeof projects === 'undefined') {
+    window.projects = [];
+    window.currentProjectIndex = 0;
+  }
+  
+  const sampleProjects = [
+    {
+      name: "Proyecto Alpha",
+      description: "Desarrollo de sistema principal",
+      tasks: [
+        {
+          id: 1,
+          name: "Análisis de requisitos",
+          startDate: new Date().toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "completed",
+          priority: "alta",
+          estimatedTime: 40,
+          timeLogged: 40,
+          assignee: "Ana García",
+          dependencies: []
+        },
+        {
+          id: 2,
+          name: "Diseño de arquitectura",
+          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "inProgress",
+          priority: "alta",
+          estimatedTime: 60,
+          timeLogged: 30,
+          assignee: "Carlos López",
+          dependencies: [1]
+        }
+      ]
+    },
+    {
+      name: "Proyecto Beta",
+      description: "Sitio web corporativo",
+      tasks: [
+        {
+          id: 3,
+          name: "Diseño UI/UX",
+          startDate: new Date().toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "inProgress",
+          priority: "media",
+          estimatedTime: 30,
+          timeLogged: 15,
+          assignee: "María Rodríguez",
+          dependencies: []
+        },
+        {
+          id: 4,
+          name: "Desarrollo Frontend",
+          startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          deadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "pending",
+          priority: "alta",
+          estimatedTime: 50,
+          timeLogged: 0,
+          assignee: "Pedro Martínez",
+          dependencies: [3]
+        }
+      ]
+    }
+  ];
+  
+  if (projects.length === 0) {
+    projects.push(...sampleProjects);
+    currentProjectIndex = 0;
+  }
+  
+  setTimeout(() => {
+    createPremiumGanttWithYourData();
+  }, 100);
+}
+
+// ========== INICIAR ==========
+createPremiumGanttWithYourData();
+
+
+
+
+
+// ========== FUNCIONES AUXILIARES QUE FALTAN ==========
+
+// 1. Función para obtener detalles de tareas críticas
+function getCriticalTasksDetails(tasks) {
+  const critical = tasks.filter(t => t.critical);
+  if (critical.length === 0) return 'No hay tareas críticas';
+  
+  const names = critical.slice(0, 3).map(t => t.name);
+  let result = names.join(', ');
+  if (critical.length > 3) result += ` y ${critical.length - 3} más`;
+  return result;
+}
+
+// 2. Función para calcular fecha estimada de finalización
+function calculatePredictedEndDatePremium(tasks) {
+  if (tasks.length === 0) return 'No hay datos';
+  
+  const today = new Date();
+  const maxEndDay = Math.max(...tasks.map(t => t.startDay + t.duration));
+  const predictedDate = new Date(today);
+  predictedDate.setDate(predictedDate.getDate() + maxEndDay);
+  
+  return predictedDate.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+// 3. Función para contar miembros del equipo
+function countTeamMembers(tasks) {
+  const members = new Set();
+  tasks.forEach(task => {
+    if (task.team && task.team.length > 0) {
+      task.team.forEach(member => members.add(member));
+    }
+  });
+  return members.size;
+}
+
+// 4. Función para generar distribución del equipo
+function generateTeamDistribution(tasks) {
+  const memberTasks = {};
+  tasks.forEach(task => {
+    task.team.forEach(member => {
+      if (!memberTasks[member]) memberTasks[member] = 0;
+      memberTasks[member]++;
+    });
+  });
+  
+  const topMembers = Object.entries(memberTasks)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  
+  if (topMembers.length === 0) return '<div style="color: #95a5a6; font-size: 12px;">Sin asignaciones</div>';
+  
+  return topMembers.map(([member, count]) => `
+    <div style="margin-bottom: 10px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="color: white; font-size: 13px;">${member}</span>
+        <span style="color: #3498db; font-size: 13px;">${count} tareas</span>
+      </div>
+      <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+        <div style="width: ${(count / Math.max(...Object.values(memberTasks)) * 100)}%; height: 100%; background: #3498db; border-radius: 2px;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
