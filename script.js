@@ -1,3 +1,31 @@
+// ============================================
+// BOTÓN FLOTANTE PARA HYPERION DASHBOARD
+// ============================================
+(function addHyperionButton() {
+    // Esperar a que el DOM esté listo
+    if(document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addButton);
+    } else {
+        addButton();
+    }
+    
+    function addButton() {
+        // Verificar si el botón ya existe
+        if(document.getElementById('hyperionLaunchBtn')) return;
+        
+        const btn = document.createElement('button');
+        btn.id = 'hyperionLaunchBtn';
+        btn.innerHTML = '🚀 HYPERION X ∞';
+        btn.style.cssText = 'position:fixed;bottom:20px;left:20px;background:linear-gradient(135deg,#00F0FF,#FF00D4);border:none;color:white;padding:14px 28px;border-radius:60px;cursor:pointer;z-index:10000;font-weight:bold;box-shadow:0 0 20px rgba(0,240,255,.4);font-family:system-ui;';
+        btn.onclick = function() {
+            window.open('hyperion.html', '_blank', 'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
+        };
+        document.body.appendChild(btn);
+    }
+})();
+
+
+
 
 // Versión: 2026-05-17 - actualización de cach
 
@@ -6904,13 +6932,17 @@ setTimeout(function(){
 
 
 // ============================================================
-// INFORME EVM EJECUTIVO - PMI STANDARD
-// Cumple con estándares PMBOK® Guide
+// INFORME EVM EJECUTIVO - PMI STANDARD (CORREGIDO)
+// Cálculo con días hábiles exclusivamente
 // ============================================================
 
 // ============================================================
-// FUNCIÓN PARA CALCULAR PV CON DÍAS HÁBILES
+// FUNCIONES DE DÍAS HÁBILES CORREGIDAS
 // ============================================================
+
+/**
+ * Cuenta días hábiles (lunes a viernes) entre dos fechas, inclusive
+ */
 function contarDiasHabiles(inicio, fin) {
     let count = 0;
     const current = new Date(inicio);
@@ -6918,16 +6950,19 @@ function contarDiasHabiles(inicio, fin) {
     current.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
     
-    while (current < end) {
-        current.setDate(current.getDate() + 1);
+    while (current <= end) {
         const dia = current.getDay();
         if (dia !== 0 && dia !== 6) {
             count++;
         }
+        current.setDate(current.getDate() + 1);
     }
     return count;
 }
 
+/**
+ * Cuenta días hábiles transcurridos desde inicio hasta hoy (excluyendo hoy si no ha terminado)
+ */
 function contarDiasHabilesTranscurridos(inicio, hoy) {
     let count = 0;
     const current = new Date(inicio);
@@ -6945,10 +6980,26 @@ function contarDiasHabilesTranscurridos(inicio, hoy) {
     return count;
 }
 
-function getPVConDiasHabiles(tasks) {
+/**
+ * Ajusta la fecha actual al último día hábil si es fin de semana
+ */
+function ajustarALastimoDiaHabil(fecha) {
+    const f = new Date(fecha);
+    const dia = f.getDay();
+    if (dia === 6) { // sábado
+        f.setDate(f.getDate() - 1);
+    } else if (dia === 0) { // domingo
+        f.setDate(f.getDate() - 2);
+    }
+    return f;
+}
+
+/**
+ * Calcula el Valor Planificado (PV) usando días hábiles
+ */
+function getPVConDiasHabiles(tasks, today) {
     let pvTotal = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const fechaReferencia = ajustarALastimoDiaHabil(today);
     
     tasks.forEach(task => {
         const estimado = Number(task.estimatedTime) || 0;
@@ -6960,28 +7011,73 @@ function getPVConDiasHabiles(tasks) {
             end.setHours(0, 0, 0, 0);
             
             let pvProgress = 0;
-            if (today >= end) {
+            
+            if (fechaReferencia >= end) {
                 pvProgress = 1;
-            } else if (today <= start) {
+            } else if (fechaReferencia <= start) {
                 pvProgress = 0;
             } else {
                 const totalDiasHabiles = contarDiasHabiles(start, end);
-                const diasHabilesTranscurridos = contarDiasHabilesTranscurridos(start, today);
+                const diasHabilesTranscurridos = contarDiasHabilesTranscurridos(start, fechaReferencia);
                 pvProgress = totalDiasHabiles > 0 ? diasHabilesTranscurridos / totalDiasHabiles : 0;
                 pvProgress = Math.min(1, Math.max(0, pvProgress));
             }
             pvTotal += estimado * pvProgress;
-        } else {
-            pvTotal += estimado * 0.5;
         }
     });
     
     return Math.round(pvTotal * 100) / 100;
 }
 
+/**
+ * Calcula el Valor Ganado (EV) basado en progreso real
+ */
+function getEV(tasks) {
+    let evTotal = 0;
+    
+    tasks.forEach(task => {
+        const estimado = Number(task.estimatedTime) || 0;
+        let progreso = 0;
+        
+        // Prioridad: 1) Progreso explícito, 2) Estado, 3) Horas registradas
+        if (task.progress !== undefined && task.progress !== null && !isNaN(Number(task.progress))) {
+            progreso = Number(task.progress) / 100;
+        } else if (task.status === 'completed') {
+            progreso = 1;
+        } else if (task.status === 'inProgress') {
+            // Si tiene horas registradas vs estimadas
+            const horasReg = Number(task.timeLogged) || 0;
+            if (estimado > 0 && horasReg > 0) {
+                progreso = Math.min(0.99, horasReg / estimado);
+            } else if (task.progressPercentage !== undefined) {
+                progreso = Number(task.progressPercentage) / 100;
+            } else {
+                progreso = 0; // Sin información, asumimos 0 (conservador)
+            }
+        } else if (task.status === 'pending' || task.status === 'overdue' || task.status === 'rezagado') {
+            progreso = 0;
+        }
+        
+        // Limitar entre 0 y 1
+        progreso = Math.min(1, Math.max(0, progreso));
+        evTotal += estimado * progreso;
+    });
+    
+    return Math.round(evTotal * 100) / 100;
+}
+
+/**
+ * Obtiene el Costo Real (AC) sumando horas registradas
+ */
+function getAC(tasks) {
+    const total = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+    return Math.round(total * 100) / 100;
+}
+
 // ============================================================
-// INFORME EVM EJECUTIVO - CON TODOS LOS ELEMENTOS ORIGINALES
+// INFORME EVM EJECUTIVO - VERSIÓN CORREGIDA
 // ============================================================
+
 function generarInformeEVMPMI() {
 
     const proyecto = obtenerProyectoActual();
@@ -6994,49 +7090,37 @@ function generarInformeEVMPMI() {
     const tasks = proyecto.tasks || [];
 
     // ============================================================
+    // FECHA DE CORTE: hoy ajustada a día hábil
+    // ============================================================
+    const today = new Date();
+    const fechaCorte = ajustarALastimoDiaHabil(today);
+    const fechaCorteStr = fechaCorte.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // ============================================================
     // KPIs GENERALES
     // ============================================================
 
     const total = tasks.length;
     const completadas = tasks.filter(t => t.status === 'completed').length;
     const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
-    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < fechaCorte && t.status !== 'completed').length;
     const horasEst = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
-    const horasReg = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+    const horasReg = getAC(tasks);
 
     // ============================================================
-    // MÉTRICAS BASE - PV CORREGIDO CON DÍAS HÁBILES
+    // MÉTRICAS EVM CORREGIDAS
     // ============================================================
     const BAC = horasEst;
-    const PV = getPVConDiasHabiles(tasks);
+    const PV = getPVConDiasHabiles(tasks, today);
     const AC = horasReg;
+    const EV = getEV(tasks);
 
     // ============================================================
-    // VALOR GANADO (EV)
-    // ============================================================
-    let EV = 0;
-    tasks.forEach(task => {
-        const estimado = Number(task.estimatedTime) || 0;
-        let progreso = 0;
-        if (task.progress !== undefined && task.progress !== null) {
-            progreso = Number(task.progress) / 100;
-        } else if (task.status === 'completed') {
-            progreso = 1.0;
-        } else if (task.status === 'inProgress') {
-            progreso = 0.5;
-        } else if (task.status === 'overdue' || task.status === 'rezagado') {
-            const registrado = Number(task.timeLogged) || 0;
-            if (estimado > 0 && registrado > 0) {
-                progreso = Math.min(0.99, registrado / estimado);
-            } else {
-                progreso = 0.5;
-            }
-        }
-        EV += estimado * progreso;
-    });
-
-    // ============================================================
-    // MÉTRICAS PMI
+    // MÉTRICAS DERIVADAS PMI
     // ============================================================
     const SV = EV - PV;
     const CV = EV - AC;
@@ -7074,7 +7158,28 @@ function generarInformeEVMPMI() {
     });
 
     // ============================================================
-    // HTML DEL INFORME (DISEÑO ORIGINAL COMPLETO)
+    // DATOS PARA DEPURACIÓN (OPCIONAL - MOSTRAR EN CONSOLA)
+    // ============================================================
+    console.log('=== INFORME EVM CORREGIDO ===');
+    console.log('Fecha corte (día hábil):', fechaCorteStr);
+    console.log('BAC:', BAC, 'h');
+    console.log('PV:', PV, 'h');
+    console.log('EV:', EV, 'h');
+    console.log('AC:', AC, 'h');
+    console.log('SPI:', SPI);
+    console.log('CPI:', CPI);
+    console.log('Detalle tareas:');
+    tasks.forEach(t => {
+        const est = Number(t.estimatedTime) || 0;
+        let prog = 0;
+        if (t.progress !== undefined && t.progress !== null) prog = Number(t.progress);
+        else if (t.status === 'completed') prog = 100;
+        else if (t.status === 'inProgress') prog = (Number(t.timeLogged) || 0) / est * 100;
+        console.log(` - ${t.name}: Est=${est}h, Prog=${prog}%, Status=${t.status}`);
+    });
+
+    // ============================================================
+    // HTML DEL INFORME
     // ============================================================
     const contenido = `
 <div style="background:linear-gradient(135deg,#0f172a,#1e293b,#0f172a);color:white;padding:35px;text-align:center;border-radius:16px 16px 0 0;">
@@ -7082,13 +7187,14 @@ function generarInformeEVMPMI() {
         <div style="background:linear-gradient(135deg,#10b981,#059669);width:60px;height:60px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;">📊</div>
         <div>
             <h1 style="margin:0;font-size:28px;">INFORME DE VALOR GANADO (EVM)</h1>
-            <p style="margin:5px 0 0 0;opacity:0.85;">EARNED VALUE MANAGEMENT REPORT - DOCUMENTO EJECUTIVO</p>
+            <p style="margin:5px 0 0 0;opacity:0.85;">EARNED VALUE MANAGEMENT REPORT - PMI STANDARD</p>
         </div>
     </div>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:15px;">
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📌 ${proyecto.name}</div>
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">🔑 ${codigoEVM}</div>
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📅 ${fechaEmision}</div>
+        <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📆 Corte: ${fechaCorteStr}</div>
     </div>
 </div>
 
@@ -7099,6 +7205,7 @@ function generarInformeEVMPMI() {
         <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📈 Estado General del Proyecto</h2>
         <div style="background:${colorEstado}20;border:2px solid ${colorEstado};border-radius:16px;padding:25px;text-align:center;margin-bottom:20px;">
             <div style="font-size:28px;font-weight:bold;color:${colorEstado};">${estadoProyecto}</div>
+            <div style="margin-top:10px;font-size:14px;opacity:0.8;">Basado en SPI=${SPI.toFixed(2)} y CPI=${CPI.toFixed(2)}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;">
             <div style="background:#dbeafe;padding:20px;border-radius:12px;text-align:center;">
@@ -7120,6 +7227,16 @@ function generarInformeEVMPMI() {
         </div>
     </div>
 
+    <!-- NOTA METODOLÓGICA -->
+    <div style="margin-bottom:30px;">
+        <div style="background:#f0f9ff;padding:15px 20px;border-radius:12px;border-left:4px solid #3b82f6;">
+            <p style="margin:0;font-size:13px;color:#1e40af;">
+            📐 <strong>Metodología:</strong> Cálculo PMI estándar con <strong>días hábiles exclusivamente</strong> (lunes a viernes). 
+            La fecha de corte es ${fechaCorteStr} (último día hábil). PV calculado por prorrateo lineal de horas estimadas sobre duración hábil de cada tarea.
+            </p>
+        </div>
+    </div>
+
     <!-- RESUMEN EJECUTIVO -->
     <div style="margin-bottom:30px;">
         <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📋 Resumen Ejecutivo para Alta Dirección</h2>
@@ -7127,7 +7244,9 @@ function generarInformeEVMPMI() {
             <p style="line-height:1.8;color:#374151;text-align:justify;margin:0;">
                 El presente Informe de Valor Ganado (EVM) proporciona un análisis integral del desempeño del proyecto 
                 <strong>${proyecto.name}</strong> mediante métricas estandarizadas del Project Management Institute (PMI).
-                Las métricas presentadas (PV, EV, AC, SPI, CPI) permiten una evaluación integral del desempeño.
+                Al corte del ${fechaCorteStr} (día hábil ${Math.round((PV/BAC)*100)}% del período planificado), 
+                el proyecto presenta un <strong>SPI de ${SPI.toFixed(2)}</strong> (${SPI>=1?'adelanto':'retraso'} del ${Math.abs((1-SPI)*100).toFixed(1)}% en cronograma) 
+                y un <strong>CPI de ${CPI.toFixed(2)}</strong> (${CPI>=1?'dentro':'por encima'} del presupuesto).
             </p>
         </div>
     </div>
@@ -7139,7 +7258,7 @@ function generarInformeEVMPMI() {
             <div style="background:#dbeafe;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #3b82f6;">
                 <div style="font-size:32px;font-weight:bold;">${PV.toFixed(1)}h</div>
                 <div style="font-size:14px;color:#1e40af;font-weight:bold;">PV - Valor Planificado</div>
-                <div style="font-size:11px;color:#64748b;">Presupuesto base aprobado (BAC)</div>
+                <div style="font-size:11px;color:#64748b;">Trabajo planificado hasta la fecha</div>
             </div>
             <div style="background:#dcfce7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #10b981;">
                 <div style="font-size:32px;font-weight:bold;">${EV.toFixed(1)}h</div>
@@ -7149,7 +7268,7 @@ function generarInformeEVMPMI() {
             <div style="background:#fee2e2;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #ef4444;">
                 <div style="font-size:32px;font-weight:bold;">${AC.toFixed(1)}h</div>
                 <div style="font-size:14px;color:#991b1b;font-weight:bold;">AC - Costo Real</div>
-                <div style="font-size:11px;color:#64748b;">Horas reales registradas (AC)</div>
+                <div style="font-size:11px;color:#64748b;">Horas reales registradas</div>
             </div>
         </div>
     </div>
@@ -7188,14 +7307,14 @@ function generarInformeEVMPMI() {
                         <td style="padding:12px;text-align:center;">EV / PV</td>
                         <td style="padding:12px;text-align:center;font-weight:bold;font-size:18px;">${SPI.toFixed(2)}</td>
                         <td style="padding:12px;text-align:center;">${SPI>=1?'Eficiencia óptima':SPI>=0.9?'Ligero retraso':'Significativamente retrasado'}</td>
-                        <td style="padding:12px;text-align:center;">${SPI>=1?'✅ Óptimo':'🔴 Crítico'}</td>
+                        <td style="padding:12px;text-align:center;">${SPI>=0.95?'✅ Óptimo':SPI>=0.8?'⚠️ Atención':'🔴 Crítico'}</td>
                     </tr>
                     <tr style="background:white;">
                         <td style="padding:12px;">💵 CPI - Índice de Costo</td>
                         <td style="padding:12px;text-align:center;">EV / AC</td>
                         <td style="padding:12px;text-align:center;font-weight:bold;font-size:18px;">${CPI.toFixed(2)}</td>
                         <td style="padding:12px;text-align:center;">${CPI>=1?'Eficiencia financiera óptima':CPI>=0.9?'Ligero sobrecosto':'Sobrecosto significativo'}</td>
-                        <td style="padding:12px;text-align:center;">${CPI>=1?'✅ Óptimo':'🔴 Crítico'}</td>
+                        <td style="padding:12px;text-align:center;">${CPI>=0.95?'✅ Óptimo':CPI>=0.8?'⚠️ Atención':'🔴 Crítico'}</td>
                     </tr>
                 </tbody>
             </table>
@@ -7209,14 +7328,17 @@ function generarInformeEVMPMI() {
             <div style="background:#fef3c7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #f59e0b;">
                 <div style="font-size:28px;font-weight:bold;">${EAC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">EAC - Estimado al Finalizar</div>
+                <div style="font-size:11px;color:#64748b;">Basado en CPI actual</div>
             </div>
             <div style="background:#dbeafe;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #3b82f6;">
                 <div style="font-size:28px;font-weight:bold;">${ETC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">ETC - Estimado para Completar</div>
+                <div style="font-size:11px;color:#64748b;">Horas necesarias para terminar</div>
             </div>
             <div style="background:#dcfce7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #10b981;">
                 <div style="font-size:28px;font-weight:bold;color:${VAC>=0?'#166534':'#991b1b'};">${VAC>=0?'+':''}${VAC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">VAC - Variación al Finalizar</div>
+                <div style="font-size:11px;color:#64748b;">${VAC>=0?'Ahorro':'Sobrecosto'} proyectado</div>
             </div>
         </div>
     </div>
@@ -7227,93 +7349,60 @@ function generarInformeEVMPMI() {
         <div style="background:#f8fafc;padding:25px;border-radius:16px;">
             <canvas id="evmChart" width="800" height="350" style="max-width:100%;height:auto;"></canvas>
             <div style="display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-top:20px;">
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#3b82f6;border-radius:4px;"></span><span>PV (Planificado)</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#10b981;border-radius:4px;"></span><span>EV (Ganado)</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#ef4444;border-radius:4px;"></span><span>AC (Real)</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#3b82f6;border-radius:4px;"></span><span>PV (Planificado) - ${PV.toFixed(1)}h</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#10b981;border-radius:4px;"></span><span>EV (Ganado) - ${EV.toFixed(1)}h</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#ef4444;border-radius:4px;"></span><span>AC (Real) - ${AC.toFixed(1)}h</span></div>
             </div>
         </div>
     </div>
 
-    <!-- ANÁLISIS DE RIESGOS -->
+    <!-- DETALLE DE TAREAS PARA AUDITORÍA -->
     <div style="margin-bottom:30px;">
-        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">⚠️ Análisis de Riesgos Basado en Métricas EVM</h2>
+        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📋 Detalle de Tareas - Cálculo EVM</h2>
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
                 <thead>
-                    <tr style="background:#fee2e2;">
-                        <th style="padding:12px;">Riesgo Identificado</th>
-                        <th style="padding:12px;">Indicador EVM</th>
-                        <th style="padding:12px;">Probabilidad</th>
-                        <th style="padding:12px;">Impacto</th>
-                        <th style="padding:12px;">Mitigación</th>
+                    <tr style="background:#dbeafe;">
+                        <th style="padding:12px;">Tarea</th>
+                        <th style="padding:12px;">Estado</th>
+                        <th style="padding:12px;">Est. (h)</th>
+                        <th style="padding:12px;">Real (h)</th>
+                        <th style="padding:12px;">Progreso Real</th>
+                        <th style="padding:12px;">EV (h)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="background:#f8fafc;">
-                        <td style="padding:12px;">🔴 Retraso en cronograma proyectado</td>
-                        <td style="padding:12px;">SPI = ${SPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${SPI<0.9?'#fee2e2':'#dcfce7'};color:${SPI<0.9?'#991b1b':'#166534'};padding:4px 12px;border-radius:20px;">${SPI<0.9?'Alta':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">${SPI<0.8?'Crítico':SPI<0.9?'Alto':'Medio'}</span></td>
-                        <td style="padding:12px;">Revisar ruta crítica, asignar recursos adicionales</td>
-                    </tr>
-                    <tr style="background:white;">
-                        <td style="padding:12px;">🔴 Sobrecosto proyectado</td>
-                        <td style="padding:12px;">CPI = ${CPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${CPI<0.9?'#fee2e2':'#dcfce7'};color:${CPI<0.9?'#991b1b':'#166534'};padding:4px 12px;border-radius:20px;">${CPI<0.9?'Alta':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${CPI<0.8?'#fee2e2':CPI<0.9?'#fef3c7':'#dcfce7'};color:${CPI<0.8?'#991b1b':CPI<0.9?'#92400e':'#166534'};padding:4px 12px;border-radius:20px;">${CPI<0.8?'Crítico':CPI<0.9?'Alto':'Medio'}</span></td>
-                        <td style="padding:12px;">Controlar horas extra, revisar estimaciones pendientes</td>
-                    </tr>
-                    <tr style="background:#f8fafc;">
-                        <td style="padding:12px;">🟡 Eficiencia requerida elevada</td>
-                        <td style="padding:12px;">TCPI = ${TCPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${TCPI>1.1?'#fef3c7':'#dcfce7'};color:${TCPI>1.1?'#92400e':'#166534'};padding:4px 12px;border-radius:20px;">${TCPI>1.1?'Media':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">Alto</span></td>
-                        <td style="padding:12px;">Optimizar procesos, eliminar actividades de bajo valor</td>
-                    </tr>
+                    ${tasks.map(t => {
+                        const est = Number(t.estimatedTime) || 0;
+                        const real = Number(t.timeLogged) || 0;
+                        let progReal = 0;
+                        if (t.progress !== undefined && t.progress !== null) progReal = Number(t.progress);
+                        else if (t.status === 'completed') progReal = 100;
+                        else if (t.status === 'inProgress' && est > 0) progReal = Math.min(99, (real/est)*100);
+                        const evTarea = est * (progReal/100);
+                        return `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px;">${t.name || 'Sin nombre'}</td>
+                            <td style="padding:12px;">${t.status === 'completed' ? '✅ Completada' : t.status === 'inProgress' ? '🔄 En progreso' : '⏳ Pendiente'}</td>
+                            <td style="padding:12px;text-align:center;">${est}h</td>
+                            <td style="padding:12px;text-align:center;">${real}h</td>
+                            <td style="padding:12px;text-align:center;">${progReal}%</td>
+                            <td style="padding:12px;text-align:center;font-weight:bold;">${evTarea.toFixed(1)}h</td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
+                <tfoot>
+                    <tr style="background:#e2e8f0;font-weight:bold;">
+                        <td style="padding:12px;">TOTAL</td>
+                        <td style="padding:12px;"></td>
+                        <td style="padding:12px;text-align:center;">${BAC}h</td>
+                        <td style="padding:12px;text-align:center;">${AC}h</td>
+                        <td style="padding:12px;"></td>
+                        <td style="padding:12px;text-align:center;">${EV.toFixed(1)}h</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-    </div>
-
-    <!-- RECOMENDACIONES -->
-    <div style="margin-bottom:30px;">
-        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">💡 Recomendaciones Estratégicas</h2>
-        <table style="width:100%;border-collapse:collapse;">
-            <thead>
-                <tr style="background:#dbeafe;">
-                    <th style="padding:12px;">#</th>
-                    <th style="padding:12px;text-align:left;">Recomendación</th>
-                    <th style="padding:12px;text-align:center;">Prioridad</th>
-                    <th style="padding:12px;text-align:center;">Impacto Esperado</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr style="background:#f8fafc;">
-                    <td style="padding:12px;text-align:center;">1</td>
-                    <td style="padding:12px;">Revisar cronograma y reasignar recursos a tareas críticas</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">🔴 Alta</span></td>
-                    <td style="padding:12px;text-align:center;">Recuperar 10-15% del retraso</td>
-                </tr>
-                <tr style="background:white;">
-                    <td style="padding:12px;text-align:center;">2</td>
-                    <td style="padding:12px;">Implementar control estricto de horas y revisar estimaciones pendientes</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">🔴 Alta</span></td>
-                    <td style="padding:12px;text-align:center;">Reducir sobrecosto en 5-10%</td>
-                </tr>
-                <tr style="background:#f8fafc;">
-                    <td style="padding:12px;text-align:center;">3</td>
-                    <td style="padding:12px;">Optimizar procesos y eliminar actividades de bajo valor</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">🟡 Media</span></td>
-                    <td style="padding:12px;text-align:center;">Mejorar TCPI a <1.1</td>
-                </tr>
-                <tr style="background:white;">
-                    <td style="padding:12px;text-align:center;">4</td>
-                    <td style="padding:12px;">Actualizar línea base EVM tras cambios de alcance aprobados</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">🟡 Media</span></td>
-                    <td style="padding:12px;text-align:center;">Mejorar precisión de proyecciones</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- PIE DE PÁGINA -->
@@ -7321,6 +7410,7 @@ function generarInformeEVMPMI() {
         <p style="color:#64748b;font-size:12px;margin:0;line-height:1.8;">
             <strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información financiera y de desempeño estratégica del proyecto.<br>
             <strong>📋 METODOLOGÍA:</strong> Análisis basado en Earned Value Management (EVM) según estándares PMI PMBOK® Guide.<br>
+            <strong>📆 CÁLCULO CON DÍAS HÁBILES:</strong> PV calculado sobre días laborables (lunes a viernes). Fecha de corte ajustada al último día hábil.<br>
             <strong>✅ APROBACIÓN:</strong> Este informe debe ser revisado por el Sponsor y el Comité de Dirección.<br><br>
             <em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoEVM} • ${fechaEmision}</em>
         </p>
@@ -7363,7 +7453,7 @@ function generarInformeEVMPMI() {
                 new Chart(canvas.getContext('2d'),{
                     type:'bar',
                     data:{
-                        labels:['PV','EV','AC'],
+                        labels:['PV (Planificado)','EV (Ganado)','AC (Real)'],
                         datasets:[{
                             label:'Horas',
                             data:[${PV},${EV},${AC}],
@@ -7392,12 +7482,10 @@ function generarInformeEVMPMI() {
 </html>`;
 
     const win = window.open('', '_blank');
-    if (!win) { alert('Permite ventanas emergentes'); return; }
+    if (!win) { alert('Permite ventanas emergentes para generar el informe'); return; }
     win.document.write(htmlCompleto);
     win.document.close();
 }
-
-
 
 
 
@@ -18496,21 +18584,19 @@ console.log('🟢 SCRIPT EMPIEZA');
     const token = localStorage.getItem('authToken');
     
     // ========== SLACK (USA PROXY) ==========
-    if (config.slack?.enabled) {
-        console.log(`📡 Enviando a Slack...`);
-        const webhookUrl = config.slack.webhookUrl;
-        if (token && webhookUrl) {
-            const mensaje = `📌 *Nueva Tarea*\n*Tarea:* ${tarea}\n*Proyecto:* ${proyecto}\n🕐 ${new Date().toLocaleString()}`;
-            try {
-                const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ webhookUrl, mensaje, tipo: 'info', color: '#3498db' })
-                });
-                console.log(res.ok ? '   ✅ Slack: OK' : '   ❌ Slack: Falló');
-            } catch(e) { console.log('   ❌ Slack:', e.message); }
-        }
-    }
+ // Dentro de sincronizarTarea
+if (config.slack?.enabled && token && config.slack?.webhookUrl) {
+    console.log(`📡 Enviando a Slack...`);
+    const mensaje = `📌 *Nueva Tarea*\n*Tarea:* ${tarea}\n*Proyecto:* ${proyecto}\n🕐 ${new Date().toLocaleString()}`;
+    try {
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ webhookUrl: config.slack.webhookUrl, mensaje, tipo: 'info', color: '#3498db' })
+        });
+        console.log(res.ok ? '   ✅ Slack: OK' : '   ❌ Slack: Falló');
+    } catch(e) { console.log('   ❌ Slack:', e.message); }
+}
     
     // ========== TELEGRAM ==========
     if (config.telegram?.enabled && config.telegram?.botToken) {
@@ -18524,89 +18610,146 @@ console.log('🟢 SCRIPT EMPIEZA');
         } catch(e) { console.log('   ❌ Telegram:', e.message); }
     }
     
-    // ========== TRELLO ==========
-    if (config.trello?.enabled && config.trello?.apiKey && config.trello?.token && config.trello?.listId) {
-        console.log(`📡 Enviando a Trello...`);
-        try {
-            const res = await fetch(`https://api.trello.com/1/cards?key=${config.trello.apiKey}&token=${config.trello.token}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: tarea, desc: `Proyecto: ${proyecto}`, idList: config.trello.listId })
-            });
-            console.log(res.ok ? '   ✅ Trello: OK' : '   ❌ Trello: Falló');
-        } catch(e) { console.log('   ❌ Trello:', e.message); }
-    }
-    
+  // ========== TRELLO ==========
+// ========== TRELLO ==========
+if (config.trello?.enabled && config.trello?.apiKey && config.trello?.token && config.trello?.listId) {
+    console.log(`📡 Enviando a Trello...`);
+    try {
+        const res = await fetch(`https://api.trello.com/1/cards?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: tarea, desc: `Proyecto: ${proyecto}`, idList: config.trello.listId })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].trello = data.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Trello: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ Trello: Falló');
+        }
+    } catch(e) { console.log('   ❌ Trello:', e.message); }
+}
+
+
     // ========== GITHUB ==========
-    if (config.github?.enabled && config.github?.token && config.github?.repo) {
-        console.log(`📡 Enviando a GitHub...`);
-        try {
-            const [owner, repo] = config.github.repo.split('/');
-            const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
-                method: 'POST', headers: { 'Authorization': `token ${config.github.token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: tarea, body: `Proyecto: ${proyecto}` })
-            });
-            console.log(res.ok ? '   ✅ GitHub: OK' : '   ❌ GitHub: Falló');
-        } catch(e) { console.log('   ❌ GitHub:', e.message); }
-    }
+ if (config.github?.enabled && config.github?.token && config.github?.repo) {
+    console.log(`📡 Enviando a GitHub...`);
+    try {
+        const [owner, repo] = config.github.repo.split('/');
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+            method: 'POST', headers: { 'Authorization': `token ${config.github.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: tarea, body: `Proyecto: ${proyecto}` })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            const proyectoActual = window.projects?.[window.projects.length - 1];
+            if (proyectoActual && proyectoActual.tasks) {
+                const tareaActual = proyectoActual.tasks[proyectoActual.tasks.length - 1];
+                if (tareaActual) tareaActual.githubIssueId = data.id;
+            }
+            console.log(`   ✅ GitHub: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ GitHub: Falló');
+        }
+    } catch(e) { console.log('   ❌ GitHub:', e.message); }
+}
     
     // ========== ASANA ==========
-    if (config.asana?.enabled && config.asana?.accessToken && config.asana?.projectId) {
-        console.log(`📡 Enviando a Asana...`);
-        try {
-            const res = await fetch('https://app.asana.com/api/1.0/tasks', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: { name: tarea, notes: `Proyecto: ${proyecto}`, projects: [config.asana.projectId] } })
-            });
-            console.log(res.ok ? '   ✅ Asana: OK' : '   ❌ Asana: Falló');
-        } catch(e) { console.log('   ❌ Asana:', e.message); }
-    }
-    
+// ========== ASANA ==========
+if (config.asana?.enabled && config.asana?.accessToken && config.asana?.projectId) {
+    console.log(`📡 Enviando a Asana...`);
+    try {
+        const res = await fetch('https://app.asana.com/api/1.0/tasks', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: { name: tarea, notes: `Proyecto: ${proyecto}`, projects: [config.asana.projectId] } })
+        });
+        const data = await res.json();
+        if (res.ok && data.data?.gid) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].asana = data.data.gid;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Asana: OK (ID: ${data.data.gid})`);
+        } else {
+            console.log('   ❌ Asana: Falló');
+        }
+    } catch(e) { console.log('   ❌ Asana:', e.message); }
+}
     // ========== MONDAY ==========
-    if (config.monday?.enabled && config.monday?.apiToken && config.monday?.boardId) {
-        console.log(`📡 Enviando a Monday...`);
-        const query = `mutation { create_item(board_id: ${config.monday.boardId}, item_name: "${tarea}") { id } }`;
-        try {
-            const res = await fetch('https://api.monday.com/v2', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${config.monday.apiToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query })
-            });
-            console.log(res.ok ? '   ✅ Monday: OK' : '   ❌ Monday: Falló');
-        } catch(e) { console.log('   ❌ Monday:', e.message); }
-    }
+ // ========== MONDAY ==========
+if (config.monday?.enabled && config.monday?.apiToken && config.monday?.boardId) {
+    console.log(`📡 Enviando a Monday...`);
+    const query = `mutation { create_item(board_id: ${config.monday.boardId}, item_name: "${tarea}") { id } }`;
+    try {
+        const res = await fetch('https://api.monday.com/v2', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${config.monday.apiToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+        if (res.ok && data.data?.create_item?.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].monday = data.data.create_item.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Monday: OK (ID: ${data.data.create_item.id})`);
+        } else {
+            console.log('   ❌ Monday: Falló');
+        }
+    } catch(e) { console.log('   ❌ Monday:', e.message); }
+}
     
     // ========== CLICKUP ==========
-    if (config.clickup?.enabled && config.clickup?.apiToken && config.clickup?.listId) {
-        console.log(`📡 Enviando a ClickUp...`);
-        try {
-            const res = await fetch(`https://api.clickup.com/api/v2/list/${config.clickup.listId}/task`, {
-                method: 'POST',
-                headers: { 'Authorization': config.clickup.apiToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: tarea, description: `Proyecto: ${proyecto}` })
-            });
-            console.log(res.ok ? '   ✅ ClickUp: OK' : '   ❌ ClickUp: Falló');
-        } catch(e) { console.log('   ❌ ClickUp:', e.message); }
-    }
-    
+// ========== CLICKUP ==========
+if (config.clickup?.enabled && config.clickup?.apiToken && config.clickup?.listId) {
+    console.log(`📡 Enviando a ClickUp...`);
+    try {
+        const res = await fetch(`https://api.clickup.com/api/v2/list/${config.clickup.listId}/task`, {
+            method: 'POST', headers: { 'Authorization': config.clickup.apiToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: tarea, description: `Proyecto: ${proyecto}` })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].clickup = data.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ ClickUp: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ ClickUp: Falló');
+        }
+    } catch(e) { console.log('   ❌ ClickUp:', e.message); }
+}
     // ========== JIRA (USA PROXY) ==========
     if (config.jira?.enabled) {
-        console.log(`📡 Enviando a Jira...`);
-        try {
-            const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/jira-notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({
-                    domain: config.jira.domain,
-                    email: config.jira.email,
-                    apiToken: config.jira.apiToken,
-                    projectKey: config.jira.projectKey,
-                    tarea: tarea,
-                    proyecto: proyecto
-                })
-            });
-            console.log(res.ok ? '   ✅ Jira: OK' : '   ❌ Jira: Falló');
-        } catch(e) { console.log('   ❌ Jira:', e.message); }
-    }
-    
+    console.log(`📡 Enviando a Jira...`);
+    try {
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/jira-notify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                domain: config.jira.domain, email: config.jira.email,
+                apiToken: config.jira.apiToken, projectKey: config.jira.projectKey,
+                tarea: tarea, proyecto: proyecto
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.key) {
+            const proyectoActual = window.projects?.[window.projects.length - 1];
+            if (proyectoActual && proyectoActual.tasks) {
+                const tareaActual = proyectoActual.tasks[proyectoActual.tasks.length - 1];
+                if (tareaActual) tareaActual.jiraIssueId = data.key;
+            }
+            console.log(`   ✅ Jira: OK (ID: ${data.key})`);
+        } else {
+            console.log('   ❌ Jira: Falló');
+        }
+    } catch(e) { console.log('   ❌ Jira:', e.message); }
+}
     // ========== POWER BI (USA PROXY) ==========
     if (config.powerbi?.enabled && config.powerbi?.streamingUrl) {
         console.log(`📡 Enviando a Power BI...`);
@@ -18628,32 +18771,244 @@ console.log('🟢 SCRIPT EMPIEZA');
 };
 
     // ========== DETECCIÓN AUTOMÁTICA DE NUEVAS TAREAS ==========
-    let ultimoConteoTareas = 0;
-    let ultimoProyectoId = null;
+ let ultimoConteoTareas = 0;
+let estadoAnteriorTareas = new Map();
 
-    function verificarNuevasTareas() {
-        if (!window.projects || window.projects.length === 0) return;
+async function enviarNotificacionCambio(tarea, proyectoActual, cambios) {
+    const config = JSON.parse(localStorage.getItem('integraciones_100_completo') || '{}');
+    const token = localStorage.getItem('authToken');
+    const mensaje = `✏️ *Tarea Modificada*\n*Tarea:* ${tarea.name}\n*Proyecto:* ${proyectoActual}\n*Cambios:* ${cambios}\n🕐 ${new Date().toLocaleString()}`;
+    
+    // 1. Slack
+    if (config.slack?.enabled && token && config.slack?.webhookUrl) {
+        try {
+            await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ webhookUrl: config.slack.webhookUrl, mensaje, tipo: 'info', color: '#f39c12' })
+            });
+        } catch(e) {}
+    }
+    
+    // 2. Telegram
+    if (config.telegram?.enabled && config.telegram?.botToken) {
+        try {
+            await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: config.telegram.chatId, text: mensaje })
+            });
+        } catch(e) {}
+    }
+    
+    // 3. JIRA
+    if (config.jira?.enabled && config.jira?.domain && tarea.jiraIssueId) {
+        try {
+            const auth = btoa(`${config.jira.email}:${config.jira.apiToken}`);
+            await fetch(`https://${config.jira.domain}/rest/api/3/issue/${tarea.jiraIssueId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    fields: { 
+                        summary: tarea.name,
+                        description: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    } 
+                })
+            });
+        } catch(e) {}
+    }
+    
+    // 4. CLICKUP
+    if (config.clickup?.enabled && config.clickup?.apiToken && tarea.clickupTaskId) {
+        try {
+            await fetch(`https://api.clickup.com/api/v2/task/${tarea.clickupTaskId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': config.clickup.apiToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: tarea.name,
+                    description: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                })
+            });
+        } catch(e) {}
+    }
+    
+    // 5. MONDAY - CORREGIDO
+    if (config.monday?.enabled && config.monday?.apiToken && tarea.mondayItemId) {
+        try {
+            // Determinar el valor del estado según el estado de la tarea
+            let estadoMonday = "Listo para empezar"; // default
+            if (tarea.status === 'en progreso') {
+                estadoMonday = "En curso";
+            } else if (tarea.status === 'completada') {
+                estadoMonday = "Listo";
+            }
+            
+            const query = `mutation { change_simple_column_value(board_id: ${config.monday.boardId}, item_id: ${tarea.mondayItemId}, column_id: "task_status", value: "${estadoMonday}") { id } }`;
+            await fetch('https://api.monday.com/v2', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${config.monday.apiToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            console.log(`   ✅ Monday: Estado actualizado a "${estadoMonday}"`);
+        } catch(e) { console.log(`   ❌ Monday: Error - ${e.message}`); }
+    }
+    
+    // 6. ASANA - CORREGIDO (mover entre secciones)
+    if (config.asana?.enabled && config.asana?.accessToken && tarea.asanaTaskId) {
+        try {
+            // IDs de las secciones de Asana
+            const SECCIONES = {
+                'pendiente': '1215028103597916',    // Tareas pendientes
+                'en progreso': '1215028103597918',  // En curso
+                'completada': '1215028103597919'    // Trabajo terminado
+            };
+            
+            const sectionId = SECCIONES[tarea.status];
+            
+            if (sectionId) {
+                // Mover tarea a la sección correspondiente
+                await fetch(`https://app.asana.com/api/1.0/tasks/${tarea.asanaTaskId}/addProject`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: { 
+                            project: config.asana.projectId, 
+                            section: sectionId 
+                        } 
+                    })
+                });
+                console.log(`   ✅ Asana: Tarea movida a sección "${tarea.status}"`);
+            }
+            
+            // También actualizar el nombre si cambió
+            await fetch(`https://app.asana.com/api/1.0/tasks/${tarea.asanaTaskId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    data: { 
+                        name: tarea.name,
+                        notes: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    } 
+                })
+            });
+        } catch(e) { console.log(`   ❌ Asana: Error - ${e.message}`); }
+    }
+    
+    // 7. TRELLO - Mover a otra lista según estado
+    if (config.trello?.enabled && config.trello?.apiKey && config.trello?.token && tarea.trelloCardId) {
+        try {
+            // IDs de las listas de Trello
+            const LISTAS_TRELLO = {
+                'pendiente': '5d09d03ba89fb24b9b5a77f2',      // backlog
+                'en progreso': '5d09d054cbbce91c29560a17',    // crear/en progreso
+                'completada': '5d09d066e4cb61440b74db14'      // hecho
+            };
+            
+            const listId = LISTAS_TRELLO[tarea.status];
+            
+            if (listId) {
+                await fetch(`https://api.trello.com/1/cards/${tarea.trelloCardId}?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: tarea.name,
+                        desc: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`,
+                        idList: listId
+                    })
+                });
+                console.log(`   ✅ Trello: Tarjeta movida a lista "${tarea.status}"`);
+            } else {
+                // Solo actualizar nombre
+                await fetch(`https://api.trello.com/1/cards/${tarea.trelloCardId}?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: tarea.name,
+                        desc: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    })
+                });
+            }
+        } catch(e) { console.log(`   ❌ Trello: Error - ${e.message}`); }
+    }
+    
+    // 8. GITHUB
+    if (config.github?.enabled && config.github?.token && config.github?.repo && tarea.githubIssueId) {
+        const [owner, repo] = config.github.repo.split('/');
+        try {
+            await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${tarea.githubIssueId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${config.github.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title: tarea.name,
+                    body: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                })
+            });
+            console.log(`   ✅ GitHub: Issue actualizado`);
+        } catch(e) { console.log(`   ❌ GitHub: Error - ${e.message}`); }
+    }
+}
+function verificarNuevasTareas() {
+    if (!window.projects || window.projects.length === 0) return;
+    
+    const proyectoActual = window.projects[window.projects.length - 1];
+    if (!proyectoActual || !proyectoActual.tasks) return;
+    
+    const tareasActuales = proyectoActual.tasks;
+    const totalTareas = tareasActuales.length;
+    
+    // Detectar nuevas tareas
+    if (totalTareas > ultimoConteoTareas) {
+        const nuevaTarea = tareasActuales[totalTareas - 1];
+        console.log(`🆕 Nueva tarea: "${nuevaTarea.name}"`);
+        window.sincronizarTarea(nuevaTarea.name, proyectoActual.name);
+    }
+    
+    // Detectar modificaciones
+    tareasActuales.forEach(tarea => {
+        const estadoGuardado = estadoAnteriorTareas.get(tarea.id);
+        const estadoActual = JSON.stringify({
+            name: tarea.name,
+            status: tarea.status,
+            assignee: tarea.assignee
+        });
         
-        const proyectoActual = window.projects[window.projects.length - 1];
-        if (!proyectoActual || !proyectoActual.tasks) return;
-        
-        const totalTareas = proyectoActual.tasks.length;
-        const proyectoId = proyectoActual._id || proyectoActual.id || proyectoActual.name;
-        
-        if ((totalTareas > ultimoConteoTareas || proyectoId !== ultimoProyectoId) && totalTareas > 0) {
-            const nuevaTarea = proyectoActual.tasks[totalTareas - 1];
-            if (nuevaTarea && nuevaTarea.name && !nuevaTarea._sincronizada) {
-                nuevaTarea._sincronizada = true;
-                console.log(`\n🆕 NUEVA TAREA DETECTADA AUTOMÁTICAMENTE:`);
-                console.log(`   📝 Tarea: "${nuevaTarea.name}"`);
-                console.log(`   📂 Proyecto: "${proyectoActual.name}"`);
-                window.sincronizarTarea(nuevaTarea.name, proyectoActual.name);
+        if (estadoGuardado && estadoGuardado !== estadoActual) {
+            console.log(`✏️ Tarea MODIFICADA: "${tarea.name}"`);
+            
+            const anterior = JSON.parse(estadoGuardado);
+            const actual = JSON.parse(estadoActual);
+            const cambios = [];
+            if (anterior.name !== actual.name) cambios.push(`título (de "${anterior.name}" a "${actual.name}")`);
+            if (anterior.status !== actual.status) cambios.push(`estado (de "${anterior.status}" a "${actual.status}")`);
+            if (anterior.assignee !== actual.assignee) cambios.push(`asignado (de "${anterior.assignee}" a "${actual.assignee}")`);
+            
+            if (cambios.length > 0) {
+                enviarNotificacionCambio(tarea, proyectoActual.name, cambios.join(', '));
             }
         }
         
-        ultimoConteoTareas = totalTareas;
-        ultimoProyectoId = proyectoId;
+        estadoAnteriorTareas.set(tarea.id, estadoActual);
+    });
+    
+    ultimoConteoTareas = totalTareas;
+}
+
+function inicializarEstadoTareas() {
+    if (!window.projects || window.projects.length === 0) return;
+    const proyectoActual = window.projects[window.projects.length - 1];
+    if (proyectoActual && proyectoActual.tasks) {
+        proyectoActual.tasks.forEach(tarea => {
+            estadoAnteriorTareas.set(tarea.id, JSON.stringify({
+                name: tarea.name,
+                status: tarea.status,
+                assignee: tarea.assignee
+            }));
+        });
+        console.log(`✅ Estado inicializado: ${estadoAnteriorTareas.size} tareas`);
     }
+}
+
+setTimeout(inicializarEstadoTareas, 2000);
+setInterval(verificarNuevasTareas, 3000);
 
     setInterval(verificarNuevasTareas, 3000);
     console.log('✅ Monitoreo automático de tareas ACTIVADO');
@@ -56286,6 +56641,80 @@ console.log('📌 Usa: showView("board") para volver');
 // 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR
 // ============================================
 
+// ============================================
+// 📊 CONTAR DÍAS HÁBILES
+// ============================================
+// ============================================
+// 📊 CONTAR DÍAS HÁBILES
+// ============================================
+function contarDiasHabiles(inicio, fin) {
+    const start = new Date(inicio);
+    const end = new Date(fin);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    if (start > end) return 0;
+    let count = 0;
+    const current = new Date(start);
+    while (current <= end) {
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) {
+            count++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    return count;
+}
+
+// ============================================
+// 📊 CALCULAR PV CON DÍAS HÁBILES (usando startDay y duration)
+// ============================================
+function calcularPVTareaConDiasHabiles(task, today) {
+    const estimado = Number(task.estimatedTime) || 0;
+    if (estimado === 0) return 0;
+    
+    const startDay = Number(task.startDay) || 0;
+    const duracion = Number(task.duration) || 0;
+    
+    if (duracion === 0) return estimado * 0.5;
+    
+    // Calcular fechas reales a partir de today
+    const fechaInicio = new Date(today);
+    fechaInicio.setDate(today.getDate() + startDay);
+    fechaInicio.setHours(0, 0, 0, 0);
+    
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setDate(fechaInicio.getDate() + duracion - 1);
+    fechaFin.setHours(0, 0, 0, 0);
+    
+    if (today < fechaInicio) return 0;
+    if (today >= fechaFin) return estimado;
+    
+    // Calcular días hábiles entre fechaInicio y fechaFin
+    let totalDiasHabiles = 0;
+    let current = new Date(fechaInicio);
+    while (current <= fechaFin) {
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) totalDiasHabiles++;
+        current.setDate(current.getDate() + 1);
+    }
+    
+    // Calcular días hábiles transcurridos desde fechaInicio hasta today
+    let diasTranscurridos = 0;
+    current = new Date(fechaInicio);
+    const hoy = new Date(today);
+    while (current < hoy) {
+        current.setDate(current.getDate() + 1);
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) diasTranscurridos++;
+    }
+    
+    const pvProgress = Math.min(1, diasTranscurridos / totalDiasHabiles);
+    return estimado * pvProgress;
+}
+
+// ============================================
+// 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR CON DÍAS HÁBILES
+// ============================================
 function getEVMMetricsFromSystem(tasks, currentDate = null) {
     if (!tasks || tasks.length === 0) {
         return { pv: 0, ev: 0, ac: 0, bac: 0, cpi: 1, spi: 1, cv: 0, sv: 0, eac: 0, etc: 0, vac: 0 };
@@ -56302,37 +56731,25 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
     tasks.forEach(task => {
         const estimado = Number(task.estimatedTime) || 0;
         const registrado = Number(task.timeLogged) || 0;
-        const progress = Number(task.progress) || 0;
-        const duracion = Number(task.duration) || 0;
-        const startDay = Number(task.startDay) || 0;
+        let progress = Number(task.progress) || 0;
+        const status = (task.status || '').toLowerCase();
         
         BAC += estimado;
         totalAC += registrado;
-        totalEV += estimado * (progress / 100);
         
-        // PV con startDay y duration
-        if (duracion > 0 && estimado > 0) {
-            const fechaInicio = new Date();
-            fechaInicio.setDate(today.getDate() + startDay);
-            fechaInicio.setHours(0, 0, 0, 0);
-            
-            const fechaFin = new Date(fechaInicio);
-            fechaFin.setDate(fechaInicio.getDate() + duracion - 1);
-            fechaFin.setHours(0, 0, 0, 0);
-            
-            let pvProgress = 0;
-            if (today >= fechaFin) {
-                pvProgress = 1;
-            } else if (today <= fechaInicio) {
-                pvProgress = 0;
-            } else {
-                const diasTranscurridos = Math.ceil((today - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
-                pvProgress = Math.min(1, diasTranscurridos / duracion);
-            }
-            totalPV += estimado * pvProgress;
-        } else {
-            totalPV += estimado * 0.5;
+        // ✅ EV con progreso real
+        let progresoReal = 0;
+        if (status === 'completed' || progress === 100) {
+            progresoReal = 1;
+        } else if (status === 'inProgress' && estimado > 0) {
+            progresoReal = Math.min(0.99, registrado / estimado);
+        } else if (progress > 0) {
+            progresoReal = Math.min(1, progress / 100);
         }
+        totalEV += estimado * progresoReal;
+        
+        // ✅ PV con días hábiles (usando startDay y duration)
+        totalPV += calcularPVTareaConDiasHabiles(task, today);
     });
     
     totalPV = Math.round(totalPV * 100) / 100;
@@ -56346,6 +56763,10 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
     const EAC = CPI > 0 ? BAC / CPI : BAC;
     const ETC = EAC - totalAC;
     const VAC = BAC - EAC;
+    
+    console.log('📊 PV calculado:', totalPV);
+    console.log('📊 EV calculado:', totalEV);
+    console.log('📊 AC calculado:', totalAC);
     
     return {
         pv: totalPV,
@@ -56365,85 +56786,93 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
 
 
 
+
+
+
+
+
+
+
+
 // ==================== BURNDOWN CHART EN HORAS - VERSIÓN CORREGIDA ====================
 function calculateBurndownInHours(tasks) {
-    console.log('📉 Calculando Burndown Chart en HORAS (VERSIÓN CORREGIDA)...');
-    
-    // 1. Calcular horas totales estimadas
-    const totalHours = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
-    
-    if (totalHours === 0) {
-        return {
-            semanas: [1, 2, 3, 4],
-            trabajoIdeal: [0, 0, 0, 0, 0],
-            trabajoReal: [0, 0, 0, 0, 0],
-            totalHoras: 0,
-            horasCompletadas: 0,
-            horasRestantes: 0
-        };
-    }
-    
-    // 2. Horas COMPLETADAS (solo tareas 100% terminadas)
-    const horasCompletadas = tasks.reduce((sum, task) => {
+    console.log('📉 Calculando Burndown Chart en HORAS (VERSIÓN EVM CORRECTA)...');
+
+    // 1. Calcular BAC y EV
+    let BAC = 0;
+    let EV = 0;
+
+    tasks.forEach(task => {
+        const estimado = Number(task.estimatedTime) || 0;
+        let progress = Number(task.progress) || 0;
         const status = (task.status || '').toLowerCase();
-        const progress = task.progress || 0;
-        const estimatedTime = task.estimatedTime || 0;
-        
-        if (status.includes('completed') || progress === 100) {
-            return sum + estimatedTime;
+
+        BAC += estimado;
+
+        // Calcular EV igual que en getEVMMetricsFromSystem
+        let progresoReal = 0;
+        if (status === 'completed' || progress === 100) {
+            progresoReal = 1;
+        } else if (status === 'inProgress' && estimado > 0) {
+            const registrado = Number(task.timeLogged) || 0;
+            progresoReal = Math.min(0.99, registrado / estimado);
+        } else if (progress > 0) {
+            progresoReal = Math.min(1, progress / 100);
         }
-        return sum;
-    }, 0);
-    
-    const horasRestantes = Math.max(0, totalHours - horasCompletadas);
-    
-    console.log('📊 DATOS CALCULADOS:');
-    console.log(`• Horas totales: ${totalHours}h`);
-    console.log(`• Horas COMPLETADAS (100%): ${horasCompletadas}h`);
-    console.log(`• Horas RESTANTES: ${horasRestantes}h`);
-    
+
+        EV += estimado * progresoReal;
+    });
+
+    const horasCompletadasEV = EV;           // ← Trabajo REAL completado (18h)
+    const horasRestantes = BAC - EV;         // ← 22 - 18 = 4h ✅
+
+    console.log('📊 DATOS CALCULADOS (EVM puro):');
+    console.log(`• Horas totales (BAC): ${BAC.toFixed(1)}h`);
+    console.log(`• Horas COMPLETADAS (EV): ${horasCompletadasEV.toFixed(1)}h`);
+    console.log(`• Horas RESTANTES (BAC - EV): ${horasRestantes.toFixed(1)}h`);
+
     // 3. Timeline de 4 semanas (5 puntos: Inicio + 4 semanas)
     const semanas = [1, 2, 3, 4];
     const totalSemanas = semanas.length;
-    
+
     // 4. Línea IDEAL (burndown lineal perfecto)
     const trabajoIdeal = [];
     for (let i = 0; i <= totalSemanas; i++) {
-        const idealHours = Math.max(0, totalHours - (totalHours / totalSemanas) * i);
+        const idealHours = Math.max(0, BAC - (BAC / totalSemanas) * i);
         trabajoIdeal.push(idealHours);
     }
-    
-    // 5. Línea REAL - FÓRMULA SIMPLE Y CORRECTA
+
+    // 5. Línea REAL: basada en EV, no en tareas completadas
     const trabajoReal = [];
-    
+
     // Punto 0: Inicio del proyecto
-    trabajoReal.push(totalHours);
-    
+    trabajoReal.push(BAC);
+
     // Si no hay progreso, línea plana
-    if (horasCompletadas === 0) {
-        trabajoReal.push(totalHours); // Semana 1
-        trabajoReal.push(totalHours); // Semana 2
-        trabajoReal.push(totalHours); // Semana 3
+    if (horasCompletadasEV === 0) {
+        trabajoReal.push(BAC); // Semana 1
+        trabajoReal.push(BAC); // Semana 2
+        trabajoReal.push(BAC); // Semana 3
     } else {
         // Distribuir progreso de forma PROPORCIONAL
-        const porcentajeCompletado = horasCompletadas / totalHours;
-        
+        const porcentajeCompletado = horasCompletadasEV / BAC;
+
         // Semana 1: 25% del progreso total
         const progresoSemana1 = porcentajeCompletado * 0.25;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana1));
-        
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana1));
+
         // Semana 2: 50% del progreso total
         const progresoSemana2 = porcentajeCompletado * 0.50;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana2));
-        
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana2));
+
         // Semana 3: 75% del progreso total
         const progresoSemana3 = porcentajeCompletado * 0.75;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana3));
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana3));
     }
-    
-    // Punto final: Semana 4 (horas realmente restantes)
+
+    // Punto final: Semana 4 (horas realmente restantes según EV)
     trabajoReal.push(horasRestantes);
-    
+
     // 6. Validar que NUNCA haya ceros (excepto si todo está completado)
     for (let i = 0; i < trabajoReal.length; i++) {
         if (trabajoReal[i] < 0.1 && horasRestantes > 0) {
@@ -56451,21 +56880,20 @@ function calculateBurndownInHours(tasks) {
             trabajoReal[i] = 0.1;
         }
     }
-    
+
     console.log('📈 LÍNEA REAL CALCULADA:');
     console.log(`• 5 puntos: ${trabajoReal.map(h => h.toFixed(1) + 'h').join(' → ')}`);
     console.log(`• Etiquetas: Inicio, Semana 1, Semana 2, Semana 3, Semana 4`);
-    
+
     return {
         semanas: semanas,
         trabajoIdeal: trabajoIdeal,
         trabajoReal: trabajoReal,
-        totalHoras: totalHours,
-        horasCompletadas: horasCompletadas,
+        totalHoras: BAC,
+        horasCompletadas: horasCompletadasEV,
         horasRestantes: horasRestantes
     };
 }
-
 function calculateRealTaskDistribution(tasks) {
     console.log('🔍 Analizando distribución PRECISA de tareas...');
     
@@ -68018,12 +68446,6 @@ function actualizarProgresoGantt() {
 
 
 
-
-
-
-
-
-
-
+   
 
 
