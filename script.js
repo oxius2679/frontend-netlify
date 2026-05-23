@@ -1,3 +1,282 @@
+
+
+// ============================================
+// 🔥 SISTEMA COMPLETO DE NOTIFICACIONES SLACK
+// ============================================
+(function() {
+    console.log("🔥 Instalando sistema completo de notificaciones Slack...");
+    
+    // ============================================
+// 📢 NOTIFICACIÓN VISUAL - VERSIÓN INFERIOR
+// ============================================
+function mostrarNotificacionVisual(mensaje, tipo = 'success') {
+    const colores = {
+        success: '#10b981',
+        warning: '#f59e0b',
+        info: '#3b82f6',
+        error: '#ef4444'
+    };
+    
+    const iconos = {
+        success: '✅',
+        warning: '🔄',
+        info: '📢',
+        error: '❌'
+    };
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${colores[tipo]};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-family: system-ui, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInBottom 0.3s ease;
+        ">
+            <span style="font-size: 16px;">${iconos[tipo]}</span>
+            <span>${mensaje}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+    
+    // ============================================
+    // 📢 NOTIFICAR MOVIMIENTO DE TAREA
+    // ============================================
+    function notificarMovimientoSlack(taskName, fromStatus, toStatus, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const estadoTexto = {
+            'pending': '📋 Pendiente',
+            'inProgress': '🔄 En progreso', 
+            'completed': '✅ Completado',
+            'overdue': '⚠️ Rezagado'
+        };
+        
+        const fromText = estadoTexto[fromStatus] || fromStatus;
+        const toText = estadoTexto[toStatus] || toStatus;
+        
+        const mensaje = `🔄 *TAREA MOVIDA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📋 *De:* ${fromText}\n` +
+            `🎯 *A:* ${toText}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "warning", color: "#f59e0b" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Movimiento notificado a Slack");
+                mostrarNotificacionVisual(`🔄 "${taskName}" movida a ${toText}`, 'success');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // 📢 NOTIFICAR CREACIÓN DE TAREA
+    // ============================================
+    function notificarCreacionSlack(taskName, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const mensaje = `✅ *NUEVA TAREA CREADA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "info", color: "#3b82f6" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Creación notificada a Slack");
+                mostrarNotificacionVisual(`✅ Nueva tarea: "${taskName}"`, 'success');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // 📢 NOTIFICAR MODIFICACIÓN DE TAREA
+    // ============================================
+    function notificarModificacionSlack(taskName, campoModificado, valorAnterior, valorNuevo, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const mensaje = `✏️ *TAREA MODIFICADA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📝 *Campo modificado:* ${campoModificado}\n` +
+            `📋 *Valor anterior:* ${valorAnterior}\n` +
+            `🎯 *Valor nuevo:* ${valorNuevo}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "info", color: "#8b5cf6" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Modificación notificada a Slack");
+                mostrarNotificacionVisual(`✏️ "${taskName}" modificada`, 'info');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // INTERCEPTAR CREACIÓN DE TAREAS
+    // ============================================
+    const originalCreateNewTask = window.createNewTask;
+    if (originalCreateNewTask) {
+        window.createNewTask = function(e) {
+            const result = originalCreateNewTask(e);
+            setTimeout(() => {
+                const project = projects[currentProjectIndex];
+                const ultimaTarea = project?.tasks?.[project.tasks.length - 1];
+                if (ultimaTarea) {
+                    notificarCreacionSlack(ultimaTarea.name, project.name);
+                }
+            }, 500);
+            return result;
+        };
+        console.log("✅ Interceptor de creación de tareas instalado");
+    }
+    
+    // ============================================
+    // INTERCEPTAR MODIFICACIÓN DE TAREAS
+    // ============================================
+    const originalSaveTaskChanges = window.saveTaskChanges;
+    if (originalSaveTaskChanges) {
+        window.saveTaskChanges = function(taskId) {
+            const project = projects[currentProjectIndex];
+            const tareaAntes = project?.tasks?.find(t => t.id === taskId);
+            const nombreAntes = tareaAntes?.name;
+            const prioridadAntes = tareaAntes?.priority;
+            const asignadoAntes = tareaAntes?.assignee;
+            
+            const result = originalSaveTaskChanges(taskId);
+            
+            setTimeout(() => {
+                const tareaDespues = project?.tasks?.find(t => t.id === taskId);
+                if (tareaDespues) {
+                    if (nombreAntes !== tareaDespues.name) {
+                        notificarModificacionSlack(tareaDespues.name, "Nombre", nombreAntes, tareaDespues.name, project.name);
+                    }
+                    if (prioridadAntes !== tareaDespues.priority) {
+                        notificarModificacionSlack(tareaDespues.name, "Prioridad", prioridadAntes, tareaDespues.priority, project.name);
+                    }
+                    if (asignadoAntes !== tareaDespues.assignee) {
+                        notificarModificacionSlack(tareaDespues.name, "Responsable", asignadoAntes, tareaDespues.assignee, project.name);
+                    }
+                }
+            }, 500);
+            return result;
+        };
+        console.log("✅ Interceptor de modificación de tareas instalado");
+    }
+    
+    // ============================================
+    // HANDLER PARA MOVIMIENTOS (DRAG & DROP)
+    // ============================================
+    window.enviarMovimientoASlack = function(taskId, oldStatus, newStatus) {
+        const project = projects[currentProjectIndex];
+        const task = project?.tasks?.find(t => String(t.id) === String(taskId));
+        if (task && oldStatus && newStatus && oldStatus !== newStatus) {
+            notificarMovimientoSlack(task.name, oldStatus, newStatus, project.name);
+        }
+    };
+    
+    // Evento drop
+    document.body.addEventListener('drop', function(e) {
+        let taskId = null;
+        let oldStatus = null;
+        let newStatus = null;
+        
+        taskId = e.dataTransfer?.getData('text/plain');
+        if (!taskId) taskId = e.dataTransfer?.getData('taskId');
+        
+        const dragged = document.querySelector('.dragging');
+        if (dragged && dragged.dataset?.taskId) taskId = dragged.dataset.taskId;
+        
+        if (taskId) {
+            const project = projects[currentProjectIndex];
+            const task = project?.tasks?.find(t => String(t.id) === String(taskId));
+            if (task) oldStatus = task.status;
+        }
+        
+        const targetColumn = e.target.closest('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList');
+        if (targetColumn) {
+            const statusMap = {
+                'pendingList': 'pending',
+                'inProgressList': 'inProgress',
+                'completedList': 'completed',
+                'overdueList': 'overdue'
+            };
+            newStatus = statusMap[targetColumn.id];
+        }
+        
+        if (taskId && oldStatus && newStatus && oldStatus !== newStatus) {
+            setTimeout(() => {
+                window.enviarMovimientoASlack(taskId, oldStatus, newStatus);
+            }, 500);
+        }
+    }, true);
+    
+    // Estilos
+    if (!document.getElementById('slack-notif-styles')) {
+        const style = document.createElement('style');
+        style.id = 'slack-notif-styles';
+        style.textContent = `
+            @keyframes slideInSlack {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    console.log("✅ Sistema completo instalado:");
+    console.log("   - Crea tarea → notifica ✅");
+    console.log("   - Modifica tarea → notifica ✅");
+    console.log("   - Mueve tarea → notifica ✅");
+    console.log("   - Notificaciones visuales ✅");
+})();
+
 // ============================================
 // BOTÓN FLOTANTE PARA HYPERION DASHBOARD
 // ============================================
@@ -38631,15 +38910,22 @@ window.postMessage({
     timestamp: Date.now()
 }, '*');
 
-    // ========== 🚨 NOTIFICACIÓN A SLACK (AQUÍ DEBE ESTAR) ==========
-    console.log('🚨 Vamos a llamar a SlackNotifier.taskMoved');
-    if (window.SlackNotifier) {
-      console.log('✅ SlackNotifier existe, enviando...');
-      SlackNotifier.taskMoved(task, oldStatus, newStatus, projects[currentProjectIndex].name);
-    } else {
-      console.warn('❌ SlackNotifier NO existe');
-    }
-    // =============================================================
+
+// ========== DIAGNÓSTICO DENTRO DE HANDLE DROP ==========
+console.log("🔴 HANDLE DROP EJECUTADA");
+console.log("📋 Tarea:", task?.name);
+console.log("📊 sincronizarTarea existe?", typeof sincronizarTarea);
+console.log("📊 projects[currentProjectIndex]?.name:", projects[currentProjectIndex]?.name);
+// ========================================================
+
+
+
+   // ========== 🚨 NOTIFICACIÓN A SLACK (VERSIÓN CORREGIDA) ==========
+console.log("📢 handleDrop ejecutada - Tarea:", task.name);
+    if (typeof sincronizarTarea === 'function') {
+        sincronizarTarea(task.name, projects[currentProjectIndex].name);
+        console.log("✅ Notificación forzada a Slack desde handleDrop");
+    }// =============================================================
 
     renderKanbanTasks();
     updateStatistics();
@@ -38714,6 +39000,13 @@ window.postMessage({
 
   e.currentTarget.style.backgroundColor = '';
 }
+
+
+
+
+
+
+
 
 
 function checkTaskOverdue(task) {
@@ -68447,5 +68740,86 @@ function actualizarProgresoGantt() {
 
 
    
+// ============================================
+// 🔔 NOTIFICACIÓN VISUAL PARA SLACK
+// ============================================
+function mostrarNotificacionSlack(mensaje, tipo = 'info') {
+    const colores = {
+        info: '#3b82f6',
+        success: '#10b981', 
+        warning: '#f59e0b',
+        error: '#ef4444'
+    };
+    
+    const iconos = {
+        info: '📢',
+        success: '✅',
+        warning: '⚠️',
+        error: '❌'
+    };
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${colores[tipo]};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            z-index: 1000000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        ">
+            <span style="font-size: 20px;">${iconos[tipo]}</span>
+            <span>${mensaje}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 
+// Agregar estilos de animación si no existen
+if (!document.getElementById('notif-slack-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notif-slack-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
 
