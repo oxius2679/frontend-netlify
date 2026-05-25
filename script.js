@@ -180,35 +180,40 @@ function mostrarNotificacionVisual(mensaje, tipo = 'success') {
     // ============================================
     // INTERCEPTAR MODIFICACIÓN DE TAREAS
     // ============================================
-    const originalSaveTaskChanges = window.saveTaskChanges;
-    if (originalSaveTaskChanges) {
-        window.saveTaskChanges = function(taskId) {
-            const project = projects[currentProjectIndex];
-            const tareaAntes = project?.tasks?.find(t => t.id === taskId);
-            const nombreAntes = tareaAntes?.name;
-            const prioridadAntes = tareaAntes?.priority;
-            const asignadoAntes = tareaAntes?.assignee;
-            
-            const result = originalSaveTaskChanges(taskId);
-            
-            setTimeout(() => {
-                const tareaDespues = project?.tasks?.find(t => t.id === taskId);
-                if (tareaDespues) {
-                    if (nombreAntes !== tareaDespues.name) {
-                        notificarModificacionSlack(tareaDespues.name, "Nombre", nombreAntes, tareaDespues.name, project.name);
-                    }
-                    if (prioridadAntes !== tareaDespues.priority) {
-                        notificarModificacionSlack(tareaDespues.name, "Prioridad", prioridadAntes, tareaDespues.priority, project.name);
-                    }
-                    if (asignadoAntes !== tareaDespues.assignee) {
-                        notificarModificacionSlack(tareaDespues.name, "Responsable", asignadoAntes, tareaDespues.assignee, project.name);
-                    }
+    // ============================================
+// INTERCEPTAR MODIFICACIÓN DE TAREAS (CORREGIDO)
+// ============================================
+const originalSaveTaskChanges = window.saveTaskChanges;
+if (originalSaveTaskChanges) {
+    window.saveTaskChanges = function(taskId) {
+        const project = projects[currentProjectIndex];
+        const tareaAntes = project?.tasks?.find(t => t.id === taskId);
+        const nombreAntes = tareaAntes?.name;
+        const prioridadAntes = tareaAntes?.priority;
+        const asignadoAntes = tareaAntes?.assignee;
+        // ⚠️ NO guardamos el estado aquí para evitar duplicados
+        
+        const result = originalSaveTaskChanges(taskId);
+        
+        setTimeout(() => {
+            const tareaDespues = project?.tasks?.find(t => t.id === taskId);
+            if (tareaDespues) {
+                if (nombreAntes !== tareaDespues.name) {
+                    notificarModificacionSlack(tareaDespues.name, "Nombre", nombreAntes, tareaDespues.name, project.name);
                 }
-            }, 500);
-            return result;
-        };
-        console.log("✅ Interceptor de modificación de tareas instalado");
-    }
+                if (prioridadAntes !== tareaDespues.priority) {
+                    notificarModificacionSlack(tareaDespues.name, "Prioridad", prioridadAntes, tareaDespues.priority, project.name);
+                }
+                if (asignadoAntes !== tareaDespues.assignee) {
+                    notificarModificacionSlack(tareaDespues.name, "Responsable", asignadoAntes, tareaDespues.assignee, project.name);
+                }
+                // ⚠️ ELIMINADO: la notificación de cambio de estado (ya la maneja el drop)
+            }
+        }, 500);
+        return result;
+    };
+    console.log("✅ Interceptor de modificaciones instalado (sin duplicar estado)");
+}
     
     // ============================================
     // HANDLER PARA MOVIMIENTOS (DRAG & DROP)
@@ -18863,19 +18868,6 @@ console.log('🟢 SCRIPT EMPIEZA');
     const token = localStorage.getItem('authToken');
     
     // ========== SLACK (USA PROXY) ==========
- // Dentro de sincronizarTarea
-if (config.slack?.enabled && token && config.slack?.webhookUrl) {
-    console.log(`📡 Enviando a Slack...`);
-    const mensaje = `📌 *Nueva Tarea*\n*Tarea:* ${tarea}\n*Proyecto:* ${proyecto}\n🕐 ${new Date().toLocaleString()}`;
-    try {
-        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ webhookUrl: config.slack.webhookUrl, mensaje, tipo: 'info', color: '#3498db' })
-        });
-        console.log(res.ok ? '   ✅ Slack: OK' : '   ❌ Slack: Falló');
-    } catch(e) { console.log('   ❌ Slack:', e.message); }
-}
     
     // ========== TELEGRAM ==========
     if (config.telegram?.enabled && config.telegram?.botToken) {
@@ -19059,6 +19051,7 @@ async function enviarNotificacionCambio(tarea, proyectoActual, cambios) {
     const mensaje = `✏️ *Tarea Modificada*\n*Tarea:* ${tarea.name}\n*Proyecto:* ${proyectoActual}\n*Cambios:* ${cambios}\n🕐 ${new Date().toLocaleString()}`;
     
     // 1. Slack
+/*
     if (config.slack?.enabled && token && config.slack?.webhookUrl) {
         try {
             await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
@@ -19068,7 +19061,7 @@ async function enviarNotificacionCambio(tarea, proyectoActual, cambios) {
             });
         } catch(e) {}
     }
-    
+    */
     // 2. Telegram
     if (config.telegram?.enabled && config.telegram?.botToken) {
         try {
@@ -33798,7 +33791,7 @@ function showLoginScreen() {
                 
                 <!-- Imagen arriba -->
                 <div style="text-align:center;margin-bottom:20px;">
-                    <img src="imagen.jpeg" alt="THE JACKSON'S SOLUTIONS" style="max-width:100%;height:auto;border-radius:16px;margin-bottom:10px;">
+                    <img src="imagen.png" alt="THE JACKSON'S SOLUTIONS" style="max-width:100%;height:auto;border-radius:16px;margin-bottom:10px;">
                 </div>
                 
                 <div id="loginForm">
@@ -38855,158 +38848,6 @@ function handleDragOver(e) {
 function handleDragLeave(e) {
   e.currentTarget.style.backgroundColor = '';
 }
-
-function handleDrop(e) {
-  e.preventDefault();
-  const taskId = parseInt(e.dataTransfer.getData('taskId'));
-  const targetColumn = e.currentTarget.closest('.column');
-  
-  const statusMap = {
-    pendingTasks: 'pending',
-    inProgressTasks: 'inProgress',
-    completedTasks: 'completed',
-    overdueTasks: 'overdue'
-  };
-
-  const newStatus = statusMap[targetColumn.id];
-  const task = projects[currentProjectIndex].tasks.find(t => t.id === taskId);
-
-  if (task && task.status !== newStatus) {
-
-    // 🔥 REGISTRAR HISTORIA
-    task.history = task.history || [];
-    task.history.push({
-      from: task.status,
-      to: newStatus,
-      date: new Date().toISOString()
-    });
-
-    const oldStatus = task.status;  // ⬅️ captura el estado anterior
-    // 🔁 CAMBIO REAL DE ESTADO
-    task.status = newStatus;
-
-    checkTaskOverdue(task);
-    updateLocalStorage();
-
-
-syncChannel.postMessage({
-    type: 'TASK_MOVED',
-    projectIndex: currentProjectIndex,
-    taskId: taskId,
-    newStatus: newStatus,
-    timestamp: Date.now()
-});
-
-
-// Notificar a otras pestañas que hubo un movimiento
-localStorage.setItem('task-moved', Date.now().toString());
-
-// Notificar a otras pestañas
-window.postMessage({
-    type: 'TASK_MOVED',
-    projectIndex: currentProjectIndex,
-    taskId: taskId,
-    newStatus: newStatus,
-    timestamp: Date.now()
-}, '*');
-
-
-// ========== DIAGNÓSTICO DENTRO DE HANDLE DROP ==========
-console.log("🔴 HANDLE DROP EJECUTADA");
-console.log("📋 Tarea:", task?.name);
-console.log("📊 sincronizarTarea existe?", typeof sincronizarTarea);
-console.log("📊 projects[currentProjectIndex]?.name:", projects[currentProjectIndex]?.name);
-// ========================================================
-
-
-
-   // ========== 🚨 NOTIFICACIÓN A SLACK (VERSIÓN CORREGIDA) ==========
-console.log("📢 handleDrop ejecutada - Tarea:", task.name);
-    if (typeof sincronizarTarea === 'function') {
-        sincronizarTarea(task.name, projects[currentProjectIndex].name);
-        console.log("✅ Notificación forzada a Slack desde handleDrop");
-    }// =============================================================
-
-    renderKanbanTasks();
-    updateStatistics();
-    updateProjectProgress();
-
-   
-
-
-    // 🔥 AGREGAR ESTO:
-    setTimeout(() => {
-      refreshCalendar();
-    }, 100);
-
-    // ✅ Inserta esto justo aquí
-    if (task.status === 'completada') {
-      logCompletedTask(task);
-      checkAutoRetrain();
-    }
-
-    // === AGREGAR ESTA LÍNEA ===
-    if (window.syncManager) window.syncManager.notifyChange('task-moved', { 
-        projectIndex: currentProjectIndex, 
-        taskId: taskId, 
-        taskName: task.name, 
-        newStatus: newStatus 
-    });
-    
-    actualizarAsignados();
-    aplicarFiltros();
-    updateStatistics();
-    updateResourceAllocation();
-    generatePieChart(getStats());
-    refreshBurndown();
-
-    // 🔥 AGREGAR NOTIFICACIÓN PARA DRAG & DROP
-    if (tiempoRealSocket && tiempoRealSocket.connected) {
-      tiempoRealSocket.emit('task-changed', {
-        projectId: currentProjectIndex,
-        taskId: taskId,
-        taskName: task.name,
-        userName: 'Usuario actual',
-        type: 'task-moved',
-        newStatus: newStatus,
-        timestamp: new Date().toISOString()
-      });
-      console.log('📢 Notificando movimiento de tarea');
-    }
-
-    // 🔥 NUEVO: actualizar gráfica de status
-    generatePieChart(getStats());
-    updateProjectProgress();
-    actualizarAsignados();
-    refreshBurndown();
-
-    // ========== 🆕 NUEVO: DISPARAR EVENTOS PARA EFECTOS VISUALES ==========
-    document.dispatchEvent(new Event('taskMoved'));
-    document.dispatchEvent(new Event('tasksRendered'));
-    
-    // Actualizar contadores con animación
-    setTimeout(() => {
-      if (typeof actualizarContadoresColumnas === 'function') {
-        actualizarContadoresColumnas();
-      }
-      
-      // Quitar efecto drag-over de todas las columnas
-      document.querySelectorAll('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList').forEach(col => {
-        col.classList.remove('drag-over');
-      });
-    }, 100);
-    // ========== FIN NUEVO ==========
-  }
-
-  e.currentTarget.style.backgroundColor = '';
-}
-
-
-
-
-
-
-
 
 
 function checkTaskOverdue(task) {
@@ -56914,2327 +56755,818 @@ console.log('📌 Usa: showView("board") para volver');
 
 
 
-// ==================== VENTANA COMPLETA PREMIUM - CON VALORES REALES PRECISOS ====================
-
-// ==================== FUNCIONES DE CÁLCULO REAL - PRECISAS ====================
 // ============================================
-// 📊 CÁLCULO EVM SEGÚN PMI - VERSIÓN CORRECTA
+// 📊 CÁLCULO EVM SEGÚN PMI - VISTA PREMIUM EJECUTIVA
 // ============================================
 
-// ============================================
-// 🔧 REEMPLAZAR getEVMMetricsFromSystem CON LA LÓGICA CORRECTA
-// ============================================
-
-// ============================================
-// 📊 CÁLCULO EVM SEGÚN PMI - VERSIÓN CORRECTA
-// (MISMA LÓGICA QUE generarInformeEVMPMI)
-// ============================================
-
-// ============================================
-// 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR
-// ============================================
-
-// ============================================
-// 📊 CONTAR DÍAS HÁBILES
-// ============================================
-// ============================================
-// 📊 CONTAR DÍAS HÁBILES
-// ============================================
 function contarDiasHabiles(inicio, fin) {
-    const start = new Date(inicio);
-    const end = new Date(fin);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-    if (start > end) return 0;
     let count = 0;
-    const current = new Date(start);
-    while (current <= end) {
-        const day = current.getDay();
-        if (day !== 0 && day !== 6) {
-            count++;
-        }
-        current.setDate(current.getDate() + 1);
-    }
+    var current = new Date(inicio); current.setHours(0,0,0,0);
+    var end = new Date(fin); end.setHours(0,0,0,0);
+    while (current <= end) { if (current.getDay() !== 0 && current.getDay() !== 6) count++; current.setDate(current.getDate() + 1); }
     return count;
 }
 
-// ============================================
-// 📊 CALCULAR PV CON DÍAS HÁBILES (usando startDay y duration)
-// ============================================
-function calcularPVTareaConDiasHabiles(task, today) {
-    const estimado = Number(task.estimatedTime) || 0;
-    if (estimado === 0) return 0;
-    
-    const startDay = Number(task.startDay) || 0;
-    const duracion = Number(task.duration) || 0;
-    
-    if (duracion === 0) return estimado * 0.5;
-    
-    // Calcular fechas reales a partir de today
-    const fechaInicio = new Date(today);
-    fechaInicio.setDate(today.getDate() + startDay);
-    fechaInicio.setHours(0, 0, 0, 0);
-    
-    const fechaFin = new Date(fechaInicio);
-    fechaFin.setDate(fechaInicio.getDate() + duracion - 1);
-    fechaFin.setHours(0, 0, 0, 0);
-    
-    if (today < fechaInicio) return 0;
-    if (today >= fechaFin) return estimado;
-    
-    // Calcular días hábiles entre fechaInicio y fechaFin
-    let totalDiasHabiles = 0;
-    let current = new Date(fechaInicio);
-    while (current <= fechaFin) {
-        const day = current.getDay();
-        if (day !== 0 && day !== 6) totalDiasHabiles++;
-        current.setDate(current.getDate() + 1);
-    }
-    
-    // Calcular días hábiles transcurridos desde fechaInicio hasta today
-    let diasTranscurridos = 0;
-    current = new Date(fechaInicio);
-    const hoy = new Date(today);
-    while (current < hoy) {
-        current.setDate(current.getDate() + 1);
-        const day = current.getDay();
-        if (day !== 0 && day !== 6) diasTranscurridos++;
-    }
-    
-    const pvProgress = Math.min(1, diasTranscurridos / totalDiasHabiles);
-    return estimado * pvProgress;
+function agregarDiasHabiles(fecha, diasHabiles) {
+    var r = new Date(fecha); var a = 1;
+    while (a < diasHabiles) { r.setDate(r.getDate() + 1); if (r.getDay() !== 0 && r.getDay() !== 6) a++; }
+    return r;
 }
 
-// ============================================
-// 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR CON DÍAS HÁBILES
-// ============================================
-function getEVMMetricsFromSystem(tasks, currentDate = null) {
-    if (!tasks || tasks.length === 0) {
-        return { pv: 0, ev: 0, ac: 0, bac: 0, cpi: 1, spi: 1, cv: 0, sv: 0, eac: 0, etc: 0, vac: 0 };
-    }
-    
-    const today = currentDate || new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    let totalPV = 0;
-    let totalEV = 0;
-    let totalAC = 0;
-    let BAC = 0;
-    
-    tasks.forEach(task => {
-        const estimado = Number(task.estimatedTime) || 0;
-        const registrado = Number(task.timeLogged) || 0;
-        let progress = Number(task.progress) || 0;
-        const status = (task.status || '').toLowerCase();
-        
-        BAC += estimado;
-        totalAC += registrado;
-        
-        // ✅ EV con progreso real
-        let progresoReal = 0;
-        if (status === 'completed' || progress === 100) {
-            progresoReal = 1;
-        } else if (status === 'inProgress' && estimado > 0) {
-            progresoReal = Math.min(0.99, registrado / estimado);
-        } else if (progress > 0) {
-            progresoReal = Math.min(1, progress / 100);
-        }
-        totalEV += estimado * progresoReal;
-        
-        // ✅ PV con días hábiles (usando startDay y duration)
-        totalPV += calcularPVTareaConDiasHabiles(task, today);
+function calcularPVTareaConDiasHabiles(task, today, projectStartDate) {
+    var estimado = Number(task.estimatedTime) || 0;
+    if (estimado <= 0) return 0;
+    var startDay = Number(task.startDay); var duracion = Number(task.duration);
+    if (isNaN(startDay) || isNaN(duracion) || duracion <= 0) return 0;
+    var base = new Date(projectStartDate); base.setHours(0,0,0,0);
+    var fi = new Date(base); fi.setDate(base.getDate() + startDay);
+    var ff = agregarDiasHabiles(fi, duracion);
+    var hoy = new Date(today); hoy.setHours(0,0,0,0);
+    if (hoy < fi) return 0; if (hoy > ff) return estimado;
+    var th = contarDiasHabiles(fi, ff); if (th === 0) return 0;
+    var ht = contarDiasHabiles(fi, hoy);
+    return Math.round((estimado * Math.min(1, ht / th)) * 100) / 100;
+}
+
+function getEVMMetricsFromSystem(tasks, currentDate, projectStartDate) {
+    if (!tasks || tasks.length === 0) return {pv:0,ev:0,ac:0,bac:0,cpi:1,spi:1,cv:0,sv:0,eac:0,etc:0,vac:0};
+    var today = currentDate ? new Date(currentDate) : new Date(); today.setHours(0,0,0,0);
+    var baseDate = projectStartDate ? new Date(projectStartDate) : tasks.reduce(function(m,t){ if(t.startDate){var d=new Date(t.startDate);if(!m||d<m)return d;} return m; }, null) || new Date();
+    baseDate.setHours(0,0,0,0);
+    var totalPV=0,totalEV=0,totalAC=0,BAC=0;
+    tasks.forEach(function(task){
+        var est=Number(task.estimatedTime)||0, reg=Number(task.timeLogged)||0, prog=Number(task.progress)||0;
+        var status=(task.status||'').toLowerCase(); BAC+=est; totalAC+=reg;
+        var pr=(status==='completed'||prog>=100)?1:Math.min(1,Math.max(0,prog/100));
+        totalEV+=est*pr; totalPV+=calcularPVTareaConDiasHabiles(task,today,baseDate);
     });
-    
-    totalPV = Math.round(totalPV * 100) / 100;
-    totalEV = Math.round(totalEV * 100) / 100;
-    totalAC = Math.round(totalAC * 100) / 100;
-    
-    const SPI = totalPV > 0 ? totalEV / totalPV : 1;
-    const CPI = totalAC > 0 ? totalEV / totalAC : 1;
-    const CV = totalEV - totalAC;
-    const SV = totalEV - totalPV;
-    const EAC = CPI > 0 ? BAC / CPI : BAC;
-    const ETC = EAC - totalAC;
-    const VAC = BAC - EAC;
-    
-    console.log('📊 PV calculado:', totalPV);
-    console.log('📊 EV calculado:', totalEV);
-    console.log('📊 AC calculado:', totalAC);
-    
-    return {
-        pv: totalPV,
-        ev: totalEV,
-        ac: totalAC,
-        bac: BAC,
-        cpi: Math.round(CPI * 1000) / 1000,
-        spi: Math.round(SPI * 1000) / 1000,
-        cv: Math.round(CV * 100) / 100,
-        sv: Math.round(SV * 100) / 100,
-        eac: Math.round(EAC * 100) / 100,
-        etc: Math.round(ETC * 100) / 100,
-        vac: Math.round(VAC * 100) / 100
-    };
+    totalPV=Math.round(totalPV*100)/100; totalEV=Math.round(totalEV*100)/100; totalAC=Math.round(totalAC*100)/100; BAC=Math.round(BAC*100)/100;
+    var SPI=totalPV>0?Math.round((totalEV/totalPV)*1000)/1000:1;
+    var CPI=totalAC>0?Math.round((totalEV/totalAC)*1000)/1000:1;
+    var EAC=CPI>0?Math.round((BAC/CPI)*100)/100:BAC;
+    return {pv:totalPV,ev:totalEV,ac:totalAC,bac:BAC,cpi:CPI,spi:SPI,cv:Math.round((totalEV-totalAC)*100)/100,sv:Math.round((totalEV-totalPV)*100)/100,eac:EAC,etc:Math.round((EAC-totalAC)*100)/100,vac:Math.round((BAC-EAC)*100)/100};
 }
 
-
-
-
-
-
-
-
-
-
-
-
-// ==================== BURNDOWN CHART EN HORAS - VERSIÓN CORREGIDA ====================
 function calculateBurndownInHours(tasks) {
-    console.log('📉 Calculando Burndown Chart en HORAS (VERSIÓN EVM CORRECTA)...');
-
-    // 1. Calcular BAC y EV
-    let BAC = 0;
-    let EV = 0;
-
-    tasks.forEach(task => {
-        const estimado = Number(task.estimatedTime) || 0;
-        let progress = Number(task.progress) || 0;
-        const status = (task.status || '').toLowerCase();
-
-        BAC += estimado;
-
-        // Calcular EV igual que en getEVMMetricsFromSystem
-        let progresoReal = 0;
-        if (status === 'completed' || progress === 100) {
-            progresoReal = 1;
-        } else if (status === 'inProgress' && estimado > 0) {
-            const registrado = Number(task.timeLogged) || 0;
-            progresoReal = Math.min(0.99, registrado / estimado);
-        } else if (progress > 0) {
-            progresoReal = Math.min(1, progress / 100);
-        }
-
-        EV += estimado * progresoReal;
-    });
-
-    const horasCompletadasEV = EV;           // ← Trabajo REAL completado (18h)
-    const horasRestantes = BAC - EV;         // ← 22 - 18 = 4h ✅
-
-    console.log('📊 DATOS CALCULADOS (EVM puro):');
-    console.log(`• Horas totales (BAC): ${BAC.toFixed(1)}h`);
-    console.log(`• Horas COMPLETADAS (EV): ${horasCompletadasEV.toFixed(1)}h`);
-    console.log(`• Horas RESTANTES (BAC - EV): ${horasRestantes.toFixed(1)}h`);
-
-    // 3. Timeline de 4 semanas (5 puntos: Inicio + 4 semanas)
-    const semanas = [1, 2, 3, 4];
-    const totalSemanas = semanas.length;
-
-    // 4. Línea IDEAL (burndown lineal perfecto)
-    const trabajoIdeal = [];
-    for (let i = 0; i <= totalSemanas; i++) {
-        const idealHours = Math.max(0, BAC - (BAC / totalSemanas) * i);
-        trabajoIdeal.push(idealHours);
-    }
-
-    // 5. Línea REAL: basada en EV, no en tareas completadas
-    const trabajoReal = [];
-
-    // Punto 0: Inicio del proyecto
-    trabajoReal.push(BAC);
-
-    // Si no hay progreso, línea plana
-    if (horasCompletadasEV === 0) {
-        trabajoReal.push(BAC); // Semana 1
-        trabajoReal.push(BAC); // Semana 2
-        trabajoReal.push(BAC); // Semana 3
-    } else {
-        // Distribuir progreso de forma PROPORCIONAL
-        const porcentajeCompletado = horasCompletadasEV / BAC;
-
-        // Semana 1: 25% del progreso total
-        const progresoSemana1 = porcentajeCompletado * 0.25;
-        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana1));
-
-        // Semana 2: 50% del progreso total
-        const progresoSemana2 = porcentajeCompletado * 0.50;
-        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana2));
-
-        // Semana 3: 75% del progreso total
-        const progresoSemana3 = porcentajeCompletado * 0.75;
-        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana3));
-    }
-
-    // Punto final: Semana 4 (horas realmente restantes según EV)
-    trabajoReal.push(horasRestantes);
-
-    // 6. Validar que NUNCA haya ceros (excepto si todo está completado)
-    for (let i = 0; i < trabajoReal.length; i++) {
-        if (trabajoReal[i] < 0.1 && horasRestantes > 0) {
-            console.warn(`⚠️ Ajustando valor inválido en punto ${i}: ${trabajoReal[i]} → 0.1`);
-            trabajoReal[i] = 0.1;
-        }
-    }
-
-    console.log('📈 LÍNEA REAL CALCULADA:');
-    console.log(`• 5 puntos: ${trabajoReal.map(h => h.toFixed(1) + 'h').join(' → ')}`);
-    console.log(`• Etiquetas: Inicio, Semana 1, Semana 2, Semana 3, Semana 4`);
-
-    return {
-        semanas: semanas,
-        trabajoIdeal: trabajoIdeal,
-        trabajoReal: trabajoReal,
-        totalHoras: BAC,
-        horasCompletadas: horasCompletadasEV,
-        horasRestantes: horasRestantes
-    };
+    var BAC=0,EV=0;
+    tasks.forEach(function(t){var e=Number(t.estimatedTime)||0,p=Number(t.progress)||0,s=(t.status||'').toLowerCase();BAC+=e;EV+=e*((s==='completed'||p>=100)?1:Math.min(1,Math.max(0,p/100)));});
+    var hc=Math.round(EV*100)/100,hr=Math.round((BAC-EV)*100)/100;
+    var ideal=[],real=[BAC];
+    for(var i=0;i<=4;i++)ideal.push(Math.max(0,Math.round((BAC-(BAC/4)*i)*100)/100));
+    for(var j=1;j<4;j++)real.push(Math.max(0.1,Math.round((BAC-EV*(j/4))*100)/100));
+    real.push(hr>0?hr:0.1);
+    return {trabajoIdeal:ideal,trabajoReal:real,totalHoras:BAC,horasCompletadas:hc,horasRestantes:hr};
 }
+
 function calculateRealTaskDistribution(tasks) {
-    console.log('🔍 Analizando distribución PRECISA de tareas...');
-    
-    const distribution = {
-        completadas: 0,
-        enProgreso: 0,
-        pendientes: 0,
-        atrasadas: 0
-    };
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    tasks.forEach((task, index) => {
-        const status = task.status || 'pending';
-        const progress = task.progress || 0;
-        
-        // VERIFICAR SI ESTÁ ATRASADA
-        let isOverdue = false;
-        if (task.deadline) {
-            try {
-                const deadline = new Date(task.deadline);
-                deadline.setHours(0, 0, 0, 0);
-                if (deadline < today && status !== 'completed') {
-                    isOverdue = true;
-                }
-            } catch (e) {
-                console.warn(`⚠️ Error parseando deadline de tarea ${index + 1}:`, e);
-            }
-        }
-        
-        // CLASIFICACIÓN PRECISA - CON LÓGICA MEJORADA
-        if (status === 'completed' || progress === 100) {
-            distribution.completadas++;
-            console.log(`  ✅ Tarea ${index + 1}: "${task.name}" - COMPLETADA (status: ${status}, progress: ${progress}%)`);
-        } 
-        else if (isOverdue || status === 'overdue') {
-            distribution.atrasadas++;
-            console.log(`  ⚠️ Tarea ${index + 1}: "${task.name}" - ATRASADA`);
-        }
-        else if (status === 'inProgress' || status === 'en progreso' || (progress > 0 && progress < 100)) {
-            distribution.enProgreso++;
-            console.log(`  🔄 Tarea ${index + 1}: "${task.name}" - EN PROGRESO (${progress}%)`);
-        }
-        else if (status === 'pending' || status === 'Pendiente' || progress === 0) {
-            distribution.pendientes++;
-            console.log(`  ⏳ Tarea ${index + 1}: "${task.name}" - PENDIENTE (progress: ${progress}%)`);
-        }
-        else {
-            // Status desconocido
-            if (progress > 0 && progress < 100) {
-                distribution.enProgreso++;
-                console.log(`  🔄 Tarea ${index + 1}: "${task.name}" - EN PROGRESO (status desconocido: ${status}, progress: ${progress}%)`);
-            } else {
-                distribution.pendientes++;
-                console.log(`  ⏳ Tarea ${index + 1}: "${task.name}" - PENDIENTE (status desconocido: ${status})`);
-            }
-        }
-    });
-    
-    console.log('📈 Distribución PRECISA calculada:', distribution);
-    
-    // Validación
-    const total = Object.values(distribution).reduce((a, b) => a + b, 0);
-    if (total !== tasks.length) {
-        console.warn(`⚠️ Discrepancia: distribución ${total} vs tareas ${tasks.length}`);
-        // Ajustar automáticamente
-        const diff = tasks.length - total;
-        if (diff > 0) {
-            distribution.pendientes += diff;
-            console.log(`  🔧 Ajustado: +${diff} tareas a pendientes`);
-        }
-    }
-    
-    return distribution;
+    var d={completadas:0,enProgreso:0,pendientes:0,atrasadas:0};
+    tasks.forEach(function(t){var s=(t.status||'pending').toLowerCase(),p=t.progress||0;
+        if(s==='completed'||s.indexOf('completada')!==-1||p===100)d.completadas++;
+        else if(s==='overdue'||s.indexOf('atrasada')!==-1||s.indexOf('rezagada')!==-1)d.atrasadas++;
+        else if(s==='inprogress'||s.indexOf('progreso')!==-1||(p>0&&p<100))d.enProgreso++;
+        else d.pendientes++;
+    });return d;
 }
 
-// ==================== FUNCIÓN CORREGIDA - PROGRESO PONDERADO POR HORAS ====================
 function calculateAverageProgress(tasks) {
-    if (!tasks || tasks.length === 0) return 0;
-    
-    // Método CORRECTO: Progreso ponderado por horas estimadas
-    let totalWeightedProgress = 0;
-    let totalEstimatedHours = 0;
-    
-    tasks.forEach(task => {
-        const estimatedTime = task.estimatedTime || 0;
-        let progress = task.progress || 0;
-        const status = (task.status || '').toLowerCase();
-        
-        // Aplicar las mismas reglas que en getEVMMetricsFromSystem
-        if (status.includes('pending') || status.includes('pendiente')) {
-            progress = 0;
-        } else if (status.includes('completed') || status.includes('completada') || progress === 100) {
-            progress = 100;
-        }
-        
-        totalWeightedProgress += estimatedTime * (progress / 100);
-        totalEstimatedHours += estimatedTime;
+    if(!tasks||tasks.length===0)return 0;
+    var wp=0,te=0;
+    tasks.forEach(function(t){var e=t.estimatedTime||0,p=t.progress||0,s=(t.status||'').toLowerCase();
+        if(s.indexOf('pending')!==-1||s.indexOf('pendiente')!==-1)p=0;
+        else if(s.indexOf('completed')!==-1||s.indexOf('completada')!==-1||p===100)p=100;
+        wp+=e*(p/100);te+=e;
+    });return te>0?Math.round((wp/te)*100):0;
+}
+
+function calculateTotalEstimatedTime(tasks){return Math.round(tasks.reduce(function(s,t){return s+(t.estimatedTime||0);},0)*100)/100;}
+function calculateTotalTimeLogged(tasks){return Math.round(tasks.reduce(function(s,t){return s+(t.timeLogged||0);},0)*100)/100;}
+
+function generateRealRecommendations(evm,dist,kpis){
+    var r=[],cpi=evm.cpi||1,spi=evm.spi||1;
+    if(cpi<1){r.push('• 📊 <strong>CPI: '+cpi.toFixed(2)+'</strong> - Sobrecosto del '+((1-cpi)*100).toFixed(1)+'%');r.push('• 💡 Controlar horas extras y revisar recursos asignados.');}
+    else{r.push('• 📊 <strong>CPI: '+cpi.toFixed(2)+'</strong> - Bajo presupuesto en '+((cpi-1)*100).toFixed(1)+'%');r.push('• 💡 Mantener eficiencia actual del equipo.');}
+    if(spi<1){r.push('• ⏱️ <strong>SPI: '+spi.toFixed(2)+'</strong> - Retraso del '+((1-spi)*100).toFixed(1)+'%');r.push('• 💡 Priorizar tareas críticas y revisar dependencias.');}
+    else{r.push('• ⏱️ <strong>SPI: '+spi.toFixed(2)+'</strong> - Adelantado '+((spi-1)*100).toFixed(1)+'%');r.push('• 💡 Excelente progreso, mantener ritmo de trabajo.');}
+    r.push('• 📋 <strong>Distribución:</strong> '+dist.completadas+' completadas, '+dist.enProgreso+' en progreso, '+dist.pendientes+' pendientes, '+dist.atrasadas+' atrasadas');
+    if(dist.atrasadas>0)r.push('• ⚠️ <strong>Atención:</strong> '+dist.atrasadas+' tareas atrasadas requieren acción inmediata');
+    if(evm.vac<0)r.push('• 💰 <strong>VAC:</strong> Proyección de '+Math.abs(evm.vac).toFixed(2)+'h sobre presupuesto');
+    else r.push('• 💰 <strong>VAC:</strong> Proyección de '+evm.vac.toFixed(2)+'h bajo presupuesto');
+    return r.join('<br><br>');
+}
+
+function calcularEVMOperativo(tasksArray){
+    var BAC=0,AC=0,EV=0,PV=0;
+    tasksArray.forEach(function(t){var e=Number(t.estimatedTime)||0,reg=Number(t.timeLogged)||0,s=(t.status||'pending').toLowerCase();BAC+=e;AC+=reg;PV+=e;var p=0;
+        if(s==='completed'||s.indexOf('completada')!==-1)p=1;
+        else if((s==='inprogress'||s.indexOf('progreso')!==-1||s==='overdue')&&e>0)p=Math.min(0.99,reg/e);
+        EV+=e*p;
     });
-    
-    if (totalEstimatedHours === 0) return 0;
-    
-    const averageProgress = Math.round((totalWeightedProgress / totalEstimatedHours) * 100);
-    console.log(`📊 Progreso ponderado calculado: ${averageProgress}% (${totalWeightedProgress.toFixed(2)}h / ${totalEstimatedHours}h)`);
-    
-    return averageProgress;
+    var SPI=PV>0?EV/PV:1,CPI=AC>0?EV/AC:1,EAC=CPI>0?BAC/CPI:BAC;
+    return {pv:Math.round(PV*100)/100,ev:Math.round(EV*100)/100,ac:Math.round(AC*100)/100,bac:Math.round(BAC*100)/100,spi:Math.round(SPI*1000)/1000,cpi:Math.round(CPI*1000)/1000,eac:Math.round(EAC*100)/100,etc:Math.round((EAC-AC)*100)/100,vac:Math.round((BAC-EAC)*100)/100};
 }
 
-function calculateTotalEstimatedTime(tasks) {
-    return tasks.reduce((total, task) => total + (task.estimatedTime || 0), 0);
-}
-
-function calculateTotalTimeLogged(tasks) {
-    return tasks.reduce((total, task) => total + (task.timeLogged || 0), 0);
-}
-
-// ==================== BOTÓN VENTANA PREMIUM ====================
-function addPremiumFullscreenButton() {
-    const gantt = document.getElementById('premiumExecutiveGantt');
-    if (!gantt) {
-        console.log('⏳ Gantt no encontrado');
-        return false;
-    }
-    
-    const headerButtons = gantt.querySelector('div[style*="background: linear-gradient(90deg"]')?.lastElementChild;
-    if (!headerButtons) {
-        console.error('❌ No se encontró contenedor de botones');
-        return false;
-    }
-    
-    if (document.getElementById('premiumFullscreenBtn')) {
-        return true;
-    }
-    
-    console.log('🎯 Agregando botón de Vista Premium...');
-    
-    const premiumBtn = document.createElement('button');
-    premiumBtn.id = 'premiumFullscreenBtn';
-    premiumBtn.innerHTML = '🚀 Vista Premium';
-    premiumBtn.style.cssText = `
-        background: linear-gradient(45deg, #8b5cf6, #6d28d9);
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s;
-        margin-left: 10px;
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-    `;
-    
-    premiumBtn.onmouseover = function() {
-        this.style.transform = 'translateY(-2px)';
-        this.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
-    };
-    
-    premiumBtn.onmouseout = function() {
-        this.style.transform = 'translateY(0)';
-        this.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-    };
-    
-    premiumBtn.onclick = function(e) {
+// ============================================
+// 🚀 BOTÓN
+// ============================================
+function addPremiumFullscreenButton(){
+    var gantt=document.getElementById('premiumExecutiveGantt');
+    if(!gantt)return false;
+    var hb=gantt.querySelector('div[style*="background: linear-gradient(90deg"]');
+    if(!hb||!hb.lastElementChild)return false;
+    var headerButtons=hb.lastElementChild;
+    if(document.getElementById('premiumFullscreenBtn'))return true;
+    var btn=document.createElement('button');
+    btn.id='premiumFullscreenBtn';
+    btn.innerHTML='🚀 Vista Premium';
+    btn.style.cssText='background:linear-gradient(45deg,#8b5cf6,#6d28d9);border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;transition:all 0.3s;margin-left:10px;box-shadow:0 4px 12px rgba(139,92,246,0.3);';
+    btn.onmouseover=function(){this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(139,92,246,0.4)';};
+    btn.onmouseout=function(){this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(139,92,246,0.3)';};
+    btn.onclick=function(e){
         e.stopPropagation();
-        
-        console.log('🚀 PREPARANDO VISTA PREMIUM CON DATOS PRECISOS...');
-        
-        const gantt = document.getElementById('premiumExecutiveGantt');
-        const projectName = gantt.dataset.projectName || 'Proyecto';
-        const projectIndex = parseInt(gantt.dataset.projectIndex) || 0;
-        const tasksData = gantt.dataset.tasks || '[]';
-        
-        let tasks = JSON.parse(tasksData);
-        
-        if (tasks.length === 0) {
-            alert('⚠️ No hay tareas en este proyecto');
-            return;
-        }
-        
-        console.log(`📋 Proyecto: ${projectName}, Tareas: ${tasks.length}`);
-        
-        // 1. BURNDOWN EN HORAS (VERSIÓN CORREGIDA)
-        let burndownData = calculateBurndownInHours(tasks);
-        
-        // 2. EVM PRECISO
-        // Usar fecha actual para cálculos precisos
-const evmData = getEVMMetricsFromSystem(tasks, new Date());
-        
-        // 3. DISTRIBUCIÓN PRECISA
-        const taskDistribution = calculateRealTaskDistribution(tasks);
-        
-        // 4. KPIs PRECISOS CON PROGRESO PONDERADO CORRECTO
-        const totalTasks = tasks.length;
-        const completedTasks = taskDistribution.completadas;
-        const averageProgress = calculateAverageProgress(tasks); // ¡CORREGIDO!
-        const lateTasks = taskDistribution.atrasadas;
-        const totalEstimatedTime = calculateTotalEstimatedTime(tasks);
-        const totalTimeLogged = calculateTotalTimeLogged(tasks);
-        
-        const kpis = {
-            totalTasks,
-            completedTasks,
-            averageProgress,
-            lateTasks,
-            totalEstimatedTime,
-            totalTimeLogged
-        };
-        
-        console.log('📊 RESUMEN FINAL:', {
-            proyecto: projectName,
-            tareas: totalTasks,
-            horasTotales: totalEstimatedTime,
-            horasRegistradas: totalTimeLogged,
-            progresoPonderado: averageProgress + '%',
-            distribucion: taskDistribution,
-            evm: evmData,
-            burndown: burndownData,
-            kpis: kpis
-        });
-        
-        // 5. GENERAR HTML
-        const htmlContent = generatePremiumDashboardHTML(
-            projectName, 
-            projectIndex, 
-            tasks,
-            burndownData,
-            evmData,
-            taskDistribution,
-            kpis
-        );
-        
-        openPremiumWindow(htmlContent, projectName);
+        var projectName=gantt.dataset.projectName||'Proyecto';
+        var tasks=JSON.parse(gantt.dataset.tasks||'[]');
+        var projectStartDate=gantt.dataset.projectStartDate||new Date().toISOString().split('T')[0];
+        if(tasks.length===0){alert('⚠️ No hay tareas');return;}
+        var burndownData=calculateBurndownInHours(tasks);
+        var evmData=getEVMMetricsFromSystem(tasks,new Date(),projectStartDate);
+        var evmOperativo=calcularEVMOperativo(tasks);
+        var taskDistribution=calculateRealTaskDistribution(tasks);
+        var kpis={totalTasks:tasks.length,completedTasks:taskDistribution.completadas,averageProgress:calculateAverageProgress(tasks),lateTasks:taskDistribution.atrasadas,totalEstimatedTime:calculateTotalEstimatedTime(tasks),totalTimeLogged:calculateTotalTimeLogged(tasks)};
+        var recommendations=generateRealRecommendations(evmData,taskDistribution,kpis);
+        var totalDist=taskDistribution.completadas+taskDistribution.enProgreso+taskDistribution.pendientes+taskDistribution.atrasadas;
+        var percC=totalDist>0?Math.round((taskDistribution.completadas/totalDist)*100):0;
+        var percP=totalDist>0?Math.round((taskDistribution.enProgreso/totalDist)*100):0;
+        var percD=totalDist>0?Math.round((taskDistribution.pendientes/totalDist)*100):0;
+        var percA=totalDist>0?Math.round((taskDistribution.atrasadas/totalDist)*100):0;
+        abrirVentanaFinal(projectName,tasks,burndownData,evmData,evmOperativo,taskDistribution,kpis,recommendations,percC,percP,percD,percA);
     };
-    
-    const closeBtn = Array.from(headerButtons.children).find(btn => 
-        btn.textContent.includes('Cerrar') || btn.textContent.includes('×')
-    );
-    
-    if (closeBtn) {
-        headerButtons.insertBefore(premiumBtn, closeBtn);
-    } else {
-        headerButtons.appendChild(premiumBtn);
-    }
-    
-    console.log('✅ Botón premium agregado');
+    var closeBtn=Array.from(headerButtons.children).find(function(b){return b.textContent.indexOf('Cerrar')!==-1||b.textContent.indexOf('×')!==-1;});
+    if(closeBtn)headerButtons.insertBefore(btn,closeBtn); else headerButtons.appendChild(btn);
     return true;
 }
 
-// ==================== SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA ====================
-let autoRefreshInterval = null;
-let currentPremiumWindow = null;
-let lastTaskData = null;
-let refreshCount = 0;
-
-// Nueva función para configurar comunicación entre ventanas
-function setupWindowCommunication() {
-    console.log('🔗 Configurando comunicación entre ventanas...');
-    
-    // Escuchar mensajes de la ventana premium
-    window.addEventListener('message', function(event) {
-        console.log('📨 Mensaje recibido:', event.data);
-        
-        if (event.data.type === 'PREMIUM_WINDOW_READY') {
-            console.log('✅ Ventana premium lista para comunicación');
-            currentPremiumWindow = event.source;
-            
-            // Enviar datos iniciales
-            sendDataToPremiumWindow();
-            
-            // Configurar actualización automática si está habilitada
-            if (window.autoRefreshEnabled) {
-                startAutoRefresh();
-            }
-        }
-        
-        if (event.data.type === 'PREMIUM_WINDOW_CLOSED') {
-            console.log('🚪 Ventana premium cerrada');
-            currentPremiumWindow = null;
-            stopAutoRefresh();
-        }
-        
-        if (event.data.type === 'PREMIUM_REFRESH_REQUEST') {
-            console.log('🔄 Solicitud de actualización desde ventana premium');
-            sendDataToPremiumWindow();
-        }
-        
-        if (event.data.type === 'PREMIUM_TOGGLE_AUTO_REFRESH') {
-            const enabled = event.data.enabled;
-            window.autoRefreshEnabled = enabled;
-            console.log(`🔄 Actualización automática ${enabled ? 'activada' : 'desactivada'}`);
-            
-            if (enabled) {
-                startAutoRefresh();
-            } else {
-                stopAutoRefresh();
-            }
-        }
-    });
-}
-
-// Función para enviar datos actualizados a la ventana premium
-function sendDataToPremiumWindow() {
-    if (!currentPremiumWindow) {
-        console.log('❌ No hay ventana premium activa');
-        return;
-    }
-    
-    try {
-        const gantt = document.getElementById('premiumExecutiveGantt');
-        if (!gantt) {
-            console.error('❌ Gantt no encontrado');
-            return;
-        }
-        
-        const projectName = gantt.dataset.projectName || 'Proyecto';
-        const projectIndex = parseInt(gantt.dataset.projectIndex) || 0;
-        const tasksData = gantt.dataset.tasks || '[]';
-        const tasks = JSON.parse(tasksData);
-        
-        // Verificar si los datos han cambiado
-        const currentTaskData = JSON.stringify(tasks);
-        if (currentTaskData === lastTaskData) {
-            console.log('📊 Datos sin cambios, omitiendo actualización');
-            return;
-        }
-        
-        lastTaskData = currentTaskData;
-        refreshCount++;
-        
-        console.log(`🔄 Actualizando ventana premium (#${refreshCount})...`);
-        
-        // Calcular datos actualizados
-        const burndownData = calculateBurndownInHours(tasks);
-        const evmData = getEVMMetricsFromSystem(tasks);
-        const taskDistribution = calculateRealTaskDistribution(tasks);
-        
-        const totalTasks = tasks.length;
-        const averageProgress = calculateAverageProgress(tasks); // ¡CORREGIDO!
-        const totalEstimatedTime = calculateTotalEstimatedTime(tasks);
-        const totalTimeLogged = calculateTotalTimeLogged(tasks);
-        
-        const kpis = {
-            totalTasks,
-            completedTasks: taskDistribution.completadas,
-            averageProgress,
-            lateTasks: taskDistribution.atrasadas,
-            totalEstimatedTime,
-            totalTimeLogged
-        };
-        
-        // Preparar datos para enviar
-        const updateData = {
-            type: 'DATA_UPDATE',
-            data: {
-                projectName,
-                projectIndex,
-                tasks,
-                burndown: burndownData,
-                evm: evmData,
-                distribution: taskDistribution,
-                kpis,
-                timestamp: new Date().toISOString(),
-                refreshCount: refreshCount
-            }
-        };
-        
-        // Enviar datos a la ventana premium
-        currentPremiumWindow.postMessage(updateData, '*');
-        console.log('✅ Datos actualizados enviados a ventana premium');
-        
-    } catch (error) {
-        console.error('❌ Error actualizando ventana premium:', error);
-    }
-}
-
-// Función para iniciar actualización automática
-function startAutoRefresh(interval = 30000) { // 30 segundos por defecto
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-    
-    console.log(`⏱️ Iniciando actualización automática cada ${interval/1000} segundos`);
-    autoRefreshInterval = setInterval(sendDataToPremiumWindow, interval);
-    
-    // Notificar a la ventana premium
-    if (currentPremiumWindow) {
-        currentPremiumWindow.postMessage({
-            type: 'AUTO_REFRESH_STATUS',
-            enabled: true,
-            interval: interval
-        }, '*');
-    }
-}
-
-// Función para detener actualización automática
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-        console.log('⏹️ Actualización automática detenida');
-        
-        // Notificar a la ventana premium
-        if (currentPremiumWindow) {
-            currentPremiumWindow.postMessage({
-                type: 'AUTO_REFRESH_STATUS',
-                enabled: false
-            }, '*');
-            }
-        }
-    }
-
-// ==================== GENERAR HTML CON ACTUALIZACIÓN AUTOMÁTICA ====================
-function generatePremiumDashboardHTML(projectName, projectIndex, tasks, burndownData, evmData, taskDistribution, kpis) {
-    // Calcular porcentajes
-    const totalDist = taskDistribution.completadas + taskDistribution.enProgreso + 
-                     taskDistribution.pendientes + taskDistribution.atrasadas;
-    
-    const percCompletadas = totalDist > 0 ? Math.round((taskDistribution.completadas / totalDist) * 100) : 0;
-    const percEnProgreso = totalDist > 0 ? Math.round((taskDistribution.enProgreso / totalDist) * 100) : 0;
-    const percPendientes = totalDist > 0 ? Math.round((taskDistribution.pendientes / totalDist) * 100) : 0;
-    const percAtrasadas = totalDist > 0 ? Math.round((taskDistribution.atrasadas / totalDist) * 100) : 0;
-    
-    // ============================================
-    // 📊 PRIMERO: DECLARAR LAS VARIABLES EVM
-    // ============================================
-    
-        // Método PMI (el que viene como parámetro)
-    const evmPMI = evmData;
-    
-
-
-
-
-    // Función para método operativo - CORREGIDA
-    function calcularEVMOperativo(tasksArray) {
-        let BAC = 0, AC = 0, EV = 0, PV = 0;  // ← Agregamos PV
-        
-        tasksArray.forEach(task => {
-            const estimado = Number(task.estimatedTime) || 0;
-            const registrado = Number(task.timeLogged) || 0;
-            const status = task.status || 'pending';
-            
-            BAC += estimado;
-            AC += registrado;
-            PV += estimado;  // ← NUEVO: PV = suma TOTAL de horas estimadas (124h)
-            
-            let progreso = 0;
-            
-            if (status === 'completed') {
-                progreso = 1.0;
-            } 
-            else if (status === 'inProgress' || status === 'overdue' || status === 'rezagado') {
-                if (estimado > 0) {
-                    progreso = Math.min(0.99, registrado / estimado);
-                }
-            }
-            
-            EV += estimado * progreso;
-        });
-        
-        // ← Usamos PV en lugar de BAC para el SPI del operativo
-        const SPI = PV > 0 ? EV / PV : 1;      // ← CAMBIADO: usa PV (124h) no BAC
-        const CPI = AC > 0 ? EV / AC : 1;
-        const EAC = CPI > 0 ? BAC / CPI : BAC;
-        const ETC = EAC - AC;
-        const VAC = BAC - EAC;
-        
-        return {
-            pv: Math.round(PV * 100) / 100,           // ← AHORA DA 124h
-            ev: Math.round(EV * 100) / 100,
-            ac: Math.round(AC * 100) / 100,
-            bac: Math.round(BAC * 100) / 100,
-            spi: Math.round(SPI * 1000) / 1000,       // ← AHORA DA 0.69
-            cpi: Math.round(CPI * 1000) / 1000,
-            eac: Math.round(EAC * 100) / 100,
-            etc: Math.round(ETC * 100) / 100,
-            vac: Math.round(VAC * 100) / 100
-        };
-    }
-    
-    // Método Operativo
-    const evmOperativo = calcularEVMOperativo(tasks);
-    
-    // ============================================
-    // 📊 SEGUNDO: GENERAR RECOMENDACIONES (AHORA evmPMI YA EXISTE)
-    // ============================================
-    
-    const recommendations = generateRealRecommendations(evmPMI, taskDistribution, kpis);
-    
-    console.log('📊 EVM PMI:', evmPMI);
-    console.log('📊 EVM Operativo:', evmOperativo);
-
-
-
-
-
-    // Preparar datos JSON
-    const tasksJSON = JSON.stringify(tasks || []).replace(/"/g, '\\"');
-    const burndownJSON = JSON.stringify(burndownData || {}).replace(/"/g, '\\"');
-    const evmJSON = JSON.stringify(evmData || {}).replace(/"/g, '\\"');
-    const distributionJSON = JSON.stringify(taskDistribution || {}).replace(/"/g, '\\"');
-    const kpisJSON = JSON.stringify(kpis || {}).replace(/"/g, '\\"');
-    
-    return `<!DOCTYPE html>
-<html>
-<head>
-    <title>🚀 ${projectName} - Vista Premium</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #0a0a1a;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            overflow: hidden;
-            color: white;
-        }
-        .app-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #0a0a1a 0%, #121230 100%);
-            overflow: hidden;
-            z-index: 999999;
-            display: flex;
-            flex-direction: column;
-        }
-        .app-header {
-            background: linear-gradient(90deg, #0a0a1a, #1a1a3a);
-            padding: 20px 30px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-        .app-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .app-logo {
-            background: linear-gradient(45deg, #8b5cf6, #6d28d9);
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
-        }
-        .app-controls {
-            display: flex;
-            gap: 12px;
-        }
-        .app-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        .app-btn:hover {
-            background: rgba(255,255,255,0.15);
-            transform: translateY(-2px);
-        }
-        .app-btn-primary {
-            background: linear-gradient(45deg, #10b981, #059669);
-            border: none;
-        }
-        .app-btn-danger {
-            background: linear-gradient(45deg, #ef4444, #dc2626);
-            border: none;
-        }
-        .app-btn-warning {
-            background: linear-gradient(45deg, #f59e0b, #d97706);
-            border: none;
-        }
-        .app-main {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-            padding: 20px;
-            gap: 20px;
-        }
-        .app-sidebar {
-            width: 350px;
-            background: rgba(26, 31, 60, 0.8);
-            border-radius: 16px;
-            padding: 25px;
-            overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.1);
-            flex-shrink: 0;
-        }
-        .sidebar-section {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            color: white;
-            font-size: 16px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .dashboard-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 20px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-        .dashboard-card {
-            background: rgba(26, 31, 60, 0.8);
-            border-radius: 16px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-        }
-        .card-large {
-            grid-column: span 2;
-        }
-        .card-title {
-            color: white;
-            font-size: 18px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .chart-container {
-            flex: 1;
-            position: relative;
-        }
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-top: 15px;
-        }
-        .kpi-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .kpi-value {
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .kpi-label {
-            color: #94a3b8;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .task-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .task-item {
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-left: 4px solid;
-        }
-        .evm-metrics {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .evm-metric {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-        }
-        .evm-label {
-            color: #94a3b8;
-            font-size: 13px;
-        }
-        .evm-value {
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .evm-good { color: #10b981 !important; }
-        .evm-warning { color: #f59e0b !important; }
-        .evm-danger { color: #ef4444 !important; }
-        .color-completed { border-left-color: #10b981; }
-        .color-inprogress { border-left-color: #3b82f6; }
-        .color-pending { border-left-color: #f59e0b; }
-        .color-overdue { border-left-color: #ef4444; }
-        
-        /* Indicador de actualización */
-        .refresh-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(139, 92, 246, 0.9);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 1000000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .last-update {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.05);
-            color: #94a3b8;
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-size: 11px;
-            z-index: 1000000;
-        }
-        
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.5);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 92, 246, 0.7);
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <div id="refreshIndicator" class="refresh-indicator" style="display: none;">
-            <span class="refresh-emoji">🔄</span>
-            <span class="refresh-text">Actualizando...</span>
-        </div>
-        
-        <header class="app-header">
-            <div class="app-title">
-                <div class="app-logo">🚀</div>
-                <div>
-                    <h1 style="margin: 0; color: white; font-size: 24px;">${projectName} - Vista Premium</h1>
-                    <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 14px;">Dashboard ejecutivo • Actualización automática • ${new Date().toLocaleString()}</p>
-                </div>
-            </div>
-            <div class="app-controls">
-                <button class="app-btn" onclick="refreshDashboard()">🔄 Actualizar</button>
-                <button class="app-btn app-btn-warning" id="autoRefreshToggle" onclick="toggleAutoRefresh()">⏱️ Auto: OFF</button>
-                <button class="app-btn app-btn-primary" onclick="exportDashboard()">📥 Exportar</button>
-                <button class="app-btn app-btn-danger" onclick="closeWindow()">✕ Cerrar</button>
-            </div>
-        </header>
-        
-        <main class="app-main">
-            <aside class="app-sidebar">
-    <!-- KPIs del Proyecto (se mantiene igual) -->
-    <div class="sidebar-section">
-        <h3 class="section-title">📊 KPIs del Proyecto</h3>
-        <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-value">${kpis.totalTasks}</div><div class="kpi-label">Tareas</div></div>
-            <div class="kpi-card"><div class="kpi-value">${taskDistribution.completadas}</div><div class="kpi-label">Completadas</div></div>
-            <div class="kpi-card"><div class="kpi-value">${kpis.averageProgress}%</div><div class="kpi-label">Progreso</div></div>
-            <div class="kpi-card"><div class="kpi-value">${taskDistribution.atrasadas}</div><div class="kpi-label">Atrasadas</div></div>
-        </div>
-        <div style="margin-top: 15px; color: #94a3b8; font-size: 11px; text-align: center;">
-            Última actualización: <span id="lastUpdateTime">${new Date().toLocaleTimeString()}</span>
-        </div>
-    </div>
-    
-    <!-- ============================================ -->
-    <!-- PANEL 1: EVM - MÉTODO PMI (Directivos)       -->
-    <!-- ============================================ -->
-    <div class="sidebar-section" style="border-left: 4px solid #3b82f6; padding-left: 15px;">
-    <h3 class="section-title" style="color: #3b82f6;">🎯 EVM - PMI ESTÁNDAR (Directivos)</h3>
-    <div class="evm-metrics">
-        <div class="evm-metric"><span class="evm-label">PV (Planificado):</span><span class="evm-value">${evmPMI.pv.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">EV (Ganado):</span><span class="evm-value ${evmPMI.ev >= evmPMI.pv ? 'evm-good' : 'evm-warning'}">${evmPMI.ev.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">AC (Real):</span><span class="evm-value">${evmPMI.ac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">SPI:</span><span class="evm-value ${evmPMI.spi >= 1 ? 'evm-good' : 'evm-danger'}">${evmPMI.spi.toFixed(2)}</span></div>
-        <div class="evm-metric"><span class="evm-label">CPI:</span><span class="evm-value ${evmPMI.cpi >= 1 ? 'evm-good' : 'evm-danger'}">${evmPMI.cpi.toFixed(2)}</span></div>
-    </div>
-</div>
-    
-    <!-- ============================================ -->
-    <!-- PANEL 2: EVM - MÉTODO OPERATIVO (Equipo)     -->
-    <!-- ============================================ -->
-    <div class="sidebar-section" style="border-left: 4px solid #f59e0b; padding-left: 15px; margin-top: 20px;">
-    <h3 class="section-title" style="color: #f59e0b;">⏱️ EVM - OPERATIVO (Equipo)</h3>
-    <div class="evm-metrics">
-        <div class="evm-metric"><span class="evm-label">PV (Plan Base):</span><span class="evm-value">${evmOperativo.pv.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">EV (Ganado):</span><span class="evm-value ${evmOperativo.ev >= evmOperativo.pv ? 'evm-good' : 'evm-warning'}">${evmOperativo.ev.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">AC (Real):</span><span class="evm-value">${evmOperativo.ac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">SPI:</span><span class="evm-value ${evmOperativo.spi >= 1 ? 'evm-good' : 'evm-danger'}">${evmOperativo.spi.toFixed(2)}</span></div>
-        <div class="evm-metric"><span class="evm-label">CPI:</span><span class="evm-value ${evmOperativo.cpi >= 1 ? 'evm-good' : 'evm-danger'}">${evmOperativo.cpi.toFixed(2)}</span></div>
-    </div>
-</div>
-    
-    <!-- ============================================ -->
-    <!-- PANEL 3: PRONÓSTICOS - PMI (Directivos)      -->
-    <!-- ============================================ -->
-   <div class="sidebar-section" style="border-left: 4px solid #3b82f6; padding-left: 15px; margin-top: 20px;">
-    <h3 class="section-title" style="color: #3b82f6;">📈 PRONÓSTICOS - PMI (Directivos)</h3>
-    <div class="evm-metrics">
-        <div class="evm-metric"><span class="evm-label">BAC (Presupuesto):</span><span class="evm-value">${evmPMI.bac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">EAC (Estimado):</span><span class="evm-value ${evmPMI.eac <= evmPMI.bac ? 'evm-good' : 'evm-danger'}">${evmPMI.eac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">ETC (Faltante):</span><span class="evm-value">${evmPMI.etc.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">VAC (Variación):</span><span class="evm-value ${evmPMI.vac >= 0 ? 'evm-good' : 'evm-danger'}">${evmPMI.vac >= 0 ? '+' : ''}${evmPMI.vac.toFixed(2)}h</span></div>
-    </div>
-</div>
-    
-    <!-- ============================================ -->
-    <!-- PANEL 4: PRONÓSTICOS - OPERATIVO (Equipo)    -->
-    <!-- ============================================ -->
-    <div class="sidebar-section" style="border-left: 4px solid #f59e0b; padding-left: 15px; margin-top: 20px;">
-    <h3 class="section-title" style="color: #f59e0b;">📈 PRONÓSTICOS - OPERATIVO (Equipo)</h3>
-    <div class="evm-metrics">
-        <div class="evm-metric"><span class="evm-label">BAC (Presupuesto):</span><span class="evm-value">${evmOperativo.bac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">EAC (Estimado):</span><span class="evm-value ${evmOperativo.eac <= evmOperativo.bac ? 'evm-good' : 'evm-danger'}">${evmOperativo.eac.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">ETC (Faltante):</span><span class="evm-value">${evmOperativo.etc.toFixed(2)}h</span></div>
-        <div class="evm-metric"><span class="evm-label">VAC (Variación):</span><span class="evm-value ${evmOperativo.vac >= 0 ? 'evm-good' : 'evm-danger'}">${evmOperativo.vac >= 0 ? '+' : ''}${evmOperativo.vac.toFixed(2)}h</span></div>
-    </div>
-</div>
-    
-    <!-- Distribución (se mantiene igual) -->
-    <div class="sidebar-section" style="margin-top: 20px;">
-        <h3 class="section-title">📊 Distribución</h3>
-        <div class="evm-metrics">
-            <div class="evm-metric"><span class="evm-label">Completadas:</span><span class="evm-value evm-good">${taskDistribution.completadas} (${percCompletadas}%)</span></div>
-            <div class="evm-metric"><span class="evm-label">En Progreso:</span><span class="evm-value evm-warning">${taskDistribution.enProgreso} (${percEnProgreso}%)</span></div>
-            <div class="evm-metric"><span class="evm-label">Pendientes:</span><span class="evm-value">${taskDistribution.pendientes} (${percPendientes}%)</span></div>
-            <div class="evm-metric"><span class="evm-label">Atrasadas:</span><span class="evm-value evm-danger">${taskDistribution.atrasadas} (${percAtrasadas}%)</span></div>
-        </div>
-    </div>
-    
-    <!-- Acciones (se mantiene igual) -->
-    <div class="sidebar-section">
-        <h3 class="section-title">⚡ Acciones</h3>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="app-btn" onclick="showBurndownChart()">📉 Burndown</button>
-            <button class="app-btn" onclick="showEVMAnalysis()">📈 Análisis EVM</button>
-            <button class="app-btn" onclick="showTaskDetails()">📋 Detalle Tareas</button>
-            <button class="app-btn" onclick="showRiskAnalysis()">🚨 Riesgos</button>
-        </div>
-    </div>
-</aside>
-            
-
-
-
-
-
-
-            <div class="dashboard-grid">
-                <div class="dashboard-card">
-                    <h3 class="card-title"><span style="color: #f59e0b;">📉</span> Burndown Chart (HORAS)</h3>
-                    <div class="chart-container"><canvas id="burndownChart"></canvas></div>
-                    <div style="margin-top: 10px; color: #94a3b8; font-size: 12px; text-align: center;">
-                        Total: ${burndownData.totalHoras.toFixed(1)}h | Completadas: ${burndownData.horasCompletadas.toFixed(1)}h | Restantes: ${burndownData.horasRestantes.toFixed(1)}h
-                    </div>
-                </div>
-                
-                <div class="dashboard-card">
-                    <h3 class="card-title"><span style="color: #10b981;">📈</span> Valor Ganado (EVM)</h3>
-                    <div class="chart-container"><canvas id="evmChart"></canvas></div>
-                </div>
-                
-                <div class="dashboard-card card-large">
-                    <h3 class="card-title"><span style="color: #8b5cf6;">📊</span> Distribución de Tareas</h3>
-                    <div style="display: flex; gap: 30px; height: 100%;">
-                        <div style="flex: 1;"><div class="chart-container"><canvas id="taskDistributionChart"></canvas></div></div>
-                        <div style="width: 300px; overflow-y: auto;">
-                            <h4 style="color: white; margin-bottom: 15px; font-size: 14px;">📋 Tareas (${kpis.totalTasks})</h4>
-                            <div class="task-list" id="taskList"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dashboard-card card-large">
-    <h3 class="card-title"><span style="color: #3b82f6;">🏥</span> Salud del Proyecto</h3>
-    <div style="display: flex; gap: 20px; height: 100%;">
-        <div style="flex: 1.7; min-width: 0;">
-            <div class="chart-container" style="min-height: 280px;">
-                <canvas id="healthChart"></canvas>
-            </div>
-        </div>
-        <div style="width: 250px; min-width: 250px;">
-            <h4 style="color: white; margin-bottom: 15px; font-size: 14px;">📌 Análisis</h4>
-            <div id="recommendations" style="color: #94a3b8; font-size: 13px; line-height: 1.5; max-height: 260px; overflow-y: auto;">${recommendations}</div>
-        </div>
-    </div>
-</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-        
-        <div id="lastUpdate" class="last-update">Actualizaciones: <span id="updateCount">0</span></div>
-    </div>
-    
-    <script>
-        // DATOS PRECISOS DEL SISTEMA
-        let projectData = {
-            name: "${projectName}",
-            index: ${projectIndex},
-            tasks: JSON.parse('${tasksJSON}'),
-            burndown: JSON.parse('${burndownJSON}'),
-            evm: JSON.parse('${evmJSON}'),
-            distribution: JSON.parse('${distributionJSON}'),
-            kpis: JSON.parse('${kpisJSON}')
-        };
-        
-        console.log('📦 Datos PRECISOS cargados:', projectData);
-        
-        let chartInstances = { burndown: null, evm: null, taskDistribution: null, health: null };
-        let autoRefreshEnabled = false;
-        let autoRefreshInterval = null;
-        let updateCount = 0;
-        
-        // Función para notificar a la ventana principal que estamos listos
-        function notifyParentWindow() {
-            try {
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PREMIUM_WINDOW_READY'
-                    }, '*');
-                    console.log('📨 Notificado a ventana principal');
-                }
-            } catch (error) {
-                console.warn('⚠️ No se pudo notificar a la ventana principal:', error);
-            }
-        }
-        
-        // Escuchar mensajes de la ventana principal
-        window.addEventListener('message', function(event) {
-            console.log('📨 Mensaje recibido de ventana principal:', event.data.type);
-            
-            if (event.data.type === 'DATA_UPDATE') {
-                console.log('🔄 Recibiendo datos actualizados...');
-                showRefreshIndicator();
-                
-                // Actualizar datos
-                projectData = event.data.data;
-                updateCount = projectData.refreshCount || updateCount + 1;
-                
-                // Actualizar UI
-                updateDashboard();
-                
-                // Actualizar contador
-                document.getElementById('updateCount').textContent = updateCount;
-                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
-                
-                // Ocultar indicador después de 2 segundos
-                setTimeout(hideRefreshIndicator, 2000);
-            }
-            
-            if (event.data.type === 'AUTO_REFRESH_STATUS') {
-                autoRefreshEnabled = event.data.enabled;
-                updateAutoRefreshButton();
-                
-                if (autoRefreshEnabled) {
-                    console.log('✅ Actualización automática activada');
-                    showNotification('Actualización automática activada');
-                } else {
-                    console.log('⏹️ Actualización automática desactivada');
-                    showNotification('Actualización automática desactivada');
-                }
-            }
-        });
-        
-        function initDashboard() {
-            console.log('🚀 Iniciando dashboard con actualización automática...');
-            try {
-                initBurndownChart();
-                initEVMChart();
-                initTaskDistributionChart();
-                initHealthChart();
-                loadTaskList();
-                notifyParentWindow();
-                
-                // Solicitar actualización inicial
-                requestRefresh();
-                
-                console.log('✅ Dashboard listo');
-            } catch (error) {
-                console.error('❌ Error:', error);
-                alert('Error: ' + error.message);
-            }
-        }
-        
-        function updateDashboard() {
-            console.log('📊 Actualizando dashboard con nuevos datos...');
-            try {
-                // Destruir gráficos existentes
-                for (let chart in chartInstances) {
-                    if (chartInstances[chart]) {
-                        chartInstances[chart].destroy();
-                    }
-                }
-                
-                // Recrear gráficos con nuevos datos
-                initBurndownChart();
-                initEVMChart();
-                initTaskDistributionChart();
-                initHealthChart();
-                loadTaskList();
-                
-                console.log('✅ Dashboard actualizado');
-            } catch (error) {
-                console.error('❌ Error actualizando dashboard:', error);
-            }
-        }
-        
-        function requestRefresh() {
-            try {
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PREMIUM_REFRESH_REQUEST'
-                    }, '*');
-                    console.log('📨 Solicitando actualización...');
-                }
-            } catch (error) {
-                console.warn('⚠️ No se pudo solicitar actualización:', error);
-            }
-        }
-        
-        function toggleAutoRefresh() {
-            autoRefreshEnabled = !autoRefreshEnabled;
-            updateAutoRefreshButton();
-            
-            try {
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PREMIUM_TOGGLE_AUTO_REFRESH',
-                        enabled: autoRefreshEnabled
-                    }, '*');
-                }
-            } catch (error) {
-                console.warn('⚠️ No se pudo cambiar auto-refresh:', error);
-            }
-        }
-        
-        function updateAutoRefreshButton() {
-            const btn = document.getElementById('autoRefreshToggle');
-            if (autoRefreshEnabled) {
-                btn.innerHTML = '⏱️ Auto: ON';
-                btn.className = 'app-btn app-btn-primary';
-            } else {
-                btn.innerHTML = '⏱️ Auto: OFF';
-                btn.className = 'app-btn app-btn-warning';
-            }
-        }
-        
-        function showRefreshIndicator() {
-            const indicator = document.getElementById('refreshIndicator');
-            indicator.style.display = 'flex';
-            
-            // Animar el emoji
-            const emoji = indicator.querySelector('.refresh-emoji');
-            emoji.style.animation = 'spin 1s linear infinite';
-            
-            // Actualizar texto
-            const text = indicator.querySelector('.refresh-text');
-            text.textContent = 'Actualizando datos...';
-        }
-        
-        function hideRefreshIndicator() {
-            const indicator = document.getElementById('refreshIndicator');
-            indicator.style.display = 'none';
-        }
-        
-        function showNotification(message) {
-            // Crear notificación temporal
-            const notification = document.createElement('div');
-            notification.className = 'refresh-indicator';
-            notification.innerHTML = \`📢 \${message}\`;
-            document.body.appendChild(notification);
-            
-            // Remover después de 3 segundos
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-        
-        // Funciones de gráficos (sin cambios en la lógica, solo nombres)
-        function initBurndownChart() {
-            try {
-                const ctx = document.getElementById('burndownChart').getContext('2d');
-                const burndown = projectData.burndown;
-                
-                if (chartInstances.burndown) chartInstances.burndown.destroy();
-                
-                chartInstances.burndown = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Inicio', ...burndown.semanas.map(s => 'Sem ' + s)],
-                        datasets: [
-                            {
-                                label: 'Línea Ideal (Burndown)',
-                                data: burndown.trabajoIdeal,
-                                borderColor: '#10b981',
-                                backgroundColor: 'transparent',
-                                borderWidth: 3,
-                                borderDash: [5, 5],
-                                tension: 0.1,
-                                pointRadius: 0
-                            },
-                            {
-                                label: 'Progreso Real',
-                                data: burndown.trabajoReal,
-                                borderColor: '#f59e0b',
-                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                borderWidth: 3,
-                                fill: true,
-                                tension: 0.2,
-                                pointRadius: 4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { 
-                                position: 'top', 
-                                labels: { 
-                                    color: '#e2e8f0', 
-                                    font: { size: 12 } 
-                                } 
-                            },
-                            tooltip: { 
-                                callbacks: { 
-                                    label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + ' horas' 
-                                } 
-                            }
-                        },
-                        scales: {
-                            x: { 
-                                grid: { color: 'rgba(255,255,255,0.1)' }, 
-                                ticks: { color: '#cbd5e1' } 
-                            },
-                            y: { 
-                                beginAtZero: true,
-                                grid: { color: 'rgba(255,255,255,0.1)' },
-                                ticks: { 
-                                    color: '#cbd5e1', 
-                                    callback: v => v.toFixed(0) + 'h' 
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Horas Restantes',
-                                    color: '#cbd5e1'
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (error) { 
-                console.error('❌ Error Burndown:', error); 
-            }
-        }
-        
-        function initEVMChart() {
-    try {
-        const canvas = document.getElementById('evmChart');
-        if (!canvas) {
-            console.error('❌ Canvas evmChart no encontrado');
-            return;
-        }
-        
-        const ctx = canvas.getContext('2d');
-        
-        // ✅ USAR projectData.evm (que ya tiene los valores correctos)
-        // pero asegurarse de que esté actualizado
-        const evm = window.currentEVMData || projectData.evm;
-        
-        console.log('📊 Renderizando gráfico EVM con:', {
-            pv: evm.pv,
-            ev: evm.ev,
-            ac: evm.ac
-        });
-        
-        if (chartInstances.evm) chartInstances.evm.destroy();
-        
-        chartInstances.evm = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['PV', 'EV', 'AC'],
-                datasets: [{
-                    label: 'Métricas EVM (horas)',
-                    data: [evm.pv, evm.ev, evm.ac],
-                    backgroundColor: ['#3b82f6', '#10b981', evm.ac > evm.ev ? '#ef4444' : '#f59e0b'],
-                    borderRadius: 8,
-                    barPercentage: 0.6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(ctx) {
-                                const labels = { 'PV': 'Valor Planificado', 'EV': 'Valor Ganado', 'AC': 'Costo Real' };
-                                return labels[ctx.label] + ': ' + ctx.parsed.y.toFixed(2) + ' h';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Horas', color: '#94a3b8' },
-                        ticks: { color: '#cbd5e1' }
-                    },
-                    x: {
-                        ticks: { color: '#cbd5e1' }
-                    }
-                }
-            }
-        });
-        
-        console.log('✅ Gráfico EVM renderizado correctamente');
-    } catch (error) {
-        console.error('❌ Error en initEVMChart:', error);
-    }
-}
-        
-        function initTaskDistributionChart() {
-            try {
-                const ctx = document.getElementById('taskDistributionChart').getContext('2d');
-                const dist = projectData.distribution;
-                const total = dist.completadas + dist.enProgreso + dist.pendientes + dist.atrasadas;
-                
-                if (chartInstances.taskDistribution) chartInstances.taskDistribution.destroy();
-                
-                chartInstances.taskDistribution = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Completadas', 'En progreso', 'Pendientes', 'Atrasadas'],
-                        datasets: [{
-                            data: [dist.completadas, dist.enProgreso, dist.pendientes, dist.atrasadas],
-                            backgroundColor: ['#10b981', '#008090', '#f59e0b', '#ef4444'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { color: '#e2e8f0', padding: 20, font: { size: 11 } }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => {
-                                        const value = ctx.raw || 0;
-                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                        return ctx.label + ': ' + value + ' tareas (' + percentage + '%)';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (error) { console.error('❌ Error Distribución:', error); }
-        }
-        
-        function initHealthChart() {
- console.log('🔥 initHealthChart EJECUTADA 🔥', new Date().toISOString());
-            try {
-
-                const ctx = document.getElementById('healthChart').getContext('2d');
-                const evm = projectData.evm;
-                const dist = projectData.distribution;
-                const kpis = projectData.kpis;
-                
-                const financialHealth = Math.min(100, Math.max(0, evm.cpi * 100));
-                const scheduleHealth = Math.min(100, Math.max(0, evm.spi * 100));
-                let costHealth = 100;
-                if (evm.bac > 0) {
-                    const vacPercentage = Math.abs(evm.vac) / evm.bac * 100;
-                    costHealth = Math.max(0, 100 - vacPercentage);
-                }
-               const progressHealth =
-    evm.bac > 0
-        ? Number(((evm.ev / evm.bac) * 100).toFixed(1))
-        : 0;
-
-                const completionHealth = projectData.tasks.length > 0 ? (dist.completadas / projectData.tasks.length) * 100 : 0;
-                
-                if (chartInstances.health) chartInstances.health.destroy();
-                
-                chartInstances.health = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: ['Financiera', 'Cronograma', 'Costos', 'Progreso', 'Cumplimiento'],
-                        datasets: [{
-                            label: 'Salud del Proyecto (%)',
-                            data: [financialHealth, scheduleHealth, costHealth, progressHealth, completionHealth],
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            borderColor: '#3b82f6',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#3b82f6',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            r: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: { color: '#cbd5e1', backdropColor: 'transparent', stepSize: 20 },
-                                grid: { color: 'rgba(255,255,255,0.1)' },
-                                angleLines: { color: 'rgba(255,255,255,0.1)' },
-                                pointLabels: { color: '#e2e8f0', font: { size: 12 } }
-                            }
-                        },
-                        plugins: { legend: { labels: { color: '#e2e8f0' } } }
-                    }
-                });
-            } catch (error) { console.error('❌ Error Salud:', error); }
-        }
-        
-        function loadTaskList() {
-            try {
-                const taskList = document.getElementById('taskList');
-                const tasks = projectData.tasks;
-                
-                if (tasks.length === 0) {
-                    taskList.innerHTML = '<div style="color: #94a3b8; text-align: center; padding: 20px;">No hay tareas</div>';
-                    return;
-                }
-                
-                taskList.innerHTML = tasks.map((task, index) => {
-                    const taskName = task.name || 'Tarea ' + (index + 1);
-                    const progress = task.progress || 0;
-                    const status = task.status || 'pending';
-                    const estimatedTime = task.estimatedTime || 0;
-                    const timeLogged = task.timeLogged || 0;
-                    
-                    let color = '#f59e0b', statusText = 'Pendiente', emoji = '⏳';
-                    if (progress === 100 || status.includes('completed') || status.includes('completada')) {
-                        color = '#10b981'; statusText = 'Completada'; emoji = '✅';
-                    } else if (status.includes('overdue') || status.includes('rezagada') || status.includes('atrasada')) {
-                        color = '#ef4444'; statusText = 'Atrasada'; emoji = '⚠️';
-                    } else if (status.includes('inProgress') || status.includes('en progreso') || (progress > 0 && progress < 100)) {
-                        color = '#008090'; statusText = 'En progreso'; emoji = '🔄';
-                    } else if (status.includes('pending') || status.includes('pendiente') || progress === 0) {
-                        color = '#f59e0b'; statusText = 'Pendiente'; emoji = '⏳';
-                    }
-                    
-                    return '<div class="task-item" style="border-left-color: ' + color + ';">' +
-                        '<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">' +
-                            '<div style="flex: 1; min-width: 0;">' +
-                                '<strong style="color: white; font-size: 13px; display: block; overflow: hidden; text-overflow: ellipsis;">' +
-                                    (index + 1) + '. ' + taskName +
-                                '</strong>' +
-                                '<div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">' +
-                                    '<span style="color: #94a3b8; font-size: 11px;">' + emoji + ' ' + statusText + ' | Est: ' + estimatedTime + 'h | Real: ' + timeLogged + 'h | Prog: ' + progress + '%</span>' +
-                                '</div>' +
-                            '</div>' +
-                            '<div style="display: flex; align-items: center;">' +
-                                '<span style="color: ' + color + '; font-size: 14px; font-weight: bold; min-width: 40px; text-align: right;">' +
-                                    progress + '%' +
-                                '</span>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px;">' +
-                            '<div style="width: ' + progress + '%; height: 100%; background: ' + color + '; border-radius: 2px;"></div>' +
-                        '</div>' +
-                    '</div>';
-                }).join('');
-            } catch (error) {
-                console.error('❌ Error cargando tareas:', error);
-            }
-        }
-        
-        function refreshDashboard() {
-            console.log('🔄 Actualizando dashboard manualmente...');
-            requestRefresh();
-            showNotification('Solicitando datos actualizados...');
-        }
-        
-        function closeWindow() {
-            // Notificar a la ventana principal que nos vamos a cerrar
-            try {
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PREMIUM_WINDOW_CLOSED'
-                    }, '*');
-                }
-            } catch (error) {
-                console.warn('⚠️ No se pudo notificar cierre:', error);
-            }
-            
-            window.close();
-        }
-        
-        // Funciones auxiliares (sin cambios)
-        function showBurndownChart() {
-            const burndown = projectData.burndown;
-            alert('📊 BURNDOWN CHART (HORAS):\\n\\n' +
-                  '• Horas totales: ' + burndown.totalHoras.toFixed(1) + 'h\\n' +
-                  '• Horas COMPLETADAS (100%): ' + burndown.horasCompletadas.toFixed(1) + 'h\\n' +
-                  '• Horas RESTANTES: ' + burndown.horasRestantes.toFixed(1) + 'h');
-        }
-        
-        function showEVMAnalysis() {
-            const evm = projectData.evm;
-            alert('💰 ANÁLISIS EVM:\\n\\n' +
-                  '• PV (Planificado): ' + evm.pv.toFixed(2) + 'h\\n' +
-                  '• EV (Ganado): ' + evm.ev.toFixed(2) + 'h\\n' + 
-                  '• AC (Real): ' + evm.ac.toFixed(2) + 'h\\n\\n' +
-                  '📊 ÍNDICES:\\n' +
-                  '• CPI (Costo): ' + evm.cpi.toFixed(2) + (evm.cpi >= 1 ? ' ✅ (Bajo presupuesto)' : ' ❌ (Sobre presupuesto)') + '\\n' +
-                  '• SPI (Tiempo): ' + evm.spi.toFixed(2) + (evm.spi >= 1 ? ' ✅ (Adelantado)' : ' ❌ (Atrasado)'));
-        }
-        
-        function showTaskDetails() {
-            alert('📋 Mostrando detalles de ' + projectData.tasks.length + ' tareas...');
-        }
-        
-        function showRiskAnalysis() {
-            const risks = [];
-            const evm = projectData.evm;
-            const dist = projectData.distribution;
-            
-            if (evm.cpi < 1) risks.push('• 📉 Riesgo de sobrecostos (CPI < 1)');
-            if (evm.spi < 1) risks.push('• ⏱️ Riesgo de retrasos (SPI < 1)');
-            if (dist.atrasadas > 0) risks.push('• ⚠️ ' + dist.atrasadas + ' tareas atrasadas');
-            if (projectData.kpis.averageProgress < 50) risks.push('• 🐌 Progreso general bajo');
-            
-            if (risks.length === 0) risks.push('• ✅ Proyecto en buen estado');
-            
-            alert('🚨 ANÁLISIS DE RIESGOS:\\n\\n' + risks.join('\\n'));
-        }
-        
 // ============================================
-// FUNCIÓN DE EXPORTACIÓN DE REPORTE EJECUTIVO
+// 📄 CREAR VENTANA
 // ============================================
+function abrirVentanaFinal(projectName,tasks,burndownData,evmData,evmOperativo,taskDistribution,kpis,recommendations,percC,percP,percD,percA){
+    var w=window.open('','_blank','width=1500,height=950,menubar=no,toolbar=no,scrollbars=yes,resizable=yes');
+    if(!w){alert('⚠️ Permite ventanas emergentes');return;}
 
-function exportDashboard() {
-    console.log('📊 Generando reporte ejecutivo...');
-
-    // ============================================
-    // FUNCIONES AUXILIARES PARA CAMBIAR COLORES TEMPORALMENTE
-    // ============================================
-    function setChartColorsToBlack(chart) {
-        if (!chart || !chart.options) return;
-
-        // Guardar opciones originales solo una vez
-        if (!chart._originalOptions) {
-            chart._originalOptions = JSON.parse(JSON.stringify(chart.options));
-        }
-
-        // Modificar escalas según el tipo
-        if (chart.options.scales) {
-            if (chart.options.scales.x) {
-                if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = '#000000';
-                if (chart.options.scales.x.title) chart.options.scales.x.title.color = '#000000';
-            }
-            if (chart.options.scales.y) {
-                if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = '#000000';
-                if (chart.options.scales.y.title) chart.options.scales.y.title.color = '#000000';
-            }
-            if (chart.options.scales.r) {
-                if (chart.options.scales.r.ticks) chart.options.scales.r.ticks.color = '#000000';
-                if (chart.options.scales.r.pointLabels) chart.options.scales.r.pointLabels.color = '#000000';
-            }
-        }
-
-        // Leyenda
-        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
-            chart.options.plugins.legend.labels.color = '#000000';
-        }
-
-        chart.update();
-    }
-
-    function restoreChartColors(chart) {
-        if (chart && chart._originalOptions) {
-            chart.options = chart._originalOptions;
-            chart.update();
-            // Opcional: eliminar copia para liberar memoria
-            // delete chart._originalOptions;
-        }
-    }
-
-    // Capturar imágenes de gráficos
-    var images = { doughnut: '', bar: '', radar: '', burndown: '' };
-
-   if (typeof Chart !== 'undefined' && Chart.instances) {
-    for (var key in Chart.instances) {
-        var chart = Chart.instances[key];
-        try {
-            var canvas = chart.canvas;
-            if (!canvas) continue;
-            
-            // CAMBIAR COLORES A NEGRO ANTES DE CAPTURAR
-            setChartColorsToBlack(chart);
-            
-            // CAPTURAR IMAGEN SEGÚN EL TIPO
-            if (chart.config.type === 'doughnut' || chart.config.type === 'pie')
-                images.doughnut = canvas.toDataURL('image/png');
-            else if (chart.config.type === 'bar')
-                images.bar = canvas.toDataURL('image/png');
-            else if (chart.config.type === 'radar')
-                images.radar = canvas.toDataURL('image/png');
-            else if (chart.config.type === 'line')
-                images.burndown = canvas.toDataURL('image/png');
-            
-            // RESTAURAR COLORES ORIGINALES
-            restoreChartColors(chart);
-            
-        } catch (e) {
-            console.warn('Error capturando gráfico:', e.message);
-            // En caso de error, intentamos restaurar por si acaso
-            if (chart) restoreChartColors(chart);
-        }
-    }
-}
-
-    // ============================================
-    // El resto de tu código (obtener datos, construir HTML, descargar) 
-    // se mantiene exactamente igual que antes.
-    // ============================================
-
-    // ... (aquí continúa todo lo demás: var evm, distribution, tasks, análisis, etc.)
-    // ... (el código que ya tienes después de la captura de imágenes)    
-    // Obtener datos del proyecto
-    var evm = projectData.evm || {};
-    var distribution = projectData.distribution || {};
-    var kpis = projectData.kpis || {};
-    var tasks = [];
-    if (projectData.tasks) {
-        for (var i = 0; i < projectData.tasks.length; i++) {
-            var task = projectData.tasks[i];
-            tasks.push({
-                name: task.name,
-                estimated: task.estimatedTime || 0,
-                logged: task.timeLogged || 0,
-                progress: task.progress || 0,
-                status: task.status || 'pending'
-            });
-        }
-    }
-    
-    var totalTasks = kpis.totalTasks || 0;
-    var completedTasks = distribution.completadas || 0;
-    var inProgressTasks = distribution.enProgreso || 0;
-    var pendingTasks = distribution.pendientes || 0;
-    var overdueTasks = distribution.atrasadas || 0;
-    var avgProgress = kpis.averageProgress || 0;
-    
-    var PV = evm.pv || 0;
-    var EV = evm.ev || 0;
-    var AC = evm.ac || 0;
-    var BAC = evm.bac || 0;
-    var CPI = evm.cpi || 1;
-    var SPI = evm.spi || 1;
-    var EAC = evm.eac || 0;
-    var ETC = evm.etc || 0;
-    var VAC = evm.vac || 0;
-    
-    // Análisis ejecutivo
-    var analysis = [];
-    if (CPI > 1) analysis.push('CPI: ' + CPI.toFixed(2) + ' - Bajo presupuesto en ' + ((CPI - 1) * 100).toFixed(1) + '%');
-    else if (CPI < 1) analysis.push('CPI: ' + CPI.toFixed(2) + ' - Sobre costos en ' + ((1 - CPI) * 100).toFixed(1) + '%');
-    else analysis.push('CPI: ' + CPI.toFixed(2) + ' - Costos ajustados');
-    
-    if (SPI < 1) analysis.push('SPI: ' + SPI.toFixed(2) + ' - Retraso del ' + ((1 - SPI) * 100).toFixed(1) + '%');
-    else if (SPI > 1) analysis.push('SPI: ' + SPI.toFixed(2) + ' - Adelantado ' + ((SPI - 1) * 100).toFixed(1) + '%');
-    else analysis.push('SPI: ' + SPI.toFixed(2) + ' - En plazo exacto');
-    
-    analysis.push('Distribucion: ' + completedTasks + ' completadas, ' + inProgressTasks + ' en progreso, ' + pendingTasks + ' pendientes, ' + overdueTasks + ' atrasadas');
-    if (overdueTasks > 0) analysis.push('Atencion: ' + overdueTasks + ' tareas atrasadas');
-    analysis.push('VAC: ' + (VAC > 0 ? 'Ahorro' : 'Sobrecosto') + ' de ' + Math.abs(VAC).toFixed(2) + 'h');
-    
-    // Función para escapar HTML
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-    
-    // Formatear fecha y hora
-    var today = new Date();
-    var fechaFormateada = today.toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    var horaFormateada = today.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    // ========== OBTENER NOMBRE DEL PROYECTO DE FORMA ROBUSTA ==========
-var nombreProyecto = '';
-if (projectData.name && projectData.name !== 'Proyecto') {
-    nombreProyecto = projectData.name;
-} else if (projectData.projectName && projectData.projectName !== 'Proyecto') {
-    nombreProyecto = projectData.projectName;
-} else if (window.currentProjectName && window.currentProjectName !== 'Proyecto') {
-    nombreProyecto = window.currentProjectName;
-} else if (window.projects && window.projects[window.currentProjectIndex] && window.projects[window.currentProjectIndex].name) {
-    nombreProyecto = window.projects[window.currentProjectIndex].name;
-} else {
-    nombreProyecto = 'Proyecto ' + new Date().toLocaleDateString();
-}
-var projectName = escapeHtml(nombreProyecto);
-
-console.log('🏷️ Nombre del proyecto detectado:', nombreProyecto); // Opcional, para depuración
-    
-    // CSS comprimido
-    var css = '*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#f0f2f5;padding:40px;color:#1e293b;}.report-container{max-width:1200px;margin:0 auto;background:white;border-radius:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;}.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);padding:48px 40px;color:white;}.header h1{font-size:42px;font-weight:700;margin-bottom:12px;}.header .subtitle{font-size:18px;opacity:0.85;margin-bottom:8px;}.header .date{font-size:14px;opacity:0.7;display:flex;gap:20px;margin-top:20px;}.content{padding:48px 40px;}.section{margin-bottom:48px;}.section-title{font-size:24px;font-weight:600;border-left:6px solid #8b5cf6;padding-left:20px;margin-bottom:28px;color:#0f172a;}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:40px;}.kpi-card{background:#ffffff;border-radius:20px;padding:24px;text-align:center;box-shadow:0 10px 20px rgba(0,0,0,0.05);border:1px solid #eef2ff;}.kpi-value{font-size:42px;font-weight:700;color:#8b5cf6;line-height:1;margin-bottom:8px;}.kpi-label{font-size:14px;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px;}.stat-card{background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;}.stat-value{font-size:32px;font-weight:700;}.stat-label{font-size:13px;color:#475569;margin-top:8px;}.two-columns{display:grid;grid-template-columns:1fr 1fr;gap:32px;}.card{background:#ffffff;border-radius:24px;padding:24px;border:1px solid #eef2ff;box-shadow:0 8px 20px rgba(0,0,0,0.03);}.card-title{font-size:18px;font-weight:600;margin-bottom:20px;color:#0f172a;}.chart-img{width:100%;border-radius:16px;margin-top:12px;box-shadow:0 5px 15px rgba(0,0,0,0.05);filter: invert(1) hue-rotate(180deg);}.task-table{width:100%;border-collapse:collapse;font-size:13px;}.task-table th{background:#f1f5f9;padding:12px 16px;text-align:left;font-weight:600;color:#1e293b;border-bottom:2px solid #e2e8f0;}.task-table td{padding:12px 16px;border-bottom:1px solid #eef2ff;}.task-table tr:hover{background:#faf5ff;}.status-badge{display:inline-block;padding:4px 10px;border-radius:30px;font-size:11px;font-weight:600;}.status-completed{background:#d1fae5;color:#065f46;}.status-progress{background:#fef3c7;color:#92400e;}.status-pending{background:#e2e3e5;color:#2c3e50;}.status-overdue{background:#fee2e2;color:#991b1b;}.progress-bar-container{width:80px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;}.progress-fill{height:100%;background:#8b5cf6;border-radius:3px;}.evm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px;}.evm-card{background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;}.evm-value{font-size:28px;font-weight:700;color:#8b5cf6;}.evm-label{font-size:12px;color:#475569;margin-top:8px;}.analysis-list{list-style:none;padding:0;}.analysis-list li{padding:12px 0;border-bottom:1px solid #eef2ff;}.footer{background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #eef2ff;color:#64748b;font-size:12px;}';
-    
-    // Construir HTML
-    var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Ejecutivo - ' + projectName + '</title><style>' + css + '</style></head><body>';
-    html += '<div class="report-container">';
-    html += '<div class="header"><h1>📊 Reporte Ejecutivo</h1>';
-    html += '<div class="subtitle">Análisis de Valor Ganado (EVM) y Gestión de Proyectos</div>';
-    html += '<div class="date">';
-    html += '<span>📅 ' + fechaFormateada + '</span>';
-    html += '<span>🕒 ' + horaFormateada + '</span>';
-    html += '<span>📌 Proyecto: ' + projectName + '</span>';
+    var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>'+projectName+' - Vista Premium</title>';
+    html += '<style>';
+    html += '*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:white;overflow:hidden}';
+    html += '.app{position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;flex-direction:column;background:linear-gradient(135deg,#0a0a1a,#121230)}';
+    html += '.hdr{background:linear-gradient(90deg,#0a0a1a,#1a1a3a);padding:14px 25px;border-bottom:2px solid rgba(139,92,246,0.3);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}';
+    html += '.hdr h1{font-size:18px;margin:0}.hdr p{color:#94a3b8;font-size:11px;margin:2px 0 0}';
+    html += '.hdr-btns{display:flex;gap:8px}';
+    html += '.btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:6px}';
+    html += '.btn:hover{background:rgba(255,255,255,0.2);transform:translateY(-1px)}';
+    html += '.btn-green{background:linear-gradient(45deg,#10b981,#059669)!important;border:none!important}';
+    html += '.btn-red{background:linear-gradient(45deg,#ef4444,#dc2626)!important;border:none!important}';
+    html += '.main{flex:1;display:flex;padding:12px;gap:12px;overflow:hidden}';
+    html += '.sb{width:380px;background:rgba(26,31,60,0.85);border-radius:12px;padding:18px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);flex-shrink:0}';
+    html += '.sec{margin-bottom:16px}.sec-t{color:white;font-size:14px;font-weight:700;margin-bottom:8px}';
+    html += '.kpi-g{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}';
+    html += '.kpi-c{background:rgba(255,255,255,0.05);border-radius:8px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,0.08)}';
+    html += '.kpi-v{font-size:22px;font-weight:800;color:white}.kpi-l{color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}';
+    html += '.mr{display:flex;justify-content:space-between;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:4px;font-size:13px}';
+    html += '.ml{color:#94a3b8;font-weight:500}.mv{font-weight:700;color:white;font-size:14px}.g{color:#10b981!important}.y{color:#f59e0b!important}.r{color:#ef4444!important}';
+    html += '.dash{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;overflow-y:auto}';
+    html += '.card{background:rgba(26,31,60,0.85);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column}';
+    html += '.cf{grid-column:span 2}';
+    html += '.ct{font-size:13px;font-weight:600;margin-bottom:8px}';
+    html += '.cw{flex:1;min-height:140px;display:flex;align-items:center;justify-content:center;position:relative}';
+    html += 'canvas{display:block}';
+    html += '.tp{width:280px;min-width:280px;max-height:220px;overflow-y:auto}';
+    html += '.ti{background:rgba(255,255,255,0.03);border-radius:5px;padding:8px 10px;margin-bottom:5px;border-left:3px solid #f59e0b;font-size:11px}';
+    html += '.ab{width:280px;min-width:280px;max-height:220px;overflow-y:auto;color:#94a3b8;font-size:11px;line-height:1.5}';
+    html += '#status{text-align:center;padding:5px;color:#94a3b8;font-size:10px}';
+    html += '</style></head><body>';
+    html += '<div class="app">';
+    html += '<div class="hdr"><div><h1>🚀 '+projectName+' - Vista Premium EVM</h1><p>Método PMI Estándar • Dashboard Ejecutivo • <span id="clock">'+new Date().toLocaleString()+'</span></p></div>';
+    html += '<div class="hdr-btns">';
+    html += '<button class="btn btn-green" id="btnExport">📥 Exportar Reporte</button>';
+    html += '<button class="btn btn-red" id="btnClose">✕ Cerrar</button>';
     html += '</div></div>';
-    html += '<div class="content">';
-    html += '<div class="section"><div class="section-title">📈 KPIs del Proyecto</div>';
-    html += '<div class="kpi-grid">';
-    html += '<div class="kpi-card"><div class="kpi-value">' + totalTasks + '</div><div class="kpi-label">TOTAL TAREAS</div></div>';
-    html += '<div class="kpi-card"><div class="kpi-value">' + completedTasks + '</div><div class="kpi-label">COMPLETADAS</div></div>';
-    html += '<div class="kpi-card"><div class="kpi-value">' + avgProgress.toFixed(0) + '%</div><div class="kpi-label">PROGRESO</div></div>';
-    html += '<div class="kpi-card"><div class="kpi-value">' + overdueTasks + '</div><div class="kpi-label">ATRASADAS</div></div>';
+    html += '<div class="main">';
+
+    // SIDEBAR
+    html += '<div class="sb">';
+    html += '<div class="sec"><div class="sec-t">📊 KPIs del Proyecto</div><div class="kpi-g">';
+    html += '<div class="kpi-c"><div class="kpi-v">'+kpis.totalTasks+'</div><div class="kpi-l">Tareas</div></div>';
+    html += '<div class="kpi-c"><div class="kpi-v">'+taskDistribution.completadas+'</div><div class="kpi-l">Completadas</div></div>';
+    html += '<div class="kpi-c"><div class="kpi-v">'+kpis.averageProgress+'%</div><div class="kpi-l">Progreso</div></div>';
+    html += '<div class="kpi-c"><div class="kpi-v">'+taskDistribution.atrasadas+'</div><div class="kpi-l">Atrasadas</div></div>';
     html += '</div></div>';
-    html += '<div class="section"><div class="section-title">📋 Estado de Tareas</div>';
-    html += '<div class="stats-grid">';
-    html += '<div class="stat-card"><div class="stat-value" style="color:#2ecc71">' + completedTasks + '</div><div class="stat-label">Completadas</div></div>';
-    html += '<div class="stat-card"><div class="stat-value" style="color:#f39c12">' + inProgressTasks + '</div><div class="stat-label">En Progreso</div></div>';
-    html += '<div class="stat-card"><div class="stat-value" style="color:#95a5a6">' + pendingTasks + '</div><div class="stat-label">Pendientes</div></div>';
-    html += '<div class="stat-card"><div class="stat-value" style="color:#e74c3c">' + overdueTasks + '</div><div class="stat-label">Atrasadas</div></div>';
-    html += '</div></div>';
-    html += '<div class="section"><div class="section-title">📊 Distribución de Tareas</div>';
-    html += '<div class="two-columns">';
-    html += '<div class="card"><div class="card-title">🍩 Gráfico de Distribución (Dona)</div>';
-    if (images.doughnut) {
-        html += '<img src="' + images.doughnut + '" class="chart-img" alt="Distribución">';
-    } else {
-        html += '<p style="padding:20px;color:#64748b">Gráfico no disponible</p>';
-    }
-    html += '</div>';
-    html += '<div class="card"><div class="card-title">📋 Detalle de Tareas (' + totalTasks + ')</div>';
-    html += '<div style="max-height:400px;overflow-y:auto;"><table class="task-table"><thead><tr><th>#</th><th>Tarea</th><th>Estado</th><th>Est (h)</th><th>Real (h)</th><th>Prog</th></tr></thead><tbody>';
-    
-    for (var i = 0; i < Math.min(tasks.length, 20); i++) {
-        var t = tasks[i];
-        var statusClass = 'pending', statusText = 'Pendiente';
-        if (t.status === 'completed') { statusClass = 'completed'; statusText = 'Completada'; }
-        else if (t.status === 'inProgress') { statusClass = 'progress'; statusText = 'En progreso'; }
-        else if (t.status === 'overdue') { statusClass = 'overdue'; statusText = 'Atrasada'; }
-        
-        html += '<tr><td>' + (i + 1) + '</td>';
-        html += '<td><strong>' + escapeHtml(t.name || 'Sin título') + '</strong></td>';
-        html += '<td><span class="status-badge status-' + statusClass + '">' + statusText + '</span></td>';
-        html += '<td>' + t.estimated.toFixed(1) + '</td>';
-        html += '<td>' + t.logged.toFixed(1) + '</td>';
-        html += '<td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar-container"><div class="progress-fill" style="width:' + (t.progress || 0) + '%"></div></div><span>' + (t.progress || 0) + '%</span></div></td></tr>';
-    }
-    
-    if (tasks.length > 20) {
-        html += '<tr><td colspan="6" style="text-align:center;padding:12px;">... y ' + (tasks.length - 20) + ' tareas más</td></tr>';
-    }
-    
-    html += '</tbody></table></div></div></div></div>';
-    html += '<div class="section"><div class="section-title">💰 Valor Ganado (EVM)</div>';
-    html += '<div class="evm-grid">';
-    html += '<div class="evm-card"><div class="evm-value">' + PV.toFixed(2) + ' h</div><div class="evm-label">PV</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + EV.toFixed(2) + ' h</div><div class="evm-label">EV</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + AC.toFixed(2) + ' h</div><div class="evm-label">AC</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + CPI.toFixed(2) + '</div><div class="evm-label">CPI</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + SPI.toFixed(2) + '</div><div class="evm-label">SPI</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + BAC.toFixed(2) + ' h</div><div class="evm-label">BAC</div></div>';
-    html += '</div></div>';
-    html += '<div class="section"><div class="section-title">🔮 Pronósticos</div>';
-    html += '<div class="evm-grid">';
-    html += '<div class="evm-card"><div class="evm-value">' + EAC.toFixed(2) + ' h</div><div class="evm-label">EAC</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + ETC.toFixed(2) + ' h</div><div class="evm-label">ETC</div></div>';
-    html += '<div class="evm-card"><div class="evm-value">' + (VAC >= 0 ? '+' : '') + VAC.toFixed(2) + ' h</div><div class="evm-label">VAC</div></div>';
-    html += '</div></div>';
-    html += '<div class="section"><div class="section-title">📈 Gráficos de Valor Ganado y Burndown</div>';
-    html += '<div class="two-columns">';
-    html += '<div class="card"><div class="card-title">📊 Gráfico EVM (Barras)</div>';
-    if (images.bar) {
-        html += '<img src="' + images.bar + '" class="chart-img" alt="EVM">';
-    } else {
-        html += '<p style="padding:20px;color:#64748b">Gráfico no disponible</p>';
-    }
-    html += '</div>';
-    html += '<div class="card"><div class="card-title">📉 Gráfico Burndown (Línea)</div>';
-    if (images.burndown) {
-        html += '<img src="' + images.burndown + '" class="chart-img" alt="Burndown">';
-    } else {
-        html += '<p style="padding:20px;color:#64748b">Gráfico no disponible</p>';
-    }
+
+    html += '<div class="sec" style="border-left:4px solid #3b82f6;padding-left:14px"><div class="sec-t" style="color:#3b82f6">🎯 EVM PMI ESTÁNDAR</div>';
+    html += '<div class="mr"><span class="ml">PV (Planificado):</span><span class="mv">'+evmData.pv.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">EV (Ganado):</span><span class="mv '+((evmData.ev>=evmData.pv)?'g':'y')+'">'+evmData.ev.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">AC (Real):</span><span class="mv">'+evmData.ac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">SPI:</span><span class="mv '+((evmData.spi>=1)?'g':'r')+'">'+evmData.spi.toFixed(2)+'</span></div>';
+    html += '<div class="mr"><span class="ml">CPI:</span><span class="mv '+((evmData.cpi>=1)?'g':'r')+'">'+evmData.cpi.toFixed(2)+'</span></div></div>';
+
+    html += '<div class="sec" style="border-left:4px solid #f59e0b;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#f59e0b">⏱️ EVM OPERATIVO</div>';
+    html += '<div class="mr"><span class="ml">PV (Base):</span><span class="mv">'+evmOperativo.pv.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">EV (Ganado):</span><span class="mv">'+evmOperativo.ev.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">AC (Real):</span><span class="mv">'+evmOperativo.ac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">SPI:</span><span class="mv '+((evmOperativo.spi>=1)?'g':'r')+'">'+evmOperativo.spi.toFixed(2)+'</span></div>';
+    html += '<div class="mr"><span class="ml">CPI:</span><span class="mv '+((evmOperativo.cpi>=1)?'g':'r')+'">'+evmOperativo.cpi.toFixed(2)+'</span></div></div>';
+
+    html += '<div class="sec" style="border-left:4px solid #3b82f6;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#3b82f6">📈 PRONÓSTICOS PMI</div>';
+    html += '<div class="mr"><span class="ml">BAC:</span><span class="mv">'+evmData.bac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">EAC:</span><span class="mv '+((evmData.eac<=evmData.bac)?'g':'r')+'">'+evmData.eac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">ETC:</span><span class="mv">'+evmData.etc.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">VAC:</span><span class="mv '+((evmData.vac>=0)?'g':'r')+'">'+(evmData.vac>=0?'+':'')+evmData.vac.toFixed(2)+'h</span></div></div>';
+
+    html += '<div class="sec" style="border-left:4px solid #f59e0b;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#f59e0b">📈 PRONÓSTICOS OPERATIVO</div>';
+    html += '<div class="mr"><span class="ml">BAC:</span><span class="mv">'+evmOperativo.bac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">EAC:</span><span class="mv">'+evmOperativo.eac.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">ETC:</span><span class="mv">'+evmOperativo.etc.toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">VAC:</span><span class="mv '+((evmOperativo.vac>=0)?'g':'r')+'">'+(evmOperativo.vac>=0?'+':'')+evmOperativo.vac.toFixed(2)+'h</span></div></div>';
+
+    html += '<div class="sec" style="margin-top:12px"><div class="sec-t">📊 Distribución</div>';
+    html += '<div class="mr"><span class="ml">✅ Completadas:</span><span class="mv g">'+taskDistribution.completadas+' ('+percC+'%)</span></div>';
+    html += '<div class="mr"><span class="ml">🔄 En Progreso:</span><span class="mv y">'+taskDistribution.enProgreso+' ('+percP+'%)</span></div>';
+    html += '<div class="mr"><span class="ml">⏳ Pendientes:</span><span class="mv">'+taskDistribution.pendientes+' ('+percD+'%)</span></div>';
+    html += '<div class="mr"><span class="ml">⚠️ Atrasadas:</span><span class="mv r">'+taskDistribution.atrasadas+' ('+percA+'%)</span></div></div>';
+    html += '<div id="status">🎨 Dibujando...</div></div>';
+
+    // DASHBOARD
+    html += '<div class="dash">';
+    html += '<div class="card"><div class="ct" style="color:#f59e0b">📉 Burndown Chart - Horas Restantes vs Tiempo</div><div class="cw"><canvas id="c1" width="520" height="245"></canvas></div></div>';
+    html += '<div class="card"><div class="ct" style="color:#10b981">📈 Valor Ganado EVM - Métricas PMI</div><div class="cw"><canvas id="c2" width="520" height="245"></canvas></div></div>';
+    html += '<div class="card cf"><div class="ct" style="color:#8b5cf6;text-align:left;margin-bottom:8px;">📊 Distribución de Tareas por Estado</div><div style="display:flex;gap:12px;height:calc(100% - 30px);min-height:0;align-items:center"><div style="flex:1.3;min-width:0;display:flex;align-items:center;justify-content:center"><canvas id="c3" width="600" height="230"></canvas></div><div class="tp" id="tpanel"></div></div></div>';
+    html += '<div class="card cf"><div class="ct" style="color:#3b82f6;text-align:left;margin-bottom:8px;">🏥 Salud Integral del Proyecto - Análisis Multidimensional</div><div style="display:flex;gap:12px;height:calc(100% - 30px);min-height:0;align-items:center"><div style="flex:1.5;min-width:0;display:flex;align-items:center;justify-content:center"><canvas id="c4" width="500" height="230"></canvas></div><div class="ab" id="abox"></div></div></div>';
     html += '</div></div></div>';
-    html += '<div class="section"><div class="section-title">🏥 Salud del Proyecto</div>';
-    html += '<div class="two-columns">';
-    html += '<div class="card"><div class="card-title">🕸️ Radar de Salud</div>';
-    if (images.radar) {
-        html += '<img src="' + images.radar + '" class="chart-img" style="border:0; box-shadow:none;" alt="Radar">';
-    } else {
-        html += '<p style="padding:20px;color:#64748b">Gráfico no disponible</p>';
-    }
-    html += '</div>';
-    html += '<div class="card"><div class="card-title">📌 Análisis Ejecutivo</div><ul class="analysis-list">';
-    for (var i = 0; i < analysis.length; i++) {
-        html += '<li>' + analysis[i] + '</li>';
-    }
-    html += '</ul></div></div></div>';
-    html += '</div>';
-    html += '<div class="footer">';
-    html += '<p>Reporte generado automáticamente por el sistema de gestión de proyectos</p>';
-    html += '<p>© ' + new Date().getFullYear() + ' - Dashboard 4D Ejecutivo</p>';
-    html += '</div></div></body></html>';
-    
-    // Descargar y abrir
-    try {
-        var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'Reporte_Ejecutivo_' + (projectData.name || 'proyecto').replace(/[^a-z0-9]/gi, '_') + '_' + today.toISOString().slice(0, 10) + '.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        // Abrir en ventana premium si existe la función
-        if (typeof openPremiumWindow === 'function') {
-            openPremiumWindow(html, projectName);
-        }
-        
-        console.log('✅ Reporte ejecutivo generado con éxito');
-        console.log('📊 Gráficas capturadas:', {
-            doughnut: !!images.doughnut,
-            bar: !!images.bar,
-            radar: !!images.radar,
-            burndown: !!images.burndown
-        });
-        
-        if (!images.doughnut || !images.bar || !images.radar || !images.burndown) {
-            alert('⚠️ Algunas gráficas no pudieron ser capturadas. Asegúrate de que todos los gráficos estén visibles al generar el reporte.');
-        }
-    } catch (e) {
-        console.error('❌ Error al generar el reporte:', e);
-        alert('Error al generar el reporte: ' + e.message);
-    }
+    html += '</body></html>';
+
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+
+    w.document.getElementById('btnClose').onclick = function(){ w.close(); };
+    w.document.getElementById('btnExport').onclick = function(){
+        generarReporteEjecutivo(projectName, tasks, burndownData, evmData, evmOperativo, taskDistribution, kpis, recommendations);
+    };
+
+    setTimeout(function(){
+        try { drawAll(w, burndownData, evmData, evmOperativo, taskDistribution, tasks, recommendations); } catch(err){ console.error('Error:',err); }
+    }, 400);
+    w.focus();
 }
-        
-        // Inicializar dashboard
-        document.addEventListener('DOMContentLoaded', initDashboard);
 
-
-
-
-        if (document.readyState === 'complete') initDashboard();
-        
-        // Agregar animación CSS para el spinner
-        const style = document.createElement('style');
-        style.textContent = \`
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        \`;
-        document.head.appendChild(style);
-        
-        // Notificar cierre de ventana
-        window.addEventListener('beforeunload', function() {
-            try {
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PREMIUM_WINDOW_CLOSED'
-                    }, '*');
-                }
-            } catch (error) {
-                // Silenciar error
-            }
-        });
-
-// CORRECCIÓN AUTOMÁTICA
-setTimeout(function() {
-    // 1. Corregir valores de texto (PV, SPI, SV)
-    document.querySelectorAll('*').forEach(el => {
-        if (el.innerText === '62.00h' || el.innerText === '62.00 h') {
-            let p = el.parentElement;
-            if (p && p.innerText.includes('PV')) el.innerText = '84.33 h';
-        }
-        if (el.innerText === '1.37' || el.innerText === '1.371') {
-            let p = el.parentElement;
-            if (p && p.innerText.includes('SPI')) el.innerText = '1.008';
-        }
+// ============================================
+// 🎨 DIBUJAR TODO
+// ============================================
+function drawAll(popup, bd, evm, evmOp, dist, tasks, recs) {
+    var status = popup.document.getElementById('status');
+    var ok = 0;
+    var panel = popup.document.getElementById('tpanel');
+    var tHTML = '';
+    tasks.forEach(function(t,i){
+        var s=(t.status||'pending').toLowerCase(),p=t.progress||0;
+        var col='#f59e0b',txt='Pendiente',emo='⏳';
+        if(s==='completed'||s.indexOf('completada')!==-1||p===100){col='#10b981';txt='Completada';emo='✅';}
+        else if(s==='overdue'||s.indexOf('atrasada')!==-1){col='#ef4444';txt='Atrasada';emo='⚠️';}
+        else if(s==='inprogress'||s.indexOf('progreso')!==-1||(p>0&&p<100)){col='#3b82f6';txt='En progreso';emo='🔄';}
+        tHTML += '<div class="ti" style="border-left-color:'+col+'"><strong>'+(i+1)+'. '+(t.name||'Tarea')+'</strong><br>'+emo+' '+txt+' | Est:'+((t.estimatedTime||0))+'h | Real:'+((t.timeLogged||0))+'h | <span style="color:'+col+'">'+p+'%</span></div>';
     });
-    
-    }, 500);
-    </script>
-</body>
-</html>
-`;
-}
-// ==================== FUNCIÓN PARA GENERAR RECOMENDACIONES PRECISAS ====================
-function generateRealRecommendations(evmData, taskDistribution, kpis) {
-    const recommendations = [];
-    
-    // ANÁLISIS EVM PRECISO
-    if (evmData.cpi < 1) {
-        const overCost = ((1 - evmData.cpi) * 100).toFixed(1);
-        recommendations.push('• 📊 <strong>CPI: ' + evmData.cpi.toFixed(2) + '</strong> - Sobrecosto del ' + overCost + '%');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Controlar horas extras y revisar recursos.');
-    } else {
-        const underCost = ((evmData.cpi - 1) * 100).toFixed(1);
-        recommendations.push('• 📊 <strong>CPI: ' + evmData.cpi.toFixed(2) + '</strong> - Bajo presupuesto en ' + underCost + '%');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Mantener la eficiencia actual.');
-    }
-    
-    if (evmData.spi < 1) {
-        const delay = ((1 - evmData.spi) * 100).toFixed(1);
-        recommendations.push('• ⏱️ <strong>SPI: ' + evmData.spi.toFixed(2) + '</strong> - Retraso del ' + delay + '%');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Priorizar tareas críticas y revisar dependencias.');
-    } else {
-        const ahead = ((evmData.spi - 1) * 100).toFixed(1);
-        recommendations.push('• ⏱️ <strong>SPI: ' + evmData.spi.toFixed(2) + '</strong> - Adelantado ' + ahead + '%');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Excelente progreso, mantener ritmo.');
-    }
-    
-    // ANÁLISIS DISTRIBUCIÓN PRECISO
-    recommendations.push('• 📋 <strong>Distribución:</strong> ' + 
-        taskDistribution.completadas + ' completadas, ' +
-        taskDistribution.enProgreso + ' en progreso, ' +
-        taskDistribution.pendientes + ' pendientes, ' +
-        taskDistribution.atrasadas + ' atrasadas');
-    
-    if (taskDistribution.atrasadas > 0) {
-        recommendations.push('• ⚠️ <strong>Atención:</strong> ' + taskDistribution.atrasadas + ' tareas atrasadas requieren acción inmediata');
-    }
-    
-    if (taskDistribution.completadas === kpis.totalTasks) {
-        recommendations.push('• 🎉 <strong>¡Proyecto completado!</strong> Todas las tareas finalizadas');
-    } else if (taskDistribution.completadas / kpis.totalTasks >= 0.8) {
-        recommendations.push('• 👍 <strong>Excelente avance:</strong> Más del 80% completado');
-    }
-    
-    // ANÁLISIS PROGRESO
-    if (kpis.averageProgress < 30) {
-        recommendations.push('• 🐌 <strong>Progreso lento:</strong> Solo ' + kpis.averageProgress + '% de avance');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Identificar bloqueos y asignar más recursos');
-    } else if (kpis.averageProgress > 70) {
-        recommendations.push('• 🚀 <strong>Excelente ritmo:</strong> ' + kpis.averageProgress + '% de progreso');
-    }
-    
-    // ANÁLISIS EVM ADICIONAL
-    if (evmData.vac < 0) {
-        recommendations.push('• 💰 <strong>Variación final (VAC):</strong> Proyección de ' + Math.abs(evmData.vac).toFixed(2) + 'h sobre presupuesto');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Revisar estimaciones y controlar costos.');
-    } else {
-        recommendations.push('• 💰 <strong>Variación final (VAC):</strong> Proyección de ' + evmData.vac.toFixed(2) + 'h bajo presupuesto');
-        recommendations.push('• 💡 <strong>Recomendación:</strong> Excelente gestión de presupuesto.');
-    }
-    
-    // ANÁLISIS BURNDOWN
-    recommendations.push('• 📉 <strong>Burndown:</strong> Gráfico muestra horas restantes vs tiempo');
-    if (evmData.spi < 0.8) {
-        recommendations.push('• ⚠️ <strong>Atención Burndown:</strong> Línea real por encima de la ideal - revisar cronograma');
-    }
-    
-    return recommendations.join('<br><br>');
+    panel.innerHTML = tHTML;
+    popup.document.getElementById('abox').innerHTML = recs;
+
+    var c1 = popup.document.getElementById('c1'); if(c1){ drawBurndown(c1, bd, popup); ok++; }
+    var c2 = popup.document.getElementById('c2'); if(c2){ drawEVM(c2, evm, popup); ok++; }
+    var c3 = popup.document.getElementById('c3'); if(c3){ drawDist(c3, dist, popup); ok++; }
+    var c4 = popup.document.getElementById('c4'); if(c4){ drawSalud(c4, evm, dist, tasks, popup); ok++; }
+
+    if(status){ status.innerHTML='✅ '+ok+'/4 gráficas | Tooltips activos en todas'; status.style.color='#10b981'; }
+    console.log('✅ Gráficas: '+ok+'/4');
 }
 
-// ==================== ABRIR VENTANA PREMIUM ====================
-function openPremiumWindow(htmlContent, projectName) {
-    const width = Math.min(1400, screen.width * 0.95);
-    const height = Math.min(900, screen.height * 0.95);
-    const left = (screen.width - width) / 2;
-    const top = (screen.height - height) / 2;
+function T(ctx,text,x,y,sz,color,align){
+    ctx.font=(sz||10)+'px "Segoe UI",sans-serif';
+    ctx.fillStyle=color||'#e2e8f0';ctx.textAlign=align||'center';ctx.textBaseline='middle';
+    ctx.fillText(text,x,y);
+}
+
+// ============================================
+// 📉 BURNDOWN
+// ============================================
+function drawBurndown(canvas, bd, popup) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var pad = {t:45,r:25,b:55,l:60};
+    var cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+    var all = bd.trabajoIdeal.concat(bd.trabajoReal);
+    var maxV = Math.max.apply(null, all) || 1;
+    maxV = Math.ceil(maxV * 1.1);
+
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(1,'#0f172a');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    // LEYENDA
+    var legendY = 18;
+    var item1Width = 160;
+    var item2Width = 130;
+    var totalLegendWidth = item1Width + 40 + item2Width;
+    var legendStartX = (W - totalLegendWidth) / 2;
     
-    const windowFeatures = 'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top + ',menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes';
+    var x1 = legendStartX;
+    ctx.setLineDash([5,3]);ctx.strokeStyle='#10b981';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(x1,legendY);ctx.lineTo(x1+25,legendY);ctx.stroke();
+    ctx.setLineDash([]);
+    T(ctx,'Ideal',x1+42,legendY+1,10,'#10b981','left');
     
-    try {
-        // ✅ MÉTODO SEGURO: Usar Blob URL en lugar de document.write
-        const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        
-        const newWindow = window.open(url, '_blank', windowFeatures);
-        if (newWindow) {
-            // Configurar comunicación con la nueva ventana
-            currentPremiumWindow = newWindow;
-            lastTaskData = null;
-            refreshCount = 0;
-            
-            // Limpiar URL del Blob cuando se cierre la ventana
-            newWindow.addEventListener('unload', () => {
-                URL.revokeObjectURL(url);
-                currentPremiumWindow = null;
-                stopAutoRefresh();
-            });
-            
-            newWindow.focus();
-            console.log('🚀 Ventana premium abierta:', projectName);
-            return true;
+    var sepX = x1 + item1Width + 20;
+    T(ctx,'|',sepX,legendY+1,10,'#475569','center');
+    
+    var x2 = sepX + 15;
+    ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(x2,legendY);ctx.lineTo(x2+25,legendY);ctx.stroke();
+    T(ctx,'Real',x2+42,legendY+1,10,'#f59e0b','left');
+
+    ctx.save(); ctx.translate(14, pad.t + ch/2); ctx.rotate(-Math.PI/2);
+    T(ctx, 'Horas Restantes', 0, 0, 10, '#94a3b8'); ctx.restore();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    for(var i=0;i<=5;i++){ var y=pad.t+ch-(ch*(i/5)); ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke(); T(ctx,Math.round(maxV*(i/5))+'h',pad.l-8,y,9,'#64748b','right'); }
+
+    var labels=['Inicio','Semana 1','Semana 2','Semana 3','Semana 4'];
+    for(var i=0;i<5;i++){ var x=pad.l+(cw/4)*i; ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);ctx.stroke(); T(ctx,labels[i],x,H-pad.b+18,9,'#64748b'); }
+
+    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+ch);ctx.lineTo(W-pad.r,pad.t+ch);ctx.stroke();
+
+    function drawLine(data,color,dash,fill){
+        ctx.beginPath(); if(dash)ctx.setLineDash(dash); else ctx.setLineDash([]); ctx.strokeStyle=color;ctx.lineWidth=3;
+        for(var i=0;i<data.length;i++){ var x=pad.l+(cw/4)*i; var y=pad.t+ch-(ch*(data[i]/maxV)); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke(); ctx.setLineDash([]);
+        for(var i=0;i<data.length;i++){ var x=pad.l+(cw/4)*i; var y=pad.t+ch-(ch*(data[i]/maxV)); ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill(); ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill(); }
+        if(fill){ ctx.beginPath(); for(var i=0;i<data.length;i++){ var x=pad.l+(cw/4)*i; var y=pad.t+ch-(ch*(data[i]/maxV)); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.lineTo(pad.l+cw,pad.t+ch);ctx.lineTo(pad.l,pad.t+ch);ctx.closePath(); ctx.fillStyle=fill;ctx.fill(); }
+    }
+    drawLine(bd.trabajoIdeal,'#10b981',[6,4],null);
+    drawLine(bd.trabajoReal,'#f59e0b',null,'rgba(245,158,11,0.05)');
+
+    var dataY = H - 14;
+    var infoText = 'Total: ' + bd.totalHoras.toFixed(0) + ' h  |  Completadas: ' + bd.horasCompletadas.toFixed(0) + ' h  |  Restantes: ' + bd.horasRestantes.toFixed(0) + ' h';
+    T(ctx, infoText, W/2, dataY, 11, '#94a3b8', 'center');
+
+    setupTooltips(canvas,popup,function(mx,my){
+        var datasets=[{data:bd.trabajoIdeal,color:'#10b981',label:'Ideal'},{data:bd.trabajoReal,color:'#f59e0b',label:'Real'}];
+        for(var d=0;d<datasets.length;d++){
+            for(var i=0;i<datasets[d].data.length;i++){
+                var px=pad.l+(cw/4)*i,py=pad.t+ch-(ch*(datasets[d].data[i]/maxV));
+                if(Math.abs(mx-px)<15&&Math.abs(my-py)<15) return {text:datasets[d].label+': '+datasets[d].data[i].toFixed(1)+'h | '+labels[i],x:px,y:py-30,color:datasets[d].color};
+            }
+        } return null;
+    });
+}
+
+// ============================================
+// 📈 EVM
+// ============================================
+function drawEVM(canvas, evm, popup) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var pad = {t:45,r:25,b:50,l:60};
+    var cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+    var vals = [evm.pv, evm.ev, evm.ac];
+    var maxV = Math.max.apply(null, vals) || 1;
+    maxV = Math.ceil(maxV * 1.25);
+
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(1,'#0f172a');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    var legendY = 18;
+    var colors = ['#3b82f6','#10b981', evm.ac>evm.ev?'#ef4444':'#f59e0b'];
+    var colorLabels = ['PV - Planificado','EV - Ganado','AC - Costo Actual'];
+    
+    var itemWidth = 145; 
+    var totalLegendWidth = itemWidth * 3;
+    var legendStartX = (W - totalLegendWidth) / 2;
+    
+    for(var i=0;i<3;i++){
+        var itemX = legendStartX + i * itemWidth;
+        ctx.fillStyle = colors[i];
+        ctx.fillRect(itemX, legendY - 6, 12, 12);
+        T(ctx, colorLabels[i], itemX + 18, legendY + 1, 10, colors[i], 'left');
+    }
+
+    ctx.save(); ctx.translate(14, pad.t + ch/2); ctx.rotate(-Math.PI/2);
+    T(ctx, 'Horas', 0, 0, 10, '#94a3b8'); ctx.restore();
+
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+    for(var i=0;i<=5;i++){ var y=pad.t+ch-(ch*(i/5)); ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke(); T(ctx,Math.round(maxV*(i/5))+'h',pad.l-8,y,9,'#64748b','right'); }
+
+    var barLabels=['PV','EV','AC'];
+    var gap=cw/3, barW=gap*0.55;
+
+    for(var i=0;i<3;i++){
+        var x=pad.l+gap*i+(gap-barW)/2, bh=(vals[i]/maxV)*ch, y=pad.t+ch-bh;
+        ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(x+3,y+3,barW,bh);
+        var barGrad=ctx.createLinearGradient(x,y,x,y+bh);barGrad.addColorStop(0,colors[i]);barGrad.addColorStop(1,colors[i]+'88');
+        ctx.fillStyle=barGrad;ctx.beginPath();ctx.moveTo(x,pad.t+ch);ctx.lineTo(x,y+6);ctx.quadraticCurveTo(x,y,x+6,y);ctx.lineTo(x+barW-6,y);ctx.quadraticCurveTo(x+barW,y,x+barW,y+6);ctx.lineTo(x+barW,pad.t+ch);ctx.closePath();ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fillRect(x+2,y+2,barW/3,bh-4);
+        T(ctx,vals[i].toFixed(1)+'h',x+barW/2,y-15,12,'#e2e8f0');
+        T(ctx,barLabels[i],x+barW/2,H-pad.b+18,13,'#e2e8f0');
+    }
+    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+ch);ctx.lineTo(W-pad.r,pad.t+ch);ctx.stroke();
+
+    setupTooltips(canvas,popup,function(mx,my){
+        for(var i=0;i<3;i++){
+            var x=pad.l+(cw/3)*i+((cw/3)-barW)/2, bh=(vals[i]/maxV)*ch, y=pad.t+ch-bh;
+            if(mx>=x&&mx<=x+barW&&my>=y&&my<=pad.t+ch) return {text:colorLabels[i]+': '+vals[i].toFixed(2)+'h',x:x+barW/2,y:y-25,color:colors[i]};
+        } return null;
+    });
+}
+
+// ============================================
+// 🍩 DISTRIBUCIÓN
+// ============================================
+function drawDist(canvas, dist, popup) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var total = dist.completadas + dist.enProgreso + dist.pendientes + dist.atrasadas;
+
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(1,'#0f172a');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    var cx = W/2, cy = H/2 - 10;
+    var oR = Math.min(cx,cy)-35, iR = oR*0.6;
+
+    if(total===0){
+        ctx.strokeStyle='#334155';ctx.lineWidth=18;ctx.beginPath();ctx.arc(cx,cy,oR,0,Math.PI*2);ctx.stroke();
+        T(ctx,'Sin datos',cx,cy,12,'#64748b'); return;
+    }
+
+    var cats=[
+        {v:dist.completadas,c:'#10b981',l:'Completadas'},
+        {v:dist.enProgreso,c:'#3b82f6',l:'En Progreso'},
+        {v:dist.pendientes,c:'#f59e0b',l:'Pendientes'},
+        {v:dist.atrasadas,c:'#ef4444',l:'Atrasadas'}
+    ];
+
+    var angle=-Math.PI/2, slices=[];
+    for(var i=0;i<cats.length;i++){
+        if(cats[i].v===0) continue;
+        var slice=(cats[i].v/total)*Math.PI*2;
+        slices.push({start:angle,end:angle+slice,color:cats[i].c,label:cats[i].l,value:cats[i].v});
+        ctx.fillStyle=cats[i].c;ctx.beginPath();ctx.arc(cx,cy,oR,angle,angle+slice);ctx.arc(cx,cy,iR,angle+slice,angle,true);ctx.closePath();ctx.fill();
+        angle+=slice;
+    }
+
+    ctx.fillStyle='#1a1a3a';ctx.beginPath();ctx.arc(cx,cy,iR-2,0,Math.PI*2);ctx.fill();
+    T(ctx,total,cx,cy-10,22,'#e2e8f0'); T(ctx,'tareas',cx,cy+12,10,'#94a3b8');
+
+    var ly = H - 18;
+    var padding = 30;
+    var drawWidth = W - padding * 2;
+    var step = drawWidth / cats.length;
+    for(var i=0;i<cats.length;i++){
+        var lx = padding + step * i + step / 2;
+        ctx.fillStyle=cats[i].c; ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI*2); ctx.fill();
+        T(ctx, cats[i].l, lx + 14, ly + 1, 11, '#cbd5e1', 'left');
+    }
+
+    setupTooltips(canvas,popup,function(mx,my){
+        var dx=mx-cx, dy=my-cy;
+        var distFromCenter=Math.sqrt(dx*dx+dy*dy);
+        if(distFromCenter<iR||distFromCenter>oR) return null;
+        var angle=Math.atan2(dy,dx);
+        if(angle<-Math.PI/2)angle+=Math.PI*2;
+        for(var i=0;i<slices.length;i++){
+            var s=slices[i], sa=s.start, ea=s.end;
+            if(angle>=sa&&angle<ea) return {text:s.label+': '+s.value+' tareas ('+((s.value/total)*100).toFixed(0)+'%)',x:mx,y:my-30,color:s.color};
+        }
+        return null;
+    });
+}
+
+// ============================================
+// 🕸️ SALUD
+// ============================================
+function drawSalud(canvas, evm, dist, tasks, popup) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+
+    var grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(1,'#0f172a');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    var cx = W/2, cy = H/2;
+    var R = Math.min(cx,cy)-30;
+
+    var labels=['Financiera\n(CPI)','Cronograma\n(SPI)','Costos\n(VAC)','Progreso\n(EV/BAC)','Cumplimiento'];
+    var fh=Math.min(100,Math.max(0,(evm.cpi||1)*100));
+    var sh=Math.min(100,Math.max(0,(evm.spi||1)*100));
+    var chv=evm.bac>0?Math.max(0,100-Math.abs(evm.vac)/evm.bac*100):100;
+    var ph=evm.bac>0?(evm.ev/evm.bac)*100:0;
+    var cph=tasks.length>0?(dist.completadas/tasks.length)*100:0;
+    var values=[fh,sh,chv,ph,cph];
+    var N=5;
+
+    for(var lv=1;lv<=5;lv++){
+        var r=R*(lv/5);ctx.strokeStyle='rgba(255,255,255,'+(lv===5?0.12:0.05)+')';ctx.lineWidth=1;ctx.beginPath();
+        for(var a=0;a<N;a++){var ang=(Math.PI*2/N)*a-Math.PI/2;var x=cx+r*Math.cos(ang),y=cy+r*Math.sin(ang);if(a===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+        ctx.closePath();ctx.stroke();
+    }
+
+    var radarPoints=[];
+    for(var a=0;a<N;a++){
+        var ang=(Math.PI*2/N)*a-Math.PI/2;
+        ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(ang),cy+R*Math.sin(ang));ctx.stroke();
+        var lx=cx+(R+22)*Math.cos(ang),ly=cy+(R+22)*Math.sin(ang);
+        var parts=labels[a].split('\n');T(ctx,parts[0],lx,ly,9,'#cbd5e1');if(parts[1])T(ctx,parts[1],lx,ly+12,7,'#64748b');
+        var val=values[a]/100;
+        radarPoints.push({x:cx+R*val*Math.cos(ang),y:cy+R*val*Math.sin(ang),label:labels[a].split('\n')[0],value:values[a]});
+    }
+
+    ctx.fillStyle='rgba(59,130,246,0.12)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=2.5;ctx.beginPath();
+    for(var a=0;a<N;a++){if(a===0)ctx.moveTo(radarPoints[a].x,radarPoints[a].y);else ctx.lineTo(radarPoints[a].x,radarPoints[a].y);}
+    ctx.closePath();ctx.fill();ctx.stroke();
+
+    for(var a=0;a<N;a++){
+        ctx.fillStyle='#3b82f6';ctx.beginPath();ctx.arc(radarPoints[a].x,radarPoints[a].y,5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(radarPoints[a].x,radarPoints[a].y,2,0,Math.PI*2);ctx.fill();
+        T(ctx,Math.round(values[a])+'%',radarPoints[a].x,radarPoints[a].y-14,9,'#e2e8f0');
+    }
+
+    setupTooltips(canvas,popup,function(mx,my){
+        for(var i=0;i<radarPoints.length;i++){
+            var p=radarPoints[i];
+            if(Math.abs(mx-p.x)<12&&Math.abs(my-p.y)<12){
+                var status=p.value>=80?'✅ Excelente':p.value>=60?'🟢 Bueno':p.value>=40?'🟡 Regular':' Crítico';
+                var vColors=['#10b981','#3b82f6','#8b5cf6','#f59e0b','#f97316'];
+                return {text:p.label+': '+Math.round(p.value)+'% - '+status,x:p.x,y:p.y-30,color:vColors[i]};
+            }
+        } return null;
+    });
+}
+
+// ============================================
+// 💬 SISTEMA DE TOOLTIPS
+// ============================================
+function setupTooltips(canvas, popup, hitTest) {
+    var tooltip = null;
+    canvas.onmousemove = function(e) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        var mx = (e.clientX - rect.left) * scaleX;
+        var my = (e.clientY - rect.top) * scaleY;
+        var result = hitTest(mx, my);
+        if(result) {
+            if(!tooltip){ 
+                tooltip=popup.document.createElement('div'); 
+                tooltip.style.position='fixed';
+                tooltip.style.background='rgba(15,23,42,0.95)';
+                tooltip.style.color='#e2e8f0';
+                tooltip.style.padding='10px 14px';
+                tooltip.style.borderRadius='8px';
+                tooltip.style.fontSize='12px';
+                tooltip.style.pointerEvents='none';
+                tooltip.style.border='1px solid rgba(139,92,246,0.3)';
+                tooltip.style.boxShadow='0 6px 16px rgba(0,0,0,0.5)';
+                tooltip.style.zIndex='999999';
+                tooltip.style.whiteSpace='nowrap';
+                tooltip.style.fontWeight='500';
+                tooltip.style.fontFamily='sans-serif';
+                popup.document.body.appendChild(tooltip); 
+            }
+            tooltip.textContent = result.text;
+            tooltip.style.left = (e.clientX + 15)+'px';
+            tooltip.style.top = (e.clientY - 35)+'px';
+            tooltip.style.borderColor = result.color;
+            tooltip.style.display = 'block';
+            canvas.style.cursor = 'pointer';
         } else {
-            URL.revokeObjectURL(url);
-            alert('⚠️ Permite ventanas emergentes para esta función');
-            return false;
+            if(tooltip) tooltip.style.display = 'none';
+            canvas.style.cursor = 'default';
         }
-    } catch (error) {
-        console.error('❌ Error al abrir ventana premium:', error);
-        alert('Error: ' + (error.message || 'No se pudo abrir la ventana premium'));
-        return false;
-    }
+    };
+    canvas.onmouseleave = function(){ if(tooltip)tooltip.style.display='none'; canvas.style.cursor='default'; };
 }
-// ==================== INYECCIÓN AUTOMÁTICA ====================
-// Busca esta función en tu código y modifícala para que no muestre el warning después de 10 intentos
-function autoInjectPremiumButton() {
-    if (addPremiumFullscreenButton()) {
-        console.log('✅ Botón premium inyectado');
-        return;
-    }
-    
-    // Cambia esto para no mostrar el warning después de muchos intentos
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const interval = setInterval(() => {
-        attempts++;
-        if (addPremiumFullscreenButton()) {
-            clearInterval(interval);
-            console.log('✅ Botón inyectado en intento ' + attempts);
-        } else if (attempts >= maxAttempts) {
-            clearInterval(interval);
-            // Comenta o elimina este warning
-            // console.warn('⚠️ No se pudo inyectar después de ' + maxAttempts + ' intentos');
+
+// ============================================
+// 📥 REPORTE EJECUTIVO - OPTIMIZADO CON GRÁFICAS
+// ============================================
+function generarReporteEjecutivo(projectName, tasks, bd, evm, evmOp, dist, kpis, recommendations) {
+    var today = new Date();
+    var fechaStr = today.toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    var horaStr = today.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+
+    // Capturar gráficas
+    var chartDataUrls = [];
+    var chartNames = ['📉 Burndown Chart','📈 Valor Ganado EVM','🍩 Distribución de Tareas','🏥 Salud del Proyecto'];
+    var canvases = document.querySelectorAll('canvas[id^="c"]');
+    canvases.forEach(function(cvs, idx) {
+        if (idx < 4) {
+            try {
+                var imgData = cvs.toDataURL('image/png');
+                chartDataUrls.push({name: chartNames[idx], data: imgData});
+            } catch(e) {}
         }
-    }, 500);
-}
-// ==================== INICIALIZACIÓN ====================
-// Configurar comunicación entre ventanas al cargar
-if (document.readyState === 'complete') {
-    setTimeout(() => {
-        setupWindowCommunication();
-        autoInjectPremiumButton();
-    }, 1000);
-} else {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            setupWindowCommunication();
-            autoInjectPremiumButton();
-        }, 1000);
     });
+
+    var spiStatus = evm.spi >= 1 ? 'positivo' : 'negativo';
+    var spiDetail = evm.spi >= 1 
+        ? 'El proyecto avanza un '+((evm.spi-1)*100).toFixed(1)+'% más rápido de lo planificado.'
+        : 'El proyecto presenta un retraso del '+((1-evm.spi)*100).toFixed(1)+'%.';
+    var cpiStatus = evm.cpi >= 1 ? 'favorable' : 'desfavorable';
+    var cpiDetail = evm.cpi >= 1
+        ? 'Los costos se mantienen bajo control con eficiencia del '+((evm.cpi)*100).toFixed(1)+'%.'
+        : 'Se observa un sobrecosto del '+((1-evm.cpi)*100).toFixed(1)+'%.';
+    var vacDetail = evm.vac >= 0
+        ? 'Se proyecta un ahorro de '+evm.vac.toFixed(2)+'h al finalizar.'
+        : 'Se proyecta un sobrecosto de '+Math.abs(evm.vac).toFixed(2)+'h al finalizar.';
+
+    var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Ejecutivo - '+projectName+'</title>';
+    html += '<style>';
+    html += '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");';
+    html += '*{margin:0;padding:0;box-sizing:border-box}';
+    html += 'body{font-family:"Inter",system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:0;min-height:100vh}';
+    html += '.cover{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:40px 60px;text-align:center;border-bottom:3px solid rgba(139,92,246,0.3)}';
+    html += '.cover h1{font-size:32px;font-weight:700;color:white;margin-bottom:8px}';
+    html += '.cover .subtitle{font-size:14px;color:#94a3b8}';
+    html += '.content{max-width:1200px;margin:0 auto;padding:40px 60px}';
+    html += '.section{margin-bottom:40px;page-break-inside:avoid}';
+    html += '.section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid rgba(139,92,246,0.2)}';
+    html += '.section-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(139,92,246,0.15)}';
+    html += '.section-title{font-size:18px;font-weight:600;color:white}';
+    html += '.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:25px}';
+    html += '.kpi-card{background:linear-gradient(135deg,rgba(30,27,75,0.6),rgba(15,23,42,0.8));border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;text-align:center}';
+    html += '.kpi-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}';
+    html += '.kpi-card.purple{border-top:3px solid #8b5cf6}';
+    html += '.kpi-card.green{border-top:3px solid #10b981}';
+    html += '.kpi-card.blue{border-top:3px solid #3b82f6}';
+    html += '.kpi-card.amber{border-top:3px solid #f59e0b}';
+    html += '.kpi-value{font-size:28px;font-weight:700;margin-bottom:4px}';
+    html += '.kpi-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}';
+    html += '.evm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}';
+    html += '.evm-card{background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px;text-align:center}';
+    html += '.evm-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}';
+    html += '.evm-value{font-size:24px;font-weight:700;color:white}';
+    html += '.evm-sub{font-size:10px;color:#94a3b8;margin-top:4px}';
+    html += '.table-wrap{background:rgba(30,41,59,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;margin-bottom:25px}';
+    html += 'table{width:100%;border-collapse:collapse}';
+    html += 'th{background:rgba(15,23,42,0.8);padding:12px 16px;text-align:left;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.06)}';
+    html += 'td{padding:12px 16px;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.04)}';
+    html += 'tr:hover td{background:rgba(139,92,246,0.05)}';
+    html += '.badge{display:inline-flex;padding:3px 10px;border-radius:15px;font-size:10px;font-weight:600}';
+    html += '.badge-green{background:rgba(16,185,129,0.15);color:#6ee7b7;border:1px solid rgba(16,185,129,0.2)}';
+    html += '.badge-blue{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.2)}';
+    html += '.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.2)}';
+    html += '.badge-red{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.2)}';
+    html += '.progress-bar{width:80px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px}';
+    html += '.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#8b5cf6,#3b82f6)}';
+    html += '.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-bottom:25px}';
+    html += '.chart-box{background:rgba(30,41,59,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:20px;page-break-inside:avoid}';
+    html += '.chart-title{font-size:14px;font-weight:600;color:white;margin-bottom:12px;display:flex;align-items:center;gap:8px}';
+    html += '.chart-img{width:100%;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.1)}';
+    html += '.analysis-box{background:rgba(30,41,59,0.5);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:18px;margin-bottom:15px;page-break-inside:avoid}';
+    html += '.analysis-title{font-size:13px;font-weight:600;color:#c4b5fd;margin-bottom:10px}';
+    html += '.analysis-text{font-size:12px;color:#cbd5e1;line-height:1.6}';
+    html += '.rec-list{list-style:none;padding:0}';
+    html += '.rec-list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;color:#cbd5e1;line-height:1.5}';
+    html += '.rec-list li:last-child{border-bottom:none}';
+    html += '.footer{background:rgba(15,23,42,0.6);border-top:1px solid rgba(255,255,255,0.06);padding:25px 60px;text-align:center;color:#64748b;font-size:11px}';
+    html += '.footer strong{color:#c4b5fd}';
+    // CSS para impresión - evitar cortes
+    html += '@media print{';
+    html += 'body{background:white!important;color:black!important}';
+    html += '.cover{background:linear-gradient(135deg,#1e1b4b,#312e81)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+    html += '.section{page-break-inside:avoid;margin-bottom:30px}';
+    html += '.kpi-card,.evm-card,.table-wrap,.chart-box,.analysis-box{border:1px solid #e2e8f0!important;page-break-inside:avoid}';
+    html += '.chart-grid{page-break-inside:avoid}';
+    html += '.chart-img{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+    html += '}';
+    html += '</style></head><body>';
+
+    // COVER COMPACTO Y ELEGANTE
+    html += '<div class="cover">';
+    html += '<h1> Análisis de Valor Ganado - '+projectName+'</h1>';
+    html += '<div class="subtitle">Metodología PMI Standard • '+fechaStr+' • '+horaStr+'</div>';
+    html += '</div>';
+
+    html += '<div class="content">';
+
+    // KPIs
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">📊</div><div class="section-title">KPIs del Proyecto</div></div>';
+    html += '<div class="kpi-row">';
+    html += '<div class="kpi-card purple"><div class="kpi-value" style="color:#c4b5fd">'+kpis.totalTasks+'</div><div class="kpi-label">Total Tareas</div></div>';
+    html += '<div class="kpi-card green"><div class="kpi-value" style="color:#6ee7b7">'+dist.completadas+'</div><div class="kpi-label">Completadas</div></div>';
+    html += '<div class="kpi-card blue"><div class="kpi-value" style="color:#93c5fd">'+kpis.averageProgress+'%</div><div class="kpi-label">Progreso</div></div>';
+    html += '<div class="kpi-card amber"><div class="kpi-value" style="color:#fbbf24">'+dist.atrasadas+'</div><div class="kpi-label">Atrasadas</div></div>';
+    html += '</div></div>';
+
+    // EVM PMI
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">💰</div><div class="section-title">Valor Ganado - EVM PMI</div></div>';
+    html += '<div class="evm-grid">';
+    html += '<div class="evm-card"><div class="evm-label">PV - Planificado</div><div class="evm-value" style="color:#3b82f6">'+evm.pv.toFixed(2)+'h</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">EV - Ganado</div><div class="evm-value" style="color:#10b981">'+evm.ev.toFixed(2)+'h</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">AC - Real</div><div class="evm-value" style="color:'+(evm.ac>evm.ev?'#ef4444':'#f59e0b')+'">'+evm.ac.toFixed(2)+'h</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">SPI</div><div class="evm-value" style="color:'+(evm.spi>=1?'#10b981':'#ef4444')+'">'+evm.spi.toFixed(2)+'</div><div class="evm-sub">'+(evm.spi>=1?'✅ Adelantado':'⚠️ Retrasado')+'</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">CPI</div><div class="evm-value" style="color:'+(evm.cpi>=1?'#10b981':'#ef4444')+'">'+evm.cpi.toFixed(2)+'</div><div class="evm-sub">'+(evm.cpi>=1?'✅ Bajo presupuesto':'⚠️ Sobre costo')+'</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">BAC</div><div class="evm-value" style="color:#c4b5fd">'+evm.bac.toFixed(2)+'h</div></div>';
+    html += '</div></div>';
+
+    // PRONÓSTICOS
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">🔮</div><div class="section-title">Pronósticos y Proyecciones</div></div>';
+    html += '<div class="evm-grid">';
+    html += '<div class="evm-card"><div class="evm-label">EAC</div><div class="evm-value" style="color:#c4b5fd">'+evm.eac.toFixed(2)+'h</div><div class="evm-sub">Estimado al completar</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">ETC</div><div class="evm-value" style="color:#f59e0b">'+evm.etc.toFixed(2)+'h</div><div class="evm-sub">Estimado para completar</div></div>';
+    html += '<div class="evm-card"><div class="evm-label">VAC</div><div class="evm-value" style="color:'+(evm.vac>=0?'#10b981':'#ef4444')+'">'+(evm.vac>=0?'+':'')+evm.vac.toFixed(2)+'h</div><div class="evm-sub">Variación al completar</div></div>';
+    html += '</div></div>';
+
+    // TABLA TAREAS
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">📋</div><div class="section-title">Detalle de Tareas</div></div>';
+    html += '<div class="table-wrap"><table><thead><tr><th>#</th><th>Tarea</th><th>Responsable</th><th>Estimado</th><th>Real</th><th>Progreso</th><th>Estado</th></tr></thead><tbody>';
+    tasks.forEach(function(t,i){
+        var s=(t.status||'pending').toLowerCase(),p=t.progress||0;
+        var badge='badge-amber',badgeText='Pendiente';
+        if(s==='completed'||s.indexOf('completada')!==-1||p===100){badge='badge-green';badgeText='Completada';}
+        else if(s==='overdue'||s.indexOf('atrasada')!==-1){badge='badge-red';badgeText='Atrasada';}
+        else if(s==='inprogress'||s.indexOf('progreso')!==-1||(p>0&&p<100)){badge='badge-blue';badgeText='En Progreso';}
+        html += '<tr><td style="color:#64748b">'+(i+1)+'</td><td><strong style="color:white">'+(t.name||'Tarea '+(i+1))+'</strong></td><td style="color:#94a3b8">'+(t.assignee||t.responsable||'N/A')+'</td><td style="color:#e2e8f0">'+(t.estimatedTime||0)+'h</td><td style="color:#e2e8f0">'+(t.timeLogged||0)+'h</td><td><div class="progress-bar"><div class="progress-fill" style="width:'+p+'%"></div></div><span style="color:#e2e8f0">'+p+'%</span></td><td><span class="badge '+badge+'">'+badgeText+'</span></td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    // GRÁFICAS
+    if(chartDataUrls.length > 0){
+        html += '<div class="section">';
+        html += '<div class="section-header"><div class="section-icon">📈</div><div class="section-title">Visualizaciones del Proyecto</div></div>';
+        html += '<div class="chart-grid">';
+        chartDataUrls.forEach(function(chart, idx) {
+            html += '<div class="chart-box">';
+            html += '<div class="chart-title">'+chart.name+'</div>';
+            html += '<img src="'+chart.data+'" class="chart-img" alt="'+chart.name+'">';
+            html += '</div>';
+        });
+        html += '</div></div>';
+    }
+
+    // ANÁLISIS
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">🔍</div><div class="section-title">Análisis Ejecutivo de Resultados</div></div>';
+    html += '<div class="analysis-box"><div class="analysis-title">📅 Análisis de Cronograma (SPI: '+evm.spi.toFixed(2)+')</div><div class="analysis-text"><p><strong>Interpretación:</strong> SPI es <strong>'+evm.spi.toFixed(2)+'</strong> ('+spiStatus+'). '+spiDetail+'</p><p style="margin-top:8px"><strong>Datos:</strong> PV: '+evm.pv.toFixed(2)+'h | EV: '+evm.ev.toFixed(2)+'h | SV: '+(evm.ev-evm.pv>=0?'+':'')+(evm.ev-evm.pv).toFixed(2)+'h</p></div></div>';
+    html += '<div class="analysis-box"><div class="analysis-title">💰 Análisis de Costos (CPI: '+evm.cpi.toFixed(2)+')</div><div class="analysis-text"><p><strong>Interpretación:</strong> CPI es <strong>'+evm.cpi.toFixed(2)+'</strong> ('+cpiStatus+'). '+cpiDetail+'</p><p style="margin-top:8px"><strong>Datos:</strong> AC: '+evm.ac.toFixed(2)+'h | EV: '+evm.ev.toFixed(2)+'h | CV: '+(evm.ev-evm.ac>=0?'+':'')+(evm.ev-evm.ac).toFixed(2)+'h</p></div></div>';
+    html += '<div class="analysis-box"><div class="analysis-title">🔮 Proyección Final (VAC: '+(evm.vac>=0?'+':'')+evm.vac.toFixed(2)+'h)</div><div class="analysis-text"><p><strong>Interpretación:</strong> '+vacDetail+'</p><p style="margin-top:8px"><strong>Datos:</strong> BAC: '+evm.bac.toFixed(2)+'h | EAC: '+evm.eac.toFixed(2)+'h | ETC: '+evm.etc.toFixed(2)+'h</p></div></div></div>';
+
+    // RECOMENDACIONES
+    html += '<div class="section">';
+    html += '<div class="section-header"><div class="section-icon">💡</div><div class="section-title">Recomendaciones Estratégicas</div></div>';
+    var recs = recommendations.split('<br><br>');
+    html += '<div class="analysis-box"><ul class="rec-list">';
+    recs.forEach(function(r){ if(r.trim()) html += '<li>'+r.trim()+'</li>'; });
+    html += '</ul></div></div>';
+
+    html += '</div>';
+    html += '<div class="footer"><p><strong>Reporte generado automáticamente</strong> por el Sistema de Gestión de Proyectos</p>';
+    html += '<p style="margin-top:6px">Metodología: PMI Standard (PMBOK Guide) • '+fechaStr+' • '+horaStr+'</p>';
+    html += '<p style="margin-top:6px;color:#475569">© '+today.getFullYear()+' - Todos los derechos reservados</p></div></body></html>';
+
+    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Reporte_Ejecutivo_'+projectName.replace(/[^a-z0-9]/gi,'_')+'_'+today.toISOString().slice(0,10)+'.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
-window.inyectarBotonPremium = autoInjectPremiumButton;
-window.abrirVistaPremium = function() {
-    const gantt = document.getElementById('premiumExecutiveGantt');
-    if (gantt) {
-        document.getElementById('premiumFullscreenBtn')?.click();
-    } else {
-        alert('Abre el Gantt Ejecutivo primero');
-    }
-};
+// ============================================
+// 🔄 INYECCIÓN AUTOMÁTICA
+// ============================================
+function autoInjectPremiumButton(){
+    if(addPremiumFullscreenButton()){console.log('✅ Botón inyectado');return;}
+    var att=0;
+    var intv=setInterval(function(){att++;if(addPremiumFullscreenButton()){clearInterval(intv);}else if(att>=15)clearInterval(intv);},400);
+}
+if(document.readyState==='complete'){setTimeout(autoInjectPremiumButton,800);}
+else{document.addEventListener('DOMContentLoaded',function(){setTimeout(autoInjectPremiumButton,800);});}
+window.inyectarBotonPremium=autoInjectPremiumButton;
+window.abrirVistaPremium=function(){var b=document.getElementById('premiumFullscreenBtn');if(b)b.click();else alert('Abre el Gantt primero');};
+console.log('🎯 Sistema Vista Premium cargado ✅');
 
-// Exportar funciones para control manual
-window.toggleAutoRefresh = function(enable) {
-    if (enable !== undefined) {
-        window.autoRefreshEnabled = enable;
-    } else {
-        window.autoRefreshEnabled = !window.autoRefreshEnabled;
-    }
-    
-    if (window.autoRefreshEnabled) {
-        startAutoRefresh();
-    } else {
-        stopAutoRefresh();
-    }
-};
 
-window.forceRefreshPremiumWindow = function() {
-    if (currentPremiumWindow) {
-        sendDataToPremiumWindow();
-    } else {
-        console.log('❌ No hay ventana premium activa');
-    }
-};
 
-console.log('🎯 Sistema de Vista Premium PRECISO cargado');
-console.log('✅ Actualización automática configurada');
-console.log('✅ Burndown Chart en HORAS (VERSIÓN CORREGIDA)');
-console.log('✅ Dashboard ejecutivo completo con auto-refresh');
+
+
+
+
+
+
+
+
+
 
 
 // ========== ANÁLISIS PREDICTIVO IA (PARA EL BOTÓN DEL MENÚ LATERAL) ==========
@@ -62540,14 +60872,11 @@ async function handleDrop(e) {
     else if (newStatus === 'pending') task.progress = 0;
     
     // ========== 🚨 NOTIFICACIÓN A SLACK ==========
-    if (window.SlackNotifier) {
-        try {
-            await SlackNotifier.taskMoved(task, oldStatus, newStatus, project.name);
-            console.log('✅ Slack notificado:', task.name, oldStatus, '→', newStatus);
-        } catch(err) {
-            console.error('❌ Error enviando a Slack:', err);
-        }
-    }
+    // DESPUÉS (esto SÍ funciona)
+if (typeof sincronizarTarea === 'function') {
+    sincronizarTarea(task.name, project.name);
+    console.log('✅ Notificación enviada a Slack:', task.name, oldStatus, '→', newStatus);
+}
     // =============================================
     
     // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
@@ -65815,60 +64144,6 @@ setTimeout(initSlackNotifications, 3000);
 
 
 
-// Comandos de prueba para Slack
-window.testSlack = {
-  test: () => SlackNotifier ? SlackNotifier.test() : console.error('SlackNotifier no disponible'),
-  taskCreated: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { 
-      name: 'Tarea de prueba', 
-      assignee: 'Usuario', 
-      priority: 'alta' 
-    };
-    SlackNotifier.taskCreated(task, 'Proyecto Demo');
-  },
-  taskCompleted: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { 
-      name: 'Tarea completada', 
-      assignee: 'Usuario', 
-      estimatedTime: 8,
-      timeLogged: 7.5
-    };
-    SlackNotifier.taskCompleted(task, 'Proyecto Demo');
-  },
-  taskMoved: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { name: 'Tarea movida' };
-    SlackNotifier.taskMoved(task, 'pending', 'inProgress', 'Proyecto Demo');
-  },
-  overdue: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const tasks = [
-      { name: 'Tarea 1 atrasada', deadline: '2024-01-01' },
-      { name: 'Tarea 2 atrasada', deadline: '2024-01-02' }
-    ];
-    SlackNotifier.overdueTasks(tasks, 'Proyecto Demo');
-  },
-  risk: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    SlackNotifier.riskAdded('Riesgo de seguridad detectado', 'Proyecto Demo');
-  },
-  status: () => SlackNotifier ? SlackNotifier.getStatus() : console.error('SlackNotifier no disponible'),
-  disable: () => SlackNotifier ? SlackNotifier.setEnabled(false) : console.error('SlackNotifier no disponible'),
-  enable: () => SlackNotifier ? SlackNotifier.setEnabled(true) : console.error('SlackNotifier no disponible')
-};
-
-console.log('🎮 Comandos de prueba para Slack:');
-console.log('testSlack.test() - Probar conexión');
-console.log('testSlack.taskCreated() - Simular tarea creada');
-console.log('testSlack.taskCompleted() - Simular tarea completada');
-console.log('testSlack.taskMoved() - Simular tarea movida');
-console.log('testSlack.overdue() - Simular tareas atrasadas');
-console.log('testSlack.risk() - Simular riesgo agregado');
-console.log('testSlack.status() - Ver estado de Slack');
-console.log('testSlack.disable() - Desactivar Slack');
-console.log('testSlack.enable() - Activar Slack');
 
 
 
