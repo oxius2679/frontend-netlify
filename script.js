@@ -67098,3 +67098,112 @@ if (!document.getElementById('notif-slack-styles')) {
     document.head.appendChild(style);
 }
 
+
+
+
+// ============================================
+// 🔔 NOTIFICACIÓN VISUAL PARA SLACK
+// ============================================
+function mostrarNotificacionSlack(mensaje, tipo = 'info') {
+    // ... (código existente) ...
+}
+
+// Agregar estilos de animación si no existen
+if (!document.getElementById('notif-slack-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notif-slack-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ============================================
+// 🛠️ CORRECCIÓN DE DESPLAZAMIENTO VERTICAL
+// ============================================
+(function fixVerticalScrollIssue() {
+    console.log('🛠️ Aplicando corrección de desplazamiento vertical...');
+
+    // Crear e inyectar estilos correctivos
+    const style = document.createElement('style');
+    style.id = 'vertical-scroll-fix';
+    style.textContent = `
+        /* CORRECCIÓN PRINCIPAL: Asegurar que el HTML y BODY permitan scroll */
+        html, body {
+            height: auto !important;
+            min-height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* CORRECCIÓN PARA LA VISTA DE INICIO (Centro de Comando IA 4D) */
+        #inicioView {
+            display: block !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow-y: visible !important;
+            padding-bottom: 50px !important;
+        }
+
+        /* CORRECCIÓN PARA CUALQUIER CONTENEDOR PRINCIPAL */
+        .main-container, .app-container, #mainAppContainer, .view-content {
+            height: auto !important;
+            min-height: 100% !important;
+            overflow-y: visible !important;
+        }
+
+        /* CORRECCIÓN PARA EL CONTENEDOR DEL DASHBOARD 4D */
+        #mainAppContainer {
+            position: relative !important;
+            overflow-y: auto !important;
+            height: 100vh !important;
+        }
+
+        /* CORRECCIÓN PARA SECCIONES LARGAS COMO TRANSCRIPCIONES */
+        .transcripciones-container,
+        #transcripciones-historial,
+        .glass-card-4d {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+
+        /* Ajuste para la lista de proyectos en el sidebar */
+        #projectList {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+    `;
+
+    // Remover estilo anterior si existe
+    const oldStyle = document.getElementById('vertical-scroll-fix');
+    if (oldStyle) oldStyle.remove();
+
+    document.head.appendChild(style);
+    console.log('✅ Estilos de corrección de scroll inyectados');
+
+    // Forzar reflow para aplicar cambios
+    document.body.style.display = 'none';
+    document.body.offsetHeight;
+    document.body.style.display = '';
+})();
