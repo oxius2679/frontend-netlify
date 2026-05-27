@@ -1,33 +1,106 @@
 // ============================================
-// 🎯 CENTRO DE CONTROL PM - CORREGIDO
+// 🎯 CENTRO DE CONTROL PM - VERSIÓN CORREGIDA (PROYECTO SELECCIONADO)
 // ============================================
 
 (function() {
     'use strict';
     
-    console.log('🎯 [QUANTUM] v10.0 - Lógica de riesgo CORREGIDA');
+    console.log('🎯 [QUANTUM] v10.4 - Proyecto seleccionado correctamente');
+    
+    // ============================================
+    // FUNCIÓN CORREGIDA - OBTIENE PROYECTO SELECCIONADO
+    // ============================================
     
     function getCurrentProject() {
         try {
-            if (typeof window.projects !== 'undefined' && Array.isArray(window.projects)) {
-                if (typeof window.currentProjectIndex !== 'undefined' && window.projects[window.currentProjectIndex]) {
-                    return window.projects[window.currentProjectIndex];
+            console.log('[QUANTUM] 🔍 Buscando proyecto actual...');
+            
+            // 1. FORZAR sincronización desde localStorage PRIMERO
+            let savedIndex = localStorage.getItem('currentProjectIndex');
+            if (savedIndex !== null) {
+                savedIndex = parseInt(savedIndex);
+                console.log(`[QUANTUM] 📍 Índice desde localStorage: ${savedIndex}`);
+            } else {
+                console.log('[QUANTUM] ⚠️ No hay índice guardado en localStorage');
+            }
+            
+            // 2. Cargar projects desde localStorage si es necesario
+            if (typeof window.projects === 'undefined' || !Array.isArray(window.projects) || window.projects.length === 0) {
+                const savedProjects = localStorage.getItem('projects');
+                if (savedProjects) {
+                    window.projects = JSON.parse(savedProjects);
+                    console.log(`[QUANTUM] ✅ Cargados ${window.projects.length} proyectos desde localStorage`);
+                } else {
+                    console.log('[QUANTUM] ❌ No hay proyectos guardados');
+                    return null;
                 }
-                if (window.projects.length > 0) return window.projects[0];
             }
-            const stored = localStorage.getItem('projects');
-            if (stored) {
-                const projects = JSON.parse(stored);
-                const idx = localStorage.getItem('currentProjectIndex');
-                if (idx && projects[parseInt(idx)]) return projects[parseInt(idx)];
-                if (projects.length > 0) return projects[0];
+            
+            // 3. Mostrar proyectos disponibles
+            console.log('[QUANTUM] 📋 Proyectos disponibles:');
+            window.projects.forEach((p, i) => console.log(`   ${i}: ${p.name}`));
+            
+            // 4. Intentar usar el índice guardado PRIMERO
+            let targetIndex = savedIndex;
+            
+            // 5. Si no hay índice guardado, intentar usar window.currentProjectIndex
+            if (targetIndex === null || targetIndex === undefined) {
+                if (typeof window.currentProjectIndex !== 'undefined' && window.currentProjectIndex !== null) {
+                    targetIndex = window.currentProjectIndex;
+                    console.log(`[QUANTUM] 📍 Usando window.currentProjectIndex: ${targetIndex}`);
+                } else {
+                    console.log('[QUANTUM] ⚠️ No hay índice disponible');
+                }
             }
-        } catch(e) {}
-        return null;
+            
+            // 6. Validar que el índice sea válido
+            if (targetIndex !== null && targetIndex !== undefined && window.projects[targetIndex]) {
+                console.log(`[QUANTUM] ✅ Proyecto encontrado por índice: "${window.projects[targetIndex].name}"`);
+                // Sincronizar ambas variables
+                window.currentProjectIndex = targetIndex;
+                localStorage.setItem('currentProjectIndex', targetIndex);
+                return window.projects[targetIndex];
+            }
+            
+            // 7. BUSCAR POR NOMBRE (si el índice no funciona)
+            if (typeof window.currentProjectName !== 'undefined') {
+                const projectByName = window.projects.find(p => p.name === window.currentProjectName);
+                if (projectByName) {
+                    const idx = window.projects.indexOf(projectByName);
+                    console.log(`[QUANTUM] ✅ Proyecto encontrado por nombre: "${projectByName.name}" (índice: ${idx})`);
+                    window.currentProjectIndex = idx;
+                    localStorage.setItem('currentProjectIndex', idx);
+                    return projectByName;
+                }
+            }
+            
+            // 8. BUSCAR POR CLIENTEID
+            const clienteId = localStorage.getItem('clienteId');
+            if (clienteId) {
+                const projectByCliente = window.projects.find(p => p.clienteId === clienteId);
+                if (projectByCliente) {
+                    const idx = window.projects.indexOf(projectByCliente);
+                    console.log(`[QUANTUM] ✅ Proyecto encontrado por clienteId: "${projectByCliente.name}"`);
+                    window.currentProjectIndex = idx;
+                    localStorage.setItem('currentProjectIndex', idx);
+                    return projectByCliente;
+                }
+            }
+            
+            // 9. FALLBACK: Usar el PRIMER proyecto
+            console.log(`[QUANTUM] ⚠️ Usando primer proyecto como fallback: "${window.projects[0].name}"`);
+            window.currentProjectIndex = 0;
+            localStorage.setItem('currentProjectIndex', 0);
+            return window.projects[0];
+            
+        } catch(e) {
+            console.error('[QUANTUM] Error:', e);
+            return null;
+        }
     }
     
     // ============================================
-    // CARGAR THREE.JS PARA EL CUBO
+    // RESTO DE FUNCIONES (ThreeJS, Riesgo, Monte Carlo, etc.)
     // ============================================
     
     function loadThreeJS() {
@@ -43,10 +116,6 @@
             document.head.appendChild(script);
         });
     }
-    
-    // ============================================
-    // CUBO 3D
-    // ============================================
     
     let cubeScene = null, cubeCamera = null, cubeRenderer = null, cubeMesh = null, cubeAnimationId = null;
     
@@ -93,7 +162,6 @@
         cubeMesh = new THREE.Mesh(geometry, materials);
         cubeScene.add(cubeMesh);
         
-        // Partículas
         const particleCount = 600;
         const particlesGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
@@ -107,7 +175,6 @@
         const particles = new THREE.Points(particlesGeometry, particlesMaterial);
         cubeScene.add(particles);
         
-        // Anillo
         const ringGeo = new THREE.TorusGeometry(2.2, 0.05, 64, 200);
         const ringMat = new THREE.MeshStandardMaterial({ color: 0xff00ff });
         const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -142,89 +209,45 @@
         });
     }
     
-    // ============================================
-    // CÁLCULO DE RIESGO - ¡CORREGIDO!
-    // ============================================
-    // REGLAS NUEVAS:
-    // - Si está COMPLETADA → riesgo 0% (NO HAY RIESGO)
-    // - Si está EN PROGRESO y falta tiempo → riesgo según deadline
-    // - Si está PENDIENTE y el deadline es pronto → riesgo alto
-    // ============================================
-    
     function calculateRisk(task) {
         if (!task) return 0;
-        
-        // ✅ REGLA 1: Tarea completada = RIESGO 0
-        if (task.status === 'completed') {
-            return 0;
-        }
+        if (task.status === 'completed') return 0;
         
         let risk = 0;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        // ✅ REGLA 2: Riesgo por fecha de vencimiento
         if (task.deadline) {
             const deadline = new Date(task.deadline);
             deadline.setHours(0, 0, 0, 0);
             const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
             
-            if (daysLeft < 0) {
-                // Ya vencida
-                risk += 80;
-            } else if (daysLeft === 0) {
-                // Vence hoy
-                risk += 70;
-            } else if (daysLeft <= 3) {
-                risk += 50;
-            } else if (daysLeft <= 7) {
-                risk += 30;
-            } else if (daysLeft <= 14) {
-                risk += 15;
-            } else {
-                risk += 5;
-            }
+            if (daysLeft < 0) risk += 80;
+            else if (daysLeft === 0) risk += 70;
+            else if (daysLeft <= 3) risk += 50;
+            else if (daysLeft <= 7) risk += 30;
+            else if (daysLeft <= 14) risk += 15;
+            else risk += 5;
         } else {
-            // Sin fecha definida - riesgo medio
             risk += 20;
         }
         
-        // ✅ REGLA 3: Riesgo por prioridad
-        if (task.priority === 'alta' || task.priority === 'high') {
-            risk += 25;
-        } else if (task.priority === 'media' || task.priority === 'medium') {
-            risk += 10;
-        }
+        if (task.priority === 'alta' || task.priority === 'high') risk += 25;
+        else if (task.priority === 'media' || task.priority === 'medium') risk += 10;
         
-        // ✅ REGLA 4: Riesgo por dependencias
-        if (task.dependencies && task.dependencies.length > 2) {
-            risk += 15;
-        } else if (task.dependencies && task.dependencies.length > 0) {
-            risk += 5;
-        }
+        if (task.dependencies && task.dependencies.length > 2) risk += 15;
+        else if (task.dependencies && task.dependencies.length > 0) risk += 5;
         
-        // ✅ REGLA 5: Riesgo por progreso (solo si NO está completada)
         if (task.status !== 'completed') {
             const progress = task.progress || 0;
-            if (progress < 20 && task.deadline) {
-                risk += 20;  // Muy poco progreso y fecha cerca
-            } else if (progress < 50 && task.deadline) {
-                risk += 10;
-            }
+            if (progress < 20 && task.deadline) risk += 20;
+            else if (progress < 50 && task.deadline) risk += 10;
         }
         
-        // ✅ REGLA 6: Si está "overdue" o "atrasada"
-        if (task.status === 'overdue') {
-            risk += 30;
-        }
+        if (task.status === 'overdue') risk += 30;
         
-        // Limitar entre 0 y 100
         return Math.min(100, Math.max(0, risk));
     }
-    
-    // ============================================
-    // MONTE CARLO
-    // ============================================
     
     function monteCarloSimulation(tasks, iterations = 500) {
         const totalTasks = tasks.length;
@@ -248,36 +271,19 @@
         };
     }
     
-    // ============================================
-    // SENTIMENT ANALYSIS - MEJORADO
-    // ============================================
-    
     function analyzeSentiment(tasks) {
-        // Extraer TODOS los comentarios de todas las tareas
         const allComments = [];
-        
         tasks.forEach(task => {
             if (task.description && task.description.trim().length > 0) {
                 allComments.push(task.description);
-            }
-            // También revisar comentarios en el historial si existe
-            if (task.comments && Array.isArray(task.comments)) {
-                task.comments.forEach(c => {
-                    if (c.text && c.text.length > 0) allComments.push(c.text);
-                });
             }
         });
         
         if (allComments.length === 0) {
             return { 
-                label: 'neutral', 
-                intensity: 0, 
-                color: '#888', 
-                emoji: '😐', 
-                positiveCount: 0, 
-                negativeCount: 0,
-                totalComments: 0,
-                sample: 'No hay comentarios en las tareas. Agrega descripciones para analizar sentimiento.'
+                label: 'neutral', intensity: 0, color: '#888', emoji: '😐', 
+                positiveCount: 0, negativeCount: 0, totalComments: 0,
+                sample: 'No hay comentarios en las tareas.'
             };
         }
         
@@ -293,14 +299,9 @@
         const total = positiveCount + negativeCount;
         if (total === 0) {
             return { 
-                label: 'neutral', 
-                intensity: 0, 
-                color: '#888', 
-                emoji: '😐', 
-                positiveCount: 0, 
-                negativeCount: 0,
-                totalComments: allComments.length,
-                sample: 'Comentarios neutrales sin palabras clave emocionales'
+                label: 'neutral', intensity: 0, color: '#888', emoji: '😐', 
+                positiveCount: 0, negativeCount: 0, totalComments: allComments.length,
+                sample: 'Comentarios neutrales'
             };
         }
         
@@ -311,7 +312,6 @@
         
         const intensity = Math.min(100, Math.round((total / 20) * 100));
         
-        // Buscar una frase de ejemplo
         let sample = 'Sin ejemplo destacado';
         const sentences = allText.split(/[.!?]+/);
         for (const s of sentences) {
@@ -321,18 +321,8 @@
             }
         }
         
-        return {
-            label, color, emoji, intensity,
-            positiveCount, negativeCount,
-            totalComments: allComments.length,
-            sample,
-            score: (score * 100).toFixed(0)
-        };
+        return { label, color, emoji, intensity, positiveCount, negativeCount, totalComments: allComments.length, sample };
     }
-    
-    // ============================================
-    // EFECTO MATRIX
-    // ============================================
     
     let matrixInterval = null;
     function generateMatrixText() {
@@ -356,10 +346,6 @@
             }
         }, 150);
     }
-    
-    // ============================================
-    // ESTILOS
-    // ============================================
     
     function injectStyles() {
         if (document.getElementById('quantum-v10-styles')) return;
@@ -482,11 +468,6 @@
             .quantum-table th { text-align: left; padding: 8px; color: #00ffff; border-bottom: 1px solid rgba(0,255,255,0.3); }
             .quantum-table td { padding: 8px; border-bottom: 1px solid rgba(0,255,255,0.1); color: #ccc; }
             .quantum-table tr:hover { background: rgba(0,255,255,0.05); cursor: pointer; }
-            .risk-critical { color: #ff4444; font-weight: bold; }
-            .risk-high { color: #ff8800; font-weight: bold; }
-            .risk-medium { color: #ffff00; font-weight: bold; }
-            .risk-low { color: #00ff00; }
-            .risk-none { color: #666; }
             .quantum-voice {
                 position: fixed;
                 bottom: 20px;
@@ -502,7 +483,6 @@
                 z-index: 10000001;
                 font-size: 22px;
             }
-            .quantum-voice.listening { animation: pulse 0.5s infinite; }
             @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
             .quantum-content::-webkit-scrollbar { width: 4px; }
             .quantum-content::-webkit-scrollbar-track { background: #111; }
@@ -516,25 +496,31 @@
     // ============================================
     
     async function showQuantumDashboard() {
-        console.log('[QUANTUM] v10.0 - Corregido');
+        console.log('[QUANTUM] Abriendo dashboard...');
         
         const project = getCurrentProject();
-        if (!project) { alert('❌ Selecciona un proyecto'); return; }
+        if (!project) { 
+            alert('❌ No hay proyectos disponibles');
+            return; 
+        }
+        
+        console.log(`[QUANTUM] 📊 Proyecto SELECCIONADO: "${project.name}"`);
         
         const tasks = project.tasks || [];
-        if (tasks.length === 0) { alert(`📭 El proyecto "${project.name}" no tiene tareas`); return; }
+        if (tasks.length === 0) { 
+            alert(`📭 El proyecto "${project.name}" no tiene tareas`);
+            return; 
+        }
         
         await loadThreeJS();
         injectStyles();
         
-        // Métricas
         const completed = tasks.filter(t => t.status === 'completed').length;
         const inProgress = tasks.filter(t => t.status === 'inProgress').length;
         const pending = tasks.filter(t => t.status === 'pending').length;
         const overdue = tasks.filter(t => t.status === 'overdue').length;
         const completionRate = Math.round((completed / tasks.length) * 100);
         
-        // EVM
         let pv = 0, ev = 0, ac = 0;
         tasks.forEach(t => {
             const est = t.estimatedTime || 0;
@@ -547,16 +533,9 @@
         const spi = pv > 0 ? ev / pv : 1;
         const healthScore = Math.round(completionRate - (overdue / tasks.length) * 50);
         
-        // Monte Carlo
         const monteCarlo = monteCarloSimulation(tasks);
-        
-        // SENTIMENT - CORREGIDO (pasa las tareas completas)
         const sentiment = analyzeSentiment(tasks);
-        
-        // Riesgos - CORREGIDO
         const tasksWithRisk = tasks.map(t => ({ ...t, risk: calculateRisk(t) }));
-        const highRiskTasks = tasksWithRisk.filter(t => t.risk > 70 && t.status !== 'completed');
-        const criticalTasks = tasksWithRisk.filter(t => t.risk > 85 && t.status !== 'completed');
         
         const existing = document.getElementById('quantumV10Dashboard');
         if (existing) existing.remove();
@@ -578,7 +557,6 @@
                     <div class="quantum-badge">⚡ 3D ACTIVE</div>
                     <button class="quantum-close" id="quantumCloseBtn">✕</button>
                 </div>
-                
                 <div class="quantum-content">
                     <div class="quantum-kpi-grid">
                         <div class="quantum-kpi"><div class="quantum-kpi-value">${tasks.length}</div><div class="quantum-kpi-label">TOTAL</div></div>
@@ -588,183 +566,98 @@
                         <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:#f44;">${overdue}</div><div class="quantum-kpi-label">ATRAS</div></div>
                         <div class="quantum-kpi"><div class="quantum-kpi-value">${completionRate}%</div><div class="quantum-kpi-label">%</div></div>
                     </div>
-                    
                     <div class="quantum-grid-2">
-                        <div class="quantum-card">
-                            <div class="quantum-card-header"><span>🌐 HOLOGRAPHIC CUBE</span><span>${completionRate}% completado</span></div>
-                            <div class="quantum-card-body"><div id="quantum3dContainer" class="quantum-3d-container"></div></div>
-                        </div>
-                        
-                        <div class="quantum-card">
-                            <div class="quantum-card-header"><span>🔮 MONTE CARLO</span><span>${monteCarlo.confidence}% confianza</span></div>
-                            <div class="quantum-card-body">
-                                <div class="quantum-mc-grid">
-                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">OPTIMISTA</div></div>
-                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.median}</div><div class="quantum-mc-label">MEDIANO</div></div>
-                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">PESIMISTA</div></div>
+                        <div class="quantum-card"><div class="quantum-card-header"><span>🌐 HOLOGRAPHIC CUBE</span><span>${completionRate}% completado</span></div><div class="quantum-card-body"><div id="quantum3dContainer" class="quantum-3d-container"></div></div></div>
+                        <div class="quantum-card"><div class="quantum-card-header"><span>🔮 MONTE CARLO</span><span>${monteCarlo.confidence}% confianza</span></div><div class="quantum-card-body">
+                            <div class="quantum-mc-grid">
+                                <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">OPTIMISTA</div></div>
+                                <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.median}</div><div class="quantum-mc-label">MEDIANO</div></div>
+                                <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">PESIMISTA</div></div>
+                            </div>
+                            <div style="padding:8px; background:#000; border-radius:4px; font-family:monospace; font-size:9px; color:#0f0;">
+                                > 500 iteraciones simuladas<br>
+                                > Velocidad: ${(completed / Math.max(1,30)).toFixed(2)} tareas/día
+                            </div>
+                        </div></div>
+                    </div>
+                    <div class="quantum-grid-2">
+                        <div class="quantum-card"><div class="quantum-card-header"><span>💬 SENTIMENT ANALYSIS</span><span style="color:${sentiment.color};">${sentiment.label.toUpperCase()} ${sentiment.emoji}</span></div><div class="quantum-card-body">
+                            <div id="quantumMatrix" class="quantum-matrix">${generateMatrixText()}</div>
+                            <div style="margin-top:8px;">
+                                <div class="quantum-progress"><div class="quantum-progress-fill" style="width: ${sentiment.intensity}%;"></div></div>
+                                <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:8px;">
+                                    <span>👍 Positivos: ${sentiment.positiveCount}</span>
+                                    <span>👎 Negativos: ${sentiment.negativeCount}</span>
+                                    <span>📝 Comentarios: ${sentiment.totalComments}</span>
                                 </div>
-                                <div style="padding:8px; background:#000; border-radius:4px; font-family:monospace; font-size:9px; color:#0f0;">
-                                    > 500 iteraciones simuladas<br>
-                                    > Velocidad: ${(completed / Math.max(1,30)).toFixed(2)} tareas/día
+                                <div style="margin-top:8px; padding:6px; background:#111; border-radius:4px; font-size:8px; color:#aaa;">
+                                    💬 "${sentiment.sample}"
                                 </div>
+                            </div>
+                        </div></div>
+                        <div class="quantum-card"><div class="quantum-card-header"><span>⚡ EXECUTIVE METRICS</span><span>CPI / SPI</span></div><div class="quantum-card-body">
+                            <div style="display:flex; gap:20px; justify-content:center; margin-bottom:12px;">
+                                <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${cpi>=1?'#0f0':'#f44'};">${cpi.toFixed(2)}</div><div style="font-size:9px;">CPI</div></div>
+                                <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${spi>=1?'#0f0':'#f44'};">${spi.toFixed(2)}</div><div style="font-size:9px;">SPI</div></div>
+                                <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${healthScore>=70?'#0f0':healthScore>=40?'#ff0':'#f44'};">${healthScore}%</div><div style="font-size:9px;">HEALTH</div></div>
+                            </div>
+                            <div class="quantum-progress"><div class="quantum-progress-fill" style="width: ${healthScore}%;"></div></div>
+                        </div></div>
+                    </div>
+                    <div class="quantum-card">
+                        <div class="quantum-card-header"><span>⚠️ CRITICAL RISK MATRIX</span><span>🔴 ${tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length} críticos | 🎉 ${tasksWithRisk.filter(t => t.status === 'completed').length} completadas</span></div>
+                        <div class="quantum-card-body">
+                            <div style="overflow-x:auto; max-height:250px; overflow-y:auto;">
+                                <table class="quantum-table"><thead><tr><th>Tarea</th><th>Asignado</th><th>Progreso</th><th>Estado</th><th>Riesgo</th></tr></thead>
+                                <tbody>${tasksWithRisk.sort((a,b) => b.risk - a.risk).slice(0,20).map(t => {
+                                    if (t.status === 'completed') {
+                                        return `<tr data-task-id="${t.id}" style="background: linear-gradient(90deg, #0a2e1a, #0a1a0a); border-left: 4px solid #00ff00;">
+                                            <td><strong>🎉✨ ${(t.name || 'Sin nombre').substring(0,30)} ✨🎉</strong> <span style="color:#00ff00;">✓ COMPLETADA</span></td>
+                                            <td style="color:#00ff00;">${t.assignee || '—'} 👏</td>
+                                            <td><div style="width:80px; background:#1a3a2a; border-radius:10px; height:6px;"><div style="width:100%; height:100%; background:#00ff00; border-radius:10px;"></div></div> 100% ✅</td>
+                                            <td><span style="background:#00ff00; color:#000; padding:3px 10px; border-radius:20px;">🎉 TRIUNFO 🎉</span></td>
+                                            <td><span style="background:#00ff00; color:#000; padding:5px 12px; border-radius:20px;">✨ 0% ✨</span></td>
+                                        </table>`;
+                                    }
+                                    let riskColor = '#00ff00', riskBg = '#0a2e1a', riskDisplay = `🟢 ${t.risk}%`;
+                                    if (t.risk >= 100) { riskColor = '#ff0000'; riskBg = '#2a0000'; riskDisplay = `🔴 ${t.risk}% CRÍTICO 🔴`; }
+                                    else if (t.risk >= 80) { riskColor = '#ff4444'; riskBg = '#2a0a0a'; riskDisplay = `🔴 ${t.risk}%`; }
+                                    else if (t.risk >= 60) { riskColor = '#ff8800'; riskBg = '#2a1a0a'; riskDisplay = `🟠 ${t.risk}%`; }
+                                    else if (t.risk >= 30) { riskColor = '#ffff00'; riskBg = '#2a2a0a'; riskDisplay = `🟡 ${t.risk}%`; }
+                                    
+                                    let statusIcon = '', statusText = '', statusColor = '';
+                                    if (t.status === 'overdue') { statusIcon = '🔴'; statusText = 'ATRASADA'; statusColor = '#ff4444'; }
+                                    else if (t.status === 'inProgress') { statusIcon = '🔄'; statusText = 'EN PROGRESO'; statusColor = '#00ffff'; }
+                                    else { statusIcon = '⏳'; statusText = 'PENDIENTE'; statusColor = '#ffff00'; }
+                                    
+                                    let daysLeftText = '';
+                                    if (t.deadline && t.status !== 'completed') {
+                                        const deadline = new Date(t.deadline);
+                                        const today = new Date();
+                                        const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+                                        if (daysLeft < 0) daysLeftText = ` ⚠️ VENCE HACE ${Math.abs(daysLeft)} DÍAS`;
+                                        else if (daysLeft === 0) daysLeftText = ` 🔴 VENCE HOY`;
+                                        else if (daysLeft <= 3) daysLeftText = ` 🟡 VENCE EN ${daysLeft} DÍAS`;
+                                    }
+                                    
+                                    return `<tr data-task-id="${t.id}" style="background: ${riskBg}; border-left: 4px solid ${riskColor};">
+                                        <td><strong style="color:${riskColor};">${statusIcon} ${(t.name || 'Sin nombre').substring(0,35)}${daysLeftText}</strong></td>
+                                        <td>${t.assignee || '—'}</td>
+                                        <td><div style="width:80px; background:#1a1a2a; border-radius:10px; height:6px;"><div style="width:${t.progress || 0}%; height:100%; background:${riskColor}; border-radius:10px;"></div></div> ${t.progress || 0}%</td>
+                                        <td><span style="background:${statusColor}33; color:${statusColor}; padding:3px 10px; border-radius:20px;">${statusIcon} ${statusText}</span></td>
+                                        <td><span style="background:${riskColor}22; color:${riskColor}; padding:5px 12px; border-radius:20px; font-weight:bold;">${riskDisplay}</span></td>
+                                    </tr>`;
+                                }).join('')}</tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:10px; display:flex; justify-content:space-between; font-size:8px; color:#888; padding:5px;">
+                                <div>🔴 Riesgo 100% → ROJO</div>
+                                <div>🟡 Riesgo medio → AMARILLO</div>
+                                <div>🟢 Riesgo bajo → VERDE</div>
+                                <div>🎉 Completadas → CELEBRACIÓN 🏆✨</div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="quantum-grid-2">
-                        <div class="quantum-card">
-                            <div class="quantum-card-header"><span>💬 SENTIMENT ANALYSIS</span><span style="color:${sentiment.color};">${sentiment.label.toUpperCase()} ${sentiment.emoji}</span></div>
-                            <div class="quantum-card-body">
-                                <div id="quantumMatrix" class="quantum-matrix">${generateMatrixText()}</div>
-                                <div style="margin-top:8px;">
-                                    <div class="quantum-progress"><div class="quantum-progress-fill" style="width: ${sentiment.intensity}%;"></div></div>
-                                    <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:8px;">
-                                        <span>👍 Positivos: ${sentiment.positiveCount}</span>
-                                        <span>👎 Negativos: ${sentiment.negativeCount}</span>
-                                        <span>📝 Comentarios: ${sentiment.totalComments}</span>
-                                    </div>
-                                    <div style="margin-top:8px; padding:6px; background:#111; border-radius:4px; font-size:8px; color:#aaa;">
-                                        💬 "${sentiment.sample}"
-                                    </div>
-                                    <div style="margin-top:5px; font-size:7px; color:#666;">
-                                        ℹ️ El sentimiento se analiza de las DESCRIPCIONES de las tareas
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quantum-card">
-                            <div class="quantum-card-header"><span>⚡ EXECUTIVE METRICS</span><span>CPI / SPI</span></div>
-                            <div class="quantum-card-body">
-                                <div style="display:flex; gap:20px; justify-content:center; margin-bottom:12px;">
-                                    <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${cpi>=1?'#0f0':'#f44'};">${cpi.toFixed(2)}</div><div style="font-size:9px;">CPI</div></div>
-                                    <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${spi>=1?'#0f0':'#f44'};">${spi.toFixed(2)}</div><div style="font-size:9px;">SPI</div></div>
-                                    <div style="text-align:center;"><div style="font-size:32px; font-weight:700; color:${healthScore>=70?'#0f0':healthScore>=40?'#ff0':'#f44'};">${healthScore}%</div><div style="font-size:9px;">HEALTH</div></div>
-                                </div>
-                                <div class="quantum-progress"><div class="quantum-progress-fill" style="width: ${healthScore}%;"></div></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- CRITICAL RISK MATRIX - CON COLORES Y CELEBRACIÓN -->
-<div class="quantum-card">
-    <div class="quantum-card-header">
-        <span>⚠️ CRITICAL RISK MATRIX</span>
-        <span>🔴 ${tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length} en riesgo crítico | 🎉 ${tasksWithRisk.filter(t => t.status === 'completed').length} completadas</span>
-    </div>
-    <div class="quantum-card-body">
-        <div style="overflow-x:auto; max-height:250px; overflow-y:auto;">
-            <table class="quantum-table">
-                <thead>
-                    <tr>
-                        <th>Tarea</th>
-                        <th>Asignado</th>
-                        <th>Progreso</th>
-                        <th>Estado</th>
-                        <th>Riesgo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tasksWithRisk.sort((a,b) => b.risk - a.risk).slice(0,20).map(t => {
-                        // 🎉 TAREA COMPLETADA - CELEBRACIÓN
-                        if (t.status === 'completed') {
-                            return `<tr data-task-id="${t.id}" style="background: linear-gradient(90deg, #0a2e1a, #0a1a0a); border-left: 4px solid #00ff00;">
-                                <td><strong>🎉🏆✨ ${(t.name || 'Sin nombre').substring(0,30)} ✨🏆🎉</strong> <span style="color:#00ff00;">✓ COMPLETADA ✓</span></td>
-                                <td style="color:#00ff00;">${t.assignee || '—'} 👏</td>
-                                <td><div style="width:80px; background:#1a3a2a; border-radius:10px; height:6px;"><div style="width:100%; height:100%; background:#00ff00; border-radius:10px;"></div></div> 100% ✅</td>
-                                <td><span style="background:#00ff00; color:#000; padding:3px 10px; border-radius:20px; font-weight:bold;">🎉 TRIUNFO 🎉</span></td>
-                                <td><span style="background:#00ff00; color:#000; padding:5px 12px; border-radius:20px; font-weight:bold;">✨ 0% ✨</span></td>
-                              </tr>`;
-                        }
-                        
-                        // Definir colores según nivel de riesgo
-                        let riskColor = '#00ff00';
-                        let riskBg = '#0a2e1a';
-                        let riskTextStyle = 'font-weight:bold;';
-                        let borderColor = '';
-                        let riskDisplay = `${t.risk}%`;
-                        
-                        if (t.risk >= 100) {
-                            riskColor = '#ff0000';
-                            riskBg = '#2a0000';
-                            riskTextStyle = 'font-weight:bold; text-shadow: 0 0 5px #ff0000;';
-                            borderColor = 'border-left: 4px solid #ff0000;';
-                            riskDisplay = `🔴 ${t.risk}% CRÍTICO 🔴`;
-                        } else if (t.risk >= 80) {
-                            riskColor = '#ff4444';
-                            riskBg = '#2a0a0a';
-                            riskTextStyle = 'font-weight:bold;';
-                            borderColor = 'border-left: 4px solid #ff4444;';
-                            riskDisplay = `🔴 ${t.risk}%`;
-                        } else if (t.risk >= 60) {
-                            riskColor = '#ff8800';
-                            riskBg = '#2a1a0a';
-                            borderColor = 'border-left: 4px solid #ff8800;';
-                            riskDisplay = `🟠 ${t.risk}%`;
-                        } else if (t.risk >= 30) {
-                            riskColor = '#ffff00';
-                            riskBg = '#2a2a0a';
-                            borderColor = 'border-left: 4px solid #ffff00;';
-                            riskDisplay = `🟡 ${t.risk}%`;
-                        } else {
-                            riskColor = '#00ff00';
-                            riskBg = '#0a2e1a';
-                            borderColor = 'border-left: 4px solid #00cc00;';
-                            riskDisplay = `🟢 ${t.risk}%`;
-                        }
-                        
-                        let statusIcon = '';
-                        let statusText = '';
-                        let statusColor = '';
-                        
-                        if (t.status === 'overdue') {
-                            statusIcon = '🔴';
-                            statusText = 'ATRASADA';
-                            statusColor = '#ff4444';
-                        } else if (t.status === 'inProgress') {
-                            statusIcon = '🔄';
-                            statusText = 'EN PROGRESO';
-                            statusColor = '#00ffff';
-                        } else {
-                            statusIcon = '⏳';
-                            statusText = 'PENDIENTE';
-                            statusColor = '#ffff00';
-                        }
-                        
-                        // Mostrar días restantes si hay deadline
-                        let daysLeftText = '';
-                        if (t.deadline && t.status !== 'completed') {
-                            const deadline = new Date(t.deadline);
-                            const today = new Date();
-                            const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
-                            if (daysLeft < 0) {
-                                daysLeftText = ` ⚠️ VENCE HACE ${Math.abs(daysLeft)} DÍAS`;
-                            } else if (daysLeft === 0) {
-                                daysLeftText = ` 🔴 VENCE HOY`;
-                            } else if (daysLeft <= 3) {
-                                daysLeftText = ` 🟡 VENCE EN ${daysLeft} DÍAS`;
-                            }
-                        }
-                        
-                        return `<tr data-task-id="${t.id}" style="background: ${riskBg}; ${borderColor}">
-                            <td><strong style="color:${riskColor};">${statusIcon} ${(t.name || 'Sin nombre').substring(0,35)}${daysLeftText}</strong></td>
-                            <td>${t.assignee || '—'}</td>
-                            <td><div style="width:80px; background:#1a1a2a; border-radius:10px; height:6px;"><div style="width:${t.progress || 0}%; height:100%; background:${riskColor}; border-radius:10px;"></div></div> ${t.progress || 0}%</td>
-                            <td><span style="background:${statusColor}33; color:${statusColor}; padding:3px 10px; border-radius:20px; font-size:9px;">${statusIcon} ${statusText}</span></td>
-                            <td><span style="background:${riskColor}22; color:${riskColor}; padding:5px 12px; border-radius:20px; font-weight:bold; ${riskTextStyle}">${riskDisplay}</span></td>
-                          </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-        <div style="margin-top:10px; display:flex; justify-content:space-between; font-size:8px; color:#888; padding:5px;">
-            <div>🔴 <span style="color:#ff0000;">Riesgo 100%</span> → ROJO FLASH</div>
-            <div>🟡 <span style="color:#ffff00;">Riesgo medio</span> → AMARILLO</div>
-            <div>🟢 <span style="color:#00ff00;">Riesgo bajo</span> → VERDE</div>
-            <div>🎉 <span style="color:#00ff00;">Completadas</span> → CELEBRACIÓN 🏆✨</div>
-        </div>
-    </div>
-</div>
                 </div>
             </div>
             <div id="quantumVoiceBtn" class="quantum-voice">🎙️</div>
@@ -790,7 +683,6 @@
         
         startMatrixAnimation();
         
-        // Voice commands
         const voiceBtn = document.getElementById('quantumVoiceBtn');
         if (voiceBtn) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -806,7 +698,7 @@
                         recognition.onresult = (event) => {
                             const command = event.results[0][0].transcript.toLowerCase();
                             if (command.includes('cerrar')) dashboard.remove();
-                            else if (command.includes('estado')) alert(`📊 ${project.name}\n✅ Progreso: ${completionRate}%\n📋 Tareas: ${completed}/${tasks.length}\n⚠️ Riesgo: ${highRiskTasks.length} tareas críticas`);
+                            else if (command.includes('estado')) alert(`📊 ${project.name}\n✅ Progreso: ${completionRate}%\n📋 Tareas: ${completed}/${tasks.length}\n⚠️ Riesgo: ${tasksWithRisk.filter(t => t.risk >= 80).length} tareas críticas`);
                             else alert(`🎤 Comando: "${command}"`);
                         };
                         recognition.start();
@@ -820,11 +712,12 @@
     }
     
     // ============================================
-    // BOTÓN EN SIDEBAR
+    // CREAR BOTÓN EN SIDEBAR
     // ============================================
     
     function createSidebarButton() {
         if (document.getElementById('quantumV10Btn')) return;
+        
         const interval = setInterval(() => {
             const sidebar = document.querySelector('aside, #sidebar, .sidebar');
             if (sidebar && !document.getElementById('quantumV10Btn')) {
@@ -844,27 +737,47 @@
                     display: block;
                     font-size: 12px;
                     box-shadow: 0 0 15px rgba(0,255,255,0.3);
+                    transition: all 0.3s ease;
                 `;
-                btn.onclick = showQuantumDashboard;
+                
+                btn.onmouseenter = () => {
+                    btn.style.transform = 'translateY(-2px)';
+                    btn.style.boxShadow = '0 0 25px rgba(0,255,255,0.5)';
+                };
+                btn.onmouseleave = () => {
+                    btn.style.transform = 'translateY(0)';
+                    btn.style.boxShadow = '0 0 15px rgba(0,255,255,0.3)';
+                };
+                
+                btn.onclick = () => showQuantumDashboard();
                 sidebar.appendChild(btn);
                 clearInterval(interval);
             }
-        }, 2000);
+        }, 500);
     }
+    
+    // ============================================
+    // EXPONER FUNCIONES GLOBALMENTE
+    // ============================================
+    
+    window.showQuantumDashboard = showQuantumDashboard;
+    window.QuantumExecutive = { 
+        show: showQuantumDashboard, 
+        version: '10.4',
+        getCurrentProject: getCurrentProject
+    };
+    
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
     
     function init() {
         createSidebarButton();
-        window.QuantumExecutive = { show: showQuantumDashboard, version: '10.0' };
         console.log('✅ CENTRO DE CONTROL PM - CORREGIDO');
-        console.log('');
-        console.log('📊 NUEVA LÓGICA DE RIESGO:');
-        console.log('   ✅ Tareas COMPLETADAS → Riesgo 0%');
-        console.log('   ⚠️ Tareas ATRASADAS → Riesgo alto');
-        console.log('   📅 Riesgo se calcula según: fecha límite, prioridad, dependencias');
-        console.log('');
-        console.log('💬 SENTIMENT ANALYSIS:');
-        console.log('   Analiza las DESCRIPCIONES de tus tareas');
-        console.log('   Agrega comentarios como "excelente" o "problema" para ver cambios');
+        console.log('   - Función global: window.showQuantumDashboard');
+        console.log('   - Objeto global: window.QuantumExecutive');
+        console.log('   - Botón en sidebar');
+        console.log('   - Proyecto seleccionado correctamente');
     }
     
     if (document.readyState === 'loading') {
