@@ -1,3 +1,132 @@
+// ============================================
+// 🎯 ENGRANE AL FINAL DE TODOS LOS BOTONES
+// ============================================
+
+(function ponerEngraneAlFinal() {
+    console.log('🔧 Poniendo engrane al final de todos los botones');
+    
+    function aplicarFix() {
+        const configBtn = document.getElementById('configButton');
+        if (!configBtn) {
+            console.log('⏳ Engrane no encontrado aún');
+            return false;
+        }
+        
+        const contenedor = document.querySelector('.header-actions');
+        if (!contenedor) {
+            console.log('⏳ Contenedor no encontrado');
+            return false;
+        }
+        
+        // Mover el engrane al FINAL del contenedor
+        contenedor.appendChild(configBtn);
+        
+        // Forzar estilos inline
+        configBtn.style.cssText = `
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            margin: 0 0 0 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            order: 999 !important;
+        `;
+        
+        // Aplicar gap al contenedor
+        contenedor.style.display = 'flex';
+        contenedor.style.alignItems = 'center';
+        contenedor.style.gap = '12px';
+        
+        console.log('✅ Engrane movido al final');
+        return true;
+    }
+    
+    // Intentar varias veces
+    if (aplicarFix()) return;
+    
+    let intentos = 0;
+    const intervalo = setInterval(() => {
+        if (aplicarFix()) {
+            clearInterval(intervalo);
+        }
+        intentos++;
+        if (intentos >= 20) {
+            clearInterval(intervalo);
+            console.log('❌ No se pudo mover el engrane');
+        }
+    }, 300);
+})();
+
+
+
+// ============================================
+// 🎨 CAMBIAR COLORES DE BOTONES A ESTÁNDARES
+// ============================================
+
+(function cambiarColoresBotones() {
+    console.log('🎨 Aplicando colores estándar a botones');
+    
+    // 1. Botón Menú (☰ Menú) - Gris oscuro (neutro)
+    const menuBtn = document.getElementById('toggleSidebarBtn');
+    if (menuBtn) {
+        menuBtn.style.backgroundColor = '#475569';  // Gris pizarra
+        menuBtn.style.border = 'none';
+        menuBtn.style.color = 'white';
+        console.log('✅ Botón Menú → Gris oscuro');
+    }
+    
+    // 2. Botón Nuevo Proyecto - Azul primario (el más usado)
+    const newProjectBtn = document.getElementById('newProjectBtn');
+    if (newProjectBtn) {
+        newProjectBtn.style.backgroundColor = '#2563EB';  // Azul primario
+        newProjectBtn.style.border = 'none';
+        newProjectBtn.style.color = 'white';
+        console.log('✅ Botón Nuevo Proyecto → Azul primario');
+    }
+    
+    // 3. Botón Comando de Voz - Morado (se mantiene, es distintivo)
+    const voiceBtn = document.getElementById('voiceAssistantButton');
+    if (voiceBtn) {
+        voiceBtn.style.backgroundColor = '#8b5cf6';  // Morado
+        console.log('✅ Botón Voz → Morado (se mantiene)');
+    }
+    
+    // 4. Botón Cerrar Sesión - Rojo (advertencia)
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.style.backgroundColor = '#ef4444';  // Rojo
+        console.log('✅ Botón Cerrar Sesión → Rojo');
+    }
+    
+    // 5. Botón PM Virtual - Azul secundario
+    const pmBtn = document.getElementById('boardUltimateBtn');
+    if (pmBtn) {
+        pmBtn.style.backgroundColor = '#1E40AF';  // Azul más oscuro
+        console.log('✅ Botón PM Virtual → Azul oscuro');
+    }
+    
+    // 6. Botón Automatización - Azul intermedio
+    const autoBtn = document.getElementById('autoBlueFinal');
+    if (autoBtn) {
+        autoBtn.style.backgroundColor = '#3B82F6';  // Azul medio
+        console.log('✅ Botón Automatización → Azul medio');
+    }
+    
+    // 7. Engrane (configuración) - Gris (se mantiene)
+    const configBtn = document.getElementById('configButton');
+    if (configBtn) {
+        configBtn.style.backgroundColor = '#475569';  // Gris
+        console.log('✅ Engrane → Gris');
+    }
+    
+    console.log('🎨 Colores aplicados exitosamente');
+})();
+
 
 
 // ============================================
@@ -280,32 +409,6 @@ if (originalSaveTaskChanges) {
     console.log("   - Modifica tarea → notifica ✅");
     console.log("   - Mueve tarea → notifica ✅");
     console.log("   - Notificaciones visuales ✅");
-})();
-
-// ============================================
-// BOTÓN FLOTANTE PARA HYPERION DASHBOARD
-// ============================================
-(function addHyperionButton() {
-    // Esperar a que el DOM esté listo
-    if(document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addButton);
-    } else {
-        addButton();
-    }
-    
-    function addButton() {
-        // Verificar si el botón ya existe
-        if(document.getElementById('hyperionLaunchBtn')) return;
-        
-        const btn = document.createElement('button');
-        btn.id = 'hyperionLaunchBtn';
-        btn.innerHTML = '🚀 HYPERION X ∞';
-        btn.style.cssText = 'position:fixed;bottom:20px;left:20px;background:linear-gradient(135deg,#00F0FF,#FF00D4);border:none;color:white;padding:14px 28px;border-radius:60px;cursor:pointer;z-index:10000;font-weight:bold;box-shadow:0 0 20px rgba(0,240,255,.4);font-family:system-ui;';
-        btn.onclick = function() {
-            window.open('hyperion.html', '_blank', 'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
-        };
-        document.body.appendChild(btn);
-    }
 })();
 
 
@@ -50440,15 +50543,19 @@ function addGanttToTopNav() {
     if (nav && nav !== document.querySelector('#simpleGanttMenu')) {
       console.log(`✅ Barra de navegación encontrada: ${selector}`);
       
-      // Crear botón para Gantt
-      const ganttButton = document.createElement('button');
-      ganttButton.id = 'topNavGanttButton';
-      ganttButton.innerHTML = `
-        <span style="display: flex; align-items: center; gap: 8px;">
-          <span>📊</span>
-          <span>Gantt</span>
-        </span>
-      `;
+     // 🔧 BOTÓN DEL HEADER ELIMINADO - Ya no se crea (se mantiene solo el de la barra lateral)
+/*
+// Crear botón para Gantt
+const ganttButton = document.createElement('button');
+ganttButton.id = 'topNavGanttButton';
+ganttButton.innerHTML = `
+  <span style="display: flex; align-items: center; gap: 8px;">
+    <span>📊</span>
+    <span>Gantt</span>
+  </span>
+`;
+// ... resto del código del botón
+*/
       
       ganttButton.style.cssText = `
         background: linear-gradient(45deg, #3498db, #2ecc71);
@@ -66659,6 +66766,9 @@ console.log('✅ SISTEMA ACTIVADO - Las críticas se pintan solas cada medio seg
 
 
 
+console.log('✅ SISTEMA ACTIVADO - Las críticas se pintan solas cada medio segundo');
+
+
 
 
 
@@ -67137,6 +67247,9 @@ if (!document.getElementById('notif-slack-styles')) {
     document.head.appendChild(style);
 }
 
+
+
+
 // ============================================
 // 🛠️ CORRECCIÓN DE DESPLAZAMIENTO VERTICAL
 // ============================================
@@ -67207,3 +67320,28 @@ if (!document.getElementById('notif-slack-styles')) {
     document.body.offsetHeight;
     document.body.style.display = '';
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
