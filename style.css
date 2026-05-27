@@ -15110,3 +15110,386 @@ const centroReportesBtn = crearBotonMenu(
   font-size: 20px;
   color: white;
 }
+
+
+
+
+
+
+
+
+
+/* Colores específicos para botones del Gantt - Versión corregida */
+.premium-btn {
+    transition: all 0.3s ease !important;
+}
+
+/* Burndown - Naranja (CORREGIDO: nombre exacto de la función) */
+button[onclick*="showBurnDownChartPremium"] {
+    background: linear-gradient(45deg, #e67e22, #f39c12) !important;
+}
+
+/* Valor Ganado - Azul */
+button[onclick*="openEVMDashboard"] {
+    background: linear-gradient(45deg, #3b82f6, #1d4ed8) !important;
+}
+
+/* Costos - Verde */
+button[onclick*="showCostConfigurationPanel"] {
+    background: linear-gradient(45deg, #10b981, #059669) !important;
+}
+
+/* IA Predictor - Púrpura */
+button[onclick*="showAIPredictorPremium"] {
+    background: linear-gradient(45deg, #8b5cf6, #6d28d9) !important;
+}
+
+/* Cambiar Proyecto - Teal */
+button[onclick*="switchProjectPremium"] {
+    background: linear-gradient(45deg, #14b8a6, #0f766e) !important;
+}
+
+/* Reporte Ejecutivo - Rojo */
+button[onclick*="exportGanttData"] {
+    background: linear-gradient(45deg, #e74c3c, #c0392b) !important;
+}
+
+/* Volver al Tablero - Gris */
+button[onclick*="goBackToDashboard"] {
+    background: linear-gradient(45deg, #64748b, #475569) !important;
+}
+
+/* Vista Mobile - Morado */
+button[onclick*="toggleMobileViewPremium"] {
+    background: linear-gradient(45deg, #6c5ce7, #a29bfe) !important;
+}
+
+
+
+
+
+
+
+/* ============================================
+   🎨 COLORES DEL MENÚ LATERAL (SIDEBAR)
+   ============================================ */
+
+/* ===== ESTILOS BASE ===== */
+#sidebar li, aside li, .sidebar li {
+    list-style: none;
+    margin: 8px 12px;
+}
+
+#sidebar li div, aside li div, .sidebar li div,
+#sidebar li button, aside li button, .sidebar li button {
+    transition: all 0.3s ease !important;
+    border-radius: 12px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+/* ===== BOTONES DEL MENÚ POR FUNCIÓN ===== */
+
+/* 1. INICIO / Centro de Comando - Azul marino (principal) */
+#showInicioView, button[onclick*="renderCentroComandoIA"] {
+    background: linear-gradient(45deg, #1e3a8a, #3b82f6) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 2. TABLERO / KANBAN - Azul cielo (gestión visual) */
+#showBoardView {
+    background: linear-gradient(45deg, #0284c7, #38bdf8) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 3. LISTA - Verde azulado (organización) */
+#showListView {
+    background: linear-gradient(45deg, #0d9488, #2dd4bf) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 4. CALENDARIO - Naranja (fechas/tiempo) */
+#showCalendarView {
+    background: linear-gradient(45deg, #ea580c, #f97316) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 5. GANTT - Púrpura (planificación avanzada) */
+#showGanttView, #showGanttProView {
+    background: linear-gradient(45deg, #6d28d9, #a855f7) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 6. REPORTES - Rojo (destacado/informes) */
+#showReportsView {
+    background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 7. RENTABILIDAD - Verde esmeralda (finanzas) */
+#showProfitabilityView {
+    background: linear-gradient(45deg, #059669, #10b981) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 8. DASHBOARD - Índigo (visión general) */
+#showDashboardView {
+    background: linear-gradient(45deg, #4338ca, #6366f1) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 9. DASHBOARD 4D - Rosa/Magenta (experiencia premium) */
+#showDashboard4DView {
+    background: linear-gradient(45deg, #be185d, #ec4899) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 10. ASIGNACIÓN DE HORAS - Amarillo/Ámbar (tiempo) */
+#showTimeAllocationView {
+    background: linear-gradient(45deg, #b45309, #f59e0b) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 11. PLANTILLAS - Morado claro (creación) */
+.btn-plantillas, #showPlantillasView {
+    background: linear-gradient(45deg, #7e22ce, #c084fc) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 12. INTEGRACIONES - Gris metálico (conexiones) */
+#btn100Final, button[onclick*="mostrarPanel"] {
+    background: linear-gradient(45deg, #475569, #94a3b8) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 13. NUEVO PROYECTO - Verde brillante (acción principal) */
+#newProjectBtn {
+    background: linear-gradient(45deg, #16a34a, #22c55e) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+}
+
+/* 14. CONFIGURACIÓN - Gris oscuro (ajustes) */
+#configButton {
+    background: linear-gradient(45deg, #334155, #64748b) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 15. CERRAR SESIÓN - Rojo oscuro (acción de salida) */
+#logoutBtn {
+    background: linear-gradient(45deg, #991b1b, #ef4444) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* 16. PM Virtual (botón flotante del sidebar) */
+#boardUltimateBtn, button[id*="boardUltimateBtn"] {
+    background: linear-gradient(45deg, #6d28d9, #8b5cf6) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* ===== EFECTOS HOVER ===== */
+#sidebar li div:hover, aside li div:hover, .sidebar li div:hover,
+#sidebar li button:hover, aside li button:hover, .sidebar li button:hover {
+    transform: translateX(5px) scale(1.02) !important;
+    filter: brightness(1.1) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+/* ===== ESTADO ACTIVO (vista seleccionada) ===== */
+#sidebar li.active div, aside li.active div {
+    box-shadow: 0 0 0 2px white, 0 4px 12px rgba(0,0,0,0.3) !important;
+    transform: translateX(5px) !important;
+}
+
+
+
+
+
+/* ============================================
+   🎨 SIDEBAR DEL GANTT EJECUTIVO
+   ============================================ */
+
+/* Contenedor principal del sidebar del Gantt */
+#premiumExecutiveGantt div[style*="width: 320px"] {
+    background: linear-gradient(180deg, #0f172a, #1e293b) !important;
+}
+
+/* ===== SECCIONES DEL SIDEBAR ===== */
+
+/* Dashboard Ejecutivo - Azul marino */
+#premiumExecutiveGantt .kpi-card:first-child,
+#premiumExecutiveGantt div[class*="kpi-card"]:first-child {
+    border-top: 3px solid #3b82f6 !important;
+}
+
+/* Dependencias - Púrpura */
+#premiumExecutiveGantt div[style*="background: rgba(155, 89, 182"] {
+    border-left: 4px solid #8b5cf6 !important;
+}
+#premiumExecutiveGantt div[class*="dependencies"] h3,
+#premiumExecutiveGantt div[style*="border-radius: 12px; padding: 18px;"]:has(> div:contains("Dependencias")) {
+    border-left: 4px solid #a855f7 !important;
+}
+
+/* Ruta Crítica - Rojo */
+#premiumExecutiveGantt div[style*="background: rgba(231, 76, 60"] {
+    border-left: 4px solid #ef4444 !important;
+}
+#premiumExecutiveGantt div[class*="critical"] h3 {
+    color: #ef4444 !important;
+}
+
+/* IA Predictor - Naranja */
+#premiumExecutiveGantt div[style*="background: rgba(52, 152, 219"] {
+    border-left: 4px solid #f59e0b !important;
+}
+
+/* Distribución de Equipo - Verde */
+#premiumExecutiveGantt div[style*="background: rgba(46, 204, 113"] {
+    border-left: 4px solid #10b981 !important;
+}
+
+/* ===== BOTONES DEL SIDEBAR ===== */
+
+/* Botones de Filtros Ejecutivos - Todos con colores específicos */
+#premiumExecutiveGantt button[onclick*="filterCriticalTasksPremium"] {
+    background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="filterDelayedTasksPremium"] {
+    background: linear-gradient(45deg, #ea580c, #f97316) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="filterByTeamPremium"] {
+    background: linear-gradient(45deg, #7e22ce, #a855f7) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="filterByBudgetPremium"] {
+    background: linear-gradient(45deg, #059669, #10b981) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="showAllTasksPremium"] {
+    background: linear-gradient(45deg, #0284c7, #38bdf8) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Botones de Gestión de Dependencias */
+#premiumExecutiveGantt button[onclick*="openDependencyCreator"] {
+    background: linear-gradient(45deg, #7e22ce, #a855f7) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="markAsCriticalPath"] {
+    background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+    border: none !important;
+    color: white !important;
+}
+
+#premiumExecutiveGantt button[onclick*="clearAllDependencies"] {
+    background: linear-gradient(45deg, #475569, #64748b) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Botón Ejecutar Análisis Predictivo */
+#premiumExecutiveGantt button[onclick*="runAIAnalysisPremium"] {
+    background: linear-gradient(45deg, #ea580c, #f97316) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* ===== EFECTOS HOVER ===== */
+#premiumExecutiveGantt button[class*="premium-btn"]:hover,
+#premiumExecutiveGantt button[onclick*="filter"]:hover,
+#premiumExecutiveGantt button[onclick*="openDependencyCreator"]:hover,
+#premiumExecutiveGantt button[onclick*="markAsCriticalPath"]:hover {
+    transform: translateY(-2px) !important;
+    filter: brightness(1.1) !important;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.3) !important;
+}
+
+/* ===== TÍTULOS DE SECCIONES ===== */
+#premiumExecutiveGantt .kpi-card h3,
+#premiumExecutiveGantt div[style*="font-weight: bold;"] {
+    font-size: 14px !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Dashboard Ejecutivo - título */
+#premiumExecutiveGantt .kpi-card:first-child h3 {
+    color: #3b82f6 !important;
+}
+
+/* Dependencias - título */
+#premiumExecutiveGantt div[style*="background: rgba(155, 89, 182"] h3 {
+    color: #a855f7 !important;
+}
+
+/* Ruta Crítica - título */
+#premiumExecutiveGantt div[style*="background: rgba(231, 76, 60"] h3 {
+    color: #ef4444 !important;
+}
+
+/* IA Predictor - título */
+#premiumExecutiveGantt div[style*="background: rgba(52, 152, 219"] h3 {
+    color: #f59e0b !important;
+}
+
+/* Distribución de Equipo - título */
+#premiumExecutiveGantt div[style*="background: rgba(46, 204, 113"] h3 {
+    color: #10b981 !important;
+}
+
+/* Filtros Ejecutivos - título */
+#premiumExecutiveGantt div[style*="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;"]:first-child h3 {
+    color: #fbbf24 !important;
+}
+
+/* Gestión de Dependencias - título */
+#premiumExecutiveGantt div[style*="display: flex; flex-direction: column; gap: 10px;"]:first-child h3 {
+    color: #a855f7 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
