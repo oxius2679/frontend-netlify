@@ -1,239 +1,86 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ========================================
-// SISTEMA PREMIUM - CON BACKEND DE RENDER
+// SISTEMA PREMIUM - VERSIÓN FORZADA
 // ========================================
 (function() {
-    // La URL del backend EN PRODUCCIÓN (Render)
     const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
     
-    console.log("🌐 Usando backend:", API_URL);
+    // Función principal que se ejecuta CADA VEZ que carga la página
+    async function verificarYAsignarPlan() {
+        console.log("🔍 Verificando plan premium...");
+        
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.log("⚠️ Sin token");
+            return;
+        }
+        
+        try {
+            const res = await fetch(`${API_URL}/api/verificar-premium`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            const data = await res.json();
+            console.log("📡 Backend dice:", data);
+            
+            // FORZAR asignación del plan
+            if (data.plan === 'free') {
+                localStorage.setItem('userPlan', 'free');
+                localStorage.setItem('userLicense', 'free');
+                console.log("🔓 Plan FREE asignado");
+                // Si había botón admin, eliminarlo
+                document.getElementById('btnAdminPremium')?.remove();
+            } else if (data.plan === 'premium' || data.plan === 'professional') {
+                localStorage.setItem('userPlan', data.plan);
+                localStorage.setItem('userLicense', data.plan);
+                console.log(`🔒 Plan ${data.plan.toUpperCase()} asignado`);
+            }
+            
+            // Recargar la página para aplicar cambios visuales
+            // Solo si el plan cambió
+            const planActual = localStorage.getItem('userPlan');
+            if (data.plan !== planActual) {
+                console.log("🔄 Plan cambiado, recargando...");
+                location.reload();
+            }
+            
+        } catch(e) {
+            console.log("❌ Error:", e.message);
+        }
+    }
     
+    // Ejecutar INMEDIATAMENTE
+    verificarYAsignarPlan();
+    
+    // También ejecutar cada vez que la página gana foco (por si el admin lo cambió desde otra pestaña)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            verificarYAsignarPlan();
+        }
+    });
+    
+    // ========================================
+    // PANEL ADMIN (SOLO PARA TI)
+    // ========================================
     function getEmail() {
         try {
             const user = localStorage.getItem('user');
             if (user) return JSON.parse(user).email;
             const token = localStorage.getItem('authToken');
-            if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.email;
-            }
+            if (token) return JSON.parse(atob(token.split('.')[1])).email;
         } catch(e) {}
         return null;
     }
     
-    const emailActual = getEmail();
-    const SOY_ADMIN = emailActual === "ajackson2672@gmail.com";
+    const SOY_ADMIN = getEmail() === "ajackson2672@gmail.com";
     
-    // Verificar premium con el backend de Render
-    async function verificarPremium() {
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) return;
-            
-            console.log("🔍 Verificando premium en:", `${API_URL}/api/verificar-premium`);
-            
-            const res = await fetch(`${API_URL}/api/verificar-premium`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (!res.ok) {
-                console.log("⚠️ Error HTTP:", res.status);
-                return;
-            }
-            
-            const data = await res.json();
-            console.log("📡 Respuesta:", data);
-            
-            if (data.plan && data.plan !== 'free') {
-                localStorage.setItem('userPlan', data.plan);
-                localStorage.setItem('userLicense', data.plan);
-                console.log(`🎉 Plan ${data.plan.toUpperCase()} asignado`);
-            }
-        } catch(e) {
-            console.log("⚠️ Error conectando con backend:", e.message);
-        }
-    }
+    if (!SOY_ADMIN) return;
     
-    verificarPremium();
+    console.log("👑 ADMIN - Panel premium activado");
     
-    // ========================================
-    // SOLO PARA ADMIN
-    // ========================================
-    if (!SOY_ADMIN) {
-        console.log("🔒 Modo usuario normal");
-        return;
-    }
-    
-    console.log("👑 MODO ADMINISTRADOR - Usando backend de Render");
-    
-    window.autorizarPremium = async (email, plan = 'premium') => {
-        const token = localStorage.getItem('authToken');
-        try {
-            const res = await fetch(`${API_URL}/api/admin/asignar-premium`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ email, plan })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                alert(`✅ ${email} ahora es ${plan.toUpperCase()}`);
-                console.log(`✅ ${email} → ${plan.toUpperCase()}`);
-            } else {
-                alert(`❌ Error: ${data.error}`);
-            }
-        } catch(e) {
-            alert(`❌ Error de conexión: ${e.message}`);
-        }
-    };
-    
-    window.revocarPremium = async (email) => {
-        const token = localStorage.getItem('authToken');
-        try {
-            const res = await fetch(`${API_URL}/api/admin/revocar-premium`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ email })
-            });
-            if (res.ok) {
-                alert(`🗑️ ${email} ya no es premium`);
-            } else {
-                alert('❌ Error al revocar');
-            }
-        } catch(e) {
-            alert(`❌ Error: ${e.message}`);
-        }
-    };
-    
-    window.listarPremium = async () => {
-        const token = localStorage.getItem('authToken');
-        try {
-            const res = await fetch(`${API_URL}/api/admin/listar-premium`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            console.table(data.usuarios);
-            return data.usuarios;
-        } catch(e) {
-            console.error("Error:", e);
-        }
-    };
-    
-    window.mostrarPanelPremium = async function() {
-        const existing = document.getElementById('panelPremiumAdmin');
-        if (existing) { existing.remove(); return; }
-        
-        let listaHTML = '';
-        try {
-            const token = localStorage.getItem('authToken');
-            const res = await fetch(`${API_URL}/api/admin/listar-premium`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            const usuarios = data.usuarios || {};
-            
-            for (const [email, info] of Object.entries(usuarios)) {
-                listaHTML += `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(139,92,246,0.1);margin-bottom:8px;border-radius:8px;">
-                        <div>
-                            <div style="color:white;font-weight:500;">${email}</div>
-                            <div style="color:#8b5cf6;font-size:11px;">${info.plan.toUpperCase()} • ${new Date(info.fecha).toLocaleDateString()}</div>
-                        </div>
-                        <button onclick="revocarPremium('${email}'); setTimeout(()=>mostrarPanelPremium(),500)" 
-                                style="background:#ef4444;border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;">Revocar</button>
-                    </div>
-                `;
-            }
-        } catch(e) {
-            listaHTML = '<div style="color:#ef4444;text-align:center;padding:20px;">❌ Error cargando usuarios</div>';
-        }
-        
-        if (listaHTML === '') {
-            listaHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">📭 No hay usuarios premium</div>';
-        }
-        
-        const panel = document.createElement('div');
-        panel.id = 'panelPremiumAdmin';
-        panel.innerHTML = `
-            <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e293b;border-radius:16px;padding:25px;z-index:10000000;border:2px solid #8b5cf6;width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
-                <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-                    <h3 style="margin:0;color:white;">👑 Admin Premium</h3>
-                    <button onclick="document.getElementById('panelPremiumAdmin').remove()" style="background:#ef4444;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;">✕</button>
-                </div>
-                <input type="email" id="emailPremiumInput" placeholder="Email del usuario" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;background:#0f172a;color:white;border:1px solid #8b5cf6;">
-                <select id="planPremiumSelect" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;background:#0f172a;color:white;">
-                    <option value="premium">⭐ PREMIUM</option>
-                    <option value="professional">📈 PROFESSIONAL</option>
-                </select>
-                <button id="btnAutorizarPremium" style="width:100%;background:#10b981;padding:10px;border-radius:8px;cursor:pointer;margin-bottom:20px;">✓ AUTORIZAR</button>
-                <div style="border-top:1px solid #334155;padding-top:15px;max-height:300px;overflow-y:auto;">${listaHTML}</div>
-            </div>
-        `;
-        document.body.appendChild(panel);
-        
-        document.getElementById('btnAutorizarPremium').onclick = () => {
-            const email = document.getElementById('emailPremiumInput').value.trim();
-            const plan = document.getElementById('planPremiumSelect').value;
-            if (email) {
-                autorizarPremium(email, plan);
-                document.getElementById('emailPremiumInput').value = '';
-                setTimeout(() => mostrarPanelPremium(), 500);
-            }
-        };
-    };
-    
-    // Botón flotante
-    setTimeout(() => {
-        if (document.getElementById('btnAdminPremium')) return;
-        
-        const btn = document.createElement('div');
-        btn.id = 'btnAdminPremium';
-        btn.innerHTML = '👑';
-        btn.title = 'Panel Premium Admin';
-        btn.style.cssText = `
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 999999;
-            font-size: 24px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-        `;
-        btn.onclick = () => mostrarPanelPremium();
-        document.body.appendChild(btn);
-        console.log("✅ Botón 👑 agregado - Usando backend de Render");
-    }, 2000);
+    // El resto del código del panel (autorizarPremium, revocarPremium, etc.)
+    // ... (pon aquí las funciones que ya tenías)
     
 })();
-
 
 
 
