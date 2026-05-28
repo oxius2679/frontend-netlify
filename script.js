@@ -1,5 +1,1265 @@
 
+(function crearModalGanttPremiumConTusDatosReales() {
+    console.log('🚀 Inyectando modal 3D premium con KPIs de tareas...');
 
+    // ========== ESTILOS DEL MODAL ==========
+    const modalStyles = document.createElement('style');
+    modalStyles.id = 'modal-premium-3d-styles';
+    modalStyles.textContent = `
+        .modal-3d-premium {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .modal-3d-premium.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-3d-container {
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 32px;
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.4s ease;
+        }
+        .modal-3d-premium.active .modal-3d-container {
+            transform: scale(1);
+        }
+        .modal-3d-header {
+            padding: 1.5rem 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-3d-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .modal-3d-close {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            width: 42px;
+            height: 42px;
+            border-radius: 30px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-3d-close:hover {
+            background: #ef4444;
+            transform: rotate(90deg);
+        }
+        .modal-3d-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        /* KPIs Grid */
+        .kpi-grid-3d {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-card-3d {
+            background: rgba(20, 28, 44, 0.8);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 1rem 0.8rem;
+            text-align: center;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        .kpi-card-3d:hover {
+            transform: translateY(-3px);
+            border-color: #8b5cf6;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+        }
+        .kpi-value-3d {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+        }
+        .kpi-label-3d {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.25rem;
+        }
+        .grid-3d {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+        }
+        .card-3d {
+            background: rgba(20, 28, 44, 0.7);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .card-3d:hover {
+            border-color: #8b5cf6;
+            transform: translateY(-3px);
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #c4b5fd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+            padding-bottom: 0.5rem;
+        }
+        .canvas-3d {
+            width: 100%;
+            height: 280px;
+            background: radial-gradient(circle at 20% 30%, #0b1020, #00000030);
+            border-radius: 16px;
+            cursor: pointer;
+        }
+        .kpi-badge {
+            background: rgba(16, 185, 129, 0.2);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #a7f3d0;
+            margin-left: 8px;
+        }
+        .tooltip-3d {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(12px);
+            border: 2px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 10px 16px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'Segoe UI', sans-serif;
+            pointer-events: none;
+            z-index: 1000000;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: opacity 0.2s;
+        }
+        .legend-3d {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 10px;
+            color: #94a3b8;
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .legend-3d span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .tasks-table-3d {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 10px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .tasks-table-3d th {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tasks-table-3d td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            background: rgba(20, 28, 44, 0.5);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .tasks-table-3d tr {
+            transition: all 0.2s ease;
+        }
+        .tasks-table-3d tr:hover td {
+            background: rgba(139, 92, 246, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+        .status-badge-3d {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+        }
+        .status-completed-3d { background: #10b981; color: white; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .status-progress-3d { background: #3b82f6; color: white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .status-pending-3d { background: #f59e0b; color: black; box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+        .status-overdue-3d { background: #ef4444; color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .priority-badge-3d {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .progress-bar-3d {
+            width: 100px;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        .progress-fill-3d {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 5px rgba(139, 92, 246, 0.5);
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5);
+            cursor: pointer;
+            z-index: 999998;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .floating-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.7);
+        }
+        .floating-btn i {
+            font-size: 32px;
+            color: white;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+        .floating-btn {
+            animation: pulseGlow 2s infinite;
+        }
+    `;
+    document.head.appendChild(modalStyles);
+
+    // ========== FUNCIÓN PARA OBTENER TUS DATOS REALES ==========
+    function obtenerDatosReales() {
+        const proyecto = projects[currentProjectIndex];
+        if (!proyecto) return null;
+
+        const tasks = proyecto.tasks || [];
+        
+        // ========== CÁLCULOS DE TAREAS ==========
+        const total = tasks.length;
+        const completadas = tasks.filter(t => t.status === 'completed').length;
+        const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+        const pendientes = tasks.filter(t => t.status === 'pending').length;
+        const rezagadas = tasks.filter(t => t.status === 'overdue' || t.status === 'rezagado').length;
+        
+        // Tareas críticas (alta prioridad o críticas o atrasadas)
+        const criticas = tasks.filter(t => {
+            const esCritica = t.critical === true || t.priority === 'alta';
+            const estaAtrasada = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+            return esCritica || estaAtrasada;
+        }).length;
+        
+        // ========== CALCULAR HORAS ESTIMADAS TOTALES (BAC / PV) ==========
+        const horasEstimadas = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+        const horasRegistradas = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+        
+        // ========== EV USANDO getEVMMetricsFromSystem ==========
+        let evValue = 0;
+        if (typeof getEVMMetricsFromSystem === 'function') {
+            const evmData = getEVMMetricsFromSystem(tasks);
+            evValue = evmData.ev;
+            console.log('📊 EV desde getEVMMetricsFromSystem:', evValue);
+        } else {
+            tasks.forEach(t => {
+                const estimado = Number(t.estimatedTime) || 0;
+                const registrado = Number(t.timeLogged) || 0;
+                if (t.status === 'completed') {
+                    evValue += estimado;
+                } else if (t.status === 'inProgress' || t.status === 'rezagado' || t.status === 'overdue') {
+                    let progreso = Math.min(1, registrado / (estimado || 1));
+                    evValue += estimado * progreso;
+                }
+            });
+        }
+        
+        // ========== PV = BAC = HORAS ESTIMADAS TOTALES ==========
+        const pvValue = horasEstimadas;
+        const acValue = horasRegistradas;
+        
+        // SPI y CPI
+        const spi = pvValue > 0 ? evValue / pvValue : 1;
+        const cpi = acValue > 0 ? evValue / acValue : 1;
+        
+        const horasRestantes = Math.max(0, horasEstimadas - horasRegistradas);
+        const horasQuemadas = horasRegistradas;
+        
+        const recursos = {};
+        tasks.forEach(t => {
+            if (t.assignee && t.assignee.trim()) {
+                if (!recursos[t.assignee]) {
+                    recursos[t.assignee] = { 
+                        nombre: t.assignee, 
+                        tareasAsignadas: 0, 
+                        horasEstimadas: 0, 
+                        horasRegistradas: 0,
+                        completadas: 0
+                    };
+                }
+                recursos[t.assignee].tareasAsignadas++;
+                recursos[t.assignee].horasEstimadas += Number(t.estimatedTime) || 0;
+                recursos[t.assignee].horasRegistradas += Number(t.timeLogged) || 0;
+                if (t.status === 'completed') recursos[t.assignee].completadas++;
+            }
+        });
+        
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const tareasEnRiesgo = tasks.filter(t => {
+            const esCritica = t.critical === true || t.priority === 'alta';
+            const estaAtrasada = t.deadline && new Date(t.deadline) < hoy && t.status !== 'completed';
+            return esCritica || estaAtrasada;
+        }).map(t => ({
+            nombre: t.name,
+            impacto: t.priority === 'alta' ? 4 : (t.critical ? 3 : 2),
+            impactoValor: t.priority === 'alta' ? 0.8 : (t.critical ? 0.5 : 0.3),
+            probabilidad: t.deadline && new Date(t.deadline) < hoy ? 4 : 3,
+            probabilidadValor: t.deadline && new Date(t.deadline) < hoy ? 0.8 : 0.5,
+            asignado: t.assignee || 'Sin asignar',
+            horasEstimadas: Number(t.estimatedTime) || 0,
+            deadline: t.deadline,
+            status: t.status
+        }));
+        
+        const equipo = Object.values(recursos).map(r => ({
+            nombre: r.nombre,
+            tareasTotales: r.tareasAsignadas,
+            completadas: r.completadas,
+            eficiencia: r.tareasAsignadas > 0 ? Math.round((r.completadas / r.tareasAsignadas) * 100) : 0,
+            productividad: r.horasEstimadas > 0 ? Math.round((r.horasRegistradas / r.horasEstimadas) * 100) : 0
+        }));
+        
+        const tareasListaCorregida = tasks.map(t => {
+            const horasEst = Number(t.estimatedTime) || 0;
+            const horasReg = Number(t.timeLogged) || 0;
+            let progresoReal = 0;
+            
+            if (t.status === 'completed') {
+                progresoReal = 100;
+            } else if (horasEst > 0) {
+                progresoReal = Math.min(99, Math.round((horasReg / horasEst) * 100));
+            } else if (t.progress > 0 && t.progress <= 100) {
+                progresoReal = t.progress;
+            } else if (t.status === 'inProgress') {
+                progresoReal = 50;
+            }
+            
+            return {
+                id: t.id,
+                nombre: t.name,
+                asignado: t.assignee || 'Sin asignar',
+                estado: t.status,
+                prioridad: t.priority,
+                progreso: progresoReal,
+                horasEstimadas: horasEst,
+                horasRegistradas: horasReg
+            };
+        });
+        
+        return {
+            proyecto: proyecto.name,
+            tasks,
+            metrics: {
+                total, completadas, enProgreso, pendientes, rezagadas, criticas,
+                horasEstimadas, horasRegistradas, horasRestantes, horasQuemadas,
+                PV: pvValue,
+                EV: evValue,
+                AC: acValue,
+                BAC: horasEstimadas,
+                SPI: spi,
+                CPI: cpi,
+                totalSP: horasEstimadas, quemadosSP: horasQuemadas, restantesSP: horasRestantes
+            },
+            recursos,
+            equipo,
+            tareasEnRiesgo,
+            tareasLista: tareasListaCorregida
+        };
+    }
+
+    // ========== CREAR BOTÓN FLOTANTE ==========
+    let btn = document.getElementById('btnModal3D');
+    if (!btn) {
+        btn = document.createElement('div');
+        btn.id = 'btnModal3D';
+        btn.className = 'floating-btn';
+        btn.innerHTML = '<i class="fas fa-cube"></i>';
+        btn.title = 'Abrir Dashboard 3D Premium';
+        btn.onclick = () => abrirModal3D();
+        document.body.appendChild(btn);
+    }
+
+    // Tooltip global
+    let tooltipDiv = null;
+    function mostrarTooltip(texto, x, y) {
+        if (!tooltipDiv) {
+            tooltipDiv = document.createElement('div');
+            tooltipDiv.className = 'tooltip-3d';
+            document.body.appendChild(tooltipDiv);
+        }
+        tooltipDiv.innerHTML = texto;
+        tooltipDiv.style.left = (x + 15) + 'px';
+        tooltipDiv.style.top = (y + 15) + 'px';
+        tooltipDiv.style.opacity = '1';
+    }
+    function ocultarTooltip() {
+        if (tooltipDiv) tooltipDiv.style.opacity = '0';
+    }
+
+    // ========== ABRIR MODAL ==========
+    window.abrirModal3D = function() {
+        const datos = obtenerDatosReales();
+        if (!datos) {
+            alert('No hay proyecto seleccionado');
+            return;
+        }
+
+        const existing = document.getElementById('modal3DPremium');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'modal3DPremium';
+        overlay.className = 'modal-3d-premium';
+        
+        // Generar filas de la tabla 3D espectacular
+        const tablaTareasHTML = datos.tareasLista.map(t => {
+            let estadoClass = '';
+            let estadoText = '';
+            if (t.estado === 'completed') { estadoClass = 'status-completed-3d'; estadoText = '✅ Completada'; }
+            else if (t.estado === 'inProgress') { estadoClass = 'status-progress-3d'; estadoText = '🔄 En Progreso'; }
+            else if (t.estado === 'overdue' || t.estado === 'rezagado') { estadoClass = 'status-overdue-3d'; estadoText = '⚠️ Rezagada'; }
+            else { estadoClass = 'status-pending-3d'; estadoText = '⏳ Pendiente'; }
+            
+            let prioridadColor = t.prioridad === 'alta' ? '#ef4444' : (t.prioridad === 'media' ? '#f59e0b' : '#10b981');
+            
+            return `
+            <tr>
+                <td style="font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${t.nombre.substring(0, 45)}${t.nombre.length > 45 ? '...' : ''}</td>
+                <td>${t.asignado}</td>
+                <td><span class="status-badge-3d ${estadoClass}">${estadoText}</span></td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="progress-bar-3d"><div class="progress-fill-3d" style="width: ${t.progreso}%;"></div></div>
+                        <span style="font-size: 12px; font-weight: 600; text-shadow: 0 1px 1px black;">${t.progreso}%</span>
+                    </div>
+                  </td>
+                <td><strong style="color: #c4b5fd;">${t.horasEstimadas}h</strong></td>
+                <td>${t.horasRegistradas}h</span></td>
+                <td><span class="priority-badge-3d" style="background: ${prioridadColor}20; color: ${prioridadColor}; padding: 4px 12px; border-radius: 20px;">${t.prioridad || 'media'}</span></td>
+            </tr>
+            `;
+        }).join('');
+        
+        overlay.innerHTML = `
+            <div class="modal-3d-container">
+                <div class="modal-3d-header">
+                    <h2>🎯 Executive Dashboard 3D · ${datos.proyecto}</h2>
+                    <button class="modal-3d-close" id="closeModal3D">✕</button>
+                </div>
+                <div class="modal-3d-content">
+                    <!-- ========== KPIS DE TAREAS (NUEVO) ========== -->
+                    <div class="kpi-grid-3d">
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d">${datos.metrics.total}</div>
+                            <div class="kpi-label-3d">📋 Total Tareas</div>
+                        </div>
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d" style="color: #10b981;">${datos.metrics.completadas}</div>
+                            <div class="kpi-label-3d">✅ Completadas</div>
+                        </div>
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d" style="color: #3b82f6;">${datos.metrics.enProgreso}</div>
+                            <div class="kpi-label-3d">🔄 En Progreso</div>
+                        </div>
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d" style="color: #f59e0b;">${datos.metrics.pendientes}</div>
+                            <div class="kpi-label-3d">⏳ Pendientes</div>
+                        </div>
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d" style="color: #ef4444;">${datos.metrics.rezagadas}</div>
+                            <div class="kpi-label-3d">⚠️ Rezagadas</div>
+                        </div>
+                        <div class="kpi-card-3d">
+                            <div class="kpi-value-3d" style="color: #f97316;">${datos.metrics.criticas}</div>
+                            <div class="kpi-label-3d">🔥 Críticas</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-3d">
+                        <!-- 1. EVM 3D -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>📈</span> EVM - Valor Ganado <span class="kpi-badge">SPI: ${datos.metrics.SPI.toFixed(2)} | CPI: ${datos.metrics.CPI.toFixed(2)}</span></div>
+                            <div style="position: relative;">
+                                <canvas id="evmChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d">
+                                    <span><div class="legend-color" style="background:#3b82f6;"></div> PV: ${datos.metrics.PV.toFixed(1)}h</span>
+                                    <span><div class="legend-color" style="background:#10b981;"></div> EV: ${datos.metrics.EV.toFixed(1)}h</span>
+                                    <span><div class="legend-color" style="background:#ef4444;"></div> AC: ${datos.metrics.AC.toFixed(1)}h</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 2. Burndown en HORAS -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>📉</span> Burndown Chart (Horas) <span class="kpi-badge">Horas restantes: ${datos.metrics.horasRestantes}</span></div>
+                            <div style="position: relative;">
+                                <canvas id="burndownChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d">
+                                    <span><div class="legend-color" style="background:#8b5cf6;"></div> Línea Ideal (Horas)</span>
+                                    <span><div class="legend-color" style="background:#f59e0b;"></div> Progreso Real (Horas)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 3. Distribución de Tareas -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>🍩</span> Distribución de Tareas <span class="kpi-badge">Total: ${datos.metrics.total}</span></div>
+                            <div style="position: relative;">
+                                <canvas id="distChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d">
+                                    <span><div class="legend-color" style="background:#10b981;"></div> ✅ Completadas (${datos.metrics.completadas})</span>
+                                    <span><div class="legend-color" style="background:#3b82f6;"></div> 🔄 En Progreso (${datos.metrics.enProgreso})</span>
+                                    <span><div class="legend-color" style="background:#f59e0b;"></div> ⏳ Pendientes (${datos.metrics.pendientes})</span>
+                                    <span><div class="legend-color" style="background:#ef4444;"></div> 🔴 Rezagadas (${datos.metrics.rezagadas})</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 4. Resource Allocation -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>👥</span> Resource Allocation <span class="kpi-badge">${Object.keys(datos.recursos).length} recursos</span></div>
+                            <div style="position: relative;">
+                                <canvas id="resourceChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d">
+                                    <span><div class="legend-color" style="background:#8b5cf6;"></div> Horas Estimadas</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 11px; color: #64748b; text-align: center;">
+                                🖱️ Pasa el mouse sobre cada barra → muestra nombre y horas del recurso
+                            </div>
+                        </div>
+                        
+                        <!-- 5. Risk Terrain con Tareas en sus cuadrantes -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>⚠️</span> Risk Terrain - Mapa de Riesgos <span class="kpi-badge">Tareas en riesgo: ${datos.tareasEnRiesgo.length}</span></div>
+                            <div style="position: relative;">
+                                <canvas id="riskChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d" style="bottom: auto; top: 10px; right: 10px; background: rgba(0,0,0,0.8); flex-direction: column; gap: 4px; min-width: 200px;">
+                                    <span><div class="legend-color" style="background:#ef4444;"></div> 🔴 Cuadrante I: Alto Impacto / Alta Probabilidad</span>
+                                    <span><div class="legend-color" style="background:#f97316;"></div> 🟠 Cuadrante II: Alto Impacto / Baja Probabilidad</span>
+                                    <span><div class="legend-color" style="background:#f59e0b;"></div> 🟡 Cuadrante III: Bajo Impacto / Alta Probabilidad</span>
+                                    <span><div class="legend-color" style="background:#10b981;"></div> 🟢 Cuadrante IV: Bajo Impacto / Baja Probabilidad</span>
+                                </div>
+                                <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); border-radius: 8px; padding: 8px; font-size: 10px; color: #94a3b8;">
+                                    <strong>📊 Cada esfera = una tarea en riesgo</strong><br>
+                                    • Tamaño = impacto (horas estimadas)<br>
+                                    • Color = cuadrante de riesgo<br>
+                                    • Posición X = Impacto | Posición Z = Probabilidad
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 6. Executive Team Matrix -->
+                        <div class="card-3d">
+                            <div class="card-title"><span>🏆</span> Executive Team Matrix <span class="kpi-badge">Eficiencia promedio: ${datos.equipo.length ? Math.round(datos.equipo.reduce((s, e) => s + e.eficiencia, 0) / datos.equipo.length) : 0}%</span></div>
+                            <div style="position: relative;">
+                                <canvas id="teamChart3D" class="canvas-3d"></canvas>
+                                <div class="legend-3d">
+                                    <span><div class="legend-color" style="background:#10b981;"></div> ≥80% Excelente</span>
+                                    <span><div class="legend-color" style="background:#f59e0b;"></div> 60-79% Aceptable</span>
+                                    <span><div class="legend-color" style="background:#ef4444;"></div> &lt;60% Crítico</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 11px; color: #64748b; text-align: center;">
+                                🖱️ Pasa el mouse sobre cada barra → muestra nombre y eficiencia del miembro
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- TABLA 3D ESPECTACULAR -->
+                    <div class="card-3d" style="margin-top: 1.5rem;">
+                        <div class="card-title"><span>📋</span> Detalle Ejecutivo de Tareas <span class="kpi-badge">${datos.tareasLista.length} tareas</span></div>
+                        <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
+                            <table class="tasks-table-3d">
+                                <thead>
+                                    <tr>
+                                        <th>Tarea</th>
+                                        <th>Asignado a</th>
+                                        <th>Estado</th>
+                                        <th>Progreso</th>
+                                        <th>Est. (h)</th>
+                                        <th>Real (h)</th>
+                                        <th>Prioridad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tablaTareasHTML}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.getElementById('closeModal3D').onclick = () => {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.remove(), 500);
+        };
+        setTimeout(() => overlay.classList.add('active'), 10);
+        setTimeout(() => renderizarGraficos3D(datos), 100);
+    };
+
+    // ========== RENDERIZAR GRÁFICOS 3D ==========
+    function renderizarGraficos3D(datos) {
+        if (typeof THREE === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            script.onload = () => renderizarGraficos3D(datos);
+            document.head.appendChild(script);
+            return;
+        }
+        
+        // 1. EVM CHART
+        const evmCanvas = document.getElementById('evmChart3D');
+        if (evmCanvas) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, evmCanvas.clientWidth / evmCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(3, 4, 6);
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: evmCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = evmCanvas.clientWidth;
+                const h = evmCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const ambientLight = new THREE.AmbientLight(0x404060);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(2, 5, 3);
+            scene.add(dirLight);
+            
+            const valores = [datos.metrics.PV, datos.metrics.EV, datos.metrics.AC];
+            const colores = [0x3b82f6, 0x10b981, 0xef4444];
+            const textos = ['PV', 'EV', 'AC'];
+            const nombresCompletos = ['Valor Planificado', 'Valor Ganado', 'Costo Real'];
+            
+            const barras = [];
+            valores.forEach((val, i) => {
+                const altura = Math.max(0.3, val / (Math.max(...valores) || 1) * 1.5);
+                const geometry = new THREE.BoxGeometry(0.6, altura, 0.6);
+                const material = new THREE.MeshStandardMaterial({ color: colores[i], emissive: 0x111122 });
+                const barra = new THREE.Mesh(geometry, material);
+                barra.userData = { valor: val.toFixed(1), nombre: nombresCompletos[i], texto: textos[i] };
+                barra.position.set(i - 1, altura / 2, 0);
+                scene.add(barra);
+                barras.push(barra);
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 20px "Segoe UI"';
+                ctx.fillText(`${textos[i]}: ${val.toFixed(1)}h`, 10, 30);
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMat = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.scale.set(1, 0.5, 1);
+                sprite.position.set(i - 1, altura + 0.3, 0);
+                scene.add(sprite);
+            });
+            
+            const gridHelper = new THREE.GridHelper(8, 20, 0x8b5cf6, 0x334155);
+            gridHelper.position.y = -0.1;
+            scene.add(gridHelper);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            evmCanvas.addEventListener('mousemove', (event) => {
+                const rect = evmCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(barras);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    mostrarTooltip(`${data.nombre}: ${data.valor} horas`, event.clientX, event.clientY);
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        // 2. BURNDOWN en HORAS
+        const burndownCanvas = document.getElementById('burndownChart3D');
+        if (burndownCanvas) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, burndownCanvas.clientWidth / burndownCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(5, 4, 7);
+            camera.lookAt(2, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: burndownCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = burndownCanvas.clientWidth;
+                const h = burndownCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const ambient = new THREE.AmbientLight(0x404060);
+            scene.add(ambient);
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 2, 1);
+            scene.add(light);
+            
+            const semanas = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+            const totalHoras = datos.metrics.horasEstimadas;
+            const ideal = [totalHoras, totalHoras * 0.75, totalHoras * 0.5, totalHoras * 0.25];
+            const real = [totalHoras, totalHoras - datos.metrics.horasQuemadas * 0.33, totalHoras - datos.metrics.horasQuemadas * 0.66, datos.metrics.horasRestantes];
+            
+            const idealPoints = ideal.map((v, i) => new THREE.Vector3(i, v / (totalHoras || 1) * 2, 0));
+            const idealLineGeo = new THREE.BufferGeometry().setFromPoints(idealPoints);
+            const idealLineMat = new THREE.LineBasicMaterial({ color: 0x8b5cf6 });
+            const idealLine = new THREE.Line(idealLineGeo, idealLineMat);
+            scene.add(idealLine);
+            
+            const realPoints = real.map((v, i) => new THREE.Vector3(i, v / (totalHoras || 1) * 2, 0));
+            const realLineGeo = new THREE.BufferGeometry().setFromPoints(realPoints);
+            const realLineMat = new THREE.LineBasicMaterial({ color: 0xf59e0b });
+            const realLine = new THREE.Line(realLineGeo, realLineMat);
+            scene.add(realLine);
+            
+            const spheres = [];
+            realPoints.forEach((p, idx) => {
+                const sphereGeo = new THREE.SphereGeometry(0.1, 32, 32);
+                const sphereMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x442200 });
+                const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+                sphere.userData = { semana: semanas[idx], horasRestantes: real[idx].toFixed(1) };
+                sphere.position.copy(p);
+                scene.add(sphere);
+                spheres.push(sphere);
+            });
+            
+            for (let i = 0; i <= 4; i++) {
+                const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, 0, 0), new THREE.Vector3(i, 2, 0)]);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0x334155 });
+                const line = new THREE.Line(lineGeo, lineMat);
+                scene.add(line);
+            }
+            
+            const grid = new THREE.GridHelper(6, 20, 0x8b5cf6, 0x334155);
+            grid.position.y = -0.1;
+            scene.add(grid);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            burndownCanvas.addEventListener('mousemove', (event) => {
+                const rect = burndownCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(spheres);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    mostrarTooltip(`${data.semana}: ${data.horasRestantes} horas restantes`, event.clientX, event.clientY);
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        // 3. DISTRIBUCIÓN
+        const distCanvas = document.getElementById('distChart3D');
+        if (distCanvas) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, distCanvas.clientWidth / distCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.5, 4);
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: distCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = distCanvas.clientWidth;
+                const h = distCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const light = new THREE.AmbientLight(0x404060);
+            scene.add(light);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(1, 2, 1);
+            scene.add(dirLight);
+            
+            const valores = [datos.metrics.completadas, datos.metrics.enProgreso, datos.metrics.pendientes, datos.metrics.rezagadas];
+            const coloresDonut = [0x10b981, 0x3b82f6, 0xf59e0b, 0xef4444];
+            const nombresDonut = ['Completadas', 'En Progreso', 'Pendientes', 'Rezagadas'];
+            const totalVal = valores.reduce((a, b) => a + b, 1);
+            
+            let anguloInicio = 0;
+            const toruses = [];
+            valores.forEach((val, idx) => {
+                if (val === 0) return;
+                const angulo = (val / totalVal) * Math.PI * 2;
+                const geometry = new THREE.TorusGeometry(1, 0.15, 32, 64, angulo);
+                const material = new THREE.MeshStandardMaterial({ color: coloresDonut[idx], emissive: 0x111122, side: THREE.DoubleSide });
+                const torus = new THREE.Mesh(geometry, material);
+                torus.userData = { nombre: nombresDonut[idx], valor: val, porcentaje: ((val / totalVal) * 100).toFixed(1) };
+                torus.rotation.x = Math.PI / 2;
+                torus.rotation.z = anguloInicio;
+                scene.add(torus);
+                toruses.push(torus);
+                anguloInicio += angulo;
+            });
+            
+            const centerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, emissive: 0x0b1020 });
+            const centerSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), centerMat);
+            scene.add(centerSphere);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            distCanvas.addEventListener('mousemove', (event) => {
+                const rect = distCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(toruses);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    mostrarTooltip(`${data.nombre}: ${data.valor} tareas (${data.porcentaje}%)`, event.clientX, event.clientY);
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        // 4. RESOURCE ALLOCATION
+        const resourceCanvas = document.getElementById('resourceChart3D');
+        if (resourceCanvas && Object.keys(datos.recursos).length > 0) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, resourceCanvas.clientWidth / resourceCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(4, 4, 7);
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: resourceCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = resourceCanvas.clientWidth;
+                const h = resourceCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const ambient = new THREE.AmbientLight(0x404060);
+            scene.add(ambient);
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(2, 3, 2);
+            scene.add(light);
+            const backLight = new THREE.PointLight(0x8b5cf6, 0.3);
+            backLight.position.set(-1, 1, -2);
+            scene.add(backLight);
+            
+            const recursosArr = Object.values(datos.recursos);
+            const maxHoras = Math.max(...recursosArr.map(r => r.horasEstimadas), 1);
+            
+            const barrasRecursos = [];
+            recursosArr.forEach((r, i) => {
+                const ancho = (r.horasEstimadas / maxHoras) * 2.5;
+                const altura = 0.4;
+                const profundidad = 0.6;
+                const geometry = new THREE.BoxGeometry(ancho, altura, profundidad);
+                const material = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, emissive: 0x331166, metalness: 0.6, roughness: 0.3 });
+                const barra = new THREE.Mesh(geometry, material);
+                barra.userData = { nombre: r.nombre, horas: r.horasEstimadas.toFixed(1), tareas: r.tareasAsignadas, completadas: r.completadas };
+                barra.position.set(ancho / 2 - 1.2, i * 0.7 - 1.5, 0);
+                scene.add(barra);
+                barrasRecursos.push(barra);
+            });
+            
+            const grid = new THREE.GridHelper(8, 20, 0x8b5cf6, 0x334155);
+            grid.position.y = -0.8;
+            scene.add(grid);
+            
+            const axesHelper = new THREE.AxesHelper(3);
+            axesHelper.material.transparent = true;
+            axesHelper.material.opacity = 0.3;
+            scene.add(axesHelper);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            resourceCanvas.addEventListener('mousemove', (event) => {
+                const rect = resourceCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(barrasRecursos);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    mostrarTooltip(`👤 ${data.nombre}\n📊 ${data.horas} horas estimadas\n📋 ${data.tareas} tareas asignadas\n✅ ${data.completadas} completadas`, event.clientX, event.clientY);
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        // 5. RISK TERRAIN
+        const riskCanvas = document.getElementById('riskChart3D');
+        if (riskCanvas) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, riskCanvas.clientWidth / riskCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(4, 3, 6);
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: riskCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = riskCanvas.clientWidth;
+                const h = riskCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const ambient = new THREE.AmbientLight(0x404060);
+            scene.add(ambient);
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(2, 5, 3);
+            scene.add(light);
+            
+            const size = 8;
+            const divisions = 20;
+            const step = size / divisions;
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const colors = [];
+            
+            for (let i = 0; i <= divisions; i++) {
+                const x = -size/2 + i * step;
+                for (let j = 0; j <= divisions; j++) {
+                    const z = -size/2 + j * step;
+                    let y = 0;
+                    let r = 0.2, g = 0.2, b = 0.2;
+                    if (x > 0 && z > 0) { r = 0.9; g = 0.2; b = 0.2; }
+                    else if (x > 0 && z < 0) { r = 0.9; g = 0.5; b = 0.1; }
+                    else if (x < 0 && z > 0) { r = 0.9; g = 0.7; b = 0.1; }
+                    else { r = 0.2; g = 0.7; b = 0.2; }
+                    
+                    vertices.push(x, y, z);
+                    colors.push(r, g, b);
+                }
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+            
+            const indices = [];
+            for (let i = 0; i < divisions; i++) {
+                for (let j = 0; j < divisions; j++) {
+                    const a = i * (divisions + 1) + j;
+                    const b = i * (divisions + 1) + j + 1;
+                    const c = (i + 1) * (divisions + 1) + j;
+                    const d = (i + 1) * (divisions + 1) + j + 1;
+                    indices.push(a, b, c);
+                    indices.push(b, d, c);
+                }
+            }
+            geometry.setIndex(indices);
+            
+            const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+            const ground = new THREE.Mesh(geometry, groundMat);
+            scene.add(ground);
+            
+            const gridHelper = new THREE.GridHelper(8, 20, 0x8b5cf6, 0x334155);
+            gridHelper.position.y = 0.02;
+            scene.add(gridHelper);
+            
+            const axesHelper = new THREE.AxesHelper(5);
+            axesHelper.material.transparent = true;
+            axesHelper.material.opacity = 0.3;
+            scene.add(axesHelper);
+            
+            const esferas = [];
+            datos.tareasEnRiesgo.forEach((tarea, idx) => {
+                const xPos = (tarea.impactoValor - 0.3) * 4 - 1;
+                const zPos = (tarea.probabilidadValor - 0.3) * 4 - 1;
+                const radio = 0.12 + (tarea.impactoValor * 0.15);
+                let color;
+                if (tarea.impactoValor > 0.6 && tarea.probabilidadValor > 0.6) color = 0xef4444;
+                else if (tarea.impactoValor > 0.6 && tarea.probabilidadValor <= 0.6) color = 0xf97316;
+                else if (tarea.impactoValor <= 0.6 && tarea.probabilidadValor > 0.6) color = 0xf59e0b;
+                else color = 0x10b981;
+                
+                const sphereGeo = new THREE.SphereGeometry(radio, 32, 32);
+                const sphereMat = new THREE.MeshStandardMaterial({ color: color, emissive: 0x221100, metalness: 0.4, roughness: 0.2 });
+                const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+                sphere.userData = {
+                    nombre: tarea.nombre,
+                    impacto: tarea.impacto,
+                    probabilidad: tarea.probabilidad,
+                    horas: tarea.horasEstimadas,
+                    asignado: tarea.asignado,
+                    status: tarea.status
+                };
+                sphere.position.set(xPos, radio + 0.05, zPos);
+                scene.add(sphere);
+                esferas.push(sphere);
+            });
+            
+            const particleCount = 200;
+            const particleGeo = new THREE.BufferGeometry();
+            const particlePositions = [];
+            for (let i = 0; i < particleCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const r = 1.5;
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi) * Math.sin(theta);
+                const z = r * Math.cos(phi);
+                particlePositions.push(x, y + 1, z);
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particlePositions), 3));
+            const particleMat = new THREE.PointsMaterial({ color: 0x8b5cf6, size: 0.04, transparent: true, opacity: 0.6 });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            riskCanvas.addEventListener('mousemove', (event) => {
+                const rect = riskCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(esferas);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    let cuadrante = '';
+                    if (data.impacto >= 3 && data.probabilidad >= 3) cuadrante = '🔴 Cuadrante I (Crítico)';
+                    else if (data.impacto >= 3 && data.probabilidad < 3) cuadrante = '🟠 Cuadrante II (Alto Impacto)';
+                    else if (data.impacto < 3 && data.probabilidad >= 3) cuadrante = '🟡 Cuadrante III (Alta Probabilidad)';
+                    else cuadrante = '🟢 Cuadrante IV (Bajo)';
+                    
+                    mostrarTooltip(
+                        `📌 ${data.nombre}\n👤 ${data.asignado}\n📊 Impacto: ${data.impacto}/5 | Probabilidad: ${data.probabilidad}/5\n📍 ${cuadrante}\n⏱️ ${data.horas}h estimadas\n📅 Estado: ${data.status}`,
+                        event.clientX, event.clientY
+                    );
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            let angle = 0;
+            const animate = () => {
+                requestAnimationFrame(animate);
+                angle += 0.005;
+                particles.rotation.y = angle;
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        // 6. TEAM MATRIX
+        const teamCanvas = document.getElementById('teamChart3D');
+        if (teamCanvas && datos.equipo.length > 0) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1020);
+            const camera = new THREE.PerspectiveCamera(45, teamCanvas.clientWidth / teamCanvas.clientHeight, 0.1, 1000);
+            camera.position.set(4, 4, 7);
+            camera.lookAt(0, 0, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas: teamCanvas, alpha: false, antialias: true });
+            
+            const resize = () => {
+                const w = teamCanvas.clientWidth;
+                const h = teamCanvas.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            };
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const ambient = new THREE.AmbientLight(0x404060);
+            scene.add(ambient);
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(2, 3, 2);
+            scene.add(light);
+            
+            const maxEficiencia = Math.max(...datos.equipo.map(e => e.eficiencia), 1);
+            const barrasEquipo = [];
+            
+            datos.equipo.forEach((m, i) => {
+                const altura = (m.eficiencia / maxEficiencia) * 1.8;
+                const geometry = new THREE.BoxGeometry(0.6, Math.max(0.25, altura), 0.6);
+                const color = m.eficiencia >= 80 ? 0x10b981 : (m.eficiencia >= 60 ? 0xf59e0b : 0xef4444);
+                const material = new THREE.MeshStandardMaterial({ color: color, emissive: 0x111122, metalness: 0.5, roughness: 0.3 });
+                const barra = new THREE.Mesh(geometry, material);
+                barra.userData = { nombre: m.nombre, eficiencia: m.eficiencia, completadas: m.completadas, total: m.tareasTotales };
+                barra.position.set(i - 1.8, altura / 2, 0);
+                scene.add(barra);
+                barrasEquipo.push(barra);
+            });
+            
+            const grid = new THREE.GridHelper(7, 20, 0x8b5cf6, 0x334155);
+            grid.position.y = -0.15;
+            scene.add(grid);
+            
+            const axesHelper = new THREE.AxesHelper(3);
+            axesHelper.material.transparent = true;
+            axesHelper.material.opacity = 0.3;
+            scene.add(axesHelper);
+            
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            teamCanvas.addEventListener('mousemove', (event) => {
+                const rect = teamCanvas.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(barrasEquipo);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    mostrarTooltip(`👤 ${data.nombre}\n📊 ${data.eficiencia}% eficiencia\n✅ ${data.completadas}/${data.total} tareas completadas`, event.clientX, event.clientY);
+                } else {
+                    ocultarTooltip();
+                }
+            });
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            };
+            animate();
+        }
+        
+        console.log('🎨 Todos los gráficos 3D renderizados correctamente');
+    }
+    
+    console.log('✅ Botón flotante 3D DEFINITIVO listo. Haz clic en el cubo flotante para abrir el modal.');
+})();
 
 
 
@@ -41367,19 +42627,7 @@ function generateReports(tasks = null) {
           <div style="height: 180px;">
             <canvas id="evmChart"></canvas>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; text-align: center;">
-            <div>
-              <div style="color: #8b5cf6; font-size: 13px;">PV</div>
-              <div style="font-weight: 600; font-size: 16px;">${timeStatsData.totalEstimated.toFixed(0)}h</div>
-            </div>
-            <div>
-              <div style="color: #10b981; font-size: 13px;">EV</div>
-              <div style="font-weight: 600; font-size: 16px;">${timeStatsData.totalLogged.toFixed(0)}h</div>
-            </div>
-            <div>
-              <div style="color: #ef4444; font-size: 13px;">AC</div>
-              <div style="font-weight: 600; font-size: 16px;">${timeStatsData.totalLogged.toFixed(0)}h</div>
-            </div>
+         
           </div>
         </div>
       </div>
