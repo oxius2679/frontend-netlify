@@ -1,3 +1,16 @@
+// Capturar invitación de la URL
+const tokenInvitacion = new URLSearchParams(window.location.search).get('token');
+if (tokenInvitacion) {
+    localStorage.setItem('invitacionPendiente', tokenInvitacion);
+    window.location.href = window.location.pathname;
+}
+
+
+
+
+
+
+
 
 (function crearModalGanttPremiumConTusDatosReales() {
     console.log('🚀 Inyectando modal 3D premium con KPIs de tareas...');
@@ -46034,6 +46047,26 @@ function recalculateDependencyLines() {
    function init() {
     console.log('🎯 Iniciando Project Enhancer Definitivo');
     
+    // 🔥 NUEVO: Procesar invitación pendiente
+    const tokenPendiente = localStorage.getItem('invitacionPendiente');
+    if (tokenPendiente) {
+        localStorage.removeItem('invitacionPendiente');
+        try {
+            const payload = JSON.parse(atob(tokenPendiente.split('.')[1]));
+            const proyectoIndex = payload.proyectoIndex;
+            if (proyectoIndex !== undefined && projects[proyectoIndex]) {
+                // Cambiar al proyecto invitado
+                currentProjectIndex = proyectoIndex;
+                if (typeof selectProject === 'function') {
+                    selectProject(currentProjectIndex);
+                }
+                console.log(`✅ Cambiado al proyecto compartido: ${projects[proyectoIndex].name}`);
+            }
+        } catch(e) {
+            console.log('Error procesando invitación:', e);
+        }
+    }
+    
     // Escuchar mensajes del canal BroadcastChannel
     syncChannel.onmessage = (event) => {
         const data = event.data;
@@ -46047,6 +46080,7 @@ function recalculateDependencyLines() {
             }
         }
     };
+}
     
     // === NUEVO: Polling cada 3 segundos para sincronizar ===
     setInterval(() => {
