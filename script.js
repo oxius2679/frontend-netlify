@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 // ========================================
 // SISTEMA PREMIUM - VERSIÓN CORREGIDA
 // ========================================
@@ -41104,6 +41111,14 @@ function updateStatusProgress() {
     labelElement.textContent = `${progress}% Completado`;
   }
 }
+
+
+
+
+
+
+
+
 // === FUNCIONES DE REPORTES - GENERAR VISTA ===
 function generateReports(tasks = null) {
   console.log("📊 Generando reportes ejecutivos...");
@@ -41113,6 +41128,9 @@ function generateReports(tasks = null) {
   const tareasData = proyectoData?.tasks || [];
   const statsData = getStats();
   const timeStatsData = getTimeStats();
+
+
+
 
   // ===== CÁLCULOS =====
   const tiempoTotalProyecto = proyectoData.totalProjectTime || timeStatsData.totalEstimated || 0;
@@ -41528,40 +41546,98 @@ function generateReports(tasks = null) {
       });
     }
 
-    // EVM chart
-    const evmCtx = document.getElementById('evmChart')?.getContext('2d');
-    if (evmCtx) {
-      const ev = timeStatsData.totalEstimated * (porcentajeTareasData/100);
-      window.evmChart = new Chart(evmCtx, {
-        type: 'bar',
-        data: {
-          labels: ['PV', 'EV', 'AC'],
-          datasets: [{
-            data: [timeStatsData.totalEstimated, ev, timeStatsData.totalLogged],
-            backgroundColor: ['#8b5cf6', '#10b981', '#ef4444'],
-            borderRadius: 8,
-            barPercentage: 0.6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: {
-              grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
-            },
-            x: {
-              grid: { display: false },
-              ticks: { color: '#94a3b8', font: { size: 10 } }
+   // EVM chart - VERSIÓN FINAL CORREGIDA
+const evmCtx = document.getElementById('evmChart')?.getContext('2d');
+if (evmCtx) {
+  const projectTasks = projects[currentProjectIndex]?.tasks || [];
+  const evmData = getEVMMetricsFromSystem(projectTasks);
+  
+  // Si PV es 0, usar BAC como PV
+  const pvValue = evmData.pv > 0 ? evmData.pv : evmData.bac;
+  
+  // VALORES CORRECTOS
+  const pvFinal = pvValue;      // 73h
+  const evFinal = evmData.ev;    // 65.5h
+  const acFinal = evmData.ac;    // 59h
+  
+  window.evmChart = new Chart(evmCtx, {
+    type: 'bar',
+    data: {
+      labels: ['PV', 'EV', 'AC'],
+      datasets: [{
+        data: [pvFinal, evFinal, acFinal],
+        backgroundColor: ['#8b5cf6', '#10b981', '#ef4444'],
+        borderRadius: 8,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + context.raw + 'h';
             }
           }
         }
-      });
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
+        }
+      },
+      // ✅ ESTO AGREGA LAS ETIQUETAS EN CADA BARRA
+      animation: {
+        onComplete: function() {
+          const chartInstance = this;
+          const ctx = chartInstance.ctx;
+          ctx.font = 'bold 12px "Segoe UI"';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          
+          this.data.datasets.forEach(function(dataset, i) {
+            const meta = chartInstance.getDatasetMeta(i);
+            meta.data.forEach(function(bar, index) {
+              const data = dataset.data[index];
+              ctx.fillText(data + 'h', bar.x, bar.y - 5);
+            });
+          });
+        }
+      }
     }
+  });
+  
+  
+ 
+}
 
   }, 200);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Botón PDF
   document.getElementById('exportarPdfBtn')?.addEventListener('click', () => {
@@ -57178,6 +57254,7 @@ function generateRealRecommendations(evm,dist,kpis){
     return r.join('<br><br>');
 }
 
+
 function calcularEVMOperativo(tasksArray){
     var BAC=0,AC=0,EV=0,PV=0;
     tasksArray.forEach(function(t){var e=Number(t.estimatedTime)||0,reg=Number(t.timeLogged)||0,s=(t.status||'pending').toLowerCase();BAC+=e;AC+=reg;PV+=e;var p=0;
@@ -57276,6 +57353,8 @@ function abrirVentanaFinal(projectName,tasks,burndownData,evmData,evmOperativo,t
 
     // SIDEBAR
     html += '<div class="sb">';
+    
+    // 1. KPIS DEL PROYECTO
     html += '<div class="sec"><div class="sec-t">📊 KPIs del Proyecto</div><div class="kpi-g">';
     html += '<div class="kpi-c"><div class="kpi-v">'+kpis.totalTasks+'</div><div class="kpi-l">Tareas</div></div>';
     html += '<div class="kpi-c"><div class="kpi-v">'+taskDistribution.completadas+'</div><div class="kpi-l">Completadas</div></div>';
@@ -57283,38 +57362,44 @@ function abrirVentanaFinal(projectName,tasks,burndownData,evmData,evmOperativo,t
     html += '<div class="kpi-c"><div class="kpi-v">'+taskDistribution.atrasadas+'</div><div class="kpi-l">Atrasadas</div></div>';
     html += '</div></div>';
 
-    html += '<div class="sec" style="border-left:4px solid #3b82f6;padding-left:14px"><div class="sec-t" style="color:#3b82f6">🎯 EVM PMI ESTÁNDAR</div>';
+    // 2. EVM PMI EJECUTIVO
+    html += '<div class="sec" style="border-left:4px solid #3b82f6;padding-left:14px"><div class="sec-t" style="color:#3b82f6">🎯 EVM PMI EJECUTIVO</div>';
     html += '<div class="mr"><span class="ml">PV (Planificado):</span><span class="mv">'+evmData.pv.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">EV (Ganado):</span><span class="mv '+((evmData.ev>=evmData.pv)?'g':'y')+'">'+evmData.ev.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">AC (Real):</span><span class="mv">'+evmData.ac.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">SPI:</span><span class="mv '+((evmData.spi>=1)?'g':'r')+'">'+evmData.spi.toFixed(2)+'</span></div>';
     html += '<div class="mr"><span class="ml">CPI:</span><span class="mv '+((evmData.cpi>=1)?'g':'r')+'">'+evmData.cpi.toFixed(2)+'</span></div></div>';
 
-    html += '<div class="sec" style="border-left:4px solid #f59e0b;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#f59e0b">⏱️ EVM OPERATIVO</div>';
-    html += '<div class="mr"><span class="ml">PV (Base):</span><span class="mv">'+evmOperativo.pv.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">EV (Ganado):</span><span class="mv">'+evmOperativo.ev.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">AC (Real):</span><span class="mv">'+evmOperativo.ac.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">SPI:</span><span class="mv '+((evmOperativo.spi>=1)?'g':'r')+'">'+evmOperativo.spi.toFixed(2)+'</span></div>';
-    html += '<div class="mr"><span class="ml">CPI:</span><span class="mv '+((evmOperativo.cpi>=1)?'g':'r')+'">'+evmOperativo.cpi.toFixed(2)+'</span></div></div>';
-
+    // 3. PRONÓSTICOS PMI
     html += '<div class="sec" style="border-left:4px solid #3b82f6;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#3b82f6">📈 PRONÓSTICOS PMI</div>';
     html += '<div class="mr"><span class="ml">BAC:</span><span class="mv">'+evmData.bac.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">EAC:</span><span class="mv '+((evmData.eac<=evmData.bac)?'g':'r')+'">'+evmData.eac.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">ETC:</span><span class="mv">'+evmData.etc.toFixed(2)+'h</span></div>';
     html += '<div class="mr"><span class="ml">VAC:</span><span class="mv '+((evmData.vac>=0)?'g':'r')+'">'+(evmData.vac>=0?'+':'')+evmData.vac.toFixed(2)+'h</span></div></div>';
 
-    html += '<div class="sec" style="border-left:4px solid #f59e0b;padding-left:14px;margin-top:12px"><div class="sec-t" style="color:#f59e0b">📈 PRONÓSTICOS OPERATIVO</div>';
-    html += '<div class="mr"><span class="ml">BAC:</span><span class="mv">'+evmOperativo.bac.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">EAC:</span><span class="mv">'+evmOperativo.eac.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">ETC:</span><span class="mv">'+evmOperativo.etc.toFixed(2)+'h</span></div>';
-    html += '<div class="mr"><span class="ml">VAC:</span><span class="mv '+((evmOperativo.vac>=0)?'g':'r')+'">'+(evmOperativo.vac>=0?'+':'')+evmOperativo.vac.toFixed(2)+'h</span></div></div>';
-
+    // 4. DISTRIBUCIÓN
     html += '<div class="sec" style="margin-top:12px"><div class="sec-t">📊 Distribución</div>';
     html += '<div class="mr"><span class="ml">✅ Completadas:</span><span class="mv g">'+taskDistribution.completadas+' ('+percC+'%)</span></div>';
     html += '<div class="mr"><span class="ml">🔄 En Progreso:</span><span class="mv y">'+taskDistribution.enProgreso+' ('+percP+'%)</span></div>';
     html += '<div class="mr"><span class="ml">⏳ Pendientes:</span><span class="mv">'+taskDistribution.pendientes+' ('+percD+'%)</span></div>';
     html += '<div class="mr"><span class="ml">⚠️ Atrasadas:</span><span class="mv r">'+taskDistribution.atrasadas+' ('+percA+'%)</span></div></div>';
+
+    // 5. SALUD DEL PROYECTO
+    var saludProyecto = (evmData.spi >= 1 && evmData.cpi >= 1) ? 'Excelente' : (evmData.spi >= 0.9 && evmData.cpi >= 0.9) ? 'Buena' : (evmData.spi >= 0.8 && evmData.cpi >= 0.8) ? 'Regular' : 'Crítica';
+    var colorSalud = (evmData.spi >= 1 && evmData.cpi >= 1) ? '#10b981' : (evmData.spi >= 0.9 && evmData.cpi >= 0.9) ? '#3b82f6' : (evmData.spi >= 0.8 && evmData.cpi >= 0.8) ? '#f59e0b' : '#ef4444';
+    
+    html += '<div class="sec" style="border-left:4px solid '+colorSalud+';padding-left:14px;margin-top:12px"><div class="sec-t" style="color:'+colorSalud+'">🏥 SALUD DEL PROYECTO</div>';
+    html += '<div class="mr"><span class="ml">Estado General:</span><span class="mv" style="color:'+colorSalud+'">'+saludProyecto+'</span></div>';
+    html += '<div class="mr"><span class="ml">Eficiencia (CPI):</span><span class="mv '+((evmData.cpi>=1)?'g':'r')+'">'+evmData.cpi.toFixed(2)+'</span></div>';
+    html += '<div class="mr"><span class="ml">Rendimiento (SPI):</span><span class="mv '+((evmData.spi>=1)?'g':'r')+'">'+evmData.spi.toFixed(2)+'</span></div>';
+    html += '<div class="mr"><span class="ml">Variación Costo:</span><span class="mv '+((evmData.ev-evmData.ac>=0)?'g':'r')+'">'+(evmData.ev-evmData.ac>=0?'+':'')+(evmData.ev-evmData.ac).toFixed(2)+'h</span></div>';
+    html += '<div class="mr"><span class="ml">Variación Tiempo:</span><span class="mv '+((evmData.ev-evmData.pv>=0)?'g':'r')+'">'+(evmData.ev-evmData.pv>=0?'+':'')+(evmData.ev-evmData.pv).toFixed(2)+'h</span></div></div>';
+
     html += '<div id="status">🎨 Dibujando...</div></div>';
+
+
+
+
 
     // DASHBOARD
     html += '<div class="dash">';
