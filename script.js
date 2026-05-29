@@ -38509,6 +38509,18 @@ function updateProjectSelectionStyles() {
 function selectProject(index) {
   console.trace('🧭 selectProject llamado');
 
+
+ // 🔥 NUEVO - FORZAR CLIENTEID SI VIENE DE INVITACIÓN
+  const tokenInvitacion = localStorage.getItem('invitacionPendiente');
+  if (tokenInvitacion && projects[index]) {
+      const miClienteId = localStorage.getItem('clienteId');
+      projects[index].clienteId = miClienteId;
+      localStorage.setItem('projects', JSON.stringify(projects));
+      console.log('✅ ClienteId forzado por invitación:', miClienteId);
+      localStorage.removeItem('invitacionPendiente');
+  }
+
+
   // 🧠 Validar índice
   if (index < 0 || index >= projects.length) {
     console.warn(`⚠️ Índice de proyecto inválido (${index})`);
