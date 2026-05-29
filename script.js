@@ -38522,26 +38522,43 @@ function selectProject(index) {
   if (!project) return;
   
   // Verificar acceso por clienteId
- // Verificar acceso por clienteId (permitir invitaciones)
-const invitacionToken = localStorage.getItem('invitacionPendiente');
-let esInvitacionValida = false;
+ // Verificar acceso por clienteId (permitir invitados)
+const clienteIdUsuario = localStorage.getItem('clienteId');
 
-if (invitacionToken) {
-    try {
-        const payload = JSON.parse(atob(invitacionToken.split('.')[1]));
-        if (payload.proyectoId === project.id || payload.proyectoIndex === currentProjectIndex) {
-            esInvitacionValida = true;
-            console.log('✅ Acceso concedido por invitación');
-        }
-    } catch(e) {}
+// Si el proyecto no tiene clienteId, asignarlo automáticamente
+if (!project.clienteId) {
+    project.clienteId = clienteIdUsuario;
+    if (typeof guardarProyectos === 'function') guardarProyectos();
 }
 
-if (project.clienteId && project.clienteId !== clienteId && !esInvitacionValida) {
-    console.log('🔒 No tienes acceso a este proyecto');
-    if (typeof showNotification === 'function') {
-        showNotification('No tienes acceso a este proyecto', 'error');
+// Permitir acceso si es el mismo clienteId
+if (project.clienteId !== clienteIdUsuario) {
+    // Verificar si es usuario invitado
+    const tokenInv = localStorage.getItem('invitacionPendiente');
+    let esInvitado = false;
+    
+    if (tokenInv) {
+        try {
+            const payload = JSON.parse(atob(tokenInv.split('.')[1]));
+            if (payload.proyectoIndex === currentProjectIndex || payload.proyectoId === project.id) {
+                esInvitado = true;
+                // Asignar clienteId automáticamente al invitado
+                project.clienteId = clienteIdUsuario;
+                if (typeof guardarProyectos === 'function') guardarProyectos();
+                console.log('✅ Invitado aceptado - clienteId asignado');
+            }
+        } catch(e) {
+            console.log('Error decodificando invitación:', e);
+        }
     }
-    return;
+    
+    if (!esInvitado) {
+        console.log('🔒 No tienes acceso a este proyecto');
+        if (typeof showNotification === 'function') {
+            showNotification('No tienes acceso a este proyecto', 'error');
+        }
+        return;
+    }
 }
 
   // Actualizar índice actual
