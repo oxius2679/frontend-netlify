@@ -62710,44 +62710,29 @@ async function enviarInvitacion() {
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
 function getProyectosPermitidos() {
-    try {
-        console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
+    const clienteId = localStorage.getItem('clienteId');
+    const userEmail = localStorage.getItem('userEmail');
+    
+    // Si es admin o tiene invitación pendiente, ver todos
+    const invitacionPendiente = localStorage.getItem('proyectoInvitado');
+    
+    return projects.filter(p => {
+        // Proyecto del propio usuario
+        if (p.clienteId === clienteId) return true;
         
-        // Obtener clienteId (esto es lo más importante)
-        const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
+        // Proyecto invitado (temporal)
+        if (invitacionPendiente) {
+            try {
+                const tokenData = JSON.parse(atob(invitacionPendiente.split('.')[1]));
+                if (p.id === tokenData.proyectoId || p.index === tokenData.proyectoIndex) {
+                    return true;
+                }
+            } catch(e) {}
         }
         
-        // Si no hay proyectos por clienteId, verificar si es admin
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
-        }
-        
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
-        
-    } catch (error) {
-        console.error('Error en getProyectosPermitidos:', error);
-        return [];
-    }
+        return false;
+    });
 }
-
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
