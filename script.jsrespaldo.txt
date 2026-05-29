@@ -1,10 +1,317 @@
 
 
+// ============================================
+// 🔥 SISTEMA COMPLETO DE NOTIFICACIONES SLACK
+// ============================================
+(function() {
+    console.log("🔥 Instalando sistema completo de notificaciones Slack...");
+    
+    // ============================================
+// 📢 NOTIFICACIÓN VISUAL - VERSIÓN INFERIOR
+// ============================================
+function mostrarNotificacionVisual(mensaje, tipo = 'success') {
+    const colores = {
+        success: '#10b981',
+        warning: '#f59e0b',
+        info: '#3b82f6',
+        error: '#ef4444'
+    };
+    
+    const iconos = {
+        success: '✅',
+        warning: '🔄',
+        info: '📢',
+        error: '❌'
+    };
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${colores[tipo]};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-family: system-ui, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInBottom 0.3s ease;
+        ">
+            <span style="font-size: 16px;">${iconos[tipo]}</span>
+            <span>${mensaje}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+    
+    // ============================================
+    // 📢 NOTIFICAR MOVIMIENTO DE TAREA
+    // ============================================
+    function notificarMovimientoSlack(taskName, fromStatus, toStatus, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const estadoTexto = {
+            'pending': '📋 Pendiente',
+            'inProgress': '🔄 En progreso', 
+            'completed': '✅ Completado',
+            'overdue': '⚠️ Rezagado'
+        };
+        
+        const fromText = estadoTexto[fromStatus] || fromStatus;
+        const toText = estadoTexto[toStatus] || toStatus;
+        
+        const mensaje = `🔄 *TAREA MOVIDA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📋 *De:* ${fromText}\n` +
+            `🎯 *A:* ${toText}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "warning", color: "#f59e0b" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Movimiento notificado a Slack");
+                mostrarNotificacionVisual(`🔄 "${taskName}" movida a ${toText}`, 'success');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // 📢 NOTIFICAR CREACIÓN DE TAREA
+    // ============================================
+    function notificarCreacionSlack(taskName, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const mensaje = `✅ *NUEVA TAREA CREADA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "info", color: "#3b82f6" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Creación notificada a Slack");
+                mostrarNotificacionVisual(`✅ Nueva tarea: "${taskName}"`, 'success');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // 📢 NOTIFICAR MODIFICACIÓN DE TAREA
+    // ============================================
+    function notificarModificacionSlack(taskName, campoModificado, valorAnterior, valorNuevo, projectName) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const mensaje = `✏️ *TAREA MODIFICADA*\n\n` +
+            `📌 *Tarea:* ${taskName}\n` +
+            `📝 *Campo modificado:* ${campoModificado}\n` +
+            `📋 *Valor anterior:* ${valorAnterior}\n` +
+            `🎯 *Valor nuevo:* ${valorNuevo}\n` +
+            `📁 *Proyecto:* ${projectName}\n` +
+            `🕐 *Hora:* ${new Date().toLocaleString()}`;
+        
+        fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ mensaje: mensaje, tipo: "info", color: "#8b5cf6" })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("✅ Modificación notificada a Slack");
+                mostrarNotificacionVisual(`✏️ "${taskName}" modificada`, 'info');
+            }
+        })
+        .catch(err => console.error("❌ Error:", err));
+    }
+    
+    // ============================================
+    // INTERCEPTAR CREACIÓN DE TAREAS
+    // ============================================
+    const originalCreateNewTask = window.createNewTask;
+    if (originalCreateNewTask) {
+        window.createNewTask = function(e) {
+            const result = originalCreateNewTask(e);
+            setTimeout(() => {
+                const project = projects[currentProjectIndex];
+                const ultimaTarea = project?.tasks?.[project.tasks.length - 1];
+                if (ultimaTarea) {
+                    notificarCreacionSlack(ultimaTarea.name, project.name);
+                }
+            }, 500);
+            return result;
+        };
+        console.log("✅ Interceptor de creación de tareas instalado");
+    }
+    
+    // ============================================
+    // INTERCEPTAR MODIFICACIÓN DE TAREAS
+    // ============================================
+    // ============================================
+// INTERCEPTAR MODIFICACIÓN DE TAREAS (CORREGIDO)
+// ============================================
+const originalSaveTaskChanges = window.saveTaskChanges;
+if (originalSaveTaskChanges) {
+    window.saveTaskChanges = function(taskId) {
+        const project = projects[currentProjectIndex];
+        const tareaAntes = project?.tasks?.find(t => t.id === taskId);
+        const nombreAntes = tareaAntes?.name;
+        const prioridadAntes = tareaAntes?.priority;
+        const asignadoAntes = tareaAntes?.assignee;
+        // ⚠️ NO guardamos el estado aquí para evitar duplicados
+        
+        const result = originalSaveTaskChanges(taskId);
+        
+        setTimeout(() => {
+            const tareaDespues = project?.tasks?.find(t => t.id === taskId);
+            if (tareaDespues) {
+                if (nombreAntes !== tareaDespues.name) {
+                    notificarModificacionSlack(tareaDespues.name, "Nombre", nombreAntes, tareaDespues.name, project.name);
+                }
+                if (prioridadAntes !== tareaDespues.priority) {
+                    notificarModificacionSlack(tareaDespues.name, "Prioridad", prioridadAntes, tareaDespues.priority, project.name);
+                }
+                if (asignadoAntes !== tareaDespues.assignee) {
+                    notificarModificacionSlack(tareaDespues.name, "Responsable", asignadoAntes, tareaDespues.assignee, project.name);
+                }
+                // ⚠️ ELIMINADO: la notificación de cambio de estado (ya la maneja el drop)
+            }
+        }, 500);
+        return result;
+    };
+    console.log("✅ Interceptor de modificaciones instalado (sin duplicar estado)");
+}
+    
+    // ============================================
+    // HANDLER PARA MOVIMIENTOS (DRAG & DROP)
+    // ============================================
+    window.enviarMovimientoASlack = function(taskId, oldStatus, newStatus) {
+        const project = projects[currentProjectIndex];
+        const task = project?.tasks?.find(t => String(t.id) === String(taskId));
+        if (task && oldStatus && newStatus && oldStatus !== newStatus) {
+            notificarMovimientoSlack(task.name, oldStatus, newStatus, project.name);
+        }
+    };
+    
+    // Evento drop
+    document.body.addEventListener('drop', function(e) {
+        let taskId = null;
+        let oldStatus = null;
+        let newStatus = null;
+        
+        taskId = e.dataTransfer?.getData('text/plain');
+        if (!taskId) taskId = e.dataTransfer?.getData('taskId');
+        
+        const dragged = document.querySelector('.dragging');
+        if (dragged && dragged.dataset?.taskId) taskId = dragged.dataset.taskId;
+        
+        if (taskId) {
+            const project = projects[currentProjectIndex];
+            const task = project?.tasks?.find(t => String(t.id) === String(taskId));
+            if (task) oldStatus = task.status;
+        }
+        
+        const targetColumn = e.target.closest('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList');
+        if (targetColumn) {
+            const statusMap = {
+                'pendingList': 'pending',
+                'inProgressList': 'inProgress',
+                'completedList': 'completed',
+                'overdueList': 'overdue'
+            };
+            newStatus = statusMap[targetColumn.id];
+        }
+        
+        if (taskId && oldStatus && newStatus && oldStatus !== newStatus) {
+            setTimeout(() => {
+                window.enviarMovimientoASlack(taskId, oldStatus, newStatus);
+            }, 500);
+        }
+    }, true);
+    
+    // Estilos
+    if (!document.getElementById('slack-notif-styles')) {
+        const style = document.createElement('style');
+        style.id = 'slack-notif-styles';
+        style.textContent = `
+            @keyframes slideInSlack {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    console.log("✅ Sistema completo instalado:");
+    console.log("   - Crea tarea → notifica ✅");
+    console.log("   - Modifica tarea → notifica ✅");
+    console.log("   - Mueve tarea → notifica ✅");
+    console.log("   - Notificaciones visuales ✅");
+})();
+
+// ============================================
+// BOTÓN FLOTANTE PARA HYPERION DASHBOARD
+// ============================================
+(function addHyperionButton() {
+    // Esperar a que el DOM esté listo
+    if(document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addButton);
+    } else {
+        addButton();
+    }
+    
+    function addButton() {
+        // Verificar si el botón ya existe
+        if(document.getElementById('hyperionLaunchBtn')) return;
+        
+        const btn = document.createElement('button');
+        btn.id = 'hyperionLaunchBtn';
+        btn.innerHTML = '🚀 HYPERION X ∞';
+        btn.style.cssText = 'position:fixed;bottom:20px;left:20px;background:linear-gradient(135deg,#00F0FF,#FF00D4);border:none;color:white;padding:14px 28px;border-radius:60px;cursor:pointer;z-index:10000;font-weight:bold;box-shadow:0 0 20px rgba(0,240,255,.4);font-family:system-ui;';
+        btn.onclick = function() {
+            window.open('hyperion.html', '_blank', 'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes');
+        };
+        document.body.appendChild(btn);
+    }
+})();
 
 
 
 
-// Versión: 2026-05-17 - actualización de caché para nueva version
+// Versión: 2026-05-17 - actualización de cach
 
 // ============================================
 // 🚫 BLOQUEO PREMIUM - 4 SECCIONES (VERSIÓN ROBUSTA)
@@ -6909,13 +7216,17 @@ setTimeout(function(){
 
 
 // ============================================================
-// INFORME EVM EJECUTIVO - PMI STANDARD
-// Cumple con estándares PMBOK® Guide
+// INFORME EVM EJECUTIVO - PMI STANDARD (CORREGIDO)
+// Cálculo con días hábiles exclusivamente
 // ============================================================
 
 // ============================================================
-// FUNCIÓN PARA CALCULAR PV CON DÍAS HÁBILES
+// FUNCIONES DE DÍAS HÁBILES CORREGIDAS
 // ============================================================
+
+/**
+ * Cuenta días hábiles (lunes a viernes) entre dos fechas, inclusive
+ */
 function contarDiasHabiles(inicio, fin) {
     let count = 0;
     const current = new Date(inicio);
@@ -6923,16 +7234,19 @@ function contarDiasHabiles(inicio, fin) {
     current.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
     
-    while (current < end) {
-        current.setDate(current.getDate() + 1);
+    while (current <= end) {
         const dia = current.getDay();
         if (dia !== 0 && dia !== 6) {
             count++;
         }
+        current.setDate(current.getDate() + 1);
     }
     return count;
 }
 
+/**
+ * Cuenta días hábiles transcurridos desde inicio hasta hoy (excluyendo hoy si no ha terminado)
+ */
 function contarDiasHabilesTranscurridos(inicio, hoy) {
     let count = 0;
     const current = new Date(inicio);
@@ -6950,10 +7264,26 @@ function contarDiasHabilesTranscurridos(inicio, hoy) {
     return count;
 }
 
-function getPVConDiasHabiles(tasks) {
+/**
+ * Ajusta la fecha actual al último día hábil si es fin de semana
+ */
+function ajustarALastimoDiaHabil(fecha) {
+    const f = new Date(fecha);
+    const dia = f.getDay();
+    if (dia === 6) { // sábado
+        f.setDate(f.getDate() - 1);
+    } else if (dia === 0) { // domingo
+        f.setDate(f.getDate() - 2);
+    }
+    return f;
+}
+
+/**
+ * Calcula el Valor Planificado (PV) usando días hábiles
+ */
+function getPVConDiasHabiles(tasks, today) {
     let pvTotal = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const fechaReferencia = ajustarALastimoDiaHabil(today);
     
     tasks.forEach(task => {
         const estimado = Number(task.estimatedTime) || 0;
@@ -6965,28 +7295,73 @@ function getPVConDiasHabiles(tasks) {
             end.setHours(0, 0, 0, 0);
             
             let pvProgress = 0;
-            if (today >= end) {
+            
+            if (fechaReferencia >= end) {
                 pvProgress = 1;
-            } else if (today <= start) {
+            } else if (fechaReferencia <= start) {
                 pvProgress = 0;
             } else {
                 const totalDiasHabiles = contarDiasHabiles(start, end);
-                const diasHabilesTranscurridos = contarDiasHabilesTranscurridos(start, today);
+                const diasHabilesTranscurridos = contarDiasHabilesTranscurridos(start, fechaReferencia);
                 pvProgress = totalDiasHabiles > 0 ? diasHabilesTranscurridos / totalDiasHabiles : 0;
                 pvProgress = Math.min(1, Math.max(0, pvProgress));
             }
             pvTotal += estimado * pvProgress;
-        } else {
-            pvTotal += estimado * 0.5;
         }
     });
     
     return Math.round(pvTotal * 100) / 100;
 }
 
+/**
+ * Calcula el Valor Ganado (EV) basado en progreso real
+ */
+function getEV(tasks) {
+    let evTotal = 0;
+    
+    tasks.forEach(task => {
+        const estimado = Number(task.estimatedTime) || 0;
+        let progreso = 0;
+        
+        // Prioridad: 1) Progreso explícito, 2) Estado, 3) Horas registradas
+        if (task.progress !== undefined && task.progress !== null && !isNaN(Number(task.progress))) {
+            progreso = Number(task.progress) / 100;
+        } else if (task.status === 'completed') {
+            progreso = 1;
+        } else if (task.status === 'inProgress') {
+            // Si tiene horas registradas vs estimadas
+            const horasReg = Number(task.timeLogged) || 0;
+            if (estimado > 0 && horasReg > 0) {
+                progreso = Math.min(0.99, horasReg / estimado);
+            } else if (task.progressPercentage !== undefined) {
+                progreso = Number(task.progressPercentage) / 100;
+            } else {
+                progreso = 0; // Sin información, asumimos 0 (conservador)
+            }
+        } else if (task.status === 'pending' || task.status === 'overdue' || task.status === 'rezagado') {
+            progreso = 0;
+        }
+        
+        // Limitar entre 0 y 1
+        progreso = Math.min(1, Math.max(0, progreso));
+        evTotal += estimado * progreso;
+    });
+    
+    return Math.round(evTotal * 100) / 100;
+}
+
+/**
+ * Obtiene el Costo Real (AC) sumando horas registradas
+ */
+function getAC(tasks) {
+    const total = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+    return Math.round(total * 100) / 100;
+}
+
 // ============================================================
-// INFORME EVM EJECUTIVO - CON TODOS LOS ELEMENTOS ORIGINALES
+// INFORME EVM EJECUTIVO - VERSIÓN CORREGIDA
 // ============================================================
+
 function generarInformeEVMPMI() {
 
     const proyecto = obtenerProyectoActual();
@@ -6999,49 +7374,37 @@ function generarInformeEVMPMI() {
     const tasks = proyecto.tasks || [];
 
     // ============================================================
+    // FECHA DE CORTE: hoy ajustada a día hábil
+    // ============================================================
+    const today = new Date();
+    const fechaCorte = ajustarALastimoDiaHabil(today);
+    const fechaCorteStr = fechaCorte.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // ============================================================
     // KPIs GENERALES
     // ============================================================
 
     const total = tasks.length;
     const completadas = tasks.filter(t => t.status === 'completed').length;
     const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
-    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+    const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < fechaCorte && t.status !== 'completed').length;
     const horasEst = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
-    const horasReg = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+    const horasReg = getAC(tasks);
 
     // ============================================================
-    // MÉTRICAS BASE - PV CORREGIDO CON DÍAS HÁBILES
+    // MÉTRICAS EVM CORREGIDAS
     // ============================================================
     const BAC = horasEst;
-    const PV = getPVConDiasHabiles(tasks);
+    const PV = getPVConDiasHabiles(tasks, today);
     const AC = horasReg;
+    const EV = getEV(tasks);
 
     // ============================================================
-    // VALOR GANADO (EV)
-    // ============================================================
-    let EV = 0;
-    tasks.forEach(task => {
-        const estimado = Number(task.estimatedTime) || 0;
-        let progreso = 0;
-        if (task.progress !== undefined && task.progress !== null) {
-            progreso = Number(task.progress) / 100;
-        } else if (task.status === 'completed') {
-            progreso = 1.0;
-        } else if (task.status === 'inProgress') {
-            progreso = 0.5;
-        } else if (task.status === 'overdue' || task.status === 'rezagado') {
-            const registrado = Number(task.timeLogged) || 0;
-            if (estimado > 0 && registrado > 0) {
-                progreso = Math.min(0.99, registrado / estimado);
-            } else {
-                progreso = 0.5;
-            }
-        }
-        EV += estimado * progreso;
-    });
-
-    // ============================================================
-    // MÉTRICAS PMI
+    // MÉTRICAS DERIVADAS PMI
     // ============================================================
     const SV = EV - PV;
     const CV = EV - AC;
@@ -7079,7 +7442,28 @@ function generarInformeEVMPMI() {
     });
 
     // ============================================================
-    // HTML DEL INFORME (DISEÑO ORIGINAL COMPLETO)
+    // DATOS PARA DEPURACIÓN (OPCIONAL - MOSTRAR EN CONSOLA)
+    // ============================================================
+    console.log('=== INFORME EVM CORREGIDO ===');
+    console.log('Fecha corte (día hábil):', fechaCorteStr);
+    console.log('BAC:', BAC, 'h');
+    console.log('PV:', PV, 'h');
+    console.log('EV:', EV, 'h');
+    console.log('AC:', AC, 'h');
+    console.log('SPI:', SPI);
+    console.log('CPI:', CPI);
+    console.log('Detalle tareas:');
+    tasks.forEach(t => {
+        const est = Number(t.estimatedTime) || 0;
+        let prog = 0;
+        if (t.progress !== undefined && t.progress !== null) prog = Number(t.progress);
+        else if (t.status === 'completed') prog = 100;
+        else if (t.status === 'inProgress') prog = (Number(t.timeLogged) || 0) / est * 100;
+        console.log(` - ${t.name}: Est=${est}h, Prog=${prog}%, Status=${t.status}`);
+    });
+
+    // ============================================================
+    // HTML DEL INFORME
     // ============================================================
     const contenido = `
 <div style="background:linear-gradient(135deg,#0f172a,#1e293b,#0f172a);color:white;padding:35px;text-align:center;border-radius:16px 16px 0 0;">
@@ -7087,13 +7471,14 @@ function generarInformeEVMPMI() {
         <div style="background:linear-gradient(135deg,#10b981,#059669);width:60px;height:60px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;">📊</div>
         <div>
             <h1 style="margin:0;font-size:28px;">INFORME DE VALOR GANADO (EVM)</h1>
-            <p style="margin:5px 0 0 0;opacity:0.85;">EARNED VALUE MANAGEMENT REPORT - DOCUMENTO EJECUTIVO</p>
+            <p style="margin:5px 0 0 0;opacity:0.85;">EARNED VALUE MANAGEMENT REPORT - PMI STANDARD</p>
         </div>
     </div>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:15px;">
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📌 ${proyecto.name}</div>
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">🔑 ${codigoEVM}</div>
         <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📅 ${fechaEmision}</div>
+        <div style="background:rgba(255,255,255,0.1);padding:8px 20px;border-radius:30px;">📆 Corte: ${fechaCorteStr}</div>
     </div>
 </div>
 
@@ -7104,6 +7489,7 @@ function generarInformeEVMPMI() {
         <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📈 Estado General del Proyecto</h2>
         <div style="background:${colorEstado}20;border:2px solid ${colorEstado};border-radius:16px;padding:25px;text-align:center;margin-bottom:20px;">
             <div style="font-size:28px;font-weight:bold;color:${colorEstado};">${estadoProyecto}</div>
+            <div style="margin-top:10px;font-size:14px;opacity:0.8;">Basado en SPI=${SPI.toFixed(2)} y CPI=${CPI.toFixed(2)}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;">
             <div style="background:#dbeafe;padding:20px;border-radius:12px;text-align:center;">
@@ -7125,6 +7511,16 @@ function generarInformeEVMPMI() {
         </div>
     </div>
 
+    <!-- NOTA METODOLÓGICA -->
+    <div style="margin-bottom:30px;">
+        <div style="background:#f0f9ff;padding:15px 20px;border-radius:12px;border-left:4px solid #3b82f6;">
+            <p style="margin:0;font-size:13px;color:#1e40af;">
+            📐 <strong>Metodología:</strong> Cálculo PMI estándar con <strong>días hábiles exclusivamente</strong> (lunes a viernes). 
+            La fecha de corte es ${fechaCorteStr} (último día hábil). PV calculado por prorrateo lineal de horas estimadas sobre duración hábil de cada tarea.
+            </p>
+        </div>
+    </div>
+
     <!-- RESUMEN EJECUTIVO -->
     <div style="margin-bottom:30px;">
         <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📋 Resumen Ejecutivo para Alta Dirección</h2>
@@ -7132,7 +7528,9 @@ function generarInformeEVMPMI() {
             <p style="line-height:1.8;color:#374151;text-align:justify;margin:0;">
                 El presente Informe de Valor Ganado (EVM) proporciona un análisis integral del desempeño del proyecto 
                 <strong>${proyecto.name}</strong> mediante métricas estandarizadas del Project Management Institute (PMI).
-                Las métricas presentadas (PV, EV, AC, SPI, CPI) permiten una evaluación integral del desempeño.
+                Al corte del ${fechaCorteStr} (día hábil ${Math.round((PV/BAC)*100)}% del período planificado), 
+                el proyecto presenta un <strong>SPI de ${SPI.toFixed(2)}</strong> (${SPI>=1?'adelanto':'retraso'} del ${Math.abs((1-SPI)*100).toFixed(1)}% en cronograma) 
+                y un <strong>CPI de ${CPI.toFixed(2)}</strong> (${CPI>=1?'dentro':'por encima'} del presupuesto).
             </p>
         </div>
     </div>
@@ -7144,7 +7542,7 @@ function generarInformeEVMPMI() {
             <div style="background:#dbeafe;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #3b82f6;">
                 <div style="font-size:32px;font-weight:bold;">${PV.toFixed(1)}h</div>
                 <div style="font-size:14px;color:#1e40af;font-weight:bold;">PV - Valor Planificado</div>
-                <div style="font-size:11px;color:#64748b;">Presupuesto base aprobado (BAC)</div>
+                <div style="font-size:11px;color:#64748b;">Trabajo planificado hasta la fecha</div>
             </div>
             <div style="background:#dcfce7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #10b981;">
                 <div style="font-size:32px;font-weight:bold;">${EV.toFixed(1)}h</div>
@@ -7154,7 +7552,7 @@ function generarInformeEVMPMI() {
             <div style="background:#fee2e2;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #ef4444;">
                 <div style="font-size:32px;font-weight:bold;">${AC.toFixed(1)}h</div>
                 <div style="font-size:14px;color:#991b1b;font-weight:bold;">AC - Costo Real</div>
-                <div style="font-size:11px;color:#64748b;">Horas reales registradas (AC)</div>
+                <div style="font-size:11px;color:#64748b;">Horas reales registradas</div>
             </div>
         </div>
     </div>
@@ -7193,14 +7591,14 @@ function generarInformeEVMPMI() {
                         <td style="padding:12px;text-align:center;">EV / PV</td>
                         <td style="padding:12px;text-align:center;font-weight:bold;font-size:18px;">${SPI.toFixed(2)}</td>
                         <td style="padding:12px;text-align:center;">${SPI>=1?'Eficiencia óptima':SPI>=0.9?'Ligero retraso':'Significativamente retrasado'}</td>
-                        <td style="padding:12px;text-align:center;">${SPI>=1?'✅ Óptimo':'🔴 Crítico'}</td>
+                        <td style="padding:12px;text-align:center;">${SPI>=0.95?'✅ Óptimo':SPI>=0.8?'⚠️ Atención':'🔴 Crítico'}</td>
                     </tr>
                     <tr style="background:white;">
                         <td style="padding:12px;">💵 CPI - Índice de Costo</td>
                         <td style="padding:12px;text-align:center;">EV / AC</td>
                         <td style="padding:12px;text-align:center;font-weight:bold;font-size:18px;">${CPI.toFixed(2)}</td>
                         <td style="padding:12px;text-align:center;">${CPI>=1?'Eficiencia financiera óptima':CPI>=0.9?'Ligero sobrecosto':'Sobrecosto significativo'}</td>
-                        <td style="padding:12px;text-align:center;">${CPI>=1?'✅ Óptimo':'🔴 Crítico'}</td>
+                        <td style="padding:12px;text-align:center;">${CPI>=0.95?'✅ Óptimo':CPI>=0.8?'⚠️ Atención':'🔴 Crítico'}</td>
                     </tr>
                 </tbody>
             </table>
@@ -7214,14 +7612,17 @@ function generarInformeEVMPMI() {
             <div style="background:#fef3c7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #f59e0b;">
                 <div style="font-size:28px;font-weight:bold;">${EAC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">EAC - Estimado al Finalizar</div>
+                <div style="font-size:11px;color:#64748b;">Basado en CPI actual</div>
             </div>
             <div style="background:#dbeafe;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #3b82f6;">
                 <div style="font-size:28px;font-weight:bold;">${ETC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">ETC - Estimado para Completar</div>
+                <div style="font-size:11px;color:#64748b;">Horas necesarias para terminar</div>
             </div>
             <div style="background:#dcfce7;padding:25px;border-radius:12px;text-align:center;border-top:4px solid #10b981;">
                 <div style="font-size:28px;font-weight:bold;color:${VAC>=0?'#166534':'#991b1b'};">${VAC>=0?'+':''}${VAC.toFixed(1)}h</div>
                 <div style="font-weight:bold;">VAC - Variación al Finalizar</div>
+                <div style="font-size:11px;color:#64748b;">${VAC>=0?'Ahorro':'Sobrecosto'} proyectado</div>
             </div>
         </div>
     </div>
@@ -7232,93 +7633,60 @@ function generarInformeEVMPMI() {
         <div style="background:#f8fafc;padding:25px;border-radius:16px;">
             <canvas id="evmChart" width="800" height="350" style="max-width:100%;height:auto;"></canvas>
             <div style="display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-top:20px;">
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#3b82f6;border-radius:4px;"></span><span>PV (Planificado)</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#10b981;border-radius:4px;"></span><span>EV (Ganado)</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#ef4444;border-radius:4px;"></span><span>AC (Real)</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#3b82f6;border-radius:4px;"></span><span>PV (Planificado) - ${PV.toFixed(1)}h</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#10b981;border-radius:4px;"></span><span>EV (Ganado) - ${EV.toFixed(1)}h</span></div>
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;background:#ef4444;border-radius:4px;"></span><span>AC (Real) - ${AC.toFixed(1)}h</span></div>
             </div>
         </div>
     </div>
 
-    <!-- ANÁLISIS DE RIESGOS -->
+    <!-- DETALLE DE TAREAS PARA AUDITORÍA -->
     <div style="margin-bottom:30px;">
-        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">⚠️ Análisis de Riesgos Basado en Métricas EVM</h2>
+        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📋 Detalle de Tareas - Cálculo EVM</h2>
         <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
                 <thead>
-                    <tr style="background:#fee2e2;">
-                        <th style="padding:12px;">Riesgo Identificado</th>
-                        <th style="padding:12px;">Indicador EVM</th>
-                        <th style="padding:12px;">Probabilidad</th>
-                        <th style="padding:12px;">Impacto</th>
-                        <th style="padding:12px;">Mitigación</th>
+                    <tr style="background:#dbeafe;">
+                        <th style="padding:12px;">Tarea</th>
+                        <th style="padding:12px;">Estado</th>
+                        <th style="padding:12px;">Est. (h)</th>
+                        <th style="padding:12px;">Real (h)</th>
+                        <th style="padding:12px;">Progreso Real</th>
+                        <th style="padding:12px;">EV (h)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="background:#f8fafc;">
-                        <td style="padding:12px;">🔴 Retraso en cronograma proyectado</td>
-                        <td style="padding:12px;">SPI = ${SPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${SPI<0.9?'#fee2e2':'#dcfce7'};color:${SPI<0.9?'#991b1b':'#166534'};padding:4px 12px;border-radius:20px;">${SPI<0.9?'Alta':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">${SPI<0.8?'Crítico':SPI<0.9?'Alto':'Medio'}</span></td>
-                        <td style="padding:12px;">Revisar ruta crítica, asignar recursos adicionales</td>
-                    </tr>
-                    <tr style="background:white;">
-                        <td style="padding:12px;">🔴 Sobrecosto proyectado</td>
-                        <td style="padding:12px;">CPI = ${CPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${CPI<0.9?'#fee2e2':'#dcfce7'};color:${CPI<0.9?'#991b1b':'#166534'};padding:4px 12px;border-radius:20px;">${CPI<0.9?'Alta':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${CPI<0.8?'#fee2e2':CPI<0.9?'#fef3c7':'#dcfce7'};color:${CPI<0.8?'#991b1b':CPI<0.9?'#92400e':'#166534'};padding:4px 12px;border-radius:20px;">${CPI<0.8?'Crítico':CPI<0.9?'Alto':'Medio'}</span></td>
-                        <td style="padding:12px;">Controlar horas extra, revisar estimaciones pendientes</td>
-                    </tr>
-                    <tr style="background:#f8fafc;">
-                        <td style="padding:12px;">🟡 Eficiencia requerida elevada</td>
-                        <td style="padding:12px;">TCPI = ${TCPI.toFixed(2)}</td>
-                        <td style="padding:12px;text-align:center;"><span style="background:${TCPI>1.1?'#fef3c7':'#dcfce7'};color:${TCPI>1.1?'#92400e':'#166534'};padding:4px 12px;border-radius:20px;">${TCPI>1.1?'Media':'Baja'}</span></td>
-                        <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">Alto</span></td>
-                        <td style="padding:12px;">Optimizar procesos, eliminar actividades de bajo valor</td>
-                    </tr>
+                    ${tasks.map(t => {
+                        const est = Number(t.estimatedTime) || 0;
+                        const real = Number(t.timeLogged) || 0;
+                        let progReal = 0;
+                        if (t.progress !== undefined && t.progress !== null) progReal = Number(t.progress);
+                        else if (t.status === 'completed') progReal = 100;
+                        else if (t.status === 'inProgress' && est > 0) progReal = Math.min(99, (real/est)*100);
+                        const evTarea = est * (progReal/100);
+                        return `
+                        <tr style="background:#f8fafc;">
+                            <td style="padding:12px;">${t.name || 'Sin nombre'}</td>
+                            <td style="padding:12px;">${t.status === 'completed' ? '✅ Completada' : t.status === 'inProgress' ? '🔄 En progreso' : '⏳ Pendiente'}</td>
+                            <td style="padding:12px;text-align:center;">${est}h</td>
+                            <td style="padding:12px;text-align:center;">${real}h</td>
+                            <td style="padding:12px;text-align:center;">${progReal}%</td>
+                            <td style="padding:12px;text-align:center;font-weight:bold;">${evTarea.toFixed(1)}h</td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
+                <tfoot>
+                    <tr style="background:#e2e8f0;font-weight:bold;">
+                        <td style="padding:12px;">TOTAL</td>
+                        <td style="padding:12px;"></td>
+                        <td style="padding:12px;text-align:center;">${BAC}h</td>
+                        <td style="padding:12px;text-align:center;">${AC}h</td>
+                        <td style="padding:12px;"></td>
+                        <td style="padding:12px;text-align:center;">${EV.toFixed(1)}h</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-    </div>
-
-    <!-- RECOMENDACIONES -->
-    <div style="margin-bottom:30px;">
-        <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">💡 Recomendaciones Estratégicas</h2>
-        <table style="width:100%;border-collapse:collapse;">
-            <thead>
-                <tr style="background:#dbeafe;">
-                    <th style="padding:12px;">#</th>
-                    <th style="padding:12px;text-align:left;">Recomendación</th>
-                    <th style="padding:12px;text-align:center;">Prioridad</th>
-                    <th style="padding:12px;text-align:center;">Impacto Esperado</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr style="background:#f8fafc;">
-                    <td style="padding:12px;text-align:center;">1</td>
-                    <td style="padding:12px;">Revisar cronograma y reasignar recursos a tareas críticas</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">🔴 Alta</span></td>
-                    <td style="padding:12px;text-align:center;">Recuperar 10-15% del retraso</td>
-                </tr>
-                <tr style="background:white;">
-                    <td style="padding:12px;text-align:center;">2</td>
-                    <td style="padding:12px;">Implementar control estricto de horas y revisar estimaciones pendientes</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;">🔴 Alta</span></td>
-                    <td style="padding:12px;text-align:center;">Reducir sobrecosto en 5-10%</td>
-                </tr>
-                <tr style="background:#f8fafc;">
-                    <td style="padding:12px;text-align:center;">3</td>
-                    <td style="padding:12px;">Optimizar procesos y eliminar actividades de bajo valor</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">🟡 Media</span></td>
-                    <td style="padding:12px;text-align:center;">Mejorar TCPI a <1.1</td>
-                </tr>
-                <tr style="background:white;">
-                    <td style="padding:12px;text-align:center;">4</td>
-                    <td style="padding:12px;">Actualizar línea base EVM tras cambios de alcance aprobados</td>
-                    <td style="padding:12px;text-align:center;"><span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;">🟡 Media</span></td>
-                    <td style="padding:12px;text-align:center;">Mejorar precisión de proyecciones</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- PIE DE PÁGINA -->
@@ -7326,6 +7694,7 @@ function generarInformeEVMPMI() {
         <p style="color:#64748b;font-size:12px;margin:0;line-height:1.8;">
             <strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene información financiera y de desempeño estratégica del proyecto.<br>
             <strong>📋 METODOLOGÍA:</strong> Análisis basado en Earned Value Management (EVM) según estándares PMI PMBOK® Guide.<br>
+            <strong>📆 CÁLCULO CON DÍAS HÁBILES:</strong> PV calculado sobre días laborables (lunes a viernes). Fecha de corte ajustada al último día hábil.<br>
             <strong>✅ APROBACIÓN:</strong> Este informe debe ser revisado por el Sponsor y el Comité de Dirección.<br><br>
             <em>Generado automáticamente por PM Virtual Ejecutivo • Código: ${codigoEVM} • ${fechaEmision}</em>
         </p>
@@ -7368,7 +7737,7 @@ function generarInformeEVMPMI() {
                 new Chart(canvas.getContext('2d'),{
                     type:'bar',
                     data:{
-                        labels:['PV','EV','AC'],
+                        labels:['PV (Planificado)','EV (Ganado)','AC (Real)'],
                         datasets:[{
                             label:'Horas',
                             data:[${PV},${EV},${AC}],
@@ -7397,12 +7766,10 @@ function generarInformeEVMPMI() {
 </html>`;
 
     const win = window.open('', '_blank');
-    if (!win) { alert('Permite ventanas emergentes'); return; }
+    if (!win) { alert('Permite ventanas emergentes para generar el informe'); return; }
     win.document.write(htmlCompleto);
     win.document.close();
 }
-
-
 
 
 
@@ -18078,562 +18445,996 @@ console.log('🟢 SCRIPT EMPIEZA');
 
 
 
-
-
 // ============================================
-// 🔌 SISTEMA DE INTEGRACIONES - 100 SERVICIOS REALES
+// SISTEMA DE INTEGRACIONES - 100 SERVICIOS
+// TODOS CON FUNCIONES REALES IMPLEMENTADAS
 // ============================================
 
-console.log('🔌 [Integraciones] Iniciando sistema completo con 100 servicios...');
+(function() {
+    console.log('🔌 Instalando sistema con 100 servicios (TODOS FUNCIONALES)...');
 
-window.IntegrationsAPI = window.IntegrationsAPI || {};
+    // ========== 100 SERVICIOS COMPLETOS ==========
+    const SERVICIOS = {
+        // Mensajería (10)
+        slack: { nombre: 'Slack', icono: '💬', tipo: 'webhook', campos: ['webhookUrl'] },
+        telegram: { nombre: 'Telegram', icono: '✈️', tipo: 'api', campos: ['botToken', 'chatId'] },
+        discord: { nombre: 'Discord', icono: '🎮', tipo: 'webhook', campos: ['webhookUrl'] },
+        teams: { nombre: 'Teams', icono: '👔', tipo: 'webhook', campos: ['webhookUrl'] },
+        whatsapp: { nombre: 'WhatsApp', icono: '📱', tipo: 'api', campos: ['phoneNumberId', 'accessToken'] },
+        signal: { nombre: 'Signal', icono: '🔒', tipo: 'api', campos: ['phoneNumber'] },
+        line: { nombre: 'LINE', icono: '💬', tipo: 'api', campos: ['channelAccessToken', 'userId'] },
+        viber: { nombre: 'Viber', icono: '📞', tipo: 'api', campos: ['authToken'] },
+        rocketChat: { nombre: 'RocketChat', icono: '🚀', tipo: 'api', campos: ['url', 'userId', 'token'] },
+        mattermost: { nombre: 'Mattermost', icono: '📢', tipo: 'api', campos: ['url', 'token'] },
+        
+        // Proyectos (20)
+        jira: { nombre: 'Jira', icono: '🔷', tipo: 'api', campos: ['domain', 'email', 'apiToken', 'projectKey'] },
+        trello: { 
+            nombre: 'Trello', 
+            icono: '📌', 
+            tipo: 'api', 
+            endpoint: 'https://api.trello.com/1/cards', 
+            campos: ['apiKey', 'token', 'listId']
+        },
+        asana: { nombre: 'Asana', icono: '✅', tipo: 'api', campos: ['accessToken', 'projectId'] },
+        clickup: { nombre: 'ClickUp', icono: '🖱️', tipo: 'api', campos: ['apiToken', 'listId'] },
+        monday: { nombre: 'Monday', icono: '📆', tipo: 'api', campos: ['apiToken', 'boardId'] },
+        notion: { nombre: 'Notion', icono: '📄', tipo: 'api', campos: ['apiKey', 'databaseId'] },
+        linear: { nombre: 'Linear', icono: '📏', tipo: 'api', campos: ['apiKey', 'teamId'] },
+        github: { nombre: 'GitHub', icono: '🐙', tipo: 'api', campos: ['token', 'repo'] },
+        gitlab: { nombre: 'GitLab', icono: '🦊', tipo: 'api', campos: ['token', 'projectId'] },
+        bitbucket: { nombre: 'Bitbucket', icono: '🔷', tipo: 'api', campos: ['username', 'appPassword'] },
+        basecamp: { nombre: 'Basecamp', icono: '🏕️', tipo: 'api', campos: ['accountId', 'accessToken'] },
+        wrike: { nombre: 'Wrike', icono: '📌', tipo: 'api', campos: ['accessToken', 'folderId'] },
+        smartsheet: { nombre: 'Smartsheet', icono: '📊', tipo: 'api', campos: ['accessToken', 'sheetId'] },
+        teamwork: { nombre: 'Teamwork', icono: '🤝', tipo: 'api', campos: ['apiKey', 'projectId'] },
+        shortcut: { nombre: 'Shortcut', icono: '⚡', tipo: 'api', campos: ['apiToken'] },
+        pivotal: { nombre: 'Pivotal', icono: '🎯', tipo: 'api', campos: ['apiToken', 'projectId'] },
+        targetprocess: { nombre: 'Targetprocess', icono: '🎯', tipo: 'api', campos: ['domain', 'token'] },
+        codegiant: { nombre: 'Codegiant', icono: '🦖', tipo: 'api', campos: ['apiKey'] },
+        plane: { nombre: 'Plane', icono: '✈️', tipo: 'api', campos: ['apiKey'] },
+        fission: { nombre: 'Fission', icono: '⚡', tipo: 'api', campos: ['apiKey'] },
+        
+        // CRM (15)
+        hubspot: { nombre: 'HubSpot', icono: '🎯', tipo: 'api', campos: ['apiKey'] },
+        pipedrive: { nombre: 'Pipedrive', icono: '📈', tipo: 'api', campos: ['apiToken'] },
+        zoho: { nombre: 'Zoho CRM', icono: '📊', tipo: 'api', campos: ['authToken', 'domain'] },
+        salesforce: { nombre: 'Salesforce', icono: '☁️', tipo: 'api', campos: ['username', 'password', 'token'] },
+        freshsales: { nombre: 'Freshsales', icono: '🍃', tipo: 'api', campos: ['apiKey', 'domain'] },
+        engageBay: { nombre: 'EngageBay', icono: '🎯', tipo: 'api', campos: ['apiKey'] },
+        bitrix24: { nombre: 'Bitrix24', icono: '🔷', tipo: 'webhook', campos: ['webhookUrl'] },
+        salesflare: { nombre: 'Salesflare', icono: '🔥', tipo: 'api', campos: ['apiKey'] },
+        insightly: { nombre: 'Insightly', icono: '🔍', tipo: 'api', campos: ['apiKey'] },
+        capsule: { nombre: 'Capsule', icono: '💊', tipo: 'api', campos: ['apiKey'] },
+        onesky: { nombre: 'OneSky', icono: '🌍', tipo: 'api', campos: ['apiKey'] },
+        closecrm: { nombre: 'CloseCRM', icono: '🔒', tipo: 'api', campos: ['apiKey'] },
+        agilecrm: { nombre: 'AgileCRM', icono: '⚡', tipo: 'api', campos: ['apiKey'] },
+        copper: { nombre: 'Copper', icono: '🔶', tipo: 'api', campos: ['apiKey'] },
+        streak: { nombre: 'Streak', icono: '📈', tipo: 'api', campos: ['apiKey'] },
+        
+        // Calendario (10)
+        googleCalendar: { nombre: 'Google Calendar', icono: '📅', tipo: 'api', campos: ['apiKey', 'calendarId'] },
+        outlook: { nombre: 'Outlook', icono: '📧', tipo: 'api', campos: ['clientId', 'clientSecret'] },
+        calendly: { nombre: 'Calendly', icono: '📆', tipo: 'api', campos: ['accessToken'] },
+        zoom: { nombre: 'Zoom', icono: '🎥', tipo: 'api', campos: ['apiKey', 'apiSecret'] },
+        meet: { nombre: 'Google Meet', icono: '🎬', tipo: 'api', campos: ['apiKey'] },
+        teamsMeeting: { nombre: 'Teams Meeting', icono: '👔', tipo: 'api', campos: ['clientId'] },
+        webex: { nombre: 'Webex', icono: '🌐', tipo: 'api', campos: ['token'] },
+        gotomeeting: { nombre: 'GoToMeeting', icono: '🚀', tipo: 'api', campos: ['apiKey'] },
+        appleCalendar: { nombre: 'Apple Calendar', icono: '🍎', tipo: 'api', campos: ['username', 'password'] },
+        yahooCalendar: { nombre: 'Yahoo Calendar', icono: '🔮', tipo: 'api', campos: ['clientId'] },
+        
+        // Pagos (12)
+        stripe: { nombre: 'Stripe', icono: '💳', tipo: 'api', campos: ['secretKey'] },
+        paypal: { nombre: 'PayPal', icono: '💰', tipo: 'api', campos: ['clientId', 'clientSecret'] },
+        mercadopago: { nombre: 'MercadoPago', icono: '🇦🇷', tipo: 'api', campos: ['accessToken'] },
+        lemonSqueezy: { nombre: 'LemonSqueezy', icono: '🍋', tipo: 'api', campos: ['apiKey'] },
+        paddle: { nombre: 'Paddle', icono: '🏓', tipo: 'api', campos: ['vendorId', 'apiKey'] },
+        razorpay: { nombre: 'Razorpay', icono: '💸', tipo: 'api', campos: ['keyId', 'keySecret'] },
+        coinbase: { nombre: 'Coinbase', icono: '🪙', tipo: 'api', campos: ['apiKey'] },
+        square: { nombre: 'Square', icono: '⬛', tipo: 'api', campos: ['accessToken'] },
+        revolt: { nombre: 'Revolut', icono: '💶', tipo: 'api', campos: ['apiKey'] },
+        wise: { nombre: 'Wise', icono: '🌍', tipo: 'api', campos: ['apiKey'] },
+        adyen: { nombre: 'Adyen', icono: '🟣', tipo: 'api', campos: ['apiKey'] },
+        braintree: { nombre: 'Braintree', icono: '🌳', tipo: 'api', campos: ['merchantId', 'publicKey', 'privateKey'] },
+        
+        // Bases Datos (12)
+        supabase: { nombre: 'Supabase', icono: '🔥', tipo: 'api', campos: ['url', 'anonKey'] },
+        firebase: { nombre: 'Firebase', icono: '🔥', tipo: 'api', campos: ['projectId', 'apiKey'] },
+        airtable: { nombre: 'Airtable', icono: '🗄️', tipo: 'api', campos: ['apiKey', 'baseId'] },
+        appwrite: { nombre: 'Appwrite', icono: '✍️', tipo: 'api', campos: ['endpoint', 'projectId', 'apiKey'] },
+        pocketbase: { nombre: 'PocketBase', icono: '📱', tipo: 'api', campos: ['url', 'adminEmail', 'adminPassword'] },
+        directus: { nombre: 'Directus', icono: '🎯', tipo: 'api', campos: ['url', 'token'] },
+        nocoDB: { nombre: 'NocoDB', icono: '📊', tipo: 'api', campos: ['url', 'apiKey'] },
+        rowy: { nombre: 'Rowy', icono: '📋', tipo: 'api', campos: ['url'] },
+        faunadb: { nombre: 'FaunaDB', icono: '🦚', tipo: 'api', campos: ['secret'] },
+        mongodb: { nombre: 'MongoDB', icono: '🍃', tipo: 'api', campos: ['uri'] },
+        couchdb: { nombre: 'CouchDB', icono: '🛋️', tipo: 'api', campos: ['url'] },
+        dynamodb: { nombre: 'DynamoDB', icono: '⚡', tipo: 'api', campos: ['region', 'accessKeyId', 'secretAccessKey'] },
+        
+        // Storage (10)
+        googleDrive: { nombre: 'Google Drive', icono: '☁️', tipo: 'api', campos: ['apiKey'] },
+        dropbox: { nombre: 'Dropbox', icono: '📦', tipo: 'api', campos: ['accessToken'] },
+        onedrive: { nombre: 'OneDrive', icono: '💾', tipo: 'api', campos: ['accessToken'] },
+        mega: { nombre: 'MEGA', icono: '🗄️', tipo: 'api', campos: ['email', 'password'] },
+        pCloud: { nombre: 'pCloud', icono: '☁️', tipo: 'api', campos: ['accessToken'] },
+        box: { nombre: 'Box', icono: '📦', tipo: 'api', campos: ['accessToken'] },
+        nextcloud: { nombre: 'Nextcloud', icono: '🖥️', tipo: 'api', campos: ['url', 'username', 'password'] },
+        synology: { nombre: 'Synology', icono: '💾', tipo: 'api', campos: ['url', 'username', 'password'] },
+        backblaze: { nombre: 'Backblaze', icono: '📁', tipo: 'api', campos: ['keyId', 'applicationKey'] },
+        wasabi: { nombre: 'Wasabi', icono: '🗑️', tipo: 'api', campos: ['accessKey', 'secretKey'] },
+        
+        // Analytics (10)
+        powerbi: { nombre: 'Power BI Streaming', icono: '📊', tipo: 'api', campos: ['streamingUrl'] },
+        googleAnalytics: { nombre: 'Google Analytics', icono: '📈', tipo: 'api', campos: ['measurementId', 'apiSecret'] },
+        plausible: { nombre: 'Plausible', icono: '📊', tipo: 'api', campos: ['apiKey', 'siteId'] },
+        umami: { nombre: 'Umami', icono: '🍱', tipo: 'api', campos: ['url', 'shareId'] },
+        matomo: { nombre: 'Matomo', icono: '📈', tipo: 'api', campos: ['url', 'token'] },
+        mixpanel: { nombre: 'Mixpanel', icono: '📊', tipo: 'api', campos: ['token'] },
+        amplitude: { nombre: 'Amplitude', icono: '📈', tipo: 'api', campos: ['apiKey'] },
+        hotjar: { nombre: 'Hotjar', icono: '🔥', tipo: 'api', campos: ['siteId'] },
+        clarity: { nombre: 'Clarity', icono: '🔍', tipo: 'api', campos: ['projectId'] },
+        posthog: { nombre: 'PostHog', icono: '🦔', tipo: 'api', campos: ['apiKey'] },
+        
+        // Automatización (10)
+        zapier: { nombre: 'Zapier', icono: '⚡', tipo: 'webhook', campos: ['webhookUrl'] },
+        make: { nombre: 'Make', icono: '🔧', tipo: 'webhook', campos: ['webhookUrl'] },
+        n8n: { nombre: 'n8n', icono: '⚙️', tipo: 'webhook', campos: ['webhookUrl'] },
+        activepieces: { nombre: 'ActivePieces', icono: '🧩', tipo: 'webhook', campos: ['webhookUrl'] },
+        pabbly: { nombre: 'Pabbly', icono: '🔗', tipo: 'webhook', campos: ['webhookUrl'] },
+        powerAutomate: { nombre: 'Power Automate', icono: '⚡', tipo: 'webhook', campos: ['webhookUrl'] },
+        ifttt: { nombre: 'IFTTT', icono: '🔌', tipo: 'api', campos: ['webhookKey', 'eventName'] },
+        huginn: { nombre: 'Huginn', icono: '🤖', tipo: 'api', campos: ['url', 'userKey'] },
+        nodeRed: { nombre: 'Node-RED', icono: '🔴', tipo: 'api', campos: ['url'] },
+        relay: { nombre: 'Relay', icono: '🔄', tipo: 'api', campos: ['apiKey'] },
+        
+        // Tiempo (8)
+        clockify: { nombre: 'Clockify', icono: '⏱️', tipo: 'api', campos: ['apiKey', 'workspaceId'] },
+        toggl: { nombre: 'Toggl', icono: '⏲️', tipo: 'api', campos: ['apiToken', 'workspaceId'] },
+        harvest: { nombre: 'Harvest', icono: '🌾', tipo: 'api', campos: ['accessToken', 'accountId'] },
+        everhour: { nombre: 'Everhour', icono: '⏰', tipo: 'api', campos: ['apiKey'] },
+        timedoctor: { nombre: 'TimeDoctor', icono: '👨‍⚕️', tipo: 'api', campos: ['apiKey'] },
+        hubstaff: { nombre: 'Hubstaff', icono: '👥', tipo: 'api', campos: ['apiToken'] },
+        trackingTime: { nombre: 'TrackingTime', icono: '📍', tipo: 'api', campos: ['apiKey'] },
+        myhours: { nombre: 'MyHours', icono: '⏱️', tipo: 'api', campos: ['apiKey'] },
+        
+        // Social (8)
+        twitter: { nombre: 'Twitter', icono: '🐦', tipo: 'api', campos: ['bearerToken'] },
+        linkedin: { nombre: 'LinkedIn', icono: '🔗', tipo: 'api', campos: ['accessToken'] },
+        facebook: { nombre: 'Facebook', icono: '📘', tipo: 'api', campos: ['accessToken'] },
+        instagram: { nombre: 'Instagram', icono: '📷', tipo: 'api', campos: ['accessToken'] },
+        reddit: { nombre: 'Reddit', icono: '🤖', tipo: 'api', campos: ['clientId', 'clientSecret'] },
+        tiktok: { nombre: 'TikTok', icono: '🎵', tipo: 'api', campos: ['accessToken'] },
+        pinterest: { nombre: 'Pinterest', icono: '📌', tipo: 'api', campos: ['accessToken'] },
+        telegramChannel: { nombre: 'Telegram Channel', icono: '📢', tipo: 'api', campos: ['botToken', 'channelId'] }
+    };
 
-// ========== CONFIGURACIÓN COMPLETA CON 100 SERVICIOS ==========
-const CONFIG_INTEGRACIONES = {
-    // === MENSAJERÍA Y NOTIFICACIONES (10) ===
-    slack: { enabled: true, webhookUrl: '', channel: '#general', gratis: true, icono: '💬', campos: ['webhookUrl', 'channel'] },
-    telegram: { enabled: false, botToken: '', chatId: '', gratis: true, icono: '✈️', campos: ['botToken', 'chatId'] },
-    discord: { enabled: false, webhookUrl: '', gratis: true, icono: '🎮', campos: ['webhookUrl'] },
-    teams: { enabled: false, webhookUrl: '', gratis: true, icono: '👔', campos: ['webhookUrl'] },
-    whatsapp: { enabled: false, phoneNumberId: '', accessToken: '', gratis: true, icono: '📱', campos: ['phoneNumberId', 'accessToken'] },
-    signal: { enabled: false, phoneNumber: '', captcha: '', gratis: true, icono: '🔒', campos: ['phoneNumber', 'captcha'] },
-    line: { enabled: false, channelAccessToken: '', userId: '', gratis: true, icono: '💬', campos: ['channelAccessToken', 'userId'] },
-    viber: { enabled: false, authToken: '', sender: '', gratis: true, icono: '📞', campos: ['authToken', 'sender'] },
-    rocketChat: { enabled: false, url: '', userId: '', token: '', gratis: true, icono: '🚀', campos: ['url', 'userId', 'token'] },
-    mattermost: { enabled: false, url: '', token: '', channelId: '', gratis: true, icono: '📢', campos: ['url', 'token', 'channelId'] },
-
-    // === GESTIÓN DE PROYECTOS Y TAREAS (15) ===
-    jira: { enabled: false, domain: '', email: '', apiToken: '', projectKey: '', gratis: true, icono: '🔷', campos: ['domain', 'email', 'apiToken', 'projectKey'] },
-    trello: { enabled: false, apiKey: '', token: '', boardId: '', gratis: true, icono: '📌', campos: ['apiKey', 'token', 'boardId'] },
-    asana: { enabled: false, accessToken: '', projectId: '', gratis: true, icono: '✅', campos: ['accessToken', 'projectId'] },
-    clickup: { enabled: false, apiToken: '', listId: '', gratis: true, icono: '🖱️', campos: ['apiToken', 'listId'] },
-    monday: { enabled: false, apiToken: '', boardId: '', gratis: true, icono: '📆', campos: ['apiToken', 'boardId'] },
-    notion: { enabled: false, apiKey: '', databaseId: '', gratis: true, icono: '📄', campos: ['apiKey', 'databaseId'] },
-    github: { enabled: false, token: '', repo: '', gratis: true, icono: '🐙', campos: ['token', 'repo'] },
-    gitlab: { enabled: false, token: '', projectId: '', gratis: true, icono: '🦊', campos: ['token', 'projectId'] },
-    bitbucket: { enabled: false, username: '', appPassword: '', repo: '', gratis: true, icono: '🔷', campos: ['username', 'appPassword', 'repo'] },
-    basecamp: { enabled: false, accountId: '', accessToken: '', projectId: '', gratis: true, icono: '🏕️', campos: ['accountId', 'accessToken', 'projectId'] },
-    wrike: { enabled: false, accessToken: '', folderId: '', gratis: true, icono: '📌', campos: ['accessToken', 'folderId'] },
-    smartsheet: { enabled: false, accessToken: '', sheetId: '', gratis: true, icono: '📊', campos: ['accessToken', 'sheetId'] },
-    teamwork: { enabled: false, apiKey: '', projectId: '', gratis: true, icono: '🤝', campos: ['apiKey', 'projectId'] },
-    linear: { enabled: false, apiKey: '', teamId: '', gratis: true, icono: '📏', campos: ['apiKey', 'teamId'] },
-    shortcut: { enabled: false, apiToken: '', gratis: true, icono: '⚡', campos: ['apiToken'] },
-
-    // === ALMACENAMIENTO Y BACKUP (12) ===
-    googleDrive: { enabled: false, apiKey: '', folderId: '', gratis: true, icono: '☁️', campos: ['apiKey', 'folderId'] },
-    dropbox: { enabled: false, accessToken: '', folderPath: '', gratis: true, icono: '📦', campos: ['accessToken', 'folderPath'] },
-    onedrive: { enabled: false, accessToken: '', folderId: '', gratis: true, icono: '💾', campos: ['accessToken', 'folderId'] },
-    mega: { enabled: false, email: '', password: '', folderPath: '', gratis: true, icono: '🗄️', campos: ['email', 'password', 'folderPath'] },
-    terabox: { enabled: false, email: '', password: '', folderPath: '', gratis: true, icono: '📦', campos: ['email', 'password', 'folderPath'] },
-    pCloud: { enabled: false, accessToken: '', folderPath: '', gratis: true, icono: '☁️', campos: ['accessToken', 'folderPath'] },
-    box: { enabled: false, accessToken: '', folderId: '', gratis: true, icono: '📦', campos: ['accessToken', 'folderId'] },
-    nextcloud: { enabled: false, url: '', username: '', password: '', gratis: true, icono: '🖥️', campos: ['url', 'username', 'password'] },
-    synology: { enabled: false, url: '', username: '', password: '', gratis: true, icono: '💾', campos: ['url', 'username', 'password'] },
-    filen: { enabled: false, email: '', password: '', folderPath: '', gratis: true, icono: '📁', campos: ['email', 'password', 'folderPath'] },
-    koofr: { enabled: false, email: '', password: '', folderPath: '', gratis: true, icono: '📂', campos: ['email', 'password', 'folderPath'] },
-    icedrive: { enabled: false, apiKey: '', folderPath: '', gratis: true, icono: '❄️', campos: ['apiKey', 'folderPath'] },
-
-    // === EMAIL MARKETING (10) ===
-    mailchimp: { enabled: false, apiKey: '', audienceId: '', serverPrefix: '', gratis: true, icono: '📧', campos: ['apiKey', 'audienceId', 'serverPrefix'] },
-    sendgrid: { enabled: false, apiKey: '', fromEmail: '', toEmail: '', gratis: true, icono: '📨', campos: ['apiKey', 'fromEmail', 'toEmail'] },
-    mailgun: { enabled: false, apiKey: '', domain: '', gratis: true, icono: '📧', campos: ['apiKey', 'domain'] },
-    sendinblue: { enabled: false, apiKey: '', listId: '', gratis: true, icono: '📨', campos: ['apiKey', 'listId'] },
-    mailjet: { enabled: false, apiKey: '', apiSecret: '', gratis: true, icono: '✈️', campos: ['apiKey', 'apiSecret'] },
-    postmark: { enabled: false, serverToken: '', fromEmail: '', gratis: true, icono: '📫', campos: ['serverToken', 'fromEmail'] },
-    resend: { enabled: false, apiKey: '', fromEmail: '', gratis: true, icono: '🔄', campos: ['apiKey', 'fromEmail'] },
-    brevo: { enabled: false, apiKey: '', listId: '', gratis: true, icono: '📧', campos: ['apiKey', 'listId'] },
-    elasticEmail: { enabled: false, apiKey: '', fromEmail: '', gratis: true, icono: '📨', campos: ['apiKey', 'fromEmail'] },
-    pepipost: { enabled: false, apiKey: '', fromEmail: '', gratis: true, icono: '📧', campos: ['apiKey', 'fromEmail'] },
-
-    // === CRM Y GESTIÓN DE CLIENTES (10) ===
-    hubspot: { enabled: false, apiKey: '', gratis: true, icono: '🎯', campos: ['apiKey'] },
-    pipedrive: { enabled: false, apiToken: '', gratis: true, icono: '📈', campos: ['apiToken'] },
-    zohoCRM: { enabled: false, authToken: '', gratis: true, icono: '📊', campos: ['authToken'] },
-    freshsales: { enabled: false, apiKey: '', domain: '', gratis: true, icono: '🍃', campos: ['apiKey', 'domain'] },
-    engageBay: { enabled: false, apiKey: '', gratis: true, icono: '🎯', campos: ['apiKey'] },
-    bitrix24: { enabled: false, webhookUrl: '', gratis: true, icono: '🔷', campos: ['webhookUrl'] },
-    salesflare: { enabled: false, apiKey: '', gratis: true, icono: '🔥', campos: ['apiKey'] },
-    insightly: { enabled: false, apiKey: '', gratis: true, icono: '🔍', campos: ['apiKey'] },
-    capsule: { enabled: false, apiKey: '', gratis: true, icono: '💊', campos: ['apiKey'] },
-    onesky: { enabled: false, apiKey: '', projectId: '', gratis: true, icono: '🌍', campos: ['apiKey', 'projectId'] },
-
-    // === BASES DE DATOS (10) ===
-    supabase: { enabled: false, url: '', anonKey: '', gratis: true, icono: '🔥', campos: ['url', 'anonKey'] },
-    airtable: { enabled: false, apiKey: '', baseId: '', tableName: 'Tareas', gratis: true, icono: '🗄️', campos: ['apiKey', 'baseId', 'tableName'] },
-    appwrite: { enabled: false, endpoint: '', projectId: '', apiKey: '', gratis: true, icono: '✍️', campos: ['endpoint', 'projectId', 'apiKey'] },
-    pocketbase: { enabled: false, url: '', adminEmail: '', adminPassword: '', gratis: true, icono: '📱', campos: ['url', 'adminEmail', 'adminPassword'] },
-    directus: { enabled: false, url: '', accessToken: '', gratis: true, icono: '🎯', campos: ['url', 'accessToken'] },
-    nocoDB: { enabled: false, url: '', apiKey: '', gratis: true, icono: '📊', campos: ['url', 'apiKey'] },
-    rowy: { enabled: false, url: '', serviceAccount: '', gratis: true, icono: '📋', campos: ['url', 'serviceAccount'] },
-    firestore: { enabled: false, projectId: '', apiKey: '', gratis: true, icono: '🔥', campos: ['projectId', 'apiKey'] },
-    faunadb: { enabled: false, secret: '', gratis: true, icono: '🦚', campos: ['secret'] },
-    mongodbAtlas: { enabled: false, uri: '', database: '', gratis: true, icono: '🍃', campos: ['uri', 'database'] },
-
-    // === ANALÍTICA Y MONITOREO (10) ===
-    plausible: { enabled: false, apiKey: '', siteId: '', gratis: true, icono: '📊', campos: ['apiKey', 'siteId'] },
-    umami: { enabled: false, url: '', shareId: '', gratis: true, icono: '🍱', campos: ['url', 'shareId'] },
-    matomo: { enabled: false, url: '', token: '', siteId: '', gratis: true, icono: '📈', campos: ['url', 'token', 'siteId'] },
-    uptimeRobot: { enabled: false, apiKey: '', monitors: '', gratis: true, icono: '🕒', campos: ['apiKey', 'monitors'] },
-    betterUptime: { enabled: false, apiKey: '', gratis: true, icono: '✅', campos: ['apiKey'] },
-    pingdom: { enabled: false, email: '', password: '', gratis: true, icono: '🌐', campos: ['email', 'password'] },
-    healthchecks: { enabled: false, apiKey: '', checks: '', gratis: true, icono: '🏥', campos: ['apiKey', 'checks'] },
-    cronitor: { enabled: false, apiKey: '', gratis: true, icono: '⏰', campos: ['apiKey'] },
-    openreplay: { enabled: false, projectKey: '', gratis: true, icono: '🎬', campos: ['projectKey'] },
-    counterDev: { enabled: false, apiKey: '', siteId: '', gratis: true, icono: '🔢', campos: ['apiKey', 'siteId'] },
-
-    // === AUTOMATIZACIÓN (10) ===
-    zapier: { enabled: false, webhookUrl: '', gratis: true, icono: '⚡', campos: ['webhookUrl'] },
-    n8n: { enabled: false, url: '', apiKey: '', gratis: true, icono: '⚙️', campos: ['url', 'apiKey'] },
-    activepieces: { enabled: false, url: '', apiKey: '', gratis: true, icono: '🧩', campos: ['url', 'apiKey'] },
-    huginn: { enabled: false, url: '', userKey: '', gratis: true, icono: '🤖', campos: ['url', 'userKey'] },
-    nodeRed: { enabled: false, url: '', accessToken: '', gratis: true, icono: '🔴', campos: ['url', 'accessToken'] },
-    pabbly: { enabled: false, webhookUrl: '', gratis: true, icono: '🔗', campos: ['webhookUrl'] },
-    integromat: { enabled: false, webhookUrl: '', gratis: true, icono: '🔄', campos: ['webhookUrl'] },
-    make: { enabled: false, webhookUrl: '', gratis: true, icono: '🔧', campos: ['webhookUrl'] },
-    automateIo: { enabled: false, apiKey: '', gratis: true, icono: '🤖', campos: ['apiKey'] },
-    powerAutomate: { enabled: false, webhookUrl: '', gratis: true, icono: '⚡', campos: ['webhookUrl'] },
-
-    // === TIEMPO Y PRODUCTIVIDAD (8) ===
-    clockify: { enabled: false, apiKey: '', workspaceId: '', projectId: '', gratis: true, icono: '⏱️', campos: ['apiKey', 'workspaceId', 'projectId'] },
-    toggl: { enabled: false, apiToken: '', workspaceId: '', projectId: '', gratis: true, icono: '⏲️', campos: ['apiToken', 'workspaceId', 'projectId'] },
-    harvest: { enabled: false, accessToken: '', accountId: '', gratis: true, icono: '🌾', campos: ['accessToken', 'accountId'] },
-    everhour: { enabled: false, apiKey: '', gratis: true, icono: '⏰', campos: ['apiKey'] },
-    timedoctor: { enabled: false, apiKey: '', gratis: true, icono: '👨‍⚕️', campos: ['apiKey'] },
-    hubstaff: { enabled: false, apiToken: '', gratis: true, icono: '👥', campos: ['apiToken'] },
-    trackingTime: { enabled: false, apiKey: '', gratis: true, icono: '📍', campos: ['apiKey'] },
-    myhours: { enabled: false, apiKey: '', gratis: true, icono: '⏱️', campos: ['apiKey'] },
-
-    // === CALENDARIO Y REUNIONES (5) ===
-    googleCalendar: { enabled: false, apiKey: '', calendarId: 'primary', gratis: true, icono: '📅', campos: ['apiKey', 'calendarId'] },
-    calendly: { enabled: false, accessToken: '', webhookUrl: '', gratis: true, icono: '📆', campos: ['accessToken', 'webhookUrl'] },
-    outlookCalendar: { enabled: false, clientId: '', clientSecret: '', gratis: true, icono: '📅', campos: ['clientId', 'clientSecret'] },
-    appleCalendar: { enabled: false, username: '', password: '', gratis: true, icono: '🍎', campos: ['username', 'password'] },
-    zoom: { enabled: false, apiKey: '', apiSecret: '', gratis: true, icono: '🎥', campos: ['apiKey', 'apiSecret'] },
-
-    // === PAGOS Y FACTURACIÓN (5) ===
-    stripe: { enabled: false, publishableKey: '', secretKey: '', gratis: true, icono: '💳', campos: ['publishableKey', 'secretKey'] },
-    paypal: { enabled: false, clientId: '', clientSecret: '', gratis: true, icono: '💰', campos: ['clientId', 'clientSecret'] },
-    mercadopago: { enabled: false, accessToken: '', publicKey: '', gratis: true, icono: '🇦🇷', campos: ['accessToken', 'publicKey'] },
-    lemonSqueezy: { enabled: false, apiKey: '', storeId: '', gratis: true, icono: '🍋', campos: ['apiKey', 'storeId'] },
-    paddle: { enabled: false, vendorId: '', apiKey: '', gratis: true, icono: '🏓', campos: ['vendorId', 'apiKey'] },
-
-    // === WEB SCRAPING Y RSS (5) ===
-    rss: { enabled: false, feedUrl: '', gratis: true, icono: '📡', campos: ['feedUrl'] },
-    rsshub: { enabled: false, instanceUrl: '', gratis: true, icono: '🔄', campos: ['instanceUrl'] },
-    hackernews: { enabled: false, gratis: true, icono: '💻', campos: [] },
-    reddit: { enabled: false, clientId: '', clientSecret: '', gratis: true, icono: '🤖', campos: ['clientId', 'clientSecret'] },
-    twitter: { enabled: false, bearerToken: '', gratis: true, icono: '🐦', campos: ['bearerToken'] }
-};
-
-// Configuración de Slack - SIN webhook por defecto
-// Los usuarios deben configurar su propio webhook
-
-// Cargar configuración guardada
-let configActual = {};
-try {
-    const saved = localStorage.getItem('integracionesConfig');
-    if (saved) {
-        configActual = JSON.parse(saved);
-        Object.keys(CONFIG_INTEGRACIONES).forEach(key => {
-            if (!configActual[key]) {
-                configActual[key] = JSON.parse(JSON.stringify(CONFIG_INTEGRACIONES[key]));
+    // Cargar configuración
+    let config = {};
+    try {
+        const saved = localStorage.getItem('integraciones_100_completo');
+        if (saved) config = JSON.parse(saved);
+        else {
+            for (const id of Object.keys(SERVICIOS)) {
+                config[id] = { enabled: false };
+                for (const campo of SERVICIOS[id].campos) config[id][campo] = '';
             }
-        });
-    } else {
-        configActual = JSON.parse(JSON.stringify(CONFIG_INTEGRACIONES));
+        }
+    } catch(e) {}
+
+    function guardar() { localStorage.setItem('integraciones_100_completo', JSON.stringify(config)); }
+
+    // ========== FUNCIÓN PARA OBTENER TOKEN ==========
+    function obtenerToken() {
+        return localStorage.getItem('authToken');
     }
-} catch(e) {
-    configActual = JSON.parse(JSON.stringify(CONFIG_INTEGRACIONES));
-}
 
-// Verificar si hay webhook configurado
-if (!configActual.slack?.webhookUrl || configActual.slack.webhookUrl === '') {
-    configActual.slack = {
-        enabled: false,
-        webhookUrl: ''
-    };
-}
-
-// Guardar en localStorage si hay webhook
-if (configActual.slack.webhookUrl) {
-    localStorage.setItem('slack_webhook', configActual.slack.webhookUrl);
-    localStorage.setItem('slackWebhook', configActual.slack.webhookUrl);
-} else {
-    localStorage.removeItem('slack_webhook');
-    localStorage.removeItem('slackWebhook');
-}
-
-function guardarConfig() {
-    localStorage.setItem('integracionesConfig', JSON.stringify(configActual));
-    if (configActual.slack?.webhookUrl) {
-        localStorage.setItem('slack_webhook', configActual.slack.webhookUrl);
-        localStorage.setItem('slackWebhook', configActual.slack.webhookUrl);
-    } else {
-        localStorage.removeItem('slack_webhook');
-        localStorage.removeItem('slackWebhook');
-    }
-}
-
-// Función para mostrar notificaciones en pantalla (INDEPENDIENTE de Slack)
-function mostrarNotificacionPantalla(mensaje, tipo = 'info') {
-    // Aquí va tu lógica actual de notificaciones en pantalla
-    // Ejemplo básico:
-    const notificacion = {
-        id: Date.now(),
-        mensaje: mensaje,
-        tipo: tipo,
-        timestamp: new Date().toISOString()
-    };
+    // ========== FUNCIÓN GENÉRICA PARA TODOS LOS SERVICIOS ==========
+    async function enviarServicio(id, creds, tarea, proyecto) {
+        const s = SERVICIOS[id];
+        if (!creds.enabled) return false;
+        
+        const mensaje = `📌 *${tarea}*\n📂 ${proyecto}\n🕐 ${new Date().toLocaleString()}`;
+        
+        try {
+            // Webhook genérico
+            if (s.tipo === 'webhook' && creds.webhookUrl) {
+                const res = await fetch(creds.webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: mensaje, content: mensaje, message: mensaje })
+                });
+                return res.ok;
+            }
+            
+            // Servicios específicos por tipo
+            switch(id) {
+               case 'slack':
+    const mensajeSlack = `📌 *Nueva Tarea*\n*Tarea:* ${tarea}\n*Proyecto:* ${proyecto}\n🕐 ${new Date().toLocaleString()}`;
+    const tokenSlack = localStorage.getItem('authToken');
+    const webhookUrlSlack = creds.webhookUrl;
     
-    // Guardar en localStorage para mostrar en la interfaz
-    const notificaciones = JSON.parse(localStorage.getItem('notificacionesPantalla') || '[]');
-    notificaciones.unshift(notificacion);
-    // Mantener solo últimas 50 notificaciones
-    if (notificaciones.length > 50) notificaciones.pop();
-    localStorage.setItem('notificacionesPantalla', JSON.stringify(notificaciones));
-    
-    // Disparar evento para actualizar UI
-    window.dispatchEvent(new CustomEvent('nuevaNotificacion', { detail: notificacion }));
-    
-    console.log(`[Notificación ${tipo}]: ${mensaje}`);
-}
-
-// Función para enviar a Slack (solo si está configurado)
-async function enviarASlack(mensaje) {
-    if (!configActual.slack?.enabled || !configActual.slack?.webhookUrl) {
-        console.log('Slack no está configurado, omitiendo envío');
+    if (!tokenSlack || !webhookUrlSlack) {
+        console.log(`   ❌ Slack: Token o webhook no disponible`);
         return false;
     }
     
     try {
-        const response = await fetch(configActual.slack.webhookUrl, {
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: mensaje })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenSlack}` },
+            body: JSON.stringify({ 
+                webhookUrl: webhookUrlSlack, 
+                mensaje: mensajeSlack, 
+                tipo: 'info', 
+                color: '#3498db' 
+            })
         });
-        
-        if (response.ok) {
-            console.log('Mensaje enviado a Slack');
+        const data = await res.json();
+        if (res.ok) {
+            console.log(`   ✅ Slack: OK`);
             return true;
         } else {
-            console.error('Error al enviar a Slack:', response.status);
+            console.log(`   ❌ Slack: Falló - ${data.error}`);
             return false;
         }
-    } catch (error) {
-        console.error('Error al enviar a Slack:', error);
+    } catch(e) {
+        console.log(`   ❌ Slack: Error - ${e.message}`);
         return false;
     }
-}
+                    
+                case 'telegram':
+                    const resTel = await fetch(`https://api.telegram.org/bot${creds.botToken}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: creds.chatId, text: mensaje }) });
+                    return resTel.ok;
+                    
+                case 'discord':
+                    const resDis = await fetch(creds.webhookUrl, { method: 'POST', body: JSON.stringify({ content: mensaje }) });
+                    return resDis.ok;
+                    
+                case 'teams':
+                    const resTea = await fetch(creds.webhookUrl, { method: 'POST', body: JSON.stringify({ text: mensaje }) });
+                    return resTea.ok;
+                    
+                case 'jira':
+                    // ========== JIRA CORREGIDO - USA EL BACKEND PROXY ==========
+                    const tokenJira = obtenerToken();
+                    if (!tokenJira) return false;
+                    
+                    try {
+                        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/jira-notify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenJira}` },
+                            body: JSON.stringify({
+                                domain: creds.domain,
+                                email: creds.email,
+                                apiToken: creds.apiToken,
+                                projectKey: creds.projectKey,
+                                tarea: tarea,
+                                proyecto: proyecto
+                            })
+                        });
+                        return res.ok;
+                    } catch(e) { return false; }
+                    
+                case 'trello':
+                    const resTre = await fetch(`https://api.trello.com/1/cards?key=${creds.apiKey}&token=${creds.token}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: tarea,
+                            desc: `Proyecto: ${proyecto}\nCreado: ${new Date().toLocaleString()}`,
+                            idList: creds.listId
+                        })
+                    });
+                    return resTre.ok;
+                    
+                case 'asana':
+                    const resAsa = await fetch('https://app.asana.com/api/1.0/tasks', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { name: tarea, notes: proyecto, projects: [creds.projectId] } }) });
+                    return resAsa.ok;
+                    
+                case 'clickup':
+                    const resCli = await fetch(`https://api.clickup.com/api/v2/list/${creds.listId}/task`, { method: 'POST', headers: { 'Authorization': creds.apiToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: tarea, description: proyecto }) });
+                    return resCli.ok;
+                    
+                case 'monday':
+                    const query = `mutation { create_item (board_id: ${creds.boardId}, item_name: "${tarea}") { id } }`;
+                    const resMon = await fetch('https://api.monday.com/v2', { method: 'POST', headers: { 'Authorization': creds.apiToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+                    return resMon.ok;
+                    
+                case 'notion':
+                    const resNot = await fetch('https://api.notion.com/v1/pages', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.apiKey}`, 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' }, body: JSON.stringify({ parent: { database_id: creds.databaseId }, properties: { Name: { title: [{ text: { content: tarea } }] } } }) });
+                    return resNot.ok;
+                    
+                case 'linear':
+                    const resLin = await fetch('https://api.linear.app/graphql', { method: 'POST', headers: { 'Authorization': creds.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ query: `mutation { issueCreate(input: { title: "${tarea}", description: "${proyecto}", teamId: "${creds.teamId}" }) { success } }` }) });
+                    return resLin.ok;
+                    
+                case 'github':
+                    const [owner, repo] = creds.repo.split('/');
+                    const resGit = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, { method: 'POST', headers: { 'Authorization': `token ${creds.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ title: tarea, body: proyecto }) });
+                    return resGit.ok;
+                    
+                case 'gitlab':
+                    const resGl = await fetch(`https://gitlab.com/api/v4/projects/${creds.projectId}/issues`, { method: 'POST', headers: { 'Authorization': `Bearer ${creds.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ title: tarea, description: proyecto }) });
+                    return resGl.ok;
+                    
+                case 'hubspot':
+                    const resHub = await fetch('https://api.hubapi.com/crm/v3/objects/tasks', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ properties: { hs_timestamp: new Date().toISOString(), hs_task_body: tarea } }) });
+                    return resHub.ok;
+                    
+                case 'pipedrive':
+                    const resPip = await fetch(`https://api.pipedrive.com/v1/activities?api_token=${creds.apiToken}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject: tarea, type: 'task' }) });
+                    return resPip.ok;
+                    
+                case 'stripe':
+                    const resStr = await fetch('https://api.stripe.com/v1/invoiceitems', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.secretKey}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: `description=${encodeURIComponent(tarea)}&amount=0&currency=usd` });
+                    return resStr.ok;
+                    
+                case 'paypal':
+                    const tokenPay = btoa(`${creds.clientId}:${creds.clientSecret}`);
+                    const authPay = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', { method: 'POST', headers: { 'Authorization': `Basic ${tokenPay}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials' });
+                    if (!authPay.ok) return false;
+                    const { access_token } = await authPay.json();
+                    const resPay = await fetch('https://api-m.sandbox.paypal.com/v1/invoicing/invoices', { method: 'POST', headers: { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ detail: { invoice_number: Date.now().toString(), reference: tarea } }) });
+                    return resPay.ok;
+                    
+                case 'supabase':
+                    const resSup = await fetch(`${creds.url}/rest/v1/tareas`, { method: 'POST', headers: { 'apikey': creds.anonKey, 'Authorization': `Bearer ${creds.anonKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: tarea, proyecto: proyecto, fecha: new Date().toISOString() }) });
+                    return resSup.ok;
+                    
+                case 'airtable':
+                    const resAir = await fetch(`https://api.airtable.com/v0/${creds.baseId}/Tareas`, { method: 'POST', headers: { 'Authorization': `Bearer ${creds.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { Nombre: tarea, Proyecto: proyecto } }) });
+                    return resAir.ok;
+                    
+                case 'firebase':
+                    const resFir = await fetch(`https://firestore.googleapis.com/v1/projects/${creds.projectId}/databases/(default)/documents/tareas`, { method: 'POST', headers: { 'Authorization': `Bearer ${creds.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { nombre: { stringValue: tarea }, proyecto: { stringValue: proyecto } } }) });
+                    return resFir.ok;
+                    
+                case 'zapier':
+                case 'make':
+                case 'n8n':
+                case 'activepieces':
+                case 'pabbly':
+                case 'powerAutomate':
+                    const resZap = await fetch(creds.webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task: tarea, project: proyecto, timestamp: new Date().toISOString() }) });
+                    return resZap.ok;
+                    
+                case 'ifttt':
+                    const resIft = await fetch(`https://maker.ifttt.com/trigger/${creds.eventName}/with/key/${creds.webhookKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value1: tarea, value2: proyecto }) });
+                    return resIft.ok;
+                    
+                case 'clockify':
+                    const resClo = await fetch(`https://api.clockify.me/api/v1/workspaces/${creds.workspaceId}/time-entries`, { method: 'POST', headers: { 'X-Api-Key': creds.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ start: new Date().toISOString(), description: tarea, projectId: creds.projectId }) });
+                    return resClo.ok;
+                    
+                case 'toggl':
+                    const resTog = await fetch(`https://api.track.toggl.com/api/v9/workspaces/${creds.workspaceId}/time_entries`, { method: 'POST', headers: { 'Authorization': `Basic ${btoa(`${creds.apiToken}:api_token`)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ description: tarea, start: new Date().toISOString(), duration: 0 }) });
+                    return resTog.ok;
+                    
+                case 'googleCalendar':
+                    const resCal = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${creds.calendarId}/events?key=${creds.apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ summary: tarea, description: proyecto, start: { dateTime: new Date().toISOString() }, end: { dateTime: new Date(Date.now() + 3600000).toISOString() } }) });
+                    return resCal.ok;
+                    
+                case 'zoom':
+                    const resZoo = await fetch('https://api.zoom.us/v2/meetings', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ topic: tarea, agenda: proyecto, type: 1 }) });
+                    return resZoo.ok;
+                    
+                case 'twitter':
+                    const resTwi = await fetch('https://api.twitter.com/2/tweets', { method: 'POST', headers: { 'Authorization': `Bearer ${creds.bearerToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: `${tarea} - ${proyecto}` }) });
+                    return resTwi.ok;
 
-// Función UNIFICADA para notificaciones
-async function notificar(mensaje, tipo = 'info') {
-    // 1. Siempre mostrar en pantalla
-    mostrarNotificacionPantalla(mensaje, tipo);
-    
-    // 2. Enviar a Slack SOLO si está configurado
-    if (configActual.slack?.enabled && configActual.slack?.webhookUrl) {
-        await enviarASlack(mensaje);
-    }
-}
-
-// Reemplaza tus llamadas actuales a notificaciones:
-// Antes: algunaFuncionQueEnviabaASlack()
-// Ahora: notificar("Tu mensaje aquí", "success/error/info")
-// ========== FUNCIONES DE INTEGRACIÓN (TODAS FUNCIONALES) ==========
-
-// Slack
-async function syncToSlack(task, projectName) {
-    const cfg = configActual.slack;
-    if (!cfg.enabled || !cfg.webhookUrl) return false;
-    try {
-        await fetch(cfg.webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: `📌 *NUEVA TAREA en ${projectName}*\n> *${task.name}*\n> 👤 ${task.assignee || 'No asignado'}` })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Telegram
-async function syncToTelegram(task, projectName) {
-    const cfg = configActual.telegram;
-    if (!cfg.enabled || !cfg.botToken || !cfg.chatId) return false;
-    try {
-        await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
-            method: 'POST',
-            body: JSON.stringify({ chat_id: cfg.chatId, text: `📌 ${task.name}\n📂 ${projectName}`, parse_mode: 'Markdown' })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Discord
-async function syncToDiscord(task, projectName) {
-    const cfg = configActual.discord;
-    if (!cfg.enabled || !cfg.webhookUrl) return false;
-    try {
-        await fetch(cfg.webhookUrl, {
-            method: 'POST',
-            body: JSON.stringify({ content: `📌 **${task.name}**\n📂 ${projectName}` })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Microsoft Teams
-async function syncToTeams(task, projectName) {
-    const cfg = configActual.teams;
-    if (!cfg.enabled || !cfg.webhookUrl) return false;
-    try {
-        await fetch(cfg.webhookUrl, { method: 'POST', body: JSON.stringify({ text: `Nueva tarea: ${task.name} - ${projectName}` }) });
-        return true;
-    } catch(err) { return false; }
-}
-
-// WhatsApp
-async function syncToWhatsApp(task, projectName) {
-    const cfg = configActual.whatsapp;
-    if (!cfg.enabled || !cfg.phoneNumberId || !cfg.accessToken) return false;
-    try {
-        await fetch(`https://graph.facebook.com/v17.0/${cfg.phoneNumberId}/messages`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${cfg.accessToken}` },
-            body: JSON.stringify({ messaging_product: 'whatsapp', to: cfg.phoneNumberId, text: { body: `📌 ${task.name} - ${projectName}` } })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Signal
-async function syncToSignal(task, projectName) {
-    const cfg = configActual.signal;
-    if (!cfg.enabled || !cfg.phoneNumber) return false;
-    console.log(`📱 Signal: ${task.name} (requiere configuración adicional)`);
-    return true;
-}
-
-// LINE
-async function syncToLine(task, projectName) {
-    const cfg = configActual.line;
-    if (!cfg.enabled || !cfg.channelAccessToken) return false;
-    try {
-        await fetch('https://api.line.me/v2/bot/message/push', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${cfg.channelAccessToken}` },
-            body: JSON.stringify({ to: cfg.userId, messages: [{ type: 'text', text: `📌 ${task.name}\n📂 ${projectName}` }] })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Viber
-async function syncToViber(task, projectName) {
-    const cfg = configActual.viber;
-    if (!cfg.enabled || !cfg.authToken) return false;
-    console.log(`📞 Viber: ${task.name} (requiere configuración adicional)`);
-    return true;
-}
-
-// Rocket.Chat
-async function syncToRocketChat(task, projectName) {
-    const cfg = configActual.rocketChat;
-    if (!cfg.enabled || !cfg.url || !cfg.token) return false;
-    try {
-        await fetch(`${cfg.url}/api/v1/chat.postMessage`, {
-            method: 'POST',
-            headers: { 'X-Auth-Token': cfg.token, 'X-User-Id': cfg.userId },
-            body: JSON.stringify({ channel: '#general', text: `📌 ${task.name} - ${projectName}` })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// Mattermost
-async function syncToMattermost(task, projectName) {
-    const cfg = configActual.mattermost;
-    if (!cfg.enabled || !cfg.url || !cfg.token) return false;
-    try {
-        await fetch(`${cfg.url}/api/v4/posts`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${cfg.token}` },
-            body: JSON.stringify({ channel_id: cfg.channelId, message: `📌 ${task.name} - ${projectName}` })
-        });
-        return true;
-    } catch(err) { return false; }
-}
-
-// ========== GENERAR LISTA DE 100 SERVICIOS ==========
-function generarLista100Servicios() {
-    let html = '';
-    for (const [id, cfg] of Object.entries(CONFIG_INTEGRACIONES)) {
-        const enabled = configActual[id]?.enabled || false;
-        html += `
-            <div style="background: rgba(255,255,255,0.03); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(139,92,246,0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">${cfg.icono || '🔌'}</div>
-                        <div>
-                            <h3 style="margin: 0; color: #8b5cf6; font-size: 18px;">${id.toUpperCase()}</h3>
-                            <p style="margin: 3px 0 0; font-size: 12px; color: #94a3b8;">${cfg.gratis ? 'Gratuito' : 'Premium'}</p>
-                        </div>
-                    </div>
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 12px; color: white;">Activar</span>
-                        <input type="checkbox" data-id="${id}" class="toggle-servicio" ${enabled ? 'checked' : ''} style="transform: scale(1.1); cursor: pointer;">
-                    </label>
-                </div>
-                <div id="campos-${id}" style="display: ${enabled ? 'grid' : 'none'}; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 15px;">
-        `;
-        for (const campo of cfg.campos || []) {
-            const valor = configActual[id]?.[campo] || '';
-            html += `
-                <div>
-                    <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #cbd5e1;">${campo}</label>
-                    <input type="text" data-id="${id}" data-field="${campo}" value="${escapeHtmlText(valor)}" 
-                           style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #3b82f6; background: #0f172a; color: white; font-size: 12px;">
-                </div>
-            `;
-        }
-        html += `</div></div>`;
-    }
-    return html;
-}
-
-function escapeHtmlText(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
-}
-
-function configurarEventos100Servicios() {
-    document.querySelectorAll('.toggle-servicio').forEach(chk => {
-        chk.addEventListener('change', (e) => {
-            const id = e.target.dataset.id;
-            if (!configActual[id]) configActual[id] = {};
-            configActual[id].enabled = e.target.checked;
-            guardarConfig();
-            const camposDiv = document.getElementById(`campos-${id}`);
-            if (camposDiv) camposDiv.style.display = e.target.checked ? 'grid' : 'none';
-        });
-    });
-    
-    document.querySelectorAll('#listaServiciosIntegracion input[type="text"]').forEach(inp => {
-        inp.addEventListener('change', (e) => {
-            const id = e.target.dataset.id;
-            const field = e.target.dataset.field;
-            if (id && field) {
-                if (!configActual[id]) configActual[id] = {};
-                configActual[id][field] = e.target.value;
-                guardarConfig();
+                // ========== POWER BI CORREGIDO - USA EL BACKEND PROXY ==========
+                case 'powerbi':
+                    if (!creds.streamingUrl || creds.streamingUrl === '') {
+                        console.log(`   ❌ Power BI: No hay URL configurada`);
+                        return false;
+                    }
+                    
+                    const tokenPowerBI = obtenerToken();
+                    if (!tokenPowerBI) return false;
+                    
+                    try {
+                        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/powerbi-notify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenPowerBI}` },
+                            body: JSON.stringify({
+                                streamingUrl: creds.streamingUrl,
+                                tarea: tarea,
+                                proyecto: proyecto
+                            })
+                        });
+                        return res.ok;
+                    } catch(e) { return false; }
+                    
+                default:
+                    if (creds.webhookUrl) {
+                        const resDef = await fetch(creds.webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: mensaje, task: tarea, project: proyecto }) });
+                        return resDef.ok;
+                    }
+                    console.log(`   📡 ${s.nombre}: Simulación (sin credenciales reales)`);
+                    return true;
             }
-        });
-    });
-}
-
-// ========== PANEL DE CONFIGURACIÓN ==========
-function mostrarPanelIntegraciones() {
-    const panelExistente = document.getElementById('panelIntegracionesFinal');
-    if (panelExistente) panelExistente.remove();
-    
-    const panel = document.createElement('div');
-    panel.id = 'panelIntegracionesFinal';
-    panel.style.cssText = `
-        position: fixed; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.95); backdrop-filter:blur(10px); z-index:10000000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    
-    panel.innerHTML = `
-        <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 32px; width: 95%; max-width: 1400px; max-height: 85vh; overflow-y: auto; padding: 30px; border: 2px solid #8b5cf6;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; position: sticky; top: 0; background: #0f172a; padding-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #8b5cf6, #ec4899); border-radius: 16px; font-size: 24px; display: flex; align-items: center; justify-content: center;">🔌</div>
-                    <div><h2 style="margin: 0; font-size: 24px; color: white;">Centro de Integraciones</h2><p style="margin: 5px 0 0 0; color: #94a3b8;">100 servicios disponibles</p></div>
-                </div>
-                <button id="cerrarPanelIntegracion" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px 20px; border-radius: 12px; cursor: pointer;">✕ Cerrar</button>
-            </div>
-            <div id="listaServiciosIntegracion">${generarLista100Servicios()}</div>
-            <div style="margin-top: 20px; padding: 15px; background: rgba(139,92,246,0.1); border-radius: 12px; text-align: center; font-size: 12px; color: #94a3b8;">💡 100 INTEGRACIONES FUNCIONALES | Configura las credenciales y activa</div>
-        </div>
-    `;
-    
-    document.body.appendChild(panel);
-    document.getElementById('cerrarPanelIntegracion').onclick = () => panel.remove();
-    setTimeout(() => configurarEventos100Servicios(), 100);
-}
-
-// ========== BOTÓN EN SIDEBAR ==========
-function agregarBotonIntegracionSidebar() {
-    const interval = setInterval(() => {
-        const sidebar = document.querySelector('aside, #sidebar, .sidebar');
-        if (sidebar) {
-            clearInterval(interval);
-            let menuList = sidebar.querySelector('ul, .menu-list, .nav-list');
-            if (!menuList) {
-                menuList = document.createElement('ul');
-                menuList.style.cssText = 'list-style: none; padding: 0; margin: 0;';
-                sidebar.appendChild(menuList);
-            }
-            const menuItem = document.createElement('li');
-            menuItem.innerHTML = `<div id="btnIntegracionesSidebar" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; color: white; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><span style="font-size: 18px;">🔌</span><span style="font-weight: 500;">Integraciones</span><span style="margin-left: auto; font-size: 11px;">100</span></div>`;
-            const btn = menuItem.querySelector('#btnIntegracionesSidebar');
-            btn.onclick = () => mostrarPanelIntegraciones();
-            menuList.appendChild(menuItem);
+        } catch(e) {
+            console.log(`   ❌ ${s.nombre}: Error - ${e.message}`);
+            return false;
         }
-    }, 1000);
-}
-
-// ========== INTERCEPTAR TAREAS ==========
-async function onTaskCreated(task, projectName) {
-    if (!task) return;
-    await Promise.allSettled([
-        syncToSlack(task, projectName),
-        syncToTelegram(task, projectName),
-        syncToDiscord(task, projectName),
-        syncToTeams(task, projectName),
-        syncToWhatsApp(task, projectName),
-        syncToSignal(task, projectName),
-        syncToLine(task, projectName),
-        syncToViber(task, projectName),
-        syncToRocketChat(task, projectName),
-        syncToMattermost(task, projectName)
-    ]);
-}
-
-function interceptarCreacionTareas() {
-    const original = window.createNewTask;
-    if (original) {
-        window.createNewTask = function(e) {
-            const result = original(e);
-            setTimeout(() => {
-                const project = window.projects?.[window.currentProjectIndex];
-                const lastTask = project?.tasks?.[project.tasks.length - 1];
-                if (lastTask && project) onTaskCreated(lastTask, project.name);
-            }, 1000);
-            return result;
-        };
     }
+
+    // ========== SINCRONIZAR TAREA CON TODOS LOS SERVICIOS ==========
+    window.sincronizarTarea = async function(tarea, proyecto) {
+    console.log(`\n🚀 Sincronizando: "${tarea}" - ${proyecto}\n`);
+    
+    const config = JSON.parse(localStorage.getItem('integraciones_100_completo') || '{}');
+    const token = localStorage.getItem('authToken');
+    
+    // ========== SLACK (USA PROXY) ==========
+    
+    // ========== TELEGRAM ==========
+    if (config.telegram?.enabled && config.telegram?.botToken) {
+        console.log(`📡 Enviando a Telegram...`);
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: config.telegram.chatId, text: `📌 *Nueva Tarea*\n*Tarea:* ${tarea}\n*Proyecto:* ${proyecto}` })
+            });
+            console.log(res.ok ? '   ✅ Telegram: OK' : '   ❌ Telegram: Falló');
+        } catch(e) { console.log('   ❌ Telegram:', e.message); }
+    }
+    
+  // ========== TRELLO ==========
+// ========== TRELLO ==========
+if (config.trello?.enabled && config.trello?.apiKey && config.trello?.token && config.trello?.listId) {
+    console.log(`📡 Enviando a Trello...`);
+    try {
+        const res = await fetch(`https://api.trello.com/1/cards?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: tarea, desc: `Proyecto: ${proyecto}`, idList: config.trello.listId })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].trello = data.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Trello: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ Trello: Falló');
+        }
+    } catch(e) { console.log('   ❌ Trello:', e.message); }
 }
 
-// ========== EXPORTAR API ==========
-window.IntegrationsAPI = {
-    showPanel: mostrarPanelIntegraciones,
-    getConfig: () => configActual,
-    onTaskCreated: onTaskCreated,
-    test: function() { console.log(`✅ ${Object.keys(configActual).length} servicios disponibles`); mostrarPanelIntegraciones(); return true; }
+
+    // ========== GITHUB ==========
+ if (config.github?.enabled && config.github?.token && config.github?.repo) {
+    console.log(`📡 Enviando a GitHub...`);
+    try {
+        const [owner, repo] = config.github.repo.split('/');
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+            method: 'POST', headers: { 'Authorization': `token ${config.github.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: tarea, body: `Proyecto: ${proyecto}` })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            const proyectoActual = window.projects?.[window.projects.length - 1];
+            if (proyectoActual && proyectoActual.tasks) {
+                const tareaActual = proyectoActual.tasks[proyectoActual.tasks.length - 1];
+                if (tareaActual) tareaActual.githubIssueId = data.id;
+            }
+            console.log(`   ✅ GitHub: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ GitHub: Falló');
+        }
+    } catch(e) { console.log('   ❌ GitHub:', e.message); }
+}
+    
+    // ========== ASANA ==========
+// ========== ASANA ==========
+if (config.asana?.enabled && config.asana?.accessToken && config.asana?.projectId) {
+    console.log(`📡 Enviando a Asana...`);
+    try {
+        const res = await fetch('https://app.asana.com/api/1.0/tasks', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: { name: tarea, notes: `Proyecto: ${proyecto}`, projects: [config.asana.projectId] } })
+        });
+        const data = await res.json();
+        if (res.ok && data.data?.gid) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].asana = data.data.gid;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Asana: OK (ID: ${data.data.gid})`);
+        } else {
+            console.log('   ❌ Asana: Falló');
+        }
+    } catch(e) { console.log('   ❌ Asana:', e.message); }
+}
+    // ========== MONDAY ==========
+ // ========== MONDAY ==========
+if (config.monday?.enabled && config.monday?.apiToken && config.monday?.boardId) {
+    console.log(`📡 Enviando a Monday...`);
+    const query = `mutation { create_item(board_id: ${config.monday.boardId}, item_name: "${tarea}") { id } }`;
+    try {
+        const res = await fetch('https://api.monday.com/v2', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${config.monday.apiToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        const data = await res.json();
+        if (res.ok && data.data?.create_item?.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].monday = data.data.create_item.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ Monday: OK (ID: ${data.data.create_item.id})`);
+        } else {
+            console.log('   ❌ Monday: Falló');
+        }
+    } catch(e) { console.log('   ❌ Monday:', e.message); }
+}
+    
+    // ========== CLICKUP ==========
+// ========== CLICKUP ==========
+if (config.clickup?.enabled && config.clickup?.apiToken && config.clickup?.listId) {
+    console.log(`📡 Enviando a ClickUp...`);
+    try {
+        const res = await fetch(`https://api.clickup.com/api/v2/list/${config.clickup.listId}/task`, {
+            method: 'POST', headers: { 'Authorization': config.clickup.apiToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: tarea, description: `Proyecto: ${proyecto}` })
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+            // GUARDAR EN LOCALSTORAGE
+            let tareas = JSON.parse(localStorage.getItem('tareas_ids') || '{}');
+            if (!tareas[tarea]) tareas[tarea] = {};
+            tareas[tarea].clickup = data.id;
+            localStorage.setItem('tareas_ids', JSON.stringify(tareas));
+            console.log(`   ✅ ClickUp: OK (ID: ${data.id})`);
+        } else {
+            console.log('   ❌ ClickUp: Falló');
+        }
+    } catch(e) { console.log('   ❌ ClickUp:', e.message); }
+}
+    // ========== JIRA (USA PROXY) ==========
+    if (config.jira?.enabled) {
+    console.log(`📡 Enviando a Jira...`);
+    try {
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/jira-notify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                domain: config.jira.domain, email: config.jira.email,
+                apiToken: config.jira.apiToken, projectKey: config.jira.projectKey,
+                tarea: tarea, proyecto: proyecto
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.key) {
+            const proyectoActual = window.projects?.[window.projects.length - 1];
+            if (proyectoActual && proyectoActual.tasks) {
+                const tareaActual = proyectoActual.tasks[proyectoActual.tasks.length - 1];
+                if (tareaActual) tareaActual.jiraIssueId = data.key;
+            }
+            console.log(`   ✅ Jira: OK (ID: ${data.key})`);
+        } else {
+            console.log('   ❌ Jira: Falló');
+        }
+    } catch(e) { console.log('   ❌ Jira:', e.message); }
+}
+    // ========== POWER BI (USA PROXY) ==========
+    if (config.powerbi?.enabled && config.powerbi?.streamingUrl) {
+        console.log(`📡 Enviando a Power BI...`);
+        try {
+            const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/powerbi-notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    streamingUrl: config.powerbi.streamingUrl,
+                    tarea: tarea,
+                    proyecto: proyecto
+                })
+            });
+            console.log(res.ok ? '   ✅ Power BI: OK' : '   ❌ Power BI: Falló');
+        } catch(e) { console.log('   ❌ Power BI:', e.message); }
+    }
+    
+    console.log(`\n✅ Sincronización completada\n`);
 };
 
-// ========== INICIALIZAR ==========
-setTimeout(() => {
-    agregarBotonIntegracionSidebar();
-    interceptarCreacionTareas();
-    console.log(`✅ Sistema de Integraciones inicializado (${Object.keys(configActual).length} servicios)`);
-}, 2000);
+    // ========== DETECCIÓN AUTOMÁTICA DE NUEVAS TAREAS ==========
+ let ultimoConteoTareas = 0;
+let estadoAnteriorTareas = new Map();
 
+async function enviarNotificacionCambio(tarea, proyectoActual, cambios) {
+    const config = JSON.parse(localStorage.getItem('integraciones_100_completo') || '{}');
+    const token = localStorage.getItem('authToken');
+    const mensaje = `✏️ *Tarea Modificada*\n*Tarea:* ${tarea.name}\n*Proyecto:* ${proyectoActual}\n*Cambios:* ${cambios}\n🕐 ${new Date().toLocaleString()}`;
+    
+    // 1. Slack
+/*
+    if (config.slack?.enabled && token && config.slack?.webhookUrl) {
+        try {
+            await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/slack-notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ webhookUrl: config.slack.webhookUrl, mensaje, tipo: 'info', color: '#f39c12' })
+            });
+        } catch(e) {}
+    }
+    */
+    // 2. Telegram
+    if (config.telegram?.enabled && config.telegram?.botToken) {
+        try {
+            await fetch(`https://api.telegram.org/bot${config.telegram.botToken}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: config.telegram.chatId, text: mensaje })
+            });
+        } catch(e) {}
+    }
+    
+    // 3. JIRA
+    if (config.jira?.enabled && config.jira?.domain && tarea.jiraIssueId) {
+        try {
+            const auth = btoa(`${config.jira.email}:${config.jira.apiToken}`);
+            await fetch(`https://${config.jira.domain}/rest/api/3/issue/${tarea.jiraIssueId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    fields: { 
+                        summary: tarea.name,
+                        description: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    } 
+                })
+            });
+        } catch(e) {}
+    }
+    
+    // 4. CLICKUP
+    if (config.clickup?.enabled && config.clickup?.apiToken && tarea.clickupTaskId) {
+        try {
+            await fetch(`https://api.clickup.com/api/v2/task/${tarea.clickupTaskId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': config.clickup.apiToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: tarea.name,
+                    description: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                })
+            });
+        } catch(e) {}
+    }
+    
+    // 5. MONDAY - CORREGIDO
+    if (config.monday?.enabled && config.monday?.apiToken && tarea.mondayItemId) {
+        try {
+            // Determinar el valor del estado según el estado de la tarea
+            let estadoMonday = "Listo para empezar"; // default
+            if (tarea.status === 'en progreso') {
+                estadoMonday = "En curso";
+            } else if (tarea.status === 'completada') {
+                estadoMonday = "Listo";
+            }
+            
+            const query = `mutation { change_simple_column_value(board_id: ${config.monday.boardId}, item_id: ${tarea.mondayItemId}, column_id: "task_status", value: "${estadoMonday}") { id } }`;
+            await fetch('https://api.monday.com/v2', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${config.monday.apiToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            console.log(`   ✅ Monday: Estado actualizado a "${estadoMonday}"`);
+        } catch(e) { console.log(`   ❌ Monday: Error - ${e.message}`); }
+    }
+    
+    // 6. ASANA - CORREGIDO (mover entre secciones)
+    if (config.asana?.enabled && config.asana?.accessToken && tarea.asanaTaskId) {
+        try {
+            // IDs de las secciones de Asana
+            const SECCIONES = {
+                'pendiente': '1215028103597916',    // Tareas pendientes
+                'en progreso': '1215028103597918',  // En curso
+                'completada': '1215028103597919'    // Trabajo terminado
+            };
+            
+            const sectionId = SECCIONES[tarea.status];
+            
+            if (sectionId) {
+                // Mover tarea a la sección correspondiente
+                await fetch(`https://app.asana.com/api/1.0/tasks/${tarea.asanaTaskId}/addProject`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        data: { 
+                            project: config.asana.projectId, 
+                            section: sectionId 
+                        } 
+                    })
+                });
+                console.log(`   ✅ Asana: Tarea movida a sección "${tarea.status}"`);
+            }
+            
+            // También actualizar el nombre si cambió
+            await fetch(`https://app.asana.com/api/1.0/tasks/${tarea.asanaTaskId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${config.asana.accessToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    data: { 
+                        name: tarea.name,
+                        notes: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    } 
+                })
+            });
+        } catch(e) { console.log(`   ❌ Asana: Error - ${e.message}`); }
+    }
+    
+    // 7. TRELLO - Mover a otra lista según estado
+    if (config.trello?.enabled && config.trello?.apiKey && config.trello?.token && tarea.trelloCardId) {
+        try {
+            // IDs de las listas de Trello
+            const LISTAS_TRELLO = {
+                'pendiente': '5d09d03ba89fb24b9b5a77f2',      // backlog
+                'en progreso': '5d09d054cbbce91c29560a17',    // crear/en progreso
+                'completada': '5d09d066e4cb61440b74db14'      // hecho
+            };
+            
+            const listId = LISTAS_TRELLO[tarea.status];
+            
+            if (listId) {
+                await fetch(`https://api.trello.com/1/cards/${tarea.trelloCardId}?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: tarea.name,
+                        desc: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`,
+                        idList: listId
+                    })
+                });
+                console.log(`   ✅ Trello: Tarjeta movida a lista "${tarea.status}"`);
+            } else {
+                // Solo actualizar nombre
+                await fetch(`https://api.trello.com/1/cards/${tarea.trelloCardId}?key=${config.trello.apiKey}&token=${config.trello.token}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: tarea.name,
+                        desc: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                    })
+                });
+            }
+        } catch(e) { console.log(`   ❌ Trello: Error - ${e.message}`); }
+    }
+    
+    // 8. GITHUB
+    if (config.github?.enabled && config.github?.token && config.github?.repo && tarea.githubIssueId) {
+        const [owner, repo] = config.github.repo.split('/');
+        try {
+            await fetch(`https://api.github.com/repos/${owner}/${repo}/issues/${tarea.githubIssueId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${config.github.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title: tarea.name,
+                    body: `Proyecto: ${proyectoActual}\nEstado: ${tarea.status || 'Actualizado'}`
+                })
+            });
+            console.log(`   ✅ GitHub: Issue actualizado`);
+        } catch(e) { console.log(`   ❌ GitHub: Error - ${e.message}`); }
+    }
+}
+function verificarNuevasTareas() {
+    if (!window.projects || window.projects.length === 0) return;
+    
+    const proyectoActual = window.projects[window.projects.length - 1];
+    if (!proyectoActual || !proyectoActual.tasks) return;
+    
+    const tareasActuales = proyectoActual.tasks;
+    const totalTareas = tareasActuales.length;
+    
+    // Detectar nuevas tareas
+    if (totalTareas > ultimoConteoTareas) {
+        const nuevaTarea = tareasActuales[totalTareas - 1];
+        console.log(`🆕 Nueva tarea: "${nuevaTarea.name}"`);
+        window.sincronizarTarea(nuevaTarea.name, proyectoActual.name);
+    }
+    
+    // Detectar modificaciones
+    tareasActuales.forEach(tarea => {
+        const estadoGuardado = estadoAnteriorTareas.get(tarea.id);
+        const estadoActual = JSON.stringify({
+            name: tarea.name,
+            status: tarea.status,
+            assignee: tarea.assignee
+        });
+        
+        if (estadoGuardado && estadoGuardado !== estadoActual) {
+            console.log(`✏️ Tarea MODIFICADA: "${tarea.name}"`);
+            
+            const anterior = JSON.parse(estadoGuardado);
+            const actual = JSON.parse(estadoActual);
+            const cambios = [];
+            if (anterior.name !== actual.name) cambios.push(`título (de "${anterior.name}" a "${actual.name}")`);
+            if (anterior.status !== actual.status) cambios.push(`estado (de "${anterior.status}" a "${actual.status}")`);
+            if (anterior.assignee !== actual.assignee) cambios.push(`asignado (de "${anterior.assignee}" a "${actual.assignee}")`);
+            
+            if (cambios.length > 0) {
+                enviarNotificacionCambio(tarea, proyectoActual.name, cambios.join(', '));
+            }
+        }
+        
+        estadoAnteriorTareas.set(tarea.id, estadoActual);
+    });
+    
+    ultimoConteoTareas = totalTareas;
+}
 
+function inicializarEstadoTareas() {
+    if (!window.projects || window.projects.length === 0) return;
+    const proyectoActual = window.projects[window.projects.length - 1];
+    if (proyectoActual && proyectoActual.tasks) {
+        proyectoActual.tasks.forEach(tarea => {
+            estadoAnteriorTareas.set(tarea.id, JSON.stringify({
+                name: tarea.name,
+                status: tarea.status,
+                assignee: tarea.assignee
+            }));
+        });
+        console.log(`✅ Estado inicializado: ${estadoAnteriorTareas.size} tareas`);
+    }
+}
 
+setTimeout(inicializarEstadoTareas, 2000);
+setInterval(verificarNuevasTareas, 3000);
+
+    setInterval(verificarNuevasTareas, 3000);
+    console.log('✅ Monitoreo automático de tareas ACTIVADO');
+
+    // ========== COMANDOS PARA EL USUARIO ==========
+    window.activarServicio = function(servicio, credenciales) {
+        if (!config[servicio]) { console.log(`❌ Servicio ${servicio} no existe`); return false; }
+        config[servicio].enabled = true;
+        for (const [k, v] of Object.entries(credenciales)) config[servicio][k] = v;
+        guardar();
+        console.log(`✅ ${SERVICIOS[servicio]?.nombre} activado con tus credenciales`);
+        return true;
+    };
+
+    window.desactivarServicio = function(servicio) {
+        if (config[servicio]) { config[servicio].enabled = false; guardar(); console.log(`❌ ${SERVICIOS[servicio]?.nombre} desactivado`); }
+    };
+
+    window.verEstado = function() {
+        const total = Object.keys(config).length;
+        const activos = Object.values(config).filter(c => c.enabled).length;
+        console.log(`\n📊 ESTADO: ${activos}/${total} servicios activos\n`);
+        for (const [id, s] of Object.entries(SERVICIOS)) {
+            if (config[id]?.enabled) console.log(`   ✅ ${s.icono} ${s.nombre}`);
+        }
+    };
+
+    // ========== GENERAR PANEL ==========
+    function generarPanel() {
+        let html = '<div style="max-height: 70vh; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px;">';
+        
+        const grupos = {
+            '💬 Mensajería': Object.keys(SERVICIOS).slice(0, 10),
+            '📊 Proyectos': Object.keys(SERVICIOS).slice(10, 30),
+            '🎯 CRM': Object.keys(SERVICIOS).slice(30, 45),
+            '📅 Calendario': Object.keys(SERVICIOS).slice(45, 55),
+            '💰 Pagos': Object.keys(SERVICIOS).slice(55, 67),
+            '🗄️ Bases Datos': Object.keys(SERVICIOS).slice(67, 79),
+            '☁️ Storage': Object.keys(SERVICIOS).slice(79, 89),
+            '📈 Analytics': Object.keys(SERVICIOS).slice(89, 99),
+            '⚡ Automatización': Object.keys(SERVICIOS).slice(99, 109),
+            '⏱️ Tiempo': Object.keys(SERVICIOS).slice(109, 117),
+            '📱 Social': Object.keys(SERVICIOS).slice(117, 125)
+        };
+
+        for (const [grupo, ids] of Object.entries(grupos)) {
+            html += `<div style="background: #1e293b; border-radius: 16px; padding: 15px; border: 1px solid #334155;"><h3 style="color: #8b5cf6; margin: 0 0 15px 0;">${grupo}</h3>`;
+            for (const id of ids) {
+                if (!SERVICIOS[id]) continue;
+                const s = SERVICIOS[id];
+                const enabled = config[id]?.enabled || false;
+                html += `
+                    <div style="background: #0f172a; border-radius: 10px; padding: 12px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div><span style="font-size: 20px;">${s.icono}</span> <span style="color: white; font-weight: bold;">${s.nombre}</span> ${enabled ? '<span style="background: #22c55e; padding: 2px 6px; border-radius: 12px; font-size: 9px;">ACTIVO</span>' : ''}</div>
+                            <label><input type="checkbox" data-id="${id}" class="toggle-servicio-panel" ${enabled ? 'checked' : ''}></label>
+                        </div>
+                        <div id="campos-panel-${id}" style="display: ${enabled ? 'grid' : 'none'}; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                            ${s.campos.map(campo => `<div><input type="text" data-id="${id}" data-field="${campo}" placeholder="${campo}" value="${escapeHtml(config[id]?.[campo] || '')}" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #3b82f6; background: #0f172a; color: white; font-size: 11px;"></div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+
+    window.mostrarPanel = function() {
+        const existing = document.getElementById('panel100Final');
+        if (existing) existing.remove();
+        
+        const total = Object.keys(config).length;
+        const activos = Object.values(config).filter(c => c.enabled).length;
+        
+        const panel = document.createElement('div');
+        panel.id = 'panel100Final';
+        panel.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); backdrop-filter:blur(10px); z-index:9999999; display:flex; align-items:center; justify-content:center;`;
+        panel.innerHTML = `
+            <div style="background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:24px; width:95%; max-width:1400px; max-height:85vh; overflow-y:auto; padding:25px; border:2px solid #8b5cf6;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; position:sticky; top:0; background:#0f172a; padding-bottom:15px;">
+                    <div><h2 style="margin:0; color:white;">🔌 Centro de Integraciones</h2><p style="margin:5px 0 0; color:#94a3b8;">${activos}/${total} servicios activos | 125 integraciones</p></div>
+                    <button id="cerrarPanelFinal" style="background:#ef4444; border:none; color:white; padding:8px 16px; border-radius:8px; cursor:pointer;">✕ Cerrar</button>
+                </div>
+                <div id="listaServiciosFinal">${generarPanel()}</div>
+                <div style="margin-top:20px; padding:12px; background:#8b5cf620; border-radius:12px; text-align:center; font-size:12px;">💡 Configura tus credenciales reales y activa cada servicio</div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        document.getElementById('cerrarPanelFinal').onclick = () => panel.remove();
+        
+        setTimeout(() => {
+            document.querySelectorAll('.toggle-servicio-panel').forEach(btn => {
+                btn.onchange = (e) => {
+                    const id = e.target.dataset.id;
+                    if (config[id]) {
+                        config[id].enabled = e.target.checked;
+                        guardar();
+                        const camposDiv = document.getElementById(`campos-panel-${id}`);
+                        if (camposDiv) camposDiv.style.display = e.target.checked ? 'grid' : 'none';
+                        const nuevosActivos = Object.values(config).filter(c => c.enabled).length;
+                        document.querySelector('#panel100Final p').innerHTML = `${nuevosActivos}/${total} servicios activos | 125 integraciones`;
+                    }
+                };
+            });
+            document.querySelectorAll('#listaServiciosFinal input[type="text"]').forEach(inp => {
+                inp.onchange = (e) => {
+                    const id = e.target.dataset.id, field = e.target.dataset.field;
+                    if (id && field && config[id]) { config[id][field] = e.target.value; guardar(); console.log(`✅ ${id}.${field} guardado`); }
+                };
+            });
+        }, 100);
+    };
+
+    // ========== AGREGAR BOTÓN AL SIDEBAR ==========
+    function agregarBoton() {
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar');
+        if (sidebar && !document.getElementById('btn100Final')) {
+            const btn = document.createElement('div');
+            btn.id = 'btn100Final';
+            btn.style.cssText = `display:flex; align-items:center; gap:10px; padding:12px 16px; margin:8px; cursor:pointer; background:linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius:12px; color:white; font-weight:bold;`;
+            btn.innerHTML = `🔌 Integraciones <span style="margin-left:auto; background:#ec4899; padding:2px 8px; border-radius:20px;">125</span>`;
+            btn.onclick = () => window.mostrarPanel();
+            sidebar.appendChild(btn);
+            console.log('✅ Botón "Integraciones" agregado al sidebar');
+        }
+    }
+
+    let intentos = 0;
+    const intervalo = setInterval(() => {
+        if (document.querySelector('aside, #sidebar, .sidebar')) {
+            clearInterval(intervalo);
+            agregarBoton();
+        } else if (intentos++ > 30) { clearInterval(intervalo); console.log('⚠️ No se encontró sidebar. Usa: mostrarPanel()'); }
+    }, 500);
+
+    console.log(`\n╔══════════════════════════════════════════════════════════════╗`);
+    console.log(`║     🔌 SISTEMA DE INTEGRACIONES - 125 SERVICIOS            ║`);
+    console.log(`╠══════════════════════════════════════════════════════════════╣`);
+    console.log(`║  ✅ TODOS los servicios tienen función de envío implementada ║`);
+    console.log(`║  ✅ Botón "Integraciones" agregado al sidebar               ║`);
+    console.log(`║  ✅ Al crear tareas, se envía automáticamente               ║`);
+    console.log(`╠══════════════════════════════════════════════════════════════╣`);
+    console.log(`║  COMANDOS:                                                   ║`);
+    console.log(`║    mostrarPanel()           - Abrir panel                    ║`);
+    console.log(`║    sincronizarTarea("x","y")- Probar envío manual            ║`);
+    console.log(`║    activarServicio("id",{}) - Activar con credenciales       ║`);
+    console.log(`║    verEstado()              - Ver servicios activos          ║`);
+    console.log(`╚══════════════════════════════════════════════════════════════╝\n`);
+    
+})();
 // ===== SOLUCIÓN DEFINITIVA - CLIENTEID =====
 (function() {
     console.log('🚀 INICIANDO SISTEMA DE CLIENTEID...');
@@ -18687,6 +19488,10 @@ setTimeout(() => {
         }
     }, 3000);
 })();
+
+
+
+
 
 
 
@@ -33653,36 +34458,6 @@ function getActiveView() {
 }
 
 
-// ============================================
-// ✅ TELEGRAM - AQUÍ (después de las funciones principales)
-// ============================================
-(function(){
-    const TOKEN = "8738566365:AAE0Vp4YCsjq-hEKJE4tXcwt_yEnQVRPbO4";
-    const CHAT = "5819884021";
-    
-    window.notificarTelegram = function(msg) {
-        fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: CHAT, text: msg, parse_mode: 'Markdown' })
-        }).catch(e => console.log('Telegram error:', e));
-    };
-    
-    let lastCount = 0;
-    setInterval(() => {
-        const p = projects?.[currentProjectIndex];
-        if(p?.tasks) {
-            const current = p.tasks.length;
-            if(current > lastCount && lastCount > 0) {
-                const t = p.tasks[current-1];
-                notificarTelegram(`📌 *TAREA NUEVA*\n📋 ${t.name}\n📂 ${p.name}`);
-            }
-            lastCount = current;
-        }
-    }, 3000);
-    
-    setTimeout(() => notificarTelegram('🟢 *SISTEMA LISTO*'), 2000);
-})();
 
 
 
@@ -38071,144 +38846,6 @@ function handleDragOver(e) {
 }
 
 function handleDragLeave(e) {
-  e.currentTarget.style.backgroundColor = '';
-}
-
-function handleDrop(e) {
-  e.preventDefault();
-  const taskId = parseInt(e.dataTransfer.getData('taskId'));
-  const targetColumn = e.currentTarget.closest('.column');
-  
-  const statusMap = {
-    pendingTasks: 'pending',
-    inProgressTasks: 'inProgress',
-    completedTasks: 'completed',
-    overdueTasks: 'overdue'
-  };
-
-  const newStatus = statusMap[targetColumn.id];
-  const task = projects[currentProjectIndex].tasks.find(t => t.id === taskId);
-
-  if (task && task.status !== newStatus) {
-
-    // 🔥 REGISTRAR HISTORIA
-    task.history = task.history || [];
-    task.history.push({
-      from: task.status,
-      to: newStatus,
-      date: new Date().toISOString()
-    });
-
-    const oldStatus = task.status;  // ⬅️ captura el estado anterior
-    // 🔁 CAMBIO REAL DE ESTADO
-    task.status = newStatus;
-
-    checkTaskOverdue(task);
-    updateLocalStorage();
-
-
-syncChannel.postMessage({
-    type: 'TASK_MOVED',
-    projectIndex: currentProjectIndex,
-    taskId: taskId,
-    newStatus: newStatus,
-    timestamp: Date.now()
-});
-
-
-// Notificar a otras pestañas que hubo un movimiento
-localStorage.setItem('task-moved', Date.now().toString());
-
-// Notificar a otras pestañas
-window.postMessage({
-    type: 'TASK_MOVED',
-    projectIndex: currentProjectIndex,
-    taskId: taskId,
-    newStatus: newStatus,
-    timestamp: Date.now()
-}, '*');
-
-    // ========== 🚨 NOTIFICACIÓN A SLACK (AQUÍ DEBE ESTAR) ==========
-    console.log('🚨 Vamos a llamar a SlackNotifier.taskMoved');
-    if (window.SlackNotifier) {
-      console.log('✅ SlackNotifier existe, enviando...');
-      SlackNotifier.taskMoved(task, oldStatus, newStatus, projects[currentProjectIndex].name);
-    } else {
-      console.warn('❌ SlackNotifier NO existe');
-    }
-    // =============================================================
-
-    renderKanbanTasks();
-    updateStatistics();
-    updateProjectProgress();
-
-   
-
-
-    // 🔥 AGREGAR ESTO:
-    setTimeout(() => {
-      refreshCalendar();
-    }, 100);
-
-    // ✅ Inserta esto justo aquí
-    if (task.status === 'completada') {
-      logCompletedTask(task);
-      checkAutoRetrain();
-    }
-
-    // === AGREGAR ESTA LÍNEA ===
-    if (window.syncManager) window.syncManager.notifyChange('task-moved', { 
-        projectIndex: currentProjectIndex, 
-        taskId: taskId, 
-        taskName: task.name, 
-        newStatus: newStatus 
-    });
-    
-    actualizarAsignados();
-    aplicarFiltros();
-    updateStatistics();
-    updateResourceAllocation();
-    generatePieChart(getStats());
-    refreshBurndown();
-
-    // 🔥 AGREGAR NOTIFICACIÓN PARA DRAG & DROP
-    if (tiempoRealSocket && tiempoRealSocket.connected) {
-      tiempoRealSocket.emit('task-changed', {
-        projectId: currentProjectIndex,
-        taskId: taskId,
-        taskName: task.name,
-        userName: 'Usuario actual',
-        type: 'task-moved',
-        newStatus: newStatus,
-        timestamp: new Date().toISOString()
-      });
-      console.log('📢 Notificando movimiento de tarea');
-    }
-
-    // 🔥 NUEVO: actualizar gráfica de status
-    generatePieChart(getStats());
-    updateProjectProgress();
-    actualizarAsignados();
-    refreshBurndown();
-
-    // ========== 🆕 NUEVO: DISPARAR EVENTOS PARA EFECTOS VISUALES ==========
-    document.dispatchEvent(new Event('taskMoved'));
-    document.dispatchEvent(new Event('tasksRendered'));
-    
-    // Actualizar contadores con animación
-    setTimeout(() => {
-      if (typeof actualizarContadoresColumnas === 'function') {
-        actualizarContadoresColumnas();
-      }
-      
-      // Quitar efecto drag-over de todas las columnas
-      document.querySelectorAll('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList').forEach(col => {
-        col.classList.remove('drag-over');
-      });
-    }, 100);
-    // ========== FIN NUEVO ==========
-  }
-
   e.currentTarget.style.backgroundColor = '';
 }
 
@@ -48576,129 +49213,6 @@ function initWebSocketEnhanced() {
 
 
 
-// =============================================
-// BARRA DE PROGRESO DE SUBTAREAS - OBSERVER
-// =============================================
-
-function initializeProgressBarsObserver() {
-  
-    
-    // Observar cambios en las columnas del Kanban
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                // Verificar si se agregaron task-cards
-                let hasTaskCards = false;
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1 && node.classList && node.classList.contains('task-card')) {
-                        hasTaskCards = true;
-                    }
-                });
-                
-                if (hasTaskCards) {
-                    console.log('🔄 Se detectaron nuevas task-cards, agregando barras de progreso...');
-                    setTimeout(addProgressBarsToAllTasks, 100);
-                }
-            }
-        });
-    });
-    
-    // Configurar observer para las columnas
-    const pendingCol = document.getElementById('pendingList');
-    const inProgressCol = document.getElementById('inProgressList');
-    const completedCol = document.getElementById('completedList');
-    const overdueCol = document.getElementById('overdueList');
-    
-    if (pendingCol && inProgressCol && completedCol && overdueCol) {
-        const config = { childList: true, subtree: false };
-        observer.observe(pendingCol, config);
-        observer.observe(inProgressCol, config);
-        observer.observe(completedCol, config);
-        observer.observe(overdueCol, config);
-        console.log('✅ Observers configurados en todas las columnas');
-        
-        // Ejecutar una vez inicialmente
-        setTimeout(addProgressBarsToAllTasks, 500);
-    } else {
-        console.log('⏳ Columnas no disponibles, reintentando...');
-        setTimeout(initializeProgressBarsObserver, 1000);
-    }
-}
-
-
-function addProgressToTask(taskName) {
-    const taskCards = document.querySelectorAll('.task-card');
-    let taskFound = false;
-    
-    taskCards.forEach((card) => {
-        const titleElement = card.querySelector('.task-title');
-        if (titleElement && titleElement.textContent.includes(taskName)) {
-            taskFound = true;
-            
-            // Verificar si ya tiene barra de progreso
-            if (card.querySelector('.subtasks-progress-container')) {
-                return false;
-            }
-            
-            const cardBody = card.querySelector('.task-card-body');
-            if (cardBody) {
-                const project = projects[currentProjectIndex];
-                const task = project.tasks.find(t => t.name === taskName);
-                
-                if (task && task.subtasks && task.subtasks.length > 0) {
-                    const completedSubtasks = task.subtasks.filter(subtask => 
-                        subtask.completed || subtask.status === 'completed'
-                    ).length;
-                    const totalSubtasks = task.subtasks.length;
-                    const progressPercentage = Math.round((completedSubtasks / totalSubtasks) * 100);
-                    
-                    // Crear barra de progreso CON ORDEN CORRECTO
-                    const progressHTML = `
-                        <div class="subtasks-progress-container">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercentage}%"></div>
-                            </div>
-                            <div class="progress-info">
-                                <span class="progress-text">${completedSubtasks}/${totalSubtasks} subtareas</span>
-                                <span class="progress-percentage">${progressPercentage}%</span>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Insertar ANTES de los badges (posición correcta)
-                    const badgesContainer = cardBody.querySelector('.badges-container');
-                    if (badgesContainer) {
-                        badgesContainer.insertAdjacentHTML('beforebegin', progressHTML);
-                    } else {
-                        // Si no hay badges, insertar después del asignado o al final
-                        const assigneeElement = cardBody.querySelector('.task-assignee');
-                        if (assigneeElement) {
-                            assigneeElement.insertAdjacentHTML('afterend', progressHTML);
-                        } else {
-                            cardBody.insertAdjacentHTML('beforeend', progressHTML);
-                        }
-                    }
-                    
-                    console.log(`✅ Barra agregada a: "${taskName}" (${progressPercentage}%)`);
-                    return true;
-                }
-            }
-        }
-    });
-    
-    return taskFound;
-}
-// Iniciar cuando la página esté lista
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(initializeProgressBarsObserver, 1000);
-    });
-} else {
-    setTimeout(initializeProgressBarsObserver, 1000);
-}
-
-console.log('🚀 MÓDULO DE BARRAS DE PROGRESO CARGADO');
-
 
 
 // =============================================
@@ -56261,6 +56775,80 @@ console.log('📌 Usa: showView("board") para volver');
 // 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR
 // ============================================
 
+// ============================================
+// 📊 CONTAR DÍAS HÁBILES
+// ============================================
+// ============================================
+// 📊 CONTAR DÍAS HÁBILES
+// ============================================
+function contarDiasHabiles(inicio, fin) {
+    const start = new Date(inicio);
+    const end = new Date(fin);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    if (start > end) return 0;
+    let count = 0;
+    const current = new Date(start);
+    while (current <= end) {
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) {
+            count++;
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    return count;
+}
+
+// ============================================
+// 📊 CALCULAR PV CON DÍAS HÁBILES (usando startDay y duration)
+// ============================================
+function calcularPVTareaConDiasHabiles(task, today) {
+    const estimado = Number(task.estimatedTime) || 0;
+    if (estimado === 0) return 0;
+    
+    const startDay = Number(task.startDay) || 0;
+    const duracion = Number(task.duration) || 0;
+    
+    if (duracion === 0) return estimado * 0.5;
+    
+    // Calcular fechas reales a partir de today
+    const fechaInicio = new Date(today);
+    fechaInicio.setDate(today.getDate() + startDay);
+    fechaInicio.setHours(0, 0, 0, 0);
+    
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setDate(fechaInicio.getDate() + duracion - 1);
+    fechaFin.setHours(0, 0, 0, 0);
+    
+    if (today < fechaInicio) return 0;
+    if (today >= fechaFin) return estimado;
+    
+    // Calcular días hábiles entre fechaInicio y fechaFin
+    let totalDiasHabiles = 0;
+    let current = new Date(fechaInicio);
+    while (current <= fechaFin) {
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) totalDiasHabiles++;
+        current.setDate(current.getDate() + 1);
+    }
+    
+    // Calcular días hábiles transcurridos desde fechaInicio hasta today
+    let diasTranscurridos = 0;
+    current = new Date(fechaInicio);
+    const hoy = new Date(today);
+    while (current < hoy) {
+        current.setDate(current.getDate() + 1);
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) diasTranscurridos++;
+    }
+    
+    const pvProgress = Math.min(1, diasTranscurridos / totalDiasHabiles);
+    return estimado * pvProgress;
+}
+
+// ============================================
+// 📊 EVM CORRECTO - MÉTODO PMI ESTÁNDAR CON DÍAS HÁBILES
+// ============================================
 function getEVMMetricsFromSystem(tasks, currentDate = null) {
     if (!tasks || tasks.length === 0) {
         return { pv: 0, ev: 0, ac: 0, bac: 0, cpi: 1, spi: 1, cv: 0, sv: 0, eac: 0, etc: 0, vac: 0 };
@@ -56277,37 +56865,25 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
     tasks.forEach(task => {
         const estimado = Number(task.estimatedTime) || 0;
         const registrado = Number(task.timeLogged) || 0;
-        const progress = Number(task.progress) || 0;
-        const duracion = Number(task.duration) || 0;
-        const startDay = Number(task.startDay) || 0;
+        let progress = Number(task.progress) || 0;
+        const status = (task.status || '').toLowerCase();
         
         BAC += estimado;
         totalAC += registrado;
-        totalEV += estimado * (progress / 100);
         
-        // PV con startDay y duration
-        if (duracion > 0 && estimado > 0) {
-            const fechaInicio = new Date();
-            fechaInicio.setDate(today.getDate() + startDay);
-            fechaInicio.setHours(0, 0, 0, 0);
-            
-            const fechaFin = new Date(fechaInicio);
-            fechaFin.setDate(fechaInicio.getDate() + duracion - 1);
-            fechaFin.setHours(0, 0, 0, 0);
-            
-            let pvProgress = 0;
-            if (today >= fechaFin) {
-                pvProgress = 1;
-            } else if (today <= fechaInicio) {
-                pvProgress = 0;
-            } else {
-                const diasTranscurridos = Math.ceil((today - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
-                pvProgress = Math.min(1, diasTranscurridos / duracion);
-            }
-            totalPV += estimado * pvProgress;
-        } else {
-            totalPV += estimado * 0.5;
+        // ✅ EV con progreso real
+        let progresoReal = 0;
+        if (status === 'completed' || progress === 100) {
+            progresoReal = 1;
+        } else if (status === 'inProgress' && estimado > 0) {
+            progresoReal = Math.min(0.99, registrado / estimado);
+        } else if (progress > 0) {
+            progresoReal = Math.min(1, progress / 100);
         }
+        totalEV += estimado * progresoReal;
+        
+        // ✅ PV con días hábiles (usando startDay y duration)
+        totalPV += calcularPVTareaConDiasHabiles(task, today);
     });
     
     totalPV = Math.round(totalPV * 100) / 100;
@@ -56321,6 +56897,10 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
     const EAC = CPI > 0 ? BAC / CPI : BAC;
     const ETC = EAC - totalAC;
     const VAC = BAC - EAC;
+    
+    console.log('📊 PV calculado:', totalPV);
+    console.log('📊 EV calculado:', totalEV);
+    console.log('📊 AC calculado:', totalAC);
     
     return {
         pv: totalPV,
@@ -56340,85 +56920,93 @@ function getEVMMetricsFromSystem(tasks, currentDate = null) {
 
 
 
+
+
+
+
+
+
+
+
 // ==================== BURNDOWN CHART EN HORAS - VERSIÓN CORREGIDA ====================
 function calculateBurndownInHours(tasks) {
-    console.log('📉 Calculando Burndown Chart en HORAS (VERSIÓN CORREGIDA)...');
-    
-    // 1. Calcular horas totales estimadas
-    const totalHours = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
-    
-    if (totalHours === 0) {
-        return {
-            semanas: [1, 2, 3, 4],
-            trabajoIdeal: [0, 0, 0, 0, 0],
-            trabajoReal: [0, 0, 0, 0, 0],
-            totalHoras: 0,
-            horasCompletadas: 0,
-            horasRestantes: 0
-        };
-    }
-    
-    // 2. Horas COMPLETADAS (solo tareas 100% terminadas)
-    const horasCompletadas = tasks.reduce((sum, task) => {
+    console.log('📉 Calculando Burndown Chart en HORAS (VERSIÓN EVM CORRECTA)...');
+
+    // 1. Calcular BAC y EV
+    let BAC = 0;
+    let EV = 0;
+
+    tasks.forEach(task => {
+        const estimado = Number(task.estimatedTime) || 0;
+        let progress = Number(task.progress) || 0;
         const status = (task.status || '').toLowerCase();
-        const progress = task.progress || 0;
-        const estimatedTime = task.estimatedTime || 0;
-        
-        if (status.includes('completed') || progress === 100) {
-            return sum + estimatedTime;
+
+        BAC += estimado;
+
+        // Calcular EV igual que en getEVMMetricsFromSystem
+        let progresoReal = 0;
+        if (status === 'completed' || progress === 100) {
+            progresoReal = 1;
+        } else if (status === 'inProgress' && estimado > 0) {
+            const registrado = Number(task.timeLogged) || 0;
+            progresoReal = Math.min(0.99, registrado / estimado);
+        } else if (progress > 0) {
+            progresoReal = Math.min(1, progress / 100);
         }
-        return sum;
-    }, 0);
-    
-    const horasRestantes = Math.max(0, totalHours - horasCompletadas);
-    
-    console.log('📊 DATOS CALCULADOS:');
-    console.log(`• Horas totales: ${totalHours}h`);
-    console.log(`• Horas COMPLETADAS (100%): ${horasCompletadas}h`);
-    console.log(`• Horas RESTANTES: ${horasRestantes}h`);
-    
+
+        EV += estimado * progresoReal;
+    });
+
+    const horasCompletadasEV = EV;           // ← Trabajo REAL completado (18h)
+    const horasRestantes = BAC - EV;         // ← 22 - 18 = 4h ✅
+
+    console.log('📊 DATOS CALCULADOS (EVM puro):');
+    console.log(`• Horas totales (BAC): ${BAC.toFixed(1)}h`);
+    console.log(`• Horas COMPLETADAS (EV): ${horasCompletadasEV.toFixed(1)}h`);
+    console.log(`• Horas RESTANTES (BAC - EV): ${horasRestantes.toFixed(1)}h`);
+
     // 3. Timeline de 4 semanas (5 puntos: Inicio + 4 semanas)
     const semanas = [1, 2, 3, 4];
     const totalSemanas = semanas.length;
-    
+
     // 4. Línea IDEAL (burndown lineal perfecto)
     const trabajoIdeal = [];
     for (let i = 0; i <= totalSemanas; i++) {
-        const idealHours = Math.max(0, totalHours - (totalHours / totalSemanas) * i);
+        const idealHours = Math.max(0, BAC - (BAC / totalSemanas) * i);
         trabajoIdeal.push(idealHours);
     }
-    
-    // 5. Línea REAL - FÓRMULA SIMPLE Y CORRECTA
+
+    // 5. Línea REAL: basada en EV, no en tareas completadas
     const trabajoReal = [];
-    
+
     // Punto 0: Inicio del proyecto
-    trabajoReal.push(totalHours);
-    
+    trabajoReal.push(BAC);
+
     // Si no hay progreso, línea plana
-    if (horasCompletadas === 0) {
-        trabajoReal.push(totalHours); // Semana 1
-        trabajoReal.push(totalHours); // Semana 2
-        trabajoReal.push(totalHours); // Semana 3
+    if (horasCompletadasEV === 0) {
+        trabajoReal.push(BAC); // Semana 1
+        trabajoReal.push(BAC); // Semana 2
+        trabajoReal.push(BAC); // Semana 3
     } else {
         // Distribuir progreso de forma PROPORCIONAL
-        const porcentajeCompletado = horasCompletadas / totalHours;
-        
+        const porcentajeCompletado = horasCompletadasEV / BAC;
+
         // Semana 1: 25% del progreso total
         const progresoSemana1 = porcentajeCompletado * 0.25;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana1));
-        
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana1));
+
         // Semana 2: 50% del progreso total
         const progresoSemana2 = porcentajeCompletado * 0.50;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana2));
-        
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana2));
+
         // Semana 3: 75% del progreso total
         const progresoSemana3 = porcentajeCompletado * 0.75;
-        trabajoReal.push(totalHours - (horasCompletadas * progresoSemana3));
+        trabajoReal.push(BAC - (horasCompletadasEV * progresoSemana3));
     }
-    
-    // Punto final: Semana 4 (horas realmente restantes)
+
+    // Punto final: Semana 4 (horas realmente restantes según EV)
     trabajoReal.push(horasRestantes);
-    
+
     // 6. Validar que NUNCA haya ceros (excepto si todo está completado)
     for (let i = 0; i < trabajoReal.length; i++) {
         if (trabajoReal[i] < 0.1 && horasRestantes > 0) {
@@ -56426,21 +57014,20 @@ function calculateBurndownInHours(tasks) {
             trabajoReal[i] = 0.1;
         }
     }
-    
+
     console.log('📈 LÍNEA REAL CALCULADA:');
     console.log(`• 5 puntos: ${trabajoReal.map(h => h.toFixed(1) + 'h').join(' → ')}`);
     console.log(`• Etiquetas: Inicio, Semana 1, Semana 2, Semana 3, Semana 4`);
-    
+
     return {
         semanas: semanas,
         trabajoIdeal: trabajoIdeal,
         trabajoReal: trabajoReal,
-        totalHoras: totalHours,
-        horasCompletadas: horasCompletadas,
+        totalHoras: BAC,
+        horasCompletadas: horasCompletadasEV,
         horasRestantes: horasRestantes
     };
 }
-
 function calculateRealTaskDistribution(tasks) {
     console.log('🔍 Analizando distribución PRECISA de tareas...');
     
@@ -61794,14 +62381,11 @@ async function handleDrop(e) {
     else if (newStatus === 'pending') task.progress = 0;
     
     // ========== 🚨 NOTIFICACIÓN A SLACK ==========
-    if (window.SlackNotifier) {
-        try {
-            await SlackNotifier.taskMoved(task, oldStatus, newStatus, project.name);
-            console.log('✅ Slack notificado:', task.name, oldStatus, '→', newStatus);
-        } catch(err) {
-            console.error('❌ Error enviando a Slack:', err);
-        }
-    }
+    // DESPUÉS (esto SÍ funciona)
+if (typeof sincronizarTarea === 'function') {
+    sincronizarTarea(task.name, project.name);
+    console.log('✅ Notificación enviada a Slack:', task.name, oldStatus, '→', newStatus);
+}
     // =============================================
     
     // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
@@ -65069,60 +65653,6 @@ setTimeout(initSlackNotifications, 3000);
 
 
 
-// Comandos de prueba para Slack
-window.testSlack = {
-  test: () => SlackNotifier ? SlackNotifier.test() : console.error('SlackNotifier no disponible'),
-  taskCreated: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { 
-      name: 'Tarea de prueba', 
-      assignee: 'Usuario', 
-      priority: 'alta' 
-    };
-    SlackNotifier.taskCreated(task, 'Proyecto Demo');
-  },
-  taskCompleted: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { 
-      name: 'Tarea completada', 
-      assignee: 'Usuario', 
-      estimatedTime: 8,
-      timeLogged: 7.5
-    };
-    SlackNotifier.taskCompleted(task, 'Proyecto Demo');
-  },
-  taskMoved: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const task = { name: 'Tarea movida' };
-    SlackNotifier.taskMoved(task, 'pending', 'inProgress', 'Proyecto Demo');
-  },
-  overdue: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    const tasks = [
-      { name: 'Tarea 1 atrasada', deadline: '2024-01-01' },
-      { name: 'Tarea 2 atrasada', deadline: '2024-01-02' }
-    ];
-    SlackNotifier.overdueTasks(tasks, 'Proyecto Demo');
-  },
-  risk: () => {
-    if (!SlackNotifier) { console.error('SlackNotifier no disponible'); return; }
-    SlackNotifier.riskAdded('Riesgo de seguridad detectado', 'Proyecto Demo');
-  },
-  status: () => SlackNotifier ? SlackNotifier.getStatus() : console.error('SlackNotifier no disponible'),
-  disable: () => SlackNotifier ? SlackNotifier.setEnabled(false) : console.error('SlackNotifier no disponible'),
-  enable: () => SlackNotifier ? SlackNotifier.setEnabled(true) : console.error('SlackNotifier no disponible')
-};
-
-console.log('🎮 Comandos de prueba para Slack:');
-console.log('testSlack.test() - Probar conexión');
-console.log('testSlack.taskCreated() - Simular tarea creada');
-console.log('testSlack.taskCompleted() - Simular tarea completada');
-console.log('testSlack.taskMoved() - Simular tarea movida');
-console.log('testSlack.overdue() - Simular tareas atrasadas');
-console.log('testSlack.risk() - Simular riesgo agregado');
-console.log('testSlack.status() - Ver estado de Slack');
-console.log('testSlack.disable() - Desactivar Slack');
-console.log('testSlack.enable() - Activar Slack');
 
 
 
@@ -67993,12 +68523,87 @@ function actualizarProgresoGantt() {
 
 
 
+   
+// ============================================
+// 🔔 NOTIFICACIÓN VISUAL PARA SLACK
+// ============================================
+function mostrarNotificacionSlack(mensaje, tipo = 'info') {
+    const colores = {
+        info: '#3b82f6',
+        success: '#10b981', 
+        warning: '#f59e0b',
+        error: '#ef4444'
+    };
+    
+    const iconos = {
+        info: '📢',
+        success: '✅',
+        warning: '⚠️',
+        error: '❌'
+    };
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${colores[tipo]};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            z-index: 1000000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        ">
+            <span style="font-size: 20px;">${iconos[tipo]}</span>
+            <span>${mensaje}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 
-
-
-
-
-
-
-
+// Agregar estilos de animación si no existen
+if (!document.getElementById('notif-slack-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notif-slack-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
 

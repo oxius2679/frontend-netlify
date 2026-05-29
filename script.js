@@ -62685,7 +62685,7 @@ async function enviarInvitacion() {
     if (!data.success) throw new Error(data.error);
     
     const inviteToken = data.token;
-    const enlace = `${window.location.origin}/invitacion.html?token=${inviteToken}`;
+    const enlace = `https://tusitio.netlify.app/?token=${inviteToken}`;
     
     // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
     emailjs.init('RKPQ7q1n2sDJdBqcG');
