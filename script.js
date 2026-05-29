@@ -38525,10 +38525,6 @@ function selectProject(index) {
 const invitacionPendiente = localStorage.getItem('invitacionPendiente');
 const esInvitado = invitacionPendiente ? true : false;
 
-// Verificar acceso por clienteId (permitir invitados)
-const invitacionPendiente = localStorage.getItem('invitacionPendiente');
-const esInvitado = invitacionPendiente ? true : false;
-
 if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
     console.log('🔒 No tienes acceso a este proyecto');
     if (typeof showNotification === 'function') {
@@ -38537,15 +38533,6 @@ if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
     return;
 }
 
-// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
-if (esInvitado) {
-    console.log('🎉 Bienvenido al proyecto invitado');
-    if (typeof showNotification === 'function') {
-        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
-    }
-    // Limpiar el token después de usarlo
-    localStorage.removeItem('invitacionPendiente');
-}
 // Si es invitado y llegó aquí, mostrar mensaje de bienvenida
 if (esInvitado) {
     console.log('🎉 Bienvenido al proyecto invitado');
