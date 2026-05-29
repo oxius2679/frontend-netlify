@@ -1,28 +1,46 @@
 
 
 
+// 🔧 FORZAR CONSISTENCIA DE CLIENTE ID
+(function syncClientId() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlClientId = urlParams.get('clienteId');
+  const localClientId = localStorage.getItem('clienteId');
+  
+  const finalClientId = urlClientId || localClientId;
+  
+  if (finalClientId) {
+    localStorage.setItem('clienteId', finalClientId);
+    console.log('✅ ClientId sincronizado:', finalClientId);
+    
+    if (localClientId && urlClientId && localClientId !== urlClientId) {
+      console.log('🔄 ClientId cambió, recargando datos...');
+      setTimeout(() => {
+        if (typeof window.forceFullRefresh === 'function') {
+          window.forceFullRefresh();
+        } else {
+          location.reload();
+        }
+      }, 500);
+    }
+  }
+})();
+
+// ===== NUEVO: Capturar token de invitación =====
+(function capturarTokenInvitacion() {
+  const tokenUrl = new URLSearchParams(window.location.search).get('token');
+  if (tokenUrl && !localStorage.getItem('invitacionPendiente')) {
+    localStorage.setItem('invitacionPendiente', tokenUrl);
+    console.log('✅ Token de invitación guardado');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+})();
 
 
 
 
 
 (function crearModalGanttPremiumConTusDatosReales() {
-
-// ===== NUEVO: Procesar invitación =====
-const tokenUrl = new URLSearchParams(window.location.search).get('token');
-if (tokenUrl && !localStorage.getItem('yaProcesado')) {
-    localStorage.setItem('yaProcesado', 'true');
-    setTimeout(function() {
-        if (projects && projects.length > 0) {
-            currentProjectIndex = 0;
-            localStorage.setItem('currentProjectIndex', 0);
-            if (typeof selectProject === 'function') selectProject(0);
-            console.log('✅ Invitación procesada - Cambiado al primer proyecto');
-        }
-    }, 2000);
-}
-// ===== Fin nuevo =====
-
     console.log('🚀 Inyectando modal 3D premium con KPIs de tareas...');
 
     // ========== ESTILOS DEL MODAL ==========
@@ -62713,7 +62731,7 @@ async function enviarInvitacion() {
     if (!data.success) throw new Error(data.error);
     
     const inviteToken = data.token;
-    const enlace = `https://admonproject.netlify.app/?token=${inviteToken}`;
+    const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
     
     // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
     emailjs.init('RKPQ7q1n2sDJdBqcG');
@@ -62741,11 +62759,45 @@ function getProyectosPermitidos() {
     try {
         console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
         
-        // Obtener clienteId (esto es lo más importante)
         const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
+        const tokenInvitacion = localStorage.getItem('invitacionPendiente');
+        const userEmail = localStorage.getItem('userEmail') || 
+                          JSON.parse(localStorage.getItem('user') || '{}').email;
         
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
+        console.log('🔑 Cliente ID:', clienteId);
+        console.log('📨 Token invitación:', tokenInvitacion ? 'SÍ' : 'NO');
+        
+        // ========== 🔥 NUEVO: Si hay invitación pendiente, mostrar TODOS los proyectos ==========
+        if (tokenInvitacion) {
+            console.log('🎉 Invitación detectada - Mostrando todos los proyectos temporalmente');
+            
+            // Intentar decodificar el token para saber a qué proyecto fue invitado
+            try {
+                const payload = JSON.parse(atob(tokenInvitacion.split('.')[1]));
+                const proyectoIdInvitado = payload.proyectoId;
+                const proyectoNombreInvitado = payload.proyectoNombre;
+                
+                console.log(`📌 Invitado al proyecto: ${proyectoNombreInvitado} (ID: ${proyectoIdInvitado})`);
+                
+                // Marcar el proyecto invitado como visible (cambiar su clienteId temporalmente)
+                const proyectoInvitado = projects.find(p => p.id == proyectoIdInvitado || p.name === proyectoNombreInvitado);
+                if (proyectoInvitado && proyectoInvitado.clienteId !== clienteId) {
+                    proyectoInvitado.clienteId = clienteId;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    console.log(`✅ Proyecto "${proyectoInvitado.name}" asignado al invitado`);
+                }
+            } catch(e) {
+                console.log('Error decodificando token:', e);
+            }
+            
+            // Limpiar el token después de usarlo (para que no se use de nuevo)
+            localStorage.removeItem('invitacionPendiente');
+            
+            // Devolver todos los proyectos (el invitado debe ver todo mientras se configura)
+            return projects;
+        }
+        
+        // ========== COMPORTAMIENTO NORMAL: Filtrar por clienteId ==========
         if (clienteId) {
             const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
             console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
@@ -62766,7 +62818,6 @@ function getProyectosPermitidos() {
             }
         }
         
-        // Si no hay nada, devolver array vacío
         console.log('ℹ️ No hay proyectos para este usuario');
         return [];
         
@@ -62775,7 +62826,6 @@ function getProyectosPermitidos() {
         return [];
     }
 }
-
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
