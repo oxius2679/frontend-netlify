@@ -1,12 +1,32 @@
-// Capturar invitación de la URL
-const tokenInvitacion = new URLSearchParams(window.location.search).get('token');
-if (tokenInvitacion) {
-    localStorage.setItem('invitacionPendiente', tokenInvitacion);
-    window.location.href = window.location.pathname;
-}
 
 
-
+// ===== PROCESAR INVITACIÓN =====
+(function() {
+    const tokenURL = new URLSearchParams(window.location.search).get('token');
+    if (tokenURL) {
+        localStorage.setItem('proyectoInvitado', tokenURL);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    const token = localStorage.getItem('proyectoInvitado');
+    if (token && window.projects && window.projects.length > 0) {
+        try {
+            const data = JSON.parse(atob(token.split('.')[1]));
+            const idx = data.proyectoIndex;
+            if (idx !== undefined && window.projects[idx]) {
+                window.currentProjectIndex = idx;
+                localStorage.setItem('currentProjectIndex', idx);
+                if (typeof window.selectProject === 'function') {
+                    window.selectProject(idx);
+                }
+                console.log('✅ Cambiado al proyecto:', window.projects[idx].name);
+            }
+            localStorage.removeItem('proyectoInvitado');
+        } catch(e) {
+            console.log('Error:', e);
+        }
+    }
+})();
 
 
 
@@ -3297,7 +3317,32 @@ function updateConnectionIndicator(status) {
 
 
 
-
+// ===== PROCESAR INVITACIÓN AUTOMÁTICA =====
+(function procesarInvitacion() {
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (token) {
+        localStorage.setItem('proyectoInvitado', token);
+        // Limpiar URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    const tokenGuardado = localStorage.getItem('proyectoInvitado');
+    if (tokenGuardado && typeof projects !== 'undefined') {
+        try {
+            const payload = JSON.parse(atob(tokenGuardado.split('.')[1]));
+            const proyectoIndex = payload.proyectoIndex;
+            if (proyectoIndex !== undefined && projects[proyectoIndex]) {
+                currentProjectIndex = proyectoIndex;
+                localStorage.setItem('currentProjectIndex', proyectoIndex);
+                if (typeof selectProject === 'function') selectProject(proyectoIndex);
+                console.log(`✅ Proyecto cambiado a: ${projects[proyectoIndex].name}`);
+            }
+            localStorage.removeItem('proyectoInvitado');
+        } catch(e) {
+            console.log('Error en invitación:', e);
+        }
+    }
+})();
 
 
 
@@ -46047,26 +46092,6 @@ function recalculateDependencyLines() {
    function init() {
     console.log('🎯 Iniciando Project Enhancer Definitivo');
     
-    // 🔥 NUEVO: Procesar invitación pendiente
-    const tokenPendiente = localStorage.getItem('invitacionPendiente');
-    if (tokenPendiente) {
-        localStorage.removeItem('invitacionPendiente');
-        try {
-            const payload = JSON.parse(atob(tokenPendiente.split('.')[1]));
-            const proyectoIndex = payload.proyectoIndex;
-            if (proyectoIndex !== undefined && projects[proyectoIndex]) {
-                // Cambiar al proyecto invitado
-                currentProjectIndex = proyectoIndex;
-                if (typeof selectProject === 'function') {
-                    selectProject(currentProjectIndex);
-                }
-                console.log(`✅ Cambiado al proyecto compartido: ${projects[proyectoIndex].name}`);
-            }
-        } catch(e) {
-            console.log('Error procesando invitación:', e);
-        }
-    }
-    
     // Escuchar mensajes del canal BroadcastChannel
     syncChannel.onmessage = (event) => {
         const data = event.data;
@@ -46080,7 +46105,6 @@ function recalculateDependencyLines() {
             }
         }
     };
-}
     
     // === NUEVO: Polling cada 3 segundos para sincronizar ===
     setInterval(() => {
