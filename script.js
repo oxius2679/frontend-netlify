@@ -29,13 +29,13 @@
 // ===== NUEVO: Capturar token de invitación =====
 (function capturarTokenInvitacion() {
   const tokenUrl = new URLSearchParams(window.location.search).get('token');
-  if (tokenUrl && !localStorage.getItem('invitacionProcesada')) {
+  if (tokenUrl && !localStorage.getItem('invitacionPendiente')) {
     localStorage.setItem('invitacionPendiente', tokenUrl);
-    localStorage.setItem('invitacionProcesada', 'false');
     console.log('✅ Token de invitación guardado');
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 })();
+
 
 
 
@@ -62731,7 +62731,7 @@ async function enviarInvitacion() {
     if (!data.success) throw new Error(data.error);
     
     const inviteToken = data.token;
-    const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
+    const enlace = `https://admonproject.netlify.app/?token=${inviteToken}`;
     
     // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
     emailjs.init('RKPQ7q1n2sDJdBqcG');
