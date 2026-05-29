@@ -29,13 +29,13 @@
 // ===== NUEVO: Capturar token de invitación =====
 (function capturarTokenInvitacion() {
   const tokenUrl = new URLSearchParams(window.location.search).get('token');
-  if (tokenUrl && !localStorage.getItem('invitacionPendiente')) {
+  if (tokenUrl && !localStorage.getItem('invitacionProcesada')) {
     localStorage.setItem('invitacionPendiente', tokenUrl);
+    localStorage.setItem('invitacionProcesada', 'false');
     console.log('✅ Token de invitación guardado');
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 })();
-
 
 
 
