@@ -7,6 +7,22 @@
 
 
 (function crearModalGanttPremiumConTusDatosReales() {
+
+// ===== NUEVO: Procesar invitación =====
+const tokenUrl = new URLSearchParams(window.location.search).get('token');
+if (tokenUrl && !localStorage.getItem('yaProcesado')) {
+    localStorage.setItem('yaProcesado', 'true');
+    setTimeout(function() {
+        if (projects && projects.length > 0) {
+            currentProjectIndex = 0;
+            localStorage.setItem('currentProjectIndex', 0);
+            if (typeof selectProject === 'function') selectProject(0);
+            console.log('✅ Invitación procesada - Cambiado al primer proyecto');
+        }
+    }, 2000);
+}
+// ===== Fin nuevo =====
+
     console.log('🚀 Inyectando modal 3D premium con KPIs de tareas...');
 
     // ========== ESTILOS DEL MODAL ==========
@@ -38508,18 +38524,6 @@ function updateProjectSelectionStyles() {
 
 function selectProject(index) {
   console.trace('🧭 selectProject llamado');
-
-
- // 🔥 NUEVO - FORZAR CLIENTEID SI VIENE DE INVITACIÓN
-  const tokenInvitacion = localStorage.getItem('invitacionPendiente');
-  if (tokenInvitacion && projects[index]) {
-      const miClienteId = localStorage.getItem('clienteId');
-      projects[index].clienteId = miClienteId;
-      localStorage.setItem('projects', JSON.stringify(projects));
-      console.log('✅ ClienteId forzado por invitación:', miClienteId);
-      localStorage.removeItem('invitacionPendiente');
-  }
-
 
   // 🧠 Validar índice
   if (index < 0 || index >= projects.length) {
