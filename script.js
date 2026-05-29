@@ -38521,15 +38521,40 @@ function selectProject(index) {
   
   if (!project) return;
   
-  // Verificar acceso por clienteId
-  if (project.clienteId && project.clienteId !== clienteId && !localStorage.getItem('invitacionPendiente')) {
+  // Verificar acceso por clienteId (permitir invitados)
+const invitacionPendiente = localStorage.getItem('invitacionPendiente');
+const esInvitado = invitacionPendiente ? true : false;
+
+// Verificar acceso por clienteId (permitir invitados)
+const invitacionPendiente = localStorage.getItem('invitacionPendiente');
+const esInvitado = invitacionPendiente ? true : false;
+
+if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
     console.log('🔒 No tienes acceso a este proyecto');
-    // Mostrar notificación si existe la función
     if (typeof showNotification === 'function') {
-      showNotification('No tienes acceso a este proyecto', 'error');
+        showNotification('No tienes acceso a este proyecto', 'error');
     }
     return;
-  }
+}
+
+// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
+if (esInvitado) {
+    console.log('🎉 Bienvenido al proyecto invitado');
+    if (typeof showNotification === 'function') {
+        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
+    }
+    // Limpiar el token después de usarlo
+    localStorage.removeItem('invitacionPendiente');
+}
+// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
+if (esInvitado) {
+    console.log('🎉 Bienvenido al proyecto invitado');
+    if (typeof showNotification === 'function') {
+        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
+    }
+    // Limpiar el token después de usarlo
+    localStorage.removeItem('invitacionPendiente');
+}
 
   // Actualizar índice actual
   currentProjectIndex = index;
