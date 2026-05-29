@@ -1,18 +1,18 @@
 
-
-
 // 🔧 FORZAR CONSISTENCIA DE CLIENTE ID
 (function syncClientId() {
   const urlParams = new URLSearchParams(window.location.search);
   const urlClientId = urlParams.get('clienteId');
   const localClientId = localStorage.getItem('clienteId');
   
+  // Prioridad: URL > localStorage > valor por defecto
   const finalClientId = urlClientId || localClientId;
   
   if (finalClientId) {
     localStorage.setItem('clienteId', finalClientId);
     console.log('✅ ClientId sincronizado:', finalClientId);
     
+    // Forzar recarga de datos si cambió
     if (localClientId && urlClientId && localClientId !== urlClientId) {
       console.log('🔄 ClientId cambió, recargando datos...');
       setTimeout(() => {
@@ -26,15 +26,6 @@
   }
 })();
 
-// ===== NUEVO: Capturar token de invitación =====
-(function capturarTokenInvitacion() {
-  const tokenUrl = new URLSearchParams(window.location.search).get('token');
-  if (tokenUrl && !localStorage.getItem('invitacionPendiente')) {
-    localStorage.setItem('invitacionPendiente', tokenUrl);
-    console.log('✅ Token de invitación guardado');
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-})();
 
 
 
@@ -62759,45 +62750,11 @@ function getProyectosPermitidos() {
     try {
         console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
         
+        // Obtener clienteId (esto es lo más importante)
         const clienteId = localStorage.getItem('clienteId');
-        const tokenInvitacion = localStorage.getItem('invitacionPendiente');
-        const userEmail = localStorage.getItem('userEmail') || 
-                          JSON.parse(localStorage.getItem('user') || '{}').email;
-        
         console.log('🔑 Cliente ID:', clienteId);
-        console.log('📨 Token invitación:', tokenInvitacion ? 'SÍ' : 'NO');
         
-        // ========== 🔥 NUEVO: Si hay invitación pendiente, mostrar TODOS los proyectos ==========
-        if (tokenInvitacion) {
-            console.log('🎉 Invitación detectada - Mostrando todos los proyectos temporalmente');
-            
-            // Intentar decodificar el token para saber a qué proyecto fue invitado
-            try {
-                const payload = JSON.parse(atob(tokenInvitacion.split('.')[1]));
-                const proyectoIdInvitado = payload.proyectoId;
-                const proyectoNombreInvitado = payload.proyectoNombre;
-                
-                console.log(`📌 Invitado al proyecto: ${proyectoNombreInvitado} (ID: ${proyectoIdInvitado})`);
-                
-                // Marcar el proyecto invitado como visible (cambiar su clienteId temporalmente)
-                const proyectoInvitado = projects.find(p => p.id == proyectoIdInvitado || p.name === proyectoNombreInvitado);
-                if (proyectoInvitado && proyectoInvitado.clienteId !== clienteId) {
-                    proyectoInvitado.clienteId = clienteId;
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    console.log(`✅ Proyecto "${proyectoInvitado.name}" asignado al invitado`);
-                }
-            } catch(e) {
-                console.log('Error decodificando token:', e);
-            }
-            
-            // Limpiar el token después de usarlo (para que no se use de nuevo)
-            localStorage.removeItem('invitacionPendiente');
-            
-            // Devolver todos los proyectos (el invitado debe ver todo mientras se configura)
-            return projects;
-        }
-        
-        // ========== COMPORTAMIENTO NORMAL: Filtrar por clienteId ==========
+        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
         if (clienteId) {
             const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
             console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
@@ -62818,6 +62775,7 @@ function getProyectosPermitidos() {
             }
         }
         
+        // Si no hay nada, devolver array vacío
         console.log('ℹ️ No hay proyectos para este usuario');
         return [];
         
@@ -62826,6 +62784,7 @@ function getProyectosPermitidos() {
         return [];
     }
 }
+
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
