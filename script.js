@@ -62681,68 +62681,229 @@ function mostrarMensajeInvitacion(texto, tipo = 'success') {
 // 7. FUNCIÓN DE EMAILJS MEJORADA
 // ============================================
 async function enviarInvitacion() {
-  const proyectoSelect = document.getElementById('selectProyectoInvitacion');
-  const emailInput = document.getElementById('emailInvitacion');
-  const rolSelect = document.getElementById('rolInvitado');
-  
-  const proyectoIndex = proyectoSelect.value;
-  const email = emailInput.value.trim();
-  const rol = rolSelect.value;
-  
-  if (!proyectoIndex || !email || !rol) {
-    mostrarMensajeInvitacion('❌ Completa todos los campos', 'error');
-    return;
-  }
-  
-  const proyectoNombre = projects[proyectoIndex]?.name;
-  if (!proyectoNombre) {
-    mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
-    return;
-  }
-
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
-    return;
-  }
-
-  try {
-    console.log('📤 Preparando fetch...');
-    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ email, proyectoIndex, proyectoNombre, rol })
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
-    if (!data.success) throw new Error(data.error);
+    const proyectoSelect = document.getElementById('selectProyectoInvitacion');
+    const emailInput = document.getElementById('emailInvitacion');
+    const rolSelect = document.getElementById('rolInvitado');
     
-    const inviteToken = data.token;
-    const enlace = `https://admonproject.netlify.app/?token=${inviteToken}`;
+    const proyectoIndex = proyectoSelect?.value;
+    const email = emailInput?.value?.trim();
+    const rol = rolSelect?.value;
     
-    // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
-    emailjs.init('RKPQ7q1n2sDJdBqcG');
+    // Validaciones
+    if (!proyectoIndex) {
+        mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error');
+        return;
+    }
     
-    // Enviar correo con EmailJS
-    await emailjs.send('service_kccmxz7', 'template_we2gzml', {
-      to_email: email,
-      project_name: proyectoNombre,
-      role: rol,
-      invite_link: enlace,
-      from_name: 'Centro de Comando IA 4D Élite'
-    });
+    if (!email) {
+        mostrarMensajeInvitacion('❌ Ingresa un email válido', 'error');
+        return;
+    }
     
-    mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
-    emailInput.value = '';
-  } catch (error) {
-    console.error(error);
-    mostrarMensajeInvitacion('❌ Error al enviar invitación', 'error');
-  }
+    if (!rol) {
+        mostrarMensajeInvitacion('❌ Selecciona un rol', 'error');
+        return;
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        mostrarMensajeInvitacion('❌ Email inválido', 'error');
+        return;
+    }
+    
+    const proyecto = projects[proyectoIndex];
+    if (!proyecto) {
+        mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnEnviar = document.getElementById('btnEnviarInvitacion');
+    const textoOriginal = btnEnviar?.innerHTML;
+    if (btnEnviar) {
+        btnEnviar.innerHTML = '⏳ Enviando...';
+        btnEnviar.disabled = true;
+    }
+    
+    try {
+        console.log('📤 Enviando invitación:', { email, proyectoIndex, proyectoNombre: proyecto.name, rol });
+        
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+                email, 
+                proyectoIndex: parseInt(proyectoIndex), 
+                proyectoNombre: proyecto.name, 
+                rol 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Construir URL de invitación
+            const inviteUrl = data.url || `https://starlit-phoenix-8ff1bb.netlify.app/invitacion.html?token=${data.token}`;
+            
+            mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+            
+            // Mostrar modal con el link
+            mostrarModalLinkInvitacion(inviteUrl, email);
+            
+            // Limpiar campos
+            if (emailInput) emailInput.value = '';
+            
+            // Copiar al portapapeles automáticamente
+            try {
+                await navigator.clipboard.writeText(inviteUrl);
+                console.log('✅ Link copiado al portapapeles');
+            } catch (err) {
+                console.log('No se pudo copiar automáticamente');
+            }
+            
+        } else {
+            throw new Error(data.error || 'Error al enviar invitación');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en enviarInvitacion:', error);
+        mostrarMensajeInvitacion('❌ Error al enviar invitación: ' + error.message, 'error');
+    } finally {
+        if (btnEnviar) {
+            btnEnviar.innerHTML = textoOriginal || 'Enviar';
+            btnEnviar.disabled = false;
+        }
+    }
 }
+
+
+
+
+// ============================================
+// 🖼️ MOSTRAR MODAL CON LINK DE INVITACIÓN
+// ============================================
+
+function mostrarModalLinkInvitacion(link, email) {
+    // Eliminar modal anterior si existe
+    const modalExistente = document.getElementById('modalLinkInvitacion');
+    if (modalExistente) modalExistente.remove();
+    
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.id = 'modalLinkInvitacion';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 10000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, sans-serif;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 24px;
+            padding: 30px;
+            width: 500px;
+            max-width: 90vw;
+            border: 2px solid #8b5cf6;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: white;">✅ Invitación creada</h3>
+                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
+                    background: rgba(239, 68, 68, 0.2);
+                    border: none;
+                    color: #ef4444;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 18px;
+                ">✕</button>
+            </div>
+            
+            <p style="color: #94a3b8; margin-bottom: 15px;">
+                La invitación ha sido enviada a <strong style="color: #8b5cf6;">${email}</strong>
+            </p>
+            
+            <div style="
+                background: #0f172a;
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 15px;
+                margin-bottom: 20px;
+            ">
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Link de invitación:</div>
+                <div style="
+                    background: #020617;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    color: #8b5cf6;
+                    word-break: break-all;
+                ">${link}</div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="copiarLinkInvitacion('${link}')" style="
+                    background: #8b5cf6;
+                    border: none;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 40px;
+                    cursor: pointer;
+                    font-weight: bold;
+                ">📋 Copiar link</button>
+                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
+                    background: #334155;
+                    border: none;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 40px;
+                    cursor: pointer;
+                    font-weight: bold;
+                ">Cerrar</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// ============================================
+// 📋 COPIAR LINK AL PORTAPAPELES
+// ============================================
+
+async function copiarLinkInvitacion(link) {
+    try {
+        await navigator.clipboard.writeText(link);
+        mostrarMensajeInvitacion('✅ Link copiado al portapapeles', 'success');
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        mostrarMensajeInvitacion('❌ No se pudo copiar el link', 'error');
+    }
+}
+
+
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
