@@ -228,38 +228,45 @@
             successDiv.style.display = 'block';
         }
         
-     async function acceptInvitation() {
-    document.getElementById('loadingState').style.display = 'block';
-    document.getElementById('actionButtons').style.display = 'none';
-    
+    async function acceptInvitation() {
     try {
         const response = await fetch(`${API_URL}/api/invitations/accept`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token })
         });
-        
+
         const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.error);
-        }
-        
+
+        if (!data.success) throw new Error(data.error);
+
+        // Guardar el clienteId ÚNICO del invitado (NO el del admin)
         if (data.clienteId) {
             localStorage.setItem('clienteId', data.clienteId);
             localStorage.setItem('userPlan', 'free');
         }
         
-        showSuccess(`✅ ¡Invitación aceptada! Redirigiendo al dashboard...`);
+        // 🔥 GUARDAR SOLO EL PROYECTO AL QUE FUE INVITADO
+        if (data.proyectosPermitidos) {
+            localStorage.setItem('invitedProjects', JSON.stringify(data.proyectosPermitidos));
+        } else if (data.proyectoIndex !== undefined) {
+            // Fallback por si no viene proyectosPermitidos
+            localStorage.setItem('invitedProjects', JSON.stringify([{
+                projectId: data.proyectoIndex,
+                projectName: data.proyectoNombre,
+                role: data.rol
+            }]));
+        }
+
+        showSuccess(`✅ ¡Invitación aceptada! Serás redirigido...`);
         
         setTimeout(() => {
-            window.location.href = '/?forceClienteId=' + data.clienteId;
+            window.location.href = '/';
         }, 2000);
-        
+
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('loadingState').style.display = 'none';
-        showError('Error al aceptar la invitación: ' + error.message);
+        showError('Error al aceptar la invitación.');
     }
 }
         function rejectInvitation() {

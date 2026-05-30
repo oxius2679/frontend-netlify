@@ -62877,44 +62877,28 @@ async function copiarLinkInvitacion(link) {
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
 function getProyectosPermitidos() {
-    try {
-        console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
-        
-        // Obtener clienteId (esto es lo más importante)
-        const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
-        }
-        
-        // Si no hay proyectos por clienteId, verificar si es admin
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
-        }
-        
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
-        
-    } catch (error) {
-        console.error('Error en getProyectosPermitidos:', error);
-        return [];
+    const clienteId = localStorage.getItem('clienteId');
+    const userPlan = localStorage.getItem('userPlan');
+    const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
+    
+    // Si es admin (plan premium), ve todos los proyectos
+    if (userPlan === 'premium' || (clienteId && !clienteId.startsWith('invitado_'))) {
+        return projects;  // Todos los proyectos
     }
+    
+    // Si es invitado, SOLO ve los proyectos a los que fue invitado
+    if (invitedProjects.length > 0) {
+        const proyectosPermitidos = invitedProjects.map(inv => {
+            return projects[inv.projectId];
+        }).filter(p => p);  // Filtrar undefined
+        
+        console.log(`👥 Usuario invitado: ${proyectosPermitidos.length} proyectos permitidos`);
+        return proyectosPermitidos;
+    }
+    
+    // Usuario free sin invitaciones: no ve nada
+    return [];
 }
-
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
