@@ -228,49 +228,43 @@
             successDiv.style.display = 'block';
         }
         
-        async function acceptInvitation() {
-            // Mostrar loading
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('actionButtons').style.display = 'none';
-            
-            try {
-                const response = await fetch(`${API_URL}/api/invitations/accept`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token })
-                });
-                
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error);
-                }
-                
-                // 🔥 GUARDAR EL CLIENTEID EN LOCALSTORAGE - ESTO ES CLAVE
-                if (data.clienteId) {
-                    localStorage.setItem('clienteId', data.clienteId);
-                    localStorage.setItem('userPlan', 'free');
-                    console.log('✅ ClienteId guardado:', data.clienteId);
-                }
-                
-                // Guardar también el proyecto
-                if (data.proyectoIndex !== undefined) {
-                    localStorage.setItem('invitedProjectIndex', data.proyectoIndex);
-                }
-                
-                showSuccess(`✅ ¡Invitación aceptada! Serás redirigido al dashboard del proyecto "${data.proyectoNombre || invitationData?.proyecto}"...`);
-                
-                // Redirigir después de 2 segundos
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Error aceptando invitación:', error);
-                document.getElementById('loadingState').style.display = 'none';
-                showError('Error al aceptar la invitación. Intenta nuevamente más tarde.');
-            }
+       async function acceptInvitation() {
+    // Mostrar loading
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('actionButtons').style.display = 'none';
+    
+    try {
+        const response = await fetch(`${API_URL}/api/invitations/accept`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error);
         }
+        
+        // ========== ESTO ES LO ÚNICO IMPORTANTE ==========
+        if (data.clienteId) {
+            localStorage.setItem('clienteId', data.clienteId);
+            console.log('✅ ClienteId guardado:', data.clienteId);
+        }
+        // ================================================
+        
+        showSuccess(`✅ ¡Invitación aceptada! Redirigiendo...`);
+        
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        showError('Error al aceptar la invitación.');
+    }
+}
         
         function rejectInvitation() {
             if (confirm('¿Estás seguro de rechazar esta invitación?')) {
