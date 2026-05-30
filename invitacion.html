@@ -228,8 +228,7 @@
             successDiv.style.display = 'block';
         }
         
-       async function acceptInvitation() {
-    console.log('🚀 Aceptando invitación...');
+     async function acceptInvitation() {
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('actionButtons').style.display = 'none';
     
@@ -240,43 +239,29 @@
             body: JSON.stringify({ token })
         });
         
-       const data = await response.json();
-console.log('📦 Respuesta COMPLETA del backend:', JSON.stringify(data, null, 2));
-alert('Respuesta del backend:\n' + JSON.stringify(data, null, 2));
+        const data = await response.json();
         
         if (!data.success) {
             throw new Error(data.error);
         }
         
-        // 🔥🔥🔥 LO MÁS IMPORTANTE - GUARDAR CLIENTEID 🔥🔥🔥
         if (data.clienteId) {
             localStorage.setItem('clienteId', data.clienteId);
             localStorage.setItem('userPlan', 'free');
-            console.log('✅ ClienteId guardado en localStorage:', data.clienteId);
-            
-            // Verificar que se guardó correctamente
-            const verificar = localStorage.getItem('clienteId');
-            console.log('🔍 Verificación - clienteId en localStorage:', verificar);
-        } else {
-            console.error('❌ ERROR: El backend no devolvió clienteId');
-            showError('Error: No se pudo obtener acceso al proyecto');
-            return;
         }
         
         showSuccess(`✅ ¡Invitación aceptada! Redirigiendo al dashboard...`);
         
-        // Redirigir después de 2 segundos
         setTimeout(() => {
             window.location.href = '/?forceClienteId=' + data.clienteId;
         }, 2000);
         
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
         document.getElementById('loadingState').style.display = 'none';
         showError('Error al aceptar la invitación: ' + error.message);
     }
 }
-        
         function rejectInvitation() {
             if (confirm('¿Estás seguro de rechazar esta invitación?')) {
                 showSuccess('Invitación rechazada. Serás redirigido...');
@@ -293,18 +278,7 @@ alert('Respuesta del backend:\n' + JSON.stringify(data, null, 2));
         // Cargar la invitación
         loadInvitation();
         
-        // ========== DIAGNÓSTICO - VERIFICAR ESTADO ==========
-        function verificarEstado() {
-            console.log('=== ESTADO ACTUAL ===');
-            console.log('Token:', token);
-            console.log('clienteId en localStorage:', localStorage.getItem('clienteId'));
-            console.log('userPlan:', localStorage.getItem('userPlan'));
-            console.log('Proyecto:', invitationData?.proyecto);
-            console.log('Rol:', invitationData?.rol);
-        }
         
-        // Ejecutar diagnóstico después de cargar
-        setTimeout(verificarEstado, 2000);
     </script>
 </body>
 </html>
