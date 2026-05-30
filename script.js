@@ -1,12 +1,23 @@
 
-// 🔧 FORZAR CONSISTENCIA DE CLIENTE ID
+// 🔧 FORZAR CONSISTENCIA DE CLIENTE ID - VERSIÓN MEJORADA
 (function syncClientId() {
+  // 1. Primero, verificar si hay forceClienteId en la URL (para invitaciones)
   const urlParams = new URLSearchParams(window.location.search);
+  const forceClienteId = urlParams.get('forceClienteId');
+  
+  if (forceClienteId) {
+    localStorage.setItem('clienteId', forceClienteId);
+    console.log('✅ ClienteId forzado desde URL:', forceClienteId);
+    // Limpiar la URL (quitar el parámetro forceClienteId)
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  
+  // 2. Luego, verificar clienteId normal (URL o localStorage)
   const urlClientId = urlParams.get('clienteId');
   const localClientId = localStorage.getItem('clienteId');
   
-  // Prioridad: URL > localStorage > valor por defecto
-  const finalClientId = urlClientId || localClientId;
+  // Prioridad: forceClienteId > URL > localStorage
+  const finalClientId = forceClienteId || urlClientId || localClientId;
   
   if (finalClientId) {
     localStorage.setItem('clienteId', finalClientId);
@@ -25,8 +36,6 @@
     }
   }
 })();
-
-
 
 
 

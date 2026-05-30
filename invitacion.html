@@ -240,8 +240,9 @@
             body: JSON.stringify({ token })
         });
         
-        const data = await response.json();
-        console.log('📦 Respuesta del backend:', data);
+       const data = await response.json();
+console.log('📦 Respuesta COMPLETA del backend:', JSON.stringify(data, null, 2));
+alert('Respuesta del backend:\n' + JSON.stringify(data, null, 2));
         
         if (!data.success) {
             throw new Error(data.error);
@@ -266,7 +267,7 @@
         
         // Redirigir después de 2 segundos
         setTimeout(() => {
-            window.location.href = '/';
+            window.location.href = '/?forceClienteId=' + data.clienteId;
         }, 2000);
         
     } catch (error) {
@@ -280,7 +281,7 @@
             if (confirm('¿Estás seguro de rechazar esta invitación?')) {
                 showSuccess('Invitación rechazada. Serás redirigido...');
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = '/?forceClienteId=' + data.clienteId;
                 }, 2000);
             }
         }
