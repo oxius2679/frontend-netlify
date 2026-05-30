@@ -22692,180 +22692,133 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
+    console.group('📥 Cargando datos desde backend o localStorage');
 
-
-const lastSave = localStorage.getItem('lastSaveTimestamp');
-const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
-if (forceLocal) {
-    console.log('🔄 Usando localStorage porque hubo un guardado reciente');
-    const saved = localStorage.getItem('projects');
-    if (saved) {
-        projects = JSON.parse(saved);
-        return true;
-    }
-}
-
-
-  console.group('📥 Cargando datos desde backend o localStorage');
-  console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
-
-  // Obtener clienteId del localStorage
-  const clienteId = localStorage.getItem('clienteId');
-  console.log('🏢 Cliente ID:', clienteId || 'No definido');
-  
-  // 🔥 NUEVO: Detectar si es un cliente generado (empieza con "user_")
-  const esClienteGenerado = clienteId && clienteId.startsWith('user_');
-  if (esClienteGenerado) {
-    console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
-  }
-  
-  let loadedData = null;
-  let backendAvailable = false;
-
-  // ✅ Primero verificar si hay token
-  if (!window.authToken || window.authToken.length < 10) {
-    console.warn('⚠️ No hay token válido, usando localStorage');
-  } else {
-    // ✅ Verificar si el backend está disponible (SOLO si NO es cliente generado)
-    if (!esClienteGenerado) {
-      try {
-        console.log('🔄 Verificando backend...');
-        const healthResponse = await fetch(`${API_URL}/api/health`, {
-          timeout: 5000
-        });
-        
-        if (healthResponse.ok) {
-          backendAvailable = true;
-          console.log('✅ Backend disponible');
+    const lastSave = localStorage.getItem('lastSaveTimestamp');
+    const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
+    if (forceLocal) {
+        console.log('🔄 Usando localStorage porque hubo un guardado reciente');
+        const saved = localStorage.getItem('projects');
+        if (saved) {
+            projects = JSON.parse(saved);
+            return true;
         }
-      } catch (error) {
-        console.warn('⚠️ Backend no disponible:', error.message);
-      }
+    }
+
+    console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
+
+    const clienteId = localStorage.getItem('clienteId');
+    console.log('🏢 Cliente ID:', clienteId || 'No definido');
+    
+    const esClienteGenerado = clienteId && clienteId.startsWith('user_');
+    if (esClienteGenerado) {
+        console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
+    }
+    
+    let loadedData = null;
+    let backendAvailable = false;
+
+    if (!window.authToken || window.authToken.length < 10) {
+        console.warn('⚠️ No hay token válido, usando localStorage');
     } else {
-      console.log('🔧 Cliente generado - Omitiendo verificación de backend');
-    }
-
-    // ✅ Si el backend está disponible Y NO es cliente generado, intentar cargar desde ahí
-    if (backendAvailable && !esClienteGenerado) {
-    try {
-        console.log('🔄 Intentando cargar desde MongoDB...');
-        const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
-        const response = await fetch(url, {
-            headers: { 
-                'Authorization': `Bearer ${window.authToken}`,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'  // opcional, pero refuerza
+        if (!esClienteGenerado) {
+            try {
+                console.log('🔄 Verificando backend...');
+                const healthResponse = await fetch(`${API_URL}/api/health`, { timeout: 5000 });
+                if (healthResponse.ok) {
+                    backendAvailable = true;
+                    console.log('✅ Backend disponible');
+                }
+            } catch (error) {
+                console.warn('⚠️ Backend no disponible:', error.message);
             }
-        });
-        
-        console.log('📡 Respuesta del backend:', response.status);
-        
-        if (response.ok) {
-          loadedData = await response.json();
-          console.log('✅ Datos cargados desde MongoDB Atlas:', loadedData);
-          console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length || 0} proyectos`);
-          
-          // Guardar en localStorage como respaldo
-          if (loadedData.projects) {
-            localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-            localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
-            console.log('📦 Datos guardados en localStorage como respaldo');
-          }
-        } else if (response.status === 401) {
-          console.warn('⚠️ Backend respondió 401. Continuando en modo local.');
-          
-          showNotification(
-            'No se pudo sincronizar con el servidor. Trabajando en modo local.',
-            'warning'
-          );
-          
-          // No hacemos return, continuamos a localStorage
+        } else {
+            console.log('🔧 Cliente generado - Omitiendo verificación de backend');
         }
-      } catch (error) {
-        console.warn('⚠️ Error cargando desde backend:', error.message);
-      }
-    } else if (esClienteGenerado) {
-      console.log('🔧 Cliente generado - Saltando carga desde backend');
-    }
-  }
 
-  // ❌ Si no se pudo cargar desde backend, usar localStorage (SIEMPRE)
-  if (!loadedData || !loadedData.projects) {
-    console.log('🔄 Usando datos de localStorage...');
-    const savedProjects = localStorage.getItem('projects');
-    if (savedProjects) {
-      try {
-        loadedData = {
-          projects: JSON.parse(savedProjects),
-          currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
-        };
-        console.log('✅ Datos cargados desde localStorage');
-        
-        // 🔥 NUEVO: Asegurar que los proyectos tengan el clienteId correcto
-        if (loadedData.projects && clienteId) {
-          let modificados = 0;
-          loadedData.projects.forEach(proj => {
-            if (!proj.clienteId) {
-              proj.clienteId = clienteId;
-              modificados++;
+        if (backendAvailable && !esClienteGenerado) {
+            try {
+                console.log('🔄 Intentando cargar desde MongoDB...');
+                const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
+                const response = await fetch(url, {
+                    headers: { 
+                        'Authorization': `Bearer ${window.authToken}`,
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    loadedData = await response.json();
+                    console.log('✅ Datos cargados desde MongoDB Atlas');
+                    
+                    if (loadedData.projects) {
+                        localStorage.setItem('projects', JSON.stringify(loadedData.projects));
+                        localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Error cargando desde backend:', error.message);
             }
-          });
-          if (modificados > 0) {
-            console.log(`🔧 Actualizados ${modificados} proyectos con clienteId: ${clienteId}`);
-            // Guardar de nuevo con los IDs corregidos
-            localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-          }
         }
-      } catch (error) {
-        console.error('❌ Error parseando localStorage:', error);
-      }
     }
-  }
 
-  // Inicializar datos si no hay nada
-   // Inicializar datos si no hay nada
-  if (loadedData && loadedData.projects) {
-    projects = loadedData.projects;
-    currentProjectIndex = loadedData.currentProjectIndex || 0;
-    console.log(`✅ ${projects.length} proyectos cargados`);
-    
-    // 🔥 FILTRO PLAN FREE - LIMITAR A 1 PROYECTO
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'free' && projects.length > 1) {
-      console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
-      projects = [projects[0]];
-      currentProjectIndex = 0;
-      loadedData.projects = projects;
-      localStorage.setItem('projects', JSON.stringify(projects));
-    }
-    
-    // 🔥 NUEVO: Verificar si la prueba FREE expiró (SOLO si es FREE)
-    if (userPlan === 'free') {
-      const pruebaActiva = verificarPruebaFree();
-      if (!pruebaActiva) {
-        console.error('❌ Período de prueba FREE expirado');
-        if (typeof showNotification === 'function') {
-          showNotification('⚠️ Tu período de prueba de 15 días ha expirado. Actualiza a Professional para continuar.', 'error');
+    if (!loadedData || !loadedData.projects) {
+        console.log('🔄 Usando datos de localStorage...');
+        const savedProjects = localStorage.getItem('projects');
+        if (savedProjects) {
+            try {
+                loadedData = {
+                    projects: JSON.parse(savedProjects),
+                    currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
+                };
+                console.log('✅ Datos cargados desde localStorage');
+            } catch (error) {
+                console.error('❌ Error parseando localStorage:', error);
+            }
         }
-      }
     }
-    
-    // 🔥 NUEVO: Mostrar contador de días restantes
-    mostrarDiasRestantesFree();
-    
-    // 🔥 NUEVO: Verificación final
-    console.log('📋 Resumen de proyectos:');
-    projects.forEach((p, i) => {
-      console.log(`   ${i+1}. "${p.name}" - clienteId: ${p.clienteId || 'NO DEFINIDO'}`);
-    });
-  }
-else {
-    console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
-  }
 
-  console.groupEnd();
-  return !!loadedData;
+    if (loadedData && loadedData.projects) {
+        projects = loadedData.projects;
+        currentProjectIndex = loadedData.currentProjectIndex || 0;
+        
+        // ========== 🔥 FILTRAR POR CLIENTEID - PARTE IMPORTANTE ==========
+        const clienteIdActual = localStorage.getItem('clienteId');
+        if (clienteIdActual) {
+            const proyectosFiltrados = projects.filter(p => p.clienteId === clienteIdActual);
+            if (proyectosFiltrados.length > 0) {
+                console.log(`🔒 Filtrados ${projects.length} → ${proyectosFiltrados.length} proyectos para cliente ${clienteIdActual}`);
+                projects = proyectosFiltrados;
+                currentProjectIndex = 0;
+            } else if (projects.length > 0) {
+                console.warn(`⚠️ Usuario ${clienteIdActual} no tiene proyectos. Mostrando mensaje.`);
+                // No mostrar proyectos que no le pertenecen
+                projects = [];
+            }
+        }
+        
+        // 🔥 NUEVO: Verificar si la prueba FREE expiró
+        const userPlan = localStorage.getItem('userPlan') || 'free';
+        if (userPlan === 'free' && projects.length > 1) {
+            console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
+            projects = [projects[0]];
+            currentProjectIndex = 0;
+            localStorage.setItem('projects', JSON.stringify(projects));
+        }
+        
+        console.log(`✅ ${projects.length} proyectos cargados`);
+    } else {
+        console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
+    }
+
+    console.groupEnd();
+    return !!loadedData;
 }
+
+
+
+
 
 
 
@@ -62681,6 +62634,8 @@ function mostrarMensajeInvitacion(texto, tipo = 'success') {
 // 7. FUNCIÓN DE EMAILJS MEJORADA
 // ============================================
 async function enviarInvitacion() {
+    console.log('🚀 INICIO - enviarInvitacion');
+    
     const proyectoSelect = document.getElementById('selectProyectoInvitacion');
     const emailInput = document.getElementById('emailInvitacion');
     const rolSelect = document.getElementById('rolInvitado');
@@ -62688,6 +62643,8 @@ async function enviarInvitacion() {
     const proyectoIndex = proyectoSelect?.value;
     const email = emailInput?.value?.trim();
     const rol = rolSelect?.value;
+    
+    console.log('📊 Datos del formulario:', { proyectoIndex, email, rol });
     
     // Validaciones
     if (!proyectoIndex) {
@@ -62705,7 +62662,6 @@ async function enviarInvitacion() {
         return;
     }
     
-    // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         mostrarMensajeInvitacion('❌ Email inválido', 'error');
@@ -62724,7 +62680,8 @@ async function enviarInvitacion() {
         return;
     }
     
-    // Mostrar loading
+    console.log('✅ Validaciones pasadas');
+    
     const btnEnviar = document.getElementById('btnEnviarInvitacion');
     const textoOriginal = btnEnviar?.innerHTML;
     if (btnEnviar) {
@@ -62733,7 +62690,7 @@ async function enviarInvitacion() {
     }
     
     try {
-        console.log('📤 Enviando invitación:', { email, proyectoIndex, proyectoNombre: proyecto.name, rol });
+        console.log('📤 PASO 1: Creando invitación en backend...');
         
         const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
             method: 'POST',
@@ -62750,34 +62707,39 @@ async function enviarInvitacion() {
         });
         
         const data = await response.json();
+        console.log('📦 Respuesta del backend:', data);
         
-        if (response.ok && data.success) {
-            // Construir URL de invitación
-            const inviteUrl = data.url || `https://starlit-phoenix-8ff1bb.netlify.app/invitacion.html?token=${data.token}`;
-            
-            mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
-            
-            // Mostrar modal con el link
-            mostrarModalLinkInvitacion(inviteUrl, email);
-            
-            // Limpiar campos
-            if (emailInput) emailInput.value = '';
-            
-            // Copiar al portapapeles automáticamente
-            try {
-                await navigator.clipboard.writeText(inviteUrl);
-                console.log('✅ Link copiado al portapapeles');
-            } catch (err) {
-                console.log('No se pudo copiar automáticamente');
-            }
-            
-        } else {
-            throw new Error(data.error || 'Error al enviar invitación');
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Error en backend');
         }
         
+        const inviteToken = data.token;
+     const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
+        console.log('🔗 Link generado:', enlace);
+        
+        console.log('📧 PASO 2: Enviando correo con EmailJS...');
+        
+        // Inicializar EmailJS (por si acaso)
+        emailjs.init('RKPQ7q1n2sDJdBqcG');
+        
+        const emailResult = await emailjs.send('service_kccmxz7', 'template_we2gzml', {
+            to_email: email,
+            project_name: proyecto.name,
+            role: rol,
+            invite_link: enlace,
+            from_name: 'Centro de Comando IA 4D Élite'
+        });
+        
+        console.log('✅ EmailJS respuesta:', emailResult);
+        
+        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+        mostrarModalLinkInvitacion(enlace, email);
+        
+        if (emailInput) emailInput.value = '';
+        
     } catch (error) {
-        console.error('❌ Error en enviarInvitacion:', error);
-        mostrarMensajeInvitacion('❌ Error al enviar invitación: ' + error.message, 'error');
+        console.error('❌ ERROR DETALLADO:', error);
+        mostrarMensajeInvitacion('❌ Error: ' + error.message, 'error');
     } finally {
         if (btnEnviar) {
             btnEnviar.innerHTML = textoOriginal || 'Enviar';
@@ -62785,8 +62747,6 @@ async function enviarInvitacion() {
         }
     }
 }
-
-
 
 
 // ============================================
