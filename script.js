@@ -1,47 +1,4 @@
-// ============================================
-// 🚀 FORZAR CARGA DE PROYECTO INVITADO
-// ============================================
 
-function cargarProyectoInvitado() {
-    const clienteId = localStorage.getItem('clienteId');
-    const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
-    const esInvitado = clienteId && clienteId.startsWith('invitado_');
-    
-    if (esInvitado && invitedProjects.length > 0) {
-        console.log('🔍 Invitado detectado - Forzando carga de proyecto');
-        
-        // Obtener el proyecto real desde la variable global projects
-        const proyectoIdReal = invitedProjects[0].projectId;
-        const proyectoReal = projects[proyectoIdReal];
-        
-        if (proyectoReal && proyectoReal.tasks) {
-            console.log(`✅ Proyecto "${proyectoReal.name}" tiene ${proyectoReal.tasks.length} tareas`);
-            
-            // Guardar el índice real
-            localStorage.setItem('currentProjectIndex', proyectoIdReal);
-            
-            // Renderizar las tareas
-            if (typeof renderKanbanTasks === 'function') {
-                renderKanbanTasks();
-            }
-        } else {
-            console.warn('⚠️ No se encontraron tareas para el proyecto invitado');
-            // Mostrar mensaje de "sin tareas"
-            const boardContainer = document.getElementById('boardContainer');
-            if (boardContainer) {
-                boardContainer.innerHTML = `
-                    <div class="glass-card-4d" style="text-align:center; padding:60px;">
-                        <p style="color:#f59e0b;">📭 Este proyecto aún no tiene tareas</p>
-                        <p style="color:#94a3b8;">El administrador puede agregar tareas desde el módulo de proyectos</p>
-                    </div>
-                `;
-            }
-        }
-    }
-}
-
-// Ejecutar después de cargar los proyectos
-setTimeout(cargarProyectoInvitado, 500);
 
 
 
@@ -69342,4 +69299,53 @@ function diagnosticarEstadoInvitado() {
 
 // Ejecutar diagnóstico
 setTimeout(diagnosticarEstadoInvitado, 500);
+
+
+
+
+
+// ============================================
+// 🚀 FORZAR CARGA DE PROYECTO INVITADO
+// ============================================
+
+function cargarProyectoInvitado() {
+    const clienteId = localStorage.getItem('clienteId');
+    const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
+    const esInvitado = clienteId && clienteId.startsWith('invitado_');
+    
+    if (esInvitado && invitedProjects.length > 0) {
+        console.log('🔍 Invitado detectado - Forzando carga de proyecto');
+        
+        // Obtener el proyecto real desde la variable global projects
+        const proyectoIdReal = invitedProjects[0].projectId;
+        const proyectoReal = projects[proyectoIdReal];
+        
+        if (proyectoReal && proyectoReal.tasks) {
+            console.log(`✅ Proyecto "${proyectoReal.name}" tiene ${proyectoReal.tasks.length} tareas`);
+            
+            // Guardar el índice real
+            localStorage.setItem('currentProjectIndex', proyectoIdReal);
+            
+            // Renderizar las tareas
+            if (typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            }
+        } else {
+            console.warn('⚠️ No se encontraron tareas para el proyecto invitado');
+            // Mostrar mensaje de "sin tareas"
+            const boardContainer = document.getElementById('boardContainer');
+            if (boardContainer) {
+                boardContainer.innerHTML = `
+                    <div class="glass-card-4d" style="text-align:center; padding:60px;">
+                        <p style="color:#f59e0b;">📭 Este proyecto aún no tiene tareas</p>
+                        <p style="color:#94a3b8;">El administrador puede agregar tareas desde el módulo de proyectos</p>
+                    </div>
+                `;
+            }
+        }
+    }
+}
+
+// Ejecutar después de cargar los proyectos
+setTimeout(cargarProyectoInvitado, 500);
 
