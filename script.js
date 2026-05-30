@@ -1,3 +1,45 @@
+// ============================================
+// 🔥 FILTRAR PROYECTOS SEGÚN ROL (EJECUCIÓN INMEDIATA)
+// ============================================
+
+// Guardar una copia original de la función que define projects
+// Pero primero, interceptar cuando se asigna la variable projects
+
+let proyectosOriginales = [];
+
+// Observar cuando se asigna projects (si es una variable global)
+Object.defineProperty(window, 'projects', {
+    get: function() { return proyectosOriginales; },
+    set: function(nuevosProyectos) {
+        console.log('📦 projects asignado con', nuevosProyectos.length, 'proyectos');
+        proyectosOriginales = nuevosProyectos;
+        
+        // Aplicar filtro inmediatamente
+        const clienteId = localStorage.getItem('clienteId');
+        const userPlan = localStorage.getItem('userPlan');
+        const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
+        const esInvitado = clienteId && clienteId.startsWith('invitado_');
+        
+        if (esInvitado && invitedProjects.length > 0) {
+            // Filtrar proyectos
+            const proyectosPermitidos = invitedProjects.map(inv => proyectosOriginales[inv.projectId]).filter(p => p);
+            console.log('🔒 Invitado - Filtrando de', proyectosOriginales.length, 'a', proyectosPermitidos.length, 'proyectos');
+            
+            // Reemplazar la variable projects con los filtrados
+            proyectosOriginales = proyectosPermitidos;
+            
+            // Forzar rerender si existe la función que muestra proyectos
+            if (typeof renderCentroComandoIA === 'function') {
+                setTimeout(() => renderCentroComandoIA(), 100);
+            } else if (typeof actualizarUI === 'function') {
+                setTimeout(() => actualizarUI(), 100);
+            }
+        }
+    }
+});
+
+
+
 
 // 🔧 FORZAR CONSISTENCIA DE CLIENTE ID - VERSIÓN MEJORADA
 (function syncClientId() {
@@ -22701,6 +22743,12 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
+    // 🔥 NUEVO: Cargar proyectos invitados desde localStorage
+    const invitedProjectsStr = localStorage.getItem('invitedProjects');
+    if (invitedProjectsStr) {
+        const invitedProjects = JSON.parse(invitedProjectsStr);
+        console.log('📦 Proyectos invitados cargados:', invitedProjects);
+    }
     console.group('📥 Cargando datos desde backend o localStorage');
 
     const lastSave = localStorage.getItem('lastSaveTimestamp');
@@ -62876,29 +62924,50 @@ async function copiarLinkInvitacion(link) {
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
+// ============================================
+// 🔒 FILTRAR PROYECTOS SEGÚN ROL DEL USUARIO
+// ============================================
+
 function getProyectosPermitidos() {
     const clienteId = localStorage.getItem('clienteId');
     const userPlan = localStorage.getItem('userPlan');
     const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
     
-    // Si es admin (plan premium), ve todos los proyectos
+    console.log('🔍 Verificando permisos:', { clienteId, userPlan, invitedProjects });
+    
+    // CASO 1: Usuario ADMIN (plan premium o clienteId normal)
+    // Los admins ven TODOS los proyectos
     if (userPlan === 'premium' || (clienteId && !clienteId.startsWith('invitado_'))) {
-        return projects;  // Todos los proyectos
+        console.log('👑 Usuario ADMIN - mostrando todos los proyectos');
+        return projects;
     }
     
-    // Si es invitado, SOLO ve los proyectos a los que fue invitado
-    if (invitedProjects.length > 0) {
-        const proyectosPermitidos = invitedProjects.map(inv => {
-            return projects[inv.projectId];
-        }).filter(p => p);  // Filtrar undefined
-        
-        console.log(`👥 Usuario invitado: ${proyectosPermitidos.length} proyectos permitidos`);
-        return proyectosPermitidos;
+    // CASO 2: Usuario INVITADO (clienteId empieza con 'invitado_')
+    // Solo ven los proyectos a los que fueron invitados
+    if (clienteId && clienteId.startsWith('invitado_')) {
+        if (invitedProjects && invitedProjects.length > 0) {
+            const proyectosPermitidos = invitedProjects.map(inv => {
+                // invitedProjects guarda { projectId, projectName, role }
+                const proyectoEncontrado = projects[inv.projectId];
+                if (!proyectoEncontrado) {
+                    console.warn(`⚠️ Proyecto ${inv.projectId} no encontrado en projects global`);
+                }
+                return proyectoEncontrado;
+            }).filter(p => p !== undefined);  // Eliminar undefined
+            
+            console.log(`👥 Usuario INVITADO: ${proyectosPermitidos.length} proyectos permitidos`, proyectosPermitidos);
+            return proyectosPermitidos;
+        } else {
+            console.log('👥 Usuario INVITADO sin proyectos asignados');
+            return [];
+        }
     }
     
-    // Usuario free sin invitaciones: no ve nada
+    // CASO 3: Usuario FREE sin invitaciones
+    console.log('👤 Usuario sin permisos especiales - sin proyectos');
     return [];
 }
+
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
@@ -69039,5 +69108,169 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
+// ============================================
+// 🚀 DIAGNÓSTICO Y CORRECCIÓN PARA INVITADOS
+// ============================================
 
+(function diagnosticarYCorregirInvitado() {
+    console.log('🔍 DIAGNÓSTICO DE INVITACIÓN:');
+    
+    const clienteId = localStorage.getItem('clienteId');
+    const invitedProjects = localStorage.getItem('invitedProjects');
+    const userPlan = localStorage.getItem('userPlan');
+    
+    console.log('📊 Estado actual:', {
+        clienteId: clienteId,
+        clienteIdEsInvitado: clienteId?.startsWith('invitado_'),
+        invitedProjects: invitedProjects,
+        invitedProjectsParseado: JSON.parse(invitedProjects || '[]'),
+        userPlan: userPlan
+    });
+    
+    // 🔥 CORRECCIÓN: Si el usuario tiene clienteId normal pero debería ser invitado
+    // Detectamos por la URL si viene de una invitación
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenInUrl = urlParams.get('token');
+    const desdeInvitacion = tokenInUrl || document.referrer.includes('invitacion.html');
+    
+    if (desdeInvitacion && clienteId && !clienteId.startsWith('invitado_')) {
+        console.warn('⚠️ Usuario vino de invitación pero tiene clienteId de admin. Corrigiendo...');
+        
+        // Generar ID único de invitado
+        const nuevoClienteId = 'invitado_corregido_' + Date.now();
+        localStorage.setItem('clienteId', nuevoClienteId);
+        console.log('✅ ClienteId corregido:', nuevoClienteId);
+    }
+    
+    // 🔥 CORRECCIÓN: Si no hay invitedProjects pero hay clienteId de invitado
+    if (clienteId && clienteId.startsWith('invitado_') && !invitedProjects) {
+        console.warn('⚠️ Usuario invitado sin proyectos asignados. Intentando recuperar...');
+        
+        // Intentar recuperar de sessionStorage (por si se perdió)
+        const backupInvited = sessionStorage.getItem('backup_invitedProjects');
+        if (backupInvited) {
+            localStorage.setItem('invitedProjects', backupInvited);
+            console.log('✅ Proyectos recuperados de backup:', JSON.parse(backupInvited));
+        } else {
+            // Mostrar mensaje al usuario
+            setTimeout(() => {
+                const container = document.getElementById('proyectosContainer');
+                if (container && container.innerHTML.includes('glass-card')) {
+                    container.innerHTML = `
+                        <div class="glass-card-4d" style="text-align:center; padding:60px; grid-column:1/-1;">
+                            <p style="color:#f59e0b;">⚠️ No se encontraron proyectos asignados</p>
+                            <p style="color:#94a3b8; font-size:14px; margin-top:10px;">
+                                Por favor, contacta al administrador para que te envíe una nueva invitación.
+                            </p>
+                        </div>
+                    `;
+                }
+            }, 1000);
+        }
+    }
+    
+    // 🔥 CORRECCIÓN: Verificar en el backend los proyectos del usuario
+    if (clienteId && clienteId.startsWith('invitado_') && (!invitedProjects || invitedProjects === 'null')) {
+        console.log('🔄 Intentando recuperar proyectos desde el backend...');
+        
+        // Intentar obtener el email del usuario (si está en algún lado)
+        const userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+        
+        if (userEmail) {
+            fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects?email=${encodeURIComponent(userEmail)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.projects && data.projects.length > 0) {
+                        localStorage.setItem('invitedProjects', JSON.stringify(data.projects));
+                        console.log('✅ Proyectos recuperados del backend:', data.projects);
+                        location.reload();
+                    }
+                })
+                .catch(err => console.error('Error recuperando proyectos:', err));
+        }
+    }
+})();
+
+
+// ============================================
+// 🚀 FUNCIÓN PARA FORZAR FILTRADO DE PROYECTOS
+// ============================================
+
+function forzarFiltroProyectos() {
+    const clienteId = localStorage.getItem('clienteId');
+    const invitedProjects = JSON.parse(localStorage.getItem('invitedProjects') || '[]');
+    const esInvitado = clienteId && clienteId.startsWith('invitado_');
+    
+    console.log('🔍 Forzando filtro de proyectos:', {
+        clienteId: clienteId,
+        esInvitado: esInvitado,
+        invitedProjects: invitedProjects,
+        cantidadProyectos: projects ? projects.length : 0
+    });
+    
+    if (esInvitado && invitedProjects.length > 0 && projects && projects.length > 0) {
+        // Obtener los proyectos permitidos
+        const proyectosPermitidos = invitedProjects.map(inv => {
+            // Buscar por índice o por id
+            if (inv.projectId !== undefined && projects[inv.projectId]) {
+                return projects[inv.projectId];
+            }
+            // Buscar por nombre
+            return projects.find(p => p.name === inv.projectName);
+        }).filter(p => p !== undefined);
+        
+        if (proyectosPermitidos.length > 0) {
+            console.log('🔒 Forzando filtro - Proyectos permitidos:', proyectosPermitidos.length);
+            
+            // Sobrescribir projects global
+            window.projects = proyectosPermitidos;
+            
+            // Forzar re-render del Centro de Comando
+            if (typeof renderCentroComandoIA === 'function') {
+                renderCentroComandoIA();
+            } else if (typeof cargarDashboard === 'function') {
+                cargarDashboard();
+            } else {
+                // Si no encuentra función, recargar la página
+                setTimeout(() => location.reload(), 500);
+            }
+        } else {
+            console.warn('⚠️ No se encontraron proyectos permitidos');
+            // Mostrar mensaje de "sin proyectos"
+            const container = document.getElementById('proyectosContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="glass-card-4d" style="text-align:center; padding:60px; grid-column:1/-1;">
+                        <p style="color:#f59e0b;">📭 No tienes proyectos asignados</p>
+                        <p style="color:#94a3b8; font-size:14px;">Contacta al administrador</p>
+                    </div>
+                `;
+            }
+        }
+    } else if (esInvitado && invitedProjects.length === 0) {
+        console.warn('⚠️ Usuario invitado sin proyectos asignados en localStorage');
+        // Mostrar mensaje de espera
+        const container = document.getElementById('proyectosContainer');
+        if (container && container.innerHTML.includes('glass-card')) {
+            container.innerHTML = `
+                <div class="glass-card-4d" style="text-align:center; padding:60px; grid-column:1/-1;">
+                    <p style="color:#f59e0b;">⏳ Cargando tu proyecto...</p>
+                    <p style="color:#94a3b8; font-size:14px;">Espera un momento</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Ejecutar cuando cargue la página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', forzarFiltroProyectos);
+} else {
+    forzarFiltroProyectos();
+}
+
+// También ejecutar después de cada renderizado
+setTimeout(forzarFiltroProyectos, 1000);
+setTimeout(forzarFiltroProyectos, 2000);
+setTimeout(forzarFiltroProyectos, 3000);
 
