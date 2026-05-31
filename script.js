@@ -69717,3 +69717,310 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// 🔧 SOLUCIÓN DEFINITIVA - SINCRONIZACIÓN KANBAN
+// ============================================
+(function() {
+    console.log('🚀 APLICANDO SOLUCIÓN DEFINITIVA DE SINCRONIZACIÓN');
+    
+    // ========== 1. FORZAR QUE LOS EVENTOS SEAN ESCUCHADOS CORRECTAMENTE ==========
+    function configurarSincronizacionPerfecta() {
+        // Guardar referencia al socket
+        const socket = window.tiempoRealSocket;
+        if (!socket) {
+            console.warn('⚠️ WebSocket no disponible, reintentando...');
+            setTimeout(configurarSincronizacionPerfecta, 1000);
+            return;
+        }
+        
+        console.log('✅ Configurando sincronización perfecta');
+        
+        // Escuchar eventos específicos
+        socket.on('task-moved', (data) => {
+            console.log('🎯 EVENTO task-moved RECIBIDO:', data);
+            
+            // Actualizar el proyecto en memoria
+            if (data.projectId !== undefined && projects[data.projectId]) {
+                const task = projects[data.projectId].tasks.find(t => t.id == data.taskId);
+                if (task && task.status !== data.newStatus) {
+                    console.log(`📝 Actualizando tarea local: ${task.name} de ${task.status} a ${data.newStatus}`);
+                    task.status = data.newStatus;
+                    
+                    // Actualizar progreso según estado
+                    if (data.newStatus === 'completed') task.progress = 100;
+                    else if (data.newStatus === 'inProgress') task.progress = 50;
+                    else if (data.newStatus === 'pending') task.progress = 0;
+                    
+                    // Guardar en localStorage
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    
+                    // FORZAR REFRESCO INMEDIATO
+                    if (typeof window.renderKanbanTasks === 'function') {
+                        console.log('🔄 Forzando renderizado inmediato');
+                        window.renderKanbanTasks();
+                    }
+                    
+                    // Notificar al usuario
+                    mostrarNotificacionLocal(`🔄 "${task.name}" movida a ${data.newStatus}`, '#3b82f6');
+                }
+            }
+        });
+        
+        // Escuchar cambios en localStorage (otras pestañas)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'projects' && e.newValue) {
+                console.log('📦 Storage event detectado, actualizando proyectos');
+                try {
+                    const newProjects = JSON.parse(e.newValue);
+                    if (newProjects && newProjects.length) {
+                        // Actualizar proyectos en memoria
+                        projects.length = 0;
+                        projects.push(...newProjects);
+                        
+                        // Refrescar vista
+                        if (typeof window.renderKanbanTasks === 'function') {
+                            window.renderKanbanTasks();
+                        }
+                        
+                        mostrarNotificacionLocal('🔄 Datos sincronizados desde otra pestaña', '#10b981');
+                    }
+                } catch(err) {
+                    console.error('Error procesando storage event:', err);
+                }
+            }
+        });
+        
+        // Forzar verificación cada 2 segundos (fallback)
+        let lastTaskCount = 0;
+        setInterval(() => {
+            const currentProject = projects[currentProjectIndex];
+            if (currentProject && currentProject.tasks) {
+                const currentCount = currentProject.tasks.length;
+                if (currentCount !== lastTaskCount) {
+                    console.log(`📊 Cambio detectado: ${lastTaskCount} → ${currentCount} tareas`);
+                    lastTaskCount = currentCount;
+                    if (typeof window.renderKanbanTasks === 'function') {
+                        window.renderKanbanTasks();
+                    }
+                }
+            }
+        }, 2000);
+    }
+    
+    // ========== 2. FUNCIÓN DE NOTIFICACIÓN LOCAL ==========
+    function mostrarNotificacionLocal(mensaje, color) {
+        // Eliminar notificaciones anteriores
+        const existing = document.querySelectorAll('.sync-notification');
+        existing.forEach(n => n.remove());
+        
+        const notif = document.createElement('div');
+        notif.className = 'sync-notification';
+        notif.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${color};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 1000000;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease;
+        `;
+        notif.textContent = mensaje;
+        document.body.appendChild(notif);
+        
+        setTimeout(() => {
+            notif.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notif.remove(), 300);
+        }, 3000);
+    }
+    
+    // ========== 3. FUNCIÓN PARA FORZAR SINCRONIZACIÓN ==========
+    window.forzarSincronizacionAhora = function() {
+        console.log('🔄 Forzando sincronización manual...');
+        mostrarNotificacionLocal('🔄 Sincronizando...', '#f59e0b');
+        
+        // Forzar guardado
+        if (typeof safeSave === 'function') {
+            safeSave().then(() => {
+                mostrarNotificacionLocal('✅ Datos sincronizados', '#10b981');
+                if (typeof window.renderKanbanTasks === 'function') {
+                    window.renderKanbanTasks();
+                }
+            }).catch(err => {
+                mostrarNotificacionLocal('❌ Error al sincronizar', '#ef4444');
+            });
+        } else {
+            // Fallback: guardar manualmente
+            localStorage.setItem('projects', JSON.stringify(projects));
+            mostrarNotificacionLocal('✅ Datos guardados localmente', '#10b981');
+        }
+    };
+    
+    // ========== 4. MONITOREO DE MOVIMIENTO DE TAREAS ==========
+    function monitorearMovimientoTareas() {
+        // Interceptar el movimiento de tareas para asegurar sincronización
+        const originalMoveTaskUp = window.moveTaskUp;
+        const originalMoveTaskDown = window.moveTaskDown;
+        
+        if (originalMoveTaskUp) {
+            window.moveTaskUp = function(taskId, status) {
+                console.log(`⬆️ Moviendo tarea ${taskId} arriba`);
+                const result = originalMoveTaskUp(taskId, status);
+                
+                // Forzar sincronización después del movimiento
+                setTimeout(() => {
+                    if (typeof safeSave === 'function') safeSave();
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    
+                    // Emitir evento manualmente
+                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                        window.tiempoRealSocket.emit('project-updated', {
+                            projectId: currentProjectIndex,
+                            timestamp: new Date().toISOString(),
+                            source: 'moveTaskUp'
+                        });
+                    }
+                }, 100);
+                
+                return result;
+            };
+        }
+        
+        if (originalMoveTaskDown) {
+            window.moveTaskDown = function(taskId, status) {
+                console.log(`⬇️ Moviendo tarea ${taskId} abajo`);
+                const result = originalMoveTaskDown(taskId, status);
+                
+                setTimeout(() => {
+                    if (typeof safeSave === 'function') safeSave();
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    
+                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                        window.tiempoRealSocket.emit('project-updated', {
+                            projectId: currentProjectIndex,
+                            timestamp: new Date().toISOString(),
+                            source: 'moveTaskDown'
+                        });
+                    }
+                }, 100);
+                
+                return result;
+            };
+        }
+        
+        console.log('✅ Movimiento de tareas monitoreado');
+    }
+    
+    // ========== 5. AGREGAR BOTÓN DE SINCRONIZACIÓN MANUAL ==========
+    function agregarBotonSincronizacion() {
+        if (document.getElementById('syncNowButton')) return;
+        
+        // Buscar el header
+        const header = document.querySelector('header, .header, .top-bar');
+        if (!header) {
+            setTimeout(agregarBotonSincronizacion, 1000);
+            return;
+        }
+        
+        const syncBtn = document.createElement('button');
+        syncBtn.id = 'syncNowButton';
+        syncBtn.innerHTML = '🔄 Sincronizar';
+        syncBtn.title = 'Forzar sincronización manual';
+        syncBtn.style.cssText = `
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            margin-left: 10px;
+            transition: all 0.2s;
+        `;
+        
+        syncBtn.onclick = () => {
+            window.forzarSincronizacionAhora();
+            syncBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => syncBtn.style.transform = 'scale(1)', 200);
+        };
+        
+        syncBtn.onmouseenter = () => syncBtn.style.transform = 'translateY(-2px)';
+        syncBtn.onmouseleave = () => syncBtn.style.transform = 'translateY(0)';
+        
+        header.appendChild(syncBtn);
+        console.log('✅ Botón de sincronización agregado');
+    }
+    
+    // ========== 6. INICIALIZAR ==========
+    function init() {
+        console.log('🔧 Inicializando solución de sincronización');
+        
+        // Esperar a que WebSocket esté listo
+        setTimeout(configurarSincronizacionPerfecta, 1500);
+        
+        // Monitorear movimiento de tareas
+        setTimeout(monitorearMovimientoTareas, 2000);
+        
+        // Agregar botón de sincronización
+        setTimeout(agregarBotonSincronizacion, 2000);
+        
+        // Agregar estilos de animación
+        if (!document.getElementById('sync-animation-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'sync-animation-styles';
+            styles.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        console.log('✅ Solución de sincronización activada');
+        console.log('💡 Comandos disponibles: forzarSincronizacionAhora()');
+    }
+    
+    // Iniciar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 500);
+    }
+})();
