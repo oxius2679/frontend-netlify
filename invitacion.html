@@ -228,7 +228,7 @@
             successDiv.style.display = 'block';
         }
         
-     async function acceptInvitation() {
+   async function acceptInvitation() {
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('actionButtons').style.display = 'none';
     
@@ -245,15 +245,28 @@
             throw new Error(data.error);
         }
         
-        if (data.clienteId) {
-            localStorage.setItem('clienteId', data.clienteId);
-            localStorage.setItem('userPlan', 'free');
-        }
+        // Guardar datos de la invitación para usarlos después del login
+        const invitationData = {
+            clienteId: data.clienteId,
+            proyectoIndex: data.proyectoIndex,
+            proyectoNombre: data.proyectoNombre,
+            rol: data.rol,
+            timestamp: Date.now()
+        };
         
-        showSuccess(`✅ ¡Invitación aceptada! Redirigiendo al dashboard...`);
+        localStorage.setItem('pendingInvitation', JSON.stringify(invitationData));
         
+        showSuccess(`✅ ¡Invitación aceptada! Por favor inicia sesión para acceder al proyecto "${data.proyectoNombre}".`);
+        
+        // Redirigir al login después de 2 segundos
         setTimeout(() => {
-            window.location.href = '/?forceClienteId=' + data.clienteId;
+            // Limpiar datos anteriores
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('clienteId');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userPlan');
+            
+            window.location.href = '/';
         }, 2000);
         
     } catch (error) {
