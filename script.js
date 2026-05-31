@@ -65068,20 +65068,6 @@ function registrarPlantillasEnInicio() {
     };
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 registrarPlantillasEnInicio();
 
 
@@ -65287,6 +65273,13 @@ window.preguntarAsistente = preguntarAsistente;
 
 console.log('✅ CENTRO DE COMANDO IA 4D ÉLITE CARGADO');
 console.log(`📊 Proyectos: ${projects?.length || 0}`);
+
+
+
+
+
+
+
 
 
 
@@ -70201,92 +70194,7 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-// ============================================================================
-// 🚀 CENTRO DE COMANDO IA 4D - VERSIÓN LIMPIA (AL FINAL DEL ARCHIVO)
-// ============================================================================
 
-(function() {
-    'use strict';
-    
-    if (window.__centroComandoInstalado) return;
-    window.__centroComandoInstalado = true;
-    
-    console.log('🔥 Iniciando Centro de Comando IA 4D');
-    
-    // Obtener proyectos del usuario (respeta clienteId)
-    function getMisProyectos() {
-        if (!window.projects || window.projects.length === 0) return [];
-        const clienteId = localStorage.getItem('clienteId');
-        if (!clienteId) return window.projects;
-        return window.projects.filter(p => p.clienteId === clienteId);
-    }
-    
-    // Renderizar vista de inicio
-    function renderInicio() {
-        const container = document.getElementById('inicioView');
-        if (!container) return;
-        
-        const proyectos = getMisProyectos();
-        const totalTareas = proyectos.reduce((s,p) => s + (p.tasks?.length || 0), 0);
-        const completadas = proyectos.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
-        const userName = (() => {
-            try {
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                return user.name || user.email || 'Usuario';
-            } catch(e) { return 'Usuario'; }
-        })();
-        
-        container.innerHTML = `
-            <div style="padding:30px;">
-                <h1 style="font-size:42px; background:linear-gradient(135deg,#8b5cf6,#ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">CENTRO DE COMANDO IA 4D</h1>
-                <p>👋 Bienvenido, <strong>${userName}</strong></p>
-                
-                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin:30px 0;">
-                    <div style="background:#1e293b; padding:20px; border-radius:16px;"><div style="font-size:32px; font-weight:bold;">${proyectos.length}</div><div>Proyectos</div></div>
-                    <div style="background:#1e293b; padding:20px; border-radius:16px;"><div style="font-size:32px; font-weight:bold;">${totalTareas}</div><div>Tareas</div></div>
-                    <div style="background:#1e293b; padding:20px; border-radius:16px;"><div style="font-size:32px; font-weight:bold;">${completadas}</div><div>Completadas</div></div>
-                    <div style="background:#1e293b; padding:20px; border-radius:16px;"><div style="font-size:32px; font-weight:bold;">${proyectos.length}</div><div>Activos</div></div>
-                </div>
-                
-                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
-                    ${proyectos.slice(0,6).map(p => {
-                        const t = p.tasks || [];
-                        const comp = t.filter(t => t.status === 'completed').length;
-                        const prog = t.length ? Math.round(comp/t.length*100) : 0;
-                        const realIndex = window.projects.findIndex(proj => proj.id === p.id);
-                        return `<div style="background:#1e293b; padding:20px; border-radius:16px; cursor:pointer;" onclick="if(typeof selectProject === 'function') selectProject(${realIndex}); if(typeof showView === 'function') showView('board');">
-                            <strong>${p.name}</strong>
-                            <div style="height:6px; background:#334155; margin:10px 0;"><div style="width:${prog}%; height:100%; background:#10b981;"></div></div>
-                            <div>${comp}/${t.length} tareas (${prog}%)</div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                
-                ${proyectos.length === 0 ? '<div style="text-align:center; padding:40px;">📭 No tienes proyectos. Crea uno nuevo.</div>' : ''}
-            </div>
-        `;
-    }
-    
-    // Modificar showView (solo para la vista de inicio)
-    const originalShow = window.showView;
-    window.showView = function(view) {
-        if (view === 'inicio') {
-            renderInicio();
-            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-            const inicio = document.getElementById('inicioView');
-            if (inicio) inicio.classList.add('active');
-        } else if (originalShow) {
-            originalShow(view);
-        }
-    };
-    
-    // Si la vista de inicio ya está activa, renderizar
-    if (document.getElementById('inicioView') && document.getElementById('inicioView').classList.contains('active')) {
-        renderInicio();
-    }
-    
-    console.log('✅ Centro de Comando IA 4D instalado correctamente');
-})();
 
 
 
