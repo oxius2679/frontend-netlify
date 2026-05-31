@@ -1,4 +1,10 @@
 
+
+
+
+
+
+
 // 🔧 FORZAR CONSISTENCIA DE CLIENTE ID - VERSIÓN MEJORADA
 (function syncClientId() {
   // 1. Primero, verificar si hay forceClienteId en la URL (para invitaciones)
@@ -69055,5 +69061,752 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-
+// ============================================
+// 🔥 KANBAN PREMIUM - VERSIÓN CON BOTONES VISIBLES
+// ============================================
+(function() {
+    console.log('👑 ACTIVANDO KANBAN PREMIUM - BOTONES VISIBLES');
+    
+    // ========== FUNCIONES DE MOVIMIENTO ==========
+    window.moveTaskUp = function(taskId, status) {
+        console.log(`⬆️ Mover arriba: taskId=${taskId}, status=${status}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
+        
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex > 0) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex - 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+            mostrarNotificacion('✅ Tarea movida arriba');
+        }
+    };
+    
+    window.moveTaskDown = function(taskId, status) {
+        console.log(`⬇️ Mover abajo: taskId=${taskId}, status=${status}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
+        
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex < tasksInStatus.length - 1) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex + 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+            mostrarNotificacion('✅ Tarea movida abajo');
+        }
+    };
+    
+    function mostrarNotificacion(mensaje) {
+        const notif = document.createElement('div');
+        notif.textContent = mensaje;
+        notif.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 100000;
+            font-size: 13px;
+            animation: fadeInOut 2s ease;
+        `;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 2000);
+    }
+    
+    // ========== FUNCIÓN PRINCIPAL ==========
+    window.renderKanbanTasks = function(tasksParam) {
+        console.log('🎯 RENDERIZANDO KANBAN PREMIUM');
+        
+        // Validaciones
+        if (typeof projects === 'undefined' || !projects || projects.length === 0) {
+            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
+            return;
+        }
+        
+        let project;
+        const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+        
+        if (idx >= 0 && idx < projects.length) {
+            project = projects[idx];
+        } else if (projects.length === 1) {
+            project = projects[0];
+            currentProjectIndex = 0;
+        }
+        
+        if (!project) {
+            console.error('❌ Proyecto no encontrado');
+            return;
+        }
+        
+        const tasks = tasksParam || project.tasks || [];
+        console.log(`📊 Renderizando ${tasks.length} tareas`);
+        
+        // Obtener columnas
+        const pendingCol = document.getElementById('pendingList');
+        const inProgressCol = document.getElementById('inProgressList');
+        const completedCol = document.getElementById('completedList');
+        const overdueCol = document.getElementById('overdueList');
+        
+        if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
+            return;
+        }
+        
+        // ========== INYECTAR ESTILOS ==========
+        if (!document.getElementById('kanban-final-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'kanban-final-styles';
+            styles.textContent = `
+                /* Contenedor principal */
+                .kanban-board-final {
+                    display: flex;
+                    gap: 20px;
+                    padding: 20px;
+                    background: linear-gradient(135deg, #0a0a1a 0%, #0f172a 100%);
+                    min-height: calc(100vh - 200px);
+                    overflow-x: auto;
+                }
+                
+                /* Columnas */
+                .kanban-column-final {
+                    flex: 1;
+                    min-width: 300px;
+                    background: rgba(15, 23, 42, 0.6);
+                    backdrop-filter: blur(12px);
+                    border-radius: 20px;
+                    border: 1px solid rgba(139, 92, 246, 0.25);
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+                
+                .kanban-column-final:hover {
+                    border-color: rgba(139, 92, 246, 0.5);
+                    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+                }
+                
+                /* Columna REZAGADAS - solo estilo visual */
+                #overdueList.kanban-column-final {
+                    border-color: rgba(239, 68, 68, 0.4);
+                    background: rgba(239, 68, 68, 0.03);
+                }
+                
+                #overdueList.kanban-column-final:hover {
+                    border-color: rgba(239, 68, 68, 0.7);
+                    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+                }
+                
+                /* Headers de columna */
+                .column-header-final {
+                    padding: 16px 20px;
+                    background: linear-gradient(135deg, #1e293b, #0f172a);
+                    border-bottom: 2px solid;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                
+                #overdueList .column-header-final {
+                    background: linear-gradient(135deg, #7f1d1d, #991b1b);
+                    border-bottom-color: #ef4444;
+                }
+                
+                .column-header-final h3 {
+                    margin: 0;
+                    font-size: 14px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: #e2e8f0;
+                }
+                
+                .column-count-final {
+                    background: rgba(255,255,255,0.12);
+                    padding: 3px 10px;
+                    border-radius: 30px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #cbd5e1;
+                }
+                
+                /* Contenedor de tareas */
+                .tasks-container-final {
+                    padding: 14px;
+                    min-height: 400px;
+                    max-height: calc(100vh - 280px);
+                    overflow-y: auto;
+                }
+                
+                /* Tarjeta de tarea */
+                .task-card-final {
+                    background: linear-gradient(145deg, #1e293b, #162236);
+                    border-radius: 16px;
+                    margin-bottom: 14px;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    border: 1px solid rgba(139, 92, 246, 0.2);
+                    position: relative;
+                    cursor: pointer;
+                }
+                
+                .task-card-final:hover {
+                    transform: translateY(-3px);
+                    border-color: rgba(139, 92, 246, 0.5);
+                    box-shadow: 0 12px 28px -8px rgba(139, 92, 246, 0.3);
+                }
+                
+                /* Tarjeta REZAGADA */
+                .task-card-final.overdue-card {
+                    background: linear-gradient(145deg, #2d1a1a, #1f1212);
+                    border: 1px solid rgba(239, 68, 68, 0.4);
+                    border-left: 4px solid #ef4444;
+                }
+                
+                .task-card-final.overdue-card:hover {
+                    border-color: rgba(239, 68, 68, 0.7);
+                    box-shadow: 0 12px 28px -8px rgba(239, 68, 68, 0.4);
+                }
+                
+                /* Header de tarjeta */
+                .task-card-header-final {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding: 14px 14px 6px 14px;
+                }
+                
+                .task-title-final {
+                    margin: 0;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #f1f5f9;
+                    flex: 1;
+                    padding-right: 10px;
+                }
+                
+                /* Contenedor de botones - asegurar visibilidad */
+                .task-actions-final {
+                    display: flex;
+                    gap: 6px;
+                    flex-shrink: 0;
+                    background: transparent;
+                    position: relative;
+                    z-index: 10;
+                }
+                
+                /* Botones de acción - ESTILOS FUERTES para asegurar visibilidad */
+                .action-btn-final {
+                    width: 30px !important;
+                    height: 30px !important;
+                    min-width: 30px !important;
+                    min-height: 30px !important;
+                    border-radius: 8px !important;
+                    background: rgba(59, 130, 246, 0.3) !important;
+                    border: 1px solid rgba(59, 130, 246, 0.5) !important;
+                    color: #60a5fa !important;
+                    cursor: pointer !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    transition: all 0.2s !important;
+                    font-size: 14px !important;
+                    font-weight: bold !important;
+                    pointer-events: auto !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    z-index: 100 !important;
+                    position: relative !important;
+                }
+                
+                .action-btn-final:hover {
+                    background: rgba(59, 130, 246, 0.6) !important;
+                    transform: scale(1.05) !important;
+                    color: white !important;
+                }
+                
+                .menu-btn-final {
+                    background: rgba(139, 92, 246, 0.3) !important;
+                    border-color: rgba(139, 92, 246, 0.5) !important;
+                    color: #a78bfa !important;
+                }
+                
+                .menu-btn-final:hover {
+                    background: rgba(139, 92, 246, 0.6) !important;
+                    color: white !important;
+                }
+                
+                /* Badge de días de retraso */
+                .overdue-badge-final {
+                    background: #ef4444;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 20px;
+                    font-size: 9px;
+                    font-weight: bold;
+                    margin-left: 8px;
+                    display: inline-block;
+                }
+                
+                /* Badges de prioridad y estado */
+                .badges-container-final {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin: 8px 14px;
+                }
+                
+                .badge-final {
+                    padding: 3px 10px;
+                    border-radius: 30px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                
+                .priority-high-final { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+                .priority-medium-final { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+                .priority-low-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+                
+                .status-pending-final { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.3); }
+                .status-progress-final { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+                .status-completed-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+                .status-overdue-final { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+                
+                /* Info adicional */
+                .task-info-final {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 8px 14px 12px 14px;
+                    font-size: 10px;
+                    color: #64748b;
+                    border-top: 1px solid rgba(255,255,255,0.05);
+                    margin-top: 4px;
+                }
+                
+                /* Barra de progreso */
+                .subtasks-progress-final {
+                    margin: 6px 14px;
+                }
+                
+                .subtasks-header-final {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 9px;
+                    color: #64748b;
+                    margin-bottom: 4px;
+                }
+                
+                .progress-bar-final {
+                    background: #334155;
+                    height: 3px;
+                    border-radius: 3px;
+                    overflow: hidden;
+                }
+                
+                .progress-fill-final {
+                    height: 100%;
+                    background: linear-gradient(90deg, #8b5cf6, #ec4899);
+                    border-radius: 3px;
+                    transition: width 0.3s ease;
+                }
+                
+                /* Menú contextual */
+                .task-context-menu-final {
+                    position: absolute;
+                    top: 45px;
+                    right: 14px;
+                    background: #1e293b;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
+                    border: 1px solid rgba(139, 92, 246, 0.3);
+                    z-index: 1001;
+                    min-width: 140px;
+                    overflow: hidden;
+                }
+                
+                .context-menu-item-final {
+                    padding: 10px 14px;
+                    cursor: pointer;
+                    color: #e2e8f0;
+                    font-size: 12px;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                
+                .context-menu-item-final:hover {
+                    background: rgba(139, 92, 246, 0.2);
+                }
+                
+                .context-menu-item-final.delete {
+                    color: #f87171;
+                    border-top: 1px solid rgba(255,255,255,0.05);
+                }
+                
+                .context-menu-item-final.delete:hover {
+                    background: rgba(239, 68, 68, 0.2);
+                }
+                
+                /* Scrollbar */
+                .tasks-container-final::-webkit-scrollbar {
+                    width: 5px;
+                }
+                
+                .tasks-container-final::-webkit-scrollbar-track {
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 10px;
+                }
+                
+                .tasks-container-final::-webkit-scrollbar-thumb {
+                    background: rgba(139, 92, 246, 0.4);
+                    border-radius: 10px;
+                }
+                
+                .empty-message-final {
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #64748b;
+                    font-size: 12px;
+                }
+                
+                /* Asegurar que nada tape los botones */
+                .task-card-final {
+                    overflow: visible !important;
+                }
+                
+                .task-card-header-final {
+                    overflow: visible !important;
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        // Configurar columnas
+        function setupColumns() {
+            const columns = [
+                { id: 'pendingList', title: '📋 PENDIENTES', color: '#f59e0b', type: 'pending' },
+                { id: 'inProgressList', title: '🔄 EN PROGRESO', color: '#3b82f6', type: 'progress' },
+                { id: 'completedList', title: '✅ COMPLETADAS', color: '#10b981', type: 'completed' },
+                { id: 'overdueList', title: '⚠️ REZAGADAS ⚠️', color: '#ef4444', type: 'overdue' }
+            ];
+            
+            columns.forEach(col => {
+                const column = document.getElementById(col.id);
+                if (!column) return;
+                
+                column.classList.add('kanban-column-final');
+                
+                let header = column.querySelector('.column-header-final');
+                if (!header) {
+                    header = document.createElement('div');
+                    header.className = 'column-header-final';
+                    header.style.borderBottomColor = col.color;
+                    header.innerHTML = `
+                        <h3>
+                            <span>${col.title}</span>
+                            <span class="column-count-final" id="count-${col.type}">0</span>
+                        </h3>
+                    `;
+                    column.insertBefore(header, column.firstChild);
+                }
+                
+                let tasksContainer = column.querySelector('.tasks-container-final');
+                if (!tasksContainer) {
+                    tasksContainer = document.createElement('div');
+                    tasksContainer.className = 'tasks-container-final';
+                    const children = Array.from(column.children);
+                    children.forEach(child => {
+                        if (child !== header) {
+                            tasksContainer.appendChild(child);
+                        }
+                    });
+                    column.innerHTML = '';
+                    column.appendChild(header);
+                    column.appendChild(tasksContainer);
+                }
+            });
+        }
+        
+        setupColumns();
+        
+        // Actualizar contadores
+        function updateCounters() {
+            const counts = {
+                pending: document.querySelector('#pendingList .tasks-container-final')?.children.length || 0,
+                progress: document.querySelector('#inProgressList .tasks-container-final')?.children.length || 0,
+                completed: document.querySelector('#completedList .tasks-container-final')?.children.length || 0,
+                overdue: document.querySelector('#overdueList .tasks-container-final')?.children.length || 0
+            };
+            
+            const countPending = document.getElementById('count-pending');
+            const countProgress = document.getElementById('count-progress');
+            const countCompleted = document.getElementById('count-completed');
+            const countOverdue = document.getElementById('count-overdue');
+            
+            if (countPending) countPending.textContent = counts.pending;
+            if (countProgress) countProgress.textContent = counts.progress;
+            if (countCompleted) countCompleted.textContent = counts.completed;
+            if (countOverdue) countOverdue.textContent = counts.overdue;
+        }
+        
+        // Limpiar contenedores
+        const containersList = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
+        containersList.forEach(id => {
+            const container = document.querySelector(`#${id} .tasks-container-final`);
+            if (container) container.innerHTML = '';
+        });
+        
+        if (tasks.length === 0) {
+            containersList.forEach(id => {
+                const container = document.querySelector(`#${id} .tasks-container-final`);
+                if (container) {
+                    container.innerHTML = '<div class="empty-message-final">📭 No hay tareas</div>';
+                }
+            });
+            updateCounters();
+            return;
+        }
+        
+        // Calcular días de retraso
+        function calcularDiasRetraso(deadline) {
+            if (!deadline) return 0;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const fechaLimite = new Date(deadline);
+            fechaLimite.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+        
+        // Renderizar cada tarea
+        tasks.forEach(task => {
+            if (!task) return;
+            
+            const status = (task.status || 'pending').toLowerCase();
+            let targetContainerId;
+            let isOverdueTask = false;
+            let diasRetraso = 0;
+            
+            if (status === 'completed' || status === 'completado') {
+                targetContainerId = 'completedList';
+            } else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') {
+                targetContainerId = 'inProgressList';
+            } else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') {
+                targetContainerId = 'overdueList';
+                isOverdueTask = true;
+                diasRetraso = calcularDiasRetraso(task.deadline);
+            } else {
+                targetContainerId = 'pendingList';
+            }
+            
+            const targetContainer = document.querySelector(`#${targetContainerId} .tasks-container-final`);
+            if (!targetContainer) return;
+            
+            // Prioridad
+            const priority = (task.priority || 'media').toLowerCase();
+            const isHigh = priority === 'alta' || priority === 'high';
+            const isLow = priority === 'baja' || priority === 'low';
+            const priorityClass = isHigh ? 'priority-high-final' : (isLow ? 'priority-low-final' : 'priority-medium-final');
+            const priorityText = isHigh ? 'Alta' : (isLow ? 'Baja' : 'Media');
+            const priorityIcon = isHigh ? '🔴' : (isLow ? '🟢' : '🟡');
+            
+            // Estado
+            const isCompleted = status === 'completed';
+            const isProgress = status === 'inprogress' || status === 'in_progress' || status === 'en progreso';
+            const isOverdue = status === 'overdue' || status === 'rezagado' || status === 'atrasado';
+            const statusClass = isCompleted ? 'status-completed-final' : (isProgress ? 'status-progress-final' : (isOverdue ? 'status-overdue-final' : 'status-pending-final'));
+            const statusText = isCompleted ? 'Completada' : (isProgress ? 'En Progreso' : (isOverdue ? 'Rezagada' : 'Pendiente'));
+            const statusIcon = isCompleted ? '✅' : (isProgress ? '🔄' : (isOverdue ? '⚠️' : '⏳'));
+            
+            // Subtareas
+            const subtasks = task.subtasks || [];
+            const completedSubtasks = subtasks.filter(st => st.completed).length;
+            const totalSubtasks = subtasks.length;
+            const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+            const hasSubtasks = totalSubtasks > 0;
+            
+            // Fecha
+            let formattedDeadline = '';
+            if (task.deadline) {
+                try {
+                    const deadlineDate = new Date(task.deadline);
+                    formattedDeadline = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                } catch(e) {}
+            }
+            
+            // Asignado - iniciales
+            const assignee = task.assignee || '';
+            const initials = assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            
+            // Escapar HTML
+            const taskName = (task.name || 'Sin nombre').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+            const assigneeName = assignee.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+            
+            // Crear tarjeta
+            const card = document.createElement('div');
+            card.className = 'task-card-final';
+            if (isOverdueTask) card.classList.add('overdue-card');
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+            card.dataset.status = status;
+            card.style.position = 'relative';
+            card.style.overflow = 'visible';
+            
+            card.innerHTML = `
+                <div class="task-card-header-final">
+                    <div class="task-title-final">
+                        ${taskName}
+                        ${isOverdueTask && diasRetraso > 0 ? `<span class="overdue-badge-final">⚠️ +${diasRetraso} días</span>` : ''}
+                    </div>
+                    <div class="task-actions-final">
+                        <button class="action-btn-final move-up" data-task-id="${task.id}" data-status="${status}" title="Mover arriba">↑</button>
+                        <button class="action-btn-final move-down" data-task-id="${task.id}" data-status="${status}" title="Mover abajo">↓</button>
+                        <button class="action-btn-final menu-btn-final" data-task-id="${task.id}" title="Menú">⋯</button>
+                    </div>
+                </div>
+                
+                ${hasSubtasks ? `
+                <div class="subtasks-progress-final">
+                    <div class="subtasks-header-final">
+                        <span>📋 Subtareas</span>
+                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+                    </div>
+                    <div class="progress-bar-final">
+                        <div class="progress-fill-final" style="width: ${subtaskProgress}%"></div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="badges-container-final">
+                    <span class="badge-final ${priorityClass}">${priorityIcon} ${priorityText}</span>
+                    <span class="badge-final ${statusClass}">${statusIcon} ${statusText}</span>
+                </div>
+                
+                <div class="task-info-final">
+                    ${assignee ? `<span title="Asignado a: ${assigneeName}"><i class="fas fa-user-circle"></i> ${initials || assigneeName.substring(0,2)}</span>` : ''}
+                    ${formattedDeadline ? `<span title="Fecha límite"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</span>` : ''}
+                    ${task.estimatedTime ? `<span title="Tiempo estimado"><i class="fas fa-clock"></i> ${task.estimatedTime}h</span>` : ''}
+                </div>
+                
+                <div class="task-context-menu-final" id="task-menu-final-${task.id}" style="display: none;">
+                    <div class="context-menu-item-final" data-task-id="${task.id}" data-action="edit">✏️ Editar tarea</div>
+                    <div class="context-menu-item-final delete" data-task-id="${task.id}" data-action="delete">🗑️ Eliminar tarea</div>
+                </div>
+            `;
+            
+            targetContainer.appendChild(card);
+        });
+        
+        // ========== CONECTAR EVENTOS CON DELEGACIÓN ==========
+        // Usar delegación de eventos para asegurar que los botones funcionen incluso si se agregan dinámicamente
+        document.body.addEventListener('click', function(e) {
+            // Botón mover arriba
+            if (e.target.closest('.move-up')) {
+                const btn = e.target.closest('.move-up');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const status = btn.dataset.status;
+                console.log(`⬆️ Click en mover arriba (delegado): taskId=${taskId}, status=${status}`);
+                if (typeof window.moveTaskUp === 'function') {
+                    window.moveTaskUp(taskId, status);
+                }
+            }
+            
+            // Botón mover abajo
+            if (e.target.closest('.move-down')) {
+                const btn = e.target.closest('.move-down');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const status = btn.dataset.status;
+                console.log(`⬇️ Click en mover abajo (delegado): taskId=${taskId}, status=${status}`);
+                if (typeof window.moveTaskDown === 'function') {
+                    window.moveTaskDown(taskId, status);
+                }
+            }
+            
+            // Botón menú
+            if (e.target.closest('.menu-btn-final')) {
+                const btn = e.target.closest('.menu-btn-final');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = btn.dataset.taskId;
+                const menu = document.getElementById(`task-menu-final-${taskId}`);
+                if (menu) {
+                    document.querySelectorAll('.task-context-menu-final').forEach(m => m.style.display = 'none');
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
+            }
+            
+            // Item del menú contextual
+            if (e.target.closest('.context-menu-item-final')) {
+                const item = e.target.closest('.context-menu-item-final');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(item.dataset.taskId);
+                const action = item.dataset.action;
+                
+                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
+                
+                const project = projects[currentProjectIndex];
+                const task = project.tasks.find(t => t.id === taskId);
+                
+                if (action === 'edit' && task && typeof showTaskDetails === 'function') {
+                    showTaskDetails(task);
+                } else if (action === 'delete' && task) {
+                    if (confirm(`¿Eliminar la tarea "${task.name}"?`)) {
+                        project.tasks = project.tasks.filter(t => t.id !== taskId);
+                        localStorage.setItem('projects', JSON.stringify(projects));
+                        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+                        mostrarNotificacion(`🗑️ Tarea "${task.name}" eliminada`);
+                    }
+                }
+            }
+        });
+        
+        // Cerrar menús al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.menu-btn-final') && !e.target.closest('.task-context-menu-final')) {
+                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
+            }
+        });
+        
+        updateCounters();
+        
+        // Configurar drag & drop
+        setTimeout(() => {
+            if (typeof initDragAndDrop === 'function') initDragAndDrop();
+            if (typeof forzarDragDrop === 'function') forzarDragDrop();
+            if (typeof forzarDropEnColumnas === 'function') forzarDropEnColumnas();
+        }, 100);
+        
+        console.log(`✅ KANBAN PREMIUM: ${tasks.length} tareas renderizadas`);
+    };
+    
+    console.log('✅ KANBAN PREMIUM DEFINITIVO ACTIVADO - Botones visibles y funcionales en todas las columnas');
+})();
 
