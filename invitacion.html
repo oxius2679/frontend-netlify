@@ -228,7 +228,7 @@
             successDiv.style.display = 'block';
         }
         
-     async function acceptInvitation() {
+    async function acceptInvitation() {
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('actionButtons').style.display = 'none';
     
@@ -241,25 +241,28 @@
         
         const data = await response.json();
         
-        if (!data.success) {
-            throw new Error(data.error);
-        }
+        if (!data.success) throw new Error(data.error);
         
+        // Guardar datos del invitado
         if (data.clienteId) {
             localStorage.setItem('clienteId', data.clienteId);
             localStorage.setItem('userPlan', 'free');
+            localStorage.setItem('userRole', data.rol || 'viewer');
         }
         
-        showSuccess(`✅ ¡Invitación aceptada! Redirigiendo al dashboard...`);
+        showSuccess(`✅ ¡Invitación aceptada! Redirigiendo...`);
         
+        // 🔥 REDIRECCIÓN CON FORZADO DE VISTA
         setTimeout(() => {
-            window.location.href = '/?forceClienteId=' + data.clienteId;
-        }, 2000);
+            const redirectUrl = `/?forceClienteId=${data.clienteId}&view=board`;
+            console.log('🔄 Redirigiendo a:', redirectUrl);
+            window.location.href = redirectUrl;
+        }, 1500);
         
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('loadingState').style.display = 'none';
-        showError('Error al aceptar la invitación: ' + error.message);
+        showError('Error: ' + error.message);
     }
 }
         function rejectInvitation() {
