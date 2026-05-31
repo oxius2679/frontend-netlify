@@ -62272,10 +62272,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================================================
-// 🚀 CENTRO DE COMANDO IA 4D ÉLITE - VERSIÓN EJECUTIVA PROFESIONAL
+// 🚀 CENTRO DE COMANDO IA 4D - VERSIÓN CORREGIDA (RESPETA CLIENTEID)
 // ============================================================================
 
-console.log('🔥 INICIANDO CENTRO DE COMANDO IA 4D ÉLITE...');
+console.log('🔥 INICIANDO CENTRO DE COMANDO IA 4D CORREGIDO...');
 
 // ============================================
 // 1. VERIFICAR QUE projects EXISTE
@@ -62287,80 +62287,41 @@ if (typeof projects === 'undefined') {
 }
 
 // ============================================
-// 2. VARIABLES GLOBALES
+// 2. VARIABLES GLOBALES (SOLO UNA VEZ)
 // ============================================
-let invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
-let reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+if (typeof invitacionesPendientes === 'undefined') {
+    var invitacionesPendientes = JSON.parse(localStorage.getItem('invitacionesPendientes') || '[]');
+}
+if (typeof reunionesIA === 'undefined') {
+    var reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
+}
 
 // Agentes IA con historial
-let pmAgent = { activo: true, historialAcciones: [] };
-let transcriptorAgent = { activo: true, reunionesProcesadas: [] };
-let analistaAgent = { activo: true, metricas: {} };
-let asistenteAgent = { activo: true, conversaciones: [] };
-
-
-
-// ==================================================
-// SOBRESCRITURA DEFINITIVA DE renderKanbanTasks (FILTROS PERSISTENTES)
-// ==================================================
-(function() {
-    if (window.__kanbanPatched) return;
-    window.__kanbanPatched = true;
-    
-    // Guardar la función original si existe (por si acaso)
-    const originalRender = window.renderKanbanTasks;
-    
-    // Nueva implementación
-    window.renderKanbanTasks = function(tasksParam) {
-        console.log('🟢 [PATCH] renderKanbanTasks con filtros persistentes');
-        
-        if (!projects || currentProjectIndex === undefined) {
-            if (originalRender) return originalRender(tasksParam);
-            return;
-        }
-        
-        const project = projects[currentProjectIndex];
-        if (!project || !project.tasks) {
-            if (originalRender) return originalRender(tasksParam);
-            return;
-        }
-        
-        // Determinar tareas a renderizar
-        let tasks = tasksParam;
-        if (!tasks) {
-            // Leer valores actuales de los filtros
-            const assigneeFilter = document.getElementById('filterAssignee')?.value?.trim() || '';
-            const priorityFilter = document.getElementById('filterPriority')?.value?.trim() || '';
-            const statusFilter = document.getElementById('filterStatus')?.value?.trim() || '';
-            
-            console.log(`[PATCH] Filtros: asignado="${assigneeFilter}", prioridad="${priorityFilter}", estado="${statusFilter}"`);
-            
-            tasks = project.tasks.filter(task => {
-                const tAssignee = (task.assignee || '').trim();
-                const tPriority = (task.priority || '').trim();
-                const tStatus = (task.status || '').trim();
-                if (assigneeFilter && tAssignee !== assigneeFilter) return false;
-                if (priorityFilter && tPriority !== priorityFilter) return false;
-                if (statusFilter && tStatus !== statusFilter) return false;
-                return true;
-            });
-            console.log(`[PATCH] Mostrando ${tasks.length} tareas de ${project.tasks.length}`);
-        }
-        
-        // Si existe la función original, llamarla con las tareas filtradas
-        if (originalRender) {
-            return originalRender(tasks);
-        }
-        
-        // Si no existe original, implementar renderizado básico (opcional)
-        // (Aquí iría tu código de renderizado si no existiera originalRender)
-    };
-    
-    console.log('✅ renderKanbanTasks parcheada permanentemente');
-})();
+if (typeof pmAgent === 'undefined') {
+    var pmAgent = { activo: true, historialAcciones: [] };
+    var transcriptorAgent = { activo: true, reunionesProcesadas: [] };
+    var analistaAgent = { activo: true, metricas: {} };
+    var asistenteAgent = { activo: true, conversaciones: [] };
+}
 
 // ============================================
-// 3. ESTILOS GLOBALES 4D
+// 3. FUNCIÓN PARA OBTENER PROYECTOS DEL USUARIO (CLAVE)
+// ============================================
+function getProyectosDelUsuario() {
+    if (!projects || projects.length === 0) return [];
+    const clienteId = localStorage.getItem('clienteId');
+    console.log(`🔍 Filtrando proyectos para clienteId: ${clienteId}`);
+    
+    if (!clienteId) return projects;
+    
+    // Filtrar SOLO los proyectos que pertenecen a este usuario
+    const filtrados = projects.filter(p => p.clienteId === clienteId);
+    console.log(`📊 Usuario ve ${filtrados.length} de ${projects.length} proyectos totales`);
+    return filtrados;
+}
+
+// ============================================
+// 4. ESTILOS GLOBALES 4D
 // ============================================
 const estilos4D = `
     <style>
@@ -62503,2455 +62464,15 @@ const estilos4D = `
 `;
 
 // ============================================
-// 4. GUARDAR REFERENCIA ORIGINAL
-// ============================================
-const originalShowViewFn = window.showView;
-
-window.showView = function(view) {
-    console.log('🧭 Navegando a vista:', view);
-    
-    // 🔒 VERIFICACIÓN DE LICENCIA
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
-    
-    // Si es FREE y la vista no está permitida, bloquear
-    if (userPlan === 'free' && !vistasFree.includes(view)) {
-        showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
-        console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
-        return;
-    }
-    
-    // Vista de inicio (Centro de Comando IA)
-    if (view === 'inicio') {
-        renderCentroComandoIA();
-        setTimeout(() => {
-            document.querySelectorAll('div').forEach(div => {
-                if (div.textContent && div.textContent.includes('Oxi')) {
-                    div.remove();
-                }
-            });
-        }, 100);
-    } else {
-        if (originalShowViewFn) {
-            originalShowViewFn(view);
-        }
-    }
-};
-// ============================================
-// 5. FUNCIONES DE DRAG & DROP MEJORADAS
-// ============================================
-function handleDragStart(e) {
-    const taskId = e.currentTarget.dataset.taskId;
-    e.dataTransfer.setData('text/plain', taskId);
-    e.currentTarget.style.opacity = '0.7';
-    e.currentTarget.style.transform = 'scale(1.05)';
-}
-
-function handleDragEnd(e) {
-    e.currentTarget.style.opacity = '1';
-    e.currentTarget.style.transform = 'scale(1)';
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-    e.currentTarget.style.transform = 'scale(1.02)';
-    e.currentTarget.style.border = '2px dashed #8b5cf6';
-}
-
-function handleDragLeave(e) {
-    e.currentTarget.style.background = '';
-    e.currentTarget.style.transform = 'scale(1)';
-    e.currentTarget.style.border = 'none';
-}
-
-async function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.style.background = '';
-    e.currentTarget.style.transform = 'scale(1)';
-    e.currentTarget.style.border = 'none';
-    
-    const taskId = e.dataTransfer.getData('text/plain');
-    const targetColumn = e.currentTarget;
-    
-    const statusMap = {
-        'pendingList': 'pending',
-        'inProgressList': 'inProgress',
-        'completedList': 'completed',
-        'overdueList': 'overdue'
-    };
-    
-    const newStatus = statusMap[targetColumn.id];
-    if (!newStatus) return;
-    
-    const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
-    const project = projects[projectIndex];
-    if (!project || !project.tasks) return;
-    
-    const task = project.tasks.find(t => String(t.id) === String(taskId));
-    if (!task || task.status === newStatus) return;
-    
-    // Capturar estado anterior antes de cambiarlo
-    const oldStatus = task.status;
-    
-    // Cambiar estado de la tarea
-    task.status = newStatus;
-    if (newStatus === 'completed') task.progress = 100;
-    else if (newStatus === 'inProgress' && (!task.progress || task.progress < 50)) task.progress = 50;
-    else if (newStatus === 'pending') task.progress = 0;
-    
-    // ========== 🚨 NOTIFICACIÓN A SLACK ==========
-    // DESPUÉS (esto SÍ funciona)
-if (typeof sincronizarTarea === 'function') {
-    sincronizarTarea(task.name, project.name);
-    console.log('✅ Notificación enviada a Slack:', task.name, oldStatus, '→', newStatus);
-}
-    // =============================================
-    
-    // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
-    if (window.tiempoRealSocket && window.tiempoRealSocket.emit) {
-        window.tiempoRealSocket.emit('task-moved', {
-            projectId: project.id,
-            taskId: task.id,
-            newStatus: newStatus,
-            timestamp: new Date().toISOString()
-        });
-        console.log('📤 Emitido task-moved:', { projectId: project.id, taskId: task.id, newStatus: newStatus });
-    }
-    
-    // Guardar en localStorage y refrescar vista local
-    localStorage.setItem('projects', JSON.stringify(projects));
-    
-    // === NUEVA LÍNEA: Forzar sincronización entre pestañas ===
-    localStorage.setItem('sync-flag', Date.now().toString());
-    // ======================================================
-    
-    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-    
-    // FORZAR SINCRONIZACIÓN CON EL BACKEND para que las otras ventanas reciban project-updated
-    if (typeof forceSync === 'function') {
-        forceSync();
-        console.log('🔄 Sincronización forzada con backend (forceSync)');
-    } else if (typeof saveProjectsToBackend === 'function') {
-        saveProjectsToBackend();
-        console.log('🔄 Sincronización forzada con backend (saveProjectsToBackend)');
-    } else {
-        // Fallback: guardar manualmente con fetch
-        const token = localStorage.getItem('token');
-        const clienteId = localStorage.getItem('clienteId');
-        if (token && clienteId) {
-            fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({
-                    projects: projects,
-                    currentProjectIndex: currentProjectIndex,
-                    clienteId: clienteId
-                })
-            })
-            .then(response => response.json())
-            .then(data => console.log('✅ Guardado manual en backend exitoso', data))
-            .catch(err => console.error('❌ Error en guardado manual:', err));
-        } else {
-            console.warn('⚠️ No se pudo sincronizar con backend: faltan token o clienteId');
-        }
-    }
-}
-function forzarDragDrop() {
-    const tareas = document.querySelectorAll('.task-card');
-    tareas.forEach(tarea => {
-        tarea.setAttribute('draggable', 'true');
-        tarea.classList.add('glass-card-4d');
-        tarea.addEventListener('dragstart', handleDragStart);
-        tarea.addEventListener('dragend', handleDragEnd);
-    });
-}
-
-function forzarDropEnColumnas() {
-    const columnas = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
-    columnas.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            elemento.addEventListener('dragover', handleDragOver);
-            elemento.addEventListener('dragleave', handleDragLeave);
-            elemento.addEventListener('drop', handleDrop);
-        }
-    });
-}
-
-// ============================================
-// 6. FUNCIONES DE UTILIDAD
-// ============================================
-function isValidEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-}
-
-function generarTokenInvitacion() {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
-
-function mostrarMensajeInvitacion(texto, tipo = 'success') {
-    const mensaje = document.getElementById('mensajeInvitacion');
-    if (!mensaje) return;
-    
-    mensaje.style.display = 'block';
-    mensaje.textContent = texto;
-    mensaje.style.color = tipo === 'success' ? '#10b981' : '#ef4444';
-    mensaje.style.background = tipo === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-    mensaje.style.padding = '15px';
-    mensaje.style.borderRadius = '10px';
-    mensaje.style.border = tipo === 'success' ? '1px solid #10b981' : '1px solid #ef4444';
-    mensaje.style.backdropFilter = 'blur(10px)';
-    
-    setTimeout(() => {
-        mensaje.style.display = 'none';
-    }, 3000);
-}
-
-// ============================================
-// 7. FUNCIÓN DE EMAILJS MEJORADA
-// ============================================
-async function enviarInvitacion() {
-    console.log('🚀 INICIO - enviarInvitacion');
-    
-    const proyectoSelect = document.getElementById('selectProyectoInvitacion');
-    const emailInput = document.getElementById('emailInvitacion');
-    const rolSelect = document.getElementById('rolInvitado');
-    
-    const proyectoIndex = proyectoSelect?.value;
-    const email = emailInput?.value?.trim();
-    const rol = rolSelect?.value;
-    
-    console.log('📊 Datos del formulario:', { proyectoIndex, email, rol });
-    
-    // Validaciones
-    if (!proyectoIndex) {
-        mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error');
-        return;
-    }
-    
-    if (!email) {
-        mostrarMensajeInvitacion('❌ Ingresa un email válido', 'error');
-        return;
-    }
-    
-    if (!rol) {
-        mostrarMensajeInvitacion('❌ Selecciona un rol', 'error');
-        return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        mostrarMensajeInvitacion('❌ Email inválido', 'error');
-        return;
-    }
-    
-    const proyecto = projects[proyectoIndex];
-    if (!proyecto) {
-        mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
-        return;
-    }
-    
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
-        return;
-    }
-    
-    console.log('✅ Validaciones pasadas');
-    
-    const btnEnviar = document.getElementById('btnEnviarInvitacion');
-    const textoOriginal = btnEnviar?.innerHTML;
-    if (btnEnviar) {
-        btnEnviar.innerHTML = '⏳ Enviando...';
-        btnEnviar.disabled = true;
-    }
-    
-    try {
-        console.log('📤 PASO 1: Creando invitación en backend...');
-        
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ 
-                email, 
-                proyectoIndex: parseInt(proyectoIndex), 
-                proyectoNombre: proyecto.name, 
-                rol 
-            })
-        });
-        
-        const data = await response.json();
-        console.log('📦 Respuesta del backend:', data);
-        
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Error en backend');
-        }
-        
-        const inviteToken = data.token;
-     const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
-        console.log('🔗 Link generado:', enlace);
-        
-        console.log('📧 PASO 2: Enviando correo con EmailJS...');
-        
-        // Inicializar EmailJS (por si acaso)
-        emailjs.init('RKPQ7q1n2sDJdBqcG');
-        
-        const emailResult = await emailjs.send('service_kccmxz7', 'template_we2gzml', {
-            to_email: email,
-            project_name: proyecto.name,
-            role: rol,
-            invite_link: enlace,
-            from_name: 'Centro de Comando IA 4D Élite'
-        });
-        
-        console.log('✅ EmailJS respuesta:', emailResult);
-        
-        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
-        mostrarModalLinkInvitacion(enlace, email);
-        
-        if (emailInput) emailInput.value = '';
-        
-    } catch (error) {
-        console.error('❌ ERROR DETALLADO:', error);
-        mostrarMensajeInvitacion('❌ Error: ' + error.message, 'error');
-    } finally {
-        if (btnEnviar) {
-            btnEnviar.innerHTML = textoOriginal || 'Enviar';
-            btnEnviar.disabled = false;
-        }
-    }
-}
-
-
-// ============================================
-// 🖼️ MOSTRAR MODAL CON LINK DE INVITACIÓN
-// ============================================
-
-function mostrarModalLinkInvitacion(link, email) {
-    // Eliminar modal anterior si existe
-    const modalExistente = document.getElementById('modalLinkInvitacion');
-    if (modalExistente) modalExistente.remove();
-    
-    // Crear modal
-    const modal = document.createElement('div');
-    modal.id = 'modalLinkInvitacion';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(10px);
-        z-index: 10000000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: system-ui, sans-serif;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            border-radius: 24px;
-            padding: 30px;
-            width: 500px;
-            max-width: 90vw;
-            border: 2px solid #8b5cf6;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        ">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: white;">✅ Invitación creada</h3>
-                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
-                    background: rgba(239, 68, 68, 0.2);
-                    border: none;
-                    color: #ef4444;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    font-size: 18px;
-                ">✕</button>
-            </div>
-            
-            <p style="color: #94a3b8; margin-bottom: 15px;">
-                La invitación ha sido enviada a <strong style="color: #8b5cf6;">${email}</strong>
-            </p>
-            
-            <div style="
-                background: #0f172a;
-                border: 1px solid #334155;
-                border-radius: 12px;
-                padding: 15px;
-                margin-bottom: 20px;
-            ">
-                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Link de invitación:</div>
-                <div style="
-                    background: #020617;
-                    padding: 12px;
-                    border-radius: 8px;
-                    font-family: monospace;
-                    font-size: 12px;
-                    color: #8b5cf6;
-                    word-break: break-all;
-                ">${link}</div>
-            </div>
-            
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button onclick="copiarLinkInvitacion('${link}')" style="
-                    background: #8b5cf6;
-                    border: none;
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 40px;
-                    cursor: pointer;
-                    font-weight: bold;
-                ">📋 Copiar link</button>
-                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
-                    background: #334155;
-                    border: none;
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 40px;
-                    cursor: pointer;
-                    font-weight: bold;
-                ">Cerrar</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-// ============================================
-// 📋 COPIAR LINK AL PORTAPAPELES
-// ============================================
-
-async function copiarLinkInvitacion(link) {
-    try {
-        await navigator.clipboard.writeText(link);
-        mostrarMensajeInvitacion('✅ Link copiado al portapapeles', 'success');
-    } catch (err) {
-        console.error('Error al copiar:', err);
-        mostrarMensajeInvitacion('❌ No se pudo copiar el link', 'error');
-    }
-}
-
-
-// ============================================
-// FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
-// ============================================
-function getProyectosPermitidos() {
-    try {
-        console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
-        
-        // Obtener clienteId (esto es lo más importante)
-        const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
-        }
-        
-        // Si no hay proyectos por clienteId, verificar si es admin
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
-        }
-        
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
-        
-    } catch (error) {
-        console.error('Error en getProyectosPermitidos:', error);
-        return [];
-    }
-}
-
-function actualizarListaInvitaciones() {
-    const container = document.getElementById('invitacionesContainer');
-    const lista = document.getElementById('listaInvitaciones');
-    if (!container || !lista) return;
-    
-    if (invitacionesPendientes.length > 0) {
-        container.style.display = 'block';
-        lista.innerHTML = invitacionesPendientes.map((inv, index) => `
-            <div class="glass-card-4d" style="padding: 20px; margin-bottom: 15px; border-left: 6px solid #ec4899;">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div style="width:50px; height:50px; background:#ec4899; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:24px;">👤</div>
-                    <div style="flex:1;">
-                        <div style="font-weight:bold; font-size:16px;">${inv.email}</div>
-                        <div style="display:flex; gap:20px; color:#94a3b8; font-size:13px; margin-top:5px;">
-                            <span>📁 ${inv.proyecto}</span>
-                            <span>👑 ${inv.rol}</span>
-                            <span>📅 ${inv.fecha}</span>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="reenviarInvitacion(${index})" class="btn-4d" style="padding:8px 20px; font-size:13px;">Reenviar</button>
-                        <button onclick="cancelarInvitacion(${index})" class="btn-4d" style="background:#ef4444; padding:8px 20px; font-size:13px;">Cancelar</button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        container.style.display = 'none';
-    }
-}
-
-function reenviarInvitacion(index) {
-    mostrarMensajeInvitacion('✅ Invitación reenviada', 'success');
-}
-
-function cancelarInvitacion(index) {
-    if (confirm('¿Eliminar esta invitación?')) {
-        invitacionesPendientes.splice(index, 1);
-        localStorage.setItem('invitacionesPendientes', JSON.stringify(invitacionesPendientes));
-        actualizarListaInvitaciones();
-        mostrarMensajeInvitacion('✅ Invitación cancelada', 'success');
-    }
-}
-
-// ============================================================================
-// AGENTE 1: PM IA ÉLITE (TODAS LAS FUNCIONES GLOBALES)
-// ============================================================================
-
-function abrirPMAgent() {
-    console.log('🎯 Abriendo PM IA Élite...');
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'pmAgentOverlay';
-    overlay.style.cssText = `
-        position: fixed; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.95); backdrop-filter:blur(20px); z-index:1000000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    
-    overlay.innerHTML = `
-        <div class="glass-card-4d" style="width: 900px; max-height: 80vh; overflow-y: auto; padding: 40px; border: 2px solid #8b5cf6;">
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
-                <div style="width:80px; height:80px; background:linear-gradient(135deg,#8b5cf6,#ec4899); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:40px;">🎯</div>
-                <div>
-                    <h2 style="margin:0; font-size:32px;" class="gradient-text-4d">PM IA ÉLITE</h2>
-                    <p style="color:#94a3b8;">Análisis ejecutivo 360°</p>
-                </div>
-                <button onclick="window.cerrarPMAgent()" style="margin-left:auto; background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:50px; height:50px; border-radius:25px; cursor:pointer;">✕</button>
-            </div>
-            
-            <select id="pmProjectSelect" class="glass-card-4d" style="width:100%; padding:18px; color:white; margin-bottom:25px; border:1px solid #8b5cf6;">
-                <option value="">📌 Seleccionar proyecto estratégico...</option>
-                ${projects.map((p,i) => {
-                    const t = p.tasks || [];
-                    const comp = t.filter(t => t.status === 'completed').length;
-                    const prog = t.length ? Math.round(comp/t.length*100) : 0;
-                    return `<option value="${i}">${p.name} (${comp}/${t.length} tareas · ${prog}% completo)</option>`;
-                }).join('')}
-            </select>
-            
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:25px;">
-                <button onclick="window.pmAnalisisCompleto()" class="btn-4d">📊 Análisis Completo</button>
-                <button onclick="window.pmKPIs()" class="btn-4d">📈 KPIs Estratégicos</button>
-                <button onclick="window.pmEquipo()" class="btn-4d">👥 Desempeño Equipo</button>
-                <button onclick="window.pmRiesgos()" class="btn-4d">⚠️ Matriz de Riesgos</button>
-                <button onclick="window.pmTendencias()" class="btn-4d">📉 Tendencias</button>
-                <button onclick="window.pmForecast()" class="btn-4d">🔮 Forecast</button>
-            </div>
-            
-            <div id="pmResultado" class="glass-card-4d" style="padding:25px; min-height:200px;"></div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-}
-
-// Función para cerrar el PM IA
-window.cerrarPMAgent = function() {
-    const overlay = document.getElementById('pmAgentOverlay');
-    if (overlay) overlay.remove();
-};
-
-// ============================================
-// FUNCIÓN 1: ANÁLISIS COMPLETO
-// ============================================
-window.pmAnalisisCompleto = function() {
-    console.log('📊 Ejecutando pmAnalisisCompleto');
-    const idx = document.getElementById('pmProjectSelect')?.value;
-    const res = document.getElementById('pmResultado');
-    if (!idx) { alert('Selecciona un proyecto'); return; }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const total = t.length;
-    const comp = t.filter(t => t.status === 'completed').length;
-    const prog = t.filter(t => t.status === 'inProgress').length;
-    const pend = t.filter(t => t.status === 'pending').length;
-    
-    const hoy = new Date();
-    hoy.setHours(0,0,0,0);
-    const atr = t.filter(t => t.status !== 'completed' && t.deadline && new Date(t.deadline) < hoy).length;
-    
-    const prox = t.filter(t => {
-        if (t.status === 'completed' || !t.deadline) return false;
-        const d = new Date(t.deadline);
-        d.setHours(0,0,0,0);
-        const diff = Math.ceil((d - hoy) / (1000*60*60*24));
-        return diff <= 7 && diff > 0;
-    }).length;
-    
-    const horasEst = t.reduce((s,t) => s + (Number(t.estimatedTime) || 0), 0);
-    const horasReal = t.reduce((s,t) => s + (Number(t.timeLogged) || 0), 0);
-    const eficiencia = horasEst > 0 ? Math.round((horasReal / horasEst) * 100) : 0;
-    
-    const miembros = new Set();
-    t.forEach(t => { if (t.assignee) miembros.add(t.assignee); });
-    
-    res.innerHTML = `
-        <h3 style="margin:0 0 20px;" class="gradient-text-4d">📊 ANÁLISIS COMPLETO: ${p.name}</h3>
-        
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:30px;">
-            <div class="kpi-card-4d"><div class="stat-value">${total}</div><div class="stat-label">Tareas</div></div>
-            <div class="kpi-card-4d" style="border-left-color:#10b981;"><div class="stat-value">${comp}</div><div class="stat-label">Completadas</div></div>
-            <div class="kpi-card-4d" style="border-left-color:#f59e0b;"><div class="stat-value">${prog}</div><div class="stat-label">En Progreso</div></div>
-            <div class="kpi-card-4d" style="border-left-color:#ef4444;"><div class="stat-value">${pend}</div><div class="stat-label">Pendientes</div></div>
-        </div>
-        
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:30px;">
-            <div class="kpi-card-4d" style="border-left-color:#8b5cf6;">
-                <div class="stat-value">${atr}</div>
-                <div class="stat-label">Atrasadas</div>
-                <div style="margin-top:10px; color:#94a3b8;">Próximas 7d: ${prox}</div>
-            </div>
-            <div class="kpi-card-4d" style="border-left-color:#8b5cf6;">
-                <div class="stat-value">${miembros.size}</div>
-                <div class="stat-label">Miembros Equipo</div>
-            </div>
-        </div>
-        
-        <div style="margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>Progreso General</span>
-                <span class="gradient-text-4d" style="font-weight:bold;">${total ? Math.round(comp/total*100) : 0}%</span>
-            </div>
-            <div style="height:12px; background:#2d2d5f; border-radius:6px; overflow:hidden;">
-                <div style="width:${total ? Math.round(comp/total*100) : 0}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:6px;"></div>
-            </div>
-        </div>
-        
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
-            <div>
-                <div style="color:#94a3b8;">⏱️ Horas Estimadas</div>
-                <div style="font-size:24px; font-weight:bold;">${horasEst}h</div>
-            </div>
-            <div>
-                <div style="color:#94a3b8;">⌛ Horas Registradas</div>
-                <div style="font-size:24px; font-weight:bold; color:${eficiencia > 100 ? '#ef4444' : '#10b981'};">${horasReal}h</div>
-            </div>
-            <div>
-                <div style="color:#94a3b8;">⚡ Eficiencia</div>
-                <div style="font-size:24px; font-weight:bold; color:${eficiencia > 100 ? '#ef4444' : eficiencia > 80 ? '#10b981' : '#f59e0b'};">${eficiencia}%</div>
-            </div>
-        </div>
-    `;
-};
-
-// ============================================
-// FUNCIÓN 2: KPIs ESTRATÉGICOS
-// ============================================
-window.pmKPIs = function() {
-    console.log('📈 Ejecutando pmKPIs');
-    const idx = document.getElementById('pmProjectSelect')?.value;
-    const res = document.getElementById('pmResultado');
-    if (!idx) { alert('Selecciona un proyecto'); return; }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const total = t.length;
-    const comp = t.filter(t => t.status === 'completed').length;
-    const prog = total ? Math.round(comp/total*100) : 0;
-    
-    const cumplimiento = total ? Math.round((t.filter(t => t.deadline && new Date(t.deadline) > new Date() && t.status !== 'completed').length / total) * 100) : 0;
-    const productividad = t.reduce((s,t) => s + (Number(t.timeLogged) || 0), 0) / (total || 1);
-    
-    res.innerHTML = `
-        <h3 style="margin:0 0 20px;" class="gradient-text-4d">📈 KPIs ESTRATÉGICOS</h3>
-        
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px;">
-            <div class="kpi-card-4d">
-                <div class="stat-value">${prog}%</div>
-                <div class="stat-label">% Completado</div>
-                <div style="margin-top:10px; font-size:12px; color:#94a3b8;">Meta: >70%</div>
-            </div>
-            <div class="kpi-card-4d" style="border-left-color:${cumplimiento > 80 ? '#10b981' : '#f59e0b'};">
-                <div class="stat-value">${cumplimiento}%</div>
-                <div class="stat-label">Cumplimiento Plazos</div>
-            </div>
-            <div class="kpi-card-4d">
-                <div class="stat-value">${productividad.toFixed(1)}h</div>
-                <div class="stat-label">Productividad/Tarea</div>
-            </div>
-            <div class="kpi-card-4d">
-                <div class="stat-value">${comp}</div>
-                <div class="stat-label">Tareas Completadas</div>
-            </div>
-        </div>
-    `;
-};
-
-// ============================================
-// FUNCIÓN 3: DESEMPEÑO EQUIPO
-// ============================================
-window.pmEquipo = function() {
-    console.log('👥 Ejecutando pmEquipo');
-    const idx = document.getElementById('pmProjectSelect')?.value;
-    const res = document.getElementById('pmResultado');
-    if (!idx) { alert('Selecciona un proyecto'); return; }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const miembros = new Map();
-    
-    t.forEach(t => {
-        if (t.assignee && t.assignee.trim()) {
-            if (!miembros.has(t.assignee)) {
-                miembros.set(t.assignee, { tareas: 0, completadas: 0, horas: 0 });
-            }
-            const m = miembros.get(t.assignee);
-            m.tareas++;
-            m.horas += Number(t.estimatedTime) || 0;
-            if (t.status === 'completed') m.completadas++;
-        }
-    });
-    
-    if (miembros.size === 0) {
-        res.innerHTML = '<div style="color:#94a3b8;">No hay miembros asignados</div>';
-        return;
-    }
-    
-    let html = '<h3 class="gradient-text-4d" style="margin:0 0 20px;">👥 DESEMPEÑO POR MIEMBRO</h3>';
-    
-    miembros.forEach((v,k) => {
-        const eficiencia = v.tareas > 0 ? Math.round(v.completadas/v.tareas*100) : 0;
-        html += `
-            <div class="glass-card-4d" style="padding:20px; margin-bottom:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span style="font-size:18px; font-weight:bold;">${k}</span>
-                    <span style="background:${eficiencia >= 70 ? '#10b981' : eficiencia >= 40 ? '#f59e0b' : '#ef4444'}; color:white; padding:5px 15px; border-radius:20px;">${eficiencia}% eficiencia</span>
-                </div>
-                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-                    <div><span style="color:#94a3b8;">📋 Tareas:</span> ${v.tareas}</div>
-                    <div><span style="color:#94a3b8;">✅ Completadas:</span> ${v.completadas}</div>
-                    <div><span style="color:#94a3b8;">⏱️ Horas:</span> ${v.horas}h</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    res.innerHTML = html;
-};
-
-// ============================================
-// FUNCIÓN 4: MATRIZ DE RIESGOS
-// ============================================
-window.pmRiesgos = function() {
-    console.log('⚠️ Ejecutando pmRiesgos');
-    const idx = document.getElementById('pmProjectSelect')?.value;
-    const res = document.getElementById('pmResultado');
-    if (!idx) { alert('Selecciona un proyecto'); return; }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const hoy = new Date();
-    hoy.setHours(0,0,0,0);
-    
-    const atrasadas = t.filter(t => t.status !== 'completed' && t.deadline && new Date(t.deadline) < hoy);
-    const proximas = t.filter(t => {
-        if (t.status === 'completed' || !t.deadline) return false;
-        const d = new Date(t.deadline);
-        d.setHours(0,0,0,0);
-        const diff = Math.ceil((d - hoy) / (1000*60*60*24));
-        return diff <= 7 && diff >= 0;
-    });
-    const sinFecha = t.filter(t => !t.deadline && t.status !== 'completed');
-    
-    let html = '<h3 class="gradient-text-4d" style="margin:0 0 20px;">⚠️ MATRIZ DE RIESGOS</h3>';
-    
-    html += `
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:30px;">
-            <div class="kpi-card-4d" style="border-left-color:#ef4444;">
-                <div class="stat-value">${atrasadas.length}</div>
-                <div class="stat-label">Críticas</div>
-            </div>
-            <div class="kpi-card-4d" style="border-left-color:#f59e0b;">
-                <div class="stat-value">${proximas.length}</div>
-                <div class="stat-label">Por Vencer</div>
-            </div>
-            <div class="kpi-card-4d" style="border-left-color:#94a3b8;">
-                <div class="stat-value">${sinFecha.length}</div>
-                <div class="stat-label">Sin Fecha</div>
-            </div>
-        </div>
-    `;
-    
-    if (atrasadas.length > 0) {
-        html += '<h4 style="color:#ef4444; margin:20px 0 10px;">🔴 Tareas Críticas Atrasadas</h4>';
-        atrasadas.slice(0,3).forEach(t => {
-            const dias = Math.ceil((hoy - new Date(t.deadline)) / (1000*60*60*24));
-            html += `
-                <div class="glass-card-4d" style="padding:15px; margin-bottom:10px; border-left:4px solid #ef4444;">
-                    <strong>${t.name}</strong><br>
-                    <span style="color:#94a3b8;">📅 Vencía: ${new Date(t.deadline).toLocaleDateString()} (${dias} días)</span>
-                    ${t.assignee ? `<br>👤 ${t.assignee}` : ''}
-                </div>
-            `;
-        });
-    }
-    
-    res.innerHTML = html;
-};
-
-// ============================================
-// FUNCIÓN 5: TENDENCIAS
-// ============================================
-window.pmTendencias = function() {
-    console.log('📉 Ejecutando pmTendencias');
-    const res = document.getElementById('pmResultado');
-    res.innerHTML = `
-        <h3 class="gradient-text-4d" style="margin:0 0 20px;">📉 ANÁLISIS DE TENDENCIAS</h3>
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px;">
-            <div class="kpi-card-4d">
-                <div class="stat-value">↑ 15%</div>
-                <div class="stat-label">Productividad Último Mes</div>
-            </div>
-            <div class="kpi-card-4d">
-                <div class="stat-value">↓ 8%</div>
-                <div class="stat-label">Tareas Atrasadas</div>
-            </div>
-        </div>
-        <p style="color:#94a3b8; margin-top:20px;">Análisis basado en histórico de 30 días</p>
-    `;
-};
-
-// ============================================
-// FUNCIÓN 6: FORECAST
-// ============================================
-window.pmForecast = function() {
-    console.log('🔮 Ejecutando pmForecast');
-    const idx = document.getElementById('pmProjectSelect')?.value;
-    const res = document.getElementById('pmResultado');
-    if (!idx) { alert('Selecciona un proyecto'); return; }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const comp = t.filter(t => t.status === 'completed').length;
-    const total = t.length;
-    const velocidad = comp / 30;
-    const diasRestantes = total > comp ? Math.ceil((total - comp) / velocidad) : 0;
-    const fechaEstimada = new Date();
-    fechaEstimada.setDate(fechaEstimada.getDate() + diasRestantes);
-    
-    res.innerHTML = `
-        <h3 class="gradient-text-4d" style="margin:0 0 20px;">🔮 FORECAST DEL PROYECTO</h3>
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:20px;">
-            <div class="kpi-card-4d">
-                <div class="stat-value">${velocidad.toFixed(1)}</div>
-                <div class="stat-label">Tareas/día</div>
-            </div>
-            <div class="kpi-card-4d">
-                <div class="stat-value">${diasRestantes}</div>
-                <div class="stat-label">Días Restantes</div>
-            </div>
-        </div>
-        <div class="glass-card-4d" style="padding:20px;">
-            <div style="color:#8b5cf6; font-size:14px;">📅 Fecha Estimada de Finalización</div>
-            <div style="font-size:28px; font-weight:bold;">${fechaEstimada.toLocaleDateString()}</div>
-            <div style="color:#94a3b8; font-size:12px; margin-top:5px;">Basado en velocidad actual</div>
-        </div>
-    `;
-};
-
-// ============================================
-// 9. AGENTE 2: TRANSCRIPTOR IA EJECUTIVO
-// ============================================
-
-// ============================================
-// AGENTE 2: TRANSCRIPTOR IA (VERSIÓN COMPLETA - ESTILO READ AI)
-// ============================================
-
-window.reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
-
-window.abrirTranscriptorAgent = function() {
-    console.log('🎙️ Abriendo Transcriptor IA (versión completa)...');
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'transcriptorOverlay';
-    overlay.style.cssText = `
-        position: fixed; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.95); backdrop-filter:blur(20px); z-index:1000000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    
-    overlay.innerHTML = `
-        <div class="glass-card-4d" style="width: 1200px; max-height: 90vh; overflow-y: auto; padding: 30px; border: 2px solid #10b981;">
-            <!-- HEADER -->
-            <div style="display:flex; align-items:center; gap:15px; margin-bottom:25px;">
-                <div style="width:60px; height:60px; background:linear-gradient(135deg,#10b981,#059669); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:30px;">🎙️</div>
-                <div style="flex:1;">
-                    <h2 style="margin:0; font-size:28px; color:white;">TRANSCRIPTOR IA</h2>
-                    <p style="color:#94a3b8;">Grabación y análisis inteligente de reuniones</p>
-                </div>
-                <button onclick="window.cerrarTranscriptorAgent()" style="background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:45px; height:45px; border-radius:12px; cursor:pointer;">✕</button>
-            </div>
-
-            <!-- SECCIÓN DE GRABACIÓN EN VIVO -->
-            <div style="padding:25px; margin-bottom:25px; border:1px solid #10b981; border-radius:15px;">
-                <h3 style="margin:0 0 15px; color:#10b981;">🎤 Reunión en Vivo</h3>
-                
-                <div style="display:flex; gap:15px; margin-bottom:20px;">
-                    <input type="text" id="liveMeetingTitle" placeholder="Título de la reunión..." 
-                           style="flex:2; padding:15px; background:rgba(255,255,255,0.1); color:white; border:1px solid #10b981; border-radius:10px;">
-                    <button id="startRecordingBtn" class="btn-4d" style="background:#ef4444; flex:0 0 auto; padding:15px 30px;">🔴 Iniciar</button>
-                    <button id="stopRecordingBtn" class="btn-4d" style="background:#4b5563; flex:0 0 auto; padding:15px 30px; display:none;">⏹️ Detener</button>
-                </div>
-                
-                <!-- ESTADO DE GRABACIÓN -->
-                <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px; padding:10px; background:rgba(0,0,0,0.3); border-radius:10px;">
-                    <div id="recordingIndicator" style="width:12px; height:12px; border-radius:50%; background:#6b7280;"></div>
-                    <span id="recordingStatusText" style="color:#94a3b8;">Listo para grabar</span>
-                    <span id="recordingTimer" style="color:#10b981; font-family:monospace; margin-left:auto;">00:00</span>
-                </div>
-                
-                <!-- ÁREA DE TRANSCRIPCIÓN -->
-                <div style="margin-bottom:20px;">
-                    <h4 style="color:#f59e0b; margin:0 0 10px;">📝 Transcripción</h4>
-                    <div id="liveTranscriptArea" style="min-height:150px; max-height:200px; overflow-y:auto; padding:15px; background:rgba(0,0,0,0.3); color:#d1d5db; border-radius:10px; font-family:monospace;">
-                        <span style="color:#6b7280;">La transcripción aparecerá aquí...</span>
-                    </div>
-                </div>
-
-                <!-- SECCIÓN DE ANÁLISIS IA -->
-                <div id="aiAnalysisSection" style="display:none;">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
-                        <!-- Resumen -->
-                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
-                            <h4 style="color:#f59e0b; margin:0 0 10px;">📋 Resumen Ejecutivo</h4>
-                            <p id="aiSummary" style="color:#94a3b8; line-height:1.5;">Cargando...</p>
-                        </div>
-                        <!-- Acciones -->
-                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
-                            <h4 style="color:#10b981; margin:0 0 10px;">✅ Acciones</h4>
-                            <div id="aiActions" style="color:#94a3b8;"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Puntos Clave y Decisiones -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
-                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
-                            <h4 style="color:#8b5cf6; margin:0 0 10px;">📌 Puntos Clave</h4>
-                            <div id="aiKeyPoints" style="color:#94a3b8;">Cargando...</div>
-                        </div>
-                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:10px;">
-                            <h4 style="color:#ec4899; margin:0 0 10px;">⚖️ Decisiones</h4>
-                            <div id="aiDecisions" style="color:#94a3b8;">Cargando...</div>
-                        </div>
-                    </div>
-                    
-                    <!-- METADATOS Y BOTONES -->
-                    <div style="display:flex; gap:20px; align-items:center;">
-                        <div style="flex:1; color:#94a3b8; font-size:13px;">
-                            <span id="meetingDuration">Duración: --:--</span> | 
-                            <span id="meetingDate">${new Date().toLocaleString()}</span>
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            <button id="saveMeetingBtn" class="btn-4d" style="background:#8b5cf6; padding:12px 25px;">💾 Guardar</button>
-                            <button id="discardMeetingBtn" class="btn-4d" style="background:#4b5563; padding:12px 25px;">🗑️ Descartar</button>
-                            <button id="exportMeetingBtn" class="btn-4d" style="background:#10b981; padding:12px 25px;">📤 Exportar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-             <!-- SECCIÓN DE HISTORIAL CON BOTÓN DE LIMPIAR -->
-            <div style="padding:25px; background:rgba(255,255,255,0.05); border-radius:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <h3 style="margin:0; color:white;">📋 Historial de Reuniones</h3>
-                    <button id="clearHistoryBtn" class="btn-4d" style="background:#ef4444; padding:8px 20px; font-size:13px; border:none; border-radius:8px; cursor:pointer;">🗑️ Limpiar Todo</button>
-                </div>
-                <div id="listaReuniones" style="max-height:300px; overflow-y:auto;"></div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-    window.actualizarListaReuniones();
-    window.inicializarGrabadorCompleto();
-    
-    // Conectar el botón de limpiar
-    setTimeout(() => {
-        const clearBtn = document.getElementById('clearHistoryBtn');
-        if (clearBtn) {
-            clearBtn.onclick = window.limpiarHistorialReuniones;
-        }
-    }, 100);
-};
-
-// ============================================
-// FUNCIONES PARA GESTIÓN DE HISTORIAL
-// ============================================
-
-// Función para borrar TODO el historial (VERSIÓN CORREGIDA)
-window.limpiarHistorialReuniones = function() {
-    console.log('🧹 Intentando limpiar historial...');
-    
-    if (confirm('⚠️ ¿Estás seguro de eliminar TODAS las reuniones del historial?\n\nEsta acción no se puede deshacer.')) {
-        
-        // 1. Vaciar el array global
-        window.reunionesIA = [];
-        
-        // 2. Guardar en localStorage (array vacío)
-        localStorage.setItem('iaReuniones', JSON.stringify([]));
-        
-        console.log('✅ Historial borrado de localStorage');
-        
-        // 3. Forzar actualización de la UI
-        window.actualizarListaReuniones();
-        
-        // 4. Mostrar notificación visual
-        const notificacion = document.createElement('div');
-        notificacion.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            z-index: 1000001;
-            font-weight: bold;
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
-            animation: slideIn 0.3s ease;
-        `;
-        notificacion.textContent = '✅ Historial limpiado correctamente';
-        document.body.appendChild(notificacion);
-        
-        setTimeout(() => {
-            notificacion.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notificacion.remove(), 300);
-        }, 3000);
-    }
-};
-
-// Función ACTUALIZADA para refrescar la lista
-window.actualizarListaReuniones = function() {
-    console.log('🔄 Actualizando lista de reuniones...');
-    
-    const lista = document.getElementById('listaReuniones');
-    if (!lista) {
-        console.log('⚠️ Elemento listaReuniones no encontrado');
-        return;
-    }
-    
-    // Cargar desde localStorage SIEMPRE
-    try {
-        const stored = localStorage.getItem('iaReuniones');
-        window.reunionesIA = stored ? JSON.parse(stored) : [];
-        console.log(`📊 Reuniones cargadas: ${window.reunionesIA.length}`);
-    } catch (e) {
-        console.error('❌ Error cargando reuniones:', e);
-        window.reunionesIA = [];
-    }
-    
-    // Si no hay reuniones, mostrar mensaje
-    if (window.reunionesIA.length === 0) {
-        lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
-        return;
-    }
-    
-    // Ordenar por fecha (más reciente primero)
-    const reunionesOrdenadas = [...window.reunionesIA].sort((a, b) => {
-        return new Date(b.fecha) - new Date(a.fecha);
-    });
-    
-    // Generar HTML
-    lista.innerHTML = reunionesOrdenadas.map(r => `
-        <div style="padding:15px; margin-bottom:10px; background:rgba(16,185,129,0.1); border-left:4px solid #10b981; border-radius:8px; position:relative;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <strong style="color:white;">${r.titulo || 'Sin título'}</strong>
-                <span style="color:#94a3b8; font-size:12px;">${r.duracion || ''}</span>
-            </div>
-            <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha || ''}</div>
-            <div style="color:#d1d5db; margin-bottom:10px;">${r.resumen || ''}</div>
-            
-            ${r.transcripcion ? `
-            <details style="margin-bottom:10px;">
-                <summary style="color:#10b981; cursor:pointer; font-size:13px;">📝 Ver transcripción</summary>
-                <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8; font-size:12px; max-height:150px; overflow-y:auto;">
-                    ${r.transcripcion}
-                </div>
-            </details>
-            ` : ''}
-            
-            <!-- Botón para eliminar individual -->
-            <button onclick="window.eliminarReunion('${r.id}')" 
-                    style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:5px; font-size:12px;">
-                🗑️
-            </button>
-        </div>
-    `).join('');
-};
-
-// Función para eliminar una reunión específica
-window.eliminarReunion = function(id) {
-    console.log('🗑️ Eliminando reunión:', id);
-    
-    if (confirm('¿Eliminar esta reunión del historial?')) {
-        // Filtrar el array
-        window.reunionesIA = window.reunionesIA.filter(r => String(r.id) !== String(id));
-        
-        // Guardar en localStorage
-        localStorage.setItem('iaReuniones', JSON.stringify(window.reunionesIA));
-        
-        console.log('✅ Reunión eliminada');
-        
-        // Actualizar la vista
-        window.actualizarListaReuniones();
-    }
-};
-
-// Asegurar que el botón de limpiar esté correctamente vinculado
-function conectarBotonLimpiar() {
-    const clearBtn = document.getElementById('clearHistoryBtn');
-    if (clearBtn) {
-        console.log('🔗 Botón de limpiar conectado');
-        // Remover cualquier evento anterior
-        clearBtn.replaceWith(clearBtn.cloneNode(true));
-        const newBtn = document.getElementById('clearHistoryBtn');
-        newBtn.onclick = window.limpiarHistorialReuniones;
-    } else {
-        console.log('⚠️ Botón de limpiar no encontrado, reintentando...');
-        setTimeout(conectarBotonLimpiar, 500);
-    }
-}
-
-// Modificar la función abrirTranscriptorAgent para llamar a conectarBotonLimpiar
-// Busca en tu código donde se define abrirTranscriptorAgent y al final agrega:
-// setTimeout(conectarBotonLimpiar, 500);
-
-
-
-
-window.cerrarTranscriptorAgent = function() {
-    const overlay = document.getElementById('transcriptorOverlay');
-    if (overlay) overlay.remove();
-    if (window.currentRecording?.mediaRecorder?.state === 'recording') {
-        window.currentRecording.mediaRecorder.stop();
-    }
-};
-
-window.inicializarGrabadorCompleto = function() {
-    let mediaRecorder;
-    let audioChunks = [];
-    let stream;
-    let recordingTimer;
-    let seconds = 0;
-    
-    const startBtn = document.getElementById('startRecordingBtn');
-    const stopBtn = document.getElementById('stopRecordingBtn');
-    const liveArea = document.getElementById('liveTranscriptArea');
-    const aiSection = document.getElementById('aiAnalysisSection');
-    const titleInput = document.getElementById('liveMeetingTitle');
-    const summaryEl = document.getElementById('aiSummary');
-    const actionsEl = document.getElementById('aiActions');
-    const keyPointsEl = document.getElementById('aiKeyPoints');
-    const decisionsEl = document.getElementById('aiDecisions');
-    const indicator = document.getElementById('recordingIndicator');
-    const statusText = document.getElementById('recordingStatusText');
-    const timerEl = document.getElementById('recordingTimer');
-    const durationEl = document.getElementById('meetingDuration');
-    
-    function updateTimer() {
-        seconds++;
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        timerEl.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-    }
-    
-    function resetUI() {
-        startBtn.style.display = 'inline-block';
-        stopBtn.style.display = 'none';
-        titleInput.disabled = false;
-        indicator.style.background = '#6b7280';
-        statusText.textContent = 'Listo para grabar';
-        statusText.style.color = '#94a3b8';
-        clearInterval(recordingTimer);
-        if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
-        seconds = 0;
-        timerEl.textContent = '00:00';
-    }
-    
-    startBtn.onclick = async () => {
-        const titulo = titleInput.value.trim();
-        if (!titulo) {
-            alert('❌ Ingresa un título');
-            return;
-        }
-        
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) audioChunks.push(e.data);
-            };
-            
-            mediaRecorder.onstop = async () => {
-    liveArea.innerHTML = '<span style="color:#f59e0b;">⏳ Procesando con IA...</span>';
-    aiSection.style.display = 'block';
-    summaryEl.innerHTML = '⏳ Analizando...';
-    actionsEl.innerHTML = '⏳ Extrayendo...';
-    keyPointsEl.innerHTML = '⏳ Identificando...';
-    decisionsEl.innerHTML = '⏳ Detectando...';
-    
-    stream.getTracks().forEach(t => t.stop());
-    
-    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'grabacion.webm');
-    formData.append('title', titulo);
-    
-    try {
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        // ============================================
-        // ÁREA DE RESPUESTA - COLOCA AQUÍ EL CÓDIGO
-        // ============================================
-        
-        // Mostrar transcripción
-        liveArea.innerHTML = `<span style="color:#10b981;">📝 Transcripción:</span><br>${data.transcripcion || 'Sin transcripción'}`;
-        
-        // 1. RESUMEN EJECUTIVO
-        summaryEl.innerHTML = data.resumen || data.executiveSummary || 'Sin resumen';
-        
-        // 2. ACCIONES
-        if (data.acciones && Array.isArray(data.acciones)) {
-            actionsEl.innerHTML = data.acciones.map(a => `<div style="margin-bottom:8px;">• ${a}</div>`).join('');
-        } else {
-            actionsEl.innerHTML = 'No se detectaron acciones específicas';
-        }
-        
-        // 3. PUNTOS CLAVE
-        if (data.keyPoints && Array.isArray(data.keyPoints)) {
-            keyPointsEl.innerHTML = data.keyPoints.map(p => `<div style="margin-bottom:5px;">• ${p}</div>`).join('');
-        } else {
-            keyPointsEl.innerHTML = 'No se detectaron puntos clave';
-        }
-        
-        // 4. DECISIONES
-        if (data.decisions && Array.isArray(data.decisions)) {
-            decisionsEl.innerHTML = data.decisions.map(d => `<div style="margin-bottom:5px;">• ${d}</div>`).join('');
-        } else {
-            decisionsEl.innerHTML = 'No se detectaron decisiones';
-        }
-        
-        // Guardar para después
-        window.currentProcessedMeeting = {
-            titulo: titulo,
-            fecha: new Date().toLocaleString(),
-            resumen: data.resumen || data.executiveSummary || 'Sin resumen',
-            transcripcion: data.transcripcion || 'Sin transcripción',
-            acciones: data.acciones || [],
-            keyPoints: data.keyPoints || [],
-            decisions: data.decisions || [],
-            duracion: timerEl.textContent
-        };
-        
-        if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
-        
-    } catch (error) {
-        liveArea.innerHTML = `<span style="color:#ef4444;">❌ Error: ${error.message}</span>`;
-        summaryEl.innerHTML = 'Error al procesar';
-        actionsEl.innerHTML = 'Intenta nuevamente';
-        keyPointsEl.innerHTML = 'Error';
-        decisionsEl.innerHTML = 'Error';
-    }
-};
-            
-            mediaRecorder.start();
-            window.currentRecording = { mediaRecorder, stream };
-            
-            startBtn.style.display = 'none';
-            stopBtn.style.display = 'inline-block';
-            titleInput.disabled = true;
-            indicator.style.background = '#ef4444';
-            statusText.textContent = 'Grabando...';
-            statusText.style.color = 'white';
-            aiSection.style.display = 'none';
-            
-            seconds = 0;
-            recordingTimer = setInterval(updateTimer, 1000);
-            
-        } catch (error) {
-            alert('❌ Error con micrófono: ' + error.message);
-        }
-    };
-    
-    stopBtn.onclick = () => {
-        if (mediaRecorder?.state !== 'inactive') {
-            mediaRecorder.stop();
-            resetUI();
-        }
-    };
-    
-    // Botones
-    // ============================================
-// VERSIÓN SIMPLIFICADA - SOLO AGREGAR MONGODB
-// ============================================
-
-// Reemplazar SOLO la función de guardado
-// En el saveMeetingBtn.onclick
-// ============================================
-// 🔧 REEMPLAZAR EL saveMeetingBtn COMPLETO
-// ============================================
-
-document.getElementById('saveMeetingBtn').onclick = async () => {
-    if (!window.currentProcessedMeeting) {
-        alert('No hay reunión para guardar');
-        return;
-    }
-    
-    const clienteId = localStorage.getItem('clienteId');
-    console.log('📤 Guardando transcripción para cliente:', clienteId);
-    
-    try {
-        // 1. Guardar en MongoDB vía backend
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                clienteId: clienteId,
-                titulo: window.currentProcessedMeeting.titulo,
-                transcripcion: window.currentProcessedMeeting.transcripcion,
-                resumen: window.currentProcessedMeeting.resumen,
-                acciones: window.currentProcessedMeeting.acciones,
-                keyPoints: window.currentProcessedMeeting.keyPoints,
-                decisions: window.currentProcessedMeeting.decisions,
-                duracion: window.currentProcessedMeeting.duracion
-            })
-        });
-        
-        const data = await response.json();
-        console.log('✅ Respuesta del backend:', data);
-        
-        // 2. También guardar en localStorage (backup)
-        const reunionesGuardadas = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
-        reunionesGuardadas.push({
-            id: Date.now(),
-            titulo: window.currentProcessedMeeting.titulo,
-            fecha: new Date().toLocaleString(),
-            resumen: window.currentProcessedMeeting.resumen,
-            transcripcion: window.currentProcessedMeeting.transcripcion,
-            acciones: window.currentProcessedMeeting.acciones,
-            keyPoints: window.currentProcessedMeeting.keyPoints,
-            decisions: window.currentProcessedMeeting.decisions,
-            duracion: window.currentProcessedMeeting.duracion
-        });
-        localStorage.setItem('iaReuniones', JSON.stringify(reunionesGuardadas));
-        
-        alert('✅ Reunión guardada exitosamente');
-        
-        // 3. 🔥 FORZAR ACTUALIZACIÓN DEL HISTORIAL
-        window.actualizarListaReuniones();
-        
-        // 4. Limpiar UI después de guardar
-        const aiSection = document.getElementById('aiAnalysisSection');
-        if (aiSection) aiSection.style.display = 'none';
-        
-        const liveArea = document.getElementById('liveTranscriptArea');
-        if (liveArea) liveArea.innerHTML = '<span style="color:#6b7280;">La transcripción aparecerá aquí...</span>';
-        
-        window.currentProcessedMeeting = null;
-        
-    } catch (error) {
-        console.error('❌ Error guardando:', error);
-        
-        // Fallback: solo localStorage
-        const reunionesGuardadas = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
-        reunionesGuardadas.push({
-            id: Date.now(),
-            titulo: window.currentProcessedMeeting.titulo,
-            fecha: new Date().toLocaleString(),
-            resumen: window.currentProcessedMeeting.resumen,
-            transcripcion: window.currentProcessedMeeting.transcripcion,
-            acciones: window.currentProcessedMeeting.acciones,
-            keyPoints: window.currentProcessedMeeting.keyPoints,
-            decisions: window.currentProcessedMeeting.decisions,
-            duracion: window.currentProcessedMeeting.duracion
-        });
-        localStorage.setItem('iaReuniones', JSON.stringify(reunionesGuardadas));
-        
-        alert('✅ Reunión guardada (solo local)');
-        window.actualizarListaReuniones();
-        
-        const aiSection = document.getElementById('aiAnalysisSection');
-        if (aiSection) aiSection.style.display = 'none';
-        
-        window.currentProcessedMeeting = null;
-    }
-};
-
-
-
-// Mantener el resto de funciones igual
-    
-    document.getElementById('discardMeetingBtn').onclick = () => {
-        if (confirm('¿Descartar esta reunión?')) {
-            aiSection.style.display = 'none';
-            liveArea.innerHTML = '<span style="color:#6b7280;">La transcripción aparecerá aquí...</span>';
-            window.currentProcessedMeeting = null;
-        }
-    };
-    
-    document.getElementById('exportMeetingBtn').onclick = () => {
-        if (!window.currentProcessedMeeting) return alert('No hay reunión para exportar');
-        
-        const dataStr = JSON.stringify(window.currentProcessedMeeting, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const exportName = `reunion_${Date.now()}.json`;
-        
-        const link = document.createElement('a');
-        link.setAttribute('href', dataUri);
-        link.setAttribute('download', exportName);
-        link.click();
-    };
-};
-
-// ============================================
-// ACTUALIZAR LISTA DE REUNIONES (CON MONGODB)
-// ============================================
-// ============================================
-// ACTUALIZAR LISTA DE REUNIONES (CON FILTRO POR CLIENTE)
-// ============================================
-window.actualizarListaReuniones = async function() {
-    const lista = document.getElementById('listaReuniones');
-    if (!lista) return;
-    
-    // Obtener el clienteId del usuario actual
-    const clienteId = localStorage.getItem('clienteId');
-    console.log('🔍 Cargando transcripciones para cliente:', clienteId);
-    
-    // 1. Cargar desde localStorage (grabaciones manuales) - ESTAS SÍ SON DEL USUARIO
-    window.reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
-    
-    try {
-        // 2. Cargar desde MongoDB (transcripciones de Teams) FILTRADAS POR CLIENTE
-        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`);
-        const data = await response.json();
-        
-        let todasReuniones = [...window.reunionesIA];
-        
-        if (data.success && data.transcripciones && data.transcripciones.length > 0) {
-            console.log(`✅ Cargadas ${data.transcripciones.length} transcripciones para cliente ${clienteId}`);
-            
-            // Convertir transcripciones de MongoDB al formato de la UI
-            const transcripcionesMongo = data.transcripciones.map(t => ({
-                id: t._id,
-                titulo: t.titulo || 'Transcripción Teams',
-                fecha: new Date(t.fecha).toLocaleString(),
-                resumen: t.resumen || 'Sin resumen',
-                transcripcion: t.transcripcion,
-                acciones: t.acciones || [],
-                keyPoints: t.keyPoints || [],
-                decisions: t.decisions || [],
-                duracion: t.duracion || '',
-                fuente: 'mongodb',
-                clienteId: t.clienteId // Para verificación
-            }));
-            
-            // 3. Combinar ambas fuentes
-            todasReuniones = [...transcripcionesMongo, ...window.reunionesIA];
-        }
-        
-        // 4. Ordenar por fecha (más reciente primero)
-        todasReuniones.sort((a, b) => {
-            return new Date(b.fecha) - new Date(a.fecha);
-        });
-        
-        // 5. Mostrar en UI
-        if (todasReuniones.length === 0) {
-            lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
-            return;
-        }
-        
-        lista.innerHTML = todasReuniones.map(r => `
-            <div style="padding:15px; margin-bottom:10px; background:${r.fuente === 'mongodb' ? 'rgba(139,92,246,0.1)' : 'rgba(16,185,129,0.1)'}; border-left:4px solid ${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; border-radius:8px; position:relative;">
-                
-                <!-- Header con título y duración -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                    <strong style="color:white;">${r.titulo}</strong>
-                    ${r.duracion ? `<span style="color:#94a3b8; font-size:12px;">${r.duracion}</span>` : ''}
-                </div>
-                
-                <!-- Fecha -->
-                <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha}</div>
-                
-                <!-- Resumen -->
-                <div style="color:#d1d5db; margin-bottom:10px;">${r.resumen}</div>
-                
-                <!-- Puntos Clave (solo mostrar primeros 2) -->
-                ${r.keyPoints && r.keyPoints.length > 0 ? `
-                    <div style="margin-bottom:10px;">
-                        ${r.keyPoints.slice(0, 2).map(kp => `
-                            <span style="background:#2c3e50; color:white; padding:2px 8px; border-radius:4px; font-size:11px; margin-right:5px;">${kp.substring(0, 30)}${kp.length > 30 ? '...' : ''}</span>
-                        `).join('')}
-                        ${r.keyPoints.length > 2 ? `<span style="color:#94a3b8; font-size:11px;">+${r.keyPoints.length-2} más</span>` : ''}
-                    </div>
-                ` : ''}
-                
-                <!-- Transcripción (colapsable) -->
-                ${r.transcripcion ? `
-                    <details style="margin-bottom:10px;">
-                        <summary style="color:${r.fuente === 'mongodb' ? '#8b5cf6' : '#10b981'}; cursor:pointer; font-size:13px;">📝 Ver transcripción</summary>
-                        <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8; font-size:12px; max-height:150px; overflow-y:auto;">
-                            ${r.transcripcion}
-                        </div>
-                    </details>
-                ` : ''}
-                
-                <!-- Acciones y Decisiones (si existen) -->
-                ${r.acciones && r.acciones.length > 0 ? `
-                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);">
-                        <span style="color:#10b981; font-size:12px; font-weight:bold;">✅ Acciones:</span>
-                        <div style="margin-top:5px;">
-                            ${r.acciones.slice(0, 2).map(a => `<div style="color:#94a3b8; font-size:12px;">• ${a}</div>`).join('')}
-                            ${r.acciones.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.acciones.length-2} acciones más</div>` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${r.decisions && r.decisions.length > 0 ? `
-                    <div style="margin-top:10px;">
-                        <span style="color:#ec4899; font-size:12px; font-weight:bold;">⚖️ Decisiones:</span>
-                        <div style="margin-top:5px;">
-                            ${r.decisions.slice(0, 2).map(d => `<div style="color:#94a3b8; font-size:12px;">• ${d}</div>`).join('')}
-                            ${r.decisions.length > 2 ? `<div style="color:#94a3b8; font-size:11px;">+${r.decisions.length-2} decisiones más</div>` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <!-- Badge de origen (Teams) o botón de eliminar (manual) -->
-                ${r.fuente === 'mongodb' ? `
-                    <span style="position:absolute; top:10px; right:10px; background:#8b5cf6; color:white; padding:2px 8px; border-radius:4px; font-size:10px;">📡 Teams</span>
-                ` : `
-                    <button onclick="window.eliminarReunion('${r.id}')" 
-                            style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:4px; font-size:12px;"
-                            onmouseover="this.style.background='rgba(239,68,68,0.3)'"
-                            onmouseout="this.style.background='rgba(239,68,68,0.2)'">
-                        🗑️
-                    </button>
-                `}
-            </div>
-        `).join('');
-        
-    } catch (error) {
-        console.error('Error cargando transcripciones de MongoDB:', error);
-        
-        // Fallback: mostrar solo localStorage
-        if (window.reunionesIA.length === 0) {
-            lista.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:30px;">📭 No hay reuniones guardadas</div>';
-        } else {
-            lista.innerHTML = window.reunionesIA.map(r => `
-                <div style="padding:15px; margin-bottom:10px; background:rgba(16,185,129,0.1); border-left:4px solid #10b981; border-radius:8px; position:relative;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <strong style="color:white;">${r.titulo}</strong>
-                        ${r.duracion ? `<span style="color:#94a3b8; font-size:12px;">${r.duracion}</span>` : ''}
-                    </div>
-                    <div style="color:#94a3b8; font-size:13px; margin-bottom:5px;">${r.fecha}</div>
-                    <div style="color:#d1d5db;">${r.resumen}</div>
-                    ${r.transcripcion ? `
-                        <details style="margin-top:10px;">
-                            <summary style="color:#10b981; cursor:pointer;">Ver transcripción</summary>
-                            <div style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-radius:5px; color:#94a3b8;">
-                                ${r.transcripcion}
-                            </div>
-                        </details>
-                    ` : ''}
-                    <button onclick="window.eliminarReunion('${r.id}')" 
-                            style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.2); border:none; color:#ef4444; cursor:pointer; padding:5px 10px; border-radius:5px; font-size:12px;">
-                        🗑️
-                    </button>
-                </div>
-            `).join('');
-        }
-    }
-};
-
-
-
-
-
-// ============================================
-// 10. AGENTE 3: ANALISTA IA EJECUTIVO
-// ============================================
-window.abrirAnalistaAgent = function() {
-    console.log('📊 Abriendo Analista IA Ejecutivo...');
-    
-    const totalProyectos = projects.length;
-    const totalTareas = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
-    const completadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
-    const enProgreso = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'inProgress').length || 0), 0);
-    const atrasadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
-    const miembros = new Set();
-    projects.forEach(p => (p.tasks || []).forEach(t => { if (t.assignee) miembros.add(t.assignee); }));
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'analistaOverlay';
-    overlay.style.cssText = `
-        position: fixed; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.95); backdrop-filter:blur(20px); z-index:1000000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    
-    overlay.innerHTML = `
-        <div class="glass-card-4d" style="width: 1000px; max-height: 80vh; overflow-y: auto; padding: 40px; border: 2px solid #f59e0b;">
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
-                <div style="width:80px; height:80px; background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:40px;">📊</div>
-                <div>
-                    <h2 style="margin:0; font-size:32px;" class="gradient-text-4d">ANALISTA IA ÉLITE</h2>
-                    <p style="color:#94a3b8;">Business Intelligence Ejecutivo</p>
-                </div>
-                <button onclick="window.cerrarAnalistaAgent()" style="margin-left:auto; background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:50px; height:50px; border-radius:25px; cursor:pointer;">✕</button>
-            </div>
-            
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:30px;">
-                <div class="kpi-card-4d"><div class="stat-value">${totalProyectos}</div><div class="stat-label">Proyectos</div></div>
-                <div class="kpi-card-4d" style="border-left-color:#10b981;"><div class="stat-value">${completadas}</div><div class="stat-label">Completadas</div></div>
-                <div class="kpi-card-4d" style="border-left-color:#f59e0b;"><div class="stat-value">${enProgreso}</div><div class="stat-label">En Progreso</div></div>
-                <div class="kpi-card-4d" style="border-left-color:#ef4444;"><div class="stat-value">${atrasadas}</div><div class="stat-label">Atrasadas</div></div>
-            </div>
-            
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:25px; margin-bottom:30px;">
-                <div class="glass-card-4d" style="padding:25px;">
-                    <h3 style="margin:0 0 15px;">📈 KPIs GLOBALES</h3>
-                    <div style="margin-bottom:15px;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span>Progreso Global</span>
-                            <span class="gradient-text-4d">${totalTareas ? Math.round(completadas/totalTareas*100) : 0}%</span>
-                        </div>
-                        <div style="height:8px; background:#2d2d5f; border-radius:4px;">
-                            <div style="width:${totalTareas ? Math.round(completadas/totalTareas*100) : 0}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:4px;"></div>
-                        </div>
-                    </div>
-                    <div><span style="color:#94a3b8;">Eficiencia Global:</span> ${totalTareas ? Math.round((totalTareas-atrasadas)/totalTareas*100) : 0}%</div>
-                    <div><span style="color:#94a3b8;">Miembros Activos:</span> ${miembros.size}</div>
-                </div>
-                
-                <div class="glass-card-4d" style="padding:25px;">
-                    <h3 style="margin:0 0 15px;">🎯 RECOMENDACIONES</h3>
-                    <ul style="color:#94a3b8; line-height:1.8;">
-                        ${atrasadas > 0 ? `<li>⚠️ Priorizar ${atrasadas} tareas críticas</li>` : ''}
-                        ${enProgreso > 10 ? '<li>🔄 Limitar trabajo en progreso</li>' : ''}
-                        ${miembros.size < 3 ? '<li>👥 Ampliar equipo</li>' : ''}
-                        <li>📊 Revisar estimaciones</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="glass-card-4d" style="padding:25px;">
-                <h3 style="margin:0 0 15px;">📋 RESUMEN EJECUTIVO</h3>
-                <p>El sistema gestiona <strong>${totalProyectos} proyectos</strong> con <strong>${totalTareas} tareas</strong>. 
-                Se han completado <strong style="color:#10b981;">${completadas} (${totalTareas ? Math.round(completadas/totalTareas*100) : 0}%)</strong>. 
-                Hay <strong style="color:#ef4444;">${atrasadas} tareas atrasadas</strong> que requieren atención.</p>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-};
-
-window.cerrarAnalistaAgent = function() {
-    const overlay = document.getElementById('analistaOverlay');
-    if (overlay) overlay.remove();
-};
-// ============================================
-// 11. AGENTE 4: ASISTENTE PERSONAL EJECUTIVO
-// ============================================
-window.abrirAsistentePersonal = function() {
-    console.log('💬 Abriendo Asistente Personal...');
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'asistenteOverlay';
-    overlay.style.cssText = `
-        position: fixed; top:0; left:0; width:100%; height:100%; 
-        background: rgba(0,0,0,0.95); backdrop-filter:blur(20px); z-index:1000000;
-        display: flex; align-items: center; justify-content: center;
-    `;
-    
-    overlay.innerHTML = `
-        <div class="glass-card-4d" style="width: 600px; padding: 40px; border: 2px solid #ec4899;">
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
-                <div style="width:70px; height:70px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:36px;">💬</div>
-                <div>
-                    <h2 style="margin:0; font-size:28px;" class="gradient-text-4d">ASISTENTE EJECUTIVO</h2>
-                    <p style="color:#94a3b8;">Tu aliado estratégico 24/7</p>
-                </div>
-                <button onclick="window.cerrarAsistentePersonal()" style="margin-left:auto; background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:50px; height:50px; border-radius:25px; cursor:pointer;">✕</button>
-            </div>
-            
-            <div style="margin-bottom:20px;">
-                <input type="text" id="asistentePregunta" placeholder="Escribe tu consulta ejecutiva..." class="glass-card-4d" style="width:100%; padding:18px; color:white; border:1px solid #ec4899;">
-            </div>
-            <button onclick="window.preguntarAsistente()" class="btn-4d" style="background:linear-gradient(135deg,#ec4899,#db2777); width:100%; margin-bottom:20px;">Enviar</button>
-            
-            <div id="asistenteRespuesta" class="glass-card-4d" style="padding:25px; min-height:150px; border-left:6px solid #ec4899;">
-                👋 Hola, soy tu asistente ejecutivo. Puedo ayudarte con:
-                • Resumen de proyectos
-                • Estadísticas globales
-                • Alertas y riesgos
-                • Próximos hitos
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-};
-
-window.cerrarAsistentePersonal = function() {
-    const overlay = document.getElementById('asistenteOverlay');
-    if (overlay) overlay.remove();
-};
-
-window.preguntarAsistente = function() {
-    console.log('💬 Procesando pregunta...');
-    const pregunta = document.getElementById('asistentePregunta')?.value;
-    const respuesta = document.getElementById('asistenteRespuesta');
-    if (!pregunta) return;
-    
-    const msg = pregunta.toLowerCase();
-    let res = '';
-    
-    if (msg.includes('proyecto')) {
-        res = `📁 Tienes ${projects.length} proyectos activos. El más reciente es "${projects[projects.length-1]?.name}".`;
-    } else if (msg.includes('tarea')) {
-        const total = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
-        const comp = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
-        res = `✅ Total tareas: ${total}, Completadas: ${comp} (${Math.round(comp/total*100)}%)`;
-    } else if (msg.includes('riesgo') || msg.includes('alerta')) {
-        const atr = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
-        res = `⚠️ Alertas: ${atr} tareas atrasadas requieren atención inmediata.`;
-    } else if (msg.includes('equipo')) {
-        const miembros = new Set();
-        projects.forEach(p => (p.tasks || []).forEach(t => { if (t.assignee) miembros.add(t.assignee); }));
-        res = `👥 Equipo total: ${miembros.size} miembros asignados.`;
-    } else {
-        res = 'No entendí. Prueba preguntar por "proyectos", "tareas", "riesgos" o "equipo".';
-    }
-    
-    respuesta.innerHTML = `<strong>Tú:</strong> ${pregunta}<br><br><strong>Asistente:</strong> ${res}`;
-    document.getElementById('asistentePregunta').value = '';
-};// ============================================
-// 12. VISUALIZAR EQUIPO (MEJORADO)
-// ============================================
-function cargarEquipoProyecto() {
-    const select = document.getElementById('equipoProyectoSelect');
-    const container = document.getElementById('listaMiembrosEquipo');
-    if (!select || !container) return;
-    
-    const idx = select.value;
-    if (!idx) {
-        container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">Selecciona un proyecto</div>';
-        return;
-    }
-    
-    const p = projects[idx];
-    const t = p.tasks || [];
-    const miembros = new Map();
-    
-    t.forEach(t => {
-        if (t.assignee && t.assignee.trim()) {
-            if (!miembros.has(t.assignee)) {
-                miembros.set(t.assignee, { tareas: 0, completadas: 0, horas: 0 });
-            }
-            const m = miembros.get(t.assignee);
-            m.tareas++;
-            m.horas += Number(t.estimatedTime) || 0;
-            if (t.status === 'completed') m.completadas++;
-        }
-    });
-    
-    if (miembros.size === 0) {
-        container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">No hay miembros asignados</div>';
-        return;
-    }
-    
-    let html = '';
-    miembros.forEach((v,k) => {
-        const eficiencia = v.tareas > 0 ? Math.round(v.completadas/v.tareas*100) : 0;
-        html += `
-            <div class="glass-card-4d" style="padding:20px; margin-bottom:15px; border-left:6px solid #10b981;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span style="font-weight:bold; font-size:18px;">${k}</span>
-                    <span style="background:${eficiencia >= 70 ? '#10b981' : eficiencia >= 40 ? '#f59e0b' : '#ef4444'}; color:white; padding:5px 15px; border-radius:20px;">${eficiencia}%</span>
-                </div>
-                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
-                    <div><span style="color:#94a3b8;">📋 Tareas:</span> ${v.tareas}</div>
-                    <div><span style="color:#94a3b8;">✅ Completadas:</span> ${v.completadas}</div>
-                    <div><span style="color:#94a3b8;">⏱️ Horas:</span> ${v.horas}h</div>
-                </div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-// ============================================
-// 13. GENERAR PROYECTO CON IA (MÁS PLANTILLAS)
-// ============================================
-function generarProyectoIA(e) {
-    e.preventDefault();
-    
-    const prompt = document.getElementById('iaProjectPrompt')?.value;
-    if (!prompt) { alert('❌ Escribe una descripción'); return; }
-    
-    const btn = e.target;
-    btn.innerHTML = '<span style="opacity:0;">⚡</span> Generando... <span style="opacity:0;">⚡</span>';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        const texto = prompt.toLowerCase();
-        let nombre = '';
-        let tareas = [];
-        
-        // PLANTILLAS AMPLIADAS
-        if (texto.includes('app') || texto.includes('aplicación') || texto.includes('móvil')) {
-            nombre = '📱 App Móvil';
-            tareas = [
-                { name: 'Diseño UI/UX', hours: 24, priority: 'alta' },
-                { name: 'Desarrollo backend', hours: 40, priority: 'alta' },
-                { name: 'Desarrollo frontend', hours: 40, priority: 'alta' },
-                { name: 'Pruebas QA', hours: 20, priority: 'alta' },
-                { name: 'Publicación en stores', hours: 8, priority: 'media' },
-                { name: 'Marketing digital', hours: 16, priority: 'media' }
-            ];
-        } else if (texto.includes('web') || texto.includes('sitio') || texto.includes('página')) {
-            nombre = '💻 Sitio Web';
-            tareas = [
-                { name: 'Diseño de interfaz', hours: 16, priority: 'alta' },
-                { name: 'Maquetación HTML/CSS', hours: 20, priority: 'alta' },
-                { name: 'Desarrollo frontend', hours: 30, priority: 'alta' },
-                { name: 'Desarrollo backend', hours: 30, priority: 'alta' },
-                { name: 'Optimización SEO', hours: 12, priority: 'media' },
-                { name: 'Pruebas de compatibilidad', hours: 10, priority: 'media' }
-            ];
-        } else if (texto.includes('marketing') || texto.includes('campaña')) {
-            nombre = '📢 Campaña Marketing';
-            tareas = [
-                { name: 'Investigación de mercado', hours: 20, priority: 'alta' },
-                { name: 'Definición de buyer persona', hours: 8, priority: 'alta' },
-                { name: 'Creación de contenido', hours: 30, priority: 'alta' },
-                { name: 'Configuración de anuncios', hours: 15, priority: 'media' },
-                { name: 'Email marketing', hours: 12, priority: 'media' },
-                { name: 'Análisis de resultados', hours: 10, priority: 'media' }
-            ];
-        } else if (texto.includes('inventario') || texto.includes('stock')) {
-            nombre = '📦 Sistema Inventario';
-            tareas = [
-                { name: 'Diseño de base de datos', hours: 20, priority: 'alta' },
-                { name: 'Desarrollo backend', hours: 40, priority: 'alta' },
-                { name: 'Desarrollo frontend', hours: 30, priority: 'alta' },
-                { name: 'Sistema de alertas', hours: 15, priority: 'media' },
-                { name: 'Generación de reportes', hours: 16, priority: 'media' },
-                { name: 'Pruebas de integración', hours: 20, priority: 'alta' }
-            ];
-        } else if (texto.includes('evento') || texto.includes('conferencia')) {
-            nombre = '🎉 Organización Evento';
-            tareas = [
-                { name: 'Selección de venue', hours: 8, priority: 'alta' },
-                { name: 'Coordinación de proveedores', hours: 20, priority: 'alta' },
-                { name: 'Diseño de experiencia', hours: 15, priority: 'alta' },
-                { name: 'Registro de asistentes', hours: 10, priority: 'media' },
-                { name: 'Logística del evento', hours: 30, priority: 'alta' },
-                { name: 'Encuestas post-evento', hours: 6, priority: 'baja' }
-            ];
-        } else if (texto.includes('ia') || texto.includes('inteligencia') || texto.includes('machine learning')) {
-            nombre = '🤖 Proyecto IA';
-            tareas = [
-                { name: 'Recolección de datos', hours: 40, priority: 'alta' },
-                { name: 'Limpieza y preparación', hours: 30, priority: 'alta' },
-                { name: 'Entrenamiento de modelo', hours: 50, priority: 'alta' },
-                { name: 'Validación y pruebas', hours: 25, priority: 'alta' },
-                { name: 'Despliegue en producción', hours: 15, priority: 'media' },
-                { name: 'Documentación técnica', hours: 12, priority: 'media' }
-            ];
-        } else if (texto.includes('blockchain') || texto.includes('cripto')) {
-            nombre = '🔗 Blockchain';
-            tareas = [
-                { name: 'Diseño de arquitectura', hours: 40, priority: 'alta' },
-                { name: 'Desarrollo de smart contracts', hours: 60, priority: 'alta' },
-                { name: 'Pruebas de seguridad', hours: 30, priority: 'alta' },
-                { name: 'Integración con wallets', hours: 20, priority: 'media' },
-                { name: 'Despliegue en testnet', hours: 10, priority: 'media' },
-                { name: 'Auditoría externa', hours: 25, priority: 'alta' }
-            ];
-        } else {
-            nombre = '🚀 Proyecto General';
-            tareas = [
-                { name: 'Análisis de requisitos', hours: 8, priority: 'alta' },
-                { name: 'Planificación estratégica', hours: 6, priority: 'alta' },
-                { name: 'Ejecución principal', hours: 24, priority: 'alta' },
-                { name: 'Seguimiento y control', hours: 8, priority: 'media' },
-                { name: 'Pruebas de calidad', hours: 12, priority: 'media' },
-                { name: 'Documentación', hours: 8, priority: 'media' },
-                { name: 'Entrega final', hours: 4, priority: 'alta' }
-            ];
-        }
-        
-        const tasks = tareas.map((t,i) => ({
-            id: Date.now() + i + Math.random(),
-            name: t.name,
-            estimatedTime: t.hours,
-            priority: t.priority,
-            status: 'pending',
-            progress: 0,
-            timeLogged: 0,
-            assignee: '',
-            startDate: new Date().toISOString().split('T')[0],
-            deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]
-        }));
-        
-        projects.push({
-            name: nombre,
-            description: prompt,
-            totalProjectTime: tareas.reduce((s,t) => s + t.hours, 0),
-            tasks
-        });
-        
-        localStorage.setItem('projects', JSON.stringify(projects));
-        if (typeof renderProjects === 'function') renderProjects();
-        renderCentroComandoIA();
-        alert(`✅ Proyecto "${nombre}" creado con ${tasks.length} tareas`);
-        btn.innerHTML = '🚀 Generar';
-        btn.disabled = false;
-    }, 1500);
-}
-// ============================================
-// 14. GENERAR DOCUMENTO PROJECT MEJORADO
-// ============================================
-function generarDocumentoProject() {
-    console.log('📄 Generando documento Project con gráficas...');
-    
-    const proyectoIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
-    const proyecto = projects[proyectoIndex];
-    
-    if (!proyecto) {
-        alert('❌ No hay proyecto seleccionado');
-        return;
-    }
-    
-    const tareas = proyecto.tasks || [];
-    
-    // ============================================
-    // CALCULAR ESTADÍSTICAS CON ESTADOS REALES
-    // ============================================
-    const totalTareas = tareas.length;
-    
-    // Considerar múltiples formas de determinar "rezagado/retrasado"
-    const completadas = tareas.filter(t => 
-        t.status === 'completed' || t.status === 'completado' || t.progress === 100
-    ).length;
-    
-    const enProgreso = tareas.filter(t => 
-        (t.status === 'inProgress' || t.status === 'en progreso') && 
-        t.progress > 0 && t.progress < 100
-    ).length;
-    
-    const pendientes = tareas.filter(t => 
-        (t.status === 'pending' || t.status === 'pendiente') && 
-        (!t.deadline || new Date(t.deadline) >= new Date())
-    ).length;
-    
-    // Detectar tareas rezagadas/retrasadas (criterios múltiples)
-    const rezagadas = tareas.filter(t => {
-        // Por estado explícito
-        if (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' || 
-            t.status === 'atrasada') {
-            return true;
-        }
-        
-        // Por fecha de vencimiento pasada y no completada
-        if (t.deadline && t.status !== 'completed' && t.status !== 'completado') {
-            const deadline = new Date(t.deadline);
-            const hoy = new Date();
-            if (deadline < hoy) return true;
-        }
-        
-        return false;
-    }).length;
-    
-    // Calcular progreso por TAREAS completadas
-    const progresoTareas = totalTareas > 0 ? Math.round((completadas / totalTareas) * 100) : 0;
-    
-    // Calcular progreso por HORAS registradas
-    const totalHorasEstimadas = tareas.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
-    const totalHorasRegistradas = tareas.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
-    const progresoHoras = totalHorasEstimadas > 0 ? Math.round((totalHorasRegistradas / totalHorasEstimadas) * 100) : 0;
-    
-    // Para usar en la barra principal (usamos el de horas como principal)
-    const progresoGeneral = progresoHoras;
-    
-    // Determinar si el proyecto está en tiempo
-    const enTiempo = rezagadas === 0;
-    
-    // Colores para los estados
-    const colorCompletadas = '#10b981';
-    const colorProgreso = '#f59e0b';
-    const colorPendientes = '#94a3b8';
-    const colorRezagadas = '#ef4444';
-    
-    // ============================================
-    // GENERAR HTML DEL DOCUMENTO
-    // ============================================
-    const fechaGeneracion = new Date().toLocaleString();
-    const nombreProyecto = proyecto.name || 'Sin nombre';
-    
-    let htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Project - ${nombreProyecto}</title>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <style>
-                body { 
-                    font-family: 'Segoe UI', Arial, sans-serif; 
-                    margin: 40px; 
-                    background: #f5f5f5;
-                }
-                .container { 
-                    max-width: 1200px; 
-                    margin: 0 auto; 
-                    background: white; 
-                    padding: 40px; 
-                    border-radius: 20px; 
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                }
-                h1 { 
-                    color: #8b5cf6; 
-                    margin-bottom: 5px;
-                    font-size: 36px;
-                }
-                .header { 
-                    border-bottom: 3px solid #8b5cf6; 
-                    padding-bottom: 20px; 
-                    margin-bottom: 30px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .fecha { 
-                    color: #666; 
-                    font-size: 14px; 
-                }
-                .stats-grid { 
-                    display: grid; 
-                    grid-template-columns: repeat(4, 1fr); 
-                    gap: 20px; 
-                    margin-bottom: 30px; 
-                }
-                .stat-card { 
-                    background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
-                    padding: 20px; 
-                    border-radius: 15px; 
-                    text-align: center; 
-                }
-                .stat-card h3 { 
-                    margin: 0 0 10px 0; 
-                    color: #2c3e50; 
-                    font-size: 14px; 
-                    text-transform: uppercase; 
-                }
-                .stat-card .numero { 
-                    font-size: 36px; 
-                    font-weight: bold; 
-                    color: #8b5cf6; 
-                }
-                
-                /* Barra de progreso */
-                .progress-container {
-                    background: #2d2d5f;
-                    border-radius: 10px;
-                    height: 30px;
-                    width: 100%;
-                    margin: 20px 0;
-                    overflow: hidden;
-                    position: relative;
-                }
-                .progress-bar {
-                    height: 100%;
-                    background: linear-gradient(90deg, #8b5cf6, #ec4899);
-                    border-radius: 10px;
-                    width: ${progresoGeneral}%;
-                    transition: width 0.5s ease;
-                }
-                .progress-label {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    color: white;
-                    font-weight: bold;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                }
-                
-                /* Etiqueta de estado */
-                .status-badge {
-                    display: inline-block;
-                    padding: 10px 30px;
-                    border-radius: 50px;
-                    font-weight: bold;
-                    font-size: 18px;
-                    background: ${enTiempo ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'};
-                    color: ${enTiempo ? '#10b981' : '#ef4444'};
-                    border: 2px solid ${enTiempo ? '#10b981' : '#ef4444'};
-                }
-                
-                /* Gráfico */
-                .chart-container {
-                    width: 300px;
-                    height: 300px;
-                    margin: 0 auto 30px;
-                }
-                
-                table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin-top: 30px; 
-                }
-                th { 
-                    background: #8b5cf6; 
-                    color: white; 
-                    padding: 15px; 
-                    text-align: left; 
-                }
-                td { 
-                    padding: 15px; 
-                    border-bottom: 1px solid #dee2e6; 
-                }
-                tr:hover { 
-                    background: #f8f9fa; 
-                }
-                .completada { 
-                    color: #10b981; 
-                    font-weight: bold; 
-                }
-                .en-progreso { 
-                    color: #f59e0b; 
-                    font-weight: bold; 
-                }
-                .pendiente { 
-                    color: #6c757d; 
-                    font-weight: bold; 
-                }
-                .rezagada { 
-                    color: #ef4444; 
-                    font-weight: bold; 
-                }
-                .footer { 
-                    margin-top: 40px; 
-                    text-align: center; 
-                    color: #6c757d; 
-                    font-size: 12px; 
-                    border-top: 1px solid #dee2e6; 
-                    padding-top: 20px; 
-                }
-                .badge-container {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    margin: 20px 0;
-                }
-                .color-sample {
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 4px;
-                    display: inline-block;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <div>
-                        <h1>📋 DOCUMENTO DE PROYECTO</h1>
-                        <h2 style="color: #2c3e50; margin-top: 10px;">${nombreProyecto}</h2>
-                        <div class="fecha">Generado: ${fechaGeneracion}</div>
-                    </div>
-                    <div class="status-badge">
-                        ${enTiempo ? '✅ EN TIEMPO' : '⚠️ REZAGADO'}
-                    </div>
-                </div>
-                
-                <!-- BARRA DE AVANCE GENERAL (BASADA EN HORAS) -->
-                <h3 style="margin: 20px 0 10px;">📊 Avance del Proyecto (Basado en Horas Trabajadas)</h3>
-                <div style="color: #666; font-size: 13px; margin-bottom: 5px;">
-                    *Calculado como: (Horas Registradas / Horas Estimadas) × 100. Incluye trabajo en progreso.
-                </div>
-                <div class="progress-container" style="margin-bottom: 30px;">
-                    <div class="progress-bar"></div>
-                    <div class="progress-label" title="Horas Registradas: ${totalHorasRegistradas}h / Horas Estimadas: ${totalHorasEstimadas}h">
-                        ${progresoHoras}%
-                    </div>
-                </div>
-                
-                <!-- COMPARATIVA DE MÉTRICAS (TAREAS VS HORAS) -->
-                <div style="display: flex; gap: 30px; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 15px;">
-                    <div style="flex: 1; text-align: center; padding: 15px; border-right: 2px solid #e9ecef;">
-                        <div style="color: #8b5cf6; font-size: 14px; font-weight: bold; margin-bottom: 10px;">📈 POR TAREAS COMPLETADAS</div>
-                        <div style="font-size: 36px; font-weight: bold; color: #8b5cf6;">${progresoTareas}%</div>
-                        <div style="color: #666; font-size: 13px; margin-top: 5px;">
-                            ${completadas} de ${totalTareas} tareas
-                        </div>
-                    </div>
-                    <div style="flex: 1; text-align: center; padding: 15px;">
-                        <div style="color: #10b981; font-size: 14px; font-weight: bold; margin-bottom: 10px;">⏱️ POR HORAS TRABAJADAS</div>
-                        <div style="font-size: 36px; font-weight: bold; color: #10b981;">${progresoHoras}%</div>
-                        <div style="color: #666; font-size: 13px; margin-top: 5px;">
-                            ${totalHorasRegistradas}h de ${totalHorasEstimadas}h
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- GRÁFICA DE ESTATUS -->
-                <div style="display: flex; flex-wrap: wrap; gap: 30px; margin: 40px 0;">
-                    <div style="flex: 1; min-width: 300px;">
-                        <h3 style="margin-bottom: 20px;">📈 Distribución de Tareas</h3>
-                        <div class="chart-container" style="margin-top: 140px;">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                    <div style="flex: 1;">
-                        <h3 style="margin-bottom: 20px;">📊 Leyenda</h3>
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 15px;">
-                            <div class="badge-container">
-                                <span class="color-sample" style="background: ${colorCompletadas};"></span>
-                                <span><strong>Completadas:</strong> ${completadas}</span>
-                            </div>
-                            <div class="badge-container">
-                                <span class="color-sample" style="background: ${colorProgreso};"></span>
-                                <span><strong>En Progreso:</strong> ${enProgreso}</span>
-                            </div>
-                            <div class="badge-container">
-                                <span class="color-sample" style="background: ${colorPendientes};"></span>
-                                <span><strong>Pendientes:</strong> ${pendientes}</span>
-                            </div>
-                            <div class="badge-container">
-                                <span class="color-sample" style="background: ${colorRezagadas};"></span>
-                                <span><strong>Rezagadas:</strong> ${rezagadas}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- MÉTRICAS ADICIONALES (ACTUALIZADO CON AMBAS) -->
-                        <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 15px;">
-                            <h4>📋 Resumen de Métricas</h4>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                                <div>
-                                    <p><strong>📊 POR TAREAS:</strong></p>
-                                    <p>• Total: ${totalTareas}</p>
-                                    <p>• Completadas: ${completadas}</p>
-                                    <p>• En progreso: ${enProgreso}</p>
-                                    <p>• Pendientes: ${pendientes}</p>
-                                    <p>• Rezagadas: ${rezagadas}</p>
-                                    <p style="margin-top: 10px;"><strong>Progreso:</strong> ${progresoTareas}%</p>
-                                </div>
-                                <div>
-                                    <p><strong>⏱️ POR HORAS:</strong></p>
-                                    <p>• Estimadas: ${totalHorasEstimadas}h</p>
-                                    <p>• Registradas: ${totalHorasRegistradas}h</p>
-                                    <p>• Restantes: ${totalHorasEstimadas - totalHorasRegistradas}h</p>
-                                    <p>• Diferencia: ${totalHorasEstimadas - totalHorasRegistradas > 0 ? '🔵 Faltan' : '🔴 Sobran'} ${Math.abs(totalHorasEstimadas - totalHorasRegistradas)}h</p>
-                                    <p style="margin-top: 10px;"><strong>Progreso:</strong> ${progresoHoras}%</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <h2 style="margin: 30px 0 20px;">📌 CRONOGRAMA DE TAREAS</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tarea</th>
-                            <th>Responsable</th>
-                            <th>Fecha Inicio</th>
-                            <th>Fecha Límite</th>
-                            <th>Horas Est.</th>
-                            <th>Progreso</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
-    
-    // ORDENAR TAREAS: primero las rezagadas, luego en progreso, luego pendientes
-    const tareasOrdenadas = [...tareas].sort((a, b) => {
-        const aRezagada = (a.status === 'overdue' || a.status === 'rezagado' || 
-                          (a.deadline && new Date(a.deadline) < new Date() && a.status !== 'completed'));
-        const bRezagada = (b.status === 'overdue' || b.status === 'rezagado' || 
-                          (b.deadline && new Date(b.deadline) < new Date() && b.status !== 'completed'));
-        
-        if (aRezagada && !bRezagada) return -1;
-        if (!aRezagada && bRezagada) return 1;
-        return 0;
-    });
-    
-    tareasOrdenadas.forEach(t => {
-        // Determinar estado real
-        let estado = 'pending';
-        let estadoTexto = 'Pendiente';
-        let estadoClass = 'pendiente';
-        
-        const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
-                           (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed' && t.status !== 'completado'));
-        
-        if (t.status === 'completed' || t.status === 'completado' || t.progress === 100) {
-            estado = 'completed';
-            estadoTexto = 'Completada';
-            estadoClass = 'completada';
-        } else if (esRezagada) {
-            estado = 'overdue';
-            estadoTexto = '⚠️ Rezagada';
-            estadoClass = 'rezagada';
-        } else if (t.status === 'inProgress' || t.status === 'en progreso' || (t.progress > 0 && t.progress < 100)) {
-            estado = 'inProgress';
-            estadoTexto = 'En Progreso';
-            estadoClass = 'en-progreso';
-        }
-        
-        htmlContent += `
-            <tr>
-                <td><strong>${t.name || 'Sin nombre'}</strong></td>
-                <td>${t.assignee || t.asignado || 'No asignado'}</td>
-                <td>${t.startDate ? new Date(t.startDate).toLocaleDateString() : 'No definida'}</td>
-                <td>${t.deadline ? new Date(t.deadline).toLocaleDateString() : 'No definida'}</td>
-                <td>${t.estimatedTime || 0}h</td>
-                <td>${t.progress || 0}%</td>
-                <td class="${estadoClass}">${estadoTexto}</td>
-            </tr>
-        `;
-    });
-    
-    htmlContent += `
-                    </tbody>
-                </table>
-                
-                <!-- PIE DE PÁGINA CON ESTADÍSTICAS -->
-                <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>Total de tareas:</strong> ${totalTareas} | 
-                        <span style="color: #10b981;">✅ Completadas: ${completadas}</span> | 
-                        <span style="color: #f59e0b;">🔄 En progreso: ${enProgreso}</span> | 
-                        <span style="color: #ef4444;">⚠️ Rezagadas: ${rezagadas}</span>
-                    </div>
-                    <div>
-                        <strong>Avance:</strong> ${progresoGeneral}%
-                    </div>
-                </div>
-                
-                <div class="footer">
-                    <p>Documento generado automáticamente por Centro de Comando IA 4D</p>
-                    <p>${fechaGeneracion} · Proyecto: ${nombreProyecto}</p>
-                </div>
-            </div>
-            
-            <script>
-                // Crear gráfica de estatus
-                const ctx = document.getElementById('statusChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Completadas', 'En Progreso', 'Pendientes', 'Rezagadas'],
-                        datasets: [{
-                            data: [${completadas}, ${enProgreso}, ${pendientes}, ${rezagadas}],
-                            backgroundColor: [
-                                '${colorCompletadas}',
-                                '${colorProgreso}',
-                                '${colorPendientes}',
-                                '${colorRezagadas}'
-                            ],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        cutout: '60%',
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            </script>
-        </body>
-        </html>
-    `;
-    
-    // Abrir ventana con el documento
-    const ventana = window.open('', '_blank');
-    ventana.document.write(htmlContent);
-    ventana.document.close();
-}
-
-
-
-
-
-// ============================================
-// 15. GENERAR DOCUMENTO DESDE SELECTOR
-// ============================================
-function generarDocumentoDesdeSelector() {
-    const selector = document.getElementById('selectorDocumentoProject');
-    const idx = selector?.value;
-    if (!idx) { alert('❌ Selecciona un proyecto'); return; }
-    
-    const originalIdx = currentProjectIndex;
-    currentProjectIndex = parseInt(idx);
-    generarDocumentoProject();
-    currentProjectIndex = originalIdx;
-}
-
-// ============================================
-// 16. RENDERIZAR CENTRO DE COMANDO IA 4D
+// 5. FUNCIÓN PRINCIPAL RENDER (CORREGIDA - USA FILTRO)
 // ============================================
 function renderCentroComandoIA() {
     const container = document.getElementById('inicioView');
     if (!container) return;
+    
+    // ========== 🔥 CORRECCIÓN CLAVE: OBTENER PROYECTOS FILTRADOS ==========
+    const proyectosUsuario = getProyectosDelUsuario();
+    console.log(`📊 Mostrando ${proyectosUsuario.length} proyectos para el usuario actual`);
     
     // Inyectar estilos 4D
     if (!document.getElementById('estilos4D')) {
@@ -64976,14 +62497,266 @@ function renderCentroComandoIA() {
         userName = user.name || user.email || 'Usuario';
     } catch (e) {}
     
-    const totalProyectos = projects.length;
-    const totalTareas = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
-    const completadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
-    const atrasadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
+    // ========== 🔥 ESTADÍSTICAS CON PROYECTOS FILTRADOS ==========
+    const totalProyectos = proyectosUsuario.length;
+    const totalTareas = proyectosUsuario.reduce((s,p) => s + (p.tasks?.length || 0), 0);
+    const completadas = proyectosUsuario.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const atrasadas = proyectosUsuario.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
    
+    registrarPlantillasEnInicio();
+    
+    // ========== HTML CON DATOS FILTRADOS ==========
+    container.innerHTML = `
+        <div style="padding:30px; min-height:100vh;">
+            
+            <!-- HEADER 4D -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:50px;">
+                <div>
+                    <h1 style="font-size:56px; font-weight:800; line-height:1;" class="gradient-text-4d">CENTRO DE COMANDO IA 4D</h1>
+                    <p style="color:#94a3b8; font-size:20px; margin-top:10px;">
+                        👋 Bienvenido, <strong>${userName}</strong>
+                    </p>
+                </div>
+                <div class="glass-card-4d floating" style="padding:20px 40px;">
+                    <span style="color:#10b981;">●</span> Sistema 4D Activo
+                </div>
+            </div>
 
+            <!-- CREADOR DE PROYECTOS ÉLITE -->
+            <div class="glass-card-4d glowing" style="padding:40px; margin-bottom:50px;">
+                <h2 style="font-size:36px; margin:0 0 20px;" class="gradient-text-4d">✨ Creador de Proyectos Estratégicos</h2>
+                <div style="display:flex; gap:15px; margin-bottom:25px;">
+                    <input type="text" id="iaProjectPrompt" placeholder="Describe tu proyecto o selecciona una plantilla..." 
+                           class="glass-card-4d" style="flex:1; padding:20px 30px; color:white; border:1px solid #8b5cf6;">
+                    <button id="generarProyectoBtn" class="btn-4d" style="padding:20px 50px;">🚀 Generar</button>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:repeat(8,1fr); gap:10px;">
+                    <button class="ejemplo-btn" data-ejemplo="app" class="btn-4d" style="background:rgba(139,92,246,0.2);">📱 App</button>
+                    <button class="ejemplo-btn" data-ejemplo="web" class="btn-4d" style="background:rgba(139,92,246,0.2);">💻 Web</button>
+                    <button class="ejemplo-btn" data-ejemplo="marketing" class="btn-4d" style="background:rgba(139,92,246,0.2);">📢 Marketing</button>
+                    <button class="ejemplo-btn" data-ejemplo="inventario" class="btn-4d" style="background:rgba(139,92,246,0.2);">📦 Inventario</button>
+                    <button class="ejemplo-btn" data-ejemplo="evento" class="btn-4d" style="background:rgba(139,92,246,0.2);">🎉 Evento</button>
+                    <button class="ejemplo-btn" data-ejemplo="ia" class="btn-4d" style="background:rgba(139,92,246,0.2);">🤖 IA</button>
+                    <button class="ejemplo-btn" data-ejemplo="blockchain" class="btn-4d" style="background:rgba(139,92,246,0.2);">🔗 Blockchain</button>
+                    <button class="ejemplo-btn" data-ejemplo="general" class="btn-4d" style="background:rgba(139,92,246,0.2);">🚀 General</button>
+                </div>
+            </div>
 
-// ========== REGISTRAR PLANTILLAS EN LA VISTA DE INICIO ==========
+            <!-- KPIS GLOBALES (AHORA FILTRADOS) -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:25px; margin-bottom:50px;">
+                <div class="kpi-card-4d floating"><div class="stat-value">${totalProyectos}</div><div class="stat-label">PROYECTOS</div></div>
+                <div class="kpi-card-4d floating" style="border-left-color:#10b981;"><div class="stat-value">${totalTareas}</div><div class="stat-label">TAREAS</div></div>
+                <div class="kpi-card-4d floating" style="border-left-color:#f59e0b;"><div class="stat-value">${completadas}</div><div class="stat-label">COMPLETADAS</div></div>
+                <div class="kpi-card-4d floating" style="border-left-color:#ef4444;"><div class="stat-value">${atrasadas}</div><div class="stat-label">ALERTAS</div></div>
+            </div>
+
+            <!-- AGENTES IA 4D -->
+            <h2 style="font-size:36px; margin:0 0 30px;" class="gradient-text-4d">🤖 Agentes de IA 4D</h2>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:25px; margin-bottom:50px;">
+                <div class="glass-card-4d" style="padding:30px; text-align:center;">
+                    <div style="font-size:60px; margin-bottom:20px;">🎯</div>
+                    <h3 style="font-size:24px; margin:0 0 10px;">PM IA Élite</h3>
+                    <p style="color:#94a3b8; margin-bottom:20px;">Project Manager Inteligente</p>
+                    <button onclick="abrirPMAgent()" class="btn-4d">Abrir →</button>
+                </div>
+                <div class="glass-card-4d" style="padding:30px; text-align:center;">
+                    <div style="font-size:60px; margin-bottom:20px;">📝</div>
+                    <h3 style="font-size:24px; margin:0 0 10px;">Transcriptor IA</h3>
+                    <p style="color:#94a3b8; margin-bottom:20px;">Gestión de Reuniones</p>
+                    <button onclick="abrirTranscriptorAgent()" class="btn-4d">Abrir →</button>
+                </div>
+                <div class="glass-card-4d" style="padding:30px; text-align:center;">
+                    <div style="font-size:60px; margin-bottom:20px;">📊</div>
+                    <h3 style="font-size:24px; margin:0 0 10px;">Analista IA</h3>
+                    <p style="color:#94a3b8; margin-bottom:20px;">Business Intelligence</p>
+                    <button onclick="abrirAnalistaAgent()" class="btn-4d">Abrir →</button>
+                </div>
+                <div class="glass-card-4d" style="padding:30px; text-align:center;">
+                    <div style="font-size:60px; margin-bottom:20px;">💬</div>
+                    <h3 style="font-size:24px; margin:0 0 10px;">Asistente</h3>
+                    <p style="color:#94a3b8; margin-bottom:20px;">Estrategia 24/7</p>
+                    <button onclick="abrirAsistentePersonal()" class="btn-4d">Abrir →</button>
+                </div>
+            </div>
+
+            <!-- PROYECTOS ACTIVOS (AHORA FILTRADOS) -->
+            <h2 style="font-size:36px; margin:0 0 30px;" class="gradient-text-4d">📋 Proyectos Estratégicos</h2>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:25px; margin-bottom:50px;">
+                ${proyectosUsuario.slice(0,6).map((p,i) => {
+                    const t = p.tasks || [];
+                    const c = t.filter(t => t.status === 'completed').length;
+                    const prog = t.length ? Math.round(c/t.length*100) : 0;
+                    const atr = t.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+                    const color = prog >= 70 ? '#10b981' : prog >= 40 ? '#f59e0b' : '#ef4444';
+                    // Encontrar el índice REAL en projects (no en proyectosUsuario)
+                    const realIndex = projects.findIndex(proj => proj.id === p.id);
+                    return `
+                        <div class="glass-card-4d" style="padding:25px; cursor:pointer;" onclick="if(typeof selectProject === 'function') selectProject(${realIndex}); if(typeof showView === 'function') showView('board');">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                                <span style="font-size:18px; font-weight:bold;">${p.name}</span>
+                                <span style="background:${color}20; color:${color}; padding:5px 15px; border-radius:20px;">${prog}%</span>
+                            </div>
+                            <div style="height:8px; background:#2d2d5f; border-radius:4px; margin-bottom:15px;">
+                                <div style="width:${prog}%; height:100%; background:${color}; border-radius:4px;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; color:#94a3b8;">
+                                <span>✅ ${c}/${t.length}</span>
+                                <span>⚠️ ${atr}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- INVITACIONES EJECUTIVAS -->
+            <div class="glass-card-4d" style="padding:40px; margin-bottom:30px;">
+                <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
+                    <div style="width:60px; height:60px; background:#ec4899; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:30px;">👥</div>
+                    <h2 style="margin:0; font-size:28px;">Invitar al Equipo</h2>
+                </div>
+                
+                <div style="display:flex; gap:15px; margin-bottom:30px;">
+                    <select id="selectProyectoInvitacion" class="glass-card-4d" style="flex:1; padding:18px; color:white; border:1px solid #ec4899;">
+                        <option value="">Proyecto...</option>
+                        ${proyectosUsuario.map((p,i) => {
+                            const realIndex = projects.findIndex(proj => proj.id === p.id);
+                            return `<option value="${realIndex}">${p.name}</option>`;
+                        }).join('')}
+                    </select>
+                    <input type="email" id="emailInvitacion" placeholder="Email ejecutivo" class="glass-card-4d" style="flex:2; padding:18px; color:white; border:1px solid #ec4899;">
+                    <select id="rolInvitado" class="glass-card-4d" style="flex:1; padding:18px; color:white; border:1px solid #ec4899;">
+                        <option>Espectador</option>
+                        <option>Editor</option>
+                        <option>Admin</option>
+                    </select>
+                    <button id="btnEnviarInvitacion" class="btn-4d" style="padding:0 40px;">Enviar</button>
+                </div>
+                
+                <div id="mensajeInvitacion"></div>
+                <div id="invitacionesContainer"></div>
+                <div id="listaInvitaciones"></div>
+            </div>
+
+            <!-- EQUIPO DE TRABAJO -->
+            <div class="glass-card-4d" style="padding:40px; margin-bottom:30px;">
+                <h3 style="font-size:24px; margin:0 0 20px;">👥 Equipo de Trabajo</h3>
+                <select id="equipoProyectoSelect" class="glass-card-4d" style="width:100%; padding:18px; color:white; border:1px solid #10b981; margin-bottom:25px;">
+                    <option value="">Seleccionar proyecto...</option>
+                    ${proyectosUsuario.map((p,i) => {
+                        const realIndex = projects.findIndex(proj => proj.id === p.id);
+                        return `<option value="${realIndex}">${p.name}</option>`;
+                    }).join('')}
+                </select>
+                <div id="listaMiembrosEquipo"></div>
+            </div>
+
+            <!-- SELECTOR + BOTÓN DOCUMENTO PROJECT -->
+            <div class="glass-card-4d" style="padding:30px; display:flex; gap:20px; align-items:center;">
+                <select id="selectorDocumentoProject" class="glass-card-4d" style="flex:2; padding:18px; color:white; border:1px solid #8b5cf6;">
+                    <option value="">📌 Seleccionar proyecto para documento...</option>
+                    ${proyectosUsuario.map((p,i) => {
+                        const realIndex = projects.findIndex(proj => proj.id === p.id);
+                        return `<option value="${realIndex}">${p.name}</option>`;
+                    }).join('')}
+                </select>
+                <button onclick="generarDocumentoDesdeSelector()" class="btn-4d" style="flex:1; padding:18px 30px;">📄 GENERAR DOCUMENTO</button>
+            </div>
+        </div>
+    `;
+    
+    // Event listeners
+    document.getElementById('generarProyectoBtn').addEventListener('click', generarProyectoIA);
+    document.getElementById('btnEnviarInvitacion').addEventListener('click', enviarInvitacion);
+    document.getElementById('equipoProyectoSelect').addEventListener('change', cargarEquipoProyecto);
+    
+    document.querySelectorAll('.ejemplo-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ejemplos = {
+                app: "App de delivery con pagos y seguimiento",
+                web: "Sitio web corporativo con blog y tienda",
+                marketing: "Campaña de marketing digital 360°",
+                inventario: "Sistema de control de inventarios con alertas",
+                evento: "Organización de evento corporativo 500 personas",
+                ia: "Proyecto de inteligencia artificial predictiva",
+                blockchain: "Plataforma blockchain para trazabilidad",
+                general: "Proyecto general de transformación digital"
+            };
+            document.getElementById('iaProjectPrompt').value = ejemplos[this.dataset.ejemplo];
+        });
+    });
+}
+
+// ============================================
+// 6. SOBRESCRIBIR showView PARA USAR FILTRO
+// ============================================
+const originalShowViewFn = window.showView;
+
+window.showView = function(view) {
+    console.log('🧭 Navegando a vista:', view);
+    
+    // 🔒 VERIFICACIÓN DE LICENCIA
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
+    
+    if (userPlan === 'free' && !vistasFree.includes(view)) {
+        if (typeof showNotification === 'function') {
+            showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
+        }
+        console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
+        return;
+    }
+    
+    // Vista de inicio (Centro de Comando IA)
+    if (view === 'inicio') {
+        renderCentroComandoIA();
+        setTimeout(() => {
+            document.querySelectorAll('div').forEach(div => {
+                if (div.textContent && div.textContent.includes('Oxi')) {
+                    div.remove();
+                }
+            });
+        }, 100);
+    } else {
+        if (originalShowViewFn) {
+            originalShowViewFn(view);
+        }
+    }
+};
+
+// ============================================
+// 7. EXPORTAR FUNCIONES
+// ============================================
+window.renderCentroComandoIA = renderCentroComandoIA;
+window.generarProyectoIA = generarProyectoIA;
+window.forzarDragDrop = forzarDragDrop;
+window.forzarDropEnColumnas = forzarDropEnColumnas;
+window.enviarInvitacion = enviarInvitacion;
+window.reenviarInvitacion = reenviarInvitacion;
+window.cancelarInvitacion = cancelarInvitacion;
+window.cargarEquipoProyecto = cargarEquipoProyecto;
+window.generarDocumentoProject = generarDocumentoProject;
+window.generarDocumentoDesdeSelector = generarDocumentoDesdeSelector;
+
+// Agentes
+window.abrirPMAgent = abrirPMAgent;
+window.pmAnalisisCompleto = pmAnalisisCompleto;
+window.pmKPIs = pmKPIs;
+window.pmEquipo = pmEquipo;
+window.pmRiesgos = pmRiesgos;
+window.pmTendencias = pmTendencias;
+window.pmForecast = pmForecast;
+window.abrirTranscriptorAgent = abrirTranscriptorAgent;
+window.abrirAnalistaAgent = abrirAnalistaAgent;
+window.abrirAsistentePersonal = abrirAsistentePersonal;
+window.preguntarAsistente = preguntarAsistente;
+
+console.log('✅ CENTRO DE COMANDO IA 4D CORREGIDO - Los invitados SOLO ven sus proyectos');
+console.log(`📊 Proyectos del usuario: ${getProyectosDelUsuario().length}`);
+
+// ============================================
+// 8. REGISTRAR PLANTILLAS
+// ============================================
 function registrarPlantillasEnInicio() {
     if (typeof window.plantillasEjecutivas !== 'undefined') return;
     
@@ -65036,6 +62809,7 @@ function registrarPlantillasEnInicio() {
             id: Date.now(),
             name: nombre,
             totalProjectTime: datos.horas,
+            clienteId: localStorage.getItem('clienteId'),
             tasks: Array.from({ length: datos.tareas }, (_, i) => ({
                 id: Date.now() + i,
                 name: `Tarea ${i + 1}: ${nombre.substring(0, 30)}`,
@@ -65067,6 +62841,18 @@ function registrarPlantillasEnInicio() {
         }
     };
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 registrarPlantillasEnInicio();
 
@@ -70204,497 +67990,6 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-// ============================================
-// 🚀 SISTEMA DE SINCRONIZACIÓN UNIFICADO - VERSIÓN DEFINITIVA
-// ============================================
-(function() {
-    console.log('🔥 ACTIVANDO SISTEMA DE SINCRONIZACIÓN UNIFICADO');
 
-    // ========== 1. VARIABLES GLOBALES ==========
-    let syncQueue = [];
-    let isSyncing = false;
-    let lastSyncTimestamp = Date.now();
-    
-    // ========== 2. FUNCIÓN PARA OBTENER ID REAL DEL PROYECTO ==========
-    function getRealProjectId() {
-        const project = projects[currentProjectIndex];
-        return project ? (project.id || project._id || String(currentProjectIndex)) : String(currentProjectIndex);
-    }
-    
-    // ========== 3. NOTIFICACIÓN VISUAL ==========
-    function showSyncNotification(message, type = 'info') {
-        const colors = {
-            success: '#10b981',
-            error: '#ef4444',
-            info: '#3b82f6',
-            warning: '#f59e0b'
-        };
-        
-        const notification = document.createElement('div');
-        notification.innerHTML = `
-            <div style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: ${colors[type]};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 12px;
-                z-index: 10000000;
-                font-size: 13px;
-                font-weight: 500;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                animation: slideInRight 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            ">
-                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '🔄'}</span>
-                <span>${message}</span>
-            </div>
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-    
-    // ========== 4. FUNCIÓN CENTRAL DE SINCRONIZACIÓN ==========
-    async function forceFullSync() {
-        if (isSyncing) {
-            console.log('⏳ Sincronización en curso, encolando...');
-            return;
-        }
-        
-        isSyncing = true;
-        console.log('🔄 INICIANDO SINCRONIZACIÓN COMPLETA');
-        
-        try {
-            const token = localStorage.getItem('authToken');
-            const clienteId = localStorage.getItem('clienteId');
-            
-            if (!token || !clienteId) {
-                console.warn('⚠️ No hay token o clienteId');
-                isSyncing = false;
-                return;
-            }
-            
-            // 1. Guardar estado actual en localStorage
-            localStorage.setItem('projects', JSON.stringify(projects));
-            
-            // 2. Enviar al backend
-            const saveResponse = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    projects: projects,
-                    currentProjectIndex: currentProjectIndex,
-                    clienteId: clienteId
-                })
-            });
-            
-            if (!saveResponse.ok) {
-                throw new Error('Error guardando en backend');
-            }
-            
-            console.log('✅ Datos guardados en backend');
-            
-            // 3. Cargar datos frescos desde backend
-            const loadResponse = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (loadResponse.ok) {
-                const data = await loadResponse.json();
-                if (data.projects && data.projects.length > 0) {
-                    // Actualizar proyectos en memoria
-                    const oldProjects = JSON.parse(JSON.stringify(projects));
-                    projects.length = 0;
-                    projects.push(...data.projects);
-                    
-                    // Verificar si hubo cambios
-                    if (JSON.stringify(oldProjects) !== JSON.stringify(projects)) {
-                        console.log('📦 Datos actualizados desde servidor');
-                        localStorage.setItem('projects', JSON.stringify(projects));
-                        
-                        // Notificar a otros clientes vía WebSocket
-                        if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-                            window.tiempoRealSocket.emit('project-updated', {
-                                projectId: getRealProjectId(),
-                                projectIndex: currentProjectIndex,
-                                timestamp: Date.now(),
-                                source: 'forceFullSync'
-                            });
-                        }
-                        
-                        // Refrescar vista actual
-                        refreshCurrentViewAfterSync();
-                    }
-                }
-            }
-            
-            lastSyncTimestamp = Date.now();
-            showSyncNotification('Datos sincronizados', 'success');
-            
-        } catch (error) {
-            console.error('❌ Error en sincronización:', error);
-            showSyncNotification('Error de sincronización', 'error');
-        } finally {
-            isSyncing = false;
-            
-            // Procesar cola si hay pendientes
-            if (syncQueue.length > 0) {
-                const next = syncQueue.shift();
-                setTimeout(() => forceFullSync(), 100);
-            }
-        }
-    }
-    
-    // ========== 5. REFRESCAR VISTA ACTUAL ==========
-    function refreshCurrentViewAfterSync() {
-        console.log('🔄 Refrescando vista actual después de sincronización');
-        
-        // Determinar vista activa
-        const activeView = getActiveView();
-        
-        switch(activeView) {
-            case 'board':
-                if (typeof renderKanbanTasks === 'function') {
-                    renderKanbanTasks();
-                }
-                break;
-            case 'list':
-                if (typeof renderListTasks === 'function') {
-                    renderListTasks();
-                }
-                break;
-            case 'calendar':
-                if (typeof renderCalendar === 'function') {
-                    renderCalendar();
-                }
-                break;
-            case 'dashboard':
-                if (typeof renderDashboard === 'function') {
-                    renderDashboard();
-                }
-                break;
-            default:
-                if (typeof renderKanbanTasks === 'function') {
-                    renderKanbanTasks();
-                }
-        }
-        
-        // Actualizar contadores
-        if (typeof actualizarContadoresColumnas === 'function') {
-            actualizarContadoresColumnas();
-        }
-        if (typeof updateStatistics === 'function') {
-            updateStatistics();
-        }
-    }
-    
-    // ========== 6. RECONFIGURAR WEBSOCKET ==========
-    function reconfigurarWebSocket() {
-        if (window.tiempoRealSocket) {
-            // Desconectar socket existente
-            try {
-                window.tiempoRealSocket.disconnect();
-            } catch(e) {}
-            window.tiempoRealSocket = null;
-        }
-        
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
-        
-        console.log('🔌 Conectando WebSocket unificado...');
-        
-        const socket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
-            transports: ['websocket', 'polling'],
-            auth: { token: token },
-            reconnection: true,
-            reconnectionAttempts: 10,
-            reconnectionDelay: 1000
-        });
-        
-        socket.on('connect', () => {
-            console.log('✅ WebSocket conectado, ID:', socket.id);
-            
-            // Unirse a la sala del proyecto actual
-            const projectId = getRealProjectId();
-            socket.emit('join-project', projectId);
-            console.log(`📡 Unido a sala: ${projectId}`);
-        });
-        
-        // ESCUCHAR ACTUALIZACIONES DE PROYECTO
-        socket.on('project-updated', (data) => {
-            console.log('📡 project-updated recibido:', data);
-            
-            // Evitar auto-actualización (viene del mismo usuario)
-            if (data.source === 'forceFullSync' && data.userId === localStorage.getItem('userId')) {
-                console.log('⏭️ Ignorando actualización propia');
-                return;
-            }
-            
-            // Forzar sincronización completa
-            setTimeout(() => forceFullSync(), 100);
-        });
-        
-        // ESCUCHAR TAREAS MOVIDAS
-        socket.on('task-moved', (data) => {
-            console.log('📡 task-moved recibido:', data);
-            
-            const projectIdActual = getRealProjectId();
-            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
-                console.log('⏭️ Evento de otro proyecto, ignorando');
-                return;
-            }
-            
-            // Actualizar la tarea localmente
-            const task = projects[currentProjectIndex]?.tasks?.find(t => t.id == data.taskId);
-            if (task && task.status !== data.newStatus) {
-                console.log(`📝 Actualizando tarea local: ${task.name} → ${data.newStatus}`);
-                task.status = data.newStatus;
-                
-                if (data.newStatus === 'completed') task.progress = 100;
-                else if (data.newStatus === 'inProgress') task.progress = 50;
-                
-                localStorage.setItem('projects', JSON.stringify(projects));
-                refreshCurrentViewAfterSync();
-                showSyncNotification(`"${task.name}" movida a ${data.newStatus}`, 'info');
-            } else {
-                // Si no encontramos la tarea, hacer sync completo
-                setTimeout(() => forceFullSync(), 200);
-            }
-        });
-        
-        // ESCUCHAR TAREAS CREADAS
-        socket.on('task-created', (data) => {
-            console.log('📡 task-created recibido:', data);
-            
-            const projectIdActual = getRealProjectId();
-            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
-                return;
-            }
-            
-            // Verificar si la tarea ya existe
-            const exists = projects[currentProjectIndex]?.tasks?.some(t => t.id == data.task.id);
-            if (!exists && data.task) {
-                projects[currentProjectIndex].tasks.push(data.task);
-                localStorage.setItem('projects', JSON.stringify(projects));
-                refreshCurrentViewAfterSync();
-                showSyncNotification(`Nueva tarea: "${data.task.name}"`, 'success');
-            } else {
-                setTimeout(() => forceFullSync(), 200);
-            }
-        });
-        
-        // ESCUCHAR TAREAS ACTUALIZADAS
-        socket.on('task-updated', (data) => {
-            console.log('📡 task-updated recibido:', data);
-            
-            const projectIdActual = getRealProjectId();
-            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
-                return;
-            }
-            
-            const taskIndex = projects[currentProjectIndex]?.tasks?.findIndex(t => t.id == data.taskId);
-            if (taskIndex !== -1 && data.task) {
-                projects[currentProjectIndex].tasks[taskIndex] = data.task;
-                localStorage.setItem('projects', JSON.stringify(projects));
-                refreshCurrentViewAfterSync();
-                showSyncNotification(`Tarea actualizada: "${data.task.name}"`, 'info');
-            } else {
-                setTimeout(() => forceFullSync(), 200);
-            }
-        });
-        
-        socket.on('disconnect', () => {
-            console.log('🔌 WebSocket desconectado');
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('❌ WebSocket error:', error.message);
-        });
-        
-        window.tiempoRealSocket = socket;
-    }
-    
-    // ========== 7. INTERCEPTAR MOVIMIENTO DE TAREAS ==========
-    function interceptarMovimientoTareas() {
-        // Guardar funciones originales
-        const originalMoveTaskUp = window.moveTaskUp;
-        const originalMoveTaskDown = window.moveTaskDown;
-        const originalHandleDrop = window.handleDrop;
-        
-        if (originalMoveTaskUp) {
-            window.moveTaskUp = function(taskId, status) {
-                const project = projects[currentProjectIndex];
-                const task = project?.tasks?.find(t => t.id == taskId);
-                const oldStatus = task?.status;
-                
-                const result = originalMoveTaskUp(taskId, status);
-                
-                if (task && oldStatus !== task.status) {
-                    console.log(`📤 Emitiendo task-moved: ${task.name} (${oldStatus} → ${task.status})`);
-                    
-                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-                        window.tiempoRealSocket.emit('task-moved', {
-                            projectId: getRealProjectId(),
-                            projectIndex: currentProjectIndex,
-                            taskId: taskId,
-                            taskName: task.name,
-                            oldStatus: oldStatus,
-                            newStatus: task.status,
-                            timestamp: Date.now()
-                        });
-                    }
-                    
-                    // Forzar sync después del movimiento
-                    setTimeout(() => forceFullSync(), 200);
-                }
-                
-                return result;
-            };
-        }
-        
-        if (originalMoveTaskDown) {
-            window.moveTaskDown = function(taskId, status) {
-                const project = projects[currentProjectIndex];
-                const task = project?.tasks?.find(t => t.id == taskId);
-                const oldStatus = task?.status;
-                
-                const result = originalMoveTaskDown(taskId, status);
-                
-                if (task && oldStatus !== task.status) {
-                    console.log(`📤 Emitiendo task-moved: ${task.name} (${oldStatus} → ${task.status})`);
-                    
-                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-                        window.tiempoRealSocket.emit('task-moved', {
-                            projectId: getRealProjectId(),
-                            projectIndex: currentProjectIndex,
-                            taskId: taskId,
-                            taskName: task.name,
-                            oldStatus: oldStatus,
-                            newStatus: task.status,
-                            timestamp: Date.now()
-                        });
-                    }
-                    
-                    setTimeout(() => forceFullSync(), 200);
-                }
-                
-                return result;
-            };
-        }
-        
-        console.log('✅ Movimiento de tareas interceptado');
-    }
-    
-    // ========== 8. SINCRONIZACIÓN PERIÓDICA (CADA 10 SEGUNDOS) ==========
-    let syncInterval = setInterval(() => {
-        // Solo sincronizar si hay cambios recientes o cada cierto tiempo
-        const timeSinceLastSync = Date.now() - lastSyncTimestamp;
-        if (timeSinceLastSync > 10000) {
-            forceFullSync();
-        }
-    }, 10000);
-    
-    // ========== 9. ESCUCHAR EVENTOS DE LOCALSTORAGE (OTRAS PESTAÑAS) ==========
-    window.addEventListener('storage', (e) => {
-        if (e.key === 'projects' && e.newValue) {
-            console.log('📦 Cambio detectado en otra pestaña');
-            
-            try {
-                const newProjects = JSON.parse(e.newValue);
-                const oldProjectsStr = JSON.stringify(projects);
-                const newProjectsStr = JSON.stringify(newProjects);
-                
-                if (oldProjectsStr !== newProjectsStr) {
-                    projects.length = 0;
-                    projects.push(...newProjects);
-                    refreshCurrentViewAfterSync();
-                    showSyncNotification('Datos actualizados desde otra pestaña', 'info');
-                }
-            } catch(err) {
-                console.error('Error procesando storage event:', err);
-            }
-        }
-    });
-    
-    // ========== 10. BOTÓN DE SINCRONIZACIÓN MANUAL ==========
-    function agregarBotonSync() {
-        if (document.getElementById('manualSyncBtn')) return;
-        
-        const header = document.querySelector('header, .header, .top-bar');
-        if (!header) {
-            setTimeout(agregarBotonSync, 1000);
-            return;
-        }
-        
-        const btn = document.createElement('button');
-        btn.id = 'manualSyncBtn';
-        btn.innerHTML = '🔄 Sincronizar';
-        btn.title = 'Forzar sincronización manual';
-        btn.style.cssText = `
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            margin-left: 10px;
-            transition: all 0.2s;
-        `;
-        
-        btn.onclick = () => {
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => btn.style.transform = 'scale(1)', 200);
-            forceFullSync();
-        };
-        
-        btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
-        btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
-        
-        header.appendChild(btn);
-        console.log('✅ Botón de sincronización manual agregado');
-    }
-    
-    // ========== 11. INICIALIZAR ==========
-    function init() {
-        console.log('🚀 INICIANDO SISTEMA DE SINCRONIZACIÓN UNIFICADO');
-        
-        // Configurar WebSocket
-        reconfigurarWebSocket();
-        
-        // Interceptar movimiento de tareas
-        setTimeout(interceptarMovimientoTareas, 500);
-        
-        // Agregar botón manual
-        setTimeout(agregarBotonSync, 1000);
-        
-        // Sincronización inicial
-        setTimeout(() => forceFullSync(), 2000);
-        
-        // Exponer funciones globales para debug
-        window.debugSync = {
-            forceSync: forceFullSync,
-            status: () => console.log('WebSocket conectado:', window.tiempoRealSocket?.connected),
-            lastSync: () => new Date(lastSyncTimestamp).toLocaleTimeString()
-        };
-        
-        console.log('✅ SISTEMA DE SINCRONIZACIÓN UNIFICADO ACTIVADO');
-        console.log('💡 Usa debugSync.forceSync() para sincronizar manualmente');
-    }
-    
-    // Iniciar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        setTimeout(init, 500);
-    }
-})();
 
 
