@@ -69054,6 +69054,340 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-
+// ============================================
+// 🔥 KANBAN PREMIUM - VERSIÓN CORREGIDA (TODAS LAS COLUMNAS IGUALES)
+// ============================================
+(function() {
+    console.log('👑 KANBAN PREMIUM - VERSIÓN CORREGIDA');
+    
+    // Funciones de movimiento
+    window.moveTaskUp = function(taskId, status) {
+        console.log(`⬆️ Mover arriba: ${taskId}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
+        
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex > 0) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex - 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+        }
+    };
+    
+    window.moveTaskDown = function(taskId, status) {
+        console.log(`⬇️ Mover abajo: ${taskId}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
+        
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex < tasksInStatus.length - 1) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex + 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+        }
+    };
+    
+    // Función principal
+    window.renderKanbanTasks = function(tasksParam) {
+        console.log('🎯 RENDERIZANDO KANBAN');
+        
+        if (typeof projects === 'undefined' || !projects || projects.length === 0) {
+            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
+            return;
+        }
+        
+        let project;
+        const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+        
+        if (idx >= 0 && idx < projects.length) {
+            project = projects[idx];
+        } else if (projects.length === 1) {
+            project = projects[0];
+            currentProjectIndex = 0;
+        }
+        
+        if (!project) return;
+        
+        const tasks = tasksParam || project.tasks || [];
+        console.log(`📊 ${tasks.length} tareas`);
+        
+        const columns = {
+            pendingList: document.getElementById('pendingList'),
+            inProgressList: document.getElementById('inProgressList'),
+            completedList: document.getElementById('completedList'),
+            overdueList: document.getElementById('overdueList')
+        };
+        
+        if (!columns.pendingList || !columns.inProgressList || !columns.completedList || !columns.overdueList) {
+            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
+            return;
+        }
+        
+        // Limpiar todas las columnas
+        Object.values(columns).forEach(col => {
+            if (col) col.innerHTML = '';
+        });
+        
+        // Configurar headers de columnas
+        const headers = [
+            { id: 'pendingList', title: '📋 PENDIENTES', color: '#f59e0b', type: 'pending' },
+            { id: 'inProgressList', title: '🔄 EN PROGRESO', color: '#3b82f6', type: 'progress' },
+            { id: 'completedList', title: '✅ COMPLETADAS', color: '#10b981', type: 'completed' },
+            { id: 'overdueList', title: '⚠️ REZAGADAS ⚠️', color: '#ef4444', type: 'overdue' }
+        ];
+        
+        headers.forEach(h => {
+            const col = columns[h.id];
+            if (col) {
+                const header = document.createElement('div');
+                header.className = 'column-header';
+                header.style.cssText = `padding:16px 20px;background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:2px solid ${h.color};display:flex;justify-content:space-between;align-items:center;`;
+                if (h.id === 'overdueList') {
+                    header.style.background = 'linear-gradient(135deg,#7f1d1d,#991b1b)';
+                }
+                header.innerHTML = `
+                    <h3 style="margin:0;font-size:14px;color:#e2e8f0;">${h.title}</h3>
+                    <span class="column-count" id="count-${h.type}" style="background:rgba(255,255,255,0.12);padding:3px 10px;border-radius:30px;font-size:12px;">0</span>
+                `;
+                col.appendChild(header);
+                
+                const tasksContainer = document.createElement('div');
+                tasksContainer.className = 'tasks-container';
+                tasksContainer.style.cssText = 'padding:14px;min-height:400px;max-height:calc(100vh - 280px);overflow-y:auto;';
+                col.appendChild(tasksContainer);
+            }
+        });
+        
+        if (tasks.length === 0) {
+            Object.values(columns).forEach(col => {
+                const container = col?.querySelector('.tasks-container');
+                if (container) {
+                    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">📭 No hay tareas</div>';
+                }
+            });
+            return;
+        }
+        
+        // Renderizar tareas
+        tasks.forEach(task => {
+            const status = (task.status || 'pending').toLowerCase();
+            let targetCol;
+            
+            if (status === 'completed') targetCol = columns.completedList;
+            else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') targetCol = columns.inProgressList;
+            else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') targetCol = columns.overdueList;
+            else targetCol = columns.pendingList;
+            
+            const container = targetCol?.querySelector('.tasks-container');
+            if (!container) return;
+            
+            // Prioridad
+            const priority = (task.priority || 'media').toLowerCase();
+            const isHigh = priority === 'alta' || priority === 'high';
+            const isLow = priority === 'baja' || priority === 'low';
+            const priorityClass = isHigh ? 'priority-high' : (isLow ? 'priority-low' : 'priority-medium');
+            const priorityText = isHigh ? 'Alta' : (isLow ? 'Baja' : 'Media');
+            const priorityIcon = isHigh ? '🔴' : (isLow ? '🟢' : '🟡');
+            
+            // Estado
+            const statusClass = status === 'completed' ? 'status-completed' : (status === 'inprogress' ? 'status-progress' : (status === 'overdue' ? 'status-overdue' : 'status-pending'));
+            const statusText = status === 'completed' ? 'Completada' : (status === 'inprogress' ? 'En Progreso' : (status === 'overdue' ? 'Rezagada' : 'Pendiente'));
+            const statusIcon = status === 'completed' ? '✅' : (status === 'inprogress' ? '🔄' : (status === 'overdue' ? '⚠️' : '⏳'));
+            
+            // Días de retraso
+            let diasRetraso = 0;
+            if (status === 'overdue' && task.deadline) {
+                const hoy = new Date();
+                const deadline = new Date(task.deadline);
+                diasRetraso = Math.ceil((hoy - deadline) / (1000 * 60 * 60 * 24));
+                diasRetraso = diasRetraso > 0 ? diasRetraso : 0;
+            }
+            
+            // Asignado
+            const assignee = task.assignee || '';
+            const initials = assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            
+            // Fecha
+            let formattedDeadline = '';
+            if (task.deadline) {
+                try {
+                    formattedDeadline = new Date(task.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                } catch(e) {}
+            }
+            
+            // Subtareas
+            const subtasks = task.subtasks || [];
+            const completedSubtasks = subtasks.filter(st => st.completed).length;
+            const totalSubtasks = subtasks.length;
+            const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+            const hasSubtasks = totalSubtasks > 0;
+            
+            // Crear tarjeta
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.style.cssText = `
+                background: ${status === 'overdue' ? 'linear-gradient(145deg,#2d1a1a,#1f1212)' : 'linear-gradient(145deg,#1e293b,#162236)'};
+                border-radius: 16px;
+                margin-bottom: 14px;
+                border: 1px solid ${status === 'overdue' ? 'rgba(239,68,68,0.4)' : 'rgba(139,92,246,0.2)'};
+                border-left: ${status === 'overdue' ? '4px solid #ef4444' : 'none'};
+                padding: 14px;
+                position: relative;
+                cursor: pointer;
+                transition: all 0.3s;
+            `;
+            card.dataset.taskId = task.id;
+            
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #f1f5f9; flex: 1; padding-right: 10px;">
+                        ${task.name || 'Sin nombre'}
+                        ${diasRetraso > 0 ? `<span style="background:#ef4444;color:white;padding:2px 8px;border-radius:20px;font-size:9px;margin-left:8px;">⚠️ +${diasRetraso} días</span>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button class="move-up" data-task-id="${task.id}" data-status="${status}" style="width:30px;height:30px;background:#3b82f6;border:none;border-radius:8px;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;" title="Mover arriba">↑</button>
+                        <button class="move-down" data-task-id="${task.id}" data-status="${status}" style="width:30px;height:30px;background:#3b82f6;border:none;border-radius:8px;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;" title="Mover abajo">↓</button>
+                        <button class="menu-btn" data-task-id="${task.id}" style="width:30px;height:30px;background:#8b5cf6;border:none;border-radius:8px;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;" title="Menú">⋯</button>
+                    </div>
+                </div>
+                
+                ${hasSubtasks ? `
+                <div style="margin: 8px 0;">
+                    <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-bottom:4px;">
+                        <span>📋 Subtareas</span>
+                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+                    </div>
+                    <div style="background:#334155;height:3px;border-radius:3px;overflow:hidden;">
+                        <div style="width:${subtaskProgress}%;height:100%;background:linear-gradient(90deg,#8b5cf6,#ec4899);border-radius:3px;"></div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;">
+                    <span style="padding:3px 10px;border-radius:30px;font-size:10px;background:${isHigh ? 'rgba(239,68,68,0.2)' : isLow ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'};color:${isHigh ? '#f87171' : isLow ? '#6ee7b7' : '#fbbf24'};border:1px solid ${isHigh ? 'rgba(239,68,68,0.3)' : isLow ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'};">${priorityIcon} ${priorityText}</span>
+                    <span style="padding:3px 10px;border-radius:30px;font-size:10px;background:${status === 'completed' ? 'rgba(16,185,129,0.2)' : status === 'inprogress' ? 'rgba(59,130,246,0.2)' : status === 'overdue' ? 'rgba(239,68,68,0.2)' : 'rgba(100,116,139,0.2)'};color:${status === 'completed' ? '#6ee7b7' : status === 'inprogress' ? '#93c5fd' : status === 'overdue' ? '#fca5a5' : '#cbd5e1'};border:1px solid ${status === 'completed' ? 'rgba(16,185,129,0.3)' : status === 'inprogress' ? 'rgba(59,130,246,0.3)' : status === 'overdue' ? 'rgba(239,68,68,0.3)' : 'rgba(100,116,139,0.3)'};">${statusIcon} ${statusText}</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px; padding-top: 8px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 10px; color: #64748b;">
+                    ${assignee ? `<span title="Asignado a: ${assignee}"><i class="fas fa-user-circle"></i> ${initials || assignee.substring(0,2)}</span>` : ''}
+                    ${formattedDeadline ? `<span title="Fecha límite"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</span>` : ''}
+                    ${task.estimatedTime ? `<span title="Tiempo estimado"><i class="fas fa-clock"></i> ${task.estimatedTime}h</span>` : ''}
+                </div>
+                
+                <div class="task-context-menu" id="task-menu-${task.id}" style="display: none; position: absolute; top: 50px; right: 14px; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4); border: 1px solid rgba(139,92,246,0.3); z-index: 1001; min-width: 140px; overflow: hidden;">
+                    <div class="context-menu-item" data-task-id="${task.id}" data-action="edit" style="padding: 10px 14px; cursor: pointer; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 10px;">✏️ Editar tarea</div>
+                    <div class="context-menu-item delete" data-task-id="${task.id}" data-action="delete" style="padding: 10px 14px; cursor: pointer; color: #f87171; font-size: 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05);">🗑️ Eliminar tarea</div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+        
+        // Actualizar contadores
+        function updateCounters() {
+            const counts = {
+                pending: columns.pendingList?.querySelectorAll('.task-card').length || 0,
+                progress: columns.inProgressList?.querySelectorAll('.task-card').length || 0,
+                completed: columns.completedList?.querySelectorAll('.task-card').length || 0,
+                overdue: columns.overdueList?.querySelectorAll('.task-card').length || 0
+            };
+            
+            const pendingCount = document.getElementById('count-pending');
+            const progressCount = document.getElementById('count-progress');
+            const completedCount = document.getElementById('count-completed');
+            const overdueCount = document.getElementById('count-overdue');
+            
+            if (pendingCount) pendingCount.textContent = counts.pending;
+            if (progressCount) progressCount.textContent = counts.progress;
+            if (completedCount) completedCount.textContent = counts.completed;
+            if (overdueCount) overdueCount.textContent = counts.overdue;
+        }
+        
+        updateCounters();
+        
+        // CONECTAR EVENTOS (usando delegación)
+        document.body.addEventListener('click', function(e) {
+            const target = e.target;
+            
+            // Mover arriba
+            if (target.classList.contains('move-up')) {
+                e.stopPropagation();
+                const taskId = parseInt(target.dataset.taskId);
+                const status = target.dataset.status;
+                console.log(`⬆️ Click mover arriba: ${taskId}`);
+                moveTaskUp(taskId, status);
+            }
+            
+            // Mover abajo
+            if (target.classList.contains('move-down')) {
+                e.stopPropagation();
+                const taskId = parseInt(target.dataset.taskId);
+                const status = target.dataset.status;
+                console.log(`⬇️ Click mover abajo: ${taskId}`);
+                moveTaskDown(taskId, status);
+            }
+            
+            // Menú
+            if (target.classList.contains('menu-btn')) {
+                e.stopPropagation();
+                const taskId = target.dataset.taskId;
+                const menu = document.getElementById(`task-menu-${taskId}`);
+                if (menu) {
+                    document.querySelectorAll('.task-context-menu').forEach(m => m.style.display = 'none');
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
+            }
+            
+            // Items del menú
+            if (target.classList.contains('context-menu-item')) {
+                e.stopPropagation();
+                const taskId = parseInt(target.dataset.taskId);
+                const action = target.dataset.action;
+                const menu = target.closest('.task-context-menu');
+                if (menu) menu.style.display = 'none';
+                
+                const project = projects[currentProjectIndex];
+                const task = project.tasks.find(t => t.id === taskId);
+                
+                if (action === 'edit' && task && typeof showTaskDetails === 'function') {
+                    showTaskDetails(task);
+                } else if (action === 'delete' && task && confirm(`¿Eliminar "${task.name}"?`)) {
+                    project.tasks = project.tasks.filter(t => t.id !== taskId);
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    window.renderKanbanTasks();
+                }
+            }
+        });
+        
+        // Cerrar menús al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('menu-btn') && !e.target.closest('.task-context-menu')) {
+                document.querySelectorAll('.task-context-menu').forEach(menu => menu.style.display = 'none');
+            }
+        });
+        
+        console.log(`✅ Kanban renderizado: ${tasks.length} tareas`);
+    };
+    
+    console.log('✅ Kanban Premium activado - TODAS las columnas tienen botones');
+})();
 
 
