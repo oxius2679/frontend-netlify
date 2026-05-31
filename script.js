@@ -69125,21 +69125,83 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 // ============================================
-// 🔥 SOBRESCRITURA DEFINITIVA - KANBAN PREMIUM
+// 🔥 KANBAN PREMIUM - VERSIÓN CON BOTONES VISIBLES
 // ============================================
 (function() {
-    console.log('🚀 ACTIVANDO KANBAN PREMIUM DEFINITIVO');
+    console.log('👑 ACTIVANDO KANBAN PREMIUM - BOTONES VISIBLES');
     
-    // Guardar referencia a la función original si existe
-    const originalRender = window.renderKanbanTasks;
-    
-    // Nueva función premium
-    window.renderKanbanTasks = function(tasksParam) {
-        console.log('👑 KANBAN PREMIUM EJECUTIVO - RENDERIZANDO');
+    // ========== FUNCIONES DE MOVIMIENTO ==========
+    window.moveTaskUp = function(taskId, status) {
+        console.log(`⬆️ Mover arriba: taskId=${taskId}, status=${status}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
         
-        // ========== 1. VALIDAR PROYECTO ==========
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex > 0) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex - 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+            mostrarNotificacion('✅ Tarea movida arriba');
+        }
+    };
+    
+    window.moveTaskDown = function(taskId, status) {
+        console.log(`⬇️ Mover abajo: taskId=${taskId}, status=${status}`);
+        const project = projects[currentProjectIndex];
+        if (!project || !project.tasks) return;
+        
+        const tasksInStatus = project.tasks.filter(t => t.status === status);
+        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
+        
+        if (currentIndex < tasksInStatus.length - 1) {
+            const allTasks = project.tasks;
+            const task1 = tasksInStatus[currentIndex];
+            const task2 = tasksInStatus[currentIndex + 1];
+            const index1 = allTasks.findIndex(t => t.id === task1.id);
+            const index2 = allTasks.findIndex(t => t.id === task2.id);
+            
+            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
+            
+            localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+            mostrarNotificacion('✅ Tarea movida abajo');
+        }
+    };
+    
+    function mostrarNotificacion(mensaje) {
+        const notif = document.createElement('div');
+        notif.textContent = mensaje;
+        notif.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 100000;
+            font-size: 13px;
+            animation: fadeInOut 2s ease;
+        `;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 2000);
+    }
+    
+    // ========== FUNCIÓN PRINCIPAL ==========
+    window.renderKanbanTasks = function(tasksParam) {
+        console.log('🎯 RENDERIZANDO KANBAN PREMIUM');
+        
+        // Validaciones
         if (typeof projects === 'undefined' || !projects || projects.length === 0) {
-            console.warn('⚠️ Projects no disponible, reintentando...');
             setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
             return;
         }
@@ -69160,47 +69222,39 @@ if (!document.getElementById('notif-slack-styles')) {
         }
         
         const tasks = tasksParam || project.tasks || [];
-        console.log(`📊 Renderizando ${tasks.length} tareas para: ${project.name}`);
+        console.log(`📊 Renderizando ${tasks.length} tareas`);
         
-        // ========== 2. OBTENER COLUMNAS ==========
+        // Obtener columnas
         const pendingCol = document.getElementById('pendingList');
         const inProgressCol = document.getElementById('inProgressList');
         const completedCol = document.getElementById('completedList');
         const overdueCol = document.getElementById('overdueList');
         
         if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-            console.warn('⚠️ Columnas no encontradas, reintentando...');
             setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
             return;
         }
         
-        // ========== 3. INYECTAR ESTILOS PREMIUM ==========
-        if (!document.getElementById('kanban-premium-final-styles')) {
+        // ========== INYECTAR ESTILOS ==========
+        if (!document.getElementById('kanban-final-styles')) {
             const styles = document.createElement('style');
-            styles.id = 'kanban-premium-final-styles';
+            styles.id = 'kanban-final-styles';
             styles.textContent = `
-                /* Reset de columnas */
-                #pendingList, #inProgressList, #completedList, #overdueList {
-                    background: transparent !important;
-                    min-height: 400px;
-                    padding: 0 !important;
-                }
-                
-                /* Contenedor del tablero */
-                .kanban-board-container {
+                /* Contenedor principal */
+                .kanban-board-final {
                     display: flex;
-                    gap: 24px;
+                    gap: 20px;
                     padding: 20px;
                     background: linear-gradient(135deg, #0a0a1a 0%, #0f172a 100%);
                     min-height: calc(100vh - 200px);
                     overflow-x: auto;
                 }
                 
-                /* Columnas premium */
-                .kanban-column-premium {
+                /* Columnas */
+                .kanban-column-final {
                     flex: 1;
-                    min-width: 320px;
-                    background: rgba(15, 23, 42, 0.7);
+                    min-width: 300px;
+                    background: rgba(15, 23, 42, 0.6);
                     backdrop-filter: blur(12px);
                     border-radius: 20px;
                     border: 1px solid rgba(139, 92, 246, 0.25);
@@ -69208,14 +69262,25 @@ if (!document.getElementById('notif-slack-styles')) {
                     transition: all 0.3s ease;
                 }
                 
-                .kanban-column-premium:hover {
+                .kanban-column-final:hover {
                     border-color: rgba(139, 92, 246, 0.5);
                     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
                 }
                 
-                /* Header de columna */
-                .column-header-premium {
-                    padding: 18px 20px;
+                /* Columna REZAGADAS - solo estilo visual */
+                #overdueList.kanban-column-final {
+                    border-color: rgba(239, 68, 68, 0.4);
+                    background: rgba(239, 68, 68, 0.03);
+                }
+                
+                #overdueList.kanban-column-final:hover {
+                    border-color: rgba(239, 68, 68, 0.7);
+                    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+                }
+                
+                /* Headers de columna */
+                .column-header-final {
+                    padding: 16px 20px;
                     background: linear-gradient(135deg, #1e293b, #0f172a);
                     border-bottom: 2px solid;
                     display: flex;
@@ -69223,295 +69288,324 @@ if (!document.getElementById('notif-slack-styles')) {
                     align-items: center;
                 }
                 
-                .column-header-premium h3 {
+                #overdueList .column-header-final {
+                    background: linear-gradient(135deg, #7f1d1d, #991b1b);
+                    border-bottom-color: #ef4444;
+                }
+                
+                .column-header-final h3 {
                     margin: 0;
-                    font-size: 15px;
+                    font-size: 14px;
                     font-weight: 600;
-                    letter-spacing: 0.5px;
                     display: flex;
                     align-items: center;
                     gap: 10px;
                     color: #e2e8f0;
                 }
                 
-                .column-count-premium {
+                .column-count-final {
                     background: rgba(255,255,255,0.12);
-                    padding: 4px 12px;
+                    padding: 3px 10px;
                     border-radius: 30px;
-                    font-size: 13px;
+                    font-size: 12px;
                     font-weight: 600;
                     color: #cbd5e1;
                 }
                 
                 /* Contenedor de tareas */
-                .tasks-container-premium {
-                    padding: 16px;
+                .tasks-container-final {
+                    padding: 14px;
                     min-height: 400px;
                     max-height: calc(100vh - 280px);
                     overflow-y: auto;
                 }
                 
                 /* Tarjeta de tarea */
-                .task-card-premium {
+                .task-card-final {
                     background: linear-gradient(145deg, #1e293b, #162236);
                     border-radius: 16px;
-                    margin-bottom: 16px;
+                    margin-bottom: 14px;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     border: 1px solid rgba(139, 92, 246, 0.2);
                     position: relative;
                     cursor: pointer;
                 }
                 
-                .task-card-premium:hover {
+                .task-card-final:hover {
                     transform: translateY(-3px);
                     border-color: rgba(139, 92, 246, 0.5);
                     box-shadow: 0 12px 28px -8px rgba(139, 92, 246, 0.3);
                 }
                 
+                /* Tarjeta REZAGADA */
+                .task-card-final.overdue-card {
+                    background: linear-gradient(145deg, #2d1a1a, #1f1212);
+                    border: 1px solid rgba(239, 68, 68, 0.4);
+                    border-left: 4px solid #ef4444;
+                }
+                
+                .task-card-final.overdue-card:hover {
+                    border-color: rgba(239, 68, 68, 0.7);
+                    box-shadow: 0 12px 28px -8px rgba(239, 68, 68, 0.4);
+                }
+                
                 /* Header de tarjeta */
-                .task-card-header-premium {
+                .task-card-header-final {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-start;
-                    padding: 16px 16px 8px 16px;
+                    padding: 14px 14px 6px 14px;
                 }
                 
-                .task-title-premium {
+                .task-title-final {
                     margin: 0;
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 600;
                     color: #f1f5f9;
-                    line-height: 1.4;
-                    word-break: break-word;
                     flex: 1;
-                    padding-right: 8px;
+                    padding-right: 10px;
                 }
                 
-                /* Botones de acción */
-                .task-actions-premium {
+                /* Contenedor de botones - asegurar visibilidad */
+                .task-actions-final {
                     display: flex;
                     gap: 6px;
-                    opacity: 0.4;
-                    transition: opacity 0.2s;
+                    flex-shrink: 0;
+                    background: transparent;
+                    position: relative;
+                    z-index: 10;
                 }
                 
-                .task-card-premium:hover .task-actions-premium {
-                    opacity: 1;
+                /* Botones de acción - ESTILOS FUERTES para asegurar visibilidad */
+                .action-btn-final {
+                    width: 30px !important;
+                    height: 30px !important;
+                    min-width: 30px !important;
+                    min-height: 30px !important;
+                    border-radius: 8px !important;
+                    background: rgba(59, 130, 246, 0.3) !important;
+                    border: 1px solid rgba(59, 130, 246, 0.5) !important;
+                    color: #60a5fa !important;
+                    cursor: pointer !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    transition: all 0.2s !important;
+                    font-size: 14px !important;
+                    font-weight: bold !important;
+                    pointer-events: auto !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    z-index: 100 !important;
+                    position: relative !important;
                 }
                 
-                .action-btn-premium {
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 8px;
-                    background: rgba(59, 130, 246, 0.15);
-                    border: none;
-                    color: #94a3b8;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s;
-                    font-size: 13px;
+                .action-btn-final:hover {
+                    background: rgba(59, 130, 246, 0.6) !important;
+                    transform: scale(1.05) !important;
+                    color: white !important;
                 }
                 
-                .action-btn-premium:hover {
-                    background: rgba(59, 130, 246, 0.35);
-                    color: #60a5fa;
-                    transform: scale(1.05);
+                .menu-btn-final {
+                    background: rgba(139, 92, 246, 0.3) !important;
+                    border-color: rgba(139, 92, 246, 0.5) !important;
+                    color: #a78bfa !important;
                 }
                 
-                .menu-btn-premium:hover {
-                    background: rgba(139, 92, 246, 0.35);
-                    color: #a78bfa;
+                .menu-btn-final:hover {
+                    background: rgba(139, 92, 246, 0.6) !important;
+                    color: white !important;
                 }
                 
-                /* Badges */
-                .badges-container-premium {
+                /* Badge de días de retraso */
+                .overdue-badge-final {
+                    background: #ef4444;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 20px;
+                    font-size: 9px;
+                    font-weight: bold;
+                    margin-left: 8px;
+                    display: inline-block;
+                }
+                
+                /* Badges de prioridad y estado */
+                .badges-container-final {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 8px;
-                    margin: 10px 16px;
+                    margin: 8px 14px;
                 }
                 
-                .badge-premium {
-                    padding: 4px 12px;
+                .badge-final {
+                    padding: 3px 10px;
                     border-radius: 30px;
                     font-size: 10px;
                     font-weight: 600;
-                    letter-spacing: 0.3px;
                     display: inline-flex;
                     align-items: center;
-                    gap: 6px;
+                    gap: 5px;
                 }
                 
-                .priority-high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-                .priority-medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-                .priority-low { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+                .priority-high-final { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+                .priority-medium-final { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+                .priority-low-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
                 
-                .status-pending { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.3); }
-                .status-progress { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-                .status-completed { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-                .status-overdue { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+                .status-pending-final { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.3); }
+                .status-progress-final { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+                .status-completed-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+                .status-overdue-final { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
                 
                 /* Info adicional */
-                .task-info-premium {
+                .task-info-final {
                     display: flex;
                     align-items: center;
-                    gap: 14px;
-                    padding: 10px 16px 14px 16px;
+                    gap: 12px;
+                    padding: 8px 14px 12px 14px;
                     font-size: 10px;
                     color: #64748b;
                     border-top: 1px solid rgba(255,255,255,0.05);
-                    margin-top: 6px;
+                    margin-top: 4px;
                 }
                 
-                .task-info-premium span {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
+                /* Barra de progreso */
+                .subtasks-progress-final {
+                    margin: 6px 14px;
                 }
                 
-                /* Barra de progreso de subtareas */
-                .subtasks-progress-premium {
-                    margin: 8px 16px;
-                }
-                
-                .subtasks-header-premium {
+                .subtasks-header-final {
                     display: flex;
                     justify-content: space-between;
-                    font-size: 10px;
+                    font-size: 9px;
                     color: #64748b;
-                    margin-bottom: 5px;
+                    margin-bottom: 4px;
                 }
                 
-                .progress-bar-premium {
+                .progress-bar-final {
                     background: #334155;
-                    height: 4px;
-                    border-radius: 4px;
+                    height: 3px;
+                    border-radius: 3px;
                     overflow: hidden;
                 }
                 
-                .progress-fill-premium {
+                .progress-fill-final {
                     height: 100%;
                     background: linear-gradient(90deg, #8b5cf6, #ec4899);
-                    border-radius: 4px;
+                    border-radius: 3px;
                     transition: width 0.3s ease;
                 }
                 
                 /* Menú contextual */
-                .task-context-menu-premium {
+                .task-context-menu-final {
                     position: absolute;
-                    top: 50px;
-                    right: 16px;
+                    top: 45px;
+                    right: 14px;
                     background: #1e293b;
                     border-radius: 12px;
                     box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
                     border: 1px solid rgba(139, 92, 246, 0.3);
-                    z-index: 1000;
-                    min-width: 150px;
+                    z-index: 1001;
+                    min-width: 140px;
                     overflow: hidden;
-                    animation: menuFadeIn 0.2s ease;
                 }
                 
-                @keyframes menuFadeIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                .context-menu-item-premium {
-                    padding: 12px 16px;
+                .context-menu-item-final {
+                    padding: 10px 14px;
                     cursor: pointer;
                     color: #e2e8f0;
-                    font-size: 13px;
+                    font-size: 12px;
                     transition: all 0.2s;
                     display: flex;
                     align-items: center;
                     gap: 10px;
                 }
                 
-                .context-menu-item-premium:hover {
+                .context-menu-item-final:hover {
                     background: rgba(139, 92, 246, 0.2);
                 }
                 
-                .context-menu-item-premium.delete {
+                .context-menu-item-final.delete {
                     color: #f87171;
                     border-top: 1px solid rgba(255,255,255,0.05);
                 }
                 
-                .context-menu-item-premium.delete:hover {
+                .context-menu-item-final.delete:hover {
                     background: rgba(239, 68, 68, 0.2);
                 }
                 
                 /* Scrollbar */
-                .tasks-container-premium::-webkit-scrollbar {
+                .tasks-container-final::-webkit-scrollbar {
                     width: 5px;
                 }
                 
-                .tasks-container-premium::-webkit-scrollbar-track {
+                .tasks-container-final::-webkit-scrollbar-track {
                     background: rgba(255,255,255,0.03);
                     border-radius: 10px;
                 }
                 
-                .tasks-container-premium::-webkit-scrollbar-thumb {
+                .tasks-container-final::-webkit-scrollbar-thumb {
                     background: rgba(139, 92, 246, 0.4);
                     border-radius: 10px;
                 }
                 
-                /* Mensaje vacío */
-                .empty-message-premium {
+                .empty-message-final {
                     text-align: center;
                     padding: 40px 20px;
                     color: #64748b;
-                    font-size: 13px;
+                    font-size: 12px;
+                }
+                
+                /* Asegurar que nada tape los botones */
+                .task-card-final {
+                    overflow: visible !important;
+                }
+                
+                .task-card-header-final {
+                    overflow: visible !important;
                 }
             `;
             document.head.appendChild(styles);
         }
         
-        // ========== 4. CONFIGURAR COLUMNAS ==========
+        // Configurar columnas
         function setupColumns() {
             const columns = [
                 { id: 'pendingList', title: '📋 PENDIENTES', color: '#f59e0b', type: 'pending' },
                 { id: 'inProgressList', title: '🔄 EN PROGRESO', color: '#3b82f6', type: 'progress' },
                 { id: 'completedList', title: '✅ COMPLETADAS', color: '#10b981', type: 'completed' },
-                { id: 'overdueList', title: '⚠️ REZAGADAS', color: '#ef4444', type: 'overdue' }
+                { id: 'overdueList', title: '⚠️ REZAGADAS ⚠️', color: '#ef4444', type: 'overdue' }
             ];
             
             columns.forEach(col => {
                 const column = document.getElementById(col.id);
                 if (!column) return;
                 
-                // Aplicar clase de columna
-                column.classList.add('kanban-column-premium');
+                column.classList.add('kanban-column-final');
                 
-                // Verificar si ya tiene header
-                let header = column.querySelector('.column-header-premium');
+                let header = column.querySelector('.column-header-final');
                 if (!header) {
                     header = document.createElement('div');
-                    header.className = 'column-header-premium';
+                    header.className = 'column-header-final';
                     header.style.borderBottomColor = col.color;
                     header.innerHTML = `
                         <h3>
                             <span>${col.title}</span>
-                            <span class="column-count-premium" id="count-${col.type}">0</span>
+                            <span class="column-count-final" id="count-${col.type}">0</span>
                         </h3>
                     `;
+                    column.insertBefore(header, column.firstChild);
                 }
                 
-                // Verificar contenedor de tareas
-                let tasksContainer = column.querySelector('.tasks-container-premium');
+                let tasksContainer = column.querySelector('.tasks-container-final');
                 if (!tasksContainer) {
                     tasksContainer = document.createElement('div');
-                    tasksContainer.className = 'tasks-container-premium';
-                    
-                    // Mover hijos existentes al nuevo contenedor
+                    tasksContainer.className = 'tasks-container-final';
                     const children = Array.from(column.children);
                     children.forEach(child => {
                         if (child !== header) {
                             tasksContainer.appendChild(child);
                         }
                     });
-                    
                     column.innerHTML = '';
                     column.appendChild(header);
                     column.appendChild(tasksContainer);
@@ -69521,44 +69615,63 @@ if (!document.getElementById('notif-slack-styles')) {
         
         setupColumns();
         
-        // ========== 5. ACTUALIZAR CONTADORES ==========
+        // Actualizar contadores
         function updateCounters() {
-            const types = ['pending', 'progress', 'completed', 'overdue'];
-            types.forEach(type => {
-                const container = document.querySelector(`#${type === 'progress' ? 'inProgressList' : type === 'pending' ? 'pendingList' : type === 'completed' ? 'completedList' : 'overdueList'} .tasks-container-premium`);
-                const counter = document.getElementById(`count-${type}`);
-                if (container && counter) {
-                    const count = container.querySelectorAll('.task-card-premium').length;
-                    counter.textContent = count;
-                }
-            });
+            const counts = {
+                pending: document.querySelector('#pendingList .tasks-container-final')?.children.length || 0,
+                progress: document.querySelector('#inProgressList .tasks-container-final')?.children.length || 0,
+                completed: document.querySelector('#completedList .tasks-container-final')?.children.length || 0,
+                overdue: document.querySelector('#overdueList .tasks-container-final')?.children.length || 0
+            };
+            
+            const countPending = document.getElementById('count-pending');
+            const countProgress = document.getElementById('count-progress');
+            const countCompleted = document.getElementById('count-completed');
+            const countOverdue = document.getElementById('count-overdue');
+            
+            if (countPending) countPending.textContent = counts.pending;
+            if (countProgress) countProgress.textContent = counts.progress;
+            if (countCompleted) countCompleted.textContent = counts.completed;
+            if (countOverdue) countOverdue.textContent = counts.overdue;
         }
         
-        // ========== 6. LIMPIAR Y RENDERIZAR ==========
-        const containers = ['pendingList', 'inProgressList', 'completedList', 'overdueList'].map(id => 
-            document.querySelector(`#${id} .tasks-container-premium`)
-        );
-        
-        containers.forEach(container => {
+        // Limpiar contenedores
+        const containersList = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
+        containersList.forEach(id => {
+            const container = document.querySelector(`#${id} .tasks-container-final`);
             if (container) container.innerHTML = '';
         });
         
         if (tasks.length === 0) {
-            containers.forEach(container => {
+            containersList.forEach(id => {
+                const container = document.querySelector(`#${id} .tasks-container-final`);
                 if (container) {
-                    container.innerHTML = '<div class="empty-message-premium">📭 No hay tareas</div>';
+                    container.innerHTML = '<div class="empty-message-final">📭 No hay tareas</div>';
                 }
             });
             updateCounters();
             return;
         }
         
-        // ========== 7. RENDERIZAR CADA TAREA ==========
+        // Calcular días de retraso
+        function calcularDiasRetraso(deadline) {
+            if (!deadline) return 0;
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const fechaLimite = new Date(deadline);
+            fechaLimite.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+        
+        // Renderizar cada tarea
         tasks.forEach(task => {
             if (!task) return;
             
             const status = (task.status || 'pending').toLowerCase();
             let targetContainerId;
+            let isOverdueTask = false;
+            let diasRetraso = 0;
             
             if (status === 'completed' || status === 'completado') {
                 targetContainerId = 'completedList';
@@ -69566,18 +69679,20 @@ if (!document.getElementById('notif-slack-styles')) {
                 targetContainerId = 'inProgressList';
             } else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') {
                 targetContainerId = 'overdueList';
+                isOverdueTask = true;
+                diasRetraso = calcularDiasRetraso(task.deadline);
             } else {
                 targetContainerId = 'pendingList';
             }
             
-            const targetContainer = document.querySelector(`#${targetContainerId} .tasks-container-premium`);
+            const targetContainer = document.querySelector(`#${targetContainerId} .tasks-container-final`);
             if (!targetContainer) return;
             
             // Prioridad
             const priority = (task.priority || 'media').toLowerCase();
             const isHigh = priority === 'alta' || priority === 'high';
             const isLow = priority === 'baja' || priority === 'low';
-            const priorityClass = isHigh ? 'priority-high' : (isLow ? 'priority-low' : 'priority-medium');
+            const priorityClass = isHigh ? 'priority-high-final' : (isLow ? 'priority-low-final' : 'priority-medium-final');
             const priorityText = isHigh ? 'Alta' : (isLow ? 'Baja' : 'Media');
             const priorityIcon = isHigh ? '🔴' : (isLow ? '🟢' : '🟡');
             
@@ -69585,7 +69700,7 @@ if (!document.getElementById('notif-slack-styles')) {
             const isCompleted = status === 'completed';
             const isProgress = status === 'inprogress' || status === 'in_progress' || status === 'en progreso';
             const isOverdue = status === 'overdue' || status === 'rezagado' || status === 'atrasado';
-            const statusClass = isCompleted ? 'status-completed' : (isProgress ? 'status-progress' : (isOverdue ? 'status-overdue' : 'status-pending'));
+            const statusClass = isCompleted ? 'status-completed-final' : (isProgress ? 'status-progress-final' : (isOverdue ? 'status-overdue-final' : 'status-pending-final'));
             const statusText = isCompleted ? 'Completada' : (isProgress ? 'En Progreso' : (isOverdue ? 'Rezagada' : 'Pendiente'));
             const statusIcon = isCompleted ? '✅' : (isProgress ? '🔄' : (isOverdue ? '⚠️' : '⏳'));
             
@@ -69605,81 +69720,147 @@ if (!document.getElementById('notif-slack-styles')) {
                 } catch(e) {}
             }
             
-            // Asignado
+            // Asignado - iniciales
             const assignee = task.assignee || '';
             const initials = assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
             
             // Escapar HTML
-            const taskName = (task.name || 'Sin nombre').replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-            const assigneeName = assignee.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+            const taskName = (task.name || 'Sin nombre').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+            const assigneeName = assignee.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
             
             // Crear tarjeta
             const card = document.createElement('div');
-            card.className = 'task-card-premium';
+            card.className = 'task-card-final';
+            if (isOverdueTask) card.classList.add('overdue-card');
             card.draggable = true;
             card.dataset.taskId = task.id;
             card.dataset.status = status;
+            card.style.position = 'relative';
+            card.style.overflow = 'visible';
             
             card.innerHTML = `
-                <div class="task-card-header-premium">
-                    <div class="task-title-premium">${taskName}</div>
-                    <div class="task-actions-premium">
-                        <button class="action-btn-premium move-up" onclick="event.stopPropagation(); window.moveTaskUp(${task.id}, '${status}')" title="Mover arriba">↑</button>
-                        <button class="action-btn-premium move-down" onclick="event.stopPropagation(); window.moveTaskDown(${task.id}, '${status}')" title="Mover abajo">↓</button>
-                        <button class="action-btn-premium menu-btn-premium" onclick="event.stopPropagation(); window.toggleTaskMenuPremium(event, ${task.id})" title="Menú">⋯</button>
+                <div class="task-card-header-final">
+                    <div class="task-title-final">
+                        ${taskName}
+                        ${isOverdueTask && diasRetraso > 0 ? `<span class="overdue-badge-final">⚠️ +${diasRetraso} días</span>` : ''}
+                    </div>
+                    <div class="task-actions-final">
+                        <button class="action-btn-final move-up" data-task-id="${task.id}" data-status="${status}" title="Mover arriba">↑</button>
+                        <button class="action-btn-final move-down" data-task-id="${task.id}" data-status="${status}" title="Mover abajo">↓</button>
+                        <button class="action-btn-final menu-btn-final" data-task-id="${task.id}" title="Menú">⋯</button>
                     </div>
                 </div>
                 
                 ${hasSubtasks ? `
-                <div class="subtasks-progress-premium">
-                    <div class="subtasks-header-premium">
+                <div class="subtasks-progress-final">
+                    <div class="subtasks-header-final">
                         <span>📋 Subtareas</span>
                         <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
                     </div>
-                    <div class="progress-bar-premium">
-                        <div class="progress-fill-premium" style="width: ${subtaskProgress}%"></div>
+                    <div class="progress-bar-final">
+                        <div class="progress-fill-final" style="width: ${subtaskProgress}%"></div>
                     </div>
                 </div>
                 ` : ''}
                 
-                <div class="badges-container-premium">
-                    <span class="badge-premium ${priorityClass}">${priorityIcon} ${priorityText}</span>
-                    <span class="badge-premium ${statusClass}">${statusIcon} ${statusText}</span>
+                <div class="badges-container-final">
+                    <span class="badge-final ${priorityClass}">${priorityIcon} ${priorityText}</span>
+                    <span class="badge-final ${statusClass}">${statusIcon} ${statusText}</span>
                 </div>
                 
-                <div class="task-info-premium">
+                <div class="task-info-final">
                     ${assignee ? `<span title="Asignado a: ${assigneeName}"><i class="fas fa-user-circle"></i> ${initials || assigneeName.substring(0,2)}</span>` : ''}
                     ${formattedDeadline ? `<span title="Fecha límite"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</span>` : ''}
                     ${task.estimatedTime ? `<span title="Tiempo estimado"><i class="fas fa-clock"></i> ${task.estimatedTime}h</span>` : ''}
                 </div>
                 
-                <div class="task-context-menu-premium" id="task-menu-premium-${task.id}" style="display: none;">
-                    <div class="context-menu-item-premium" onclick="window.showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')}); event.stopPropagation();">
-                        ✏️ Editar tarea
-                    </div>
-                    <div class="context-menu-item-premium delete" onclick="window.deleteTask('${encodeURIComponent(JSON.stringify(task))}'); event.stopPropagation();">
-                        🗑️ Eliminar tarea
-                    </div>
+                <div class="task-context-menu-final" id="task-menu-final-${task.id}" style="display: none;">
+                    <div class="context-menu-item-final" data-task-id="${task.id}" data-action="edit">✏️ Editar tarea</div>
+                    <div class="context-menu-item-final delete" data-task-id="${task.id}" data-action="delete">🗑️ Eliminar tarea</div>
                 </div>
             `;
             
             targetContainer.appendChild(card);
         });
         
-        // ========== 8. ACTUALIZAR TODO ==========
+        // ========== CONECTAR EVENTOS CON DELEGACIÓN ==========
+        // Usar delegación de eventos para asegurar que los botones funcionen incluso si se agregan dinámicamente
+        document.body.addEventListener('click', function(e) {
+            // Botón mover arriba
+            if (e.target.closest('.move-up')) {
+                const btn = e.target.closest('.move-up');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const status = btn.dataset.status;
+                console.log(`⬆️ Click en mover arriba (delegado): taskId=${taskId}, status=${status}`);
+                if (typeof window.moveTaskUp === 'function') {
+                    window.moveTaskUp(taskId, status);
+                }
+            }
+            
+            // Botón mover abajo
+            if (e.target.closest('.move-down')) {
+                const btn = e.target.closest('.move-down');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(btn.dataset.taskId);
+                const status = btn.dataset.status;
+                console.log(`⬇️ Click en mover abajo (delegado): taskId=${taskId}, status=${status}`);
+                if (typeof window.moveTaskDown === 'function') {
+                    window.moveTaskDown(taskId, status);
+                }
+            }
+            
+            // Botón menú
+            if (e.target.closest('.menu-btn-final')) {
+                const btn = e.target.closest('.menu-btn-final');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = btn.dataset.taskId;
+                const menu = document.getElementById(`task-menu-final-${taskId}`);
+                if (menu) {
+                    document.querySelectorAll('.task-context-menu-final').forEach(m => m.style.display = 'none');
+                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                }
+            }
+            
+            // Item del menú contextual
+            if (e.target.closest('.context-menu-item-final')) {
+                const item = e.target.closest('.context-menu-item-final');
+                e.preventDefault();
+                e.stopPropagation();
+                const taskId = parseInt(item.dataset.taskId);
+                const action = item.dataset.action;
+                
+                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
+                
+                const project = projects[currentProjectIndex];
+                const task = project.tasks.find(t => t.id === taskId);
+                
+                if (action === 'edit' && task && typeof showTaskDetails === 'function') {
+                    showTaskDetails(task);
+                } else if (action === 'delete' && task) {
+                    if (confirm(`¿Eliminar la tarea "${task.name}"?`)) {
+                        project.tasks = project.tasks.filter(t => t.id !== taskId);
+                        localStorage.setItem('projects', JSON.stringify(projects));
+                        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+                        mostrarNotificacion(`🗑️ Tarea "${task.name}" eliminada`);
+                    }
+                }
+            }
+        });
+        
+        // Cerrar menús al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.menu-btn-final') && !e.target.closest('.task-context-menu-final')) {
+                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
+            }
+        });
+        
         updateCounters();
         
-        // Configurar drag & drop después de renderizar
+        // Configurar drag & drop
         setTimeout(() => {
             if (typeof initDragAndDrop === 'function') initDragAndDrop();
             if (typeof forzarDragDrop === 'function') forzarDragDrop();
@@ -69689,32 +69870,8 @@ if (!document.getElementById('notif-slack-styles')) {
         console.log(`✅ KANBAN PREMIUM: ${tasks.length} tareas renderizadas`);
     };
     
-    // Función para toggle del menú
-    window.toggleTaskMenuPremium = function(event, taskId) {
-        event.stopPropagation();
-        
-        document.querySelectorAll('.task-context-menu-premium').forEach(menu => {
-            if (menu.id !== `task-menu-premium-${taskId}`) {
-                menu.style.display = 'none';
-            }
-        });
-        
-        const menu = document.getElementById(`task-menu-premium-${taskId}`);
-        if (menu) {
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        }
-    };
-    
-    // Cerrar menús al hacer clic fuera
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.task-context-menu-premium').forEach(menu => {
-            menu.style.display = 'none';
-        });
-    });
-    
-    console.log('✅ KANBAN PREMIUM DEFINITIVO ACTIVADO');
+    console.log('✅ KANBAN PREMIUM DEFINITIVO ACTIVADO - Botones visibles y funcionales en todas las columnas');
 })();
-
 
 
 
@@ -70024,3 +70181,520 @@ if (!document.getElementById('notif-slack-styles')) {
         setTimeout(init, 500);
     }
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// 🚀 SISTEMA DE SINCRONIZACIÓN UNIFICADO - VERSIÓN DEFINITIVA
+// ============================================
+(function() {
+    console.log('🔥 ACTIVANDO SISTEMA DE SINCRONIZACIÓN UNIFICADO');
+
+    // ========== 1. VARIABLES GLOBALES ==========
+    let syncQueue = [];
+    let isSyncing = false;
+    let lastSyncTimestamp = Date.now();
+    
+    // ========== 2. FUNCIÓN PARA OBTENER ID REAL DEL PROYECTO ==========
+    function getRealProjectId() {
+        const project = projects[currentProjectIndex];
+        return project ? (project.id || project._id || String(currentProjectIndex)) : String(currentProjectIndex);
+    }
+    
+    // ========== 3. NOTIFICACIÓN VISUAL ==========
+    function showSyncNotification(message, type = 'info') {
+        const colors = {
+            success: '#10b981',
+            error: '#ef4444',
+            info: '#3b82f6',
+            warning: '#f59e0b'
+        };
+        
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${colors[type]};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                z-index: 10000000;
+                font-size: 13px;
+                font-weight: 500;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                animation: slideInRight 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '🔄'}</span>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+    
+    // ========== 4. FUNCIÓN CENTRAL DE SINCRONIZACIÓN ==========
+    async function forceFullSync() {
+        if (isSyncing) {
+            console.log('⏳ Sincronización en curso, encolando...');
+            return;
+        }
+        
+        isSyncing = true;
+        console.log('🔄 INICIANDO SINCRONIZACIÓN COMPLETA');
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            const clienteId = localStorage.getItem('clienteId');
+            
+            if (!token || !clienteId) {
+                console.warn('⚠️ No hay token o clienteId');
+                isSyncing = false;
+                return;
+            }
+            
+            // 1. Guardar estado actual en localStorage
+            localStorage.setItem('projects', JSON.stringify(projects));
+            
+            // 2. Enviar al backend
+            const saveResponse = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    projects: projects,
+                    currentProjectIndex: currentProjectIndex,
+                    clienteId: clienteId
+                })
+            });
+            
+            if (!saveResponse.ok) {
+                throw new Error('Error guardando en backend');
+            }
+            
+            console.log('✅ Datos guardados en backend');
+            
+            // 3. Cargar datos frescos desde backend
+            const loadResponse = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (loadResponse.ok) {
+                const data = await loadResponse.json();
+                if (data.projects && data.projects.length > 0) {
+                    // Actualizar proyectos en memoria
+                    const oldProjects = JSON.parse(JSON.stringify(projects));
+                    projects.length = 0;
+                    projects.push(...data.projects);
+                    
+                    // Verificar si hubo cambios
+                    if (JSON.stringify(oldProjects) !== JSON.stringify(projects)) {
+                        console.log('📦 Datos actualizados desde servidor');
+                        localStorage.setItem('projects', JSON.stringify(projects));
+                        
+                        // Notificar a otros clientes vía WebSocket
+                        if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                            window.tiempoRealSocket.emit('project-updated', {
+                                projectId: getRealProjectId(),
+                                projectIndex: currentProjectIndex,
+                                timestamp: Date.now(),
+                                source: 'forceFullSync'
+                            });
+                        }
+                        
+                        // Refrescar vista actual
+                        refreshCurrentViewAfterSync();
+                    }
+                }
+            }
+            
+            lastSyncTimestamp = Date.now();
+            showSyncNotification('Datos sincronizados', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error en sincronización:', error);
+            showSyncNotification('Error de sincronización', 'error');
+        } finally {
+            isSyncing = false;
+            
+            // Procesar cola si hay pendientes
+            if (syncQueue.length > 0) {
+                const next = syncQueue.shift();
+                setTimeout(() => forceFullSync(), 100);
+            }
+        }
+    }
+    
+    // ========== 5. REFRESCAR VISTA ACTUAL ==========
+    function refreshCurrentViewAfterSync() {
+        console.log('🔄 Refrescando vista actual después de sincronización');
+        
+        // Determinar vista activa
+        const activeView = getActiveView();
+        
+        switch(activeView) {
+            case 'board':
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                }
+                break;
+            case 'list':
+                if (typeof renderListTasks === 'function') {
+                    renderListTasks();
+                }
+                break;
+            case 'calendar':
+                if (typeof renderCalendar === 'function') {
+                    renderCalendar();
+                }
+                break;
+            case 'dashboard':
+                if (typeof renderDashboard === 'function') {
+                    renderDashboard();
+                }
+                break;
+            default:
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                }
+        }
+        
+        // Actualizar contadores
+        if (typeof actualizarContadoresColumnas === 'function') {
+            actualizarContadoresColumnas();
+        }
+        if (typeof updateStatistics === 'function') {
+            updateStatistics();
+        }
+    }
+    
+    // ========== 6. RECONFIGURAR WEBSOCKET ==========
+    function reconfigurarWebSocket() {
+        if (window.tiempoRealSocket) {
+            // Desconectar socket existente
+            try {
+                window.tiempoRealSocket.disconnect();
+            } catch(e) {}
+            window.tiempoRealSocket = null;
+        }
+        
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        console.log('🔌 Conectando WebSocket unificado...');
+        
+        const socket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
+            transports: ['websocket', 'polling'],
+            auth: { token: token },
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000
+        });
+        
+        socket.on('connect', () => {
+            console.log('✅ WebSocket conectado, ID:', socket.id);
+            
+            // Unirse a la sala del proyecto actual
+            const projectId = getRealProjectId();
+            socket.emit('join-project', projectId);
+            console.log(`📡 Unido a sala: ${projectId}`);
+        });
+        
+        // ESCUCHAR ACTUALIZACIONES DE PROYECTO
+        socket.on('project-updated', (data) => {
+            console.log('📡 project-updated recibido:', data);
+            
+            // Evitar auto-actualización (viene del mismo usuario)
+            if (data.source === 'forceFullSync' && data.userId === localStorage.getItem('userId')) {
+                console.log('⏭️ Ignorando actualización propia');
+                return;
+            }
+            
+            // Forzar sincronización completa
+            setTimeout(() => forceFullSync(), 100);
+        });
+        
+        // ESCUCHAR TAREAS MOVIDAS
+        socket.on('task-moved', (data) => {
+            console.log('📡 task-moved recibido:', data);
+            
+            const projectIdActual = getRealProjectId();
+            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
+                console.log('⏭️ Evento de otro proyecto, ignorando');
+                return;
+            }
+            
+            // Actualizar la tarea localmente
+            const task = projects[currentProjectIndex]?.tasks?.find(t => t.id == data.taskId);
+            if (task && task.status !== data.newStatus) {
+                console.log(`📝 Actualizando tarea local: ${task.name} → ${data.newStatus}`);
+                task.status = data.newStatus;
+                
+                if (data.newStatus === 'completed') task.progress = 100;
+                else if (data.newStatus === 'inProgress') task.progress = 50;
+                
+                localStorage.setItem('projects', JSON.stringify(projects));
+                refreshCurrentViewAfterSync();
+                showSyncNotification(`"${task.name}" movida a ${data.newStatus}`, 'info');
+            } else {
+                // Si no encontramos la tarea, hacer sync completo
+                setTimeout(() => forceFullSync(), 200);
+            }
+        });
+        
+        // ESCUCHAR TAREAS CREADAS
+        socket.on('task-created', (data) => {
+            console.log('📡 task-created recibido:', data);
+            
+            const projectIdActual = getRealProjectId();
+            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
+                return;
+            }
+            
+            // Verificar si la tarea ya existe
+            const exists = projects[currentProjectIndex]?.tasks?.some(t => t.id == data.task.id);
+            if (!exists && data.task) {
+                projects[currentProjectIndex].tasks.push(data.task);
+                localStorage.setItem('projects', JSON.stringify(projects));
+                refreshCurrentViewAfterSync();
+                showSyncNotification(`Nueva tarea: "${data.task.name}"`, 'success');
+            } else {
+                setTimeout(() => forceFullSync(), 200);
+            }
+        });
+        
+        // ESCUCHAR TAREAS ACTUALIZADAS
+        socket.on('task-updated', (data) => {
+            console.log('📡 task-updated recibido:', data);
+            
+            const projectIdActual = getRealProjectId();
+            if (data.projectId !== projectIdActual && data.projectIndex != currentProjectIndex) {
+                return;
+            }
+            
+            const taskIndex = projects[currentProjectIndex]?.tasks?.findIndex(t => t.id == data.taskId);
+            if (taskIndex !== -1 && data.task) {
+                projects[currentProjectIndex].tasks[taskIndex] = data.task;
+                localStorage.setItem('projects', JSON.stringify(projects));
+                refreshCurrentViewAfterSync();
+                showSyncNotification(`Tarea actualizada: "${data.task.name}"`, 'info');
+            } else {
+                setTimeout(() => forceFullSync(), 200);
+            }
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('🔌 WebSocket desconectado');
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('❌ WebSocket error:', error.message);
+        });
+        
+        window.tiempoRealSocket = socket;
+    }
+    
+    // ========== 7. INTERCEPTAR MOVIMIENTO DE TAREAS ==========
+    function interceptarMovimientoTareas() {
+        // Guardar funciones originales
+        const originalMoveTaskUp = window.moveTaskUp;
+        const originalMoveTaskDown = window.moveTaskDown;
+        const originalHandleDrop = window.handleDrop;
+        
+        if (originalMoveTaskUp) {
+            window.moveTaskUp = function(taskId, status) {
+                const project = projects[currentProjectIndex];
+                const task = project?.tasks?.find(t => t.id == taskId);
+                const oldStatus = task?.status;
+                
+                const result = originalMoveTaskUp(taskId, status);
+                
+                if (task && oldStatus !== task.status) {
+                    console.log(`📤 Emitiendo task-moved: ${task.name} (${oldStatus} → ${task.status})`);
+                    
+                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                        window.tiempoRealSocket.emit('task-moved', {
+                            projectId: getRealProjectId(),
+                            projectIndex: currentProjectIndex,
+                            taskId: taskId,
+                            taskName: task.name,
+                            oldStatus: oldStatus,
+                            newStatus: task.status,
+                            timestamp: Date.now()
+                        });
+                    }
+                    
+                    // Forzar sync después del movimiento
+                    setTimeout(() => forceFullSync(), 200);
+                }
+                
+                return result;
+            };
+        }
+        
+        if (originalMoveTaskDown) {
+            window.moveTaskDown = function(taskId, status) {
+                const project = projects[currentProjectIndex];
+                const task = project?.tasks?.find(t => t.id == taskId);
+                const oldStatus = task?.status;
+                
+                const result = originalMoveTaskDown(taskId, status);
+                
+                if (task && oldStatus !== task.status) {
+                    console.log(`📤 Emitiendo task-moved: ${task.name} (${oldStatus} → ${task.status})`);
+                    
+                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+                        window.tiempoRealSocket.emit('task-moved', {
+                            projectId: getRealProjectId(),
+                            projectIndex: currentProjectIndex,
+                            taskId: taskId,
+                            taskName: task.name,
+                            oldStatus: oldStatus,
+                            newStatus: task.status,
+                            timestamp: Date.now()
+                        });
+                    }
+                    
+                    setTimeout(() => forceFullSync(), 200);
+                }
+                
+                return result;
+            };
+        }
+        
+        console.log('✅ Movimiento de tareas interceptado');
+    }
+    
+    // ========== 8. SINCRONIZACIÓN PERIÓDICA (CADA 10 SEGUNDOS) ==========
+    let syncInterval = setInterval(() => {
+        // Solo sincronizar si hay cambios recientes o cada cierto tiempo
+        const timeSinceLastSync = Date.now() - lastSyncTimestamp;
+        if (timeSinceLastSync > 10000) {
+            forceFullSync();
+        }
+    }, 10000);
+    
+    // ========== 9. ESCUCHAR EVENTOS DE LOCALSTORAGE (OTRAS PESTAÑAS) ==========
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'projects' && e.newValue) {
+            console.log('📦 Cambio detectado en otra pestaña');
+            
+            try {
+                const newProjects = JSON.parse(e.newValue);
+                const oldProjectsStr = JSON.stringify(projects);
+                const newProjectsStr = JSON.stringify(newProjects);
+                
+                if (oldProjectsStr !== newProjectsStr) {
+                    projects.length = 0;
+                    projects.push(...newProjects);
+                    refreshCurrentViewAfterSync();
+                    showSyncNotification('Datos actualizados desde otra pestaña', 'info');
+                }
+            } catch(err) {
+                console.error('Error procesando storage event:', err);
+            }
+        }
+    });
+    
+    // ========== 10. BOTÓN DE SINCRONIZACIÓN MANUAL ==========
+    function agregarBotonSync() {
+        if (document.getElementById('manualSyncBtn')) return;
+        
+        const header = document.querySelector('header, .header, .top-bar');
+        if (!header) {
+            setTimeout(agregarBotonSync, 1000);
+            return;
+        }
+        
+        const btn = document.createElement('button');
+        btn.id = 'manualSyncBtn';
+        btn.innerHTML = '🔄 Sincronizar';
+        btn.title = 'Forzar sincronización manual';
+        btn.style.cssText = `
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            margin-left: 10px;
+            transition: all 0.2s;
+        `;
+        
+        btn.onclick = () => {
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 200);
+            forceFullSync();
+        };
+        
+        btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
+        btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
+        
+        header.appendChild(btn);
+        console.log('✅ Botón de sincronización manual agregado');
+    }
+    
+    // ========== 11. INICIALIZAR ==========
+    function init() {
+        console.log('🚀 INICIANDO SISTEMA DE SINCRONIZACIÓN UNIFICADO');
+        
+        // Configurar WebSocket
+        reconfigurarWebSocket();
+        
+        // Interceptar movimiento de tareas
+        setTimeout(interceptarMovimientoTareas, 500);
+        
+        // Agregar botón manual
+        setTimeout(agregarBotonSync, 1000);
+        
+        // Sincronización inicial
+        setTimeout(() => forceFullSync(), 2000);
+        
+        // Exponer funciones globales para debug
+        window.debugSync = {
+            forceSync: forceFullSync,
+            status: () => console.log('WebSocket conectado:', window.tiempoRealSocket?.connected),
+            lastSync: () => new Date(lastSyncTimestamp).toLocaleTimeString()
+        };
+        
+        console.log('✅ SISTEMA DE SINCRONIZACIÓN UNIFICADO ACTIVADO');
+        console.log('💡 Usa debugSync.forceSync() para sincronizar manualmente');
+    }
+    
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        setTimeout(init, 500);
+    }
+})();
+
+
