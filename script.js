@@ -1,4 +1,129 @@
 
+
+// 🔥 renderKanbanTasks - VERSIÓN CORREGIDA PARA INVITADOS
+window.renderKanbanTasks = function(tasksParam) {
+    console.log('🟢 renderKanbanTasks ejecutado');
+    
+    // ✅ 1. Verificar que projects existe y tiene datos
+    if (typeof projects === 'undefined' || !Array.isArray(projects) || projects.length === 0) {
+        console.warn('⚠️ projects no disponible, esperando...');
+        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
+        return;
+    }
+    
+    // ✅ 2. Determinar el proyecto ACTUAL (maneja invitados)
+    let project;
+    const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+    
+    if (idx >= 0 && idx < projects.length) {
+        project = projects[idx];
+    } else if (projects.length === 1) {
+        // Fallback para invitados: usar el único proyecto disponible
+        project = projects[0];
+        currentProjectIndex = 0;
+    }
+    
+    if (!project) {
+        console.error('❌ Proyecto no encontrado en índice:', idx);
+        return;
+    }
+    
+    // ✅ 3. Normalizar estructura de tareas (tasks vs tareas)
+    const tasks = tasksParam || project.tasks || project.tareas || [];
+    
+    // ✅ 4. Obtener columnas del DOM con verificación
+    const pendingCol = document.getElementById('pendingList');
+    const inProgressCol = document.getElementById('inProgressList');
+    const completedCol = document.getElementById('completedList');
+    const overdueCol = document.getElementById('overdueList');
+    
+    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+        console.warn('⚠️ Columnas del Kanban no encontradas, reintentando...');
+        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
+        return;
+    }
+    
+    // ✅ 5. Limpiar columnas
+    [pendingCol, inProgressCol, completedCol, overdueCol].forEach(col => col.innerHTML = '');
+    
+    // ✅ 6. Si no hay tareas, mostrar mensaje amigable
+    if (tasks.length === 0) {
+        pendingCol.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">📭 No hay tareas</div>';
+        actualizarContadoresColumnas?.();
+        return;
+    }
+    
+    // ✅ 7. Renderizar tareas con normalización completa
+    tasks.forEach(task => {
+        if (!task) return;
+        
+        // Normalizar estado (maneja múltiples formatos)
+        const status = (task.status || 'pending').toLowerCase();
+        let targetCol = pendingCol;
+        
+        if (status === 'completed' || status === 'completado') targetCol = completedCol;
+        else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') targetCol = inProgressCol;
+        else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') targetCol = overdueCol;
+        
+        // Crear tarjeta
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.taskId = task.id;
+        card.dataset.status = status;
+        
+        // Colores por prioridad
+        const priorityColors = { 'alta': '#ef4444', 'media': '#f59e0b', 'baja': '#10b981' };
+        const priority = task.priority || 'media';
+        card.style.borderLeft = `4px solid ${priorityColors[priority]}`;
+        
+        // Formatear fecha con manejo de errores
+        let deadline = 'Sin fecha';
+        if (task.deadline) {
+            try {
+                deadline = new Date(task.deadline).toLocaleDateString('es-ES');
+            } catch(e) {
+                deadline = 'Fecha inválida';
+            }
+        }
+        
+        card.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-title">${task.name || 'Sin nombre'}</h4>
+                <span class="priority-badge" style="background:${priorityColors[priority]}20;color:${priorityColors[priority]}">${priority}</span>
+            </div>
+            <div class="task-card-body">
+                ${task.assignee ? `<div>👤 ${task.assignee}</div>` : ''}
+                <div>📅 ${deadline}</div>
+                ${task.estimatedTime ? `<div>⏱️ ${task.estimatedTime}h</div>` : ''}
+            </div>
+        `;
+        
+        // Evento click para editar (con stopPropagation)
+        card.onclick = (e) => {
+            e.stopPropagation();
+            if (typeof showTaskDetails === 'function') showTaskDetails(task);
+        };
+        
+        targetCol.appendChild(card);
+    });
+    
+    // ✅ 8. Actualizar contadores y drag&drop con setTimeout para asegurar DOM
+    setTimeout(() => {
+        actualizarContadoresColumnas?.();
+        forzarDragDrop?.();
+        forzarDropEnColumnas?.();
+        console.log(`✅ ${tasks.length} tareas renderizadas`);
+    }, 100);
+};
+
+
+
+
+
+
+
+
 // 🔧 FORZAR CONSISTENCIA DE CLIENTE ID - VERSIÓN MEJORADA
 (function syncClientId() {
   // 1. Primero, verificar si hay forceClienteId en la URL (para invitaciones)
@@ -69119,123 +69244,5 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-
-
-// 🔥 renderKanbanTasks - VERSIÓN CORREGIDA PARA INVITADOS
-window.renderKanbanTasks = function(tasksParam) {
-    console.log('🟢 renderKanbanTasks ejecutado');
-    
-    // ✅ 1. Verificar que projects existe y tiene datos
-    if (typeof projects === 'undefined' || !Array.isArray(projects) || projects.length === 0) {
-        console.warn('⚠️ projects no disponible, esperando...');
-        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
-        return;
-    }
-    
-    // ✅ 2. Determinar el proyecto ACTUAL (maneja invitados)
-    let project;
-    const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
-    
-    if (idx >= 0 && idx < projects.length) {
-        project = projects[idx];
-    } else if (projects.length === 1) {
-        // Fallback para invitados: usar el único proyecto disponible
-        project = projects[0];
-        currentProjectIndex = 0;
-    }
-    
-    if (!project) {
-        console.error('❌ Proyecto no encontrado en índice:', idx);
-        return;
-    }
-    
-    // ✅ 3. Normalizar estructura de tareas (tasks vs tareas)
-    const tasks = tasksParam || project.tasks || project.tareas || [];
-    
-    // ✅ 4. Obtener columnas del DOM con verificación
-    const pendingCol = document.getElementById('pendingList');
-    const inProgressCol = document.getElementById('inProgressList');
-    const completedCol = document.getElementById('completedList');
-    const overdueCol = document.getElementById('overdueList');
-    
-    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-        console.warn('⚠️ Columnas del Kanban no encontradas, reintentando...');
-        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
-        return;
-    }
-    
-    // ✅ 5. Limpiar columnas
-    [pendingCol, inProgressCol, completedCol, overdueCol].forEach(col => col.innerHTML = '');
-    
-    // ✅ 6. Si no hay tareas, mostrar mensaje amigable
-    if (tasks.length === 0) {
-        pendingCol.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">📭 No hay tareas</div>';
-        actualizarContadoresColumnas?.();
-        return;
-    }
-    
-    // ✅ 7. Renderizar tareas con normalización completa
-    tasks.forEach(task => {
-        if (!task) return;
-        
-        // Normalizar estado (maneja múltiples formatos)
-        const status = (task.status || 'pending').toLowerCase();
-        let targetCol = pendingCol;
-        
-        if (status === 'completed' || status === 'completado') targetCol = completedCol;
-        else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') targetCol = inProgressCol;
-        else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') targetCol = overdueCol;
-        
-        // Crear tarjeta
-        const card = document.createElement('div');
-        card.className = 'task-card';
-        card.draggable = true;
-        card.dataset.taskId = task.id;
-        card.dataset.status = status;
-        
-        // Colores por prioridad
-        const priorityColors = { 'alta': '#ef4444', 'media': '#f59e0b', 'baja': '#10b981' };
-        const priority = task.priority || 'media';
-        card.style.borderLeft = `4px solid ${priorityColors[priority]}`;
-        
-        // Formatear fecha con manejo de errores
-        let deadline = 'Sin fecha';
-        if (task.deadline) {
-            try {
-                deadline = new Date(task.deadline).toLocaleDateString('es-ES');
-            } catch(e) {
-                deadline = 'Fecha inválida';
-            }
-        }
-        
-        card.innerHTML = `
-            <div class="task-card-header">
-                <h4 class="task-title">${task.name || 'Sin nombre'}</h4>
-                <span class="priority-badge" style="background:${priorityColors[priority]}20;color:${priorityColors[priority]}">${priority}</span>
-            </div>
-            <div class="task-card-body">
-                ${task.assignee ? `<div>👤 ${task.assignee}</div>` : ''}
-                <div>📅 ${deadline}</div>
-                ${task.estimatedTime ? `<div>⏱️ ${task.estimatedTime}h</div>` : ''}
-            </div>
-        `;
-        
-        // Evento click para editar (con stopPropagation)
-        card.onclick = (e) => {
-            e.stopPropagation();
-            if (typeof showTaskDetails === 'function') showTaskDetails(task);
-        };
-        
-        targetCol.appendChild(card);
-    });
-    
-    // ✅ 8. Actualizar contadores y drag&drop con setTimeout para asegurar DOM
-    setTimeout(() => {
-        actualizarContadoresColumnas?.();
-        forzarDragDrop?.();
-        forzarDropEnColumnas?.();
-        console.log(`✅ ${tasks.length} tareas renderizadas`);
-    }, 100);
-};
 
 
