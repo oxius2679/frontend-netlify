@@ -69130,593 +69130,316 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-// ============================================
-// 🔥 SOBRESCRITURA DEFINITIVA - KANBAN PREMIUM
-// ============================================
-(function() {
-    console.log('🚀 ACTIVANDO KANBAN PREMIUM DEFINITIVO');
+// 🔥 renderKanbanTasks - VERSIÓN CORREGIDA PARA INVITADOS
+window.renderKanbanTasks = function(tasksParam) {
+    console.log('🟢 renderKanbanTasks ejecutado');
     
-    // Guardar referencia a la función original si existe
-    const originalRender = window.renderKanbanTasks;
+    // ✅ 1. Verificar que projects existe y tiene datos
+    if (typeof projects === 'undefined' || !Array.isArray(projects) || projects.length === 0) {
+        console.warn('⚠️ projects no disponible, esperando...');
+        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
+        return;
+    }
     
-    // Nueva función premium
-    window.renderKanbanTasks = function(tasksParam) {
-        console.log('👑 KANBAN PREMIUM EJECUTIVO - RENDERIZANDO');
+    // ✅ 2. Determinar el proyecto ACTUAL (maneja invitados)
+    let project;
+    const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+    
+    if (idx >= 0 && idx < projects.length) {
+        project = projects[idx];
+    } else if (projects.length === 1) {
+        // Fallback para invitados: usar el único proyecto disponible
+        project = projects[0];
+        currentProjectIndex = 0;
+    }
+    
+    if (!project) {
+        console.error('❌ Proyecto no encontrado en índice:', idx);
+        return;
+    }
+    
+    // ✅ 3. Normalizar estructura de tareas (tasks vs tareas)
+    const tasks = tasksParam || project.tasks || project.tareas || [];
+    
+    // ✅ 4. Obtener columnas del DOM con verificación
+    const pendingCol = document.getElementById('pendingList');
+    const inProgressCol = document.getElementById('inProgressList');
+    const completedCol = document.getElementById('completedList');
+    const overdueCol = document.getElementById('overdueList');
+    
+    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+        console.warn('⚠️ Columnas del Kanban no encontradas, reintentando...');
+        setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
+        return;
+    }
+    
+    // ✅ 5. Limpiar columnas
+    [pendingCol, inProgressCol, completedCol, overdueCol].forEach(col => col.innerHTML = '');
+    
+    // ✅ 6. Si no hay tareas, mostrar mensaje amigable
+    if (tasks.length === 0) {
+        pendingCol.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">📭 No hay tareas</div>';
+        actualizarContadoresColumnas?.();
+        return;
+    }
+    
+    // ✅ 7. Renderizar tareas con normalización completa
+    tasks.forEach(task => {
+        if (!task) return;
         
-        // ========== 1. VALIDAR PROYECTO ==========
-        if (typeof projects === 'undefined' || !projects || projects.length === 0) {
-            console.warn('⚠️ Projects no disponible, reintentando...');
-            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
-            return;
-        }
+        // Normalizar estado (maneja múltiples formatos)
+        const status = (task.status || 'pending').toLowerCase();
+        let targetCol = pendingCol;
         
-        let project;
-        const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
+        if (status === 'completed' || status === 'completado') targetCol = completedCol;
+        else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') targetCol = inProgressCol;
+        else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') targetCol = overdueCol;
         
-        if (idx >= 0 && idx < projects.length) {
-            project = projects[idx];
-        } else if (projects.length === 1) {
-            project = projects[0];
-            currentProjectIndex = 0;
-        }
+        // Crear tarjeta
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.taskId = task.id;
+        card.dataset.status = status;
         
-        if (!project) {
-            console.error('❌ Proyecto no encontrado');
-            return;
-        }
+        // Colores por prioridad
+        const priorityColors = { 'alta': '#ef4444', 'media': '#f59e0b', 'baja': '#10b981' };
+        const priority = task.priority || 'media';
+        card.style.borderLeft = `4px solid ${priorityColors[priority]}`;
         
-        const tasks = tasksParam || project.tasks || [];
-        console.log(`📊 Renderizando ${tasks.length} tareas para: ${project.name}`);
-        
-        // ========== 2. OBTENER COLUMNAS ==========
-        const pendingCol = document.getElementById('pendingList');
-        const inProgressCol = document.getElementById('inProgressList');
-        const completedCol = document.getElementById('completedList');
-        const overdueCol = document.getElementById('overdueList');
-        
-        if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-            console.warn('⚠️ Columnas no encontradas, reintentando...');
-            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
-            return;
-        }
-        
-        // ========== 3. INYECTAR ESTILOS PREMIUM ==========
-        if (!document.getElementById('kanban-premium-final-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'kanban-premium-final-styles';
-            styles.textContent = `
-                /* Reset de columnas */
-                #pendingList, #inProgressList, #completedList, #overdueList {
-                    background: transparent !important;
-                    min-height: 400px;
-                    padding: 0 !important;
-                }
-                
-                /* Contenedor del tablero */
-                .kanban-board-container {
-                    display: flex;
-                    gap: 24px;
-                    padding: 20px;
-                    background: linear-gradient(135deg, #0a0a1a 0%, #0f172a 100%);
-                    min-height: calc(100vh - 200px);
-                    overflow-x: auto;
-                }
-                
-                /* Columnas premium */
-                .kanban-column-premium {
-                    flex: 1;
-                    min-width: 320px;
-                    background: rgba(15, 23, 42, 0.7);
-                    backdrop-filter: blur(12px);
-                    border-radius: 20px;
-                    border: 1px solid rgba(139, 92, 246, 0.25);
-                    overflow: hidden;
-                    transition: all 0.3s ease;
-                }
-                
-                .kanban-column-premium:hover {
-                    border-color: rgba(139, 92, 246, 0.5);
-                    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
-                }
-                
-                /* Header de columna */
-                .column-header-premium {
-                    padding: 18px 20px;
-                    background: linear-gradient(135deg, #1e293b, #0f172a);
-                    border-bottom: 2px solid;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                
-                .column-header-premium h3 {
-                    margin: 0;
-                    font-size: 15px;
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    color: #e2e8f0;
-                }
-                
-                .column-count-premium {
-                    background: rgba(255,255,255,0.12);
-                    padding: 4px 12px;
-                    border-radius: 30px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #cbd5e1;
-                }
-                
-                /* Contenedor de tareas */
-                .tasks-container-premium {
-                    padding: 16px;
-                    min-height: 400px;
-                    max-height: calc(100vh - 280px);
-                    overflow-y: auto;
-                }
-                
-                /* Tarjeta de tarea */
-                .task-card-premium {
-                    background: linear-gradient(145deg, #1e293b, #162236);
-                    border-radius: 16px;
-                    margin-bottom: 16px;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    border: 1px solid rgba(139, 92, 246, 0.2);
-                    position: relative;
-                    cursor: pointer;
-                }
-                
-                .task-card-premium:hover {
-                    transform: translateY(-3px);
-                    border-color: rgba(139, 92, 246, 0.5);
-                    box-shadow: 0 12px 28px -8px rgba(139, 92, 246, 0.3);
-                }
-                
-                /* Header de tarjeta */
-                .task-card-header-premium {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    padding: 16px 16px 8px 16px;
-                }
-                
-                .task-title-premium {
-                    margin: 0;
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #f1f5f9;
-                    line-height: 1.4;
-                    word-break: break-word;
-                    flex: 1;
-                    padding-right: 8px;
-                }
-                
-                /* Botones de acción */
-                .task-actions-premium {
-                    display: flex;
-                    gap: 6px;
-                    opacity: 0.4;
-                    transition: opacity 0.2s;
-                }
-                
-                .task-card-premium:hover .task-actions-premium {
-                    opacity: 1;
-                }
-                
-                .action-btn-premium {
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 8px;
-                    background: rgba(59, 130, 246, 0.15);
-                    border: none;
-                    color: #94a3b8;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s;
-                    font-size: 13px;
-                }
-                
-                .action-btn-premium:hover {
-                    background: rgba(59, 130, 246, 0.35);
-                    color: #60a5fa;
-                    transform: scale(1.05);
-                }
-                
-                .menu-btn-premium:hover {
-                    background: rgba(139, 92, 246, 0.35);
-                    color: #a78bfa;
-                }
-                
-                /* Badges */
-                .badges-container-premium {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    margin: 10px 16px;
-                }
-                
-                .badge-premium {
-                    padding: 4px 12px;
-                    border-radius: 30px;
-                    font-size: 10px;
-                    font-weight: 600;
-                    letter-spacing: 0.3px;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                
-                .priority-high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-                .priority-medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-                .priority-low { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-                
-                .status-pending { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.3); }
-                .status-progress { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-                .status-completed { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-                .status-overdue { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-                
-                /* Info adicional */
-                .task-info-premium {
-                    display: flex;
-                    align-items: center;
-                    gap: 14px;
-                    padding: 10px 16px 14px 16px;
-                    font-size: 10px;
-                    color: #64748b;
-                    border-top: 1px solid rgba(255,255,255,0.05);
-                    margin-top: 6px;
-                }
-                
-                .task-info-premium span {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                }
-                
-                /* Barra de progreso de subtareas */
-                .subtasks-progress-premium {
-                    margin: 8px 16px;
-                }
-                
-                .subtasks-header-premium {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 10px;
-                    color: #64748b;
-                    margin-bottom: 5px;
-                }
-                
-                .progress-bar-premium {
-                    background: #334155;
-                    height: 4px;
-                    border-radius: 4px;
-                    overflow: hidden;
-                }
-                
-                .progress-fill-premium {
-                    height: 100%;
-                    background: linear-gradient(90deg, #8b5cf6, #ec4899);
-                    border-radius: 4px;
-                    transition: width 0.3s ease;
-                }
-                
-                /* Menú contextual */
-                .task-context-menu-premium {
-                    position: absolute;
-                    top: 50px;
-                    right: 16px;
-                    background: #1e293b;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
-                    border: 1px solid rgba(139, 92, 246, 0.3);
-                    z-index: 1000;
-                    min-width: 150px;
-                    overflow: hidden;
-                    animation: menuFadeIn 0.2s ease;
-                }
-                
-                @keyframes menuFadeIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                .context-menu-item-premium {
-                    padding: 12px 16px;
-                    cursor: pointer;
-                    color: #e2e8f0;
-                    font-size: 13px;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                
-                .context-menu-item-premium:hover {
-                    background: rgba(139, 92, 246, 0.2);
-                }
-                
-                .context-menu-item-premium.delete {
-                    color: #f87171;
-                    border-top: 1px solid rgba(255,255,255,0.05);
-                }
-                
-                .context-menu-item-premium.delete:hover {
-                    background: rgba(239, 68, 68, 0.2);
-                }
-                
-                /* Scrollbar */
-                .tasks-container-premium::-webkit-scrollbar {
-                    width: 5px;
-                }
-                
-                .tasks-container-premium::-webkit-scrollbar-track {
-                    background: rgba(255,255,255,0.03);
-                    border-radius: 10px;
-                }
-                
-                .tasks-container-premium::-webkit-scrollbar-thumb {
-                    background: rgba(139, 92, 246, 0.4);
-                    border-radius: 10px;
-                }
-                
-                /* Mensaje vacío */
-                .empty-message-premium {
-                    text-align: center;
-                    padding: 40px 20px;
-                    color: #64748b;
-                    font-size: 13px;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        // ========== 4. CONFIGURAR COLUMNAS ==========
-        function setupColumns() {
-            const columns = [
-                { id: 'pendingList', title: '📋 PENDIENTES', color: '#f59e0b', type: 'pending' },
-                { id: 'inProgressList', title: '🔄 EN PROGRESO', color: '#3b82f6', type: 'progress' },
-                { id: 'completedList', title: '✅ COMPLETADAS', color: '#10b981', type: 'completed' },
-                { id: 'overdueList', title: '⚠️ REZAGADAS', color: '#ef4444', type: 'overdue' }
-            ];
-            
-            columns.forEach(col => {
-                const column = document.getElementById(col.id);
-                if (!column) return;
-                
-                // Aplicar clase de columna
-                column.classList.add('kanban-column-premium');
-                
-                // Verificar si ya tiene header
-                let header = column.querySelector('.column-header-premium');
-                if (!header) {
-                    header = document.createElement('div');
-                    header.className = 'column-header-premium';
-                    header.style.borderBottomColor = col.color;
-                    header.innerHTML = `
-                        <h3>
-                            <span>${col.title}</span>
-                            <span class="column-count-premium" id="count-${col.type}">0</span>
-                        </h3>
-                    `;
-                }
-                
-                // Verificar contenedor de tareas
-                let tasksContainer = column.querySelector('.tasks-container-premium');
-                if (!tasksContainer) {
-                    tasksContainer = document.createElement('div');
-                    tasksContainer.className = 'tasks-container-premium';
-                    
-                    // Mover hijos existentes al nuevo contenedor
-                    const children = Array.from(column.children);
-                    children.forEach(child => {
-                        if (child !== header) {
-                            tasksContainer.appendChild(child);
-                        }
-                    });
-                    
-                    column.innerHTML = '';
-                    column.appendChild(header);
-                    column.appendChild(tasksContainer);
-                }
-            });
-        }
-        
-        setupColumns();
-        
-        // ========== 5. ACTUALIZAR CONTADORES ==========
-        function updateCounters() {
-            const types = ['pending', 'progress', 'completed', 'overdue'];
-            types.forEach(type => {
-                const container = document.querySelector(`#${type === 'progress' ? 'inProgressList' : type === 'pending' ? 'pendingList' : type === 'completed' ? 'completedList' : 'overdueList'} .tasks-container-premium`);
-                const counter = document.getElementById(`count-${type}`);
-                if (container && counter) {
-                    const count = container.querySelectorAll('.task-card-premium').length;
-                    counter.textContent = count;
-                }
-            });
-        }
-        
-        // ========== 6. LIMPIAR Y RENDERIZAR ==========
-        const containers = ['pendingList', 'inProgressList', 'completedList', 'overdueList'].map(id => 
-            document.querySelector(`#${id} .tasks-container-premium`)
-        );
-        
-        containers.forEach(container => {
-            if (container) container.innerHTML = '';
-        });
-        
-        if (tasks.length === 0) {
-            containers.forEach(container => {
-                if (container) {
-                    container.innerHTML = '<div class="empty-message-premium">📭 No hay tareas</div>';
-                }
-            });
-            updateCounters();
-            return;
-        }
-        
-        // ========== 7. RENDERIZAR CADA TAREA ==========
-        tasks.forEach(task => {
-            if (!task) return;
-            
-            const status = (task.status || 'pending').toLowerCase();
-            let targetContainerId;
-            
-            if (status === 'completed' || status === 'completado') {
-                targetContainerId = 'completedList';
-            } else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') {
-                targetContainerId = 'inProgressList';
-            } else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') {
-                targetContainerId = 'overdueList';
-            } else {
-                targetContainerId = 'pendingList';
+        // Formatear fecha con manejo de errores
+        let deadline = 'Sin fecha';
+        if (task.deadline) {
+            try {
+                deadline = new Date(task.deadline).toLocaleDateString('es-ES');
+            } catch(e) {
+                deadline = 'Fecha inválida';
             }
-            
-            const targetContainer = document.querySelector(`#${targetContainerId} .tasks-container-premium`);
-            if (!targetContainer) return;
-            
-            // Prioridad
-            const priority = (task.priority || 'media').toLowerCase();
-            const isHigh = priority === 'alta' || priority === 'high';
-            const isLow = priority === 'baja' || priority === 'low';
-            const priorityClass = isHigh ? 'priority-high' : (isLow ? 'priority-low' : 'priority-medium');
-            const priorityText = isHigh ? 'Alta' : (isLow ? 'Baja' : 'Media');
-            const priorityIcon = isHigh ? '🔴' : (isLow ? '🟢' : '🟡');
-            
-            // Estado
-            const isCompleted = status === 'completed';
-            const isProgress = status === 'inprogress' || status === 'in_progress' || status === 'en progreso';
-            const isOverdue = status === 'overdue' || status === 'rezagado' || status === 'atrasado';
-            const statusClass = isCompleted ? 'status-completed' : (isProgress ? 'status-progress' : (isOverdue ? 'status-overdue' : 'status-pending'));
-            const statusText = isCompleted ? 'Completada' : (isProgress ? 'En Progreso' : (isOverdue ? 'Rezagada' : 'Pendiente'));
-            const statusIcon = isCompleted ? '✅' : (isProgress ? '🔄' : (isOverdue ? '⚠️' : '⏳'));
-            
-            // Subtareas
-            const subtasks = task.subtasks || [];
-            const completedSubtasks = subtasks.filter(st => st.completed).length;
-            const totalSubtasks = subtasks.length;
-            const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
-            const hasSubtasks = totalSubtasks > 0;
-            
-            // Fecha
-            let formattedDeadline = '';
-            if (task.deadline) {
-                try {
-                    const deadlineDate = new Date(task.deadline);
-                    formattedDeadline = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-                } catch(e) {}
-            }
-            
-            // Asignado
-            const assignee = task.assignee || '';
-            const initials = assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            
-            // Escapar HTML
-            const taskName = (task.name || 'Sin nombre').replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-            const assigneeName = assignee.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-            
-            // Crear tarjeta
-            const card = document.createElement('div');
-            card.className = 'task-card-premium';
-            card.draggable = true;
-            card.dataset.taskId = task.id;
-            card.dataset.status = status;
-            
-            card.innerHTML = `
-                <div class="task-card-header-premium">
-                    <div class="task-title-premium">${taskName}</div>
-                    <div class="task-actions-premium">
-                        <button class="action-btn-premium move-up" onclick="event.stopPropagation(); window.moveTaskUp(${task.id}, '${status}')" title="Mover arriba">↑</button>
-                        <button class="action-btn-premium move-down" onclick="event.stopPropagation(); window.moveTaskDown(${task.id}, '${status}')" title="Mover abajo">↓</button>
-                        <button class="action-btn-premium menu-btn-premium" onclick="event.stopPropagation(); window.toggleTaskMenuPremium(event, ${task.id})" title="Menú">⋯</button>
-                    </div>
-                </div>
-                
-                ${hasSubtasks ? `
-                <div class="subtasks-progress-premium">
-                    <div class="subtasks-header-premium">
-                        <span>📋 Subtareas</span>
-                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
-                    </div>
-                    <div class="progress-bar-premium">
-                        <div class="progress-fill-premium" style="width: ${subtaskProgress}%"></div>
-                    </div>
-                </div>
-                ` : ''}
-                
-                <div class="badges-container-premium">
-                    <span class="badge-premium ${priorityClass}">${priorityIcon} ${priorityText}</span>
-                    <span class="badge-premium ${statusClass}">${statusIcon} ${statusText}</span>
-                </div>
-                
-                <div class="task-info-premium">
-                    ${assignee ? `<span title="Asignado a: ${assigneeName}"><i class="fas fa-user-circle"></i> ${initials || assigneeName.substring(0,2)}</span>` : ''}
-                    ${formattedDeadline ? `<span title="Fecha límite"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</span>` : ''}
-                    ${task.estimatedTime ? `<span title="Tiempo estimado"><i class="fas fa-clock"></i> ${task.estimatedTime}h</span>` : ''}
-                </div>
-                
-                <div class="task-context-menu-premium" id="task-menu-premium-${task.id}" style="display: none;">
-                    <div class="context-menu-item-premium" onclick="window.showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')}); event.stopPropagation();">
-                        ✏️ Editar tarea
-                    </div>
-                    <div class="context-menu-item-premium delete" onclick="window.deleteTask('${encodeURIComponent(JSON.stringify(task))}'); event.stopPropagation();">
-                        🗑️ Eliminar tarea
-                    </div>
-                </div>
-            `;
-            
-            targetContainer.appendChild(card);
-        });
-        
-        // ========== 8. ACTUALIZAR TODO ==========
-        updateCounters();
-        
-        // Configurar drag & drop después de renderizar
-        setTimeout(() => {
-            if (typeof initDragAndDrop === 'function') initDragAndDrop();
-            if (typeof forzarDragDrop === 'function') forzarDragDrop();
-            if (typeof forzarDropEnColumnas === 'function') forzarDropEnColumnas();
-        }, 100);
-        
-        console.log(`✅ KANBAN PREMIUM: ${tasks.length} tareas renderizadas`);
-    };
-    
-    // Función para toggle del menú
-    window.toggleTaskMenuPremium = function(event, taskId) {
-        event.stopPropagation();
-        
-        document.querySelectorAll('.task-context-menu-premium').forEach(menu => {
-            if (menu.id !== `task-menu-premium-${taskId}`) {
-                menu.style.display = 'none';
-            }
-        });
-        
-        const menu = document.getElementById(`task-menu-premium-${taskId}`);
-        if (menu) {
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         }
-    };
-    
-    // Cerrar menús al hacer clic fuera
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.task-context-menu-premium').forEach(menu => {
-            menu.style.display = 'none';
-        });
+        
+        card.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-title">${task.name || 'Sin nombre'}</h4>
+                <span class="priority-badge" style="background:${priorityColors[priority]}20;color:${priorityColors[priority]}">${priority}</span>
+            </div>
+            <div class="task-card-body">
+                ${task.assignee ? `<div>👤 ${task.assignee}</div>` : ''}
+                <div>📅 ${deadline}</div>
+                ${task.estimatedTime ? `<div>⏱️ ${task.estimatedTime}h</div>` : ''}
+            </div>
+        `;
+        
+        // Evento click para editar (con stopPropagation)
+        card.onclick = (e) => {
+            e.stopPropagation();
+            if (typeof showTaskDetails === 'function') showTaskDetails(task);
+        };
+        
+        targetCol.appendChild(card);
     });
     
-    console.log('✅ KANBAN PREMIUM DEFINITIVO ACTIVADO');
+    // ✅ 8. Actualizar contadores y drag&drop con setTimeout para asegurar DOM
+    setTimeout(() => {
+        actualizarContadoresColumnas?.();
+        forzarDragDrop?.();
+        forzarDropEnColumnas?.();
+        console.log(`✅ ${tasks.length} tareas renderizadas`);
+    }, 100);
+};
+
+
+
+// ============================================
+// 🔥 PARCHE ANTI-POLLING - MANTIENE EL PROYECTO SELECCIONADO
+// ============================================
+(function() {
+    console.log('🛡️ ACTIVANDO PARCHE ANTI-POLLING DEFINITIVO');
+    
+    // 1. Guardar el proyecto actual antes de cualquier refresco
+    let ultimoProyectoSeleccionado = null;
+    
+    // 2. Guardar la función original de forceRefreshFromBackend si existe
+    const originalForceRefresh = window.forceRefreshFromBackend;
+    
+    // 3. Reemplazar forceRefreshFromBackend con versión que respeta la selección
+    window.forceRefreshFromBackend = async function() {
+        // Guardar qué proyecto estaba seleccionado ANTES del refresco
+        let nombreProyectoActual = null;
+        let idProyectoActual = null;
+        
+        if (window.projects && window.currentProjectIndex !== undefined && window.projects[window.currentProjectIndex]) {
+            nombreProyectoActual = window.projects[window.currentProjectIndex].name;
+            idProyectoActual = window.projects[window.currentProjectIndex].id;
+            console.log('💾 Guardando proyecto actual:', nombreProyectoActual);
+        }
+        
+        // Ejecutar la función original si existe
+        let resultado;
+        if (originalForceRefresh) {
+            resultado = await originalForceRefresh();
+        }
+        
+        // Restaurar el proyecto seleccionado DESPUÉS del refresco
+        if (nombreProyectoActual && window.projects) {
+            const nuevoIndex = window.projects.findIndex(p => p.name === nombreProyectoActual || p.id === idProyectoActual);
+            if (nuevoIndex !== -1 && nuevoIndex !== window.currentProjectIndex) {
+                console.log('🔄 Restaurando proyecto:', nombreProyectoActual, 'índice:', nuevoIndex);
+                window.currentProjectIndex = nuevoIndex;
+                localStorage.setItem('currentProjectIndex', nuevoIndex);
+                
+                // Forzar renderizado con el proyecto correcto
+                if (typeof window.renderKanbanTasks === 'function') {
+                    const proyecto = window.projects[nuevoIndex];
+                    const tareas = proyecto?.tasks || proyecto?.tareas || [];
+                    window.renderKanbanTasks(tareas);
+                }
+            }
+        }
+        
+        return resultado;
+    };
+    
+    // 4. Limpiar TODOS los intervalos existentes (sin romper funcionalidades críticas)
+    const limpiarIntervalos = () => {
+        // Obtener el ID más alto de intervalos
+        let idMaximo = setTimeout(() => {}, 0);
+        for (let i = 0; i < idMaximo; i++) {
+            clearInterval(i);
+            clearTimeout(i);
+        }
+        console.log('🧹 Intervalos limpiados');
+        
+        // Restaurar intervalos críticos que NO sean el polling
+        // (Si tu app necesita otros intervalos, mantenlos aquí)
+    };
+    
+    // Ejecutar limpieza solo UNA vez
+    limpiarIntervalos();
+    
+    // 5. Desactivar el polling específico si existe
+    if (window.pollingInterval) {
+        clearInterval(window.pollingInterval);
+        window.pollingInterval = null;
+    }
+    
+    // 6. Prevenir que el polling se reactive
+    const originalInitPolling = window.initPolling;
+    if (originalInitPolling) {
+        window.initPolling = function() {
+            console.log('⏸️ initPolling bloqueado');
+            return;
+        };
+    }
+    
+    // 7. Corregir selectProject para que use renderKanbanTasks correctamente
+    const originalSelectProject = window.selectProject;
+    if (originalSelectProject) {
+        window.selectProject = function(index) {
+            console.log('🎯 selectProject llamado con índice:', index);
+            
+            if (!window.projects || !window.projects[index]) {
+                console.error('❌ Proyecto no encontrado');
+                return;
+            }
+            
+            window.currentProjectIndex = index;
+            localStorage.setItem('currentProjectIndex', index);
+            
+            const proyecto = window.projects[index];
+            const tareas = proyecto?.tasks || proyecto?.tareas || [];
+            
+            if (typeof window.renderKanbanTasks === 'function') {
+                window.renderKanbanTasks(tareas);
+            }
+            
+            // Actualizar clase activa en el menú
+            const menuItems = document.querySelectorAll('.project-item, .menu-project, [data-project-id]');
+            menuItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active', 'selected');
+                } else {
+                    item.classList.remove('active', 'selected');
+                }
+            });
+        };
+    }
+    
+    // 8. Forzar renderizado inicial correcto después de cargar proyectos
+    const esperarProyectos = setInterval(() => {
+        if (window.projects && window.projects.length > 0 && window.currentProjectIndex !== undefined) {
+            clearInterval(esperarProyectos);
+            
+            // Si el índice guardado es válido, usarlo; si no, usar el primero
+            let index = window.currentProjectIndex;
+            if (index >= window.projects.length || index < 0) {
+                index = 0;
+            }
+            
+            const proyecto = window.projects[index];
+            const tareas = proyecto?.tasks || proyecto?.tareas || [];
+            
+            console.log('🎨 Renderizando proyecto inicial:', proyecto?.name);
+            if (typeof window.renderKanbanTasks === 'function') {
+                window.renderKanbanTasks(tareas);
+            }
+        }
+    }, 500);
+    
+    console.log('✅ PARCHE ANTI-POLLING ACTIVADO - El proyecto seleccionado ya no se perderá');
+})();
+
+
+
+// ============================================
+// 🔥 DETENER POLLING DEFINITIVAMENTE - SOLUCIÓN FINAL
+// ============================================
+(function() {
+    console.log('🔴 DETENIENDO POLLING PERMANENTEMENTE');
+    
+    // 1. Limpiar variables de polling
+    if (window.pollingInterval) {
+        clearInterval(window.pollingInterval);
+        window.pollingInterval = null;
+    }
+    
+    if (window.autoSyncInterval) {
+        clearInterval(window.autoSyncInterval);
+        window.autoSyncInterval = null;
+    }
+    
+    // 2. Desactivar funciones de polling
+    window.forceRefreshFromBackend = function() { 
+        console.log('⏸️ forceRefreshFromBackend DESACTIVADO');
+        return Promise.resolve(); 
+    };
+    
+    window.initPolling = function() { 
+        console.log('⏸️ initPolling DESACTIVADO');
+    };
+    
+    window.startPolling = function() { 
+        console.log('⏸️ startPolling DESACTIVADO');
+    };
+    
+    // 3. Limpiar TODOS los intervalos existentes
+    let maxId = setTimeout(() => {}, 0);
+    for (let i = 0; i < maxId; i++) {
+        clearInterval(i);
+        clearTimeout(i);
+    }
+    
+    // 4. Bloquear que se creen nuevos intervalos de polling
+    const originalSetInterval = window.setInterval;
+    window.setInterval = function(fn, delay, ...args) {
+        const fnString = fn.toString();
+        // Solo bloquear polling, mantener otros intervalos
+        if (delay < 10000 && (fnString.includes('forceRefresh') || fnString.includes('polling') || fnString.includes('refresh'))) {
+            console.log('🚫 Polling bloqueado');
+            return null;
+        }
+        return originalSetInterval(fn, delay, ...args);
+    };
+    
+    console.log('✅ POLLING DETENIDO COMPLETAMENTE');
+    console.log('✅ El sistema ahora es ESTÁTICO - Los proyectos ya no se refrescan automáticamente');
 })();
