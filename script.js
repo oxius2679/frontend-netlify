@@ -22705,7 +22705,12 @@ async function safeLoad() {
 
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
-    if (forceLocal) {
+    
+    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
+    const urlParams = new URLSearchParams(window.location.search);
+    const justAccepted = urlParams.get('accepted') === 'true';
+    
+    if (forceLocal && !justAccepted) {
         console.log('🔄 Usando localStorage porque hubo un guardado reciente');
         const saved = localStorage.getItem('projects');
         if (saved) {
@@ -22714,116 +22719,74 @@ async function safeLoad() {
         }
     }
 
-    console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
-
+    const token = localStorage.getItem('authToken');
     const clienteId = localStorage.getItem('clienteId');
+    
+    console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
     console.log('🏢 Cliente ID:', clienteId || 'No definido');
     
-    const esClienteGenerado = clienteId && clienteId.startsWith('user_');
-    if (esClienteGenerado) {
-        console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
+    if (justAccepted) {
+        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
     }
     
-    let loadedData = null;
-    let backendAvailable = false;
-
-    if (!window.authToken || window.authToken.length < 10) {
-        console.warn('⚠️ No hay token válido, usando localStorage');
-    } else {
-        if (!esClienteGenerado) {
-            try {
-                console.log('🔄 Verificando backend...');
-                const healthResponse = await fetch(`${API_URL}/api/health`, { timeout: 5000 });
-                if (healthResponse.ok) {
-                    backendAvailable = true;
-                    console.log('✅ Backend disponible');
+    // Siempre intentar cargar desde backend si hay token
+    if (token && clienteId) {
+        try {
+            console.log('🔄 Cargando desde MongoDB...');
+            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
+            const response = await fetch(url, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
-            } catch (error) {
-                console.warn('⚠️ Backend no disponible:', error.message);
-            }
-        } else {
-            console.log('🔧 Cliente generado - Omitiendo verificación de backend');
-        }
-
-        if (backendAvailable && !esClienteGenerado) {
-            try {
-                console.log('🔄 Intentando cargar desde MongoDB...');
-                const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
-                const response = await fetch(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${window.authToken}`,
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Datos cargados desde MongoDB Atlas');
                 
-                if (response.ok) {
-                    loadedData = await response.json();
-                    console.log('✅ Datos cargados desde MongoDB Atlas');
+                if (data.projects) {
+                    projects = data.projects;
+                    currentProjectIndex = data.currentProjectIndex || 0;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
                     
-                    if (loadedData.projects) {
-                        localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-                        localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
+                    // Limpiar parámetro de URL si existe
+                    if (justAccepted) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
+                    
+                    console.log(`✅ ${projects.length} proyectos cargados`);
+                    return true;
                 }
-            } catch (error) {
-                console.warn('⚠️ Error cargando desde backend:', error.message);
             }
+        } catch (error) {
+            console.warn('⚠️ Error cargando desde backend:', error.message);
         }
     }
 
-    if (!loadedData || !loadedData.projects) {
-        console.log('🔄 Usando datos de localStorage...');
-        const savedProjects = localStorage.getItem('projects');
-        if (savedProjects) {
-            try {
-                loadedData = {
-                    projects: JSON.parse(savedProjects),
-                    currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
-                };
-                console.log('✅ Datos cargados desde localStorage');
-            } catch (error) {
-                console.error('❌ Error parseando localStorage:', error);
-            }
-        }
+    // Fallback a localStorage
+    const savedProjects = localStorage.getItem('projects');
+    if (savedProjects) {
+        projects = JSON.parse(savedProjects);
+        currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        return true;
     }
 
-    if (loadedData && loadedData.projects) {
-        projects = loadedData.projects;
-        currentProjectIndex = loadedData.currentProjectIndex || 0;
-        
-        // ========== 🔥 FILTRAR POR CLIENTEID - PARTE IMPORTANTE ==========
-        const clienteIdActual = localStorage.getItem('clienteId');
-        if (clienteIdActual) {
-            const proyectosFiltrados = projects.filter(p => p.clienteId === clienteIdActual);
-            if (proyectosFiltrados.length > 0) {
-                console.log(`🔒 Filtrados ${projects.length} → ${proyectosFiltrados.length} proyectos para cliente ${clienteIdActual}`);
-                projects = proyectosFiltrados;
-                currentProjectIndex = 0;
-            } else if (projects.length > 0) {
-                console.warn(`⚠️ Usuario ${clienteIdActual} no tiene proyectos. Mostrando mensaje.`);
-                // No mostrar proyectos que no le pertenecen
-                projects = [];
-            }
-        }
-        
-        // 🔥 NUEVO: Verificar si la prueba FREE expiró
-        const userPlan = localStorage.getItem('userPlan') || 'free';
-        if (userPlan === 'free' && projects.length > 1) {
-            console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
-            projects = [projects[0]];
-            currentProjectIndex = 0;
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
-        
-        console.log(`✅ ${projects.length} proyectos cargados`);
-    } else {
-        console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
-    }
-
+    console.log('📝 No hay datos, se creará proyecto inicial');
+    projects = [];
     console.groupEnd();
-    return !!loadedData;
+    return false;
 }
+
+
+
+
+
+
+
 
 
 
@@ -23199,7 +23162,59 @@ const syncChannel = new BroadcastChannel('task_sync');
 
 
 
-
+// ============================================
+// 🎯 PROCESAR INVITACIÓN PENDIENTE DESPUÉS DEL LOGIN
+// ============================================
+(function procesarInvitacionPendiente() {
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
+    
+    if (pendingInvitation) {
+        try {
+            const invitation = JSON.parse(pendingInvitation);
+            console.log('🎉 Invitación pendiente detectada:', invitation);
+            
+            // Verificar si ya tenemos un token (usuario logueado)
+            const token = localStorage.getItem('authToken');
+            
+            if (token && invitation.clienteId) {
+                console.log('✅ Usuario logueado, aplicando invitación...');
+                
+                // Guardar el clienteId
+                localStorage.setItem('clienteId', invitation.clienteId);
+                
+                // Mostrar mensaje de bienvenida
+                setTimeout(() => {
+                    if (typeof showNotification === 'function') {
+                        showNotification(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`, 'success');
+                    } else {
+                        alert(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`);
+                    }
+                }, 1000);
+                
+                // Limpiar la invitación pendiente
+                localStorage.removeItem('pendingInvitation');
+                
+                // Forzar recarga de proyectos
+                setTimeout(() => {
+                    if (typeof forceFullRefresh === 'function') {
+                        forceFullRefresh();
+                    } else if (typeof safeLoad === 'function') {
+                        safeLoad().then(() => {
+                            if (typeof renderProjects === 'function') renderProjects();
+                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                        });
+                    }
+                }, 500);
+            } else {
+                console.log('⏳ Esperando login del usuario para aplicar invitación...');
+                // No eliminamos pendingInvitation aún, esperamos el login
+            }
+        } catch (e) {
+            console.error('Error procesando invitación pendiente:', e);
+            localStorage.removeItem('pendingInvitation');
+        }
+    }
+})();
 
 
 
@@ -38414,9 +38429,9 @@ function renderProjects() {
         return;
     }
     
-    // Obtener proyectos permitidos (AHORA SÍ FILTRA POR CLIENTEID)
+    // 🔥 USAR proyectos FILTRADOS en lugar de projects directamente
     const proyectosPermitidos = getProyectosPermitidos();
-    console.log('📋 Proyectos a renderizar:', proyectosPermitidos.length);
+    console.log(`📋 Proyectos a renderizar: ${proyectosPermitidos.length}`);
     
     projectListContainer.innerHTML = '';
     
@@ -38424,56 +38439,47 @@ function renderProjects() {
         projectListContainer.innerHTML = `
             <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
                 <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                No tienes proyectos creados
+                No tienes proyectos
             </li>
         `;
         return;
     }
     
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    proyectosPermitidos.forEach((project) => {
-        // Encontrar el índice REAL en el array original
-        const realIndex = projects.findIndex(p => 
-            p.name === project.name && 
-            p.clienteId === project.clienteId
-        );
-        
-        if (realIndex === -1) return;
-        
+    proyectosPermitidos.forEach((project, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
-        li.dataset.projectIndex = realIndex;
-        
-        // Sistema legacy de permisos (opcional)
-        const permiso = user.proyectosPermitidos?.find(p => p.proyectoIndex === realIndex);
+        li.dataset.projectIndex = idx;
+        li.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: ${idx === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
         
         li.innerHTML = `
-            <span>
-                ${project.name}
-                ${permiso ? `<span class="rol-badge" style="
-                    font-size: 10px;
-                    background: #8b5cf6;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    margin-left: 10px;
-                    display: inline-block;
-                ">${permiso.rol}</span>` : ''}
-            </span>
-            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${realIndex})">⋮</div>
-            <div class="project-context-menu" id="project-menu-${realIndex}">
-                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${realIndex})">Editar</div>
-                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${realIndex})">Eliminar</div>
+            <span style="color: white; font-weight: 500;">${project.name}</span>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${idx})">⋮</div>
+            <div class="project-context-menu" id="project-menu-${idx}">
+                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${idx})">Editar</div>
+                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${idx})">Eliminar</div>
             </div>
         `;
         
-        li.addEventListener('click', () => selectProject(realIndex));
+        li.addEventListener('click', () => selectProject(idx));
         projectListContainer.appendChild(li);
     });
     
-    console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
+    // Actualizar también window.projects para mantener consistencia
+    window.projects = proyectosPermitidos;
+    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
     
+    console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
+}    
     // Actualizar estilos del proyecto seleccionado
     setTimeout(updateProjectSelectionStyles, 100);
 }
@@ -38494,162 +38500,132 @@ function updateProjectSelectionStyles() {
 
 
 function selectProject(index) {
-  console.trace('🧭 selectProject llamado');
-
-  // 🧠 Validar índice
-  if (index < 0 || index >= projects.length) {
-    console.warn(`⚠️ Índice de proyecto inválido (${index})`);
-    return;
-  }
-
-  // 🔥 NUEVO: Verificar que el usuario tiene acceso a este proyecto
-  const clienteId = localStorage.getItem('clienteId');
-  const project = projects[index];
-  
-  if (!project) return;
-  
-  // Verificar acceso por clienteId (permitir invitados)
-const invitacionPendiente = localStorage.getItem('invitacionPendiente');
-const esInvitado = invitacionPendiente ? true : false;
-
-if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
-    console.log('🔒 No tienes acceso a este proyecto');
-    if (typeof showNotification === 'function') {
-        showNotification('No tienes acceso a este proyecto', 'error');
+    console.log('🧭 selectProject llamado con índice:', index);
+    
+    // 🔥 Usar proyectos filtrados en lugar de projects directamente
+    const proyectosPermitidos = getProyectosPermitidos();
+    
+    // Validar índice
+    if (index < 0 || index >= proyectosPermitidos.length) {
+        console.warn(`⚠️ Índice de proyecto inválido (${index})`);
+        return;
     }
-    return;
-}
+    
+    const project = proyectosPermitidos[index];
+    if (!project) return;
 
-// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
-if (esInvitado) {
-    console.log('🎉 Bienvenido al proyecto invitado');
-    if (typeof showNotification === 'function') {
-        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
+    // 🔥 Verificar acceso (opcional, ya lo hace getProyectosPermitidos)
+    const clienteId = localStorage.getItem('clienteId');
+    
+    // Actualizar índice actual (este es el índice dentro de proyectosPermitidos)
+    currentProjectIndex = index;
+    
+    // Guardar en localStorage
+    localStorage.setItem('currentProjectIndex', index);
+    
+    // 🔥 SOCKET → unir al proyecto
+    if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
+        console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
+        window.tiempoRealSocket.emit("join-project", currentProjectIndex);
     }
-    // Limpiar el token después de usarlo
-    localStorage.removeItem('invitacionPendiente');
-}
 
-  // Actualizar índice actual
-  currentProjectIndex = index;
+    // 📝 Actualizar nombres del proyecto en todas las vistas
+    const projectNameDisplay = document.getElementById('projectName');
+    const projectNameList = document.getElementById('projectNameList');
+    const projectNameCalendar = document.getElementById('projectNameCalendar');
+    const projectNameGantt = document.getElementById('projectNameGantt');
+    const projectNameReports = document.getElementById('projectNameReports');
+    const projectNameDashboard = document.getElementById('projectNameDashboard');
 
-  // Guardar en localStorage el índice seleccionado
-  localStorage.setItem('currentProjectIndex', index);
+    if (projectNameDisplay) projectNameDisplay.textContent = project.name;
+    if (projectNameList) projectNameList.textContent = project.name;
+    if (projectNameCalendar) projectNameCalendar.textContent = project.name;
+    if (projectNameGantt) projectNameGantt.textContent = project.name;
+    if (projectNameReports) projectNameReports.textContent = project.name;
+    if (projectNameDashboard) projectNameDashboard.textContent = project.name;
 
-// 🔌 SOCKET → unir al proyecto usando el índice (currentProjectIndex)
-if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
-    console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
-    window.tiempoRealSocket.emit("join-project", currentProjectIndex);
-}
+    // ⏱️ Tiempo total del proyecto
+    const totalTimeElement = document.getElementById('totalProjectTime');
+    if (totalTimeElement) {
+        totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
+    }
 
+    // 🔄 Actualizaciones generales
+    if (typeof actualizarAsignados === 'function') actualizarAsignados();
+    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    if (typeof updateTaskList === 'function') updateTaskList();
+    if (typeof updateStatistics === 'function') updateStatistics();
+    if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
+    if (typeof updateProjectProgress === 'function') updateProjectProgress();
 
-  // 📝 Actualizar nombres del proyecto en todas las vistas
-  const projectNameDisplay = document.getElementById('projectName');
-  const projectNameList = document.getElementById('projectNameList');
-  const projectNameCalendar = document.getElementById('projectNameCalendar');
-  const projectNameGantt = document.getElementById('projectNameGantt');
-  const projectNameReports = document.getElementById('projectNameReports');
-  const projectNameDashboard = document.getElementById('projectNameDashboard');
+    // 📊 Reportes
+    if (typeof generateReports === 'function') generateReports();
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        generatePieChart(getStats());
+    }
 
-  if (projectNameDisplay) projectNameDisplay.textContent = project.name;
-  if (projectNameList) projectNameList.textContent = project.name;
-  if (projectNameCalendar) projectNameCalendar.textContent = project.name;
-  if (projectNameGantt) projectNameGantt.textContent = project.name;
-  if (projectNameReports) projectNameReports.textContent = project.name;
-  if (projectNameDashboard) projectNameDashboard.textContent = project.name;
-
-  // ⏱️ Tiempo total del proyecto
-  const totalTimeElement = document.getElementById('totalProjectTime');
-  if (totalTimeElement) {
-    totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
-  }
-
-  // 🔄 Actualizaciones generales
-  if (typeof actualizarAsignados === 'function') actualizarAsignados();
-  if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-  if (typeof updateTaskList === 'function') updateTaskList();
-  if (typeof updateStatistics === 'function') updateStatistics();
-  if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
-  if (typeof updateProjectProgress === 'function') updateProjectProgress();
- // if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
-
-  // 📊 Reportes
-  if (typeof generateReports === 'function') generateReports();
-  if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
-    generatePieChart(getStats());
-  }
-
-  // ⚠️ Riesgos, acciones e hitos
-  setTimeout(() => {
-    if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
-    if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
-    if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
-    if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
-  }, 50);
-
-  // 🔁 Re-renderizar dashboard si está visible
-  const dashboardView = document.getElementById('dashboardView');
-  if (
-    dashboardView &&
-    getComputedStyle(dashboardView).display !== 'none'
-  ) {
-    console.log('🔁 Re-render dashboard por cambio de proyecto');
+    // ⚠️ Riesgos, acciones e hitos
     setTimeout(() => {
-      if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
+        if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
+        if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
+        if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
     }, 50);
-  }
 
-  // 🔀 Renderizar vista activa
-  const activeView = getActiveView();
-  switch (activeView) {
-    case 'calendar':
-      if (typeof renderCalendar === 'function') renderCalendar();
-      break;
-    case 'profitability':
-      if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
-      break;
-    case 'dashboard':
-      // Ya se renderizó arriba
-      break;
-    default:
-      // Para otras vistas, asegurar que se rendericen
-      if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
-        renderKanbanTasks();
-      } else if (activeView === 'list' && typeof renderListTasks === 'function') {
-        renderListTasks();
-      } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
-        renderGanttChart();
-      }
-  }
-  
-  // 🔥 NUEVO: Actualizar estilos del menú lateral
-  setTimeout(() => {
-    document.querySelectorAll('.project-item').forEach(item => {
-      const idx = parseInt(item.dataset.projectIndex);
-      if (idx === index) {
-        item.style.background = 'rgba(52, 152, 219, 0.2)';
-        item.style.border = '1px solid #3498db';
-        // Asegurar que el checkmark se vea
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = '#3498db';
-          checkmark.style.color = 'white';
-        }
-      } else {
-        item.style.background = 'rgba(255,255,255,0.05)';
-        item.style.border = '1px solid rgba(255,255,255,0.1)';
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = 'rgba(255,255,255,0.1)';
-          checkmark.style.color = 'transparent';
-        }
-      }
-    });
-  }, 100);
+    // 🔁 Re-renderizar dashboard si está visible
+    const dashboardView = document.getElementById('dashboardView');
+    if (dashboardView && getComputedStyle(dashboardView).display !== 'none') {
+        setTimeout(() => {
+            if (typeof renderDashboard === 'function') renderDashboard();
+        }, 50);
+    }
 
-  console.log(`✅ Proyecto seleccionado: "${project.name}"`);
+    // 🔀 Renderizar vista activa
+    const activeView = getActiveView();
+    switch (activeView) {
+        case 'calendar':
+            if (typeof renderCalendar === 'function') renderCalendar();
+            break;
+        case 'profitability':
+            if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
+            break;
+        case 'dashboard':
+            break;
+        default:
+            if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            } else if (activeView === 'list' && typeof renderListTasks === 'function') {
+                renderListTasks();
+            } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
+                renderGanttChart();
+            }
+    }
+    
+    // 🔥 Actualizar estilos del menú lateral
+    setTimeout(() => {
+        document.querySelectorAll('.project-item').forEach((item, i) => {
+            if (i === index) {
+                item.style.background = 'rgba(52, 152, 219, 0.2)';
+                item.style.border = '1px solid #3498db';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = '#3498db';
+                    checkmark.style.color = 'white';
+                }
+            } else {
+                item.style.background = 'rgba(255,255,255,0.05)';
+                item.style.border = '1px solid rgba(255,255,255,0.1)';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = 'rgba(255,255,255,0.1)';
+                    checkmark.style.color = 'transparent';
+                }
+            }
+        });
+    }, 100);
+
+    console.log(`✅ Proyecto seleccionado: "${project.name}"`);
 }
-
 
 
 function editProjectName(index) {
@@ -62878,42 +62854,48 @@ async function copiarLinkInvitacion(link) {
 // ============================================
 function getProyectosPermitidos() {
     try {
-        console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
-        
-        // Obtener clienteId (esto es lo más importante)
-        const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
-        }
-        
-        // Si no hay proyectos por clienteId, verificar si es admin
         const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
+        if (!userStr) return [];
+        
+        const user = JSON.parse(userStr);
+        const userEmail = user.email;
+        
+        console.log(`🔍 getProyectosPermitidos - Usuario: ${userEmail}, Rol: ${user.role}`);
+        
+        // Si es ADMIN, devolver TODOS los proyectos (para debugging)
+        if (user.role === 'admin' || userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 Usuario ADMIN - devolviendo todos los proyectos');
+            return projects;
         }
         
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
+        // Si es GUEST, filtrar solo proyectos donde fue invitado
+        if (user.role === 'guest' || user.isGuest) {
+            console.log('👤 Usuario GUEST - filtrando proyectos invitados');
+            
+            // Buscar en los proyectos aquellos donde el email está en colaboradores
+            const proyectosInvitados = projects.filter(proyecto => 
+                proyecto.colaboradores && 
+                proyecto.colaboradores.includes(userEmail)
+            );
+            
+            console.log(`📊 Proyectos invitados encontrados: ${proyectosInvitados.length}`);
+            return proyectosInvitados;
+        }
+        
+        // Usuario normal: solo sus proyectos
+        return projects.filter(p => p.clienteId === user.clienteId);
         
     } catch (error) {
         console.error('Error en getProyectosPermitidos:', error);
         return [];
     }
 }
+
+
+
+
+
+
 
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
