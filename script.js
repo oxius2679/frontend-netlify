@@ -1,5 +1,76 @@
 
+// ========== CARGAR PROYECTOS DESDE BACKEND AL INICIAR ==========
+async function cargarProyectosDesdeBackend() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.warn('⚠️ No hay token, usando datos locales');
+        return false;
+    }
+    
+    try {
+        console.log('📡 Cargando proyectos desde backend...');
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Proyectos cargados:', data);
+            
+            if (data.projects && Array.isArray(data.projects)) {
+                window.projects = data.projects;
+                window.currentProjectIndex = data.currentProjectIndex || 0;
+                return true;
+            }
+        } else {
+            console.warn(`⚠️ Error ${response.status} al cargar proyectos`);
+        }
+    } catch (error) {
+        console.error('❌ Error en carga:', error);
+    }
+    return false;
+}
 
+// ========== GUARDAR PROYECTOS EN BACKEND ==========
+async function guardarProyectosEnBackend() {
+    const token = localStorage.getItem('token');
+    const clienteId = localStorage.getItem('clienteId');
+    
+    if (!token || !clienteId) {
+        console.warn('⚠️ No hay token o clienteId');
+        return false;
+    }
+    
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                projects: window.projects || [],
+                currentProjectIndex: window.currentProjectIndex || 0,
+                clienteId: clienteId
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Proyectos guardados en backend');
+            return true;
+        } else {
+            console.warn(`⚠️ Error ${response.status} al guardar`);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error en guardado:', error);
+        return false;
+    }
+}
 
 
 
@@ -3374,13 +3445,15 @@ if (originalSaveTaskChanges) {
     }
     
     // Ejecutar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(moverInicio, 500);
-        });
-    } else {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
         setTimeout(moverInicio, 500);
-    }
+        cargarProyectosDesdeBackend();  // <--- AGREGAR ESTO
+    });
+} else {
+    setTimeout(moverInicio, 500);
+    cargarProyectosDesdeBackend();      // <--- AGREGAR ESTO
+}
 })();
 
 
@@ -22948,38 +23021,53 @@ else {
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
-    console.log('🔄 Forzando refresh desde backend...');
-    
     try {
         const token = localStorage.getItem('authToken');
-        const clienteId = localStorage.getItem('clienteId');
-        
+        let clienteId = localStorage.getItem('clienteId');
+
+        // 1. CORRECCIÓN: Evitar que 'null' o 'undefined' se envíen como texto
+        if (!clienteId || clienteId === 'null' || clienteId === 'undefined') {
+            clienteId = ''; 
+        }
+
         if (!token) {
-            console.warn('⚠️ No hay token');
+            console.log('ℹ️ Sin token. Trabajando en modo local.');
             return;
         }
-        
-        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
-            headers: { 
+
+        // 2. CORRECCIÓN: Construir la URL de forma segura
+        let url = `${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`;
+        if (clienteId) {
+            url += `?clienteId=${clienteId}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
+        if (response.status === 404) {
+            console.warn('⚠️ El backend no tiene la ruta GET /api/projects habilitada. Usando datos locales.');
+            return; // Sale silenciosamente sin romper la app
+        }
+
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Datos frescos recibidos');
-            
-            if (data.projects) {
+            if (data && data.projects) {
                 window.projects = data.projects;
+                localStorage.setItem('projects', JSON.stringify(data.projects));
                 if (typeof refreshCurrentView === 'function') refreshCurrentView();
+                console.log('✅ Datos sincronizados con el backend.');
             }
+        } else {
+            console.warn(`⚠️ El backend respondió con estado: ${response.status}`);
         }
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ Fallo de red en forceRefreshFromBackend:', error.message);
     }
 }
-
 
 
 
@@ -23312,68 +23400,7 @@ const syncChannel = new BroadcastChannel('task_sync');
 
 
 
-// === SOBRESCRIBIR FUNCIÓN LOGIN ===
-window.login = async function() {
-    const email = document.getElementById('loginEmail')?.value;
-    const password = document.getElementById('loginPassword')?.value;
-    
-    if (!email || !password) {
-        const errorEl = document.getElementById('loginError');
-        if (errorEl) errorEl.textContent = 'Completa todos los campos';
-        return;
-    }
-    
-    try {
-        console.log('🔐 Intentando login con:', email);
-        
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        
-        const data = await response.json();
-        console.log('📦 Respuesta del servidor:', data);
-        
-        if (response.ok && data.token) {
-            localStorage.setItem('authToken', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            if (data.user.clienteId) {
-                localStorage.setItem('clienteId', data.user.clienteId);
-            }
-            showNotification('✅ Login exitoso');
-            location.reload();
-        } else {
-            // FALLBACK: Si el backend falla, crear token local
-            console.warn('⚠️ Backend no responde, creando token local...');
-            const tokenLocal = btoa(JSON.stringify({
-                uid: Date.now(),
-                email: email,
-                clienteId: 'cliente_' + Date.now(),
-                exp: Date.now() + 365 * 24 * 60 * 60 * 1000
-            }));
-            localStorage.setItem('authToken', tokenLocal);
-            localStorage.setItem('clienteId', 'cliente_' + Date.now());
-            localStorage.setItem('user', JSON.stringify({ email: email, name: 'Usuario', role: 'admin' }));
-            showNotification('⚠️ Modo offline - Funcionalidad limitada');
-            location.reload();
-        }
-    } catch (error) {
-        console.error('❌ Error de conexión:', error);
-        // Fallback local
-        const tokenLocal = btoa(JSON.stringify({
-            uid: Date.now(),
-            email: email,
-            clienteId: 'cliente_' + Date.now(),
-            exp: Date.now() + 365 * 24 * 60 * 60 * 1000
-        }));
-        localStorage.setItem('authToken', tokenLocal);
-        localStorage.setItem('clienteId', 'cliente_' + Date.now());
-        localStorage.setItem('user', JSON.stringify({ email: email, name: 'Usuario', role: 'admin' }));
-        showNotification('⚠️ Sin conexión al servidor - Modo local');
-        location.reload();
-    }
-};
+
 
 
 
@@ -35291,48 +35318,53 @@ socket.on('project-updated', async (data) => {
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
-    console.log('🔄 Forzando refresh desde backend...');
-    
     try {
         const token = localStorage.getItem('authToken');
-        const clienteId = localStorage.getItem('clienteId');
-        
+        let clienteId = localStorage.getItem('clienteId');
+
+        // 1. CORRECCIÓN: Evitar que 'null' o 'undefined' se envíen como texto
+        if (!clienteId || clienteId === 'null' || clienteId === 'undefined') {
+            clienteId = ''; 
+        }
+
         if (!token) {
-            console.warn('⚠️ No hay token');
+            console.log('ℹ️ Sin token. Trabajando en modo local.');
             return;
         }
-        
-        // Cargar datos frescos
-        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
-            headers: { 
+
+        // 2. CORRECCIÓN: Construir la URL de forma segura
+        let url = `${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`;
+        if (clienteId) {
+            url += `?clienteId=${clienteId}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
+        if (response.status === 404) {
+            console.warn('⚠️ El backend no tiene la ruta GET /api/projects habilitada. Usando datos locales.');
+            return; // Sale silenciosamente sin romper la app
+        }
+
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Datos frescos recibidos');
-            
-            if (data.projects) {
-                // Actualizar variable global
+            if (data && data.projects) {
                 window.projects = data.projects;
-                
-                // Actualizar vista actual
-                refreshCurrentView();
-                
-                if (typeof showNotification === 'function') {
-                    // showNotification('🔄 Datos sincronizados', 'success'); // COMENTADO - ya no molesta
-                }
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                if (typeof refreshCurrentView === 'function') refreshCurrentView();
+                console.log('✅ Datos sincronizados con el backend.');
             }
         } else {
-            console.warn('⚠️ Error obteniendo datos frescos:', response.status);
+            console.warn(`⚠️ El backend respondió con estado: ${response.status}`);
         }
     } catch (error) {
-        console.error('❌ Error en forceRefreshFromBackend:', error);
+        console.error('❌ Fallo de red en forceRefreshFromBackend:', error.message);
     }
 }
-
 // Función para refrescar la vista actual
 function refreshCurrentView() {
     console.log('🔄 Refrescando vista actual...');
