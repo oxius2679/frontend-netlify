@@ -1,159 +1,84 @@
-
-// ========== CARGAR PROYECTOS DESDE BACKEND AL INICIAR ==========
-async function cargarProyectosDesdeBackend() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        console.warn('⚠️ No hay token, usando datos locales');
-        return false;
-    }
-    
-    try {
-        console.log('📡 Cargando proyectos desde backend...');
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Proyectos cargados:', data);
-            
-            if (data.projects && Array.isArray(data.projects)) {
-                window.projects = data.projects;
-                window.currentProjectIndex = data.currentProjectIndex || 0;
-                return true;
-            }
-        } else {
-            console.warn(`⚠️ Error ${response.status} al cargar proyectos`);
-        }
-    } catch (error) {
-        console.error('❌ Error en carga:', error);
-    }
-    return false;
-}
-
-// ========== GUARDAR PROYECTOS EN BACKEND ==========
-async function guardarProyectosEnBackend() {
-    const token = localStorage.getItem('token');
-    const clienteId = localStorage.getItem('clienteId');
-    
-    if (!token || !clienteId) {
-        console.warn('⚠️ No hay token o clienteId');
-        return false;
-    }
-    
-    try {
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({
-                projects: window.projects || [],
-                currentProjectIndex: window.currentProjectIndex || 0,
-                clienteId: clienteId
-            })
-        });
-        
-        if (response.ok) {
-            console.log('✅ Proyectos guardados en backend');
-            return true;
-        } else {
-            console.warn(`⚠️ Error ${response.status} al guardar`);
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Error en guardado:', error);
-        return false;
-    }
-}
-
-
-
-
-
-
-
-
-
-
 // ============================================
-// 🔧 PARCHE: Corregir autenticación
+// 🎯 PROCESAR INVITACIÓN PENDIENTE DESPUÉS DEL LOGIN
 // ============================================
-(function fixAuth() {
-    console.log('🔧 Aplicando parche de autenticación...');
+(function procesarInvitacionPendiente() {
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
     
-    // Verificar si Firebase está disponible
-    if (typeof firebase === 'undefined') {
-        console.error('❌ Firebase no cargado');
-        return;
-    }
-    
-    // Función para obtener token actualizado
-    window.refreshAuthToken = async function() {
-        const user = firebase.auth().currentUser;
-        if (!user) {
-            console.log('⚠️ No hay usuario logueado');
-            return null;
-        }
-        
+    if (pendingInvitation) {
         try {
-            const token = await user.getIdToken(true);
-            localStorage.setItem('authToken', token);
-            console.log('✅ Token actualizado');
-            return token;
-        } catch (error) {
-            console.error('❌ Error actualizando token:', error);
-            return null;
-        }
-    };
-    
-    // Interceptar errores de autenticación
-    const originalFetch = window.fetch;
-    window.fetch = function(...args) {
-        return originalFetch.apply(this, args).then(async response => {
-            if (response.status === 401 || response.status === 403) {
-                console.log('⚠️ Error de autenticación, renovando token...');
-                const newToken = await window.refreshAuthToken();
-                if (newToken) {
-                    // Reintentar con token nuevo
-                    const newHeaders = new Headers(args[1]?.headers || {});
-                    newHeaders.set('Authorization', `Bearer ${newToken}`);
-                    const newArgs = [...args];
-                    newArgs[1] = { ...args[1], headers: newHeaders };
-                    return originalFetch.apply(this, newArgs);
-                }
+            const invitation = JSON.parse(pendingInvitation);
+            console.log('🎉 Invitación pendiente detectada:', invitation);
+            
+            // Verificar si ya tenemos un token (usuario logueado)
+            const token = localStorage.getItem('authToken');
+            
+            if (token && invitation.clienteId) {
+                console.log('✅ Usuario logueado, aplicando invitación...');
+                
+                // Guardar el clienteId
+                localStorage.setItem('clienteId', invitation.clienteId);
+                
+                // Mostrar mensaje de bienvenida
+                setTimeout(() => {
+                    if (typeof showNotification === 'function') {
+                        showNotification(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`, 'success');
+                    } else {
+                        alert(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`);
+                    }
+                }, 1000);
+                
+                // Limpiar la invitación pendiente
+                localStorage.removeItem('pendingInvitation');
+                
+                // Forzar recarga de proyectos
+                setTimeout(() => {
+                    if (typeof forceFullRefresh === 'function') {
+                        forceFullRefresh();
+                    } else if (typeof safeLoad === 'function') {
+                        safeLoad().then(() => {
+                            if (typeof renderProjects === 'function') renderProjects();
+                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                        });
+                    }
+                }, 500);
+            } else {
+                console.log('⏳ Esperando login del usuario para aplicar invitación...');
+                // No eliminamos pendingInvitation aún, esperamos el login
             }
-            return response;
-        });
-    };
-    
-    // Verificar estado cada 5 minutos
-    setInterval(() => {
-        const user = firebase.auth().currentUser;
-        if (user && !localStorage.getItem('authToken')) {
-            window.refreshAuthToken();
+        } catch (e) {
+            console.error('Error procesando invitación pendiente:', e);
+            localStorage.removeItem('pendingInvitation');
         }
-    }, 300000);
-    
-    console.log('✅ Parche de autenticación aplicado');
+    }
 })();
 
 
 
 
-// 🔧 FORZAR CONSISTENCIA DE CLIENTE ID
+
+
+
+
+
+// 🔧 FORZAR CONSISTENCIA DE CLIENTE ID - VERSIÓN MEJORADA
 (function syncClientId() {
+  // 1. Primero, verificar si hay forceClienteId en la URL (para invitaciones)
   const urlParams = new URLSearchParams(window.location.search);
+  const forceClienteId = urlParams.get('forceClienteId');
+  
+  if (forceClienteId) {
+    localStorage.setItem('clienteId', forceClienteId);
+    console.log('✅ ClienteId forzado desde URL:', forceClienteId);
+    // Limpiar la URL (quitar el parámetro forceClienteId)
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  
+  // 2. Luego, verificar clienteId normal (URL o localStorage)
   const urlClientId = urlParams.get('clienteId');
   const localClientId = localStorage.getItem('clienteId');
   
-  // Prioridad: URL > localStorage > valor por defecto
-  const finalClientId = urlClientId || localClientId;
+  // Prioridad: forceClienteId > URL > localStorage
+  const finalClientId = forceClienteId || urlClientId || localClientId;
   
   if (finalClientId) {
     localStorage.setItem('clienteId', finalClientId);
@@ -172,8 +97,6 @@ async function guardarProyectosEnBackend() {
     }
   }
 })();
-
-
 
 
 
@@ -3445,15 +3368,13 @@ if (originalSaveTaskChanges) {
     }
     
     // Ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(moverInicio, 500);
+        });
+    } else {
         setTimeout(moverInicio, 500);
-        cargarProyectosDesdeBackend();  // <--- AGREGAR ESTO
-    });
-} else {
-    setTimeout(moverInicio, 500);
-    cargarProyectosDesdeBackend();      // <--- AGREGAR ESTO
-}
+    }
 })();
 
 
@@ -22841,233 +22762,126 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
+    console.group('📥 Cargando datos desde backend o localStorage');
 
-
-const lastSave = localStorage.getItem('lastSaveTimestamp');
-const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
-if (forceLocal) {
-    console.log('🔄 Usando localStorage porque hubo un guardado reciente');
-    const saved = localStorage.getItem('projects');
-    if (saved) {
-        projects = JSON.parse(saved);
-        return true;
-    }
-}
-
-
-  console.group('📥 Cargando datos desde backend o localStorage');
-  console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
-
-  // Obtener clienteId del localStorage
-  const clienteId = localStorage.getItem('clienteId');
-  console.log('🏢 Cliente ID:', clienteId || 'No definido');
-  
-  // 🔥 NUEVO: Detectar si es un cliente generado (empieza con "user_")
-  const esClienteGenerado = clienteId && clienteId.startsWith('user_');
-  if (esClienteGenerado) {
-    console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
-  }
-  
-  let loadedData = null;
-  let backendAvailable = false;
-
-  // ✅ Primero verificar si hay token
-  if (!window.authToken || window.authToken.length < 10) {
-    console.warn('⚠️ No hay token válido, usando localStorage');
-  } else {
-    // ✅ Verificar si el backend está disponible (SOLO si NO es cliente generado)
-    if (!esClienteGenerado) {
-      try {
-        console.log('🔄 Verificando backend...');
-        const healthResponse = await fetch(`${API_URL}/api/health`, {
-          timeout: 5000
-        });
-        
-        if (healthResponse.ok) {
-          backendAvailable = true;
-          console.log('✅ Backend disponible');
+    const lastSave = localStorage.getItem('lastSaveTimestamp');
+    const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
+    
+    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
+    const urlParams = new URLSearchParams(window.location.search);
+    const justAccepted = urlParams.get('accepted') === 'true';
+    
+    if (forceLocal && !justAccepted) {
+        console.log('🔄 Usando localStorage porque hubo un guardado reciente');
+        const saved = localStorage.getItem('projects');
+        if (saved) {
+            projects = JSON.parse(saved);
+            return true;
         }
-      } catch (error) {
-        console.warn('⚠️ Backend no disponible:', error.message);
-      }
-    } else {
-      console.log('🔧 Cliente generado - Omitiendo verificación de backend');
     }
 
-    // ✅ Si el backend está disponible Y NO es cliente generado, intentar cargar desde ahí
-    if (backendAvailable && !esClienteGenerado) {
-    try {
-        console.log('🔄 Intentando cargar desde MongoDB...');
-        const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
-        const response = await fetch(url, {
-            headers: { 
-                'Authorization': `Bearer ${window.authToken}`,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'  // opcional, pero refuerza
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    
+    console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
+    console.log('🏢 Cliente ID:', clienteId || 'No definido');
+    
+    if (justAccepted) {
+        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
+    }
+    
+    // Siempre intentar cargar desde backend si hay token
+    if (token && clienteId) {
+        try {
+            console.log('🔄 Cargando desde MongoDB...');
+            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
+            const response = await fetch(url, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Datos cargados desde MongoDB Atlas');
+                
+                if (data.projects) {
+                    projects = data.projects;
+                    currentProjectIndex = data.currentProjectIndex || 0;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                    
+                    // Limpiar parámetro de URL si existe
+                    if (justAccepted) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                    
+                    console.log(`✅ ${projects.length} proyectos cargados`);
+                    return true;
+                }
             }
-        });
-        
-        console.log('📡 Respuesta del backend:', response.status);
-        
-        if (response.ok) {
-          loadedData = await response.json();
-          console.log('✅ Datos cargados desde MongoDB Atlas:', loadedData);
-          console.log(`📊 Datos del cliente ${clienteId}: ${loadedData.projects?.length || 0} proyectos`);
-          
-          // Guardar en localStorage como respaldo
-          if (loadedData.projects) {
-            localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-            localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
-            console.log('📦 Datos guardados en localStorage como respaldo');
-          }
-        } else if (response.status === 401) {
-          console.warn('⚠️ Backend respondió 401. Continuando en modo local.');
-          
-          showNotification(
-            'No se pudo sincronizar con el servidor. Trabajando en modo local.',
-            'warning'
-          );
-          
-          // No hacemos return, continuamos a localStorage
+        } catch (error) {
+            console.warn('⚠️ Error cargando desde backend:', error.message);
         }
-      } catch (error) {
-        console.warn('⚠️ Error cargando desde backend:', error.message);
-      }
-    } else if (esClienteGenerado) {
-      console.log('🔧 Cliente generado - Saltando carga desde backend');
     }
-  }
 
-  // ❌ Si no se pudo cargar desde backend, usar localStorage (SIEMPRE)
-  if (!loadedData || !loadedData.projects) {
-    console.log('🔄 Usando datos de localStorage...');
+    // Fallback a localStorage
     const savedProjects = localStorage.getItem('projects');
     if (savedProjects) {
-      try {
-        loadedData = {
-          projects: JSON.parse(savedProjects),
-          currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
-        };
-        console.log('✅ Datos cargados desde localStorage');
-        
-        // 🔥 NUEVO: Asegurar que los proyectos tengan el clienteId correcto
-        if (loadedData.projects && clienteId) {
-          let modificados = 0;
-          loadedData.projects.forEach(proj => {
-            if (!proj.clienteId) {
-              proj.clienteId = clienteId;
-              modificados++;
-            }
-          });
-          if (modificados > 0) {
-            console.log(`🔧 Actualizados ${modificados} proyectos con clienteId: ${clienteId}`);
-            // Guardar de nuevo con los IDs corregidos
-            localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error parseando localStorage:', error);
-      }
+        projects = JSON.parse(savedProjects);
+        currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        return true;
     }
-  }
 
-  // Inicializar datos si no hay nada
-   // Inicializar datos si no hay nada
-  if (loadedData && loadedData.projects) {
-    projects = loadedData.projects;
-    currentProjectIndex = loadedData.currentProjectIndex || 0;
-    console.log(`✅ ${projects.length} proyectos cargados`);
-    
-    // 🔥 FILTRO PLAN FREE - LIMITAR A 1 PROYECTO
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'free' && projects.length > 1) {
-      console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
-      projects = [projects[0]];
-      currentProjectIndex = 0;
-      loadedData.projects = projects;
-      localStorage.setItem('projects', JSON.stringify(projects));
-    }
-    
-    // 🔥 NUEVO: Verificar si la prueba FREE expiró (SOLO si es FREE)
-    if (userPlan === 'free') {
-      const pruebaActiva = verificarPruebaFree();
-      if (!pruebaActiva) {
-        console.error('❌ Período de prueba FREE expirado');
-        if (typeof showNotification === 'function') {
-          showNotification('⚠️ Tu período de prueba de 15 días ha expirado. Actualiza a Professional para continuar.', 'error');
-        }
-      }
-    }
-    
-    // 🔥 NUEVO: Mostrar contador de días restantes
-    mostrarDiasRestantesFree();
-    
-    // 🔥 NUEVO: Verificación final
-    console.log('📋 Resumen de proyectos:');
-    projects.forEach((p, i) => {
-      console.log(`   ${i+1}. "${p.name}" - clienteId: ${p.clienteId || 'NO DEFINIDO'}`);
-    });
-  }
-else {
-    console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
-  }
-
-  console.groupEnd();
-  return !!loadedData;
+    console.log('📝 No hay datos, se creará proyecto inicial');
+    projects = [];
+    console.groupEnd();
+    return false;
 }
+
+
+
 
 
 
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
+    console.log('🔄 Forzando refresh desde backend...');
+    
     try {
         const token = localStorage.getItem('authToken');
-        let clienteId = localStorage.getItem('clienteId');
-
-        // 1. CORRECCIÓN: Evitar que 'null' o 'undefined' se envíen como texto
-        if (!clienteId || clienteId === 'null' || clienteId === 'undefined') {
-            clienteId = ''; 
-        }
-
+        const clienteId = localStorage.getItem('clienteId');
+        
         if (!token) {
-            console.log('ℹ️ Sin token. Trabajando en modo local.');
+            console.warn('⚠️ No hay token');
             return;
         }
-
-        // 2. CORRECCIÓN: Construir la URL de forma segura
-        let url = `${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`;
-        if (clienteId) {
-            url += `?clienteId=${clienteId}`;
-        }
-
-        const response = await fetch(url, {
-            headers: {
+        
+        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
+            headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-
-        if (response.status === 404) {
-            console.warn('⚠️ El backend no tiene la ruta GET /api/projects habilitada. Usando datos locales.');
-            return; // Sale silenciosamente sin romper la app
-        }
-
+        
         if (response.ok) {
             const data = await response.json();
-            if (data && data.projects) {
+            console.log('✅ Datos frescos recibidos');
+            
+            if (data.projects) {
                 window.projects = data.projects;
-                localStorage.setItem('projects', JSON.stringify(data.projects));
                 if (typeof refreshCurrentView === 'function') refreshCurrentView();
-                console.log('✅ Datos sincronizados con el backend.');
             }
-        } else {
-            console.warn(`⚠️ El backend respondió con estado: ${response.status}`);
         }
     } catch (error) {
-        console.error('❌ Fallo de red en forceRefreshFromBackend:', error.message);
+        console.error('❌ Error:', error);
     }
 }
+
 
 
 
@@ -35318,53 +35132,48 @@ socket.on('project-updated', async (data) => {
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
+    console.log('🔄 Forzando refresh desde backend...');
+    
     try {
         const token = localStorage.getItem('authToken');
-        let clienteId = localStorage.getItem('clienteId');
-
-        // 1. CORRECCIÓN: Evitar que 'null' o 'undefined' se envíen como texto
-        if (!clienteId || clienteId === 'null' || clienteId === 'undefined') {
-            clienteId = ''; 
-        }
-
+        const clienteId = localStorage.getItem('clienteId');
+        
         if (!token) {
-            console.log('ℹ️ Sin token. Trabajando en modo local.');
+            console.warn('⚠️ No hay token');
             return;
         }
-
-        // 2. CORRECCIÓN: Construir la URL de forma segura
-        let url = `${window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com'}/api/projects`;
-        if (clienteId) {
-            url += `?clienteId=${clienteId}`;
-        }
-
-        const response = await fetch(url, {
-            headers: {
+        
+        // Cargar datos frescos
+        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
+            headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-
-        if (response.status === 404) {
-            console.warn('⚠️ El backend no tiene la ruta GET /api/projects habilitada. Usando datos locales.');
-            return; // Sale silenciosamente sin romper la app
-        }
-
+        
         if (response.ok) {
             const data = await response.json();
-            if (data && data.projects) {
+            console.log('✅ Datos frescos recibidos');
+            
+            if (data.projects) {
+                // Actualizar variable global
                 window.projects = data.projects;
-                localStorage.setItem('projects', JSON.stringify(data.projects));
-                if (typeof refreshCurrentView === 'function') refreshCurrentView();
-                console.log('✅ Datos sincronizados con el backend.');
+                
+                // Actualizar vista actual
+                refreshCurrentView();
+                
+                if (typeof showNotification === 'function') {
+                    // showNotification('🔄 Datos sincronizados', 'success'); // COMENTADO - ya no molesta
+                }
             }
         } else {
-            console.warn(`⚠️ El backend respondió con estado: ${response.status}`);
+            console.warn('⚠️ Error obteniendo datos frescos:', response.status);
         }
     } catch (error) {
-        console.error('❌ Fallo de red en forceRefreshFromBackend:', error.message);
+        console.error('❌ Error en forceRefreshFromBackend:', error);
     }
 }
+
 // Función para refrescar la vista actual
 function refreshCurrentView() {
     console.log('🔄 Refrescando vista actual...');
@@ -38621,9 +38430,9 @@ function renderProjects() {
         return;
     }
     
-    // Obtener proyectos permitidos (AHORA SÍ FILTRA POR CLIENTEID)
+    // 🔥 USAR proyectos FILTRADOS en lugar de projects directamente
     const proyectosPermitidos = getProyectosPermitidos();
-    console.log('📋 Proyectos a renderizar:', proyectosPermitidos.length);
+    console.log(`📋 Proyectos a renderizar: ${proyectosPermitidos.length}`);
     
     projectListContainer.innerHTML = '';
     
@@ -38631,53 +38440,44 @@ function renderProjects() {
         projectListContainer.innerHTML = `
             <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
                 <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                No tienes proyectos creados
+                No tienes proyectos
             </li>
         `;
         return;
     }
     
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    proyectosPermitidos.forEach((project) => {
-        // Encontrar el índice REAL en el array original
-        const realIndex = projects.findIndex(p => 
-            p.name === project.name && 
-            p.clienteId === project.clienteId
-        );
-        
-        if (realIndex === -1) return;
-        
+    proyectosPermitidos.forEach((project, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
-        li.dataset.projectIndex = realIndex;
-        
-        // Sistema legacy de permisos (opcional)
-        const permiso = user.proyectosPermitidos?.find(p => p.proyectoIndex === realIndex);
+        li.dataset.projectIndex = idx;
+        li.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: ${idx === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
         
         li.innerHTML = `
-            <span>
-                ${project.name}
-                ${permiso ? `<span class="rol-badge" style="
-                    font-size: 10px;
-                    background: #8b5cf6;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    margin-left: 10px;
-                    display: inline-block;
-                ">${permiso.rol}</span>` : ''}
-            </span>
-            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${realIndex})">⋮</div>
-            <div class="project-context-menu" id="project-menu-${realIndex}">
-                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${realIndex})">Editar</div>
-                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${realIndex})">Eliminar</div>
+            <span style="color: white; font-weight: 500;">${project.name}</span>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${idx})">⋮</div>
+            <div class="project-context-menu" id="project-menu-${idx}">
+                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${idx})">Editar</div>
+                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${idx})">Eliminar</div>
             </div>
         `;
         
-        li.addEventListener('click', () => selectProject(realIndex));
+        li.addEventListener('click', () => selectProject(idx));
         projectListContainer.appendChild(li);
     });
+    
+    // Actualizar también window.projects para mantener consistencia
+    window.projects = proyectosPermitidos;
+    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
     
     console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
     
@@ -38701,162 +38501,132 @@ function updateProjectSelectionStyles() {
 
 
 function selectProject(index) {
-  console.trace('🧭 selectProject llamado');
-
-  // 🧠 Validar índice
-  if (index < 0 || index >= projects.length) {
-    console.warn(`⚠️ Índice de proyecto inválido (${index})`);
-    return;
-  }
-
-  // 🔥 NUEVO: Verificar que el usuario tiene acceso a este proyecto
-  const clienteId = localStorage.getItem('clienteId');
-  const project = projects[index];
-  
-  if (!project) return;
-  
-  // Verificar acceso por clienteId (permitir invitados)
-const invitacionPendiente = localStorage.getItem('invitacionPendiente');
-const esInvitado = invitacionPendiente ? true : false;
-
-if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
-    console.log('🔒 No tienes acceso a este proyecto');
-    if (typeof showNotification === 'function') {
-        showNotification('No tienes acceso a este proyecto', 'error');
+    console.log('🧭 selectProject llamado con índice:', index);
+    
+    // 🔥 Usar proyectos filtrados en lugar de projects directamente
+    const proyectosPermitidos = getProyectosPermitidos();
+    
+    // Validar índice
+    if (index < 0 || index >= proyectosPermitidos.length) {
+        console.warn(`⚠️ Índice de proyecto inválido (${index})`);
+        return;
     }
-    return;
-}
+    
+    const project = proyectosPermitidos[index];
+    if (!project) return;
 
-// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
-if (esInvitado) {
-    console.log('🎉 Bienvenido al proyecto invitado');
-    if (typeof showNotification === 'function') {
-        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
+    // 🔥 Verificar acceso (opcional, ya lo hace getProyectosPermitidos)
+    const clienteId = localStorage.getItem('clienteId');
+    
+    // Actualizar índice actual (este es el índice dentro de proyectosPermitidos)
+    currentProjectIndex = index;
+    
+    // Guardar en localStorage
+    localStorage.setItem('currentProjectIndex', index);
+    
+    // 🔥 SOCKET → unir al proyecto
+    if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
+        console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
+        window.tiempoRealSocket.emit("join-project", currentProjectIndex);
     }
-    // Limpiar el token después de usarlo
-    localStorage.removeItem('invitacionPendiente');
-}
 
-  // Actualizar índice actual
-  currentProjectIndex = index;
+    // 📝 Actualizar nombres del proyecto en todas las vistas
+    const projectNameDisplay = document.getElementById('projectName');
+    const projectNameList = document.getElementById('projectNameList');
+    const projectNameCalendar = document.getElementById('projectNameCalendar');
+    const projectNameGantt = document.getElementById('projectNameGantt');
+    const projectNameReports = document.getElementById('projectNameReports');
+    const projectNameDashboard = document.getElementById('projectNameDashboard');
 
-  // Guardar en localStorage el índice seleccionado
-  localStorage.setItem('currentProjectIndex', index);
+    if (projectNameDisplay) projectNameDisplay.textContent = project.name;
+    if (projectNameList) projectNameList.textContent = project.name;
+    if (projectNameCalendar) projectNameCalendar.textContent = project.name;
+    if (projectNameGantt) projectNameGantt.textContent = project.name;
+    if (projectNameReports) projectNameReports.textContent = project.name;
+    if (projectNameDashboard) projectNameDashboard.textContent = project.name;
 
-// 🔌 SOCKET → unir al proyecto usando el índice (currentProjectIndex)
-if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
-    console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
-    window.tiempoRealSocket.emit("join-project", currentProjectIndex);
-}
+    // ⏱️ Tiempo total del proyecto
+    const totalTimeElement = document.getElementById('totalProjectTime');
+    if (totalTimeElement) {
+        totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
+    }
 
+    // 🔄 Actualizaciones generales
+    if (typeof actualizarAsignados === 'function') actualizarAsignados();
+    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    if (typeof updateTaskList === 'function') updateTaskList();
+    if (typeof updateStatistics === 'function') updateStatistics();
+    if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
+    if (typeof updateProjectProgress === 'function') updateProjectProgress();
 
-  // 📝 Actualizar nombres del proyecto en todas las vistas
-  const projectNameDisplay = document.getElementById('projectName');
-  const projectNameList = document.getElementById('projectNameList');
-  const projectNameCalendar = document.getElementById('projectNameCalendar');
-  const projectNameGantt = document.getElementById('projectNameGantt');
-  const projectNameReports = document.getElementById('projectNameReports');
-  const projectNameDashboard = document.getElementById('projectNameDashboard');
+    // 📊 Reportes
+    if (typeof generateReports === 'function') generateReports();
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        generatePieChart(getStats());
+    }
 
-  if (projectNameDisplay) projectNameDisplay.textContent = project.name;
-  if (projectNameList) projectNameList.textContent = project.name;
-  if (projectNameCalendar) projectNameCalendar.textContent = project.name;
-  if (projectNameGantt) projectNameGantt.textContent = project.name;
-  if (projectNameReports) projectNameReports.textContent = project.name;
-  if (projectNameDashboard) projectNameDashboard.textContent = project.name;
-
-  // ⏱️ Tiempo total del proyecto
-  const totalTimeElement = document.getElementById('totalProjectTime');
-  if (totalTimeElement) {
-    totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
-  }
-
-  // 🔄 Actualizaciones generales
-  if (typeof actualizarAsignados === 'function') actualizarAsignados();
-  if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-  if (typeof updateTaskList === 'function') updateTaskList();
-  if (typeof updateStatistics === 'function') updateStatistics();
-  if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
-  if (typeof updateProjectProgress === 'function') updateProjectProgress();
- // if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
-
-  // 📊 Reportes
-  if (typeof generateReports === 'function') generateReports();
-  if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
-    generatePieChart(getStats());
-  }
-
-  // ⚠️ Riesgos, acciones e hitos
-  setTimeout(() => {
-    if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
-    if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
-    if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
-    if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
-  }, 50);
-
-  // 🔁 Re-renderizar dashboard si está visible
-  const dashboardView = document.getElementById('dashboardView');
-  if (
-    dashboardView &&
-    getComputedStyle(dashboardView).display !== 'none'
-  ) {
-    console.log('🔁 Re-render dashboard por cambio de proyecto');
+    // ⚠️ Riesgos, acciones e hitos
     setTimeout(() => {
-      if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
+        if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
+        if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
+        if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
     }, 50);
-  }
 
-  // 🔀 Renderizar vista activa
-  const activeView = getActiveView();
-  switch (activeView) {
-    case 'calendar':
-      if (typeof renderCalendar === 'function') renderCalendar();
-      break;
-    case 'profitability':
-      if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
-      break;
-    case 'dashboard':
-      // Ya se renderizó arriba
-      break;
-    default:
-      // Para otras vistas, asegurar que se rendericen
-      if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
-        renderKanbanTasks();
-      } else if (activeView === 'list' && typeof renderListTasks === 'function') {
-        renderListTasks();
-      } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
-        renderGanttChart();
-      }
-  }
-  
-  // 🔥 NUEVO: Actualizar estilos del menú lateral
-  setTimeout(() => {
-    document.querySelectorAll('.project-item').forEach(item => {
-      const idx = parseInt(item.dataset.projectIndex);
-      if (idx === index) {
-        item.style.background = 'rgba(52, 152, 219, 0.2)';
-        item.style.border = '1px solid #3498db';
-        // Asegurar que el checkmark se vea
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = '#3498db';
-          checkmark.style.color = 'white';
-        }
-      } else {
-        item.style.background = 'rgba(255,255,255,0.05)';
-        item.style.border = '1px solid rgba(255,255,255,0.1)';
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = 'rgba(255,255,255,0.1)';
-          checkmark.style.color = 'transparent';
-        }
-      }
-    });
-  }, 100);
+    // 🔁 Re-renderizar dashboard si está visible
+    const dashboardView = document.getElementById('dashboardView');
+    if (dashboardView && getComputedStyle(dashboardView).display !== 'none') {
+        setTimeout(() => {
+            if (typeof renderDashboard === 'function') renderDashboard();
+        }, 50);
+    }
 
-  console.log(`✅ Proyecto seleccionado: "${project.name}"`);
+    // 🔀 Renderizar vista activa
+    const activeView = getActiveView();
+    switch (activeView) {
+        case 'calendar':
+            if (typeof renderCalendar === 'function') renderCalendar();
+            break;
+        case 'profitability':
+            if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
+            break;
+        case 'dashboard':
+            break;
+        default:
+            if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            } else if (activeView === 'list' && typeof renderListTasks === 'function') {
+                renderListTasks();
+            } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
+                renderGanttChart();
+            }
+    }
+    
+    // 🔥 Actualizar estilos del menú lateral
+    setTimeout(() => {
+        document.querySelectorAll('.project-item').forEach((item, i) => {
+            if (i === index) {
+                item.style.background = 'rgba(52, 152, 219, 0.2)';
+                item.style.border = '1px solid #3498db';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = '#3498db';
+                    checkmark.style.color = 'white';
+                }
+            } else {
+                item.style.background = 'rgba(255,255,255,0.05)';
+                item.style.border = '1px solid rgba(255,255,255,0.1)';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = 'rgba(255,255,255,0.1)';
+                    checkmark.style.color = 'transparent';
+                }
+            }
+        });
+    }, 100);
+
+    console.log(`✅ Proyecto seleccionado: "${project.name}"`);
 }
-
 
 
 function editProjectName(index) {
@@ -62850,68 +62620,236 @@ function mostrarMensajeInvitacion(texto, tipo = 'success') {
 // 7. FUNCIÓN DE EMAILJS MEJORADA
 // ============================================
 async function enviarInvitacion() {
-  const proyectoSelect = document.getElementById('selectProyectoInvitacion');
-  const emailInput = document.getElementById('emailInvitacion');
-  const rolSelect = document.getElementById('rolInvitado');
-  
-  const proyectoIndex = proyectoSelect.value;
-  const email = emailInput.value.trim();
-  const rol = rolSelect.value;
-  
-  if (!proyectoIndex || !email || !rol) {
-    mostrarMensajeInvitacion('❌ Completa todos los campos', 'error');
-    return;
-  }
-  
-  const proyectoNombre = projects[proyectoIndex]?.name;
-  if (!proyectoNombre) {
-    mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
-    return;
-  }
-
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
-    return;
-  }
-
-  try {
-    console.log('📤 Preparando fetch...');
-    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ email, proyectoIndex, proyectoNombre, rol })
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
-    if (!data.success) throw new Error(data.error);
+    console.log('🚀 INICIO - enviarInvitacion');
     
-    const inviteToken = data.token;
-    const enlace = `https://admonproject.netlify.app/?token=${inviteToken}`;
+    const proyectoSelect = document.getElementById('selectProyectoInvitacion');
+    const emailInput = document.getElementById('emailInvitacion');
+    const rolSelect = document.getElementById('rolInvitado');
     
-    // 🔥 INICIALIZAR EMAILJS (una línea) 🔥
-    emailjs.init('RKPQ7q1n2sDJdBqcG');
+    const proyectoIndex = proyectoSelect?.value;
+    const email = emailInput?.value?.trim();
+    const rol = rolSelect?.value;
     
-    // Enviar correo con EmailJS
-    await emailjs.send('service_kccmxz7', 'template_we2gzml', {
-      to_email: email,
-      project_name: proyectoNombre,
-      role: rol,
-      invite_link: enlace,
-      from_name: 'Centro de Comando IA 4D Élite'
-    });
+    console.log('📊 Datos del formulario:', { proyectoIndex, email, rol });
     
-    mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
-    emailInput.value = '';
-  } catch (error) {
-    console.error(error);
-    mostrarMensajeInvitacion('❌ Error al enviar invitación', 'error');
-  }
+    // Validaciones
+    if (!proyectoIndex) {
+        mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error');
+        return;
+    }
+    
+    if (!email) {
+        mostrarMensajeInvitacion('❌ Ingresa un email válido', 'error');
+        return;
+    }
+    
+    if (!rol) {
+        mostrarMensajeInvitacion('❌ Selecciona un rol', 'error');
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        mostrarMensajeInvitacion('❌ Email inválido', 'error');
+        return;
+    }
+    
+    const proyecto = projects[proyectoIndex];
+    if (!proyecto) {
+        mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
+        return;
+    }
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
+        return;
+    }
+    
+    console.log('✅ Validaciones pasadas');
+    
+    const btnEnviar = document.getElementById('btnEnviarInvitacion');
+    const textoOriginal = btnEnviar?.innerHTML;
+    if (btnEnviar) {
+        btnEnviar.innerHTML = '⏳ Enviando...';
+        btnEnviar.disabled = true;
+    }
+    
+    try {
+        console.log('📤 PASO 1: Creando invitación en backend...');
+        
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+                email, 
+                proyectoIndex: parseInt(proyectoIndex), 
+                proyectoNombre: proyecto.name, 
+                rol 
+            })
+        });
+        
+        const data = await response.json();
+        console.log('📦 Respuesta del backend:', data);
+        
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Error en backend');
+        }
+        
+        const inviteToken = data.token;
+     const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
+        console.log('🔗 Link generado:', enlace);
+        
+        console.log('📧 PASO 2: Enviando correo con EmailJS...');
+        
+        // Inicializar EmailJS (por si acaso)
+        emailjs.init('RKPQ7q1n2sDJdBqcG');
+        
+        const emailResult = await emailjs.send('service_kccmxz7', 'template_we2gzml', {
+            to_email: email,
+            project_name: proyecto.name,
+            role: rol,
+            invite_link: enlace,
+            from_name: 'Centro de Comando IA 4D Élite'
+        });
+        
+        console.log('✅ EmailJS respuesta:', emailResult);
+        
+        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+        mostrarModalLinkInvitacion(enlace, email);
+        
+        if (emailInput) emailInput.value = '';
+        
+    } catch (error) {
+        console.error('❌ ERROR DETALLADO:', error);
+        mostrarMensajeInvitacion('❌ Error: ' + error.message, 'error');
+    } finally {
+        if (btnEnviar) {
+            btnEnviar.innerHTML = textoOriginal || 'Enviar';
+            btnEnviar.disabled = false;
+        }
+    }
 }
+
+
+// ============================================
+// 🖼️ MOSTRAR MODAL CON LINK DE INVITACIÓN
+// ============================================
+
+function mostrarModalLinkInvitacion(link, email) {
+    // Eliminar modal anterior si existe
+    const modalExistente = document.getElementById('modalLinkInvitacion');
+    if (modalExistente) modalExistente.remove();
+    
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.id = 'modalLinkInvitacion';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 10000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, sans-serif;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 24px;
+            padding: 30px;
+            width: 500px;
+            max-width: 90vw;
+            border: 2px solid #8b5cf6;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: white;">✅ Invitación creada</h3>
+                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
+                    background: rgba(239, 68, 68, 0.2);
+                    border: none;
+                    color: #ef4444;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 18px;
+                ">✕</button>
+            </div>
+            
+            <p style="color: #94a3b8; margin-bottom: 15px;">
+                La invitación ha sido enviada a <strong style="color: #8b5cf6;">${email}</strong>
+            </p>
+            
+            <div style="
+                background: #0f172a;
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 15px;
+                margin-bottom: 20px;
+            ">
+                <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Link de invitación:</div>
+                <div style="
+                    background: #020617;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    color: #8b5cf6;
+                    word-break: break-all;
+                ">${link}</div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="copiarLinkInvitacion('${link}')" style="
+                    background: #8b5cf6;
+                    border: none;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 40px;
+                    cursor: pointer;
+                    font-weight: bold;
+                ">📋 Copiar link</button>
+                <button onclick="this.closest('#modalLinkInvitacion').remove()" style="
+                    background: #334155;
+                    border: none;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 40px;
+                    cursor: pointer;
+                    font-weight: bold;
+                ">Cerrar</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// ============================================
+// 📋 COPIAR LINK AL PORTAPAPELES
+// ============================================
+
+async function copiarLinkInvitacion(link) {
+    try {
+        await navigator.clipboard.writeText(link);
+        mostrarMensajeInvitacion('✅ Link copiado al portapapeles', 'success');
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        mostrarMensajeInvitacion('❌ No se pudo copiar el link', 'error');
+    }
+}
+
+
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
@@ -62919,41 +62857,55 @@ function getProyectosPermitidos() {
     try {
         console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
         
-        // Obtener clienteId (esto es lo más importante)
         const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
-        }
-        
-        // Si no hay proyectos por clienteId, verificar si es admin
         const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
+        const userEmail = userStr ? JSON.parse(userStr).email : null;
+        
+        console.log('🔑 Cliente ID:', clienteId);
+        console.log('📧 User email:', userEmail);
+        
+        // 🟢 1. PRIMERO: Filtrar por clienteId (proyectos creados por el usuario)
+        let proyectosPorClienteId = [];
+        if (clienteId) {
+            proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
+            console.log(`📊 Proyectos por clienteId: ${proyectosPorClienteId.length}`);
         }
         
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
+        // 🟢 2. SEGUNDO: Buscar proyectos donde el usuario fue invitado como colaborador
+        //    Esto requiere que en el backend, al aceptar la invitación, se agregue al usuario
+        //    como miembro en una colección separada o se marque el proyecto con su email.
+        //    Por ahora, simulamos con proyectos que tengan el email en un campo 'invitados'
+        
+        let proyectosInvitado = [];
+        if (userEmail) {
+            proyectosInvitado = projects.filter(p => 
+                p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
+            );
+            console.log(`📊 Proyectos donde fue invitado: ${proyectosInvitado.length}`);
+        }
+        
+        // 🟢 3. TERCERO: Si es ADMIN, devolver todos
+        if (userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 Admin - devolviendo todos los proyectos');
+            return projects;
+        }
+        
+        // 🟢 4. COMBINAR ambas fuentes (sin duplicados por id)
+        const todosProyectos = [...proyectosPorClienteId];
+        proyectosInvitado.forEach(p => {
+            if (!todosProyectos.some(existente => existente.id === p.id)) {
+                todosProyectos.push(p);
+            }
+        });
+        
+        console.log(`✅ Total proyectos para este usuario: ${todosProyectos.length}`);
+        return todosProyectos;
         
     } catch (error) {
         console.error('Error en getProyectosPermitidos:', error);
         return [];
     }
 }
-
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
