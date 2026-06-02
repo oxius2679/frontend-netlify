@@ -1,3 +1,57 @@
+// ============================================
+// 🎯 PROCESAR INVITACIÓN PENDIENTE DESPUÉS DEL LOGIN
+// ============================================
+(function procesarInvitacionPendiente() {
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
+    
+    if (pendingInvitation) {
+        try {
+            const invitation = JSON.parse(pendingInvitation);
+            console.log('🎉 Invitación pendiente detectada:', invitation);
+            
+            // Verificar si ya tenemos un token (usuario logueado)
+            const token = localStorage.getItem('authToken');
+            
+            if (token && invitation.clienteId) {
+                console.log('✅ Usuario logueado, aplicando invitación...');
+                
+                // Guardar el clienteId
+                localStorage.setItem('clienteId', invitation.clienteId);
+                
+                // Mostrar mensaje de bienvenida
+                setTimeout(() => {
+                    if (typeof showNotification === 'function') {
+                        showNotification(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`, 'success');
+                    } else {
+                        alert(`🎉 Bienvenido al proyecto "${invitation.proyectoNombre}" como ${invitation.rol}`);
+                    }
+                }, 1000);
+                
+                // Limpiar la invitación pendiente
+                localStorage.removeItem('pendingInvitation');
+                
+                // Forzar recarga de proyectos
+                setTimeout(() => {
+                    if (typeof forceFullRefresh === 'function') {
+                        forceFullRefresh();
+                    } else if (typeof safeLoad === 'function') {
+                        safeLoad().then(() => {
+                            if (typeof renderProjects === 'function') renderProjects();
+                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                        });
+                    }
+                }, 500);
+            } else {
+                console.log('⏳ Esperando login del usuario para aplicar invitación...');
+                // No eliminamos pendingInvitation aún, esperamos el login
+            }
+        } catch (e) {
+            console.error('Error procesando invitación pendiente:', e);
+            localStorage.removeItem('pendingInvitation');
+        }
+    }
+})();
+
 
 
 
@@ -22712,7 +22766,12 @@ async function safeLoad() {
 
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
-    if (forceLocal) {
+    
+    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
+    const urlParams = new URLSearchParams(window.location.search);
+    const justAccepted = urlParams.get('accepted') === 'true';
+    
+    if (forceLocal && !justAccepted) {
         console.log('🔄 Usando localStorage porque hubo un guardado reciente');
         const saved = localStorage.getItem('projects');
         if (saved) {
@@ -22721,117 +22780,67 @@ async function safeLoad() {
         }
     }
 
-    console.log('🔐 Token disponible:', window.authToken ? "SÍ" : "NO");
-
+    const token = localStorage.getItem('authToken');
     const clienteId = localStorage.getItem('clienteId');
+    
+    console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
     console.log('🏢 Cliente ID:', clienteId || 'No definido');
     
-    const esClienteGenerado = clienteId && clienteId.startsWith('user_');
-    if (esClienteGenerado) {
-        console.log('🔧 Cliente ID generado automáticamente - Modo LOCAL');
+    if (justAccepted) {
+        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
     }
     
-    let loadedData = null;
-    let backendAvailable = false;
-
-    if (!window.authToken || window.authToken.length < 10) {
-        console.warn('⚠️ No hay token válido, usando localStorage');
-    } else {
-        if (!esClienteGenerado) {
-            try {
-                console.log('🔄 Verificando backend...');
-                const healthResponse = await fetch(`${API_URL}/api/health`, { timeout: 5000 });
-                if (healthResponse.ok) {
-                    backendAvailable = true;
-                    console.log('✅ Backend disponible');
+    // Siempre intentar cargar desde backend si hay token
+    if (token && clienteId) {
+        try {
+            console.log('🔄 Cargando desde MongoDB...');
+            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
+            const response = await fetch(url, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
-            } catch (error) {
-                console.warn('⚠️ Backend no disponible:', error.message);
-            }
-        } else {
-            console.log('🔧 Cliente generado - Omitiendo verificación de backend');
-        }
-
-        if (backendAvailable && !esClienteGenerado) {
-            try {
-                console.log('🔄 Intentando cargar desde MongoDB...');
-                const url = clienteId ? `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}` : `${API_URL}/api/projects?_t=${Date.now()}`;
-                const response = await fetch(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${window.authToken}`,
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Datos cargados desde MongoDB Atlas');
                 
-                if (response.ok) {
-                    loadedData = await response.json();
-                    console.log('✅ Datos cargados desde MongoDB Atlas');
+                if (data.projects) {
+                    projects = data.projects;
+                    currentProjectIndex = data.currentProjectIndex || 0;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
                     
-                    if (loadedData.projects) {
-                        localStorage.setItem('projects', JSON.stringify(loadedData.projects));
-                        localStorage.setItem('currentProjectIndex', loadedData.currentProjectIndex || 0);
+                    // Limpiar parámetro de URL si existe
+                    if (justAccepted) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
+                    
+                    console.log(`✅ ${projects.length} proyectos cargados`);
+                    return true;
                 }
-            } catch (error) {
-                console.warn('⚠️ Error cargando desde backend:', error.message);
             }
+        } catch (error) {
+            console.warn('⚠️ Error cargando desde backend:', error.message);
         }
     }
 
-    if (!loadedData || !loadedData.projects) {
-        console.log('🔄 Usando datos de localStorage...');
-        const savedProjects = localStorage.getItem('projects');
-        if (savedProjects) {
-            try {
-                loadedData = {
-                    projects: JSON.parse(savedProjects),
-                    currentProjectIndex: parseInt(localStorage.getItem('currentProjectIndex') || '0')
-                };
-                console.log('✅ Datos cargados desde localStorage');
-            } catch (error) {
-                console.error('❌ Error parseando localStorage:', error);
-            }
-        }
+    // Fallback a localStorage
+    const savedProjects = localStorage.getItem('projects');
+    if (savedProjects) {
+        projects = JSON.parse(savedProjects);
+        currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        return true;
     }
 
-    if (loadedData && loadedData.projects) {
-        projects = loadedData.projects;
-        currentProjectIndex = loadedData.currentProjectIndex || 0;
-        
-        // ========== 🔥 FILTRAR POR CLIENTEID - PARTE IMPORTANTE ==========
-        const clienteIdActual = localStorage.getItem('clienteId');
-        if (clienteIdActual) {
-            const proyectosFiltrados = projects.filter(p => p.clienteId === clienteIdActual);
-            if (proyectosFiltrados.length > 0) {
-                console.log(`🔒 Filtrados ${projects.length} → ${proyectosFiltrados.length} proyectos para cliente ${clienteIdActual}`);
-                projects = proyectosFiltrados;
-                currentProjectIndex = 0;
-            } else if (projects.length > 0) {
-                console.warn(`⚠️ Usuario ${clienteIdActual} no tiene proyectos. Mostrando mensaje.`);
-                // No mostrar proyectos que no le pertenecen
-                projects = [];
-            }
-        }
-        
-        // 🔥 NUEVO: Verificar si la prueba FREE expiró
-        const userPlan = localStorage.getItem('userPlan') || 'free';
-        if (userPlan === 'free' && projects.length > 1) {
-            console.warn(`⚠️ Plan FREE: ${projects.length} proyectos → limitando a 1`);
-            projects = [projects[0]];
-            currentProjectIndex = 0;
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
-        
-        console.log(`✅ ${projects.length} proyectos cargados`);
-    } else {
-        console.log('📝 No hay datos, se creará proyecto inicial al interactuar');
-    }
-
+    console.log('📝 No hay datos, se creará proyecto inicial');
+    projects = [];
     console.groupEnd();
-    return !!loadedData;
+    return false;
 }
-
 
 
 
@@ -23206,74 +23215,7 @@ const syncChannel = new BroadcastChannel('task_sync');
 
 
 
-// ============================================
-// 🚨 DETECTOR DE INVITACIÓN - FORZAR CARGA
-// ============================================
-(function handleInvitationRedirect() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceClienteId = urlParams.get('forceClienteId');
-    const forceView = urlParams.get('view');
-    
-    if (forceClienteId) {
-        console.log('🎯 Invitación detectada - Forzando clienteId:', forceClienteId);
-        
-        // Guardar clienteId inmediatamente
-        localStorage.setItem('clienteId', forceClienteId);
-        
-        // Limpar URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // Forzar recarga de proyectos DESPUÉS de que el DOM esté listo
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', forceReloadForInvited);
-        } else {
-            forceReloadForInvited();
-        }
-    }
-    
-    function forceReloadForInvited() {
-        console.log('🔄 Forzando recarga para invitado...');
-        
-        // Esperar un poco para que auth se inicialice
-        setTimeout(async () => {
-            try {
-                // Si tienes safeLoad, úsalo
-                if (typeof window.safeLoad === 'function') {
-                    await window.safeLoad();
-                }
-                
-                // Forzar render de sidebar
-                if (typeof forceRenderSidebar === 'function') {
-                    forceRenderSidebar();
-                }
-                
-                // Forzar vista Kanban si se solicitó
-                if (forceView === 'board' && typeof window.renderKanbanTasks === 'function') {
-                    // Esperar a que projects esté disponible
-                    let attempts = 0;
-                    const checkProjects = setInterval(() => {
-                        if (window.projects && window.projects.length > 0) {
-                            clearInterval(checkProjects);
-                            console.log('✅ Projects disponibles, renderizando Kanban');
-                            window.renderKanbanTasks();
-                            
-                            // También mostrar la vista board
-                            const boardView = document.getElementById('boardView');
-                            if (boardView) {
-                                document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-                                boardView.classList.add('active');
-                            }
-                        }
-                        attempts++;
-                        if (attempts > 20) clearInterval(checkProjects); // Timeout 10s
-                    }, 500);
-                }
-            } catch (e) {
-                console.error('❌ Error en forceReloadForInvited:', e);
-            }
-        }, 1000);
-    }
-})();
+
 
 
 
@@ -38488,9 +38430,9 @@ function renderProjects() {
         return;
     }
     
-    // Obtener proyectos permitidos (AHORA SÍ FILTRA POR CLIENTEID)
+    // 🔥 USAR proyectos FILTRADOS en lugar de projects directamente
     const proyectosPermitidos = getProyectosPermitidos();
-    console.log('📋 Proyectos a renderizar:', proyectosPermitidos.length);
+    console.log(`📋 Proyectos a renderizar: ${proyectosPermitidos.length}`);
     
     projectListContainer.innerHTML = '';
     
@@ -38498,53 +38440,44 @@ function renderProjects() {
         projectListContainer.innerHTML = `
             <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
                 <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                No tienes proyectos creados
+                No tienes proyectos
             </li>
         `;
         return;
     }
     
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    proyectosPermitidos.forEach((project) => {
-        // Encontrar el índice REAL en el array original
-        const realIndex = projects.findIndex(p => 
-            p.name === project.name && 
-            p.clienteId === project.clienteId
-        );
-        
-        if (realIndex === -1) return;
-        
+    proyectosPermitidos.forEach((project, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
-        li.dataset.projectIndex = realIndex;
-        
-        // Sistema legacy de permisos (opcional)
-        const permiso = user.proyectosPermitidos?.find(p => p.proyectoIndex === realIndex);
+        li.dataset.projectIndex = idx;
+        li.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: ${idx === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
         
         li.innerHTML = `
-            <span>
-                ${project.name}
-                ${permiso ? `<span class="rol-badge" style="
-                    font-size: 10px;
-                    background: #8b5cf6;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 10px;
-                    margin-left: 10px;
-                    display: inline-block;
-                ">${permiso.rol}</span>` : ''}
-            </span>
-            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${realIndex})">⋮</div>
-            <div class="project-context-menu" id="project-menu-${realIndex}">
-                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${realIndex})">Editar</div>
-                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${realIndex})">Eliminar</div>
+            <span style="color: white; font-weight: 500;">${project.name}</span>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${idx})">⋮</div>
+            <div class="project-context-menu" id="project-menu-${idx}">
+                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${idx})">Editar</div>
+                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${idx})">Eliminar</div>
             </div>
         `;
         
-        li.addEventListener('click', () => selectProject(realIndex));
+        li.addEventListener('click', () => selectProject(idx));
         projectListContainer.appendChild(li);
     });
+    
+    // Actualizar también window.projects para mantener consistencia
+    window.projects = proyectosPermitidos;
+    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
     
     console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
     
@@ -38568,162 +38501,132 @@ function updateProjectSelectionStyles() {
 
 
 function selectProject(index) {
-  console.trace('🧭 selectProject llamado');
-
-  // 🧠 Validar índice
-  if (index < 0 || index >= projects.length) {
-    console.warn(`⚠️ Índice de proyecto inválido (${index})`);
-    return;
-  }
-
-  // 🔥 NUEVO: Verificar que el usuario tiene acceso a este proyecto
-  const clienteId = localStorage.getItem('clienteId');
-  const project = projects[index];
-  
-  if (!project) return;
-  
-  // Verificar acceso por clienteId (permitir invitados)
-const invitacionPendiente = localStorage.getItem('invitacionPendiente');
-const esInvitado = invitacionPendiente ? true : false;
-
-if (project.clienteId && project.clienteId !== clienteId && !esInvitado) {
-    console.log('🔒 No tienes acceso a este proyecto');
-    if (typeof showNotification === 'function') {
-        showNotification('No tienes acceso a este proyecto', 'error');
+    console.log('🧭 selectProject llamado con índice:', index);
+    
+    // 🔥 Usar proyectos filtrados en lugar de projects directamente
+    const proyectosPermitidos = getProyectosPermitidos();
+    
+    // Validar índice
+    if (index < 0 || index >= proyectosPermitidos.length) {
+        console.warn(`⚠️ Índice de proyecto inválido (${index})`);
+        return;
     }
-    return;
-}
+    
+    const project = proyectosPermitidos[index];
+    if (!project) return;
 
-// Si es invitado y llegó aquí, mostrar mensaje de bienvenida
-if (esInvitado) {
-    console.log('🎉 Bienvenido al proyecto invitado');
-    if (typeof showNotification === 'function') {
-        showNotification('🎉 Bienvenido al proyecto compartido', 'success');
+    // 🔥 Verificar acceso (opcional, ya lo hace getProyectosPermitidos)
+    const clienteId = localStorage.getItem('clienteId');
+    
+    // Actualizar índice actual (este es el índice dentro de proyectosPermitidos)
+    currentProjectIndex = index;
+    
+    // Guardar en localStorage
+    localStorage.setItem('currentProjectIndex', index);
+    
+    // 🔥 SOCKET → unir al proyecto
+    if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
+        console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
+        window.tiempoRealSocket.emit("join-project", currentProjectIndex);
     }
-    // Limpiar el token después de usarlo
-    localStorage.removeItem('invitacionPendiente');
-}
 
-  // Actualizar índice actual
-  currentProjectIndex = index;
+    // 📝 Actualizar nombres del proyecto en todas las vistas
+    const projectNameDisplay = document.getElementById('projectName');
+    const projectNameList = document.getElementById('projectNameList');
+    const projectNameCalendar = document.getElementById('projectNameCalendar');
+    const projectNameGantt = document.getElementById('projectNameGantt');
+    const projectNameReports = document.getElementById('projectNameReports');
+    const projectNameDashboard = document.getElementById('projectNameDashboard');
 
-  // Guardar en localStorage el índice seleccionado
-  localStorage.setItem('currentProjectIndex', index);
+    if (projectNameDisplay) projectNameDisplay.textContent = project.name;
+    if (projectNameList) projectNameList.textContent = project.name;
+    if (projectNameCalendar) projectNameCalendar.textContent = project.name;
+    if (projectNameGantt) projectNameGantt.textContent = project.name;
+    if (projectNameReports) projectNameReports.textContent = project.name;
+    if (projectNameDashboard) projectNameDashboard.textContent = project.name;
 
-// 🔌 SOCKET → unir al proyecto usando el índice (currentProjectIndex)
-if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
-    console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
-    window.tiempoRealSocket.emit("join-project", currentProjectIndex);
-}
+    // ⏱️ Tiempo total del proyecto
+    const totalTimeElement = document.getElementById('totalProjectTime');
+    if (totalTimeElement) {
+        totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
+    }
 
+    // 🔄 Actualizaciones generales
+    if (typeof actualizarAsignados === 'function') actualizarAsignados();
+    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    if (typeof updateTaskList === 'function') updateTaskList();
+    if (typeof updateStatistics === 'function') updateStatistics();
+    if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
+    if (typeof updateProjectProgress === 'function') updateProjectProgress();
 
-  // 📝 Actualizar nombres del proyecto en todas las vistas
-  const projectNameDisplay = document.getElementById('projectName');
-  const projectNameList = document.getElementById('projectNameList');
-  const projectNameCalendar = document.getElementById('projectNameCalendar');
-  const projectNameGantt = document.getElementById('projectNameGantt');
-  const projectNameReports = document.getElementById('projectNameReports');
-  const projectNameDashboard = document.getElementById('projectNameDashboard');
+    // 📊 Reportes
+    if (typeof generateReports === 'function') generateReports();
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        generatePieChart(getStats());
+    }
 
-  if (projectNameDisplay) projectNameDisplay.textContent = project.name;
-  if (projectNameList) projectNameList.textContent = project.name;
-  if (projectNameCalendar) projectNameCalendar.textContent = project.name;
-  if (projectNameGantt) projectNameGantt.textContent = project.name;
-  if (projectNameReports) projectNameReports.textContent = project.name;
-  if (projectNameDashboard) projectNameDashboard.textContent = project.name;
-
-  // ⏱️ Tiempo total del proyecto
-  const totalTimeElement = document.getElementById('totalProjectTime');
-  if (totalTimeElement) {
-    totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
-  }
-
-  // 🔄 Actualizaciones generales
-  if (typeof actualizarAsignados === 'function') actualizarAsignados();
-  if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-  if (typeof updateTaskList === 'function') updateTaskList();
-  if (typeof updateStatistics === 'function') updateStatistics();
-  if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
-  if (typeof updateProjectProgress === 'function') updateProjectProgress();
- // if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
-
-  // 📊 Reportes
-  if (typeof generateReports === 'function') generateReports();
-  if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
-    generatePieChart(getStats());
-  }
-
-  // ⚠️ Riesgos, acciones e hitos
-  setTimeout(() => {
-    if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
-    if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
-    if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
-    if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
-  }, 50);
-
-  // 🔁 Re-renderizar dashboard si está visible
-  const dashboardView = document.getElementById('dashboardView');
-  if (
-    dashboardView &&
-    getComputedStyle(dashboardView).display !== 'none'
-  ) {
-    console.log('🔁 Re-render dashboard por cambio de proyecto');
+    // ⚠️ Riesgos, acciones e hitos
     setTimeout(() => {
-      if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
+        if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
+        if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
+        if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
     }, 50);
-  }
 
-  // 🔀 Renderizar vista activa
-  const activeView = getActiveView();
-  switch (activeView) {
-    case 'calendar':
-      if (typeof renderCalendar === 'function') renderCalendar();
-      break;
-    case 'profitability':
-      if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
-      break;
-    case 'dashboard':
-      // Ya se renderizó arriba
-      break;
-    default:
-      // Para otras vistas, asegurar que se rendericen
-      if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
-        renderKanbanTasks();
-      } else if (activeView === 'list' && typeof renderListTasks === 'function') {
-        renderListTasks();
-      } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
-        renderGanttChart();
-      }
-  }
-  
-  // 🔥 NUEVO: Actualizar estilos del menú lateral
-  setTimeout(() => {
-    document.querySelectorAll('.project-item').forEach(item => {
-      const idx = parseInt(item.dataset.projectIndex);
-      if (idx === index) {
-        item.style.background = 'rgba(52, 152, 219, 0.2)';
-        item.style.border = '1px solid #3498db';
-        // Asegurar que el checkmark se vea
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = '#3498db';
-          checkmark.style.color = 'white';
-        }
-      } else {
-        item.style.background = 'rgba(255,255,255,0.05)';
-        item.style.border = '1px solid rgba(255,255,255,0.1)';
-        const checkmark = item.querySelector('div > div:last-child');
-        if (checkmark) {
-          checkmark.style.background = 'rgba(255,255,255,0.1)';
-          checkmark.style.color = 'transparent';
-        }
-      }
-    });
-  }, 100);
+    // 🔁 Re-renderizar dashboard si está visible
+    const dashboardView = document.getElementById('dashboardView');
+    if (dashboardView && getComputedStyle(dashboardView).display !== 'none') {
+        setTimeout(() => {
+            if (typeof renderDashboard === 'function') renderDashboard();
+        }, 50);
+    }
 
-  console.log(`✅ Proyecto seleccionado: "${project.name}"`);
+    // 🔀 Renderizar vista activa
+    const activeView = getActiveView();
+    switch (activeView) {
+        case 'calendar':
+            if (typeof renderCalendar === 'function') renderCalendar();
+            break;
+        case 'profitability':
+            if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
+            break;
+        case 'dashboard':
+            break;
+        default:
+            if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            } else if (activeView === 'list' && typeof renderListTasks === 'function') {
+                renderListTasks();
+            } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
+                renderGanttChart();
+            }
+    }
+    
+    // 🔥 Actualizar estilos del menú lateral
+    setTimeout(() => {
+        document.querySelectorAll('.project-item').forEach((item, i) => {
+            if (i === index) {
+                item.style.background = 'rgba(52, 152, 219, 0.2)';
+                item.style.border = '1px solid #3498db';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = '#3498db';
+                    checkmark.style.color = 'white';
+                }
+            } else {
+                item.style.background = 'rgba(255,255,255,0.05)';
+                item.style.border = '1px solid rgba(255,255,255,0.1)';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = 'rgba(255,255,255,0.1)';
+                    checkmark.style.color = 'transparent';
+                }
+            }
+        });
+    }, 100);
+
+    console.log(`✅ Proyecto seleccionado: "${project.name}"`);
 }
-
 
 
 function editProjectName(index) {
@@ -62954,41 +62857,55 @@ function getProyectosPermitidos() {
     try {
         console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
         
-        // Obtener clienteId (esto es lo más importante)
         const clienteId = localStorage.getItem('clienteId');
-        console.log('🔑 Cliente ID:', clienteId);
-        
-        // 🟢🟢🟢 FILTRO POR CLIENTEID (DEBE SER LO PRIMERO) 🟢🟢🟢
-        if (clienteId) {
-            const proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
-            console.log(`📊 Proyectos encontrados por clienteId: ${proyectosPorClienteId.length}`);
-            
-            if (proyectosPorClienteId.length > 0) {
-                console.log('✅ Devolviendo proyectos por clienteId');
-                return proyectosPorClienteId;
-            }
-        }
-        
-        // Si no hay proyectos por clienteId, verificar si es admin
         const userStr = localStorage.getItem('user');
-        if (userStr) {
-            const user = JSON.parse(userStr);
-            if (user.role === 'ADMIN' || user.email === 'ajackson2672@gmail.com') {
-                console.log('👑 Admin - devolviendo todos los proyectos');
-                return projects;
-            }
+        const userEmail = userStr ? JSON.parse(userStr).email : null;
+        
+        console.log('🔑 Cliente ID:', clienteId);
+        console.log('📧 User email:', userEmail);
+        
+        // 🟢 1. PRIMERO: Filtrar por clienteId (proyectos creados por el usuario)
+        let proyectosPorClienteId = [];
+        if (clienteId) {
+            proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
+            console.log(`📊 Proyectos por clienteId: ${proyectosPorClienteId.length}`);
         }
         
-        // Si no hay nada, devolver array vacío
-        console.log('ℹ️ No hay proyectos para este usuario');
-        return [];
+        // 🟢 2. SEGUNDO: Buscar proyectos donde el usuario fue invitado como colaborador
+        //    Esto requiere que en el backend, al aceptar la invitación, se agregue al usuario
+        //    como miembro en una colección separada o se marque el proyecto con su email.
+        //    Por ahora, simulamos con proyectos que tengan el email en un campo 'invitados'
+        
+        let proyectosInvitado = [];
+        if (userEmail) {
+            proyectosInvitado = projects.filter(p => 
+                p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
+            );
+            console.log(`📊 Proyectos donde fue invitado: ${proyectosInvitado.length}`);
+        }
+        
+        // 🟢 3. TERCERO: Si es ADMIN, devolver todos
+        if (userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 Admin - devolviendo todos los proyectos');
+            return projects;
+        }
+        
+        // 🟢 4. COMBINAR ambas fuentes (sin duplicados por id)
+        const todosProyectos = [...proyectosPorClienteId];
+        proyectosInvitado.forEach(p => {
+            if (!todosProyectos.some(existente => existente.id === p.id)) {
+                todosProyectos.push(p);
+            }
+        });
+        
+        console.log(`✅ Total proyectos para este usuario: ${todosProyectos.length}`);
+        return todosProyectos;
         
     } catch (error) {
         console.error('Error en getProyectosPermitidos:', error);
         return [];
     }
 }
-
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
@@ -69111,1085 +69028,6 @@ if (!document.getElementById('notif-slack-styles')) {
     document.body.offsetHeight;
     document.body.style.display = '';
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ============================================
-// 🔥 KANBAN PREMIUM - VERSIÓN CON BOTONES VISIBLES
-// ============================================
-(function() {
-    console.log('👑 ACTIVANDO KANBAN PREMIUM - BOTONES VISIBLES');
-    
-    // ========== FUNCIONES DE MOVIMIENTO ==========
-    window.moveTaskUp = function(taskId, status) {
-        console.log(`⬆️ Mover arriba: taskId=${taskId}, status=${status}`);
-        const project = projects[currentProjectIndex];
-        if (!project || !project.tasks) return;
-        
-        const tasksInStatus = project.tasks.filter(t => t.status === status);
-        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
-        
-        if (currentIndex > 0) {
-            const allTasks = project.tasks;
-            const task1 = tasksInStatus[currentIndex];
-            const task2 = tasksInStatus[currentIndex - 1];
-            const index1 = allTasks.findIndex(t => t.id === task1.id);
-            const index2 = allTasks.findIndex(t => t.id === task2.id);
-            
-            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
-            
-            localStorage.setItem('projects', JSON.stringify(projects));
-            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
-            mostrarNotificacion('✅ Tarea movida arriba');
-        }
-    };
-    
-    window.moveTaskDown = function(taskId, status) {
-        console.log(`⬇️ Mover abajo: taskId=${taskId}, status=${status}`);
-        const project = projects[currentProjectIndex];
-        if (!project || !project.tasks) return;
-        
-        const tasksInStatus = project.tasks.filter(t => t.status === status);
-        const currentIndex = tasksInStatus.findIndex(t => t.id == taskId);
-        
-        if (currentIndex < tasksInStatus.length - 1) {
-            const allTasks = project.tasks;
-            const task1 = tasksInStatus[currentIndex];
-            const task2 = tasksInStatus[currentIndex + 1];
-            const index1 = allTasks.findIndex(t => t.id === task1.id);
-            const index2 = allTasks.findIndex(t => t.id === task2.id);
-            
-            [allTasks[index1], allTasks[index2]] = [allTasks[index2], allTasks[index1]];
-            
-            localStorage.setItem('projects', JSON.stringify(projects));
-            if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
-            mostrarNotificacion('✅ Tarea movida abajo');
-        }
-    };
-    
-    function mostrarNotificacion(mensaje) {
-        const notif = document.createElement('div');
-        notif.textContent = mensaje;
-        notif.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            z-index: 100000;
-            font-size: 13px;
-            animation: fadeInOut 2s ease;
-        `;
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 2000);
-    }
-    
-    // ========== FUNCIÓN PRINCIPAL ==========
-    window.renderKanbanTasks = function(tasksParam) {
-        console.log('🎯 RENDERIZANDO KANBAN PREMIUM');
-        
-        // Validaciones
-        if (typeof projects === 'undefined' || !projects || projects.length === 0) {
-            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 500);
-            return;
-        }
-        
-        let project;
-        const idx = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
-        
-        if (idx >= 0 && idx < projects.length) {
-            project = projects[idx];
-        } else if (projects.length === 1) {
-            project = projects[0];
-            currentProjectIndex = 0;
-        }
-        
-        if (!project) {
-            console.error('❌ Proyecto no encontrado');
-            return;
-        }
-        
-        const tasks = tasksParam || project.tasks || [];
-        console.log(`📊 Renderizando ${tasks.length} tareas`);
-        
-        // Obtener columnas
-        const pendingCol = document.getElementById('pendingList');
-        const inProgressCol = document.getElementById('inProgressList');
-        const completedCol = document.getElementById('completedList');
-        const overdueCol = document.getElementById('overdueList');
-        
-        if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-            setTimeout(() => window.renderKanbanTasks?.(tasksParam), 300);
-            return;
-        }
-        
-        // ========== INYECTAR ESTILOS ==========
-        if (!document.getElementById('kanban-final-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'kanban-final-styles';
-            styles.textContent = `
-                /* Contenedor principal */
-                .kanban-board-final {
-                    display: flex;
-                    gap: 20px;
-                    padding: 20px;
-                    background: linear-gradient(135deg, #0a0a1a 0%, #0f172a 100%);
-                    min-height: calc(100vh - 200px);
-                    overflow-x: auto;
-                }
-                
-                /* Columnas */
-                .kanban-column-final {
-                    flex: 1;
-                    min-width: 300px;
-                    background: rgba(15, 23, 42, 0.6);
-                    backdrop-filter: blur(12px);
-                    border-radius: 20px;
-                    border: 1px solid rgba(139, 92, 246, 0.25);
-                    overflow: hidden;
-                    transition: all 0.3s ease;
-                }
-                
-                .kanban-column-final:hover {
-                    border-color: rgba(139, 92, 246, 0.5);
-                    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
-                }
-                
-                /* Columna REZAGADAS - solo estilo visual */
-                #overdueList.kanban-column-final {
-                    border-color: rgba(239, 68, 68, 0.4);
-                    background: rgba(239, 68, 68, 0.03);
-                }
-                
-                #overdueList.kanban-column-final:hover {
-                    border-color: rgba(239, 68, 68, 0.7);
-                    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
-                }
-                
-                /* Headers de columna */
-                .column-header-final {
-                    padding: 16px 20px;
-                    background: linear-gradient(135deg, #1e293b, #0f172a);
-                    border-bottom: 2px solid;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                
-                #overdueList .column-header-final {
-                    background: linear-gradient(135deg, #7f1d1d, #991b1b);
-                    border-bottom-color: #ef4444;
-                }
-                
-                .column-header-final h3 {
-                    margin: 0;
-                    font-size: 14px;
-                    font-weight: 600;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    color: #e2e8f0;
-                }
-                
-                .column-count-final {
-                    background: rgba(255,255,255,0.12);
-                    padding: 3px 10px;
-                    border-radius: 30px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #cbd5e1;
-                }
-                
-                /* Contenedor de tareas */
-                .tasks-container-final {
-                    padding: 14px;
-                    min-height: 400px;
-                    max-height: calc(100vh - 280px);
-                    overflow-y: auto;
-                }
-                
-                /* Tarjeta de tarea */
-                .task-card-final {
-                    background: linear-gradient(145deg, #1e293b, #162236);
-                    border-radius: 16px;
-                    margin-bottom: 14px;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    border: 1px solid rgba(139, 92, 246, 0.2);
-                    position: relative;
-                    cursor: pointer;
-                }
-                
-                .task-card-final:hover {
-                    transform: translateY(-3px);
-                    border-color: rgba(139, 92, 246, 0.5);
-                    box-shadow: 0 12px 28px -8px rgba(139, 92, 246, 0.3);
-                }
-                
-                /* Tarjeta REZAGADA */
-                .task-card-final.overdue-card {
-                    background: linear-gradient(145deg, #2d1a1a, #1f1212);
-                    border: 1px solid rgba(239, 68, 68, 0.4);
-                    border-left: 4px solid #ef4444;
-                }
-                
-                .task-card-final.overdue-card:hover {
-                    border-color: rgba(239, 68, 68, 0.7);
-                    box-shadow: 0 12px 28px -8px rgba(239, 68, 68, 0.4);
-                }
-                
-                /* Header de tarjeta */
-                .task-card-header-final {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    padding: 14px 14px 6px 14px;
-                }
-                
-                .task-title-final {
-                    margin: 0;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #f1f5f9;
-                    flex: 1;
-                    padding-right: 10px;
-                }
-                
-                /* Contenedor de botones - asegurar visibilidad */
-                .task-actions-final {
-                    display: flex;
-                    gap: 6px;
-                    flex-shrink: 0;
-                    background: transparent;
-                    position: relative;
-                    z-index: 10;
-                }
-                
-                /* Botones de acción - ESTILOS FUERTES para asegurar visibilidad */
-                .action-btn-final {
-                    width: 30px !important;
-                    height: 30px !important;
-                    min-width: 30px !important;
-                    min-height: 30px !important;
-                    border-radius: 8px !important;
-                    background: rgba(59, 130, 246, 0.3) !important;
-                    border: 1px solid rgba(59, 130, 246, 0.5) !important;
-                    color: #60a5fa !important;
-                    cursor: pointer !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    transition: all 0.2s !important;
-                    font-size: 14px !important;
-                    font-weight: bold !important;
-                    pointer-events: auto !important;
-                    opacity: 1 !important;
-                    visibility: visible !important;
-                    z-index: 100 !important;
-                    position: relative !important;
-                }
-                
-                .action-btn-final:hover {
-                    background: rgba(59, 130, 246, 0.6) !important;
-                    transform: scale(1.05) !important;
-                    color: white !important;
-                }
-                
-                .menu-btn-final {
-                    background: rgba(139, 92, 246, 0.3) !important;
-                    border-color: rgba(139, 92, 246, 0.5) !important;
-                    color: #a78bfa !important;
-                }
-                
-                .menu-btn-final:hover {
-                    background: rgba(139, 92, 246, 0.6) !important;
-                    color: white !important;
-                }
-                
-                /* Badge de días de retraso */
-                .overdue-badge-final {
-                    background: #ef4444;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 20px;
-                    font-size: 9px;
-                    font-weight: bold;
-                    margin-left: 8px;
-                    display: inline-block;
-                }
-                
-                /* Badges de prioridad y estado */
-                .badges-container-final {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    margin: 8px 14px;
-                }
-                
-                .badge-final {
-                    padding: 3px 10px;
-                    border-radius: 30px;
-                    font-size: 10px;
-                    font-weight: 600;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 5px;
-                }
-                
-                .priority-high-final { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-                .priority-medium-final { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-                .priority-low-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-                
-                .status-pending-final { background: rgba(100, 116, 139, 0.2); color: #cbd5e1; border: 1px solid rgba(100, 116, 139, 0.3); }
-                .status-progress-final { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-                .status-completed-final { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-                .status-overdue-final { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-                
-                /* Info adicional */
-                .task-info-final {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    padding: 8px 14px 12px 14px;
-                    font-size: 10px;
-                    color: #64748b;
-                    border-top: 1px solid rgba(255,255,255,0.05);
-                    margin-top: 4px;
-                }
-                
-                /* Barra de progreso */
-                .subtasks-progress-final {
-                    margin: 6px 14px;
-                }
-                
-                .subtasks-header-final {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 9px;
-                    color: #64748b;
-                    margin-bottom: 4px;
-                }
-                
-                .progress-bar-final {
-                    background: #334155;
-                    height: 3px;
-                    border-radius: 3px;
-                    overflow: hidden;
-                }
-                
-                .progress-fill-final {
-                    height: 100%;
-                    background: linear-gradient(90deg, #8b5cf6, #ec4899);
-                    border-radius: 3px;
-                    transition: width 0.3s ease;
-                }
-                
-                /* Menú contextual */
-                .task-context-menu-final {
-                    position: absolute;
-                    top: 45px;
-                    right: 14px;
-                    background: #1e293b;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
-                    border: 1px solid rgba(139, 92, 246, 0.3);
-                    z-index: 1001;
-                    min-width: 140px;
-                    overflow: hidden;
-                }
-                
-                .context-menu-item-final {
-                    padding: 10px 14px;
-                    cursor: pointer;
-                    color: #e2e8f0;
-                    font-size: 12px;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                
-                .context-menu-item-final:hover {
-                    background: rgba(139, 92, 246, 0.2);
-                }
-                
-                .context-menu-item-final.delete {
-                    color: #f87171;
-                    border-top: 1px solid rgba(255,255,255,0.05);
-                }
-                
-                .context-menu-item-final.delete:hover {
-                    background: rgba(239, 68, 68, 0.2);
-                }
-                
-                /* Scrollbar */
-                .tasks-container-final::-webkit-scrollbar {
-                    width: 5px;
-                }
-                
-                .tasks-container-final::-webkit-scrollbar-track {
-                    background: rgba(255,255,255,0.03);
-                    border-radius: 10px;
-                }
-                
-                .tasks-container-final::-webkit-scrollbar-thumb {
-                    background: rgba(139, 92, 246, 0.4);
-                    border-radius: 10px;
-                }
-                
-                .empty-message-final {
-                    text-align: center;
-                    padding: 40px 20px;
-                    color: #64748b;
-                    font-size: 12px;
-                }
-                
-                /* Asegurar que nada tape los botones */
-                .task-card-final {
-                    overflow: visible !important;
-                }
-                
-                .task-card-header-final {
-                    overflow: visible !important;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        // Configurar columnas
-        function setupColumns() {
-            const columns = [
-                { id: 'pendingList', title: '📋 PENDIENTES', color: '#f59e0b', type: 'pending' },
-                { id: 'inProgressList', title: '🔄 EN PROGRESO', color: '#3b82f6', type: 'progress' },
-                { id: 'completedList', title: '✅ COMPLETADAS', color: '#10b981', type: 'completed' },
-                { id: 'overdueList', title: '⚠️ REZAGADAS ⚠️', color: '#ef4444', type: 'overdue' }
-            ];
-            
-            columns.forEach(col => {
-                const column = document.getElementById(col.id);
-                if (!column) return;
-                
-                column.classList.add('kanban-column-final');
-                
-                let header = column.querySelector('.column-header-final');
-                if (!header) {
-                    header = document.createElement('div');
-                    header.className = 'column-header-final';
-                    header.style.borderBottomColor = col.color;
-                    header.innerHTML = `
-                        <h3>
-                            <span>${col.title}</span>
-                            <span class="column-count-final" id="count-${col.type}">0</span>
-                        </h3>
-                    `;
-                    column.insertBefore(header, column.firstChild);
-                }
-                
-                let tasksContainer = column.querySelector('.tasks-container-final');
-                if (!tasksContainer) {
-                    tasksContainer = document.createElement('div');
-                    tasksContainer.className = 'tasks-container-final';
-                    const children = Array.from(column.children);
-                    children.forEach(child => {
-                        if (child !== header) {
-                            tasksContainer.appendChild(child);
-                        }
-                    });
-                    column.innerHTML = '';
-                    column.appendChild(header);
-                    column.appendChild(tasksContainer);
-                }
-            });
-        }
-        
-        setupColumns();
-        
-        // Actualizar contadores
-        function updateCounters() {
-            const counts = {
-                pending: document.querySelector('#pendingList .tasks-container-final')?.children.length || 0,
-                progress: document.querySelector('#inProgressList .tasks-container-final')?.children.length || 0,
-                completed: document.querySelector('#completedList .tasks-container-final')?.children.length || 0,
-                overdue: document.querySelector('#overdueList .tasks-container-final')?.children.length || 0
-            };
-            
-            const countPending = document.getElementById('count-pending');
-            const countProgress = document.getElementById('count-progress');
-            const countCompleted = document.getElementById('count-completed');
-            const countOverdue = document.getElementById('count-overdue');
-            
-            if (countPending) countPending.textContent = counts.pending;
-            if (countProgress) countProgress.textContent = counts.progress;
-            if (countCompleted) countCompleted.textContent = counts.completed;
-            if (countOverdue) countOverdue.textContent = counts.overdue;
-        }
-        
-        // Limpiar contenedores
-        const containersList = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
-        containersList.forEach(id => {
-            const container = document.querySelector(`#${id} .tasks-container-final`);
-            if (container) container.innerHTML = '';
-        });
-        
-        if (tasks.length === 0) {
-            containersList.forEach(id => {
-                const container = document.querySelector(`#${id} .tasks-container-final`);
-                if (container) {
-                    container.innerHTML = '<div class="empty-message-final">📭 No hay tareas</div>';
-                }
-            });
-            updateCounters();
-            return;
-        }
-        
-        // Calcular días de retraso
-        function calcularDiasRetraso(deadline) {
-            if (!deadline) return 0;
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const fechaLimite = new Date(deadline);
-            fechaLimite.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((hoy - fechaLimite) / (1000 * 60 * 60 * 24));
-            return diffDays > 0 ? diffDays : 0;
-        }
-        
-        // Renderizar cada tarea
-        tasks.forEach(task => {
-            if (!task) return;
-            
-            const status = (task.status || 'pending').toLowerCase();
-            let targetContainerId;
-            let isOverdueTask = false;
-            let diasRetraso = 0;
-            
-            if (status === 'completed' || status === 'completado') {
-                targetContainerId = 'completedList';
-            } else if (status === 'inprogress' || status === 'in_progress' || status === 'en progreso') {
-                targetContainerId = 'inProgressList';
-            } else if (status === 'overdue' || status === 'rezagado' || status === 'atrasado') {
-                targetContainerId = 'overdueList';
-                isOverdueTask = true;
-                diasRetraso = calcularDiasRetraso(task.deadline);
-            } else {
-                targetContainerId = 'pendingList';
-            }
-            
-            const targetContainer = document.querySelector(`#${targetContainerId} .tasks-container-final`);
-            if (!targetContainer) return;
-            
-            // Prioridad
-            const priority = (task.priority || 'media').toLowerCase();
-            const isHigh = priority === 'alta' || priority === 'high';
-            const isLow = priority === 'baja' || priority === 'low';
-            const priorityClass = isHigh ? 'priority-high-final' : (isLow ? 'priority-low-final' : 'priority-medium-final');
-            const priorityText = isHigh ? 'Alta' : (isLow ? 'Baja' : 'Media');
-            const priorityIcon = isHigh ? '🔴' : (isLow ? '🟢' : '🟡');
-            
-            // Estado
-            const isCompleted = status === 'completed';
-            const isProgress = status === 'inprogress' || status === 'in_progress' || status === 'en progreso';
-            const isOverdue = status === 'overdue' || status === 'rezagado' || status === 'atrasado';
-            const statusClass = isCompleted ? 'status-completed-final' : (isProgress ? 'status-progress-final' : (isOverdue ? 'status-overdue-final' : 'status-pending-final'));
-            const statusText = isCompleted ? 'Completada' : (isProgress ? 'En Progreso' : (isOverdue ? 'Rezagada' : 'Pendiente'));
-            const statusIcon = isCompleted ? '✅' : (isProgress ? '🔄' : (isOverdue ? '⚠️' : '⏳'));
-            
-            // Subtareas
-            const subtasks = task.subtasks || [];
-            const completedSubtasks = subtasks.filter(st => st.completed).length;
-            const totalSubtasks = subtasks.length;
-            const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
-            const hasSubtasks = totalSubtasks > 0;
-            
-            // Fecha
-            let formattedDeadline = '';
-            if (task.deadline) {
-                try {
-                    const deadlineDate = new Date(task.deadline);
-                    formattedDeadline = deadlineDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-                } catch(e) {}
-            }
-            
-            // Asignado - iniciales
-            const assignee = task.assignee || '';
-            const initials = assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            
-            // Escapar HTML
-            const taskName = (task.name || 'Sin nombre').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
-            const assigneeName = assignee.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
-            
-            // Crear tarjeta
-            const card = document.createElement('div');
-            card.className = 'task-card-final';
-            if (isOverdueTask) card.classList.add('overdue-card');
-            card.draggable = true;
-            card.dataset.taskId = task.id;
-            card.dataset.status = status;
-            card.style.position = 'relative';
-            card.style.overflow = 'visible';
-            
-            card.innerHTML = `
-                <div class="task-card-header-final">
-                    <div class="task-title-final">
-                        ${taskName}
-                        ${isOverdueTask && diasRetraso > 0 ? `<span class="overdue-badge-final">⚠️ +${diasRetraso} días</span>` : ''}
-                    </div>
-                    <div class="task-actions-final">
-                        <button class="action-btn-final move-up" data-task-id="${task.id}" data-status="${status}" title="Mover arriba">↑</button>
-                        <button class="action-btn-final move-down" data-task-id="${task.id}" data-status="${status}" title="Mover abajo">↓</button>
-                        <button class="action-btn-final menu-btn-final" data-task-id="${task.id}" title="Menú">⋯</button>
-                    </div>
-                </div>
-                
-                ${hasSubtasks ? `
-                <div class="subtasks-progress-final">
-                    <div class="subtasks-header-final">
-                        <span>📋 Subtareas</span>
-                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
-                    </div>
-                    <div class="progress-bar-final">
-                        <div class="progress-fill-final" style="width: ${subtaskProgress}%"></div>
-                    </div>
-                </div>
-                ` : ''}
-                
-                <div class="badges-container-final">
-                    <span class="badge-final ${priorityClass}">${priorityIcon} ${priorityText}</span>
-                    <span class="badge-final ${statusClass}">${statusIcon} ${statusText}</span>
-                </div>
-                
-                <div class="task-info-final">
-                    ${assignee ? `<span title="Asignado a: ${assigneeName}"><i class="fas fa-user-circle"></i> ${initials || assigneeName.substring(0,2)}</span>` : ''}
-                    ${formattedDeadline ? `<span title="Fecha límite"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</span>` : ''}
-                    ${task.estimatedTime ? `<span title="Tiempo estimado"><i class="fas fa-clock"></i> ${task.estimatedTime}h</span>` : ''}
-                </div>
-                
-                <div class="task-context-menu-final" id="task-menu-final-${task.id}" style="display: none;">
-                    <div class="context-menu-item-final" data-task-id="${task.id}" data-action="edit">✏️ Editar tarea</div>
-                    <div class="context-menu-item-final delete" data-task-id="${task.id}" data-action="delete">🗑️ Eliminar tarea</div>
-                </div>
-            `;
-            
-            targetContainer.appendChild(card);
-        });
-        
-        // ========== CONECTAR EVENTOS CON DELEGACIÓN ==========
-        // Usar delegación de eventos para asegurar que los botones funcionen incluso si se agregan dinámicamente
-        document.body.addEventListener('click', function(e) {
-            // Botón mover arriba
-            if (e.target.closest('.move-up')) {
-                const btn = e.target.closest('.move-up');
-                e.preventDefault();
-                e.stopPropagation();
-                const taskId = parseInt(btn.dataset.taskId);
-                const status = btn.dataset.status;
-                console.log(`⬆️ Click en mover arriba (delegado): taskId=${taskId}, status=${status}`);
-                if (typeof window.moveTaskUp === 'function') {
-                    window.moveTaskUp(taskId, status);
-                }
-            }
-            
-            // Botón mover abajo
-            if (e.target.closest('.move-down')) {
-                const btn = e.target.closest('.move-down');
-                e.preventDefault();
-                e.stopPropagation();
-                const taskId = parseInt(btn.dataset.taskId);
-                const status = btn.dataset.status;
-                console.log(`⬇️ Click en mover abajo (delegado): taskId=${taskId}, status=${status}`);
-                if (typeof window.moveTaskDown === 'function') {
-                    window.moveTaskDown(taskId, status);
-                }
-            }
-            
-            // Botón menú
-            if (e.target.closest('.menu-btn-final')) {
-                const btn = e.target.closest('.menu-btn-final');
-                e.preventDefault();
-                e.stopPropagation();
-                const taskId = btn.dataset.taskId;
-                const menu = document.getElementById(`task-menu-final-${taskId}`);
-                if (menu) {
-                    document.querySelectorAll('.task-context-menu-final').forEach(m => m.style.display = 'none');
-                    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                }
-            }
-            
-            // Item del menú contextual
-            if (e.target.closest('.context-menu-item-final')) {
-                const item = e.target.closest('.context-menu-item-final');
-                e.preventDefault();
-                e.stopPropagation();
-                const taskId = parseInt(item.dataset.taskId);
-                const action = item.dataset.action;
-                
-                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
-                
-                const project = projects[currentProjectIndex];
-                const task = project.tasks.find(t => t.id === taskId);
-                
-                if (action === 'edit' && task && typeof showTaskDetails === 'function') {
-                    showTaskDetails(task);
-                } else if (action === 'delete' && task) {
-                    if (confirm(`¿Eliminar la tarea "${task.name}"?`)) {
-                        project.tasks = project.tasks.filter(t => t.id !== taskId);
-                        localStorage.setItem('projects', JSON.stringify(projects));
-                        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
-                        mostrarNotificacion(`🗑️ Tarea "${task.name}" eliminada`);
-                    }
-                }
-            }
-        });
-        
-        // Cerrar menús al hacer clic fuera
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.menu-btn-final') && !e.target.closest('.task-context-menu-final')) {
-                document.querySelectorAll('.task-context-menu-final').forEach(menu => menu.style.display = 'none');
-            }
-        });
-        
-        updateCounters();
-        
-        // Configurar drag & drop
-        setTimeout(() => {
-            if (typeof initDragAndDrop === 'function') initDragAndDrop();
-            if (typeof forzarDragDrop === 'function') forzarDragDrop();
-            if (typeof forzarDropEnColumnas === 'function') forzarDropEnColumnas();
-        }, 100);
-        
-        console.log(`✅ KANBAN PREMIUM: ${tasks.length} tareas renderizadas`);
-    };
-    
-    console.log('✅ KANBAN PREMIUM DEFINITIVO ACTIVADO - Botones visibles y funcionales en todas las columnas');
-})();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ============================================
-// 🔧 SOLUCIÓN DEFINITIVA - SINCRONIZACIÓN KANBAN
-// ============================================
-(function() {
-    console.log('🚀 APLICANDO SOLUCIÓN DEFINITIVA DE SINCRONIZACIÓN');
-    
-    // ========== 1. FORZAR QUE LOS EVENTOS SEAN ESCUCHADOS CORRECTAMENTE ==========
-    function configurarSincronizacionPerfecta() {
-        // Guardar referencia al socket
-        const socket = window.tiempoRealSocket;
-        if (!socket) {
-            console.warn('⚠️ WebSocket no disponible, reintentando...');
-            setTimeout(configurarSincronizacionPerfecta, 1000);
-            return;
-        }
-        
-        console.log('✅ Configurando sincronización perfecta');
-        
-        // Escuchar eventos específicos
-        socket.on('task-moved', (data) => {
-            console.log('🎯 EVENTO task-moved RECIBIDO:', data);
-            
-            // Actualizar el proyecto en memoria
-            if (data.projectId !== undefined && projects[data.projectId]) {
-                const task = projects[data.projectId].tasks.find(t => t.id == data.taskId);
-                if (task && task.status !== data.newStatus) {
-                    console.log(`📝 Actualizando tarea local: ${task.name} de ${task.status} a ${data.newStatus}`);
-                    task.status = data.newStatus;
-                    
-                    // Actualizar progreso según estado
-                    if (data.newStatus === 'completed') task.progress = 100;
-                    else if (data.newStatus === 'inProgress') task.progress = 50;
-                    else if (data.newStatus === 'pending') task.progress = 0;
-                    
-                    // Guardar en localStorage
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    
-                    // FORZAR REFRESCO INMEDIATO
-                    if (typeof window.renderKanbanTasks === 'function') {
-                        console.log('🔄 Forzando renderizado inmediato');
-                        window.renderKanbanTasks();
-                    }
-                    
-                    // Notificar al usuario
-                    mostrarNotificacionLocal(`🔄 "${task.name}" movida a ${data.newStatus}`, '#3b82f6');
-                }
-            }
-        });
-        
-        // Escuchar cambios en localStorage (otras pestañas)
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'projects' && e.newValue) {
-                console.log('📦 Storage event detectado, actualizando proyectos');
-                try {
-                    const newProjects = JSON.parse(e.newValue);
-                    if (newProjects && newProjects.length) {
-                        // Actualizar proyectos en memoria
-                        projects.length = 0;
-                        projects.push(...newProjects);
-                        
-                        // Refrescar vista
-                        if (typeof window.renderKanbanTasks === 'function') {
-                            window.renderKanbanTasks();
-                        }
-                        
-                        mostrarNotificacionLocal('🔄 Datos sincronizados desde otra pestaña', '#10b981');
-                    }
-                } catch(err) {
-                    console.error('Error procesando storage event:', err);
-                }
-            }
-        });
-        
-        // Forzar verificación cada 2 segundos (fallback)
-        let lastTaskCount = 0;
-        setInterval(() => {
-            const currentProject = projects[currentProjectIndex];
-            if (currentProject && currentProject.tasks) {
-                const currentCount = currentProject.tasks.length;
-                if (currentCount !== lastTaskCount) {
-                    console.log(`📊 Cambio detectado: ${lastTaskCount} → ${currentCount} tareas`);
-                    lastTaskCount = currentCount;
-                    if (typeof window.renderKanbanTasks === 'function') {
-                        window.renderKanbanTasks();
-                    }
-                }
-            }
-        }, 2000);
-    }
-    
-    // ========== 2. FUNCIÓN DE NOTIFICACIÓN LOCAL ==========
-    function mostrarNotificacionLocal(mensaje, color) {
-        // Eliminar notificaciones anteriores
-        const existing = document.querySelectorAll('.sync-notification');
-        existing.forEach(n => n.remove());
-        
-        const notif = document.createElement('div');
-        notif.className = 'sync-notification';
-        notif.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: ${color};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 1000000;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideInRight 0.3s ease;
-        `;
-        notif.textContent = mensaje;
-        document.body.appendChild(notif);
-        
-        setTimeout(() => {
-            notif.style.animation = 'slideOutRight 0.3s ease';
-            setTimeout(() => notif.remove(), 300);
-        }, 3000);
-    }
-    
-    // ========== 3. FUNCIÓN PARA FORZAR SINCRONIZACIÓN ==========
-    window.forzarSincronizacionAhora = function() {
-        console.log('🔄 Forzando sincronización manual...');
-        mostrarNotificacionLocal('🔄 Sincronizando...', '#f59e0b');
-        
-        // Forzar guardado
-        if (typeof safeSave === 'function') {
-            safeSave().then(() => {
-                mostrarNotificacionLocal('✅ Datos sincronizados', '#10b981');
-                if (typeof window.renderKanbanTasks === 'function') {
-                    window.renderKanbanTasks();
-                }
-            }).catch(err => {
-                mostrarNotificacionLocal('❌ Error al sincronizar', '#ef4444');
-            });
-        } else {
-            // Fallback: guardar manualmente
-            localStorage.setItem('projects', JSON.stringify(projects));
-            mostrarNotificacionLocal('✅ Datos guardados localmente', '#10b981');
-        }
-    };
-    
-    // ========== 4. MONITOREO DE MOVIMIENTO DE TAREAS ==========
-    function monitorearMovimientoTareas() {
-        // Interceptar el movimiento de tareas para asegurar sincronización
-        const originalMoveTaskUp = window.moveTaskUp;
-        const originalMoveTaskDown = window.moveTaskDown;
-        
-        if (originalMoveTaskUp) {
-            window.moveTaskUp = function(taskId, status) {
-                console.log(`⬆️ Moviendo tarea ${taskId} arriba`);
-                const result = originalMoveTaskUp(taskId, status);
-                
-                // Forzar sincronización después del movimiento
-                setTimeout(() => {
-                    if (typeof safeSave === 'function') safeSave();
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    
-                    // Emitir evento manualmente
-                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-                        window.tiempoRealSocket.emit('project-updated', {
-                            projectId: currentProjectIndex,
-                            timestamp: new Date().toISOString(),
-                            source: 'moveTaskUp'
-                        });
-                    }
-                }, 100);
-                
-                return result;
-            };
-        }
-        
-        if (originalMoveTaskDown) {
-            window.moveTaskDown = function(taskId, status) {
-                console.log(`⬇️ Moviendo tarea ${taskId} abajo`);
-                const result = originalMoveTaskDown(taskId, status);
-                
-                setTimeout(() => {
-                    if (typeof safeSave === 'function') safeSave();
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    
-                    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-                        window.tiempoRealSocket.emit('project-updated', {
-                            projectId: currentProjectIndex,
-                            timestamp: new Date().toISOString(),
-                            source: 'moveTaskDown'
-                        });
-                    }
-                }, 100);
-                
-                return result;
-            };
-        }
-        
-        console.log('✅ Movimiento de tareas monitoreado');
-    }
-    
-    // ========== 5. AGREGAR BOTÓN DE SINCRONIZACIÓN MANUAL ==========
-    function agregarBotonSincronizacion() {
-        if (document.getElementById('syncNowButton')) return;
-        
-        // Buscar el header
-        const header = document.querySelector('header, .header, .top-bar');
-        if (!header) {
-            setTimeout(agregarBotonSincronizacion, 1000);
-            return;
-        }
-        
-        const syncBtn = document.createElement('button');
-        syncBtn.id = 'syncNowButton';
-        syncBtn.innerHTML = '🔄 Sincronizar';
-        syncBtn.title = 'Forzar sincronización manual';
-        syncBtn.style.cssText = `
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            margin-left: 10px;
-            transition: all 0.2s;
-        `;
-        
-        syncBtn.onclick = () => {
-            window.forzarSincronizacionAhora();
-            syncBtn.style.transform = 'scale(0.95)';
-            setTimeout(() => syncBtn.style.transform = 'scale(1)', 200);
-        };
-        
-        syncBtn.onmouseenter = () => syncBtn.style.transform = 'translateY(-2px)';
-        syncBtn.onmouseleave = () => syncBtn.style.transform = 'translateY(0)';
-        
-        header.appendChild(syncBtn);
-        console.log('✅ Botón de sincronización agregado');
-    }
-    
-    // ========== 6. INICIALIZAR ==========
-    function init() {
-        console.log('🔧 Inicializando solución de sincronización');
-        
-        // Esperar a que WebSocket esté listo
-        setTimeout(configurarSincronizacionPerfecta, 1500);
-        
-        // Monitorear movimiento de tareas
-        setTimeout(monitorearMovimientoTareas, 2000);
-        
-        // Agregar botón de sincronización
-        setTimeout(agregarBotonSincronizacion, 2000);
-        
-        // Agregar estilos de animación
-        if (!document.getElementById('sync-animation-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'sync-animation-styles';
-            styles.textContent = `
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        console.log('✅ Solución de sincronización activada');
-        console.log('💡 Comandos disponibles: forzarSincronizacionAhora()');
-    }
-    
-    // Iniciar
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        setTimeout(init, 500);
-    }
-})();
-
-
-
-
-
-
-
-
-
 
 
 
