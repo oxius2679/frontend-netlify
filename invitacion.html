@@ -33,11 +33,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .subtitle {
-            color: #94a3b8;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+        .subtitle { color: #94a3b8; margin-bottom: 30px; font-size: 14px; }
         .info-card {
             background: rgba(15, 23, 42, 0.6);
             border-radius: 20px;
@@ -57,12 +53,7 @@
         .info-icon { font-size: 20px; width: 32px; }
         .info-label { color: #94a3b8; font-size: 12px; margin-bottom: 2px; }
         .info-value { color: white; font-weight: 500; font-size: 14px; }
-        .buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 25px;
-        }
+        .buttons { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
         .btn {
             padding: 12px 28px;
             border-radius: 40px;
@@ -85,14 +76,7 @@
             color: #cbd5e1;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .loading {
-            display: none;
-            padding: 30px;
-            color: #8b5cf6;
-        }
+        .loading { display: none; padding: 30px; color: #8b5cf6; }
         .error-message {
             background: rgba(239, 68, 68, 0.15);
             border: 1px solid #ef4444;
@@ -120,9 +104,7 @@
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -169,12 +151,9 @@
     </div>
 
     <script>
-        // Configuración - AJUSTA ESTA URL SI ES NECESARIO
         const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
-        
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        
         let invitationData = null;
 
         async function loadInvitation() {
@@ -195,7 +174,6 @@
                 }
                 
                 invitationData = data;
-                
                 document.getElementById('proyectoNombre').textContent = data.proyecto;
                 document.getElementById('rolInvitacion').textContent = data.rol;
                 document.getElementById('emailInvitado').textContent = data.email;
@@ -209,7 +187,7 @@
                 showError('Error al cargar la invitación. Intenta nuevamente.');
             }
         }
-        
+
         function showError(message) {
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('infoCard').style.display = 'none';
@@ -218,7 +196,7 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
-        
+
         function showSuccess(message) {
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('infoCard').style.display = 'none';
@@ -227,71 +205,72 @@
             successDiv.textContent = message;
             successDiv.style.display = 'block';
         }
-        
-   async function acceptInvitation() {
-    document.getElementById('loadingState').style.display = 'block';
-    document.getElementById('actionButtons').style.display = 'none';
-    
-    try {
-        const response = await fetch(`${API_URL}/api/invitations/accept`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-        });
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.error);
-        }
-        
-        // Guardar datos de la invitación para usarlos después del login
-        const invitationData = {
-            clienteId: data.clienteId,
-            proyectoIndex: data.proyectoIndex,
-            proyectoNombre: data.proyectoNombre,
-            rol: data.rol,
-            timestamp: Date.now()
-        };
-        
-        localStorage.setItem('pendingInvitation', JSON.stringify(invitationData));
-        
-        showSuccess(`✅ ¡Invitación aceptada! Por favor inicia sesión para acceder al proyecto "${data.proyectoNombre}".`);
-        
-        // Redirigir al login después de 2 segundos
-        setTimeout(() => {
-            // Limpiar datos anteriores
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('clienteId');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userPlan');
+
+        async function acceptInvitation() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('actionButtons').style.display = 'none';
             
-            window.location.href = '/';
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('loadingState').style.display = 'none';
-        showError('Error al aceptar la invitación: ' + error.message);
-    }
-}
+            try {
+                const response = await fetch(`${API_URL}/api/invitations/accept`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+                
+                // 🔥 GUARDAR DATOS CORRECTOS EN LOCALSTORAGE
+                localStorage.setItem('pendingInvitation', JSON.stringify({
+                    clienteId: data.clienteId,
+                    proyectoId: data.proyectoId,
+                    proyectoNombre: data.proyectoNombre,
+                    proyectoIndex: data.proyectoIndex,
+                    rol: data.rol,
+                    email: data.email,
+                    clienteIdOrigen: data.clienteIdOrigen,
+                    timestamp: Date.now()
+                }));
+                
+                showSuccess(`✅ ¡Invitación aceptada! Serás redirigido al proyecto "${data.proyectoNombre}".`);
+                
+                // Redirigir después de 3 segundos
+                setTimeout(() => {
+                    // Limpiar datos de sesión anterior
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('projects');
+                    localStorage.removeItem('currentProjectIndex');
+                    
+                    // Redirigir al login con parámetro especial
+                    window.location.href = '/?accepted=true';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingState').style.display = 'none';
+                showError('Error al aceptar la invitación: ' + error.message);
+            }
+        }
+
         function rejectInvitation() {
             if (confirm('¿Estás seguro de rechazar esta invitación?')) {
-                showSuccess('Invitación rechazada. Serás redirigido...');
+                showSuccess('Invitación rechazada.');
                 setTimeout(() => {
-                    window.location.href = '/?forceClienteId=' + data.clienteId;
+                    window.location.href = '/';
                 }, 2000);
             }
         }
-        
-               // Inicializar eventos
+
+        // Event listeners
         document.getElementById('acceptBtn').onclick = acceptInvitation;
         document.getElementById('rejectBtn').onclick = rejectInvitation;
         
-        // Cargar la invitación
+        // Cargar invitación al iniciar
         loadInvitation();
-        
-        
     </script>
 </body>
 </html>

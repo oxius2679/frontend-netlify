@@ -22761,88 +22761,162 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 }
 
 // ==================== SAFE LOAD MEJORADO ====================
+// ==================== SAFE LOAD MEJORADO - VERSIÓN DEFINITIVA ====================
 async function safeLoad() {
     console.group('📥 Cargando datos desde backend o localStorage');
-
+    
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
     
-    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
+    // 🔥 VERIFICAR SI ACABAMOS DE ACEPTAR UNA INVITACIÓN
     const urlParams = new URLSearchParams(window.location.search);
     const justAccepted = urlParams.get('accepted') === 'true';
+    const pendingInvitation = localStorage.getItem('pendingInvitation');
     
-    if (forceLocal && !justAccepted) {
+    if (forceLocal && !justAccepted && !pendingInvitation) {
         console.log('🔄 Usando localStorage porque hubo un guardado reciente');
         const saved = localStorage.getItem('projects');
         if (saved) {
-            projects = JSON.parse(saved);
+            window.projects = JSON.parse(saved);
+            console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
             return true;
         }
     }
-
+    
     const token = localStorage.getItem('authToken');
-    const clienteId = localStorage.getItem('clienteId');
     
     console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
-    console.log('🏢 Cliente ID:', clienteId || 'No definido');
     
-    if (justAccepted) {
-        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
+    // Si no hay token, no podemos cargar nada del backend
+    if (!token) {
+        console.warn('⚠️ No hay token, usando localStorage');
+        const savedProjects = localStorage.getItem('projects');
+        if (savedProjects) {
+            window.projects = JSON.parse(savedProjects);
+            window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+            console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
+            return true;
+        }
+        
+        // Si no hay proyectos, crear uno de ejemplo
+        window.projects = [{
+            id: Date.now(),
+            name: "Mi Primer Proyecto",
+            tasks: [],
+            totalProjectTime: 0
+        }];
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        window.currentProjectIndex = 0;
+        console.log('📝 Proyecto de ejemplo creado');
+        console.groupEnd();
+        return true;
     }
     
-    // Siempre intentar cargar desde backend si hay token
-    if (token && clienteId) {
+    // 🔥 SI ACABAMOS DE ACEPTAR INVITACIÓN, CARGAR PROYECTOS COMPARTIDOS
+    if (justAccepted && pendingInvitation) {
+        console.log('🎉 Acabamos de aceptar invitación, cargando proyectos compartidos...');
+        
         try {
-            console.log('🔄 Cargando desde MongoDB...');
-            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
-            const response = await fetch(url, {
+            // Primero intentar cargar proyectos compartidos
+            const sharedResponse = await fetch(`${API_URL}/api/shared-projects`, {
                 headers: { 
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache'
+                    'Content-Type': 'application/json'
                 }
             });
             
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Datos cargados desde MongoDB Atlas');
+            if (sharedResponse.ok) {
+                const sharedData = await sharedResponse.json();
                 
-                if (data.projects) {
-                    projects = data.projects;
-                    currentProjectIndex = data.currentProjectIndex || 0;
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                if (sharedData.success && sharedData.projects && sharedData.projects.length > 0) {
+                    window.projects = sharedData.projects;
+                    localStorage.setItem('projects', JSON.stringify(window.projects));
                     
-                    // Limpiar parámetro de URL si existe
-                    if (justAccepted) {
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
+                    // Seleccionar el proyecto recién aceptado
+                    const invitation = JSON.parse(pendingInvitation);
+                    const projectIndex = window.projects.findIndex(
+                        p => p.id === invitation.proyectoId || p.name === invitation.proyectoNombre
+                    );
                     
-                    console.log(`✅ ${projects.length} proyectos cargados`);
+                    window.currentProjectIndex = projectIndex >= 0 ? projectIndex : 0;
+                    localStorage.setItem('currentProjectIndex', window.currentProjectIndex);
+                    
+                    console.log(`✅ ${window.projects.length} proyectos compartidos cargados`);
+                    console.log(`📋 Proyecto seleccionado: ${window.projects[window.currentProjectIndex].name}`);
+                    
+                    // Limpiar parámetros de URL y datos temporales
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    localStorage.removeItem('pendingInvitation');
+                    
+                    console.groupEnd();
                     return true;
                 }
             }
         } catch (error) {
-            console.warn('⚠️ Error cargando desde backend:', error.message);
+            console.warn('⚠️ Error cargando proyectos compartidos:', error.message);
         }
     }
-
+    
+    // 🔥 CARGAR PROYECTOS NORMALES (propios del usuario)
+    try {
+        console.log('🔄 Cargando proyectos propios desde backend...');
+        
+        const response = await fetch(`${API_URL}/api/projects`, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.projects && data.projects.length > 0) {
+                window.projects = data.projects;
+                window.currentProjectIndex = data.currentProjectIndex || 0;
+                
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+                localStorage.setItem('currentProjectIndex', window.currentProjectIndex);
+                
+                // 🔥 IMPORTANTE: Guardar el clienteId correcto del backend
+                if (data.clienteId) {
+                    localStorage.setItem('clienteId', data.clienteId);
+                    console.log(`✅ ClienteId guardado: ${data.clienteId}`);
+                }
+                
+                console.log(`✅ ${window.projects.length} proyectos cargados desde backend`);
+                console.groupEnd();
+                return true;
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ Error cargando desde backend:', error.message);
+    }
+    
     // Fallback a localStorage
     const savedProjects = localStorage.getItem('projects');
     if (savedProjects) {
-        projects = JSON.parse(savedProjects);
-        currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        window.projects = JSON.parse(savedProjects);
+        window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
+        console.groupEnd();
         return true;
     }
-
-    console.log('📝 No hay datos, se creará proyecto inicial');
-    projects = [];
+    
+    // Si no hay nada, crear proyecto de ejemplo
+    window.projects = [{
+        id: Date.now(),
+        name: "Mi Primer Proyecto",
+        tasks: [],
+        totalProjectTime: 0
+    }];
+    localStorage.setItem('projects', JSON.stringify(window.projects));
+    window.currentProjectIndex = 0;
+    console.log('📝 Proyecto de ejemplo creado');
+    
     console.groupEnd();
-    return false;
+    return true;
 }
-
-
 
 
 
