@@ -36,6 +36,8 @@
 --glass-border: rgba(255, 255, 255, 0.08);
 }
 
+
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
@@ -1601,67 +1603,151 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <h2 class="section-title" id="comparisonTitle">Zacky vs <span class="gradient-text">competitors</span></h2>
     <p class="section-subtitle" id="comparisonSubtitle">REAL price comparison · What you pay vs what you get</p>
     <div class="comparison-table">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: rgba(99,102,241,0.2);">
-                <th style="padding: 1rem;">Feature</th>
-                <th style="padding: 1rem;">Jira</th>
-                <th style="padding: 1rem;">ClickUp</th>
-                <th style="padding: 1rem;">Trello</th>
-                <th style="padding: 1rem;">Asana</th>
-                <th style="padding: 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary));">ZACKY</th>
-             </tr>
-        </thead>
-        <tbody>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">Live EVM (CPI/SPI)</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">AI Meeting Transcriber</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">Executive 4D Dashboard</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">Gantt with Critical Path</td><td class="check-partial"><i class="fas fa-adjust"></i> With plugin (+$10)</td><td class="check-partial"><i class="fas fa-adjust"></i> Limited</td><td class="check-no"><i class="fas fa-times"></i> No</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">AI Agents (4 in 1)</td><td class="check-no"><i class="fas fa-times"></i> +$20/mo</td><td class="check-partial"><i class="fas fa-adjust"></i> 1 basic agent</td><td class="check-no"><i class="fas fa-times"></i> No</td><td class="check-no"><i class="fas fa-times"></i> +$15/mo</td><td class="check-yes"><i class="fas fa-check"></i> ✅ 4 Agents</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">PMI Change Control</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-yes"><i class="fas fa-check"></i> ✅ Complete</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">Burndown with AI</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-yes"><i class="fas fa-check"></i> ✅ With AI</td></tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="padding: 1rem;">Executive PDF Reports</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-partial"><i class="fas fa-adjust"></i> Basic</td><td class="check-no"><i class="fas fa-times"></i></td><td class="check-partial"><i class="fas fa-adjust"></i> +$8/mo</td><td class="check-yes"><i class="fas fa-check"></i> ✅ Unlimited</td></tr>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(99,102,241,0.2);">
+                    <th style="padding: 1rem;" id="compareFeature">Feature</th>
+                    <th style="padding: 1rem;" id="compareJira">Jira</th>
+                    <th style="padding: 1rem;" id="compareClickUp">ClickUp</th>
+                    <th style="padding: 1rem;" id="compareTrello">Trello</th>
+                    <th style="padding: 1rem;" id="compareAsana">Asana</th>
+                    <th style="padding: 1rem; background: linear-gradient(135deg, var(--primary), var(--secondary));" id="compareZacky">ZACKY</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Live EVM -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareLiveEVM">Live EVM (CPI/SPI)</td>
+                    <td class="check-no" id="compareLiveEVMJira"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareLiveEVMClickUp"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareLiveEVMTrello"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareLiveEVMAsana"><i class="fas fa-times"></i></td>
+                    <td class="check-yes" id="compareLiveEVMZacky"><i class="fas fa-check"></i> ✅ Native</td>
+                </tr>
 
-            <tr style="background: rgba(0,0,0,0.3); border-top: 2px solid var(--primary);">
-                <td style="padding: 1rem; font-weight: 800;">💰 REAL PRICE /user/month</td>
-                <td style="padding: 1rem;"><strong>$8.15</strong><br><span style="font-size:0.7rem;color:var(--danger);">+$30 plugins</span><br><strong>= $38.15</strong></td>
-                <td style="padding: 1rem;"><strong>$7</strong><br><span style="font-size:0.7rem;color:var(--warning);">+$15 features</span><br><strong>= $22</strong></td>
-                <td style="padding: 1rem;"><strong>$5</strong><br><span style="font-size:0.7rem;color:var(--danger);">+$20 power-ups</span><br><strong>= $25</strong></td>
-                <td style="padding: 1rem;"><strong>$10.99</strong><br><span style="font-size:0.7rem;color:var(--danger);">+$23 extras</span><br><strong>= $33.99</strong></td>
-                <td style="padding: 1rem; background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.1));"><strong style="color:var(--success);">€24</strong><br><span style="font-size:0.7rem;color:var(--success);">✅ ALL INCLUDED</span><br><span style="font-size:0.7rem;color:var(--success);"><strong>No plugins!</strong></span></td>
-            </tr>
+                <!-- AI Transcriber -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareAITranscriber">AI Meeting Transcriber</td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td>
+                </tr>
 
-            <tr style="background: rgba(16,185,129,0.1);">
-    <td style="padding: 1rem; font-weight: 800; text-align: left;">💸 YOUR SAVINGS vs each</td>
-    <td style="padding: 1rem; text-align: left; color: var(--success);"><strong>🔥 68%</strong></td>
-    <td style="padding: 1rem; text-align: left; color: var(--success);"><strong>🔥 45%</strong></td>
-    <td style="padding: 1rem; text-align: left; color: var(--success);"><strong>🔥 52%</strong></td>
-    <td style="padding: 1rem; text-align: left; color: var(--success);"><strong>🔥 64%</strong></td>
-    <td style="padding: 1rem; text-align: left;">🎯 <strong>CHOOSE ZACKY</strong></td>
-</tr>
-        </tbody>
-    </table>
-</div>
+                <!-- 4D Dashboard -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compare4DDashboard">Executive 4D Dashboard</td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-no"><i class="fas fa-times"></i></td>
+                    <td class="check-yes"><i class="fas fa-check"></i> ✅ Native</td>
+                </tr>
 
+                <!-- Gantt -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareGantt">Gantt with Critical Path</td>
+                    <td class="check-partial" id="compareGanttJira"><i class="fas fa-adjust"></i> With plugin (+$10)</td>
+                    <td class="check-partial" id="compareGanttClickUp"><i class="fas fa-adjust"></i> Limited</td>
+                    <td class="check-no" id="compareGanttTrello"><i class="fas fa-times"></i> No</td>
+                    <td class="check-partial" id="compareGanttAsana"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-yes" id="compareGanttZacky"><i class="fas fa-check"></i> ✅ Native</td>
+                </tr>
 
+                <!-- AI Agents -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareAIAgents">AI Agents (4 in 1)</td>
+                    <td class="check-no" id="compareAIJira"><i class="fas fa-times"></i> +$20/mo</td>
+                    <td class="check-partial" id="compareAIClickUp"><i class="fas fa-adjust"></i> 1 basic agent</td>
+                    <td class="check-no" id="compareAITrello"><i class="fas fa-times"></i> No</td>
+                    <td class="check-no" id="compareAIAsana"><i class="fas fa-times"></i> +$15/mo</td>
+                    <td class="check-yes" id="compareAIZacky"><i class="fas fa-check"></i> ✅ 4 Agents</td>
+                </tr>
 
+                <!-- Change Control -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareChangeControl">PMI Change Control</td>
+                    <td class="check-partial" id="compareChangeJira"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-no" id="compareChangeClickUp"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareChangeTrello"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareChangeAsana"><i class="fas fa-times"></i></td>
+                    <td class="check-yes" id="compareChangeZacky"><i class="fas fa-check"></i> ✅ Complete</td>
+                </tr>
 
+                <!-- Burndown -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="compareBurndown">Burndown with AI</td>
+                    <td class="check-partial" id="compareBurndownJira"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-partial" id="compareBurndownClickUp"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-no" id="compareBurndownTrello"><i class="fas fa-times"></i></td>
+                    <td class="check-no" id="compareBurndownAsana"><i class="fas fa-times"></i></td>
+                    <td class="check-yes" id="compareBurndownZacky"><i class="fas fa-check"></i> ✅ With AI</td>
+                </tr>
 
+                <!-- PDF Reports -->
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <td style="padding: 1rem;" id="comparePDFReports">Executive PDF Reports</td>
+                    <td class="check-partial" id="comparePDFJira"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-partial" id="comparePDFClickUp"><i class="fas fa-adjust"></i> Basic</td>
+                    <td class="check-no" id="comparePDFTrello"><i class="fas fa-times"></i></td>
+                    <td class="check-partial" id="comparePDFAsana"><i class="fas fa-adjust"></i> +$8/mo</td>
+                    <td class="check-yes" id="comparePDFZacky"><i class="fas fa-check"></i> ✅ Unlimited</td>
+                </tr>
 
+                <!-- PRICE ROW -->
+                <tr style="background: rgba(0,0,0,0.3); border-top: 2px solid var(--primary);">
+                    <td style="padding: 1rem; font-weight: 800;" id="comparePriceTitle">💰 REAL PRICE /user/month</td>
+                    <td style="padding: 1rem;" id="comparePriceJiraCell">
+                        <strong>$8.15</strong><br>
+                        <span style="font-size:0.7rem;color:var(--danger);" id="comparePriceJiraPlugins">+$30 plugins</span><br>
+                        <strong id="comparePriceJiraTotal">= $38.15</strong>
+                    </td>
+                    <td style="padding: 1rem;" id="comparePriceClickUpCell">
+                        <strong>$7</strong><br>
+                        <span style="font-size:0.7rem;color:var(--warning);" id="comparePriceClickUpFeatures">+$15 features</span><br>
+                        <strong id="comparePriceClickUpTotal">= $22</strong>
+                    </td>
+                    <td style="padding: 1rem;" id="comparePriceTrelloCell">
+                        <strong>$5</strong><br>
+                        <span style="font-size:0.7rem;color:var(--danger);" id="comparePriceTrelloPowerups">+$20 power-ups</span><br>
+                        <strong id="comparePriceTrelloTotal">= $25</strong>
+                    </td>
+                    <td style="padding: 1rem;" id="comparePriceAsanaCell">
+                        <strong>$10.99</strong><br>
+                        <span style="font-size:0.7rem;color:var(--danger);" id="comparePriceAsanaExtras">+$23 extras</span><br>
+                        <strong id="comparePriceAsanaTotal">= $33.99</strong>
+                    </td>
+                    <td style="padding: 1rem; background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.1));">
+                        <strong style="color:var(--success);" id="comparePriceZacky">€24</strong><br>
+                        <span style="font-size:0.7rem;color:var(--success);" id="comparePriceZackyIncluded">✅ ALL INCLUDED</span><br>
+                        <span style="font-size:0.7rem;color:var(--success);" id="comparePriceZackyNoPlugins"><strong>No plugins!</strong></span>
+                    </td>
+                </tr>
 
-
-
-
-
+                <!-- SAVINGS ROW -->
+                <tr style="background: rgba(16,185,129,0.1);">
+                    <td style="padding: 1rem; font-weight: 800; text-align: left;" id="compareSavingsTitle">💸 YOUR SAVINGS vs each</td>
+                    <td style="padding: 1rem; text-align: left; color: var(--success);" id="compareSavingsJira"><strong>🔥 68%</strong></td>
+                    <td style="padding: 1rem; text-align: left; color: var(--success);" id="compareSavingsClickUp"><strong>🔥 45%</strong></td>
+                    <td style="padding: 1rem; text-align: left; color: var(--success);" id="compareSavingsTrello"><strong>🔥 52%</strong></td>
+                    <td style="padding: 1rem; text-align: left; color: var(--success);" id="compareSavingsAsana"><strong>🔥 64%</strong></td>
+                    <td style="padding: 1rem; text-align: left;" id="compareSavingsZacky">🎯 <strong>CHOOSE ZACKY</strong></td>
+                </tr>
             </tbody>
         </table>
     </div>
     <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(99,102,241,0.1); border-radius: 16px; text-align: center;">
-        <p style="font-size: 0.85rem; color: var(--text-secondary);">
-            <i class="fas fa-info-circle"></i> Prices updated April 2026 · Jira, Asana and Trello plugins are necessary to match Zacky's native functionalities.
+        <p style="font-size: 0.85rem; color: var(--text-secondary);" id="compareNote">
+            <i class="fas fa-info-circle"></i> * Prices updated April 2026 · Jira, Asana and Trello plugins are necessary to match Zacky's native functionalities.
         </p>
     </div>
 </section>
+
+
+
+
+
 <section class="section">
   <h2 class="section-title" id="testimonialsTitle">What <span class="gradient-text">CEOs who trust us</span> say</h2>
   <div class="testimonial-grid">
@@ -1704,13 +1790,29 @@ input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     <h2 class="section-title" id="pricingExecTitle">Executive <span class="gradient-text">Plans</span></h2>
     <p class="section-subtitle" id="pricingExecSubtitle">Price per user/month · Everything included natively · No plugins · No surprises</p>
     <div class="pricing-grid">
-        <div class="pricing-card"><div class="pricing-badge" id="planFreeBadge" style="background: linear-gradient(135deg, #10b981, #06b6d4);">⏱️ 15 DAYS FREE TRIAL</div><h3 id="planFreeName">Free</h3><div class="pricing-price" id="planFreePrice">€0<span id="planFreePeriod">/user · 15 days</span></div><ul class="pricing-features"><li id="planFreeFeature1"><i class="fas fa-check"></i> Command Center IA 4D</li><li id="planFreeFeature2"><i class="fas fa-check"></i> Board / List / Calendar</li><li id="planFreeFeature3"><i class="fas fa-check"></i> Basic Reports</li><li id="planFreeFeature4"><i class="fas fa-check"></i> 1 project</li><li id="planFreeFeature5"><i class="fas fa-clock"></i> <strong>Valid for 15 days</strong></li><li id="planFreeFeatureMissing"><i class="fas fa-times" style="color: var(--danger);"></i> Gantt · EVM · Dashboard 4D</li></ul><button class="btn-primary" id="planFreeBtn" onclick="selectPlan('free')" style="width:100%; justify-content:center;">Try 15 days free</button><div id="planFreeNote" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem;">No credit card required</div></div>
-        <div class="pricing-card featured"><div class="pricing-badge" id="planProBadge">🎯 MOST POPULAR</div><h3 id="planProName">Professional</h3><div class="pricing-price" id="planProPrice">€24<span id="planProPeriod">/user/month</span></div><div id="planProCompare" style="font-size:0.75rem; color: var(--success); margin-bottom: 1rem;">💰 Vs Monday: $12 + plugins → Zacky: €24 ALL INCLUDED</div><ul class="pricing-features"><li id="planProFeature1"><i class="fas fa-infinity"></i> <strong>Unlimited projects</strong></li><li id="planProFeature2"><i class="fas fa-chart-gantt"></i> <strong>Executive Gantt</strong> <span id="planProFeature2Note" style="font-size:0.7rem;">(native, no plugin)</span></li><li id="planProFeature3"><i class="fas fa-chart-line"></i> <strong>EVM / Profitability</strong> <span id="planProFeature3Note" style="font-size:0.7rem;">(CPI/SPI real-time)</span></li><li id="planProFeature4"><i class="fas fa-tv"></i> <strong>Global 4D Dashboard</strong></li><li id="planProFeature5"><i class="fas fa-file-pdf"></i> <strong>Executive PDF Reports</strong></li><li id="planProFeature6"><i class="fas fa-chart-pie"></i> <strong>Project Dashboard</strong></li><li id="planProFeature7"><i class="fas fa-stopwatch"></i> <strong>Time tracking</strong></li><li id="planProFeature8"><i class="fas fa-headset"></i> <strong>24h Support</strong></li></ul><button class="btn-primary" id="planProBtn" onclick="selectPlan('professional')" style="width:100%; justify-content:center;">Hire for €24/user</button><div id="planProOffer" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem;">🎯 Annual offer: €110/year (€9.16/month)</div></div>
-        <div class="pricing-card"><h3 id="planPremiumName">Premium</h3><div class="pricing-price" id="planPremiumPrice">€32<span id="planPremiumPeriod">/user/month</span></div><div id="planPremiumCompare" style="font-size:0.75rem; color: var(--warning); margin-bottom: 1rem;">⭐ Vs Asana Enterprise: $24 + extra AI → Zacky: €32 ALL INCLUDED</div><ul class="pricing-features"><li id="planPremiumFeature1"><i class="fas fa-crown"></i> <strong>🔥 ALL Professional plan</strong></li><li id="planPremiumFeature2"><i class="fas fa-users"></i> <strong>Real-time collaboration</strong> <span id="planPremiumFeature2Note" style="font-size:0.7rem;">(up to 10 users)</span></li><li id="planPremiumFeature3"><i class="fas fa-brain"></i> <strong>Virtual AI PM</strong> <span id="planPremiumFeature3Note" style="font-size:0.7rem;">(assigns tasks, predicts risks)</span></li><li id="planPremiumFeature4"><i class="fas fa-headset"></i> <strong>VIP 24/7 Support</strong> <span id="planPremiumFeature4Note" style="font-size:0.7rem;">(response in 15 min)</span></li><li id="planPremiumFeature5"><i class="fas fa-calendar-week"></i> <strong>Monthly consulting</strong> <span id="planPremiumFeature5Note" style="font-size:0.7rem;">(1h with certified PMP)</span></li><li id="planPremiumFeature6"><i class="fas fa-chalkboard"></i> <strong>Personalized onboarding</strong></li><li id="planPremiumFeature7"><i class="fas fa-chart-simple"></i> <strong>Quarterly audit</strong></li><li id="planPremiumFeature8"><i class="fas fa-plug"></i> <strong>Custom API</strong> <span id="planPremiumFeature8Note" style="font-size:0.7rem;">(connect with CRM/ERP)</span></li></ul><button class="btn-primary" id="planPremiumBtn" onclick="selectPlan('premium')" style="width:100%; justify-content:center; background: linear-gradient(135deg, #f59e0b, #ef4444);">Contact Sales</button><div id="planPremiumOffer" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem;">🎯 Annual: €190/year (€15.83/month)</div></div>
-    </div>
-</section>
+        <!-- PLAN FREE -->
+        <div class="pricing-card"><div class="pricing-badge" id="planFreeBadge" style="background: linear-gradient(135deg, #10b981, #06b6d4);">⏱️ 15 DAYS FREE TRIAL</div><h3 id="planFreeName">Free</h3><div class="pricing-price" id="planFreePrice">€0<span id="planFreePeriod">/user · 15 days</span></div><ul class="pricing-features"><li id="planFreeFeature1"><i class="fas fa-check"></i> Command Center IA 4D</li><li id="planFreeFeature2"><i class="fas fa-check"></i> Board / List / Calendar</li><li id="planFreeFeature3"><i class="fas fa-check"></i> Basic Reports</li><li id="planFreeFeature4"><i class="fas fa-check"></i> 1 project</li><li id="planFreeFeature5"><i class="fas fa-clock"></i> <strong>Valid for 15 days</strong></li></ul><button class="btn-primary" id="planFreeBtn" onclick="selectPlan('free')" style="width:100%; justify-content:center;">Try 15 days free</button><div id="planFreeNote" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem;">No credit card required</div></div>
 
-<!-- TABLA COMPARATIVA CON PRECIOS REALES -->
+        <!-- PLAN PROFESSIONAL (MÁS POPULAR) -->
+        <div class="pricing-card featured"><div class="pricing-badge" id="planProBadge">🎯 MÁS POPULAR</div><h3 id="planProName">Professional</h3><div class="pricing-price" id="planProPrice">€24<span id="planProPeriod">/mes</span></div><ul class="pricing-features"><li id="planProFeature1"><i class="fas fa-infinity"></i> <strong>Proyectos ilimitados</strong></li><li id="planProFeature2"><i class="fas fa-check"></i> Board / List / Calendar</li><li id="planProFeature3"><i class="fas fa-chart-simple"></i> <strong>Status del proyecto</strong></li><li id="planProFeature4"><i class="fas fa-euro-sign"></i> <strong>Rentabilidad del proyecto</strong></li><li id="planProFeature5"><i class="fas fa-chart-gantt"></i> <strong>Gantt Ejecutivo</strong></li><li id="planProFeature6"><i class="fas fa-chart-line"></i> <strong>EVM / Rentabilidad</strong></li><li id="planProFeature7"><i class="fas fa-tv"></i> <strong>Dashboard 4D Global</strong></li><li id="planProFeature8"><i class="fas fa-chart-pie"></i> <strong>Dashboard por proyecto</strong></li><li id="planProFeature9"><i class="fas fa-stopwatch"></i> <strong>Seguimiento de horas</strong></li><li id="planProFeature10"><i class="fas fa-brain"></i> <strong>Centro de Comando 4D IA</strong></li><li id="planProFeature11"><i class="fas fa-file-alt"></i> <strong>Centro de reportes ejecutivos</strong></li><li id="planProFeature12"><i class="fas fa-sliders-h"></i> <strong>Centro de control PM</strong></li><li id="planProFeature13"><i class="fas fa-headset"></i> <strong>Soporte en 24h</strong></li></ul><button class="btn-primary" id="planProBtn" onclick="selectPlan('professional')" style="width:100%; justify-content:center;">Contratar por €24/usuario</button></div>
+
+       <!-- PLAN PREMIUM -->
+<div class="pricing-card">
+    <h3 id="planPremiumName">Premium</h3>
+    <div class="pricing-price" id="planPremiumPrice">€32<span id="planPremiumPeriod">/mes</span></div>
+    <ul class="pricing-features">
+        <li id="planPremiumFeature1"><i class="fas fa-crown"></i> <strong>🔥 TODO el plan Professional</strong></li>
+        <li id="planPremiumFeature2"><i class="fas fa-users"></i> <strong>Colaboración tiempo real</strong></li>
+        <li id="planPremiumFeature3"><i class="fas fa-brain"></i> <strong>PM Virtual con IA</strong></li>
+        <li id="planPremiumFeature4"><i class="fas fa-headset"></i> <strong>Soporte VIP 24/7</strong></li>
+        <li id="planPremiumFeature5"><i class="fas fa-calendar-week"></i> <strong>Asesoría mensual</strong></li>
+        <li id="planPremiumFeature6"><i class="fas fa-chalkboard"></i> <strong>Onboarding personalizado</strong></li>
+        <li id="planPremiumFeature7"><i class="fas fa-mobile-alt"></i> <strong>APP móvil</strong></li>
+    </ul>
+    <button class="btn-primary" id="planPremiumBtn" onclick="selectPlan('premium')" style="width:100%; justify-content:center; background: linear-gradient(135deg, #f59e0b, #ef4444);">Contactar Ventas</button>
+</div>
+    </div>
+</section><!-- TABLA COMPARATIVA CON PRECIOS REALES -->
 <div style="max-width: 1200px; margin: 3rem auto 0; padding: 0 2rem;">
     <h3 id="compareWhyTitle" style="text-align: center; margin-bottom: 1.5rem;">Why is Zacky cheaper than the competition?</h3>
 
@@ -1751,7 +1853,7 @@ function selectPlan(plan) {
 <div class="contact-info">
 <h3 id="contactInfoTitle">Contact Information</h3>
 <p id="contactInfoText">We are ready to help you transform your project management. Contact us for a personalized demonstration.</p>
-<div class="contact-detail"><i class="fas fa-envelope"></i><span>ajackson2672@gmail.com</span></div>
+<div class="contact-detail"><i class="fas fa-envelope"></i><span>angel.jackson@thejacksonssolutions.com</span></div>
 <div class="contact-detail"><i class="fab fa-whatsapp"></i><span>+34 634 122 273</span></div>
 <div class="contact-detail"><i class="fas fa-clock"></i><span id="contactSupport">24/7 Support for Professional and Enterprise plans</span></div>
 <div style="margin-top: 2rem;"><h4 id="contactFollow" style="margin-bottom: 1rem;">Follow us</h4><div class="social-links" style="justify-content: flex-start;"><a href="#" onclick="showComingSoon()"><i class="fab fa-linkedin-in"></i></a><a href="#" onclick="showComingSoon()"><i class="fab fa-twitter"></i></a><a href="#" onclick="showComingSoon()"><i class="fab fa-github"></i></a><a href="#" onclick="showComingSoon()"><i class="fab fa-youtube"></i></a></div></div>
@@ -1780,7 +1882,7 @@ function selectPlan(plan) {
 </div>
 <p style="color: var(--text-muted); margin-top: 1rem;">4D Command Center for executive projects</p>
             <div class="footer-contact">
-                <p><i class="fas fa-envelope"></i> <a href="mailto:ajackson2672@gmail.com">ajackson2672@gmail.com</a></p>
+                <p><i class="fas fa-envelope"></i> <a href="mailto:angel.jackson@thejacksonssolutions.com">angel.jackson@thejacksonssolutions.com</a></p>
                 <p><i class="fab fa-whatsapp"></i> <a href="https://wa.me/34634122273" target="_blank">+34 634 122 273</a></p>
                 <p><i class="fas fa-phone"></i> <a href="tel:+34634122273">+34 634 122 273</a></p>
             </div>
@@ -1822,7 +1924,7 @@ function selectPlan(plan) {
         </div>
     </div>
     <div class="footer-bottom">
-        <p>© 2025 Zacky Gantt Enterprise Pro. Technology validated by PMI. All rights reserved.</p>
+        <p>© 2026 Zacky Gantt Enterprise Pro. Technology validated by PMI. All rights reserved.</p>
         <p style="margin-top: 0.5rem;">💡 AI-powered project management · EVM · AI Transcriber · 4D Dashboard</p>
     </div>
 </footer>
@@ -1934,40 +2036,118 @@ planFreeBtn: "Probar 15 días gratis",
 planFreeNote: "Sin tarjeta de crédito",
 planProName: "Professional",
 planProPrice: "€24",
-planProPeriod: "/usuario/mes",
+planProPeriod: "/mes",
 planProBadge: "🎯 MÁS POPULAR",
-planProCompare: "💰 Vs Monday: €24 + plugins → Zacky: €24 TODO INCLUIDO",
 planProFeature1: "Proyectos ilimitados",
-planProFeature2: "Gantt Ejecutivo",
-planProFeature2Note: "(nativo, no plugin)",
-planProFeature3: "EVM / Rentabilidad",
-planProFeature3Note: "(CPI/SPI en tiempo real)",
-planProFeature4: "Dashboard 4D Global",
-planProFeature5: "Reportería PDF ejecutiva",
-planProFeature6: "Dashboard por proyecto",
-planProFeature7: "Seguimiento de horas",
-planProFeature8: "Soporte en 24h",
-planProBtn: "Contratar por €24/usuario",
-planProOffer: "🎯 Oferta anual: €110/año (€9.16/mes)",
+planProFeature2: "Board / List / Calendar",
+planProFeature3: "Status del proyecto",
+planProFeature4: "Rentabilidad del proyecto",
+planProFeature5: "Gantt Ejecutivo",
+planProFeature6: "EVM / Rentabilidad",
+planProFeature7: "Dashboard 4D Global",
+planProFeature8: "Dashboard por proyecto",
+planProFeature9: "Seguimiento de horas",
+planProFeature10: "Centro de Comando 4D IA",
+planProFeature11: "Centro de reportes ejecutivos",
+planProFeature12: "Centro de control PM",
+planProFeature13: "Soporte en 24h",
+planProBtn: "Contratar por €24/usuario",planProOffer: "🎯 Oferta anual: €110/año (€9.16/mes)",
 planPremiumName: "Premium",
 planPremiumPrice: "€32",
-planPremiumPeriod: "/usuario/mes",
+planPremiumPeriod: "/mes",
 planPremiumCompare: "⭐ Vs Asana Enterprise: €24 + IA extra → Zacky: €32 TODO INCLUIDO",
 planPremiumFeature1: "🔥 TODO el plan Professional",
 planPremiumFeature2: "Colaboración tiempo real",
-planPremiumFeature2Note: "(hasta 10 usuarios)",
 planPremiumFeature3: "PM Virtual con IA",
-planPremiumFeature3Note: "(asigna tareas, predice riesgos)",
 planPremiumFeature4: "Soporte VIP 24/7",
-planPremiumFeature4Note: "(respuesta en 15 min)",
 planPremiumFeature5: "Asesoría mensual",
-planPremiumFeature5Note: "(1h con PMP certificado)",
 planPremiumFeature6: "Onboarding personalizado",
-planPremiumFeature7: "Auditoría trimestral",
-planPremiumFeature8: "API personalizada",
-planPremiumFeature8Note: "(conecta con CRM/ERP)",
+planPremiumFeature7: "APP móvil",
 planPremiumBtn: "Contactar Ventas",
 planPremiumOffer: "🎯 Anual: €190/año (€15.83/mes)",
+
+// ========== NUEVA SECCIÓN: TABLA COMPARATIVA ==========
+// Comparativa - Cabeceras
+compareFeature: "Característica",
+compareJira: "Jira",
+compareClickUp: "ClickUp",
+compareTrello: "Trello",
+compareAsana: "Asana",
+compareZacky: "ZACKY",
+
+// Comparativa - Filas
+compareLiveEVM: "EVM en Vivo (CPI/SPI)",
+compareAITranscriber: "AI Meeting Transcriber",
+compare4DDashboard: "Executive 4D Dashboard",
+compareGantt: "Gantt con Ruta Crítica",
+compareAIAgents: "Agentes IA (4 en 1)",
+compareChangeControl: "PMI Change Control",
+compareBurndown: "Burndown con IA",
+comparePDFReports: "Executive PDF Reports",
+
+// Comparativa - Valores de Gantt
+compareGanttJira: "Con plugin (+$10)",
+compareGanttClickUp: "Limitado",
+compareGanttTrello: "No",
+compareGanttAsana: "Básico",
+compareGanttZacky: "✅ Nativo",
+
+// Comparativa - Valores de AI Agents
+compareAIJira: "+$20/mes",
+compareAIClickUp: "1 agente básico",
+compareAITrello: "No",
+compareAIAsana: "+$15/mes",
+compareAIZacky: "✅ 4 Agentes",
+
+// Comparativa - Valores de Change Control
+compareChangeJira: "Básico",
+compareChangeClickUp: "No",
+compareChangeTrello: "No",
+compareChangeAsana: "No",
+compareChangeZacky: "✅ Completo",
+
+// Comparativa - Valores de Burndown
+compareBurndownJira: "Básico",
+compareBurndownClickUp: "Básico",
+compareBurndownTrello: "No",
+compareBurndownAsana: "No",
+compareBurndownZacky: "✅ Con IA",
+
+// Comparativa - Valores de PDF Reports
+comparePDFJira: "Básico",
+comparePDFClickUp: "Básico",
+comparePDFTrello: "No",
+comparePDFAsana: "+$8/mes",
+comparePDFZacky: "✅ Ilimitados",
+
+// Comparativa - Precios
+comparePriceTitle: "💰 PRECIO REAL /usuario/mes",
+comparePriceJira: "$8.15",
+comparePriceJiraPlugins: "+$30 plugins",
+comparePriceJiraTotal: "= $38.15",
+comparePriceClickUp: "$7",
+comparePriceClickUpFeatures: "+$15 features",
+comparePriceClickUpTotal: "= $22",
+comparePriceTrello: "$5",
+comparePriceTrelloPowerups: "+$20 power-ups",
+comparePriceTrelloTotal: "= $25",
+comparePriceAsana: "$10.99",
+comparePriceAsanaExtras: "+$23 extras",
+comparePriceAsanaTotal: "= $33.99",
+comparePriceZacky: "€24",
+comparePriceZackyIncluded: "✅ TODO INCLUIDO",
+comparePriceZackyNoPlugins: "¡Sin plugins!",
+
+// Comparativa - Ahorros
+compareSavingsTitle: "💸 TU AHORRO vs cada",
+compareSavingsJira: "🔥 68%",
+compareSavingsClickUp: "🔥 45%",
+compareSavingsTrello: "🔥 52%",
+compareSavingsAsana: "🔥 64%",
+compareSavingsZacky: "🎯 ELIGE ZACKY",
+
+// Nota final
+compareNote: "* Precios actualizados Abril 2026 · Los plugins de Jira, Asana y Trello son necesarios para igualar las funcionalidades nativas de Zacky.",
 compareWhyTitle: "¿Por qué Zacky es más barato que la competencia?",
 compareTool: "Herramienta",
 compareBasePrice: "Precio base",
@@ -1987,7 +2167,7 @@ contactTitle: "📞 <span class='gradient-text'>Contacto</span>",
 contactSubtitle: "Solicita una demo ejecutiva y descubre cómo reducir retrasos y costes.",
 contactInfoTitle: "Información de Contacto",
 contactInfoText: "Estamos listos para ayudarte a transformar la gestión de tus proyectos. Contáctanos para una demostración personalizada.",
-contactSupport: "Soporte 24/7 para planes Professional y Enterprise",
+contactSupport: "Soporte 24/7 para plan Premium",
 contactFollow: "Síguenos",
 contactFormName: "Nombre completo",
 contactFormEmail: "Correo electrónico",
@@ -2046,7 +2226,7 @@ faq3A: "EVM (Earned Value Management) is the PMI standard methodology for measur
 faq4Q: "Can I migrate my data from Jira/ClickUp/Trello/Asana?",
 faq4A: "Yes. Zacky has a mass importer that converts your data (tasks, projects, dates, responsible persons) from CSV, Excel or direct API from Jira, ClickUp, Trello, Asana and MS Project. The process takes less than 15 minutes.",
 faq5Q: "Is there support in English?",
-faq5A: "Yes. 24/7 support for Professional and Enterprise plans. We also have personalized onboarding with an assigned Project Manager.",
+faq5A: "Yes. 24/7 support forPremium plan. We also have personalized onboarding with an assigned Project Manager.",
 faq6Q: "What happens if I cancel my subscription?",
 faq6A: "You can export all your data in Excel, PDF or JSON format. You won't lose anything. And you will always have read access to your historical projects.",
 footerProduct: "Product", footerResources: "Resources", footerLegal: "Legal", footerCompany: "Company",
@@ -2086,40 +2266,118 @@ planFreeBtn: "Try 15 days free",
 planFreeNote: "No credit card required",
 planProName: "Professional",
 planProPrice: "€24",
-planProPeriod: "/user/month",
+planProPeriod: "/month",
 planProBadge: "🎯 MOST POPULAR",
-planProCompare: "💰 Vs Monday: $12 + plugins → Zacky: €24 ALL INCLUDED",
 planProFeature1: "Unlimited projects",
-planProFeature2: "Executive Gantt",
-planProFeature2Note: "(native, no plugin)",
-planProFeature3: "EVM / Profitability",
-planProFeature3Note: "(CPI/SPI real-time)",
-planProFeature4: "Global 4D Dashboard",
-planProFeature5: "Executive PDF Reports",
-planProFeature6: "Project Dashboard",
-planProFeature7: "Time tracking",
-planProFeature8: "24h Support",
-planProBtn: "Hire for €24/user",
-planProOffer: "🎯 Annual offer: €110/year (€9.16/month)",
+planProFeature2: "Board / List / Calendar",
+planProFeature3: "Project Status",
+planProFeature4: "Project Profitability",
+planProFeature5: "Executive Gantt",
+planProFeature6: "EVM / Profitability",
+planProFeature7: "Global 4D Dashboard",
+planProFeature8: "Project Dashboard",
+planProFeature9: "Time tracking",
+planProFeature10: "AI 4D Command Center",
+planProFeature11: "Executive Reports Center",
+planProFeature12: "PM Control Center",
+planProFeature13: "24h Support",
+planProBtn: "Hire for €24/user",planProOffer: "🎯 Annual offer: €110/year (€9.16/month)",
 planPremiumName: "Premium",
 planPremiumPrice: "€32",
-planPremiumPeriod: "/user/month",
+planPremiumPeriod: "/month",
 planPremiumCompare: "⭐ Vs Asana Enterprise: $24 + extra AI → Zacky: €32 ALL INCLUDED",
 planPremiumFeature1: "🔥 ALL Professional plan",
 planPremiumFeature2: "Real-time collaboration",
-planPremiumFeature2Note: "(up to 10 users)",
 planPremiumFeature3: "Virtual AI PM",
-planPremiumFeature3Note: "(assigns tasks, predicts risks)",
 planPremiumFeature4: "VIP 24/7 Support",
-planPremiumFeature4Note: "(response in 15 min)",
 planPremiumFeature5: "Monthly consulting",
-planPremiumFeature5Note: "(1h with certified PMP)",
 planPremiumFeature6: "Personalized onboarding",
-planPremiumFeature7: "Quarterly audit",
-planPremiumFeature8: "Custom API",
-planPremiumFeature8Note: "(connect with CRM/ERP)",
+planPremiumFeature7: "Mobile APP",
 planPremiumBtn: "Contact Sales",
 planPremiumOffer: "🎯 Annual: €190/year (€15.83/month)",
+
+// ========== NUEVA SECCIÓN: TABLA COMPARATIVA INGLÉS ==========
+// Comparativa - Headers
+compareFeature: "Feature",
+compareJira: "Jira",
+compareClickUp: "ClickUp",
+compareTrello: "Trello",
+compareAsana: "Asana",
+compareZacky: "ZACKY",
+
+// Comparativa - Rows
+compareLiveEVM: "Live EVM (CPI/SPI)",
+compareAITranscriber: "AI Meeting Transcriber",
+compare4DDashboard: "Executive 4D Dashboard",
+compareGantt: "Gantt with Critical Path",
+compareAIAgents: "AI Agents (4 in 1)",
+compareChangeControl: "PMI Change Control",
+compareBurndown: "Burndown with AI",
+comparePDFReports: "Executive PDF Reports",
+
+// Comparativa - Gantt values
+compareGanttJira: "With plugin (+$10)",
+compareGanttClickUp: "Limited",
+compareGanttTrello: "No",
+compareGanttAsana: "Basic",
+compareGanttZacky: "✅ Native",
+
+// Comparativa - AI Agents values
+compareAIJira: "+$20/mo",
+compareAIClickUp: "1 basic agent",
+compareAITrello: "No",
+compareAIAsana: "+$15/mo",
+compareAIZacky: "✅ 4 Agents",
+
+// Comparativa - Change Control values
+compareChangeJira: "Basic",
+compareChangeClickUp: "No",
+compareChangeTrello: "No",
+compareChangeAsana: "No",
+compareChangeZacky: "✅ Complete",
+
+// Comparativa - Burndown values
+compareBurndownJira: "Basic",
+compareBurndownClickUp: "Basic",
+compareBurndownTrello: "No",
+compareBurndownAsana: "No",
+compareBurndownZacky: "✅ With AI",
+
+// Comparativa - PDF Reports values
+comparePDFJira: "Basic",
+comparePDFClickUp: "Basic",
+comparePDFTrello: "No",
+comparePDFAsana: "+$8/mo",
+comparePDFZacky: "✅ Unlimited",
+
+// Comparativa - Prices
+comparePriceTitle: "💰 REAL PRICE /user/month",
+comparePriceJira: "$8.15",
+comparePriceJiraPlugins: "+$30 plugins",
+comparePriceJiraTotal: "= $38.15",
+comparePriceClickUp: "$7",
+comparePriceClickUpFeatures: "+$15 features",
+comparePriceClickUpTotal: "= $22",
+comparePriceTrello: "$5",
+comparePriceTrelloPowerups: "+$20 power-ups",
+comparePriceTrelloTotal: "= $25",
+comparePriceAsana: "$10.99",
+comparePriceAsanaExtras: "+$23 extras",
+comparePriceAsanaTotal: "= $33.99",
+comparePriceZacky: "€24",
+comparePriceZackyIncluded: "✅ ALL INCLUDED",
+comparePriceZackyNoPlugins: "No plugins!",
+
+// Comparativa - Savings
+compareSavingsTitle: "💸 YOUR SAVINGS vs each",
+compareSavingsJira: "🔥 68%",
+compareSavingsClickUp: "🔥 45%",
+compareSavingsTrello: "🔥 52%",
+compareSavingsAsana: "🔥 64%",
+compareSavingsZacky: "🎯 CHOOSE ZACKY",
+
+// Nota final
+compareNote: "* Prices updated April 2026 · Jira, Asana and Trello plugins are necessary to match Zacky's native functionalities.",
 compareWhyTitle: "Why is Zacky cheaper than the competition?",
 compareTool: "Tool",
 compareBasePrice: "Base price",
@@ -2230,6 +2488,20 @@ function setLanguage(lang) {
     setIf('newsletterTitle', t.newsletterTitle);
     setIf('newsletterText', t.newsletterText);
     
+
+// ✅ AQUÍ COLOCAS LAS LÍNEAS DEL ROI ✅
+    // ===== ROI SECTION =====
+    setIf('roiTitle', t.roiTitle);
+    setIf('roiLabel', t.roiLabel);
+    setIf('roiWithoutLabel', t.roiWithoutLabel);
+    setIf('roiWithoutSmall', t.roiWithoutSmall);
+    setIf('roiWithLabel', t.roiWithLabel);
+    setIf('roiWithSmall', t.roiWithSmall);
+    setIf('roiSavingsLabel', t.roiSavingsLabel);
+    setIf('roiSavingsSmall', t.roiSavingsSmall);
+
+
+
     // ===== BLOG =====
     setIf('blogTitle', t.blogTitle);
     setIf('blogSubtitle', t.blogSubtitle);
@@ -2348,28 +2620,112 @@ function setLanguage(lang) {
     setIf('contactFollow', t.contactFollow);
     
     // Contact form placeholders
-    const contactName = document.getElementById('contactName');
-    if(contactName) contactName.placeholder = t.contactFormName;
-    const contactEmail = document.getElementById('contactEmail');
-    if(contactEmail) contactEmail.placeholder = t.contactFormEmail;
-    const contactPlanDefault = document.getElementById('contactPlanDefault');
-    if(contactPlanDefault) contactPlanDefault.innerHTML = t.contactFormPlan;
-    const contactPlanFree = document.getElementById('contactPlanFree');
-    if(contactPlanFree) contactPlanFree.innerHTML = t.contactFormPlanFree;
-    const contactPlanPro = document.getElementById('contactPlanPro');
-    if(contactPlanPro) contactPlanPro.innerHTML = t.contactFormPlanPro;
-    const contactPlanPremium = document.getElementById('contactPlanPremium');
-    if(contactPlanPremium) contactPlanPremium.innerHTML = t.contactFormPlanPremium;
-    const contactMessage = document.getElementById('contactMessage');
-    if(contactMessage) contactMessage.placeholder = t.contactFormMessage;
-    const contactSubmit = document.getElementById('contactSubmitBtn');
-    if(contactSubmit) contactSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> ${t.contactFormSubmit}`;
-    
-    // CTA button
-    const ctaNavBtn = document.getElementById('ctaNavBtn');
-    if(ctaNavBtn) ctaNavBtn.innerHTML = lang === 'es' ? 'Probar Zacky' : 'Try Zacky';
-    
-    console.log(`✅ Idioma cambiado a: ${lang === 'es' ? 'Español' : 'English'}`);
+    // Contact form placeholders
+const contactName = document.getElementById('contactName');
+if(contactName) contactName.placeholder = t.contactFormName;
+const contactEmail = document.getElementById('contactEmail');
+if(contactEmail) contactEmail.placeholder = t.contactFormEmail;
+const contactPlanDefault = document.getElementById('contactPlanDefault');
+if(contactPlanDefault) contactPlanDefault.innerHTML = t.contactFormPlan;
+const contactPlanFree = document.getElementById('contactPlanFree');
+if(contactPlanFree) contactPlanFree.innerHTML = t.contactFormPlanFree;
+const contactPlanPro = document.getElementById('contactPlanPro');
+if(contactPlanPro) contactPlanPro.innerHTML = t.contactFormPlanPro;
+const contactPlanPremium = document.getElementById('contactPlanPremium');
+if(contactPlanPremium) contactPlanPremium.innerHTML = t.contactFormPlanPremium;
+const contactMessage = document.getElementById('contactMessage');
+if(contactMessage) contactMessage.placeholder = t.contactFormMessage;
+const contactSubmit = document.getElementById('contactSubmitBtn');
+if(contactSubmit) contactSubmit.innerHTML = `<i class="fas fa-paper-plane"></i> ${t.contactFormSubmit}`;
+
+// CTA button
+const ctaNavBtn = document.getElementById('ctaNavBtn');
+if(ctaNavBtn) ctaNavBtn.innerHTML = lang === 'es' ? 'Probar Zacky' : 'Try Zacky';
+
+console.log(`✅ Idioma cambiado a: ${lang === 'es' ? 'Español' : 'English'}`);
+
+// ========== NUEVA SECCIÓN: TABLA COMPARATIVA ==========
+// Headers
+setIf('compareFeature', t.compareFeature);
+setIf('compareJira', t.compareJira);
+setIf('compareClickUp', t.compareClickUp);
+setIf('compareTrello', t.compareTrello);
+setIf('compareAsana', t.compareAsana);
+setIf('compareZacky', t.compareZacky);
+
+// Features (texto de la primera columna)
+setIf('compareLiveEVM', t.compareLiveEVM);
+setIf('compareAITranscriber', t.compareAITranscriber);
+setIf('compare4DDashboard', t.compare4DDashboard);
+setIf('compareGantt', t.compareGantt);
+setIf('compareAIAgents', t.compareAIAgents);
+setIf('compareChangeControl', t.compareChangeControl);
+setIf('compareBurndown', t.compareBurndown);
+setIf('comparePDFReports', t.comparePDFReports);
+
+// Valores de Gantt
+setIf('compareGanttJira', t.compareGanttJira);
+setIf('compareGanttClickUp', t.compareGanttClickUp);
+setIf('compareGanttTrello', t.compareGanttTrello);
+setIf('compareGanttAsana', t.compareGanttAsana);
+setIf('compareGanttZacky', t.compareGanttZacky);
+
+// Valores de AI Agents
+setIf('compareAIJira', t.compareAIJira);
+setIf('compareAIClickUp', t.compareAIClickUp);
+setIf('compareAITrello', t.compareAITrello);
+setIf('compareAIAsana', t.compareAIAsana);
+setIf('compareAIZacky', t.compareAIZacky);
+
+// Valores de Change Control
+setIf('compareChangeJira', t.compareChangeJira);
+setIf('compareChangeClickUp', t.compareChangeClickUp);
+setIf('compareChangeTrello', t.compareChangeTrello);
+setIf('compareChangeAsana', t.compareChangeAsana);
+setIf('compareChangeZacky', t.compareChangeZacky);
+
+// Valores de Burndown
+setIf('compareBurndownJira', t.compareBurndownJira);
+setIf('compareBurndownClickUp', t.compareBurndownClickUp);
+setIf('compareBurndownTrello', t.compareBurndownTrello);
+setIf('compareBurndownAsana', t.compareBurndownAsana);
+setIf('compareBurndownZacky', t.compareBurndownZacky);
+
+// Valores de PDF Reports
+setIf('comparePDFJira', t.comparePDFJira);
+setIf('comparePDFClickUp', t.comparePDFClickUp);
+setIf('comparePDFTrello', t.comparePDFTrello);
+setIf('comparePDFAsana', t.comparePDFAsana);
+setIf('comparePDFZacky', t.comparePDFZacky);
+
+// Precios
+setIf('comparePriceTitle', t.comparePriceTitle);
+setIf('comparePriceJira', t.comparePriceJira);
+setIf('comparePriceJiraPlugins', t.comparePriceJiraPlugins);
+setIf('comparePriceJiraTotal', t.comparePriceJiraTotal);
+setIf('comparePriceClickUp', t.comparePriceClickUp);
+setIf('comparePriceClickUpFeatures', t.comparePriceClickUpFeatures);
+setIf('comparePriceClickUpTotal', t.comparePriceClickUpTotal);
+setIf('comparePriceTrello', t.comparePriceTrello);
+setIf('comparePriceTrelloPowerups', t.comparePriceTrelloPowerups);
+setIf('comparePriceTrelloTotal', t.comparePriceTrelloTotal);
+setIf('comparePriceAsana', t.comparePriceAsana);
+setIf('comparePriceAsanaExtras', t.comparePriceAsanaExtras);
+setIf('comparePriceAsanaTotal', t.comparePriceAsanaTotal);
+setIf('comparePriceZacky', t.comparePriceZacky);
+setIf('comparePriceZackyIncluded', t.comparePriceZackyIncluded);
+setIf('comparePriceZackyNoPlugins', t.comparePriceZackyNoPlugins);
+
+// Ahorros
+setIf('compareSavingsTitle', t.compareSavingsTitle);
+setIf('compareSavingsJira', t.compareSavingsJira);
+setIf('compareSavingsClickUp', t.compareSavingsClickUp);
+setIf('compareSavingsTrello', t.compareSavingsTrello);
+setIf('compareSavingsAsana', t.compareSavingsAsana);
+setIf('compareSavingsZacky', t.compareSavingsZacky);
+
+// Nota final
+setIf('compareNote', t.compareNote);
 }
 document.addEventListener('DOMContentLoaded', () => {
     const savedLang = localStorage.getItem('zacky_lang') || 'en';
@@ -2387,8 +2743,19 @@ function showLegal(type) { const m = { terms: '📋 Términos disponibles', priv
 // ROI CALCULATOR
 document.addEventListener('DOMContentLoaded', () => {
     const roiSlider = document.getElementById('roiSlider'), hoursValue = document.getElementById('hoursValue'), withoutZacky = document.getElementById('withoutZacky'), withZacky = document.getElementById('withZacky'), savings = document.getElementById('savings');
-    function updateROI() { if(!roiSlider) return; const hours = parseInt(roiSlider.value); if(hoursValue) hoursValue.textContent = hours; const without = hours * 40 * 48, withTotal = 29*12 + hours*40*48*0.2, saving = without - withTotal; if(withoutZacky) withoutZacky.textContent = `$${without.toLocaleString()}`; if(withZacky) withZacky.textContent = `$${withTotal.toLocaleString()}`; if(savings) savings.textContent = `$${Math.max(0, saving).toLocaleString()}`; }
-    if(roiSlider) { roiSlider.addEventListener('input', updateROI); updateROI(); }
+    function updateROI() { 
+    if(!roiSlider) return; 
+    const hours = parseInt(roiSlider.value); 
+    if(hoursValue) hoursValue.textContent = hours; 
+    const without = hours * 40 * 48; 
+    const withTotal = 29 * 12 + hours * 40 * 48 * 0.2; 
+    const saving = without - withTotal; 
+    const currencySymbol = currentLang === 'es' ? '€' : '$';
+    if(withoutZacky) withoutZacky.textContent = `${currencySymbol}${without.toLocaleString()}`; 
+    if(withZacky) withZacky.textContent = `${currencySymbol}${withTotal.toLocaleString()}`; 
+    if(savings) savings.textContent = `${currencySymbol}${Math.max(0, saving).toLocaleString()}`; 
+}
+if(roiSlider) { roiSlider.addEventListener('input', updateROI); updateROI(); }
 });
 
 // NEWSLETTER
