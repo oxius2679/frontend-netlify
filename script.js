@@ -22761,162 +22761,88 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 }
 
 // ==================== SAFE LOAD MEJORADO ====================
-// ==================== SAFE LOAD MEJORADO - VERSIÓN DEFINITIVA ====================
 async function safeLoad() {
     console.group('📥 Cargando datos desde backend o localStorage');
-    
+
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
     
-    // 🔥 VERIFICAR SI ACABAMOS DE ACEPTAR UNA INVITACIÓN
+    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
     const urlParams = new URLSearchParams(window.location.search);
     const justAccepted = urlParams.get('accepted') === 'true';
-    const pendingInvitation = localStorage.getItem('pendingInvitation');
     
-    if (forceLocal && !justAccepted && !pendingInvitation) {
+    if (forceLocal && !justAccepted) {
         console.log('🔄 Usando localStorage porque hubo un guardado reciente');
         const saved = localStorage.getItem('projects');
         if (saved) {
-            window.projects = JSON.parse(saved);
-            console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
+            projects = JSON.parse(saved);
             return true;
         }
     }
-    
+
     const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
     
     console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
+    console.log('🏢 Cliente ID:', clienteId || 'No definido');
     
-    // Si no hay token, no podemos cargar nada del backend
-    if (!token) {
-        console.warn('⚠️ No hay token, usando localStorage');
-        const savedProjects = localStorage.getItem('projects');
-        if (savedProjects) {
-            window.projects = JSON.parse(savedProjects);
-            window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-            console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
-            return true;
-        }
-        
-        // Si no hay proyectos, crear uno de ejemplo
-        window.projects = [{
-            id: Date.now(),
-            name: "Mi Primer Proyecto",
-            tasks: [],
-            totalProjectTime: 0
-        }];
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        window.currentProjectIndex = 0;
-        console.log('📝 Proyecto de ejemplo creado');
-        console.groupEnd();
-        return true;
+    if (justAccepted) {
+        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
     }
     
-    // 🔥 SI ACABAMOS DE ACEPTAR INVITACIÓN, CARGAR PROYECTOS COMPARTIDOS
-    if (justAccepted && pendingInvitation) {
-        console.log('🎉 Acabamos de aceptar invitación, cargando proyectos compartidos...');
-        
+    // Siempre intentar cargar desde backend si hay token
+    if (token && clienteId) {
         try {
-            // Primero intentar cargar proyectos compartidos
-            const sharedResponse = await fetch(`${API_URL}/api/shared-projects`, {
+            console.log('🔄 Cargando desde MongoDB...');
+            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
+            const response = await fetch(url, {
                 headers: { 
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
                 }
             });
             
-            if (sharedResponse.ok) {
-                const sharedData = await sharedResponse.json();
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Datos cargados desde MongoDB Atlas');
                 
-                if (sharedData.success && sharedData.projects && sharedData.projects.length > 0) {
-                    window.projects = sharedData.projects;
-                    localStorage.setItem('projects', JSON.stringify(window.projects));
+                if (data.projects) {
+                    projects = data.projects;
+                    currentProjectIndex = data.currentProjectIndex || 0;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
                     
-                    // Seleccionar el proyecto recién aceptado
-                    const invitation = JSON.parse(pendingInvitation);
-                    const projectIndex = window.projects.findIndex(
-                        p => p.id === invitation.proyectoId || p.name === invitation.proyectoNombre
-                    );
+                    // Limpiar parámetro de URL si existe
+                    if (justAccepted) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
                     
-                    window.currentProjectIndex = projectIndex >= 0 ? projectIndex : 0;
-                    localStorage.setItem('currentProjectIndex', window.currentProjectIndex);
-                    
-                    console.log(`✅ ${window.projects.length} proyectos compartidos cargados`);
-                    console.log(`📋 Proyecto seleccionado: ${window.projects[window.currentProjectIndex].name}`);
-                    
-                    // Limpiar parámetros de URL y datos temporales
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    localStorage.removeItem('pendingInvitation');
-                    
-                    console.groupEnd();
+                    console.log(`✅ ${projects.length} proyectos cargados`);
                     return true;
                 }
             }
         } catch (error) {
-            console.warn('⚠️ Error cargando proyectos compartidos:', error.message);
+            console.warn('⚠️ Error cargando desde backend:', error.message);
         }
     }
-    
-    // 🔥 CARGAR PROYECTOS NORMALES (propios del usuario)
-    try {
-        console.log('🔄 Cargando proyectos propios desde backend...');
-        
-        const response = await fetch(`${API_URL}/api/projects`, {
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.projects && data.projects.length > 0) {
-                window.projects = data.projects;
-                window.currentProjectIndex = data.currentProjectIndex || 0;
-                
-                localStorage.setItem('projects', JSON.stringify(window.projects));
-                localStorage.setItem('currentProjectIndex', window.currentProjectIndex);
-                
-                // 🔥 IMPORTANTE: Guardar el clienteId correcto del backend
-                if (data.clienteId) {
-                    localStorage.setItem('clienteId', data.clienteId);
-                    console.log(`✅ ClienteId guardado: ${data.clienteId}`);
-                }
-                
-                console.log(`✅ ${window.projects.length} proyectos cargados desde backend`);
-                console.groupEnd();
-                return true;
-            }
-        }
-    } catch (error) {
-        console.warn('⚠️ Error cargando desde backend:', error.message);
-    }
-    
+
     // Fallback a localStorage
     const savedProjects = localStorage.getItem('projects');
     if (savedProjects) {
-        window.projects = JSON.parse(savedProjects);
-        window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-        console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
-        console.groupEnd();
+        projects = JSON.parse(savedProjects);
+        currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
         return true;
     }
-    
-    // Si no hay nada, crear proyecto de ejemplo
-    window.projects = [{
-        id: Date.now(),
-        name: "Mi Primer Proyecto",
-        tasks: [],
-        totalProjectTime: 0
-    }];
-    localStorage.setItem('projects', JSON.stringify(window.projects));
-    window.currentProjectIndex = 0;
-    console.log('📝 Proyecto de ejemplo creado');
-    
+
+    console.log('📝 No hay datos, se creará proyecto inicial');
+    projects = [];
     console.groupEnd();
-    return true;
+    return false;
 }
+
+
 
 
 
@@ -36129,6 +36055,283 @@ function getActiveView() {
 /******************************
  * FUNCIONES DE RENDERIZADO
  ******************************/
+function renderKanbanTasks(tasks = null) {
+    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CORREGIDA');
+    
+    // 🔥 CORRECCIÓN: Usar variables DIRECTAMENTE, sin window.
+    // Paso 1: Verificar lo básico
+    if (!projects || currentProjectIndex === undefined) {
+        console.error('❌ No hay proyectos o índice');
+        console.log('   projects:', projects);
+        console.log('   currentProjectIndex:', currentProjectIndex);
+        return;
+    }
+    
+    const project = projects[currentProjectIndex];
+    if (!project || !project.tasks) {
+        console.error('❌ No hay proyecto o tareas');
+        return;
+    }
+    
+    console.log('✅ Proyecto:', project.name);
+    console.log('✅ Tareas:', project.tasks.length);
+    
+    // Paso 2: Obtener columnas
+    const pendingCol = document.getElementById('pendingList');
+    const inProgressCol = document.getElementById('inProgressList');
+    const completedCol = document.getElementById('completedList');
+    const overdueCol = document.getElementById('overdueList');
+    
+    console.log('✅ Columnas:', {
+        pending: !!pendingCol,
+        inProgress: !!inProgressCol,
+        completed: !!completedCol,
+        overdue: !!overdueCol
+    });
+    
+    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+        console.error('❌ Faltan columnas');
+        return;
+    }
+    
+    // Paso 3: Limpiar columnas
+    pendingCol.innerHTML = '';
+    inProgressCol.innerHTML = '';
+    completedCol.innerHTML = '';
+    overdueCol.innerHTML = '';
+    
+    // Paso 4: Obtener tareas
+    let tasksToRender = tasks || project.tasks || [];
+    console.log('✅ Tareas a renderizar:', tasksToRender.length);
+    
+    if (tasksToRender.length === 0) {
+        console.log('📭 No hay tareas');
+        
+        // ========== 🆕 ACTUALIZAR CONTADORES A CERO ==========
+        setTimeout(() => {
+            if (typeof actualizarContadoresColumnas === 'function') {
+                actualizarContadoresColumnas();
+            }
+            document.dispatchEvent(new Event('tasksRendered'));
+        }, 50);
+
+
+
+        // ========== FIN NUEVO ==========
+        
+        return;
+    }
+    
+    // Paso 5: Renderizar CADA TAREA
+    tasksToRender.forEach((task, index) => {
+        console.log(`🎨 Renderizando tarea ${index + 1}: "${task.name}"`);
+        console.log('📊 Campos de la tarea:', {
+            name: task.name,
+            assignee: task.assignee,
+            priority: task.priority,
+            status: task.status,
+            deadline: task.deadline,
+            description: task.description,
+            estimatedTime: task.estimatedTime,
+            subtasks: task.subtasks,
+            startDate: task.startDate
+        });
+        
+        if (!task) {
+            console.log(' ⚠️ Tarea nula, saltando');
+            return;
+        }
+        
+        // Determinar columna
+        let targetColumn = pendingCol;
+        if (task.status === 'completed' || task.status === 'completado') {
+            targetColumn = completedCol;
+        } else if (task.status === 'inProgress' || task.status === 'en progreso') {
+            targetColumn = inProgressCol;
+        } else if (task.status === 'overdue' || task.status === 'rezagado') {
+            targetColumn = overdueCol;
+        }
+        
+        console.log(`   📍 Estado: ${task.status} → Columna: ${targetColumn.id}`);
+        
+        // COLORES DE BORDE POR PRIORIDAD
+        const priorityBorderColors = {
+            'alta': '#e74c3c',    // Rojo
+            'media': '#f39c12',   // Naranja  
+            'baja': '#2ecc71',    // Verde
+            'high': '#e74c3c',
+            'medium': '#f39c12',
+            'low': '#2ecc71'
+        };
+        
+        const priorityColor = priorityBorderColors[task.priority] || '#3498db';
+        
+        // ICONOS DE STATUS
+        const statusIcons = {
+            'pending': '⏳',
+            'inProgress': '🔄', 
+            'completed': '✅',
+            'overdue': '⚠️'
+        };
+        
+        const statusIcon = statusIcons[task.status] || '📝';
+
+        // Formatear fecha límite
+        let formattedDeadline = '';
+        if (task.deadline) {
+            try {
+                const deadlineDate = new Date(task.deadline);
+                formattedDeadline = deadlineDate.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                console.log(`   📅 Fecha formateada: ${formattedDeadline}`);
+            } catch (error) {
+                console.error('❌ Error formateando fecha:', error);
+                formattedDeadline = 'Fecha inválida';
+            }
+        }
+
+        // Crear tarjeta con formato MEJORADO - ESTRUCTURA CORREGIDA
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.taskId = task.id;
+        card.dataset.status = task.status;
+        
+        // Aplicar color de borde
+        card.style.borderLeft = `4px solid ${priorityColor}`;
+        
+        // HTML con NUEVA ESTRUCTURA
+        // ... dentro de renderKanbanTasks, dentro del forEach de tareas ...
+
+    // ✅ CÁLCULO DE PROGRESO DE SUBTAREAS
+    const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
+    const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
+    const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+    const hasSubtasks = totalSubtasks > 0;
+
+    // ... (código anterior de colores y estados) ...
+
+    card.innerHTML = `
+    <div class="task-card-header">
+        <h4 class="task-title">
+            ${statusIcon} ${task.name || 'Tarea sin nombre'}
+        </h4>
+        <div class="task-controls">
+            <!-- FLECHAS DE DESPLAZAMIENTO -->
+            <div class="move-buttons">
+                <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
+                <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
+            </div>
+            <!-- MENÚ DE TRES PUNTITOS -->
+            <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
+        </div>
+    </div>
+    <div class="task-card-body">
+        <!-- ASIGNADO ARRIBA de las banderas -->
+        ${task.assignee ? `
+        <div class="task-assignee">
+            <i class="fas fa-user"></i> Asignado a: ${task.assignee}
+        </div>
+        ` : ''}
+        
+        <!-- ✅ NUEVO: BARRA DE PROGRESO DE SUBTAREAS (VISIBLE EN EL BOARD) -->
+        ${hasSubtasks ? `
+        <div class="subtasks-progress-container" style="margin-top: 10px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
+                <span>📋 Subtareas</span>
+                <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+            </div>
+            <div class="progress-bar" style="background:#2d2d5f; height:6px; border-radius:3px; overflow:hidden;">
+                <div class="progress-fill" style="width: ${subtaskProgress}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:3px; transition: width 0.3s ease;"></div>
+            </div>
+        </div>
+        ` : ''}
+        <!-- FIN NUEVO -->
+
+        <!-- CONTENEDOR CENTRADO PARA BANDERAS -->
+        <div class="badges-container">
+            <!-- BANDERA DE PRIORIDAD -->
+            <span class="task-badge priority-badge ${task.priority || 'media'}">
+                ${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}
+            </span>
+            <!-- BANDERA DE STATUS -->
+            <span class="task-badge status-badge status-${task.status}">
+                ${task.status === 'pending' ? 'Pendiente' :
+                task.status === 'inProgress' ? 'En Progreso' :
+                task.status === 'completed' ? 'Completado' :
+                task.status === 'overdue' ? 'Rezagado' : task.status}
+            </span>
+        </div>
+        <!-- FECHA LÍMITE DEBAJO de las banderas -->
+        ${task.deadline ? `
+        <div class="task-deadline">
+            <i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}
+        </div>
+        ` : ''}
+    </div>
+    <div class="task-context-menu" id="task-menu-${task.id}">
+        <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+            <i class="fas fa-edit"></i> Editar
+        </div>
+        <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
+            <i class="fas fa-trash"></i> Eliminar
+        </div>
+    </div>
+    `;
+
+// ... (el resto de la función sigue igual) ...
+
+        // Event listener para clicks
+        card.addEventListener('click', function(e) {
+            console.log('🖱️ Click en:', task.name);
+            e.stopPropagation();
+            if (typeof showTaskDetails === 'function') {
+                showTaskDetails(task);
+            }
+        });
+
+
+
+        // Agregar a la columna
+        targetColumn.appendChild(card);
+        console.log(`   ✅ Tarea agregada a ${targetColumn.id}`);
+    });
+    
+    console.log('🎉 renderKanbanTasks COMPLETADO EXITOSAMENTE');
+    
+    // ========== 🆕 NUEVO: ACTUALIZAR CONTADORES Y EVENTOS ==========
+    setTimeout(() => {
+        // 1. Actualizar contadores de columnas (los números con animación)
+        if (typeof actualizarContadoresColumnas === 'function') {
+            actualizarContadoresColumnas();
+        }
+        
+        // 2. Disparar evento de tareas renderizadas
+        document.dispatchEvent(new Event('tasksRendered'));
+        
+        // 3. Iniciar drag & drop si existe (tu función original)
+        if (typeof initDragAndDrop === 'function') {
+            console.log('🎯 Iniciando drag & drop...');
+            initDragAndDrop();
+        }
+        
+        // 4. Mejorar drag & drop con efectos elegantes (nuevo)
+        if (typeof mejorarDragDrop === 'function') {
+            mejorarDragDrop();
+        }
+        
+        // 5. Agregar tooltips a las tareas (nuevo)
+        if (typeof agregarTooltipsATareas === 'function') {
+            agregarTooltipsATareas();
+        }
+        
+        console.log('✨ Efectos visuales aplicados correctamente');
+    }, 100);
+    // ========== FIN NUEVO ==========
+}
 
 
 
@@ -38220,22 +38423,16 @@ if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 // ============================================
 // RENDERIZAR PROYECTOS CON FILTRO DE PERMISOS
 // ============================================
-// ============================================
-// ✅ renderProjects - VERSIÓN CORREGIDA
-// ============================================
 function renderProjects() {
-    console.log('📋 renderProjects - VERSIÓN CORREGIDA');
-    
     const projectListContainer = document.getElementById('projectList');
     if (!projectListContainer) {
-        console.warn('⚠️ projectListContainer no encontrado');
+        console.log('⚠️ No se encontró projectListContainer');
         return;
     }
     
-    // 🔥 USAR proyectos filtrados
+    // 🔥 USAR proyectos FILTRADOS en lugar de projects directamente
     const proyectosPermitidos = getProyectosPermitidos();
-    
-    console.log(`📊 Proyectos a renderizar: ${proyectosPermitidos.length}`);
+    console.log(`📋 Proyectos a renderizar: ${proyectosPermitidos.length}`);
     
     projectListContainer.innerHTML = '';
     
@@ -38278,7 +38475,11 @@ function renderProjects() {
         projectListContainer.appendChild(li);
     });
     
-    console.log(`✅ ${proyectosPermitidos.length} proyectos renderizados en el menú`);
+    // Actualizar también window.projects para mantener consistencia
+    window.projects = proyectosPermitidos;
+    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
+    
+    console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
     
     // Actualizar estilos del proyecto seleccionado
     setTimeout(updateProjectSelectionStyles, 100);
@@ -38299,80 +38500,134 @@ function updateProjectSelectionStyles() {
 }
 
 
-// ============================================
-// ✅ selectProject - VERSIÓN CORREGIDA
-// ============================================
 function selectProject(index) {
     console.log('🧭 selectProject llamado con índice:', index);
     
-    // 🔥 USAR proyectos filtrados
+    // 🔥 Usar proyectos filtrados en lugar de projects directamente
     const proyectosPermitidos = getProyectosPermitidos();
-    
-    if (!proyectosPermitidos || proyectosPermitidos.length === 0) {
-        console.warn('⚠️ No hay proyectos disponibles');
-        return;
-    }
     
     // Validar índice
     if (index < 0 || index >= proyectosPermitidos.length) {
-        console.warn(`⚠️ Índice inválido (${index}), usando índice 0`);
-        index = 0; // Usar el primer proyecto si el índice es inválido
-    }
-    
-    const project = proyectosPermitidos[index];
-    if (!project) {
-        console.error('❌ Proyecto no encontrado');
+        console.warn(`⚠️ Índice de proyecto inválido (${index})`);
         return;
     }
     
-    // Actualizar índice global
+    const project = proyectosPermitidos[index];
+    if (!project) return;
+
+    // 🔥 Verificar acceso (opcional, ya lo hace getProyectosPermitidos)
+    const clienteId = localStorage.getItem('clienteId');
+    
+    // Actualizar índice actual (este es el índice dentro de proyectosPermitidos)
     currentProjectIndex = index;
+    
+    // Guardar en localStorage
     localStorage.setItem('currentProjectIndex', index);
     
-    // Actualizar nombres del proyecto en todas las vistas
-    const projectNameElements = [
-        'projectName', 'projectNameList', 'projectNameCalendar',
-        'projectNameGantt', 'projectNameReports', 'projectNameDashboard'
-    ];
-    
-    projectNameElements.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = project.name;
-    });
-    
-    // 🔥 ACTUALIZAR NOMBRE EN EL KANBAN
-    const boardTitle = document.querySelector('#boardView h1, #boardView h2, .project-title');
-    if (boardTitle) {
-        boardTitle.textContent = `📋 ${project.name}`;
+    // 🔥 SOCKET → unir al proyecto
+    if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
+        console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
+        window.tiempoRealSocket.emit("join-project", currentProjectIndex);
     }
-    
-    // Renderizar la vista actual
+
+    // 📝 Actualizar nombres del proyecto en todas las vistas
+    const projectNameDisplay = document.getElementById('projectName');
+    const projectNameList = document.getElementById('projectNameList');
+    const projectNameCalendar = document.getElementById('projectNameCalendar');
+    const projectNameGantt = document.getElementById('projectNameGantt');
+    const projectNameReports = document.getElementById('projectNameReports');
+    const projectNameDashboard = document.getElementById('projectNameDashboard');
+
+    if (projectNameDisplay) projectNameDisplay.textContent = project.name;
+    if (projectNameList) projectNameList.textContent = project.name;
+    if (projectNameCalendar) projectNameCalendar.textContent = project.name;
+    if (projectNameGantt) projectNameGantt.textContent = project.name;
+    if (projectNameReports) projectNameReports.textContent = project.name;
+    if (projectNameDashboard) projectNameDashboard.textContent = project.name;
+
+    // ⏱️ Tiempo total del proyecto
+    const totalTimeElement = document.getElementById('totalProjectTime');
+    if (totalTimeElement) {
+        totalTimeElement.textContent = `${project.totalProjectTime || 0} horas`;
+    }
+
+    // 🔄 Actualizaciones generales
+    if (typeof actualizarAsignados === 'function') actualizarAsignados();
+    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+    if (typeof updateTaskList === 'function') updateTaskList();
+    if (typeof updateStatistics === 'function') updateStatistics();
+    if (typeof updateProjectDatesFromTasks === 'function') updateProjectDatesFromTasks();
+    if (typeof updateProjectProgress === 'function') updateProjectProgress();
+
+    // 📊 Reportes
+    if (typeof generateReports === 'function') generateReports();
+    if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
+        generatePieChart(getStats());
+    }
+
+    // ⚠️ Riesgos, acciones e hitos
+    setTimeout(() => {
+        if (typeof loadRisksFromLocalStorage === 'function') loadRisksFromLocalStorage();
+        if (typeof loadActionsFromLocalStorage === 'function') loadActionsFromLocalStorage();
+        if (typeof loadMilestonesFromLocalStorage === 'function') loadMilestonesFromLocalStorage();
+        if (typeof updateMilestonesStatus === 'function') updateMilestonesStatus();
+    }, 50);
+
+    // 🔁 Re-renderizar dashboard si está visible
+    const dashboardView = document.getElementById('dashboardView');
+    if (dashboardView && getComputedStyle(dashboardView).display !== 'none') {
+        setTimeout(() => {
+            if (typeof renderDashboard === 'function') renderDashboard();
+        }, 50);
+    }
+
+    // 🔀 Renderizar vista activa
     const activeView = getActiveView();
-    console.log('📍 Vista activa:', activeView);
-    
-    switch(activeView) {
-        case 'board':
-            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-            break;
-        case 'list':
-            if (typeof renderListTasks === 'function') renderListTasks();
-            break;
+    switch (activeView) {
         case 'calendar':
             if (typeof renderCalendar === 'function') renderCalendar();
             break;
-        case 'reports':
-            if (typeof generateReports === 'function') generateReports();
+        case 'profitability':
+            if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
             break;
         case 'dashboard':
-            if (typeof renderDashboard === 'function') renderDashboard();
             break;
+        default:
+            if (activeView === 'board' && typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            } else if (activeView === 'list' && typeof renderListTasks === 'function') {
+                renderListTasks();
+            } else if (activeView === 'gantt' && typeof renderGanttChart === 'function') {
+                renderGanttChart();
+            }
     }
     
-    // Actualizar estilos del sidebar
-    updateProjectSelectionStyles();
-    
-    console.log(`✅ Proyecto seleccionado: "${project.name}" (índice ${index})`);
+    // 🔥 Actualizar estilos del menú lateral
+    setTimeout(() => {
+        document.querySelectorAll('.project-item').forEach((item, i) => {
+            if (i === index) {
+                item.style.background = 'rgba(52, 152, 219, 0.2)';
+                item.style.border = '1px solid #3498db';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = '#3498db';
+                    checkmark.style.color = 'white';
+                }
+            } else {
+                item.style.background = 'rgba(255,255,255,0.05)';
+                item.style.border = '1px solid rgba(255,255,255,0.1)';
+                const checkmark = item.querySelector('div > div:last-child');
+                if (checkmark) {
+                    checkmark.style.background = 'rgba(255,255,255,0.1)';
+                    checkmark.style.color = 'transparent';
+                }
+            }
+        });
+    }, 100);
+
+    console.log(`✅ Proyecto seleccionado: "${project.name}"`);
 }
+
 
 function editProjectName(index) {
   const newName = prompt('Ingrese el nuevo nombre:', projects[index].name);
@@ -40240,73 +40495,65 @@ function updateStatistics(tasks = null) {
   if (overdueCount) overdueCount.textContent = stats.overdue;
 }
 
-// ============================================
-// ✅ generatePieChart - VERSIÓN CON DIMENSIONES FIJAS
-// ============================================
 function generatePieChart(data) {
-    console.log("🎯 Generando gráfico de pastel...");
-    
-    let pieChartCanvas = document.getElementById('pieChart');
-    
-    // Si no existe, crearlo
-    if (!pieChartCanvas) {
-        console.warn('⚠️ Canvas pieChart no encontrado, creándolo...');
-        const container = document.querySelector('.dashboard-stats, .stats-container, #dashboardView');
-        if (container) {
-            pieChartCanvas = document.createElement('canvas');
-            pieChartCanvas.id = 'pieChart';
-            pieChartCanvas.width = 300;
-            pieChartCanvas.height = 300;
-            pieChartCanvas.style.width = '300px';
-            pieChartCanvas.style.height = '300px';
-            container.appendChild(pieChartCanvas);
-        } else {
-            console.error('❌ No se pudo crear el canvas');
-            return;
-        }
-    }
-    
-    // Asegurar dimensiones
-    pieChartCanvas.width = 300;
-    pieChartCanvas.height = 300;
-    pieChartCanvas.style.width = '300px';
-    pieChartCanvas.style.height = '300px';
-    
-    // Destruir instancia anterior
-    if (window.myChartInstance) {
-        window.myChartInstance.destroy();
-        window.myChartInstance = null;
-    }
-    
-    const ctx = pieChartCanvas.getContext('2d');
-    
-    try {
-        window.myChartInstance = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Pendientes', 'En Progreso', 'Completados', 'Rezagados'],
-                datasets: [{
-                    data: [data.pending, data.inProgress, data.completed, data.overdue],
-                    backgroundColor: ['#f1c40f', '#008090', '#2ecc71', '#e74c3c'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#e2e8f0' }
-                    }
-                }
-            }
-        });
-        console.log("✅ Gráfico de pastel creado exitosamente");
-    } catch (error) {
-        console.error("❌ Error creando gráfico:", error);
-    }
-}
+  console.log("🎯 Generando gráfico de pastel...");
+  
+  const pieChartCanvas = document.getElementById('pieChart');
+  if (!pieChartCanvas) {
+    console.error("❌ No se encuentra el canvas pieChart");
+    return;
+  }
 
+  // 🔥 CLAVE: Asegurar que el canvas tenga dimensiones visibles
+  if (pieChartCanvas.offsetWidth === 0 || pieChartCanvas.offsetHeight === 0) {
+    console.log("⚠️ Canvas tiene dimensiones 0, forzando tamaño...");
+    pieChartCanvas.style.width = '400px';
+    pieChartCanvas.style.height = '400px';
+  }
+
+  // Destruir gráfica anterior SI existe
+  if (window.myChartInstance) {
+    window.myChartInstance.destroy();
+    window.myChartInstance = null;
+  }
+
+  const ctx = pieChartCanvas.getContext('2d');
+  
+  try {
+    window.myChartInstance = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Pendientes', 'En Progreso', 'Completados', 'Rezagados'],
+        datasets: [{
+          data: [data.pending, data.inProgress, data.completed, data.overdue],
+          backgroundColor: ['#f1c40f', '#008090', '#2ecc71', '#e74c3c']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    console.log("✅ Gráfico de pastel creado exitosamente");
+
+    // 🔥 FORZAR REDIBUJADO después de un pequeño delay
+    setTimeout(() => {
+      if (window.myChartInstance) {
+        window.myChartInstance.update();
+        console.log("🔄 Gráfico actualizado forzadamente");
+      }
+    }, 500);
+
+  } catch (error) {
+    console.error("❌ Error creando gráfico:", error);
+  }
+}
 function updateProjectProgress() {
   const project = projects[currentProjectIndex];
   const totalTasks = project.tasks.length;
@@ -62606,50 +62853,58 @@ async function copiarLinkInvitacion(link) {
 // ============================================
 // FILTRAR PROYECTOS POR PERMISOS DEL USUARIO
 // ============================================
-// ============================================
-// ✅ getProyectosPermitidos - VERSIÓN CORREGIDA
-// ============================================
 function getProyectosPermitidos() {
-    console.log('🚀 getProyectosPermitidos - VERSIÓN CORREGIDA');
-    
-    const clienteId = localStorage.getItem('clienteId');
-    const userStr = localStorage.getItem('user');
-    const userEmail = userStr ? JSON.parse(userStr).email : null;
-    
-    console.log('🔑 Cliente ID:', clienteId);
-    console.log('📧 User email:', userEmail);
-    console.log('📦 Total proyectos en window.projects:', window.projects ? window.projects.length : 0);
-    
-    // 🔥 CORRECCIÓN CRÍTICA: Usar clienteId, NO email
-    // El email puede ser el mismo en diferentes máquinas, pero el clienteId es único
-    
-    if (!window.projects || window.projects.length === 0) {
-        console.warn('⚠️ No hay proyectos en window.projects');
-        return [];
-    }
-    
-    // 🔥 FILTRAR POR clienteId (NO POR EMAIL)
-    if (clienteId) {
-        const proyectosFiltrados = window.projects.filter(p => {
-            // Proyecto pertenece a este clienteId
-            if (p.clienteId === clienteId) return true;
-            
-            // Usuario fue invitado al proyecto
-            if (p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)) return true;
-            
-            // Usuario es colaborador del proyecto
-            if (p.colaboradores && Array.isArray(p.colaboradores) && p.colaboradores.includes(userEmail)) return true;
-            
-            return false;
+    try {
+        console.log('🚀 getProyectosPermitidos EJECUTÁNDOSE');
+        
+        const clienteId = localStorage.getItem('clienteId');
+        const userStr = localStorage.getItem('user');
+        const userEmail = userStr ? JSON.parse(userStr).email : null;
+        
+        console.log('🔑 Cliente ID:', clienteId);
+        console.log('📧 User email:', userEmail);
+        
+        // 🟢 1. PRIMERO: Filtrar por clienteId (proyectos creados por el usuario)
+        let proyectosPorClienteId = [];
+        if (clienteId) {
+            proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
+            console.log(`📊 Proyectos por clienteId: ${proyectosPorClienteId.length}`);
+        }
+        
+        // 🟢 2. SEGUNDO: Buscar proyectos donde el usuario fue invitado como colaborador
+        //    Esto requiere que en el backend, al aceptar la invitación, se agregue al usuario
+        //    como miembro en una colección separada o se marque el proyecto con su email.
+        //    Por ahora, simulamos con proyectos que tengan el email en un campo 'invitados'
+        
+        let proyectosInvitado = [];
+        if (userEmail) {
+            proyectosInvitado = projects.filter(p => 
+                p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
+            );
+            console.log(`📊 Proyectos donde fue invitado: ${proyectosInvitado.length}`);
+        }
+        
+        // 🟢 3. TERCERO: Si es ADMIN, devolver todos
+        if (userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 Admin - devolviendo todos los proyectos');
+            return projects;
+        }
+        
+        // 🟢 4. COMBINAR ambas fuentes (sin duplicados por id)
+        const todosProyectos = [...proyectosPorClienteId];
+        proyectosInvitado.forEach(p => {
+            if (!todosProyectos.some(existente => existente.id === p.id)) {
+                todosProyectos.push(p);
+            }
         });
         
-        console.log(`✅ ${proyectosFiltrados.length} proyectos filtrados por clienteId`);
-        return proyectosFiltrados;
+        console.log(`✅ Total proyectos para este usuario: ${todosProyectos.length}`);
+        return todosProyectos;
+        
+    } catch (error) {
+        console.error('Error en getProyectosPermitidos:', error);
+        return [];
     }
-    
-    // Si no hay clienteId, devolver array vacío
-    console.warn('⚠️ No hay clienteId, devolviendo array vacío');
-    return [];
 }
 function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
@@ -67860,6 +68115,198 @@ function generarReporteBoard() {
 // Te proporciono una versión completa que puedes usar directamente.
 
 
+function renderKanbanTasks(tasks = null) {
+    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CORREGIDA');
+
+    if (!projects || currentProjectIndex === undefined) {
+        console.error('❌ No hay proyectos o índice');
+        return;
+    }
+
+    const project = projects[currentProjectIndex];
+    if (!project || !project.tasks) {
+        console.error('❌ No hay proyecto o tareas');
+        return;
+    }
+
+    console.log('✅ Proyecto:', project.name);
+    console.log('✅ Tareas:', project.tasks.length);
+
+    const pendingCol = document.getElementById('pendingList');
+    const inProgressCol = document.getElementById('inProgressList');
+    const completedCol = document.getElementById('completedList');
+    const overdueCol = document.getElementById('overdueList');
+
+    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+        console.error('❌ Faltan columnas');
+        return;
+    }
+
+    // ========== AGREGAR BOTÓN "REPORTE EJECUTIVO" ==========
+    const boardView = document.getElementById('boardView');
+    if (boardView && !document.getElementById('reportButtonBoard')) {
+        let header = boardView.querySelector('.kanban-header, .board-header, header');
+        if (!header) {
+            header = document.createElement('div');
+            header.className = 'kanban-header';
+            header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 0 15px 0; margin-bottom: 10px;';
+            boardView.insertBefore(header, boardView.firstChild);
+        }
+        const btn = document.createElement('button');
+        btn.id = 'reportButtonBoard';
+        btn.innerHTML = '<i class="fas fa-chart-line"></i> Reporte Ejecutivo';
+        btn.style.cssText = `
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        `;
+        btn.onclick = generarReporteBoard;
+        btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
+        btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
+        header.appendChild(btn);
+        console.log('✅ Botón Reporte Ejecutivo añadido');
+    }
+    // =====================================================
+
+    // Limpiar columnas
+    pendingCol.innerHTML = '';
+    inProgressCol.innerHTML = '';
+    completedCol.innerHTML = '';
+    overdueCol.innerHTML = '';
+
+    let tasksToRender = tasks || project.tasks || [];
+    if (tasksToRender.length === 0) {
+        setTimeout(() => {
+            if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
+            document.dispatchEvent(new Event('tasksRendered'));
+        }, 50);
+        return;
+    }
+
+    tasksToRender.forEach((task) => {
+        if (!task) return;
+
+        let targetColumn = pendingCol;
+        if (task.status === 'completed' || task.status === 'completado') targetColumn = completedCol;
+        else if (task.status === 'inProgress' || task.status === 'en progreso') targetColumn = inProgressCol;
+        else if (task.status === 'overdue' || task.status === 'rezagado') targetColumn = overdueCol;
+
+        const priorityColor = { 'alta': '#e74c3c', 'media': '#f39c12', 'baja': '#2ecc71' }[task.priority] || '#3498db';
+        const statusIcon = { 'pending': '⏳', 'inProgress': '🔄', 'completed': '✅', 'overdue': '⚠️' }[task.status] || '📝';
+
+        let formattedDeadline = '';
+        if (task.deadline) {
+            try {
+                formattedDeadline = new Date(task.deadline).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
+            } catch(e) { formattedDeadline = 'Fecha inválida'; }
+        }
+
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.taskId = task.id;
+        card.dataset.status = task.status;
+        card.style.borderLeft = `4px solid ${priorityColor}`;
+        card.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-title">${statusIcon} ${task.name || 'Tarea sin nombre'}</h4>
+                <div class="task-controls">
+                    <div class="move-buttons">
+                        <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
+                        <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
+                    </div>
+                    <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
+                </div>
+            </div>
+            <div class="task-card-body">
+                ${task.assignee ? `<div class="task-assignee"><i class="fas fa-user"></i> Asignado a: ${task.assignee}</div>` : ''}
+                <div class="badges-container">
+                    <span class="task-badge priority-badge ${task.priority || 'media'}">${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}</span>
+                    <span class="task-badge status-badge status-${task.status}">${task.status === 'pending' ? 'Pendiente' : task.status === 'inProgress' ? 'En Progreso' : task.status === 'completed' ? 'Completado' : task.status === 'overdue' ? 'Rezagado' : task.status}</span>
+                </div>
+                ${task.deadline ? `<div class="task-deadline"><i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}</div>` : ''}
+            </div>
+            <div class="task-context-menu" id="task-menu-${task.id}">
+                <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Editar</div>
+                <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')"><i class="fas fa-trash"></i> Eliminar</div>
+            </div>
+        `;
+        card.addEventListener('click', (e) => { e.stopPropagation(); if (typeof showTaskDetails === 'function') showTaskDetails(task); });
+        targetColumn.appendChild(card);
+    });
+
+    setTimeout(() => {
+        if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
+        document.dispatchEvent(new Event('tasksRendered'));
+        if (typeof initDragAndDrop === 'function') initDragAndDrop();
+        if (typeof mejorarDragDrop === 'function') mejorarDragDrop();
+        if (typeof agregarTooltipsATareas === 'function') agregarTooltipsATareas();
+    }, 100);
+}
+
+// 3. OBSERVADOR ADICIONAL (por si la vista Board se activa después de renderizar)
+(function ensureBoardButton() {
+    function addButtonIfMissing() {
+        const boardView = document.getElementById('boardView');
+        if (boardView && boardView.classList.contains('active') && !document.getElementById('reportButtonBoard')) {
+            let header = boardView.querySelector('.kanban-header, .board-header, header');
+            if (!header) {
+                header = document.createElement('div');
+                header.className = 'kanban-header';
+                header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 0 15px 0; margin-bottom: 10px;';
+                boardView.insertBefore(header, boardView.firstChild);
+            }
+            const btn = document.createElement('button');
+            btn.id = 'reportButtonBoard';
+            btn.innerHTML = '<i class="fas fa-chart-line"></i> Reporte Ejecutivo';
+            btn.style.cssText = 'background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 12px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin-left: 15px; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+            btn.onclick = generarReporteBoard;
+            btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
+            btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
+            header.appendChild(btn);
+            console.log('✅ Botón Reporte Ejecutivo añadido por observador');
+        }
+    }
+    const target = document.getElementById('boardView');
+    if (target) {
+        const observer = new MutationObserver(() => addButtonIfMissing());
+        observer.observe(target, { attributes: true });
+        addButtonIfMissing();
+    } else {
+        const interval = setInterval(() => {
+            const el = document.getElementById('boardView');
+            if (el) {
+                clearInterval(interval);
+                const observer = new MutationObserver(() => addButtonIfMissing());
+                observer.observe(el, { attributes: true });
+                addButtonIfMissing();
+            }
+        }, 500);
+    }
+})();
+
+console.log('✅ Código de reporte ejecutivo cargado correctamente');
+
+
+
+
+
+
+
+
+
+
 
 
 // ==================================================
@@ -68189,9 +68636,6 @@ function syncProjectsToWindow() {
 }
 
 // 8. FORZAR RENDERIZADO DEL SIDEBAR
-// ============================================
-// ✅ forceRenderSidebar - VERSIÓN CORREGIDA
-// ============================================
 function forceRenderSidebar() {
     console.log('🎯 Forzando renderizado del sidebar...');
     
@@ -68201,32 +68645,31 @@ function forceRenderSidebar() {
         return;
     }
     
-    // Usar getProyectosPermitidos en lugar de projects directamente
-    const proyectosPermitidos = getProyectosPermitidos();
-    
-    if (!proyectosPermitidos || proyectosPermitidos.length === 0) {
+    if (!projects || projects.length === 0) {
         projectList.innerHTML = '<li style="color:#95a5a6;padding:20px;text-align:center;">No hay proyectos</li>';
         return;
     }
     
     projectList.innerHTML = '';
-    
-    proyectosPermitidos.forEach((project, idx) => {
+    projects.forEach((project, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
         li.setAttribute('data-project-index', idx);
         li.style.cssText = `
-            display:flex;justify-content:space-between;align-items:center;
-            padding:12px 15px;margin-bottom:8px;
-            background:${idx === (currentProjectIndex || 0) ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
-            border-radius:10px;cursor:pointer;transition:all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: ${idx === (currentProjectIndex || 0) ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
         `;
-        
         li.innerHTML = `
-            <span style="color:white;font-weight:500;">${project.name}</span>
-            <span style="color:#8b5cf6;">📋</span>
+            <span style="color: white; font-weight: 500;">${project.name}</span>
+            <span style="color: #8b5cf6;">📋</span>
         `;
-        
         li.onclick = (function(i) {
             return function() {
                 if (typeof selectProject === 'function') {
@@ -68234,12 +68677,12 @@ function forceRenderSidebar() {
                 }
             };
         })(idx);
-        
         projectList.appendChild(li);
     });
     
-    console.log(`✅ ${proyectosPermitidos.length} proyecto(s) renderizados en sidebar`);
+    console.log(`✅ ${projects.length} proyecto(s) renderizados en sidebar`);
 }
+
 // 9. SOBRESCRIBIR safeLoad para evitar el error
 const originalSafeLoad = window.safeLoad;
 window.safeLoad = async function() {
@@ -68515,242 +68958,90 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-
-
-
-
-
-
-
-
-
 // ============================================
-// ✅ renderKanbanTasks - VERSIÓN ÚNICA Y DEFINITIVA
+// 🛠️ CORRECCIÓN DE DESPLAZAMIENTO VERTICAL
 // ============================================
-function renderKanbanTasks(tasks = null) {
-    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN DEFINITIVA');
-    
-    // 🔥 CORRECCIÓN: Usar proyectos filtrados
-    const proyectosPermitidos = getProyectosPermitidos();
-    
-    if (!proyectosPermitidos || proyectosPermitidos.length === 0) {
-        console.warn('⚠️ No hay proyectos permitidos');
-        mostrarMensajeSinProyectos();
-        return;
-    }
-    
-    // 🔥 CORRECCIÓN: Usar el índice correcto del array filtrado
-    const project = proyectosPermitidos[currentProjectIndex];
-    
-    if (!project) {
-        console.warn('⚠️ Proyecto no encontrado en índice:', currentProjectIndex);
-        mostrarMensajeSinProyectos();
-        return;
-    }
-    
-    console.log('✅ Proyecto:', project.name);
-    console.log('✅ Tareas:', project.tasks ? project.tasks.length : 0);
-    
-    // Obtener columnas
-    const pendingCol = document.getElementById('pendingList');
-    const inProgressCol = document.getElementById('inProgressList');
-    const completedCol = document.getElementById('completedList');
-    const overdueCol = document.getElementById('overdueList');
-    
-    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-        console.error('❌ Faltan columnas del Kanban');
-        return;
-    }
-    
-    // 🔥 ACTUALIZAR NOMBRE DEL PROYECTO EN EL KANBAN
-    const projectNameElement = document.querySelector('#boardView h1, #boardView h2, .project-title');
-    if (projectNameElement) {
-        projectNameElement.textContent = `📋 ${project.name}`;
-        console.log('✅ Nombre del proyecto actualizado:', project.name);
-    }
-    
-    // Limpiar columnas
-    pendingCol.innerHTML = '';
-    inProgressCol.innerHTML = '';
-    completedCol.innerHTML = '';
-    overdueCol.innerHTML = '';
-    
-    // Obtener tareas
-    let tasksToRender = tasks || project.tasks || [];
-    
-    if (tasksToRender.length === 0) {
-        console.log('📭 No hay tareas para renderizar');
-        mostrarMensajeSinTareas();
-        setTimeout(() => {
-            if (typeof actualizarContadoresColumnas === 'function') {
-                actualizarContadoresColumnas();
-            }
-            document.dispatchEvent(new Event('tasksRendered'));
-        }, 50);
-        return;
-    }
-    
-    // Renderizar cada tarea
-    tasksToRender.forEach((task) => {
-        if (!task) return;
-        
-        // Determinar columna
-        let targetColumn = pendingCol;
-        if (task.status === 'completed' || task.status === 'completado') targetColumn = completedCol;
-        else if (task.status === 'inProgress' || task.status === 'en progreso') targetColumn = inProgressCol;
-        else if (task.status === 'overdue' || task.status === 'rezagado') targetColumn = overdueCol;
-        
-        // Colores
-        const priorityColor = {'alta': '#e74c3c', 'media': '#f39c12', 'baja': '#2ecc71'}[task.priority] || '#3498db';
-        const statusIcon = {'pending': '⏳', 'inProgress': '🔄', 'completed': '✅', 'overdue': '⚠️'}[task.status] || '📝';
-        
-        // Fecha
-        let formattedDeadline = '';
-        if (task.deadline) {
-            try {
-                formattedDeadline = new Date(task.deadline).toLocaleDateString('es-ES', {day: '2-digit', month: '2-digit', year: 'numeric'});
-            } catch(e) { formattedDeadline = 'Fecha inválida'; }
-        }
-        
-        // Crear tarjeta
-        const card = document.createElement('div');
-        card.className = 'task-card';
-        card.draggable = true;
-        card.dataset.taskId = task.id;
-        card.dataset.status = task.status;
-        card.style.borderLeft = `4px solid ${priorityColor}`;
-        
-        card.innerHTML = `
-            <div class="task-card-header">
-                <h4 class="task-title">${statusIcon} ${task.name || 'Sin nombre'}</h4>
-                <div class="task-controls">
-                    <div class="move-buttons">
-                        <button class="move-btn up" onclick="event.stopPropagation();moveTaskUp(${task.id},'${task.status}')">↑</button>
-                        <button class="move-btn down" onclick="event.stopPropagation();moveTaskDown(${task.id},'${task.status}')">↓</button>
-                    </div>
-                    <div class="task-menu" onclick="event.stopPropagation();toggleTaskMenu(event,${task.id})">⋮</div>
-                </div>
-            </div>
-            <div class="task-card-body">
-                ${task.assignee ? `<div class="task-assignee"><i class="fas fa-user"></i> ${task.assignee}</div>` : ''}
-                <div class="badges-container">
-                    <span class="task-badge priority-badge ${task.priority || 'media'}">${(task.priority || 'media').charAt(0).toUpperCase() + (task.priority || 'media').slice(1)}</span>
-                    <span class="task-badge status-badge status-${task.status}">${task.status === 'pending' ? 'Pendiente' : task.status === 'inProgress' ? 'En Progreso' : task.status === 'completed' ? 'Completado' : 'Rezagado'}</span>
-                </div>
-                ${task.deadline ? `<div class="task-deadline"><i class="fas fa-calendar-alt"></i> ${formattedDeadline}</div>` : ''}
-            </div>
-        `;
-        
-        card.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (typeof showTaskDetails === 'function') showTaskDetails(task);
-        });
-        
-        targetColumn.appendChild(card);
-    });
-    
-    console.log(`✅ ${tasksToRender.length} tareas renderizadas`);
-    
-    // Actualizar contadores y eventos
-    setTimeout(() => {
-        if (typeof actualizarContadoresColumnas === 'function') {
-            actualizarContadoresColumnas();
-        }
-        document.dispatchEvent(new Event('tasksRendered'));
-        if (typeof initDragAndDrop === 'function') initDragAndDrop();
-        if (typeof mejorarDragDrop === 'function') mejorarDragDrop();
-    }, 100);
-}
+(function fixVerticalScrollIssue() {
+    console.log('🛠️ Aplicando corrección de desplazamiento vertical...');
 
-// 🔥 FUNCIÓN AUXILIAR: Mostrar mensaje cuando no hay proyectos
-function mostrarMensajeSinProyectos() {
-    const boardView = document.getElementById('boardView');
-    if (!boardView) return;
-    
-    // Limpiar contenido anterior
-    const columns = boardView.querySelectorAll('.kanban-column');
-    columns.forEach(col => col.innerHTML = '');
-    
-    // Mostrar mensaje central
-    const message = document.createElement('div');
-    message.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        color: #94a3b8;
-        font-size: 18px;
+    // Crear e inyectar estilos correctivos
+    const style = document.createElement('style');
+    style.id = 'vertical-scroll-fix';
+    style.textContent = `
+        /* CORRECCIÓN PRINCIPAL: Asegurar que el HTML y BODY permitan scroll */
+        html, body {
+            height: auto !important;
+            min-height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* CORRECCIÓN PARA LA VISTA DE INICIO (Centro de Comando IA 4D) */
+        #inicioView {
+            display: block !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow-y: visible !important;
+            padding-bottom: 50px !important;
+        }
+
+        /* CORRECCIÓN PARA CUALQUIER CONTENEDOR PRINCIPAL */
+        .main-container, .app-container, #mainAppContainer, .view-content {
+            height: auto !important;
+            min-height: 100% !important;
+            overflow-y: visible !important;
+        }
+
+        /* CORRECCIÓN PARA EL CONTENEDOR DEL DASHBOARD 4D */
+        #mainAppContainer {
+            position: relative !important;
+            overflow-y: auto !important;
+            height: 100vh !important;
+        }
+
+        /* CORRECCIÓN PARA SECCIONES LARGAS COMO TRANSCRIPCIONES */
+        .transcripciones-container,
+        #transcripciones-historial,
+        .glass-card-4d {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+
+        /* Ajuste para la lista de proyectos en el sidebar */
+        #projectList {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
     `;
-    message.innerHTML = `
-        <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
-        <h3 style="color: #e2e8f0; margin-bottom: 10px;">No hay proyectos disponibles</h3>
-        <p>Crea un nuevo proyecto o contacta al administrador</p>
-    `;
-    
-    boardView.appendChild(message);
-}
 
-// 🔥 FUNCIÓN AUXILIAR: Mostrar mensaje cuando no hay tareas
-function mostrarMensajeSinTareas() {
-    const columns = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
-    columns.forEach(colId => {
-        const col = document.getElementById(colId);
-        if (col) {
-            col.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 14px;">
-                    <div style="font-size: 32px; margin-bottom: 10px;">📝</div>
-                    Sin tareas
-                </div>
-            `;
-        }
-    });
-}
+    // Remover estilo anterior si existe
+    const oldStyle = document.getElementById('vertical-scroll-fix');
+    if (oldStyle) oldStyle.remove();
+
+    document.head.appendChild(style);
+    console.log('✅ Estilos de corrección de scroll inyectados');
+
+    // Forzar reflow para aplicar cambios
+    document.body.style.display = 'none';
+    document.body.offsetHeight;
+    document.body.style.display = '';
+})();
 
 
-// ============================================
-// ✅ INICIALIZACIÓN CORREGIDA AL CARGAR
-// ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOMContentLoaded - Inicializando sistema...');
-    
-    // Esperar a que todo esté listo
-    setTimeout(() => {
-        // 1. Cargar proyectos
-        if (typeof safeLoad === 'function') {
-            safeLoad().then(() => {
-                console.log('✅ safeLoad completado');
-                
-                // 2. Renderizar sidebar
-                forceRenderSidebar();
-                
-                // 3. Renderizar proyectos
-                if (typeof renderProjects === 'function') {
-                    renderProjects();
-                }
-                
-                // 4. Seleccionar primer proyecto
-                if (typeof selectProject === 'function' && window.projects && window.projects.length > 0) {
-                    selectProject(0);
-                }
-                
-                // 5. Renderizar Kanban
-                setTimeout(() => {
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
-                }, 500);
-                
-                // 6. Arreglar canvas
-                const canvas = document.getElementById('pieChart');
-                if (canvas) {
-                    canvas.width = 300;
-                    canvas.height = 300;
-                    canvas.style.width = '300px';
-                    canvas.style.height = '300px';
-                }
-            });
-        }
-    }, 1000);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
