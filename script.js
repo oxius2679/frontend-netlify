@@ -1,3 +1,7 @@
+
+
+
+
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
 // ============================================
@@ -19357,10 +19361,25 @@ function renderDashboard(container) {
 
   const tasks = project.tasks || [];
   const totalTasks = tasks.length;
-  const completed = tasks.filter(t => t.status === 'completed').length;
-  const inProgress = tasks.filter(t => t.status === 'inProgress').length;
-  const pending = tasks.filter(t => t.status === 'pending').length;
-  const overdue = tasks.filter(t => t.status === 'overdue').length;
+      let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    let overdue = 0;
+    
+    tasks.forEach(t => {
+        const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
+                           (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'));
+        
+        if (t.status === 'completed') {
+            completed++;
+        } else if (esRezagada) {
+            overdue++;
+        } else if (t.status === 'inProgress') {
+            inProgress++;
+        } else {
+            pending++;
+        }
+    });
 
   const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
   const totalLogged = tasks.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
@@ -68208,18 +68227,37 @@ function generarReporteBoard() {
     }
 
     // --- Tabla de tareas (sin duplicados) ---
-    const tasksRows = tasks.map(t => `
-        <tr>
-            <td>${escapeHtml(t.name)}${t.critical ? ' ⭐' : ''}${t.isMilestone ? ' ⭐' : ''}</td>
-            <td>${escapeHtml(t.assignee || t.asignado || 'Sin asignar')}</td>
-            <td>${escapeHtml(t.category || t.tipo || 'General')}</td>
-            <td>${t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D'} al ${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D'}</td>
-            <td><div class="progress-bar"><div class="progress-fill" style="width: ${t.progress || 0}%"></div></div> ${t.progress || 0}%</td>
-            <td><span class="status-badge status-${t.status === 'completed' ? 'completed' : (t.status === 'inProgress' ? 'progress' : 'pending')}">
-                ${t.status === 'completed' ? 'Completado' : (t.status === 'inProgress' ? 'En progreso' : 'Pendiente')}
-            </span></td>
-        </tr>
-    `).join('');
+        const tasksRows = tasks.map(t => {
+        const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
+                           (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'));
+        
+        let estadoTexto = '';
+        let estadoClass = '';
+        if (t.status === 'completed') {
+            estadoTexto = '✅ Completada';
+            estadoClass = 'status-completed';
+        } else if (esRezagada) {
+            estadoTexto = '🔴 Retrasada';
+            estadoClass = 'status-overdue';
+        } else if (t.status === 'inProgress') {
+            estadoTexto = '🔄 En Progreso';
+            estadoClass = 'status-progress';
+        } else {
+            estadoTexto = '⏳ Pendiente';
+            estadoClass = 'status-pending';
+        }
+        
+        return `
+            <tr>
+                <td style="padding:12px;"><strong>${escapeHtml(t.name)}</strong>${t.critical ? ' ⭐' : ''}${t.isMilestone ? ' ⭐' : ''}${esRezagada && t.deadline ? `<span style="color:#ef4444; font-size:11px; margin-left:8px;">(${Math.ceil((new Date() - new Date(t.deadline)) / (1000*60*60*24))}d retraso)</span>` : ''}</td>
+                <td style="padding:12px;">${escapeHtml(t.assignee || t.asignado || 'Sin asignar')}</td>
+                <td style="padding:12px;">${escapeHtml(t.category || t.tipo || 'General')}</td>
+                <td style="padding:12px;">${t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D'} al ${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D'}</td>
+                <td style="padding:12px;"><div class="progress-bar"><div class="progress-fill" style="width: ${t.progress || 0}%"></div></div> ${t.progress || 0}%</td>
+                <td style="padding:12px;"><span class="status-badge ${estadoClass}" style="${estadoClass === 'status-overdue' ? 'background:#ef4444; color:white;' : ''}">${estadoTexto}</span></td>
+            </tr>
+        `;
+    }).join('');
 
     // --- Hitos ---
     const milestonesHTML = milestones.length > 0 ? milestones.map(m => `
@@ -68272,8 +68310,10 @@ function generarReporteBoard() {
                 const leftPercent = (startOffset / totalDays) * 100;
                 const widthPercent = (duration / totalDays) * 100;
 
-                let statusClass = 'pending';
+                               let statusClass = 'pending';
+                const esRezagadaGantt = (task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed');
                 if (task.status === 'completed') statusClass = 'completed';
+                else if (esRezagadaGantt) statusClass = 'overdue';
                 else if (task.status === 'inProgress') statusClass = 'progress';
 
                 rowsHTML += `
@@ -68338,6 +68378,7 @@ function generarReporteBoard() {
         .status-completed { background:#10b981; color:#fff; }
         .status-progress { background:#2dd4bf; color:#fff; }
         .status-pending { background:#fde047; color:#000; }
+        .status-overdue { background:#ef4444; color:white; }
         .gantt-container { overflow-x:auto; padding:10px 0; }
         .gantt-header { display:flex; margin-bottom:20px; padding-left:250px; border-bottom:2px solid #e2e8f0; padding-bottom:10px; }
         .gantt-month { flex:1; text-align:center; font-weight:600; color:#475569; font-size:0.9rem; border-left:1px solid #e2e8f0; min-width:80px; }
@@ -68347,9 +68388,10 @@ function generarReporteBoard() {
         .gantt-info p { color:#64748b; font-size:0.8rem; }
         .gantt-bars { flex:1; height:50px; background:#f1f5f9; border-radius:25px; position:relative; }
         .gantt-bar { height:50px; border-radius:25px; position:absolute; display:flex; align-items:center; justify-content:center; color:white; font-size:0.8rem; font-weight:600; min-width:40px; }
-        .gantt-bar.completed { background:#10b981; }
+               .gantt-bar.completed { background:#10b981; }
         .gantt-bar.progress { background:#2dd4bf; }
         .gantt-bar.pending { background:#fde047; color:#000; }
+        .gantt-bar.overdue { background:#ef4444; }
         .gantt-milestone { position:absolute; width:20px; height:20px; background:#f59e0b; border-radius:50%; transform:translateX(-50%); top:15px; border:3px solid white; z-index:10; }
         .gantt-weeks { display:flex; margin-top:15px; padding-left:250px; border-top:1px solid #e2e8f0; padding-top:10px; }
         .gantt-week { flex:1; text-align:center; font-size:0.75rem; color:#64748b; border-left:1px dashed #e2e8f0; }
@@ -68383,11 +68425,12 @@ function generarReporteBoard() {
                     <button class="print-btn" id="printReportBtn"><i class="fas fa-print"></i> Imprimir</button>
                 </div>
             </div>
-            <div class="kpi-grid">
+                        <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);">
                 <div class="kpi-card"><div class="kpi-value">${globalProgress}%</div><div class="kpi-label">Avance Global</div></div>
                 <div class="kpi-card"><div class="kpi-value">${completed}</div><div class="kpi-label">Completadas</div></div>
                 <div class="kpi-card"><div class="kpi-value">${inProgress}</div><div class="kpi-label">En Progreso</div></div>
                 <div class="kpi-card"><div class="kpi-value">${pending}</div><div class="kpi-label">Pendientes</div></div>
+                <div class="kpi-card" style="border-color:#ef4444; background:#fef2f2;"><div class="kpi-value" style="color:#ef4444;">${overdue}</div><div class="kpi-label" style="color:#ef4444;">🔴 Retrasadas</div></div>
             </div>
             <div class="section">
                 <h2><i class="fas fa-clipboard-list"></i> Plan de Trabajo</h2>
@@ -70056,92 +70099,38 @@ console.log('📌 Ahora prueba: openInviteModal(0)');
 
 
 
-
-
-
-
-
 // ============================================
-// CARGA AUTOMÁTICA DE PROYECTOS (AL INICIO)
+// CARGA DE PROYECTOS COLABORADOS - CÓDIGO FUNCIONAL
 // ============================================
-
-(async function() {
-    console.log('🚀 Inicializando carga automática de proyectos...');
+setTimeout(async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
     
-    async function cargarProyectosCorrectamente() {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.log('⏳ Esperando token...');
-            return false;
-        }
-        
-        try {
-            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                const proyectosPropios = data.ownedProjects || [];
-                const proyectosColaborados = data.collaboratedProjects || [];
-                const todosProyectos = [...proyectosPropios, ...proyectosColaborados];
-                
-                console.log(`✅ Cargados ${todosProyectos.length} proyectos:`, todosProyectos.map(p => p.name));
-                
-                window.projects = todosProyectos;
-                localStorage.setItem('projects', JSON.stringify(todosProyectos));
-                
-                // Renderizar proyectos
-                if (typeof renderProjects === 'function') {
-                    renderProjects();
-                } else {
-                    const container = document.getElementById('projectList');
-                    if (container && todosProyectos.length > 0) {
-                        container.innerHTML = '';
-                        todosProyectos.forEach((p, idx) => {
-                            const li = document.createElement('li');
-                            li.textContent = p.name;
-                            li.style.padding = '12px 15px';
-                            li.style.margin = '8px';
-                            li.style.background = '#1e293b';
-                            li.style.borderRadius = '8px';
-                            li.style.cursor = 'pointer';
-                            li.style.color = 'white';
-                            li.onclick = () => {
-                                if (typeof selectProject === 'function') {
-                                    selectProject(idx);
-                                }
-                            };
-                            container.appendChild(li);
-                        });
-                    }
-                }
-                
-                return true;
-            }
-        } catch (error) {
-            console.error('Error cargando proyectos:', error);
-        }
-        return false;
-    }
-    
-    // Esperar a que el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(cargarProyectosCorrectamente, 500);
+    try {
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+            headers: { 'Authorization': 'Bearer ' + token }
         });
-    } else {
-        setTimeout(cargarProyectosCorrectamente, 500);
-    }
-    
-    // También escuchar cambios de token (para cuando inicia sesión)
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-        originalSetItem.apply(this, arguments);
-        if (key === 'authToken' && value) {
-            console.log('🔑 Token detectado, cargando proyectos...');
-            setTimeout(cargarProyectosCorrectamente, 500);
+        const data = await res.json();
+        
+        if (data.collaboratedProjects && data.collaboratedProjects.length > 0) {
+            window.projects = data.collaboratedProjects;
+            const container = document.getElementById('projectList');
+            if (container) {
+                container.innerHTML = '';
+                data.collaboratedProjects.forEach(p => {
+                    const div = document.createElement('div');
+                    div.textContent = p.name;
+                    div.style.cssText = 'background:#3b82f6;color:white;padding:15px;margin:10px;border-radius:8px;cursor:pointer;font-weight:bold;';
+                    div.onclick = () => {
+                        console.log('Proyecto:', p.name);
+                        if (typeof selectProject === 'function') selectProject(0);
+                    };
+                    container.appendChild(div);
+                });
+                console.log('✅', data.collaboratedProjects.length, 'proyectos cargados');
+            }
         }
-    };
-})();
+    } catch(e) {
+        console.error('Error:', e);
+    }
+}, 1500);
