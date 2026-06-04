@@ -69357,295 +69357,97 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-
 // ============================================
-// 🚀 SISTEMA DE COLABORACIÓN EN TIEMPO REAL - VERSIÓN DEFINITIVA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN PARA TU BACKEND
 // ============================================
 
 (function() {
-    console.log('🌟 Inicializando Sistema de Colaboración en Tiempo Real...');
+    console.log('🌟 Inicializando Sistema de Colaboración (compatible con backend real)...');
 
     // ============================================
-    // 1. CONFIGURACIÓN INICIAL
+    // 1. CONFIGURACIÓN
     // ============================================
     const COLLAB_CONFIG = {
         API_URL: 'https://mi-sistema-proyectos-backend-4.onrender.com',
         STORAGE_KEYS: {
-            USER_PROJECTS: 'user_projects_membership',
-            ACTIVE_COLLAB: 'active_collaboration',
-            SESSION_ID: 'collab_session_id'
+            USER_EMAIL: 'userEmail',
+            AUTH_TOKEN: 'authToken',
+            CLIENTE_ID: 'clienteId'
         }
     };
 
     // ============================================
-    // 2. GESTIÓN DE MIEMBROS POR PROYECTO
+    // 2. FUNCIONES AUXILIARES
     // ============================================
-    window.collaborationManager = {
-        // Obtener miembros de un proyecto
-        getProjectMembers: async function(projectId) {
-            const token = localStorage.getItem('authToken');
-            if (!token) return [];
-
-            try {
-                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/members`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.members || [];
-                }
-            } catch (error) {
-                console.error('Error obteniendo miembros:', error);
-            }
-            return this.getLocalProjectMembers(projectId);
-        },
-
-        // Obtener miembros desde localStorage (fallback)
-        getLocalProjectMembers: function(projectId) {
-            const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
-            return memberships[projectId] || [];
-        },
-
-        // Agregar miembro a un proyecto
-        addProjectMember: async function(projectId, email, role = 'viewer') {
-            const token = localStorage.getItem('authToken');
-            if (!token) return { success: false, error: 'No autenticado' };
-
-            try {
-                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/invite`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ email, role })
-                });
-
-                if (response.ok) {
-                    // Actualizar localStorage
-                    const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
-                    if (!memberships[projectId]) memberships[projectId] = [];
-                    if (!memberships[projectId].find(m => m.email === email)) {
-                        memberships[projectId].push({ email, role, addedAt: new Date().toISOString() });
-                        localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS, JSON.stringify(memberships));
-                    }
-                    return { success: true };
-                }
-                return { success: false, error: await response.text() };
-            } catch (error) {
-                console.error('Error invitando miembro:', error);
-                return { success: false, error: error.message };
-            }
-        },
-
-        // Remover miembro de un proyecto
-        removeProjectMember: async function(projectId, email) {
-            const token = localStorage.getItem('authToken');
-            if (!token) return false;
-
-            try {
-                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/members/${encodeURIComponent(email)}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    // Actualizar localStorage
-                    const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
-                    if (memberships[projectId]) {
-                        memberships[projectId] = memberships[projectId].filter(m => m.email !== email);
-                        localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS, JSON.stringify(memberships));
-                    }
-                    return true;
-                }
-            } catch (error) {
-                console.error('Error removiendo miembro:', error);
-            }
-            return false;
-        },
-
-        // Obtener proyectos donde el usuario es miembro (NO el dueño)
-        getSharedProjects: function() {
-            const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
-            const userEmail = this.getCurrentUserEmail();
-            const sharedProjects = [];
-
-            for (const [projectId, members] of Object.entries(memberships)) {
-                if (members.some(m => m.email === userEmail)) {
-                    sharedProjects.push(parseInt(projectId));
-                }
-            }
-            return sharedProjects;
-        },
-
-        // Obtener email del usuario actual
-        getCurrentUserEmail: function() {
-            try {
-                const token = localStorage.getItem('authToken');
-                if (token) {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    return payload.email || payload.sub;
-                }
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                return user.email || user.username;
-            } catch (e) {
-                return null;
-            }
-        },
-
-        // Obtener el dueño del proyecto
-        getProjectOwner: async function(projectId) {
-            const token = localStorage.getItem('authToken');
-            if (!token) return null;
-
-            try {
-                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/owner`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.owner;
-                }
-            } catch (error) {
-                console.error('Error obteniendo dueño:', error);
-            }
-            return null;
-        },
-
-        // Verificar si el usuario actual puede editar un proyecto
-        canEditProject: async function(projectId) {
-            const userEmail = this.getCurrentUserEmail();
-            const members = await this.getProjectMembers(projectId);
-            const member = members.find(m => m.email === userEmail);
+    function getCurrentUserEmail() {
+        try {
+            // Intentar desde localStorage
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.email) return user.email;
             
-            // El dueño siempre puede editar
-            if (member && member.role === 'owner') return true;
-            // Colaboradores con rol admin o editor pueden editar
-            return member && (member.role === 'admin' || member.role === 'editor');
-        },
-
-        // Verificar si el usuario actual puede ver un proyecto
-        canViewProject: async function(projectId) {
-            const userEmail = this.getCurrentUserEmail();
-            const members = await this.getProjectMembers(projectId);
-            return members.some(m => m.email === userEmail);
+            // Intentar desde token JWT
+            const token = localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.email || payload.sub;
+            }
+            
+            return null;
+        } catch (e) {
+            console.error('Error obteniendo email:', e);
+            return null;
         }
-    };
+    }
+
+    function getCurrentClienteId() {
+        return localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.CLIENTE_ID);
+    }
 
     // ============================================
     // 3. FILTRADO CORREGIDO DE PROYECTOS
     // ============================================
-    
-    // Sobrescribir la función getProyectosPermitidos original
     window.getProyectosPermitidos = function() {
-        const userEmail = window.collaborationManager.getCurrentUserEmail();
+        const userEmail = getCurrentUserEmail();
+        const userClienteId = getCurrentClienteId();
         
-        // ADMIN puede ver todo
+        console.log('🔍 Filtrando proyectos para:', { userEmail, userClienteId });
+        
+        // ADMIN (ajackson2672@gmail.com) ve todos
         if (userEmail === 'ajackson2672@gmail.com') {
-            console.log('👑 ADMIN - Acceso a todos los proyectos');
+            console.log('👑 ADMIN - Acceso total a', projects.length, 'proyectos');
             return projects;
         }
         
-        // Para usuarios normales: SOLO proyectos donde SON MIEMBROS
-        const userProjectIds = [];
-        
-        // 1. Proyectos donde el usuario es dueño (clienteId coincide)
-        const ownedProjects = projects.filter(p => p.clienteId === localStorage.getItem('clienteId'));
-        ownedProjects.forEach(p => userProjectIds.push(p.id || projects.indexOf(p)));
-        
-        // 2. Proyectos donde fue invitado como colaborador
-        const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
-        for (const [projectId, members] of Object.entries(memberships)) {
-            if (members.some(m => m.email === userEmail)) {
-                const project = projects.find(p => (p.id || projects.indexOf(p)) == projectId);
-                if (project && !userProjectIds.includes(projectId)) {
-                    userProjectIds.push(projectId);
-                }
+        // Usuario normal: filtrar por colaborador o dueño
+        const proyectosPermitidos = projects.filter(project => {
+            // Caso 1: Es dueño (clienteId coincide)
+            if (project.clienteId === userClienteId) {
+                return true;
             }
-        }
-        
-        // También verificar si hay proyectos en el array projects con el email en invitados
-        const invitedProjects = projects.filter(p => 
-            p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
-        );
-        invitedProjects.forEach(p => {
-            const idx = projects.indexOf(p);
-            if (!userProjectIds.includes(idx)) userProjectIds.push(idx);
+            
+            // Caso 2: Es colaborador invitado
+            if (project.colaboradores && Array.isArray(project.colaboradores)) {
+                return project.colaboradores.includes(userEmail);
+            }
+            
+            return false;
         });
         
-        const result = projects.filter((_, idx) => userProjectIds.includes(idx));
-        console.log(`✅ Usuario ${userEmail} tiene acceso a ${result.length} de ${projects.length} proyectos`);
-        
-        return result;
+        console.log(`✅ Usuario ${userEmail} accede a ${proyectosPermitidos.length} de ${projects.length} proyectos`);
+        return proyectosPermitidos;
     };
-    
-    // Sobrescribir renderProjects para usar el filtro correcto
-    const originalRenderProjects = window.renderProjects;
-    window.renderProjects = function() {
-        const proyectosPermitidos = window.getProyectosPermitidos();
-        const projectListContainer = document.getElementById('projectList');
-        
-        if (!projectListContainer) {
-            if (originalRenderProjects) originalRenderProjects();
-            return;
-        }
-        
-        projectListContainer.innerHTML = '';
-        
-        if (proyectosPermitidos.length === 0) {
-            projectListContainer.innerHTML = `
-                <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
-                    <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                    No tienes proyectos. Crea uno o acepta una invitación.
-                </li>
-            `;
-            return;
-        }
-        
-        proyectosPermitidos.forEach((project, idx) => {
-            const originalIndex = projects.findIndex(p => p.id === project.id || p.name === project.name);
-            const li = document.createElement('li');
-            li.className = 'project-item';
-            li.dataset.projectIndex = originalIndex;
-            li.style.cssText = `
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 15px;
-                margin-bottom: 8px;
-                background: ${originalIndex === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
-                border-radius: 10px;
-                cursor: pointer;
-                transition: all 0.2s;
-            `;
-            
-            li.innerHTML = `
-                <span style="color: white; font-weight: 500; flex: 1;">${project.name}</span>
-                <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${originalIndex})">⋮</div>
-                <div class="project-context-menu" id="project-menu-${originalIndex}" style="display: none; position: absolute; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 1000;">
-                    <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${originalIndex})" style="padding: 8px 15px; cursor: pointer;">Editar</div>
-                    <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${originalIndex})" style="padding: 8px 15px; cursor: pointer; color: #ef4444;">Eliminar</div>
-                    <div class="project-context-menu-item invite" onclick="openInviteModal(${originalIndex})" style="padding: 8px 15px; cursor: pointer; color: #10b981;">➕ Invitar</div>
-                </div>
-            `;
-            
-            li.addEventListener('click', () => selectProject(originalIndex));
-            projectListContainer.appendChild(li);
-        });
-        
-        // Actualizar estilos del proyecto seleccionado
-        setTimeout(updateProjectSelectionStyles, 100);
-    };
-    
+
     // ============================================
-    // 4. MODAL DE INVITACIÓN MEJORADO
+    // 4. MODAL DE INVITACIÓN (usa endpoint real)
     // ============================================
-    
     window.openInviteModal = function(projectIndex) {
         const project = projects[projectIndex];
-        if (!project) return;
+        if (!project) {
+            console.error('Proyecto no encontrado en índice:', projectIndex);
+            return;
+        }
         
-        // Eliminar modal anterior si existe
+        // Eliminar modal anterior
         const existingModal = document.getElementById('inviteCollaboratorModal');
         if (existingModal) existingModal.remove();
         
@@ -69673,7 +69475,7 @@ if (!document.getElementById('notif-slack-styles')) {
                 </div>
                 
                 <p style="color: #94a3b8; margin-bottom: 20px;">
-                    Proyecto: <strong style="color: #8b5cf6;">${project.name}</strong>
+                    Proyecto: <strong style="color: #8b5cf6;">${escapeHtml(project.name)}</strong>
                 </p>
                 
                 <div style="margin-bottom: 15px;">
@@ -69687,7 +69489,7 @@ if (!document.getElementById('notif-slack-styles')) {
                     <select id="inviteRole" style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white;">
                         <option value="viewer">👁️ Visualizador - Solo lectura</option>
                         <option value="editor">✏️ Editor - Puede crear/modificar tareas</option>
-                        <option value="admin">👑 Admin - Control total del proyecto</option>
+                        <option value="admin">👑 Admin - Control total</option>
                     </select>
                 </div>
                 
@@ -69703,14 +69505,22 @@ if (!document.getElementById('notif-slack-styles')) {
         document.body.appendChild(modal);
     };
     
-    // ============================================
-    // 5. ENVIAR INVITACIÓN CORREGIDA
-    // ============================================
+    // Función auxiliar para escapar HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     
+    // ============================================
+    // 5. ENVIAR INVITACIÓN (usa tu endpoint real)
+    // ============================================
     window.sendInvitation = async function(projectIndex) {
         const email = document.getElementById('inviteEmail')?.value.trim();
         const role = document.getElementById('inviteRole')?.value;
         const messageDiv = document.getElementById('inviteMessage');
+        const project = projects[projectIndex];
         
         if (!email) {
             messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Ingresa un email válido</span>';
@@ -69723,7 +69533,7 @@ if (!document.getElementById('notif-slack-styles')) {
             return;
         }
         
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
         if (!token) {
             messageDiv.innerHTML = '<span style="color: #ef4444;">❌ No estás autenticado</span>';
             return;
@@ -69732,6 +69542,7 @@ if (!document.getElementById('notif-slack-styles')) {
         messageDiv.innerHTML = '<span style="color: #f59e0b;">⏳ Enviando invitación...</span>';
         
         try {
+            // Usar el endpoint REAL de tu backend
             const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations`, {
                 method: 'POST',
                 headers: {
@@ -69740,28 +69551,27 @@ if (!document.getElementById('notif-slack-styles')) {
                 },
                 body: JSON.stringify({
                     email: email,
-                    projectId: projects[projectIndex].id || projectIndex,
-                    projectName: projects[projectIndex].name,
-                    role: role
+                    proyectoIndex: projectIndex,  // ← tu backend espera "proyectoIndex"
+                    proyectoNombre: project.name,
+                    rol: role
                 })
             });
             
             const data = await response.json();
             
             if (response.ok && data.success) {
-                messageDiv.innerHTML = '<span style="color: #10b981;">✅ Invitación enviada exitosamente</span>';
+                messageDiv.innerHTML = '<span style="color: #10b981;">✅ ¡Invitación enviada!</span>';
                 
                 // Mostrar modal con el enlace
-                const inviteLink = data.link || `https://admonproject.netlify.app/invitacion.html?token=${data.token}`;
-                showInviteLinkModal(inviteLink, email);
+                showInviteLinkModal(data.url, email);
                 
-                // Limpiar input después de 2 segundos
+                // Cerrar modal después de 3 segundos
                 setTimeout(() => {
                     const modal = document.getElementById('inviteCollaboratorModal');
                     if (modal) modal.remove();
-                }, 2000);
+                }, 3000);
             } else {
-                messageDiv.innerHTML = `<span style="color: #ef4444;">❌ ${data.error || 'Error al enviar invitación'}</span>`;
+                messageDiv.innerHTML = `<span style="color: #ef4444;">❌ ${data.error || 'Error al enviar'}</span>`;
             }
         } catch (error) {
             console.error('Error enviando invitación:', error);
@@ -69772,7 +69582,6 @@ if (!document.getElementById('notif-slack-styles')) {
     // ============================================
     // 6. MODAL CON ENLACE DE INVITACIÓN
     // ============================================
-    
     function showInviteLinkModal(link, email) {
         const existing = document.getElementById('inviteLinkModal');
         if (existing) existing.remove();
@@ -69801,16 +69610,16 @@ if (!document.getElementById('notif-slack-styles')) {
                 </div>
                 
                 <p style="color: #94a3b8; margin-bottom: 15px;">
-                    Se ha enviado una invitación a <strong style="color: #10b981;">${email}</strong>
+                    Se ha enviado una invitación a <strong style="color: #10b981;">${escapeHtml(email)}</strong>
                 </p>
                 
                 <div style="background: #0f172a; border: 1px solid #3b82f6; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Enlace de invitación (copia y comparte):</div>
-                    <div style="background: #020617; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #8b5cf6; word-break: break-all;">${link}</div>
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Enlace de invitación:</div>
+                    <div style="background: #020617; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #8b5cf6; word-break: break-all;">${escapeHtml(link)}</div>
                 </div>
                 
                 <div style="display: flex; gap: 15px;">
-                    <button onclick="navigator.clipboard.writeText('${link}')" style="flex: 1; background: #3b82f6; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">📋 Copiar Enlace</button>
+                    <button onclick="navigator.clipboard.writeText('${link.replace(/'/g, "\\'")}')" style="flex: 1; background: #3b82f6; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">📋 Copiar Enlace</button>
                     <button onclick="this.closest('#inviteLinkModal').remove()" style="flex: 1; background: #475569; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">Cerrar</button>
                 </div>
             </div>
@@ -69820,259 +69629,227 @@ if (!document.getElementById('notif-slack-styles')) {
     }
     
     // ============================================
-    // 7. PROCESAR INVITACIÓN AL CARGAR
+    // 7. PROCESAR INVITACIÓN (al cargar página)
     // ============================================
-    
-   // ============================================
-// 🎯 PROCESAR INVITACIÓN - VERSIÓN CORREGIDA
-// ============================================
-
-window.processInvitation = async function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    
-    if (!token) {
-        console.log('ℹ️ No hay token en la URL');
-        return;
-    }
-    
-    console.log('🔑 Procesando invitación con token:', token);
-    
-    // Mostrar loading
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'invitation-loading';
-    loadingDiv.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        backdrop-filter: blur(10px);
-        z-index: 10000000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        color: white;
-        font-family: system-ui, sans-serif;
-    `;
-    loadingDiv.innerHTML = `
-        <div style="font-size: 48px; margin-bottom: 20px;">🎯</div>
-        <div style="font-size: 24px; font-weight: bold;">Procesando invitación...</div>
-        <div style="margin-top: 20px; width: 200px; height: 4px; background: #2d2d5f; border-radius: 4px; overflow: hidden;">
-            <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); border-radius: 4px; animation: loading 2s ease infinite;"></div>
-        </div>
-        <style>
-            @keyframes loading {
-                0% { width: 0%; }
-                50% { width: 100%; }
-                100% { width: 0%; }
-            }
-        </style>
-    `;
-    document.body.appendChild(loadingDiv);
-    
-    try {
-        // 🔥 CORRECCIÓN: Usar POST con token en el body (no en la URL)
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ token: token })
-        });
+    window.processInvitation = async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
         
-        const data = await response.json();
-        console.log('📦 Respuesta del backend:', data);
+        if (!token) return;
         
-        if (response.ok && data.success) {
-            // Guardar en localStorage la membresía
-            const memberships = JSON.parse(localStorage.getItem('user_projects_membership') || '{}');
-            const projectId = data.proyectoIndex;
+        console.log('🔑 Procesando invitación con token:', token);
+        
+        try {
+            // Primero validar la invitación
+            const validateResponse = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations/validate?token=${token}`);
+            const validateData = await validateResponse.json();
             
-            if (!memberships[projectId]) memberships[projectId] = [];
-            if (!memberships[projectId].find(m => m.email === data.email)) {
-                memberships[projectId].push({
-                    email: data.email,
-                    role: data.rol,
-                    addedAt: new Date().toISOString()
-                });
-                localStorage.setItem('user_projects_membership', JSON.stringify(memberships));
-                console.log('✅ Membresía guardada en localStorage');
-            }
-            
-            // Guardar clienteId
-            if (data.clienteId) {
-                localStorage.setItem('clienteId', data.clienteId);
-                console.log('✅ clienteId guardado:', data.clienteId);
-            }
-            
-            // Mostrar mensaje de éxito
-            loadingDiv.innerHTML = `
-                <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
-                <div style="font-size: 24px; font-weight: bold; color: #10b981;">¡Invitación aceptada!</div>
-                <div style="margin-top: 20px; color: #94a3b8; text-align: center;">
-                    Bienvenido al proyecto:<br>
-                    <strong style="color: #8b5cf6;">${data.proyectoNombre || 'Proyecto'}</strong><br>
-                    Rol: <strong>${data.rol || 'colaborador'}</strong>
-                </div>
-                <div style="margin-top: 30px; color: #64748b;">Redirigiendo al dashboard...</div>
-            `;
-            
-            // Recargar después de 2 segundos
-            setTimeout(() => {
+            if (!validateData.success) {
+                alert(`❌ Invitación inválida: ${validateData.error || 'Enlace no válido'}`);
                 window.location.href = window.location.pathname;
-            }, 2000);
+                return;
+            }
             
-        } else {
-            throw new Error(data.error || 'Error al procesar invitación');
+            // Preguntar al usuario si acepta
+            const confirmar = confirm(
+                `📨 ¡Has sido invitado al proyecto "${validateData.proyecto}"!\n\n` +
+                `Rol: ${validateData.rol}\n\n` +
+                `¿Deseas aceptar la invitación?`
+            );
+            
+            if (!confirmar) {
+                window.location.href = window.location.pathname;
+                return;
+            }
+            
+            // Aceptar invitación
+            const acceptResponse = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations/accept`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            
+            const acceptData = await acceptResponse.json();
+            
+            if (acceptResponse.ok && acceptData.success) {
+                // Guardar el clienteId en localStorage
+                localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.CLIENTE_ID, acceptData.clienteId);
+                
+                alert(`✅ ¡Bienvenido al proyecto "${validateData.proyecto}"!\n\nAhora verás este proyecto en tu lista.`);
+                
+                // Recargar la página para mostrar el nuevo proyecto
+                window.location.href = window.location.pathname;
+            } else {
+                alert(`❌ Error al aceptar invitación: ${acceptData.error || 'Error desconocido'}`);
+                window.location.href = window.location.pathname;
+            }
+        } catch (error) {
+            console.error('Error procesando invitación:', error);
+            alert('❌ Error al procesar la invitación');
+            window.location.href = window.location.pathname;
         }
-        
-    } catch (error) {
-        console.error('❌ Error procesando invitación:', error);
-        loadingDiv.innerHTML = `
-            <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
-            <div style="font-size: 24px; font-weight: bold; color: #ef4444;">Error al aceptar invitación</div>
-            <div style="margin-top: 20px; color: #94a3b8; text-align: center; max-width: 400px;">
-                ${error.message}<br><br>
-                El enlace pudo haber expirado o ya fue utilizado.
-            </div>
-            <button onclick="window.location.href='/'"
-                    style="margin-top: 30px; background: #8b5cf6; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer;">
-                Ir al Dashboard
-            </button>
-        `;
-    }
-};
-
-// Ejecutar al cargar la página
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.processInvitation);
-} else {
-    window.processInvitation();
-}
+    };
     
     // ============================================
-    // 8. SINCRO  REALTIME (WebSocket mejorado)
+    // 8. SOCKET.IO PARA TIEMPO REAL
     // ============================================
-    
     window.collaborationSocket = null;
     
     window.initCollaborationWebSocket = function() {
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
+        const token = localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+        if (!token) {
+            console.log('⚠️ No hay token, WebSocket no iniciado');
+            return;
+        }
         
         try {
-            if (window.collaborationSocket) {
+            if (window.collaborationSocket && window.collaborationSocket.connected) {
                 window.collaborationSocket.disconnect();
             }
             
-            window.collaborationSocket = io(`${COLLAB_CONFIG.API_URL}`, {
+            // Conectar usando Socket.io
+            window.collaborationSocket = io(COLLAB_CONFIG.API_URL, {
                 transports: ['websocket', 'polling'],
                 auth: { token: token },
-                reconnection: true
+                reconnection: true,
+                reconnectionAttempts: 5
             });
             
             window.collaborationSocket.on('connect', () => {
-                console.log('🔌 Colaboración en tiempo real - Conectado');
+                console.log('🔌 WebSocket conectado exitosamente');
                 
-                // Unirse al proyecto actual
-                if (currentProjectIndex !== undefined) {
-                    window.collaborationSocket.emit('join-project-room', currentProjectIndex);
+                // Registrar el usuario
+                window.collaborationSocket.emit('register-user', {
+                    userId: getCurrentUserEmail()
+                });
+                
+                // Unirse al proyecto actual si existe
+                if (typeof currentProjectIndex !== 'undefined' && currentProjectIndex !== null) {
+                    window.collaborationSocket.emit('join-project', currentProjectIndex);
+                    console.log(`📁 Unido a sala project-${currentProjectIndex}`);
                 }
             });
             
-            window.collaborationSocket.on('task-updated', async (data) => {
-                console.log('📡 Evento colaborativo recibido:', data);
-                
-                // Verificar si el usuario tiene acceso a este proyecto
-                const canView = await window.collaborationManager.canViewProject(data.projectId);
-                if (!canView && data.userEmail !== window.collaborationManager.getCurrentUserEmail()) return;
-                
-                // Actualizar la tarea si es necesario
-                if (projects[data.projectId]) {
-                    const taskIndex = projects[data.projectId].tasks?.findIndex(t => t.id == data.taskId);
-                    if (taskIndex !== -1 && data.task) {
-                        projects[data.projectId].tasks[taskIndex] = data.task;
-                        localStorage.setItem('projects', JSON.stringify(projects));
-                        
-                        if (currentProjectIndex == data.projectId) {
-                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-                        }
-                    }
-                }
+            // Escuchar eventos de tareas
+            window.collaborationSocket.on('task-created', (data) => {
+                console.log('📡 Evento: tarea creada', data);
+                if (typeof refreshTasks === 'function') refreshTasks();
+                else if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
             });
             
-            window.collaborationSocket.on('user-joined', (data) => {
-                console.log(`👤 ${data.userName} se unió al proyecto`);
-                if (typeof showNotification === 'function') {
-                    showNotification(`👤 ${data.userName} está viendo este proyecto`, 'info');
-                }
+            window.collaborationSocket.on('task-updated', (data) => {
+                console.log('📡 Evento: tarea actualizada', data);
+                if (typeof refreshTasks === 'function') refreshTasks();
+                else if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            });
+            
+            window.collaborationSocket.on('task-deleted', (data) => {
+                console.log('📡 Evento: tarea eliminada', data);
+                if (typeof refreshTasks === 'function') refreshTasks();
+                else if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            });
+            
+            window.collaborationSocket.on('project-updated', (data) => {
+                console.log('📡 Evento: proyecto actualizado', data);
+                if (typeof loadProjects === 'function') loadProjects();
+                else if (typeof renderProjects === 'function') renderProjects();
+            });
+            
+            window.collaborationSocket.on('welcome', (data) => {
+                console.log('🎉 Bienvenida del servidor:', data.message);
             });
             
             window.collaborationSocket.on('disconnect', () => {
-                console.log('🔌 Colaboración en tiempo real - Desconectado');
+                console.log('🔌 WebSocket desconectado');
+            });
+            
+            window.collaborationSocket.on('connect_error', (error) => {
+                console.error('❌ Error de conexión WebSocket:', error);
             });
             
         } catch (error) {
-            console.error('Error iniciando WebSocket colaborativo:', error);
+            console.error('Error iniciando WebSocket:', error);
         }
     };
     
     // ============================================
     // 9. EMITIR CAMBIOS A COLABORADORES
     // ============================================
+    window.emitTaskChange = function(projectId, taskId, task, action) {
+        if (window.collaborationSocket && window.collaborationSocket.connected) {
+            window.collaborationSocket.emit('task-changed', {
+                projectId: projectId,
+                taskId: taskId,
+                task: task,
+                action: action,
+                timestamp: Date.now()
+            });
+            console.log(`📤 Emitido ${action} para tarea ${taskId}`);
+        }
+    };
     
-    // Interceptar cambios de tareas para emitir eventos
-    const originalUpdateLocalStorage = window.updateLocalStorage;
-    window.updateLocalStorage = function() {
-        if (originalUpdateLocalStorage) originalUpdateLocalStorage();
-        
-        // Emitir evento a colaboradores
-        if (window.collaborationSocket && window.collaborationSocket.connected && currentProjectIndex !== undefined) {
-            const lastTask = projects[currentProjectIndex]?.tasks?.[projects[currentProjectIndex].tasks.length - 1];
-            if (lastTask) {
-                window.collaborationSocket.emit('task-changed', {
-                    projectId: currentProjectIndex,
-                    taskId: lastTask.id,
-                    task: lastTask,
-                    action: 'updated'
-                });
-            }
+    window.emitProjectChange = function(projectId, action) {
+        if (window.collaborationSocket && window.collaborationSocket.connected) {
+            window.collaborationSocket.emit('project-updated', {
+                projectId: projectId,
+                action: action,
+                timestamp: Date.now()
+            });
+            console.log(`📤 Emitido proyecto ${action} para sala project-${projectId}`);
         }
     };
     
     // ============================================
-    // 10. INICIALIZACIÓN
+    // 10. SOBRESCRIBIR FUNCIONES PARA EMITIR EVENTOS
     // ============================================
+    // Interceptar cambios en tareas (si existe función de actualización)
+    if (typeof window.updateLocalStorage === 'function') {
+        const originalUpdateLocalStorage = window.updateLocalStorage;
+        window.updateLocalStorage = function() {
+            originalUpdateLocalStorage();
+            
+            // Emitir evento si hay proyecto activo
+            if (typeof currentProjectIndex !== 'undefined' && currentProjectIndex !== null) {
+                window.emitProjectChange(currentProjectIndex, 'updated');
+            }
+        };
+    }
     
+    // ============================================
+    // 11. INICIALIZACIÓN
+    // ============================================
     function initialize() {
-        console.log('🚀 Inicializando Sistema de Colaboración...');
+        console.log('🚀 Inicializando Sistema de Colaboración (compatible)...');
         
-        // Procesar invitación pendiente
-        window.processInvitation();
+        // Procesar invitación pendiente (si viene en URL)
+        if (window.location.search.includes('token')) {
+            window.processInvitation();
+        }
         
-        // Iniciar WebSocket colaborativo
+        // Iniciar WebSocket después de un delay
         setTimeout(() => {
             window.initCollaborationWebSocket();
         }, 2000);
         
-        // Sobrescribir selectProject para unirse a salas de proyectos
-        const originalSelectProject = window.selectProject;
-        window.selectProject = function(index) {
-            if (originalSelectProject) originalSelectProject(index);
-            
-            if (window.collaborationSocket && window.collaborationSocket.connected) {
-                window.collaborationSocket.emit('join-project-room', index);
-            }
-        };
+        // Sobrescribir selectProject para unirse a salas
+        if (typeof window.selectProject === 'function') {
+            const originalSelectProject = window.selectProject;
+            window.selectProject = function(index) {
+                const result = originalSelectProject(index);
+                
+                if (window.collaborationSocket && window.collaborationSocket.connected) {
+                    window.collaborationSocket.emit('join-project', index);
+                    console.log(`📁 Unido a sala project-${index}`);
+                }
+                
+                return result;
+            };
+        }
         
-        console.log('✅ Sistema de Colaboración inicializado correctamente');
+        console.log('✅ Sistema de Colaboración inicializado');
     }
     
-    // Ejecutar inicialización
+    // Ejecutar cuando el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initialize);
     } else {
@@ -70080,3 +69857,279 @@ if (document.readyState === 'loading') {
     }
     
 })();
+
+
+
+
+
+// ============================================
+// FUNCIONES DE INVITACIÓN - AGREGAR MANUALMENTE
+// ============================================
+
+window.openInviteModal = function(projectIndex) {
+    const project = projects[projectIndex];
+    if (!project) {
+        console.error('Proyecto no encontrado en índice:', projectIndex);
+        alert('Proyecto no encontrado');
+        return;
+    }
+    
+    const email = prompt('📧 Email del colaborador:', '');
+    if (!email) return;
+    
+    const rol = prompt('Rol (viewer/editor/admin):', 'editor');
+    if (!rol) return;
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        alert('❌ No estás autenticado');
+        return;
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = '⏳ Enviando invitación...';
+    messageDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#333;color:white;padding:10px;border-radius:8px;z-index:10000;';
+    document.body.appendChild(messageDiv);
+    
+    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            email: email,
+            proyectoIndex: projectIndex,
+            proyectoNombre: project.name,
+            rol: rol
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        messageDiv.remove();
+        if (data.success) {
+            const confirmMsg = `✅ ¡Invitación enviada a ${email}!\n\nEnlace: ${data.url}\n\n¿Copiar al portapapeles?`;
+            if (confirm(confirmMsg)) {
+                navigator.clipboard.writeText(data.url);
+                alert('📋 Enlace copiado');
+            }
+        } else {
+            alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        messageDiv.remove();
+        alert('❌ Error: ' + error.message);
+    });
+};
+
+// También corregir getProyectosPermitidos para que use colaboradores
+const originalGetProyectos = window.getProyectosPermitidos;
+window.getProyectosPermitidos = function() {
+    const userEmail = (() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.email) return user.email;
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.email || payload.sub;
+            }
+        } catch(e) {}
+        return null;
+    })();
+    
+    const userClienteId = localStorage.getItem('clienteId');
+    
+    // Admin ve todo
+    if (userEmail === 'ajackson2672@gmail.com') return projects;
+    
+    // Filtrar proyectos
+    return projects.filter(project => {
+        // Es dueño
+        if (project.clienteId === userClienteId) return true;
+        // Es colaborador invitado
+        if (project.colaboradores && Array.isArray(project.colaboradores)) {
+            return project.colaboradores.includes(userEmail);
+        }
+        return false;
+    });
+};
+
+console.log('✅ Sistema de invitaciones cargado correctamente');
+console.log('📌 Uso: openInviteModal(índice_del_proyecto)');
+
+
+
+
+
+// ============================================
+// CREAR FUNCIÓN INVITAR MANUALMENTE
+// ============================================
+
+window.openInviteModal = async function(projectIndex) {
+    const project = projects[projectIndex];
+    if (!project) {
+        alert('❌ Proyecto no encontrado');
+        return;
+    }
+    
+    const email = prompt('📧 Email del colaborador:', 'ancorzacarias4@gmail.com');
+    if (!email) return;
+    
+    const rol = prompt('👑 Rol (viewer/editor/admin):', 'editor');
+    if (!rol) return;
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        alert('❌ No estás autenticado');
+        return;
+    }
+    
+    // Mostrar loading
+    const loading = document.createElement('div');
+    loading.textContent = '⏳ Enviando invitación...';
+    loading.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;padding:12px 20px;border-radius:10px;z-index:100000;';
+    document.body.appendChild(loading);
+    
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                email: email,
+                proyectoIndex: projectIndex,
+                proyectoNombre: project.name,
+                rol: rol
+            })
+        });
+        
+        const data = await response.json();
+        loading.remove();
+        
+        if (data.success) {
+            // Mostrar enlace
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+                <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000000;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:#0f172a;border-radius:20px;padding:30px;max-width:500px;width:90%;border:2px solid #10b981;">
+                        <h3 style="color:white;">✅ ¡Invitación Enviada!</h3>
+                        <p style="color:#94a3b8;">A <strong>${email}</strong> con rol <strong>${rol}</strong></p>
+                        <div style="background:#020617;padding:15px;border-radius:10px;margin:15px 0;">
+                            <p style="color:#94a3b8;font-size:12px;">🔗 Enlace:</p>
+                            <p style="color:#10b981;font-size:12px;word-break:break-all;">${data.url}</p>
+                        </div>
+                        <div style="display:flex;gap:10px;">
+                            <button id="copyBtn" style="flex:1;background:#3b82f6;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;">📋 Copiar</button>
+                            <button id="closeBtn" style="flex:1;background:#475569;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('copyBtn').onclick = () => {
+                navigator.clipboard.writeText(data.url);
+                alert('✅ Enlace copiado');
+            };
+            document.getElementById('closeBtn').onclick = () => modal.remove();
+        } else {
+            alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        loading.remove();
+        alert('❌ Error: ' + error.message);
+    }
+};
+
+console.log('✅ Función openInviteModal creada');
+console.log('📌 Ahora prueba: openInviteModal(0)');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// FUNCIÓN CORREGIDA PARA CARGAR PROYECTOS
+// ============================================
+
+async function cargarProyectosDelBackend() {
+    console.log('🚀 Cargando proyectos desde backend...');
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    
+    if (!token) {
+        console.error('❌ No hay token');
+        return;
+    }
+    
+    try {
+        // Intentar diferentes endpoints
+        let proyectosData = null;
+        
+        // Endpoint 1: Obtener documento completo
+        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects/cliente/${clienteId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            proyectosData = data.projects || data;
+        } else {
+            // Endpoint 2: Buscar directamente en MongoDB (requiere endpoint)
+            console.log('Endpoint no encontrado, usando datos locales...');
+        }
+        
+        // Si no se pudo obtener del backend, usar lo que hay en localStorage
+        if (!proyectosData || proyectosData.length === 0) {
+            const localProjects = localStorage.getItem('projects');
+            if (localProjects) {
+                proyectosData = JSON.parse(localProjects);
+            }
+        }
+        
+        // Actualizar variable global
+        if (proyectosData && Array.isArray(proyectosData)) {
+            window.projects = proyectosData;
+            console.log(`✅ ${proyectosData.length} proyectos cargados:`, proyectosData.map(p => p.name));
+            
+            // Guardar en localStorage
+            localStorage.setItem('projects', JSON.stringify(proyectosData));
+            
+            // Renderizar
+            if (typeof renderProjects === 'function') {
+                renderProjects();
+            }
+            
+            // Seleccionar primer proyecto si hay
+            if (proyectosData.length > 0 && typeof selectProject === 'function') {
+                selectProject(0);
+            }
+        } else {
+            console.log('⚠️ No hay proyectos para este usuario');
+            window.projects = [];
+            if (typeof renderProjects === 'function') renderProjects();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando proyectos:', error);
+    }
+}
+
+// Reemplazar la función original
+window.loadProjects = cargarProyectosDelBackend;
+
+// Ejecutar ahora
+cargarProyectosDelBackend();

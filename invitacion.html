@@ -276,13 +276,13 @@
     }
 }
         function rejectInvitation() {
-            if (confirm('¿Estás seguro de rechazar esta invitación?')) {
-                showSuccess('Invitación rechazada. Serás redirigido...');
-                setTimeout(() => {
-                    window.location.href = '/?forceClienteId=' + data.clienteId;
-                }, 2000);
-            }
-        }
+    if (confirm('¿Estás seguro de rechazar esta invitación?')) {
+        showSuccess('Invitación rechazada. Serás redirigido...');
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+    }
+}
         
                // Inicializar eventos
         document.getElementById('acceptBtn').onclick = acceptInvitation;
