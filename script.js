@@ -1,4 +1,116 @@
+// ============================================
+// 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
+// ============================================
 
+function filtrarProyectosPorUsuario() {
+    console.log('🔍 Ejecutando filtro de proyectos...');
+    
+    // Obtener email del usuario logueado
+    let userEmail = null;
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            userEmail = user.email;
+        } catch(e) {}
+    }
+    
+    // Si no hay email, intentar desde el token
+    if (!userEmail) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email;
+            } catch(e) {}
+        }
+    }
+    
+    const clienteId = localStorage.getItem('clienteId');
+    const esAdmin = userEmail === 'ajackson2672@gmail.com';
+    
+    console.log('👤 Usuario:', userEmail);
+    console.log('🔑 clienteId:', clienteId);
+    console.log('👑 Es admin:', esAdmin);
+    
+    // Guardar originales para referencia (necesario para el admin)
+    if (!window.originalProjects && projects.length > 0) {
+        window.originalProjects = [...projects];
+        console.log('💾 Proyectos originales guardados:', window.originalProjects.length);
+    }
+    
+    // ADMIN ve todo
+    if (esAdmin) {
+        console.log('👑 Admin - Mostrando todos los proyectos');
+        // Restaurar proyectos originales para el admin
+        if (window.originalProjects) {
+            projects.length = 0;
+            projects.push(...window.originalProjects);
+        }
+        return;
+    }
+    
+    if (!projects || projects.length === 0) {
+        console.log('📭 No hay proyectos para filtrar');
+        return;
+    }
+    
+    // Filtrar proyectos donde el usuario es dueño O colaborador
+    const proyectosFiltrados = projects.filter(proyecto => {
+        const esDueno = proyecto.clienteId === clienteId;
+        const esColaborador = proyecto.colaboradores && 
+                              Array.isArray(proyecto.colaboradores) && 
+                              proyecto.colaboradores.includes(userEmail);
+        
+        if (esDueno) {
+            console.log(`  ✅ DUEÑO: ${proyecto.name}`);
+        } else if (esColaborador) {
+            console.log(`  ✅ COLABORADOR: ${proyecto.name}`);
+        }
+        
+        return esDueno || esColaborador;
+    });
+    
+    console.log(`📊 Proyectos originales: ${window.originalProjects?.length || projects.length}`);
+    console.log(`📊 Proyectos visibles: ${proyectosFiltrados.length}`);
+    
+    // Reemplazar el array global
+    projects.length = 0;
+    projects.push(...proyectosFiltrados);
+}
+// ============================================
+// 🎯 CARGAR DATOS Y FILTRAR PROYECTOS
+// ============================================
+
+async function safeLoadConFiltro() {
+    console.log('🔄 Cargando proyectos con filtro de permisos...');
+    
+    // Cargar desde localStorage (o backend)
+    const stored = localStorage.getItem('projects');
+    if (stored) {
+        const proyectosCargados = JSON.parse(stored);
+        projects.length = 0;
+        projects.push(...proyectosCargados);
+        console.log(`📦 Cargados ${projects.length} proyectos desde localStorage`);
+    }
+    
+    // Filtrar según el usuario actual
+    filtrarProyectosPorUsuario();
+    
+    // Guardar los proyectos filtrados de vuelta en localStorage
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // Renderizar la interfaz
+    if (typeof renderProjects === 'function') {
+        renderProjects();
+    }
+    
+    if (typeof renderKanbanTasks === 'function' && currentProjectIndex !== undefined) {
+        renderKanbanTasks();
+    }
+    
+    return true;
+}
 
 
 
@@ -22771,7 +22883,6 @@ async function safeLoad() {
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
     
-    // 🔥 NUEVO: Verificar si acabamos de aceptar una invitación
     const urlParams = new URLSearchParams(window.location.search);
     const justAccepted = urlParams.get('accepted') === 'true';
     
@@ -22780,6 +22891,10 @@ async function safeLoad() {
         const saved = localStorage.getItem('projects');
         if (saved) {
             projects = JSON.parse(saved);
+            // ✅ UBICACIÓN 1
+            filtrarProyectosPorUsuario();
+            localStorage.setItem('projects', JSON.stringify(projects));
+            console.groupEnd();
             return true;
         }
     }
@@ -22787,14 +22902,6 @@ async function safeLoad() {
     const token = localStorage.getItem('authToken');
     const clienteId = localStorage.getItem('clienteId');
     
-    console.log('🔐 Token disponible:', token ? "SÍ" : "NO");
-    console.log('🏢 Cliente ID:', clienteId || 'No definido');
-    
-    if (justAccepted) {
-        console.log('🎉 Acabamos de aceptar invitación - Forzando carga desde backend');
-    }
-    
-    // Siempre intentar cargar desde backend si hay token
     if (token && clienteId) {
         try {
             console.log('🔄 Cargando desde MongoDB...');
@@ -22814,15 +22921,17 @@ async function safeLoad() {
                 if (data.projects) {
                     projects = data.projects;
                     currentProjectIndex = data.currentProjectIndex || 0;
+                    // ✅ UBICACIÓN 2
+                    filtrarProyectosPorUsuario();
                     localStorage.setItem('projects', JSON.stringify(projects));
                     localStorage.setItem('currentProjectIndex', currentProjectIndex);
                     
-                    // Limpiar parámetro de URL si existe
                     if (justAccepted) {
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
                     
                     console.log(`✅ ${projects.length} proyectos cargados`);
+                    console.groupEnd();
                     return true;
                 }
             }
@@ -22831,12 +22940,15 @@ async function safeLoad() {
         }
     }
 
-    // Fallback a localStorage
     const savedProjects = localStorage.getItem('projects');
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
         currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        // ✅ UBICACIÓN 3
+        filtrarProyectosPorUsuario();
+        localStorage.setItem('projects', JSON.stringify(projects));
         console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        console.groupEnd();
         return true;
     }
 
@@ -22846,6 +22958,80 @@ async function safeLoad() {
     return false;
 }
 
+// ============================================
+// 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
+// ============================================
+
+function filtrarProyectosPorUsuario() {
+    const userStr = localStorage.getItem('user');
+    let userEmail = null;
+    
+    try {
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            userEmail = user.email;
+        }
+    } catch(e) {}
+    
+    // Si no hay email en user, intentar desde el token
+    if (!userEmail) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email;
+            } catch(e) {}
+        }
+    }
+    
+    const clienteId = localStorage.getItem('clienteId');
+    const esAdmin = userEmail === 'ajackson2672@gmail.com';
+    
+    console.log('🔍 Filtrando proyectos para:', userEmail);
+    console.log('   Es admin:', esAdmin);
+    console.log('   clienteId:', clienteId);
+    
+    if (esAdmin) {
+        console.log('👑 Admin - Mostrando todos los proyectos');
+        return;
+    }
+    
+    if (!projects || projects.length === 0) {
+        console.log('📭 No hay proyectos para filtrar');
+        return;
+    }
+    
+    // Guardar proyectos originales para referencia (opcional)
+    if (!window.originalProjects) {
+        window.originalProjects = [...projects];
+    }
+    
+    // Filtrar proyectos donde el usuario es dueño O colaborador
+    const proyectosFiltrados = projects.filter(proyecto => {
+        // El usuario es dueño (clienteId coincide)
+        const esDueno = proyecto.clienteId === clienteId;
+        
+        // El usuario es colaborador (campo colaboradores)
+        const esColaborador = proyecto.colaboradores && 
+                              Array.isArray(proyecto.colaboradores) && 
+                              proyecto.colaboradores.includes(userEmail);
+        
+        if (esDueno) {
+            console.log(`✅ Dueño: ${proyecto.name}`);
+        } else if (esColaborador) {
+            console.log(`✅ Colaborador: ${proyecto.name}`);
+        }
+        
+        return esDueno || esColaborador;
+    });
+    
+    console.log(`📊 Proyectos originales: ${window.originalProjects?.length || projects.length}`);
+    console.log(`📊 Proyectos visibles: ${proyectosFiltrados.length}`);
+    
+    // Reemplazar el array global
+    projects.length = 0;
+    projects.push(...proyectosFiltrados);
+}
 
 
 
@@ -23219,7 +23405,88 @@ const syncChannel = new BroadcastChannel('task_sync');
 
 
 
+// ============================================
+// 🔥 FILTRAR PROYECTOS POR USUARIO (DUEÑO O COLABORADOR)
+// ============================================
 
+function filtrarProyectosPorUsuario() {
+    console.log('🔍 Ejecutando filtro de proyectos...');
+    
+    // Obtener email del usuario logueado
+    let userEmail = null;
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            userEmail = user.email;
+            console.log('📧 Email desde user:', userEmail);
+        } catch(e) {}
+    }
+    
+    // Si no hay email, intentar desde el token
+    if (!userEmail) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email;
+                console.log('📧 Email desde token:', userEmail);
+            } catch(e) {}
+        }
+    }
+    
+    const clienteId = localStorage.getItem('clienteId');
+    const esAdmin = userEmail === 'ajackson2672@gmail.com';
+    
+    console.log('👤 Usuario:', userEmail);
+    console.log('🔑 clienteId:', clienteId);
+    console.log('👑 Es admin:', esAdmin);
+    
+    // ADMIN ve todo
+    if (esAdmin) {
+        console.log('👑 Admin - Mostrando todos los proyectos');
+        return;
+    }
+    
+    if (!projects || projects.length === 0) {
+        console.log('📭 No hay proyectos para filtrar');
+        return;
+    }
+    
+    // Guardar originales para debug
+    const originalCount = projects.length;
+    
+    // Filtrar proyectos
+    const proyectosFiltrados = projects.filter(proyecto => {
+        // El usuario es DUEÑO (clienteId coincide)
+        const esDueno = proyecto.clienteId === clienteId;
+        
+        // El usuario es COLABORADOR (está en el array colaboradores)
+        const esColaborador = proyecto.colaboradores && 
+                              Array.isArray(proyecto.colaboradores) && 
+                              proyecto.colaboradores.includes(userEmail);
+        
+        if (esDueno) {
+            console.log(`  ✅ DUEÑO: ${proyecto.name}`);
+        } else if (esColaborador) {
+            console.log(`  ✅ COLABORADOR: ${proyecto.name}`);
+        } else {
+            console.log(`  ❌ EXCLUIDO: ${proyecto.name}`);
+        }
+        
+        return esDueno || esColaborador;
+    });
+    
+    console.log(`📊 Proyectos originales: ${originalCount}`);
+    console.log(`📊 Proyectos visibles: ${proyectosFiltrados.length}`);
+    
+    // Reemplazar el array global
+    projects.length = 0;
+    projects.push(...proyectosFiltrados);
+    
+    // Guardar en localStorage
+    localStorage.setItem('projects', JSON.stringify(projects));
+}
 
 
 
@@ -38428,18 +38695,59 @@ if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 // RENDERIZAR PROYECTOS CON FILTRO DE PERMISOS
 // ============================================
 function renderProjects() {
-    const userEmail = localStorage.getItem('userEmail');
+    const userStr = localStorage.getItem('user');
+    let userEmail = null;
+    try {
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            userEmail = user.email;
+        }
+    } catch(e) {}
+    
+    // Si no hay email en user, intentar desde el token
+    if (!userEmail) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email;
+            } catch(e) {}
+        }
+    }
+    
     const esAdmin = userEmail === 'ajackson2672@gmail.com';
     
-    // Obtener proyectos filtrados directamente del sistema de colaboradores
+    // projects YA DEBE ESTAR FILTRADO por filtrarProyectosPorUsuario()
+    // Pero por si acaso, aplicamos el filtro nuevamente
     let proyectosAMostrar = [];
     
     if (esAdmin) {
-        proyectosAMostrar = [...projects];
+        // Admin ve todos los proyectos originales (desde window.originalProjects si existe)
+        if (window.originalProjects && window.originalProjects.length > 0) {
+            proyectosAMostrar = [...window.originalProjects];
+        } else {
+            proyectosAMostrar = [...projects];
+        }
+        console.log(`👑 Admin - Mostrando ${proyectosAMostrar.length} proyectos`);
     } else {
-        // Usar los proyectos que ya están filtrados en la variable global projects
-        // (ColaboradoresAPI ya los filtró al cargar)
-        proyectosAMostrar = [...projects];
+        // Usuarios normales: solo proyectos donde son dueños o colaboradores
+        const clienteId = localStorage.getItem('clienteId');
+        
+        proyectosAMostrar = projects.filter(proyecto => {
+            const esDueno = proyecto.clienteId === clienteId;
+            const esColaborador = proyecto.colaboradores && 
+                                  Array.isArray(proyecto.colaboradores) && 
+                                  proyecto.colaboradores.includes(userEmail);
+            return esDueno || esColaborador;
+        });
+        
+        console.log(`👤 Usuario ${userEmail} - Mostrando ${proyectosAMostrar.length} proyectos`);
+        
+        // Mostrar cuáles son en consola para debug
+        proyectosAMostrar.forEach(p => {
+            const esDueno = p.clienteId === clienteId;
+            console.log(`  ${esDueno ? '👑 Dueño' : '🤝 Colaborador'}: ${p.name}`);
+        });
     }
     
     const projectListContainer = document.getElementById('projectList');
@@ -38459,16 +38767,20 @@ function renderProjects() {
     }
     
     proyectosAMostrar.forEach((project, idx) => {
+        // Encontrar el índice real en el array global projects
+        const realIndex = projects.findIndex(p => p.id === project.id || p.name === project.name);
+        const displayIndex = realIndex !== -1 ? realIndex : idx;
+        
         const li = document.createElement('li');
         li.className = 'project-item';
-        li.dataset.projectIndex = idx;
+        li.dataset.projectIndex = displayIndex;
         li.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 12px 15px;
             margin-bottom: 8px;
-            background: ${idx === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+            background: ${displayIndex === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
@@ -38476,14 +38788,15 @@ function renderProjects() {
         
         li.innerHTML = `
             <span style="color: white; font-weight: 500;">${project.name}</span>
-            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${idx})">⋮</div>
-            <div class="project-context-menu" id="project-menu-${idx}">
-                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${idx})">Editar</div>
-                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${idx})">Eliminar</div>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${displayIndex})">⋮</div>
+            <div class="project-context-menu" id="project-menu-${displayIndex}" style="display: none; position: absolute; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 1000;">
+                <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${displayIndex})" style="padding: 8px 15px; cursor: pointer;">Editar</div>
+                <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${displayIndex})" style="padding: 8px 15px; cursor: pointer; color: #ef4444;">Eliminar</div>
+                <div class="project-context-menu-item invite" onclick="openInviteModal(${displayIndex})" style="padding: 8px 15px; cursor: pointer; color: #10b981;">➕ Invitar</div>
             </div>
         `;
         
-        li.addEventListener('click', () => selectProject(idx));
+        li.addEventListener('click', () => selectProject(displayIndex));
         projectListContainer.appendChild(li);
     });
     
@@ -62873,36 +63186,36 @@ function getProyectosPermitidos() {
         console.log('🔑 Cliente ID:', clienteId);
         console.log('📧 User email:', userEmail);
         
-        // 🟢 1. PRIMERO: Filtrar por clienteId (proyectos creados por el usuario)
+        // ADMIN ve todo
+        if (userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 Admin - devolviendo todos los proyectos');
+            return projects;
+        }
+        
+        // 🟢 1. Proyectos creados por el usuario (por clienteId)
         let proyectosPorClienteId = [];
         if (clienteId) {
             proyectosPorClienteId = projects.filter(p => p.clienteId === clienteId);
             console.log(`📊 Proyectos por clienteId: ${proyectosPorClienteId.length}`);
         }
         
-        // 🟢 2. SEGUNDO: Buscar proyectos donde el usuario fue invitado como colaborador
-        //    Esto requiere que en el backend, al aceptar la invitación, se agregue al usuario
-        //    como miembro en una colección separada o se marque el proyecto con su email.
-        //    Por ahora, simulamos con proyectos que tengan el email en un campo 'invitados'
-        
+        // 🟢 2. 🔥 NUEVO: Proyectos donde fue invitado (campo colaboradores)
         let proyectosInvitado = [];
-        if (userEmail) {
-            proyectosInvitado = projects.filter(p => 
-                p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
-            );
-            console.log(`📊 Proyectos donde fue invitado: ${proyectosInvitado.length}`);
-        }
         
-        // 🟢 3. TERCERO: Si es ADMIN, devolver todos
-        if (userEmail === 'ajackson2672@gmail.com') {
-            console.log('👑 Admin - devolviendo todos los proyectos');
-            return projects;
-        }
+        projects.forEach((project, idx) => {
+            // Verificar si el usuario está en la lista de colaboradores del proyecto
+            if (project.colaboradores && Array.isArray(project.colaboradores) && project.colaboradores.includes(userEmail)) {
+                proyectosInvitado.push(project);
+                console.log(`✅ Proyecto "${project.name}" (índice ${idx}) - acceso por colaborador`);
+            }
+        });
         
-        // 🟢 4. COMBINAR ambas fuentes (sin duplicados por id)
+        console.log(`📊 Proyectos donde fue invitado: ${proyectosInvitado.length}`);
+        
+        // 🟢 3. COMBINAR ambas fuentes (sin duplicados)
         const todosProyectos = [...proyectosPorClienteId];
         proyectosInvitado.forEach(p => {
-            if (!todosProyectos.some(existente => existente.id === p.id)) {
+            if (!todosProyectos.some(existente => existente.id === p.id || existente.name === p.name)) {
                 todosProyectos.push(p);
             }
         });
@@ -62914,8 +63227,7 @@ function getProyectosPermitidos() {
         console.error('Error en getProyectosPermitidos:', error);
         return [];
     }
-}
-function actualizarListaInvitaciones() {
+}function actualizarListaInvitaciones() {
     const container = document.getElementById('invitacionesContainer');
     const lista = document.getElementById('listaInvitaciones');
     if (!container || !lista) return;
@@ -69046,4 +69358,725 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
+// ============================================
+// 🚀 SISTEMA DE COLABORACIÓN EN TIEMPO REAL - VERSIÓN DEFINITIVA
+// ============================================
 
+(function() {
+    console.log('🌟 Inicializando Sistema de Colaboración en Tiempo Real...');
+
+    // ============================================
+    // 1. CONFIGURACIÓN INICIAL
+    // ============================================
+    const COLLAB_CONFIG = {
+        API_URL: 'https://mi-sistema-proyectos-backend-4.onrender.com',
+        STORAGE_KEYS: {
+            USER_PROJECTS: 'user_projects_membership',
+            ACTIVE_COLLAB: 'active_collaboration',
+            SESSION_ID: 'collab_session_id'
+        }
+    };
+
+    // ============================================
+    // 2. GESTIÓN DE MIEMBROS POR PROYECTO
+    // ============================================
+    window.collaborationManager = {
+        // Obtener miembros de un proyecto
+        getProjectMembers: async function(projectId) {
+            const token = localStorage.getItem('authToken');
+            if (!token) return [];
+
+            try {
+                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/members`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.members || [];
+                }
+            } catch (error) {
+                console.error('Error obteniendo miembros:', error);
+            }
+            return this.getLocalProjectMembers(projectId);
+        },
+
+        // Obtener miembros desde localStorage (fallback)
+        getLocalProjectMembers: function(projectId) {
+            const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
+            return memberships[projectId] || [];
+        },
+
+        // Agregar miembro a un proyecto
+        addProjectMember: async function(projectId, email, role = 'viewer') {
+            const token = localStorage.getItem('authToken');
+            if (!token) return { success: false, error: 'No autenticado' };
+
+            try {
+                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ email, role })
+                });
+
+                if (response.ok) {
+                    // Actualizar localStorage
+                    const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
+                    if (!memberships[projectId]) memberships[projectId] = [];
+                    if (!memberships[projectId].find(m => m.email === email)) {
+                        memberships[projectId].push({ email, role, addedAt: new Date().toISOString() });
+                        localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS, JSON.stringify(memberships));
+                    }
+                    return { success: true };
+                }
+                return { success: false, error: await response.text() };
+            } catch (error) {
+                console.error('Error invitando miembro:', error);
+                return { success: false, error: error.message };
+            }
+        },
+
+        // Remover miembro de un proyecto
+        removeProjectMember: async function(projectId, email) {
+            const token = localStorage.getItem('authToken');
+            if (!token) return false;
+
+            try {
+                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/members/${encodeURIComponent(email)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    // Actualizar localStorage
+                    const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
+                    if (memberships[projectId]) {
+                        memberships[projectId] = memberships[projectId].filter(m => m.email !== email);
+                        localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS, JSON.stringify(memberships));
+                    }
+                    return true;
+                }
+            } catch (error) {
+                console.error('Error removiendo miembro:', error);
+            }
+            return false;
+        },
+
+        // Obtener proyectos donde el usuario es miembro (NO el dueño)
+        getSharedProjects: function() {
+            const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
+            const userEmail = this.getCurrentUserEmail();
+            const sharedProjects = [];
+
+            for (const [projectId, members] of Object.entries(memberships)) {
+                if (members.some(m => m.email === userEmail)) {
+                    sharedProjects.push(parseInt(projectId));
+                }
+            }
+            return sharedProjects;
+        },
+
+        // Obtener email del usuario actual
+        getCurrentUserEmail: function() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    return payload.email || payload.sub;
+                }
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                return user.email || user.username;
+            } catch (e) {
+                return null;
+            }
+        },
+
+        // Obtener el dueño del proyecto
+        getProjectOwner: async function(projectId) {
+            const token = localStorage.getItem('authToken');
+            if (!token) return null;
+
+            try {
+                const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/projects/${projectId}/owner`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.owner;
+                }
+            } catch (error) {
+                console.error('Error obteniendo dueño:', error);
+            }
+            return null;
+        },
+
+        // Verificar si el usuario actual puede editar un proyecto
+        canEditProject: async function(projectId) {
+            const userEmail = this.getCurrentUserEmail();
+            const members = await this.getProjectMembers(projectId);
+            const member = members.find(m => m.email === userEmail);
+            
+            // El dueño siempre puede editar
+            if (member && member.role === 'owner') return true;
+            // Colaboradores con rol admin o editor pueden editar
+            return member && (member.role === 'admin' || member.role === 'editor');
+        },
+
+        // Verificar si el usuario actual puede ver un proyecto
+        canViewProject: async function(projectId) {
+            const userEmail = this.getCurrentUserEmail();
+            const members = await this.getProjectMembers(projectId);
+            return members.some(m => m.email === userEmail);
+        }
+    };
+
+    // ============================================
+    // 3. FILTRADO CORREGIDO DE PROYECTOS
+    // ============================================
+    
+    // Sobrescribir la función getProyectosPermitidos original
+    window.getProyectosPermitidos = function() {
+        const userEmail = window.collaborationManager.getCurrentUserEmail();
+        
+        // ADMIN puede ver todo
+        if (userEmail === 'ajackson2672@gmail.com') {
+            console.log('👑 ADMIN - Acceso a todos los proyectos');
+            return projects;
+        }
+        
+        // Para usuarios normales: SOLO proyectos donde SON MIEMBROS
+        const userProjectIds = [];
+        
+        // 1. Proyectos donde el usuario es dueño (clienteId coincide)
+        const ownedProjects = projects.filter(p => p.clienteId === localStorage.getItem('clienteId'));
+        ownedProjects.forEach(p => userProjectIds.push(p.id || projects.indexOf(p)));
+        
+        // 2. Proyectos donde fue invitado como colaborador
+        const memberships = JSON.parse(localStorage.getItem(COLLAB_CONFIG.STORAGE_KEYS.USER_PROJECTS) || '{}');
+        for (const [projectId, members] of Object.entries(memberships)) {
+            if (members.some(m => m.email === userEmail)) {
+                const project = projects.find(p => (p.id || projects.indexOf(p)) == projectId);
+                if (project && !userProjectIds.includes(projectId)) {
+                    userProjectIds.push(projectId);
+                }
+            }
+        }
+        
+        // También verificar si hay proyectos en el array projects con el email en invitados
+        const invitedProjects = projects.filter(p => 
+            p.invitados && Array.isArray(p.invitados) && p.invitados.includes(userEmail)
+        );
+        invitedProjects.forEach(p => {
+            const idx = projects.indexOf(p);
+            if (!userProjectIds.includes(idx)) userProjectIds.push(idx);
+        });
+        
+        const result = projects.filter((_, idx) => userProjectIds.includes(idx));
+        console.log(`✅ Usuario ${userEmail} tiene acceso a ${result.length} de ${projects.length} proyectos`);
+        
+        return result;
+    };
+    
+    // Sobrescribir renderProjects para usar el filtro correcto
+    const originalRenderProjects = window.renderProjects;
+    window.renderProjects = function() {
+        const proyectosPermitidos = window.getProyectosPermitidos();
+        const projectListContainer = document.getElementById('projectList');
+        
+        if (!projectListContainer) {
+            if (originalRenderProjects) originalRenderProjects();
+            return;
+        }
+        
+        projectListContainer.innerHTML = '';
+        
+        if (proyectosPermitidos.length === 0) {
+            projectListContainer.innerHTML = `
+                <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
+                    <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                    No tienes proyectos. Crea uno o acepta una invitación.
+                </li>
+            `;
+            return;
+        }
+        
+        proyectosPermitidos.forEach((project, idx) => {
+            const originalIndex = projects.findIndex(p => p.id === project.id || p.name === project.name);
+            const li = document.createElement('li');
+            li.className = 'project-item';
+            li.dataset.projectIndex = originalIndex;
+            li.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 15px;
+                margin-bottom: 8px;
+                background: ${originalIndex === currentProjectIndex ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
+                border-radius: 10px;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            
+            li.innerHTML = `
+                <span style="color: white; font-weight: 500; flex: 1;">${project.name}</span>
+                <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${originalIndex})">⋮</div>
+                <div class="project-context-menu" id="project-menu-${originalIndex}" style="display: none; position: absolute; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 1000;">
+                    <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${originalIndex})" style="padding: 8px 15px; cursor: pointer;">Editar</div>
+                    <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${originalIndex})" style="padding: 8px 15px; cursor: pointer; color: #ef4444;">Eliminar</div>
+                    <div class="project-context-menu-item invite" onclick="openInviteModal(${originalIndex})" style="padding: 8px 15px; cursor: pointer; color: #10b981;">➕ Invitar</div>
+                </div>
+            `;
+            
+            li.addEventListener('click', () => selectProject(originalIndex));
+            projectListContainer.appendChild(li);
+        });
+        
+        // Actualizar estilos del proyecto seleccionado
+        setTimeout(updateProjectSelectionStyles, 100);
+    };
+    
+    // ============================================
+    // 4. MODAL DE INVITACIÓN MEJORADO
+    // ============================================
+    
+    window.openInviteModal = function(projectIndex) {
+        const project = projects[projectIndex];
+        if (!project) return;
+        
+        // Eliminar modal anterior si existe
+        const existingModal = document.getElementById('inviteCollaboratorModal');
+        if (existingModal) existingModal.remove();
+        
+        const modal = document.createElement('div');
+        modal.id = 'inviteCollaboratorModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; width: 450px; max-width: 90vw; border: 2px solid #8b5cf6;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: white;">➕ Invitar Colaborador</h3>
+                    <button onclick="this.closest('#inviteCollaboratorModal').remove()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">✕</button>
+                </div>
+                
+                <p style="color: #94a3b8; margin-bottom: 20px;">
+                    Proyecto: <strong style="color: #8b5cf6;">${project.name}</strong>
+                </p>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Email del colaborador</label>
+                    <input type="email" id="inviteEmail" placeholder="ejemplo@correo.com" 
+                           style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Rol</label>
+                    <select id="inviteRole" style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white;">
+                        <option value="viewer">👁️ Visualizador - Solo lectura</option>
+                        <option value="editor">✏️ Editor - Puede crear/modificar tareas</option>
+                        <option value="admin">👑 Admin - Control total del proyecto</option>
+                    </select>
+                </div>
+                
+                <div id="inviteMessage" style="margin-bottom: 15px; font-size: 13px;"></div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <button onclick="window.sendInvitation(${projectIndex})" class="btn-4d" style="flex: 1; background: linear-gradient(135deg, #8b5cf6, #6d28d9);">📧 Enviar Invitación</button>
+                    <button onclick="this.closest('#inviteCollaboratorModal').remove()" class="btn-4d" style="flex: 1; background: #475569;">Cancelar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    };
+    
+    // ============================================
+    // 5. ENVIAR INVITACIÓN CORREGIDA
+    // ============================================
+    
+    window.sendInvitation = async function(projectIndex) {
+        const email = document.getElementById('inviteEmail')?.value.trim();
+        const role = document.getElementById('inviteRole')?.value;
+        const messageDiv = document.getElementById('inviteMessage');
+        
+        if (!email) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Ingresa un email válido</span>';
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Email inválido</span>';
+            return;
+        }
+        
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ No estás autenticado</span>';
+            return;
+        }
+        
+        messageDiv.innerHTML = '<span style="color: #f59e0b;">⏳ Enviando invitación...</span>';
+        
+        try {
+            const response = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    email: email,
+                    projectId: projects[projectIndex].id || projectIndex,
+                    projectName: projects[projectIndex].name,
+                    role: role
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                messageDiv.innerHTML = '<span style="color: #10b981;">✅ Invitación enviada exitosamente</span>';
+                
+                // Mostrar modal con el enlace
+                const inviteLink = data.link || `https://admonproject.netlify.app/invitacion.html?token=${data.token}`;
+                showInviteLinkModal(inviteLink, email);
+                
+                // Limpiar input después de 2 segundos
+                setTimeout(() => {
+                    const modal = document.getElementById('inviteCollaboratorModal');
+                    if (modal) modal.remove();
+                }, 2000);
+            } else {
+                messageDiv.innerHTML = `<span style="color: #ef4444;">❌ ${data.error || 'Error al enviar invitación'}</span>`;
+            }
+        } catch (error) {
+            console.error('Error enviando invitación:', error);
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Error de conexión</span>';
+        }
+    };
+    
+    // ============================================
+    // 6. MODAL CON ENLACE DE INVITACIÓN
+    // ============================================
+    
+    function showInviteLinkModal(link, email) {
+        const existing = document.getElementById('inviteLinkModal');
+        if (existing) existing.remove();
+        
+        const modal = document.createElement('div');
+        modal.id = 'inviteLinkModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; width: 500px; max-width: 90vw; border: 2px solid #10b981;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: white;">✅ Invitación Enviada</h3>
+                    <button onclick="this.closest('#inviteLinkModal').remove()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">✕</button>
+                </div>
+                
+                <p style="color: #94a3b8; margin-bottom: 15px;">
+                    Se ha enviado una invitación a <strong style="color: #10b981;">${email}</strong>
+                </p>
+                
+                <div style="background: #0f172a; border: 1px solid #3b82f6; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                    <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">🔗 Enlace de invitación (copia y comparte):</div>
+                    <div style="background: #020617; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #8b5cf6; word-break: break-all;">${link}</div>
+                </div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <button onclick="navigator.clipboard.writeText('${link}')" style="flex: 1; background: #3b82f6; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">📋 Copiar Enlace</button>
+                    <button onclick="this.closest('#inviteLinkModal').remove()" style="flex: 1; background: #475569; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer;">Cerrar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    // ============================================
+    // 7. PROCESAR INVITACIÓN AL CARGAR
+    // ============================================
+    
+   // ============================================
+// 🎯 PROCESAR INVITACIÓN - VERSIÓN CORREGIDA
+// ============================================
+
+window.processInvitation = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) {
+        console.log('ℹ️ No hay token en la URL');
+        return;
+    }
+    
+    console.log('🔑 Procesando invitación con token:', token);
+    
+    // Mostrar loading
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'invitation-loading';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        backdrop-filter: blur(10px);
+        z-index: 10000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        font-family: system-ui, sans-serif;
+    `;
+    loadingDiv.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 20px;">🎯</div>
+        <div style="font-size: 24px; font-weight: bold;">Procesando invitación...</div>
+        <div style="margin-top: 20px; width: 200px; height: 4px; background: #2d2d5f; border-radius: 4px; overflow: hidden;">
+            <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); border-radius: 4px; animation: loading 2s ease infinite;"></div>
+        </div>
+        <style>
+            @keyframes loading {
+                0% { width: 0%; }
+                50% { width: 100%; }
+                100% { width: 0%; }
+            }
+        </style>
+    `;
+    document.body.appendChild(loadingDiv);
+    
+    try {
+        // 🔥 CORRECCIÓN: Usar POST con token en el body (no en la URL)
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ token: token })
+        });
+        
+        const data = await response.json();
+        console.log('📦 Respuesta del backend:', data);
+        
+        if (response.ok && data.success) {
+            // Guardar en localStorage la membresía
+            const memberships = JSON.parse(localStorage.getItem('user_projects_membership') || '{}');
+            const projectId = data.proyectoIndex;
+            
+            if (!memberships[projectId]) memberships[projectId] = [];
+            if (!memberships[projectId].find(m => m.email === data.email)) {
+                memberships[projectId].push({
+                    email: data.email,
+                    role: data.rol,
+                    addedAt: new Date().toISOString()
+                });
+                localStorage.setItem('user_projects_membership', JSON.stringify(memberships));
+                console.log('✅ Membresía guardada en localStorage');
+            }
+            
+            // Guardar clienteId
+            if (data.clienteId) {
+                localStorage.setItem('clienteId', data.clienteId);
+                console.log('✅ clienteId guardado:', data.clienteId);
+            }
+            
+            // Mostrar mensaje de éxito
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+                <div style="font-size: 24px; font-weight: bold; color: #10b981;">¡Invitación aceptada!</div>
+                <div style="margin-top: 20px; color: #94a3b8; text-align: center;">
+                    Bienvenido al proyecto:<br>
+                    <strong style="color: #8b5cf6;">${data.proyectoNombre || 'Proyecto'}</strong><br>
+                    Rol: <strong>${data.rol || 'colaborador'}</strong>
+                </div>
+                <div style="margin-top: 30px; color: #64748b;">Redirigiendo al dashboard...</div>
+            `;
+            
+            // Recargar después de 2 segundos
+            setTimeout(() => {
+                window.location.href = window.location.pathname;
+            }, 2000);
+            
+        } else {
+            throw new Error(data.error || 'Error al procesar invitación');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error procesando invitación:', error);
+        loadingDiv.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+            <div style="font-size: 24px; font-weight: bold; color: #ef4444;">Error al aceptar invitación</div>
+            <div style="margin-top: 20px; color: #94a3b8; text-align: center; max-width: 400px;">
+                ${error.message}<br><br>
+                El enlace pudo haber expirado o ya fue utilizado.
+            </div>
+            <button onclick="window.location.href='/'"
+                    style="margin-top: 30px; background: #8b5cf6; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer;">
+                Ir al Dashboard
+            </button>
+        `;
+    }
+};
+
+// Ejecutar al cargar la página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.processInvitation);
+} else {
+    window.processInvitation();
+}
+    
+    // ============================================
+    // 8. SINCRO  REALTIME (WebSocket mejorado)
+    // ============================================
+    
+    window.collaborationSocket = null;
+    
+    window.initCollaborationWebSocket = function() {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        try {
+            if (window.collaborationSocket) {
+                window.collaborationSocket.disconnect();
+            }
+            
+            window.collaborationSocket = io(`${COLLAB_CONFIG.API_URL}`, {
+                transports: ['websocket', 'polling'],
+                auth: { token: token },
+                reconnection: true
+            });
+            
+            window.collaborationSocket.on('connect', () => {
+                console.log('🔌 Colaboración en tiempo real - Conectado');
+                
+                // Unirse al proyecto actual
+                if (currentProjectIndex !== undefined) {
+                    window.collaborationSocket.emit('join-project-room', currentProjectIndex);
+                }
+            });
+            
+            window.collaborationSocket.on('task-updated', async (data) => {
+                console.log('📡 Evento colaborativo recibido:', data);
+                
+                // Verificar si el usuario tiene acceso a este proyecto
+                const canView = await window.collaborationManager.canViewProject(data.projectId);
+                if (!canView && data.userEmail !== window.collaborationManager.getCurrentUserEmail()) return;
+                
+                // Actualizar la tarea si es necesario
+                if (projects[data.projectId]) {
+                    const taskIndex = projects[data.projectId].tasks?.findIndex(t => t.id == data.taskId);
+                    if (taskIndex !== -1 && data.task) {
+                        projects[data.projectId].tasks[taskIndex] = data.task;
+                        localStorage.setItem('projects', JSON.stringify(projects));
+                        
+                        if (currentProjectIndex == data.projectId) {
+                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                        }
+                    }
+                }
+            });
+            
+            window.collaborationSocket.on('user-joined', (data) => {
+                console.log(`👤 ${data.userName} se unió al proyecto`);
+                if (typeof showNotification === 'function') {
+                    showNotification(`👤 ${data.userName} está viendo este proyecto`, 'info');
+                }
+            });
+            
+            window.collaborationSocket.on('disconnect', () => {
+                console.log('🔌 Colaboración en tiempo real - Desconectado');
+            });
+            
+        } catch (error) {
+            console.error('Error iniciando WebSocket colaborativo:', error);
+        }
+    };
+    
+    // ============================================
+    // 9. EMITIR CAMBIOS A COLABORADORES
+    // ============================================
+    
+    // Interceptar cambios de tareas para emitir eventos
+    const originalUpdateLocalStorage = window.updateLocalStorage;
+    window.updateLocalStorage = function() {
+        if (originalUpdateLocalStorage) originalUpdateLocalStorage();
+        
+        // Emitir evento a colaboradores
+        if (window.collaborationSocket && window.collaborationSocket.connected && currentProjectIndex !== undefined) {
+            const lastTask = projects[currentProjectIndex]?.tasks?.[projects[currentProjectIndex].tasks.length - 1];
+            if (lastTask) {
+                window.collaborationSocket.emit('task-changed', {
+                    projectId: currentProjectIndex,
+                    taskId: lastTask.id,
+                    task: lastTask,
+                    action: 'updated'
+                });
+            }
+        }
+    };
+    
+    // ============================================
+    // 10. INICIALIZACIÓN
+    // ============================================
+    
+    function initialize() {
+        console.log('🚀 Inicializando Sistema de Colaboración...');
+        
+        // Procesar invitación pendiente
+        window.processInvitation();
+        
+        // Iniciar WebSocket colaborativo
+        setTimeout(() => {
+            window.initCollaborationWebSocket();
+        }, 2000);
+        
+        // Sobrescribir selectProject para unirse a salas de proyectos
+        const originalSelectProject = window.selectProject;
+        window.selectProject = function(index) {
+            if (originalSelectProject) originalSelectProject(index);
+            
+            if (window.collaborationSocket && window.collaborationSocket.connected) {
+                window.collaborationSocket.emit('join-project-room', index);
+            }
+        };
+        
+        console.log('✅ Sistema de Colaboración inicializado correctamente');
+    }
+    
+    // Ejecutar inicialización
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
+    
+})();
