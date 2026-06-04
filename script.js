@@ -70062,13 +70062,12 @@ console.log('📌 Ahora prueba: openInviteModal(0)');
 
 
 // ============================================
-// FUNCIÓN CORREGIDA PARA CARGAR PROYECTOS
+// FUNCIÓN CORREGIDA PARA CARGAR PROYECTOS (USA EL ENDPOINT CORRECTO)
 // ============================================
 
 async function cargarProyectosDelBackend() {
     console.log('🚀 Cargando proyectos desde backend...');
     const token = localStorage.getItem('authToken');
-    const clienteId = localStorage.getItem('clienteId');
     
     if (!token) {
         console.error('❌ No hay token');
@@ -70076,60 +70075,76 @@ async function cargarProyectosDelBackend() {
     }
     
     try {
-        // Intentar diferentes endpoints
-        let proyectosData = null;
-        
-        // Endpoint 1: Obtener documento completo
-        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects/cliente/${clienteId}`, {
+        // 🔥 USAR EL ENDPOINT QUE SÍ FUNCIONA (EL QUE DEVUELVE collaboratedProjects)
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        if (response.ok) {
-            const data = await response.json();
-            proyectosData = data.projects || data;
-        } else {
-            // Endpoint 2: Buscar directamente en MongoDB (requiere endpoint)
-            console.log('Endpoint no encontrado, usando datos locales...');
-        }
+        const data = await response.json();
+        console.log('📡 Respuesta del backend:', data);
         
-        // Si no se pudo obtener del backend, usar lo que hay en localStorage
-        if (!proyectosData || proyectosData.length === 0) {
-            const localProjects = localStorage.getItem('projects');
-            if (localProjects) {
-                proyectosData = JSON.parse(localProjects);
-            }
-        }
-        
-        // Actualizar variable global
-        if (proyectosData && Array.isArray(proyectosData)) {
-            window.projects = proyectosData;
-            console.log(`✅ ${proyectosData.length} proyectos cargados:`, proyectosData.map(p => p.name));
+        if (data.success) {
+            // Combinar proyectos propios + colaborados
+            const proyectosPropios = data.ownedProjects || [];
+            const proyectosColaborados = data.collaboratedProjects || [];
+            const todosProyectos = [...proyectosPropios, ...proyectosColaborados];
+            
+            console.log(`📊 Proyectos propios: ${proyectosPropios.length}`);
+            console.log(`📊 Proyectos colaborados: ${proyectosColaborados.length}`);
+            console.log(`✅ Total proyectos: ${todosProyectos.length}`);
+            console.log('Proyectos:', todosProyectos.map(p => p.name));
+            
+            // Actualizar variable global
+            window.projects = todosProyectos;
             
             // Guardar en localStorage
-            localStorage.setItem('projects', JSON.stringify(proyectosData));
+            localStorage.setItem('projects', JSON.stringify(todosProyectos));
             
-            // Renderizar
+            // Renderizar la interfaz
             if (typeof renderProjects === 'function') {
                 renderProjects();
+            } else {
+                // Render manual si no existe renderProjects
+                const container = document.getElementById('projectList');
+                if (container) {
+                    container.innerHTML = '';
+                    todosProyectos.forEach((p, idx) => {
+                        const li = document.createElement('li');
+                        li.textContent = p.name;
+                        li.style.padding = '10px';
+                        li.style.margin = '5px';
+                        li.style.background = '#1e293b';
+                        li.style.borderRadius = '8px';
+                        li.style.cursor = 'pointer';
+                        li.onclick = () => {
+                            if (typeof selectProject === 'function') selectProject(idx);
+                        };
+                        container.appendChild(li);
+                    });
+                }
             }
             
             // Seleccionar primer proyecto si hay
-            if (proyectosData.length > 0 && typeof selectProject === 'function') {
+            if (todosProyectos.length > 0 && typeof selectProject === 'function') {
                 selectProject(0);
             }
+            
+            return todosProyectos;
         } else {
-            console.log('⚠️ No hay proyectos para este usuario');
+            console.error('❌ Error en respuesta:', data.error);
             window.projects = [];
             if (typeof renderProjects === 'function') renderProjects();
         }
         
     } catch (error) {
         console.error('❌ Error cargando proyectos:', error);
+        window.projects = [];
+        if (typeof renderProjects === 'function') renderProjects();
     }
 }
 
-// Reemplazar la función original
+// Reemplazar la función original de carga
 window.loadProjects = cargarProyectosDelBackend;
 
-// Ejecutar ahora
+// Ejecutar automáticamente al cargar
 cargarProyectosDelBackend();
