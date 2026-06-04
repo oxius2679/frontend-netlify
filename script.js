@@ -1,3 +1,7 @@
+
+
+
+
 // ============================================
 // 🎯 PROCESAR INVITACIÓN PENDIENTE DESPUÉS DEL LOGIN
 // ============================================
@@ -38424,29 +38428,37 @@ if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 // RENDERIZAR PROYECTOS CON FILTRO DE PERMISOS
 // ============================================
 function renderProjects() {
-    const projectListContainer = document.getElementById('projectList');
-    if (!projectListContainer) {
-        console.log('⚠️ No se encontró projectListContainer');
-        return;
+    const userEmail = localStorage.getItem('userEmail');
+    const esAdmin = userEmail === 'ajackson2672@gmail.com';
+    
+    // Obtener proyectos filtrados directamente del sistema de colaboradores
+    let proyectosAMostrar = [];
+    
+    if (esAdmin) {
+        proyectosAMostrar = [...projects];
+    } else {
+        // Usar los proyectos que ya están filtrados en la variable global projects
+        // (ColaboradoresAPI ya los filtró al cargar)
+        proyectosAMostrar = [...projects];
     }
     
-    // 🔥 USAR proyectos FILTRADOS en lugar de projects directamente
-    const proyectosPermitidos = getProyectosPermitidos();
-    console.log(`📋 Proyectos a renderizar: ${proyectosPermitidos.length}`);
+    const projectListContainer = document.getElementById('projectList');
+    if (!projectListContainer) return;
     
     projectListContainer.innerHTML = '';
     
-    if (proyectosPermitidos.length === 0) {
+    if (proyectosAMostrar.length === 0) {
         projectListContainer.innerHTML = `
             <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
                 <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
                 No tienes proyectos
+                ${!esAdmin ? '<br><small>💡 Pídele al administrador que te invite</small>' : ''}
             </li>
         `;
         return;
     }
     
-    proyectosPermitidos.forEach((project, idx) => {
+    proyectosAMostrar.forEach((project, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
         li.dataset.projectIndex = idx;
@@ -38475,16 +38487,9 @@ function renderProjects() {
         projectListContainer.appendChild(li);
     });
     
-    // Actualizar también window.projects para mantener consistencia
-    window.projects = proyectosPermitidos;
-    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
-    
-    console.log(`✅ Renderizados ${proyectosPermitidos.length} proyectos en el menú`);
-    
-    // Actualizar estilos del proyecto seleccionado
+    console.log(`✅ Renderizados ${proyectosAMostrar.length} proyectos en el menú`);
     setTimeout(updateProjectSelectionStyles, 100);
 }
-
 // Función auxiliar para estilos
 function updateProjectSelectionStyles() {
     document.querySelectorAll('.project-item').forEach(item => {
@@ -38503,8 +38508,17 @@ function updateProjectSelectionStyles() {
 function selectProject(index) {
     console.log('🧭 selectProject llamado con índice:', index);
     
-    // 🔥 Usar proyectos filtrados en lugar de projects directamente
-    const proyectosPermitidos = getProyectosPermitidos();
+    // 🔥 USAR proyectos filtrados en lugar de projects directamente
+    const userEmail = localStorage.getItem('userEmail');
+    const esAdmin = userEmail === 'ajackson2672@gmail.com';
+    
+    let proyectosPermitidos = projects;
+    
+    if (!esAdmin && window.ColaboradoresAPI) {
+        const misProyectos = window.ColaboradoresAPI.misProyectos(userEmail);
+        const nombresPermitidos = misProyectos.map(p => p.nombre);
+        proyectosPermitidos = projects.filter(p => nombresPermitidos.includes(p.name));
+    }
     
     // Validar índice
     if (index < 0 || index >= proyectosPermitidos.length) {
@@ -38514,9 +38528,6 @@ function selectProject(index) {
     
     const project = proyectosPermitidos[index];
     if (!project) return;
-
-    // 🔥 Verificar acceso (opcional, ya lo hace getProyectosPermitidos)
-    const clienteId = localStorage.getItem('clienteId');
     
     // Actualizar índice actual (este es el índice dentro de proyectosPermitidos)
     currentProjectIndex = index;
@@ -38526,10 +38537,8 @@ function selectProject(index) {
     
     // 🔥 SOCKET → unir al proyecto
     if (window.tiempoRealSocket && currentProjectIndex !== undefined) {
-        console.log("🔌 Uniéndose a la sala del proyecto índice:", currentProjectIndex);
         window.tiempoRealSocket.emit("join-project", currentProjectIndex);
     }
-
     // 📝 Actualizar nombres del proyecto en todas las vistas
     const projectNameDisplay = document.getElementById('projectName');
     const projectNameList = document.getElementById('projectNameList');
@@ -69038,10 +69047,37 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
+// Botón Invitar
+document.getElementById('invitarBtn')?.addEventListener('click', () => {
+    const proyecto = projects[currentProjectIndex];
+    if (!proyecto) return alert('Selecciona un proyecto');
+    const email = prompt('Email del colaborador:');
+    if (!email) return;
+    
+    // Guardar en localStorage qué proyectos puede ver cada usuario
+    let permisos = JSON.parse(localStorage.getItem('permisos_proyectos') || '{}');
+    if (!permisos[email]) permisos[email] = [];
+    if (!permisos[email].includes(proyecto.name)) permisos[email].push(proyecto.name);
+    localStorage.setItem('permisos_proyectos', JSON.stringify(permisos));
+    
+    alert(`✅ ${email} ahora puede ver "${proyecto.name}"\n\nAl recargar su sesión, solo verá este proyecto.`);
+});
 
+// Filtrar proyectos para usuarios NO admin al cargar
+const emailActual = localStorage.getItem('userEmail');
+const esAdmin = emailActual === 'ajackson2672@gmail.com';
 
-
-
-
-
+if (!esAdmin) {
+    const permisos = JSON.parse(localStorage.getItem('permisos_proyectos') || '{}');
+    const proyectosPermitidos = permisos[emailActual] || [];
+    
+    if (proyectosPermitidos.length > 0) {
+        const proyectosFiltrados = projects.filter(p => proyectosPermitidos.includes(p.name));
+        if (proyectosFiltrados.length !== projects.length) {
+            projects.length = 0;
+            projects.push(...proyectosFiltrados);
+            if (typeof renderProjects === 'function') renderProjects();
+        }
+    }
+}
 
