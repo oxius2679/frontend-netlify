@@ -70062,89 +70062,86 @@ console.log('📌 Ahora prueba: openInviteModal(0)');
 
 
 // ============================================
-// FUNCIÓN CORREGIDA PARA CARGAR PROYECTOS (USA EL ENDPOINT CORRECTO)
+// CARGA AUTOMÁTICA DE PROYECTOS (AL INICIO)
 // ============================================
 
-async function cargarProyectosDelBackend() {
-    console.log('🚀 Cargando proyectos desde backend...');
-    const token = localStorage.getItem('authToken');
+(async function() {
+    console.log('🚀 Inicializando carga automática de proyectos...');
     
-    if (!token) {
-        console.error('❌ No hay token');
-        return;
-    }
-    
-    try {
-        // 🔥 USAR EL ENDPOINT QUE SÍ FUNCIONA (EL QUE DEVUELVE collaboratedProjects)
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await response.json();
-        console.log('📡 Respuesta del backend:', data);
-        
-        if (data.success) {
-            // Combinar proyectos propios + colaborados
-            const proyectosPropios = data.ownedProjects || [];
-            const proyectosColaborados = data.collaboratedProjects || [];
-            const todosProyectos = [...proyectosPropios, ...proyectosColaborados];
-            
-            console.log(`📊 Proyectos propios: ${proyectosPropios.length}`);
-            console.log(`📊 Proyectos colaborados: ${proyectosColaborados.length}`);
-            console.log(`✅ Total proyectos: ${todosProyectos.length}`);
-            console.log('Proyectos:', todosProyectos.map(p => p.name));
-            
-            // Actualizar variable global
-            window.projects = todosProyectos;
-            
-            // Guardar en localStorage
-            localStorage.setItem('projects', JSON.stringify(todosProyectos));
-            
-            // Renderizar la interfaz
-            if (typeof renderProjects === 'function') {
-                renderProjects();
-            } else {
-                // Render manual si no existe renderProjects
-                const container = document.getElementById('projectList');
-                if (container) {
-                    container.innerHTML = '';
-                    todosProyectos.forEach((p, idx) => {
-                        const li = document.createElement('li');
-                        li.textContent = p.name;
-                        li.style.padding = '10px';
-                        li.style.margin = '5px';
-                        li.style.background = '#1e293b';
-                        li.style.borderRadius = '8px';
-                        li.style.cursor = 'pointer';
-                        li.onclick = () => {
-                            if (typeof selectProject === 'function') selectProject(idx);
-                        };
-                        container.appendChild(li);
-                    });
-                }
-            }
-            
-            // Seleccionar primer proyecto si hay
-            if (todosProyectos.length > 0 && typeof selectProject === 'function') {
-                selectProject(0);
-            }
-            
-            return todosProyectos;
-        } else {
-            console.error('❌ Error en respuesta:', data.error);
-            window.projects = [];
-            if (typeof renderProjects === 'function') renderProjects();
+    async function cargarProyectosCorrectamente() {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.log('⏳ Esperando token...');
+            return false;
         }
         
-    } catch (error) {
-        console.error('❌ Error cargando proyectos:', error);
-        window.projects = [];
-        if (typeof renderProjects === 'function') renderProjects();
+        try {
+            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const proyectosPropios = data.ownedProjects || [];
+                const proyectosColaborados = data.collaboratedProjects || [];
+                const todosProyectos = [...proyectosPropios, ...proyectosColaborados];
+                
+                console.log(`✅ Cargados ${todosProyectos.length} proyectos:`, todosProyectos.map(p => p.name));
+                
+                window.projects = todosProyectos;
+                localStorage.setItem('projects', JSON.stringify(todosProyectos));
+                
+                // Renderizar proyectos
+                if (typeof renderProjects === 'function') {
+                    renderProjects();
+                } else {
+                    const container = document.getElementById('projectList');
+                    if (container && todosProyectos.length > 0) {
+                        container.innerHTML = '';
+                        todosProyectos.forEach((p, idx) => {
+                            const li = document.createElement('li');
+                            li.textContent = p.name;
+                            li.style.padding = '12px 15px';
+                            li.style.margin = '8px';
+                            li.style.background = '#1e293b';
+                            li.style.borderRadius = '8px';
+                            li.style.cursor = 'pointer';
+                            li.style.color = 'white';
+                            li.onclick = () => {
+                                if (typeof selectProject === 'function') {
+                                    selectProject(idx);
+                                }
+                            };
+                            container.appendChild(li);
+                        });
+                    }
+                }
+                
+                return true;
+            }
+        } catch (error) {
+            console.error('Error cargando proyectos:', error);
+        }
+        return false;
     }
-}
-
-// Reemplazar la función original de carga
-window.loadProjects = cargarProyectosDelBackend;
-
-// Ejecutar automáticamente al cargar
-cargarProyectosDelBackend();
+    
+    // Esperar a que el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(cargarProyectosCorrectamente, 500);
+        });
+    } else {
+        setTimeout(cargarProyectosCorrectamente, 500);
+    }
+    
+    // También escuchar cambios de token (para cuando inicia sesión)
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        originalSetItem.apply(this, arguments);
+        if (key === 'authToken' && value) {
+            console.log('🔑 Token detectado, cargando proyectos...');
+            setTimeout(cargarProyectosCorrectamente, 500);
+        }
+    };
+})();
