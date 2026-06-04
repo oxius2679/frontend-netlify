@@ -69047,37 +69047,3 @@ if (!document.getElementById('notif-slack-styles')) {
 
 
 
-// Botón Invitar
-document.getElementById('invitarBtn')?.addEventListener('click', () => {
-    const proyecto = projects[currentProjectIndex];
-    if (!proyecto) return alert('Selecciona un proyecto');
-    const email = prompt('Email del colaborador:');
-    if (!email) return;
-    
-    // Guardar en localStorage qué proyectos puede ver cada usuario
-    let permisos = JSON.parse(localStorage.getItem('permisos_proyectos') || '{}');
-    if (!permisos[email]) permisos[email] = [];
-    if (!permisos[email].includes(proyecto.name)) permisos[email].push(proyecto.name);
-    localStorage.setItem('permisos_proyectos', JSON.stringify(permisos));
-    
-    alert(`✅ ${email} ahora puede ver "${proyecto.name}"\n\nAl recargar su sesión, solo verá este proyecto.`);
-});
-
-// Filtrar proyectos para usuarios NO admin al cargar
-const emailActual = localStorage.getItem('userEmail');
-const esAdmin = emailActual === 'ajackson2672@gmail.com';
-
-if (!esAdmin) {
-    const permisos = JSON.parse(localStorage.getItem('permisos_proyectos') || '{}');
-    const proyectosPermitidos = permisos[emailActual] || [];
-    
-    if (proyectosPermitidos.length > 0) {
-        const proyectosFiltrados = projects.filter(p => proyectosPermitidos.includes(p.name));
-        if (proyectosFiltrados.length !== projects.length) {
-            projects.length = 0;
-            projects.push(...proyectosFiltrados);
-            if (typeof renderProjects === 'function') renderProjects();
-        }
-    }
-}
-
