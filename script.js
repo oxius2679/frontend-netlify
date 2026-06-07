@@ -38711,12 +38711,11 @@ function renderProjects() {
         `;
         
         li.innerHTML = `
-            <span style="color: white; font-weight: 500;">${project.name}</span>
-            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${displayIndex})">⋮</div>
-            <div class="project-context-menu" id="project-menu-${displayIndex}" style="display: none; position: absolute; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 1000;">
+            <span style="color: white; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${project.name}</span>
+            <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${displayIndex})" style="padding: 5px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; flex-shrink: 0;">⋮</div>
+            <div class="project-context-menu" id="project-menu-${displayIndex}" style="display: none; position: fixed; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 10000; min-width: 120px;">
                 <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${displayIndex})" style="padding: 8px 15px; cursor: pointer;">Editar</div>
                 <div class="project-context-menu-item delete" onclick="deleteProjectFromMenu(${displayIndex})" style="padding: 8px 15px; cursor: pointer; color: #ef4444;">Eliminar</div>
-                <div class="project-context-menu-item invite" onclick="openInviteModal(${displayIndex})" style="padding: 8px 15px; cursor: pointer; color: #10b981;">➕ Invitar</div>
             </div>
         `;
         
@@ -38726,7 +38725,19 @@ function renderProjects() {
     
     console.log(`✅ Renderizados ${proyectosAMostrar.length} proyectos en el menú`);
     setTimeout(updateProjectSelectionStyles, 100);
+    
+    // ========== 🔥 SOLO ESTO SE AGREGA AL FINAL ==========
+    setTimeout(() => {
+        document.querySelectorAll('.project-context-menu').forEach(menu => {
+            if (menu.parentElement !== document.body) {
+                document.body.appendChild(menu);
+            }
+        });
+    }, 50);
+    // ========== FIN DE LO AGREGADO ==========
 }
+
+
 // Función auxiliar para estilos
 function updateProjectSelectionStyles() {
     document.querySelectorAll('.project-item').forEach(item => {
@@ -42525,27 +42536,42 @@ function getViewName(view) {
         'timeAllocation': 'Asignación de Horas' // Agrega esta línea
     };
     return names[view] || view;
-}// Mostrar/ocultar menú contextual de proyectos
-function toggleProjectMenu(event, projectIndex) {
-  event.stopPropagation();
-  
-  // Cerrar todos los otros menús
-  document.querySelectorAll('.project-context-menu').forEach(menu => {
-    if (menu.id !== `project-menu-${projectIndex}`) {
-      menu.classList.remove('show');
-    }
-  });
-  
-  // Alternar el menú actual
-  const menu = document.getElementById(`project-menu-${projectIndex}`);
-  if (menu) {
-    menu.classList.toggle('show');
-    // Posicionar el menú
-    const rect = event.target.getBoundingClientRect();
-    menu.style.left = `${rect.left}px`;
-    menu.style.top = `${rect.bottom}px`;
-  }
 }
+
+
+// Mostrar/ocultar menú contextual de proyectos
+function toggleProjectMenu(event, projectIndex) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById(`project-menu-${projectIndex}`);
+    if (!menu) return;
+    
+    // Verificar si el menú ya está visible
+    const isVisible = menu.style.display === 'block';
+    
+    // CERRAR TODOS los menús primero
+    document.querySelectorAll('.project-context-menu').forEach(m => {
+        m.style.display = 'none';
+    });
+    
+    // Si NO estaba visible, abrir este
+    if (!isVisible) {
+        menu.style.display = 'block';
+        const rect = event.target.getBoundingClientRect();
+        menu.style.left = `${rect.right - 130}px`;
+        menu.style.top = `${rect.bottom + 5}px`;
+        
+        // Cerrar al hacer clic en cualquier parte
+        const closeMenu = (e) => {
+            if (!menu.contains(e.target) && !event.target.contains(e.target)) {
+                menu.style.display = 'none';
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
+    }
+}
+
 
 // Editar proyecto desde el menú contextual
 function editProjectFromMenu(projectIndex) {
