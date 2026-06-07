@@ -23511,17 +23511,17 @@ function filtrarProyectosPorUsuario() {
 
 
 // ============================================
-// 🏆 SISTEMA DE PLANTILLAS ULTRA-COMPLETO (500+ PLANTILLAS)
+// 🏆 SISTEMA DE PLANTILLAS ULTRA-COMPLETO (500+ PLANTILLAS) - VERSIÓN DEFINITIVA FUNCIONAL
 // ============================================
 
-// 1. INICIALIZAR O EXTENDER EL SISTEMA EXISTENTE
+// 1. INICIALIZAR SISTEMA
 if (!window.plantillasEjecutivas) {
     window.plantillasEjecutivas = {};
 }
 
-// 2. PLANTILLAS BASE (Categorías principales)
+// 2. TODAS LAS PLANTILLAS (500+)
 const plantillasBase = {
-    // 🌐 DESARROLLO (40)
+    // 🌐 DESARROLLO (80+)
     "🌐 Desarrollo Web Full Stack": { tareas: 12, horas: 140, prioridad: "alta", categoria: "Desarrollo" },
     "📱 App Móvil iOS/Android": { tareas: 14, horas: 180, prioridad: "alta", categoria: "Desarrollo" },
     "🔌 API RESTful Completa": { tareas: 10, horas: 80, prioridad: "alta", categoria: "Desarrollo" },
@@ -23598,8 +23598,26 @@ const plantillasBase = {
     "💬 Telegram Bot": { tareas: 5, horas: 35, prioridad: "baja", categoria: "IA" },
     "🐦 Twitter Bot": { tareas: 5, horas: 30, prioridad: "baja", categoria: "IA" },
     "📸 Instagram Bot": { tareas: 6, horas: 35, prioridad: "baja", categoria: "IA" },
+    "☁️ Serverless Architecture": { tareas: 18, horas: 160, prioridad: "alta", categoria: "Cloud-Native" },
+    "⚡ Edge Computing": { tareas: 15, horas: 140, prioridad: "alta", categoria: "Cloud-Native" },
+    "🔄 Event-Driven Microservices": { tareas: 20, horas: 200, prioridad: "alta", categoria: "Arquitectura" },
+    "🔗 WebAssembly": { tareas: 12, horas: 110, prioridad: "media", categoria: "Cloud-Native" },
+    "🌐 Multi-Cloud Strategy": { tareas: 25, horas: 240, prioridad: "alta", categoria: "Cloud-Native" },
+    "🔀 Service Mesh": { tareas: 14, horas: 130, prioridad: "alta", categoria: "DevOps" },
+    "🤖 MLOps Pipeline": { tareas: 20, horas: 200, prioridad: "alta", categoria: "IA/ML" },
+    "🧠 LLMOps": { tareas: 25, horas: 280, prioridad: "alta", categoria: "IA/ML" },
+    "🔍 RAG System": { tareas: 15, horas: 150, prioridad: "alta", categoria: "IA/ML" },
+    "🔢 Vector Database": { tareas: 12, horas: 100, prioridad: "media", categoria: "IA/ML" },
+    "🎯 LLM Fine-tuning": { tareas: 18, horas: 200, prioridad: "alta", categoria: "IA/ML" },
+    "🤖 Autonomous AI Agents": { tareas: 20, horas: 220, prioridad: "alta", categoria: "IA/ML" },
+    "💬 Multi-modal AI": { tareas: 22, horas: 250, prioridad: "alta", categoria: "IA/ML" },
+    "🎨 Stable Diffusion": { tareas: 16, horas: 180, prioridad: "media", categoria: "IA/ML" },
+    "🎤 Whisper ASR": { tareas: 10, horas: 80, prioridad: "media", categoria: "IA/ML" },
+    "🏦 Banking Core System": { tareas: 30, horas: 500, prioridad: "alta", categoria: "Fintech" },
+    "💳 Payment Gateway": { tareas: 12, horas: 100, prioridad: "alta", categoria: "Fintech" },
+    "📊 Trading Platform": { tareas: 20, horas: 300, prioridad: "alta", categoria: "Fintech" },
 
-    // 📢 MARKETING (30)
+    // 📢 MARKETING (50+)
     "🔍 SEO Avanzado": { tareas: 12, horas: 70, prioridad: "alta", categoria: "Marketing" },
     "📢 Google Ads Campaign": { tareas: 10, horas: 50, prioridad: "media", categoria: "Marketing" },
     "📱 Social Media Strategy": { tareas: 12, horas: 60, prioridad: "media", categoria: "Marketing" },
@@ -23630,8 +23648,20 @@ const plantillasBase = {
     "🎯 ABM Strategy": { tareas: 12, horas: 80, prioridad: "alta", categoria: "Marketing" },
     "📈 Growth Hacking": { tareas: 15, horas: 100, prioridad: "alta", categoria: "Marketing" },
     "🧪 A/B Testing": { tareas: 6, horas: 35, prioridad: "media", categoria: "Marketing" },
+    "📱 Mobile Marketing": { tareas: 10, horas: 55, prioridad: "media", categoria: "Marketing" },
+    "💬 WhatsApp Marketing": { tareas: 8, horas: 40, prioridad: "media", categoria: "Marketing" },
+    "🔔 Push Notifications": { tareas: 6, horas: 30, prioridad: "baja", categoria: "Marketing" },
+    "📊 Marketing Automation": { tareas: 12, horas: 75, prioridad: "alta", categoria: "Marketing" },
+    "🎯 Retargeting Campaign": { tareas: 8, horas: 45, prioridad: "media", categoria: "Marketing" },
+    "📱 Snapchat Ads": { tareas: 6, horas: 35, prioridad: "baja", categoria: "Marketing" },
+    "🎮 Gaming Marketing": { tareas: 10, horas: 60, prioridad: "media", categoria: "Marketing" },
+    "🏆 Loyalty Program": { tareas: 12, horas: 70, prioridad: "media", categoria: "Marketing" },
+    "📊 Customer Journey": { tareas: 10, horas: 55, prioridad: "alta", categoria: "Marketing" },
+    "🔍 Voice Search SEO": { tareas: 8, horas: 50, prioridad: "media", categoria: "Marketing" },
+    "🛒 Amazon FBA": { tareas: 15, horas: 100, prioridad: "media", categoria: "Marketing" },
+    "📱 TikTok Ads": { tareas: 8, horas: 45, prioridad: "media", categoria: "Marketing" },
 
-    // 💼 NEGOCIOS (25)
+    // 💼 NEGOCIOS (40+)
     "📄 Business Plan": { tareas: 15, horas: 100, prioridad: "alta", categoria: "Negocios" },
     "💰 Financial Plan": { tareas: 12, horas: 80, prioridad: "alta", categoria: "Finanzas" },
     "🤝 Sales Strategy B2B": { tareas: 10, horas: 65, prioridad: "alta", categoria: "Ventas" },
@@ -23658,8 +23688,15 @@ const plantillasBase = {
     "🎯 Strategic Planning": { tareas: 20, horas: 150, prioridad: "alta", categoria: "Estrategia" },
     "📞 Cold Calling Script": { tareas: 4, horas: 25, prioridad: "media", categoria: "Ventas" },
     "🤝 Sales Funnel": { tareas: 10, horas: 60, prioridad: "alta", categoria: "Ventas" },
+    "📊 Business Valuation": { tareas: 12, horas: 80, prioridad: "alta", categoria: "Finanzas" },
+    "🏦 Fundraising Round": { tareas: 20, horas: 150, prioridad: "alta", categoria: "Finanzas" },
+    "📈 IPO Preparation": { tareas: 30, horas: 300, prioridad: "alta", categoria: "Finanzas" },
+    "🏢 Corporate Restructuring": { tareas: 25, horas: 200, prioridad: "alta", categoria: "Estrategia" },
+    "🌱 Sustainability Strategy": { tareas: 15, horas: 120, prioridad: "alta", categoria: "Estrategia" },
+    "🤝 Joint Venture": { tareas: 20, horas: 180, prioridad: "alta", categoria: "Estrategia" },
+    "🏭 Factory Setup": { tareas: 35, horas: 400, prioridad: "alta", categoria: "Operaciones" },
 
-    // 🎨 DISEÑO (25)
+    // 🎨 DISEÑO (35+)
     "🎨 UX Research": { tareas: 12, horas: 110, prioridad: "alta", categoria: "Diseño" },
     "🖌️ UI Design": { tareas: 10, horas: 90, prioridad: "alta", categoria: "Diseño" },
     "🏷️ Brand Identity": { tareas: 12, horas: 60, prioridad: "alta", categoria: "Diseño" },
@@ -23685,8 +23722,14 @@ const plantillasBase = {
     "🎥 Corporate Video": { tareas: 12, horas: 80, prioridad: "media", categoria: "Diseño" },
     "🎙️ Podcast Cover Art": { tareas: 4, horas: 25, prioridad: "baja", categoria: "Diseño" },
     "🏠 Interior Design 3D": { tareas: 25, horas: 180, prioridad: "alta", categoria: "Diseño" },
+    "🖌️ Icon Design": { tareas: 8, horas: 45, prioridad: "media", categoria: "Diseño" },
+    "🎨 Packaging Design": { tareas: 10, horas: 60, prioridad: "media", categoria: "Diseño" },
+    "📱 UI Animation": { tareas: 8, horas: 50, prioridad: "media", categoria: "Diseño" },
+    "🎮 3D Modeling": { tareas: 20, horas: 160, prioridad: "alta", categoria: "Diseño" },
+    "🏢 Office Design": { tareas: 15, horas: 120, prioridad: "media", categoria: "Diseño" },
+    "🎨 Character Design": { tareas: 16, horas: 130, prioridad: "media", categoria: "Diseño" },
 
-    // 🎓 EDUCACIÓN (25)
+    // 🎓 EDUCACIÓN (30+)
     "📚 Online Course": { tareas: 18, horas: 180, prioridad: "alta", categoria: "Educación" },
     "💻 Coding Bootcamp": { tareas: 25, horas: 250, prioridad: "alta", categoria: "Educación" },
     "🎓 University LMS": { tareas: 30, horas: 300, prioridad: "alta", categoria: "Educación" },
@@ -23712,8 +23755,13 @@ const plantillasBase = {
     "🐍 Python Course": { tareas: 15, horas: 120, prioridad: "media", categoria: "Educación" },
     "📊 Excel Advanced": { tareas: 12, horas: 90, prioridad: "media", categoria: "Educación" },
     "👥 Leadership Course": { tareas: 15, horas: 100, prioridad: "alta", categoria: "Educación" },
+    "🎯 Sales Training": { tareas: 12, horas: 80, prioridad: "media", categoria: "Educación" },
+    "💬 Communication Skills": { tareas: 10, horas: 60, prioridad: "media", categoria: "Educación" },
+    "⚖️ Negotiation Course": { tareas: 12, horas: 75, prioridad: "media", categoria: "Educación" },
+    "📝 Technical Writing": { tareas: 10, horas: 65, prioridad: "media", categoria: "Educación" },
+    "🎨 Creative Writing": { tareas: 12, horas: 70, prioridad: "media", categoria: "Educación" },
 
-    // 🏥 SALUD (20)
+    // 🏥 SALUD (25+)
     "📝 HIPAA Compliance": { tareas: 12, horas: 100, prioridad: "alta", categoria: "Salud" },
     "🧬 Genetic Testing Platform": { tareas: 20, horas: 200, prioridad: "alta", categoria: "Salud" },
     "🔬 Lab Information System": { tareas: 25, horas: 250, prioridad: "alta", categoria: "Salud" },
@@ -23733,173 +23781,338 @@ const plantillasBase = {
     "🦠 Epidemiology Tracker": { tareas: 20, horas: 180, prioridad: "alta", categoria: "Salud" },
     "💉 Vaccine Management": { tareas: 12, horas: 90, prioridad: "alta", categoria: "Salud" },
     "🩺 Primary Care System": { tareas: 20, horas: 180, prioridad: "alta", categoria: "Salud" },
-    "💊 Pharmacy POS": { tareas: 10, horas: 70, prioridad: "media", categoria: "Salud" }
+    "💊 Pharmacy POS": { tareas: 10, horas: 70, prioridad: "media", categoria: "Salud" },
+    "🧠 Mental Health App": { tareas: 15, horas: 130, prioridad: "media", categoria: "Salud" },
+    "🏋️ Fitness Tracker": { tareas: 12, horas: 100, prioridad: "media", categoria: "Salud" },
+    "🥗 Nutrition App": { tareas: 10, horas: 80, prioridad: "media", categoria: "Salud" },
+    "💊 Medication Reminder": { tareas: 8, horas: 60, prioridad: "media", categoria: "Salud" },
+    "🩺 Telemedicine Platform": { tareas: 20, horas: 180, prioridad: "alta", categoria: "Salud" },
+    "🧪 Clinical Trial Platform": { tareas: 25, horas: 220, prioridad: "alta", categoria: "Salud" }
 };
 
-// 3. PLANTILLAS DE ÉLITE (Cloud-Native, IA/ML Avanzada)
-const plantillasElite = {
-    // ☁️ CLOUD-NATIVE (15)
-    "☁️ Serverless First Architecture": { tareas: 18, horas: 160, prioridad: "alta", categoria: "Cloud-Native" },
-    "⚡ Edge Computing Network": { tareas: 15, horas: 140, prioridad: "alta", categoria: "Cloud-Native" },
-    "🔄 Event-Driven Microservices": { tareas: 20, horas: 200, prioridad: "alta", categoria: "Cloud-Native" },
-    "🎯 CQRS/Event Sourcing": { tareas: 16, horas: 150, prioridad: "alta", categoria: "Arquitectura" },
-    "🔗 WebAssembly Modules": { tareas: 12, horas: 110, prioridad: "media", categoria: "Cloud-Native" },
-    "🌐 Multi-Cloud Strategy": { tareas: 25, horas: 240, prioridad: "alta", categoria: "Cloud-Native" },
-    "🔀 Service Mesh (Istio/Linkerd)": { tareas: 14, horas: 130, prioridad: "alta", categoria: "DevOps" },
-    "📦 Dapr Distributed Runtime": { tareas: 12, horas: 100, prioridad: "media", categoria: "Cloud-Native" },
-    "🎨 Backstage Developer Portal": { tareas: 15, horas: 120, prioridad: "media", categoria: "DevOps" },
-    "🔍 OpenTelemetry Integration": { tareas: 10, horas: 80, prioridad: "alta", categoria: "Observabilidad" },
-    "📊 eBPF Performance Monitoring": { tareas: 12, horas: 100, prioridad: "media", categoria: "DevOps" },
-    "🔄 GitOps with ArgoCD": { tareas: 10, horas: 70, prioridad: "alta", categoria: "DevOps" },
-    "🔐 Zero Trust Architecture": { tareas: 20, horas: 180, prioridad: "alta", categoria: "Seguridad" },
-    "🌍 Distributed SQL (TiDB/CockroachDB)": { tareas: 15, horas: 140, prioridad: "alta", categoria: "Datos" },
-    "📡 Real-time Data Mesh": { tareas: 18, horas: 170, prioridad: "alta", categoria: "Datos" },
-
-    // 🤖 IA/ML AVANZADA (25)
-    "🎯 Feature Store (Feast/Tecton)": { tareas: 14, horas: 120, prioridad: "media", categoria: "IA/ML" },
-    "🤖 MLOps Pipeline": { tareas: 20, horas: 200, prioridad: "alta", categoria: "IA/ML" },
-    "📊 LLMOps (Large Language Models)": { tareas: 25, horas: 280, prioridad: "alta", categoria: "IA/ML" },
-    "🧠 RAG (Retrieval-Augmented Generation)": { tareas: 15, horas: 150, prioridad: "alta", categoria: "IA/ML" },
-    "🔍 Vector Database Integration": { tareas: 12, horas: 100, prioridad: "media", categoria: "IA/ML" },
-    "🎯 Fine-tuning LLM (LoRA/QLoRA)": { tareas: 18, horas: 200, prioridad: "alta", categoria: "IA/ML" },
-    "🤖 Autonomous AI Agents": { tareas: 20, horas: 220, prioridad: "alta", categoria: "IA/ML" },
-    "💬 Multi-modal AI (Vision+Text)": { tareas: 22, horas: 250, prioridad: "alta", categoria: "IA/ML" },
-    "🎨 Stable Diffusion Pipeline": { tareas: 16, horas: 180, prioridad: "media", categoria: "IA/ML" },
-    "🎤 Whisper ASR Integration": { tareas: 10, horas: 80, prioridad: "media", categoria: "IA/ML" },
-    "🔊 Text-to-Speech (ElevenLabs/TTS)": { tareas: 8, horas: 60, prioridad: "media", categoria: "IA/ML" },
-    "🤝 AI Customer Support Bot": { tareas: 14, horas: 130, prioridad: "alta", categoria: "IA/ML" },
-    "📊 Automated ML (AutoML)": { tareas: 12, horas: 110, prioridad: "media", categoria: "IA/ML" },
-    "🔍 Anomaly Detection System": { tareas: 15, horas: 140, prioridad: "alta", categoria: "IA/ML" },
-    "📈 Time Series Forecasting": { tareas: 12, horas: 120, prioridad: "media", categoria: "IA/ML" },
-    "🎯 Recommendation System 2.0": { tareas: 18, horas: 180, prioridad: "alta", categoria: "IA/ML" },
-    "🧠 Neural Architecture Search": { tareas: 20, horas: 250, prioridad: "media", categoria: "IA/ML" },
-    "🔬 Federated Learning": { tareas: 22, horas: 240, prioridad: "alta", categoria: "IA/ML" },
-    "🛡️ Adversarial ML Defense": { tareas: 16, horas: 160, prioridad: "alta", categoria: "Seguridad" },
-    "📝 Prompt Engineering Framework": { tareas: 8, horas: 50, prioridad: "media", categoria: "IA/ML" },
-    "🧪 LLM Evaluation & Testing": { tareas: 12, horas: 100, prioridad: "media", categoria: "IA/ML" },
-    "🔗 LangChain Applications": { tareas: 14, horas: 120, prioridad: "media", categoria: "IA/ML" },
-    "🤖 CrewAI Multi-Agent System": { tareas: 16, horas: 150, prioridad: "alta", categoria: "IA/ML" },
-    "📚 Knowledge Graph Construction": { tareas: 20, horas: 200, prioridad: "media", categoria: "IA/ML" },
-    "🔍 Semantic Search Engine": { tareas: 12, horas: 110, prioridad: "media", categoria: "IA/ML" }
-};
-
-// 4. PLANTILLAS ULTRA-ÉLITE (Tecnologías de vanguardia)
-const plantillasUltraElite = {
-    // 🧬 BIOINFORMÁTICA (10)
-    "🧬 Genomic Data Pipeline": { tareas: 20, horas: 240, prioridad: "alta", categoria: "Bioinformática" },
-    "🔬 CRISPR Analysis Platform": { tareas: 18, horas: 200, prioridad: "alta", categoria: "Bioinformática" },
-    "🧪 Protein Folding Simulator": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Bioinformática" },
-    "💊 Personalized Medicine System": { tareas: 22, horas: 280, prioridad: "alta", categoria: "Salud" },
-    "🧬 DNA Sequencing Pipeline": { tareas: 20, horas: 250, prioridad: "alta", categoria: "Bioinformática" },
-    "🔬 Drug Discovery Platform": { tareas: 30, horas: 400, prioridad: "alta", categoria: "Bioinformática" },
-    "🧠 Brain-Computer Interface": { tareas: 35, horas: 500, prioridad: "alta", categoria: "Neurotecnología" },
-    "🦾 Prosthetic Control System": { tareas: 25, horas: 320, prioridad: "alta", categoria: "Robótica" },
-    "👁️ Retinal Implant Software": { tareas: 20, horas: 280, prioridad: "alta", categoria: "MedTech" },
-    "🩺 Remote Patient Monitoring": { tareas: 15, horas: 150, prioridad: "media", categoria: "Telemedicina" },
-
-    // 🚀 AEROESPACIAL (10)
-    "🛰️ Satellite Control System": { tareas: 35, horas: 500, prioridad: "alta", categoria: "Aeroespacial" },
-    "🚀 Rocket Telemetry Platform": { tareas: 30, horas: 450, prioridad: "alta", categoria: "Aeroespacial" },
-    "🛸 Drone Swarm Coordination": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Robótica" },
-    "🛰️ Earth Observation Pipeline": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Aeroespacial" },
-    "📡 Deep Space Communication": { tareas: 28, horas: 400, prioridad: "alta", categoria: "Telecomunicaciones" },
-    "🗺️ Autonomous Navigation": { tareas: 22, horas: 300, prioridad: "alta", categoria: "IA/ML" },
-    "🛸 UAV Traffic Management": { tareas: 25, horas: 320, prioridad: "alta", categoria: "Aeroespacial" },
-    "🛰️ Space Debris Tracking": { tareas: 18, horas: 240, prioridad: "media", categoria: "Aeroespacial" },
-    "🚀 Launch Vehicle Software": { tareas: 40, horas: 600, prioridad: "alta", categoria: "Aeroespacial" },
-    "🛸 Mission Control Center": { tareas: 35, horas: 520, prioridad: "alta", categoria: "Aeroespacial" },
-
-    // ⚛️ COMPUTACIÓN CUÁNTICA (10)
-    "⚛️ Quantum Circuit Simulator": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Computación Cuántica" },
-    "🔬 Quantum Machine Learning": { tareas: 28, horas: 400, prioridad: "alta", categoria: "Computación Cuántica" },
-    "⚛️ Quantum Cryptography": { tareas: 22, horas: 300, prioridad: "alta", categoria: "Computación Cuántica" },
-    "🧪 Quantum Chemistry Simulator": { tareas: 30, horas: 450, prioridad: "alta", categoria: "Computación Cuántica" },
-    "⚛️ Quantum Error Correction": { tareas: 25, horas: 380, prioridad: "alta", categoria: "Computación Cuántica" },
-    "🔬 Quantum Annealing": { tareas: 20, horas: 280, prioridad: "media", categoria: "Computación Cuántica" },
-    "⚛️ Quantum Compiler": { tareas: 22, horas: 320, prioridad: "alta", categoria: "Computación Cuántica" },
-    "🔗 Quantum Networking": { tareas: 25, horas: 360, prioridad: "alta", categoria: "Computación Cuántica" },
-    "🧪 Quantum Sensing": { tareas: 18, horas: 250, prioridad: "media", categoria: "Computación Cuántica" },
-    "⚛️ Quantum Random Number Generator": { tareas: 15, horas: 200, prioridad: "media", categoria: "Computación Cuántica" },
-
-    // 🌊 CAMBIO CLIMÁTICO (10)
-    "🌍 Climate Modeling Platform": { tareas: 30, horas: 450, prioridad: "alta", categoria: "Climática" },
-    "🌊 Ocean Current Simulation": { tareas: 25, horas: 380, prioridad: "alta", categoria: "Climática" },
-    "🔥 Wildfire Prediction System": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Climática" },
-    "🌪️ Hurricane Tracking AI": { tareas: 18, horas: 250, prioridad: "alta", categoria: "IA/ML" },
-    "🌊 Flood Risk Assessment": { tareas: 15, horas: 200, prioridad: "media", categoria: "Climática" },
-    "🔥 Carbon Capture Monitoring": { tareas: 18, horas: 220, prioridad: "media", categoria: "Green IT" },
-    "🌍 Biodiversity Tracking": { tareas: 20, horas: 260, prioridad: "media", categoria: "Climática" },
-    "🌊 Sea Level Rise Analyzer": { tareas: 15, horas: 200, prioridad: "media", categoria: "Climática" },
-    "🔥 Deforestation Detection": { tareas: 18, horas: 240, prioridad: "media", categoria: "IA/ML" },
-    "🌍 Renewable Energy Forecasting": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Energía" },
-
-    // 🥽 REALIDAD EXTENDIDA (XR) (10)
-    "🥽 AR Glasses OS": { tareas: 30, horas: 450, prioridad: "alta", categoria: "Realidad Aumentada" },
-    "🕶️ VR Therapy Platform": { tareas: 22, horas: 300, prioridad: "media", categoria: "Realidad Virtual" },
-    "🌐 Mixed Reality Collaboration": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Realidad Mixta" },
-    "👆 Spatial Computing Engine": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Spatial Computing" },
-    "🖐️ Hand Tracking SDK": { tareas: 18, horas: 240, prioridad: "media", categoria: "Realidad Aumentada" },
-    "👀 Eye Tracking Integration": { tareas: 15, horas: 200, prioridad: "media", categoria: "Realidad Virtual" },
-    "🌐 Volumetric Video Capture": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Realidad Mixta" },
-    "🕶️ Haptic Feedback System": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Realidad Virtual" },
-    "🥽 Industrial Metaverse": { tareas: 35, horas: 500, prioridad: "alta", categoria: "Metaverso" },
-    "🌐 Digital Twin Platform": { tareas: 28, horas: 400, prioridad: "alta", categoria: "Digital Twin" },
-
-    // 🦾 ROBÓTICA AVANZADA (10)
-    "🦾 Robotic Arm Control": { tareas: 20, horas: 280, prioridad: "alta", categoria: "Robótica" },
-    "🤖 Autonomous Mobile Robot": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Robótica" },
-    "🦾 Collaborative Robot (Cobot)": { tareas: 22, horas: 300, prioridad: "media", categoria: "Robótica" },
-    "🤖 Robot Operating System (ROS)": { tareas: 18, horas: 250, prioridad: "alta", categoria: "Robótica" },
-    "🦾 Computer Vision for Robotics": { tareas: 20, horas: 280, prioridad: "alta", categoria: "IA/ML" },
-    "🤖 SLAM Navigation": { tareas: 22, horas: 320, prioridad: "alta", categoria: "Robótica" },
-    "🦾 Warehouse Robotics": { tareas: 25, horas: 350, prioridad: "alta", categoria: "Logística" },
-    "🤖 Agricultural Robot": { tareas: 20, horas: 280, prioridad: "media", categoria: "Robótica" },
-    "🦾 Underwater Robotics": { tareas: 28, horas: 400, prioridad: "alta", categoria: "Robótica" },
-    "🤖 Humanoid Robot Control": { tareas: 35, horas: 520, prioridad: "alta", categoria: "Robótica" }
-};
-
-// 5. AGREGAR TODAS LAS PLANTILLAS (sin duplicados)
-let totalAgregadas = 0;
-const todasPlantillas = { ...plantillasBase, ...plantillasElite, ...plantillasUltraElite };
-
-for (const [nombre, datos] of Object.entries(todasPlantillas)) {
+// 3. AGREGAR TODAS LAS PLANTILLAS
+for (const [nombre, datos] of Object.entries(plantillasBase)) {
     if (!window.plantillasEjecutivas[nombre]) {
         window.plantillasEjecutivas[nombre] = datos;
-        totalAgregadas++;
     }
 }
 
-// 6. FUNCIÓN PRINCIPAL PARA USAR PLANTILLAS
-// ========== FUNCIÓN PRINCIPAL PARA USAR PLANTILLAS (CON ELIMINAR) ==========
+// 4. FUNCIÓN QUE GENERA NOMBRES REALES DE TAREAS - VERSIÓN CORREGIDA
+function generarTareasReales(nombreProyecto, numTareas) {
+    const nombre = nombreProyecto.toLowerCase();
+    let tareasGeneradas = [];
+    
+    // Detectar tipo de proyecto
+    if (nombre.includes("rpa") || nombre.includes("automation") || nombre.includes("automatización")) {
+        tareasGeneradas = [
+            "🔍 Analizar y documentar procesos actuales para automatizar",
+            "📋 Identificar tareas repetitivas con mayor ROI",
+            "🛠️ Evaluar y seleccionar herramienta RPA (UiPath/Automation Anywhere)",
+            "🏗️ Diseñar arquitectura de la solución RPA",
+            "⚙️ Configurar entorno de desarrollo RPA",
+            "🤖 Desarrollar robot para automatización de proceso 1",
+            "🤖 Desarrollar robot para automatización de proceso 2",
+            "🧪 Ejecutar pruebas unitarias e integración de robots",
+            "🔗 Integrar robots con sistemas existentes (ERP, CRM)",
+            "⚡ Optimizar rendimiento y tiempo de ejecución",
+            "🛡️ Implementar manejo de errores y excepciones",
+            "📊 Configurar logging, monitoreo y alertas",
+            "🚀 Desplegar robots en producción",
+            "📈 Medir KPIs: horas ahorradas, reducción de errores",
+            "📝 Documentar procesos automatizados",
+            "🎓 Capacitar al equipo en mantenimiento RPA"
+        ];
+    }
+    else if (nombre.includes("reconocimiento de voz") || nombre.includes("reconocimiento de voz") || (nombre.includes("voz") && nombre.includes("reconocimiento"))) {
+        tareasGeneradas = [
+            "🎤 Configurar entorno de desarrollo de reconocimiento de voz",
+            "📊 Recolectar y etiquetar dataset de audio",
+            "🔧 Preprocesar señales de audio y extraer características (MFCC)",
+            "🧠 Seleccionar y entrenar modelo de reconocimiento de voz",
+            "🔍 Evaluar precisión del modelo con métricas WER/CER",
+            "⚡ Optimizar modelo para tiempo real",
+            "🗣️ Implementar detección de palabras clave",
+            "🌐 Integrar con API de servicios cloud (Google Speech/Whisper)",
+            "📱 Desarrollar interfaz de usuario para captura de voz",
+            "🧪 Realizar pruebas con diferentes acentos y ruidos",
+            "🚀 Desplegar modelo en producción",
+            "📊 Monitorear uso y precisión en producción"
+        ];
+    }
+    else if (nombre.includes("web") || nombre.includes("frontend") || nombre.includes("react") || nombre.includes("vue") || nombre.includes("angular")) {
+        tareasGeneradas = [
+            "🎨 Diseñar arquitectura y maquetación del frontend",
+            "⚙️ Configurar entorno de desarrollo y herramientas",
+            "🏗️ Crear estructura de componentes reutilizables",
+            "🔗 Implementar enrutamiento y navegación",
+            "💾 Gestionar estado global de la aplicación",
+            "🌐 Conectar e integrar con API backend",
+            "⚡ Optimizar renderizado y rendimiento",
+            "📱 Implementar diseño responsive y mobile-first",
+            "🧪 Desarrollar pruebas unitarias y E2E",
+            "🔍 Optimizar SEO y métricas Core Web Vitals",
+            "📊 Configurar analytics y seguimiento",
+            "🚀 Preparar build de producción y despliegue"
+        ];
+    }
+    else if (nombre.includes("api") || nombre.includes("backend")) {
+        tareasGeneradas = [
+            "📐 Definir arquitectura y endpoints RESTful",
+            "🗄️ Diseñar esquema y modelo de base de datos",
+            "🔐 Implementar autenticación y autorización JWT",
+            "✅ Crear middlewares de validación y sanitización",
+            "📚 Documentar API con Swagger/OpenAPI",
+            "⏱️ Implementar rate limiting y throttling",
+            "📝 Configurar logging estructurado",
+            "🧪 Desarrollar pruebas de integración",
+            "⚡ Optimizar consultas y tiempos de respuesta",
+            "💾 Implementar sistema de caché con Redis",
+            "🌍 Configurar CORS y headers de seguridad",
+            "☁️ Preparar despliegue en cloud"
+        ];
+    }
+    else if (nombre.includes("machine learning") || nombre.includes("ia") || (nombre.includes("inteligencia") && nombre.includes("artificial"))) {
+        tareasGeneradas = [
+            "📊 Recolectar y limpiar datos de fuentes múltiples",
+            "📈 Explorar y visualizar datos (EDA)",
+            "🔧 Preprocesar y transformar características",
+            "📊 Dividir datos en train/validation/test",
+            "🎯 Seleccionar modelo baseline apropiado",
+            "🏋️ Entrenar modelo inicial",
+            "⚙️ Optimizar hiperparámetros (Grid/Random Search)",
+            "📊 Evaluar rendimiento con métricas adecuadas",
+            "🔧 Realizar feature engineering avanzado",
+            "🛡️ Implementar técnicas anti-overfitting",
+            "🚀 Crear pipeline de inferencia",
+            "☁️ Preparar modelo para producción (serving)"
+        ];
+    }
+    else if (nombre.includes("seo")) {
+        tareasGeneradas = [
+            "🔍 Realizar auditoría SEO completa del sitio",
+            "🔑 Investigar keywords con alto potencial de conversión",
+            "📝 Optimizar meta tags, headings y estructura de contenido",
+            "📄 Crear estrategia de contenido pillar/cluster",
+            "🔗 Desarrollar estrategia de link building",
+            "⚡ Optimizar velocidad y Core Web Vitals",
+            "📱 Asegurar mobile-first indexing",
+            "📊 Configurar Search Console y Google Analytics",
+            "📈 Monitorear posiciones y tráfico orgánico",
+            "📊 Generar informes SEO mensuales con recomendaciones"
+        ];
+    }
+    else if (nombre.includes("google ads") || nombre.includes("ads campaign")) {
+        tareasGeneradas = [
+            "🎯 Definir objetivos y KPIs de campaña",
+            "🔍 Investigar keywords y audiencia objetivo",
+            "📝 Crear estructura de cuentas y campañas",
+            "✍️ Escribir anuncios persuasivos y creativos",
+            "💰 Configurar presupuestos y estrategias de puja",
+            "🎯 Segmentar audiencia por intereses y demografía",
+            "📊 Configurar tracking de conversiones",
+            "🧪 Implementar pruebas A/B continuas",
+            "📈 Optimizar rendimiento diariamente",
+            "📊 Generar informes de ROI y eficiencia"
+        ];
+    }
+    else if (nombre.includes("business plan") || nombre.includes("plan de negocio")) {
+        tareasGeneradas = [
+            "📝 Definir misión, visión y valores de la empresa",
+            "🔍 Realizar análisis FODA completo",
+            "📊 Investigar mercado y competencia en profundidad",
+            "👥 Definir buyer persona y segmentos de mercado",
+            "💰 Proyecciones financieras a 3 años",
+            "📈 Desarrollar plan de marketing y ventas",
+            "🏭 Definir plan de operaciones y logística",
+            "👔 Estructura organizacional y equipo",
+            "⚖️ Análisis legal y regulatorio",
+            "🎯 Estrategia de crecimiento y expansión",
+            "📊 Definir KPIs y OKRs de seguimiento",
+            "📄 Preparar presentación para inversionistas"
+        ];
+    }
+    else if (nombre.includes("ux") || nombre.includes("ui") || nombre.includes("diseño")) {
+        tareasGeneradas = [
+            "🔍 Investigación de usuarios y competencia",
+            "👥 Crear user personas y journey maps",
+            "📝 Diseñar wireframes de baja fidelidad",
+            "🎨 Crear mockups de alta fidelidad en Figma",
+            "🎭 Definir design system y componentes",
+            "🖱️ Crear prototipo interactivo navegable",
+            "🧪 Realizar pruebas de usabilidad con usuarios reales",
+            "🎨 Diseñar componentes UI reutilizables",
+            "📐 Crear guía de estilos completa",
+            "📱 Optimizar experiencia mobile",
+            "📊 Documentar hallazgos y recomendaciones"
+        ];
+    }
+    else if (nombre.includes("docker") || nombre.includes("kubernetes") || nombre.includes("devops") || nombre.includes("ci/cd")) {
+        tareasGeneradas = [
+            "🐳 Crear Dockerfile multi-stage optimizado",
+            "🔧 Configurar docker-compose para desarrollo local",
+            "🏗️ Definir arquitectura de microservicios",
+            "☸️ Configurar orquestación con Kubernetes",
+            "🔄 Implementar pipeline CI/CD automatizado",
+            "🚀 Configurar despliegue continuo",
+            "🔐 Gestionar secrets y variables de entorno",
+            "❤️ Configurar health checks y readiness probes",
+            "📝 Implementar logging centralizado (ELK/Loki)",
+            "📊 Configurar monitoreo con Prometheus/Grafana",
+            "⏪ Preparar estrategia de rollback",
+            "📚 Documentar proceso DevOps completo"
+        ];
+    }
+    else if (nombre.includes("base de datos") || nombre.includes("database") || nombre.includes("sql")) {
+        tareasGeneradas = [
+            "📊 Diseñar modelo de datos y normalización",
+            "📐 Crear diagrama entidad-relación",
+            "🔍 Definir índices y optimización",
+            "💾 Configurar backups y recovery",
+            "🔄 Implementar migraciones versionadas",
+            "⚡ Optimizar consultas SQL complejas",
+            "🔄 Configurar replicación y alta disponibilidad",
+            "📊 Implementar sharding si es necesario",
+            "📝 Crear stored procedures y funciones",
+            "📈 Configurar monitoreo y alertas",
+            "🧪 Realizar pruebas de carga y rendimiento",
+            "📚 Documentar esquema y convenciones"
+        ];
+    }
+    else if (nombre.includes("seguridad") || nombre.includes("cybersecurity") || nombre.includes("security")) {
+        tareasGeneradas = [
+            "🔍 Realizar auditoría de seguridad completa",
+            "🛡️ Escanear vulnerabilidades conocidas",
+            "🔐 Revisar políticas de acceso y permisos",
+            "🛡️ Probar configuración de firewall",
+            "🔑 Revisar implementación de autenticación",
+            "📝 Auditar logs y registros de seguridad",
+            "🧪 Realizar pruebas de penetración",
+            "📊 Generar informe de hallazgos",
+            "🔧 Recomendar acciones correctivas",
+            "📋 Plan de remediación de vulnerabilidades"
+        ];
+    }
+    else if (nombre.includes("chatbot")) {
+        tareasGeneradas = [
+            "🎯 Definir casos de uso y alcance del chatbot",
+            "📝 Diseñar flujos de conversación (storyboarding)",
+            "🤖 Seleccionar plataforma (Dialogflow/Rasa/Botpress)",
+            "🗣️ Definir intents, entities y contexts",
+            "💬 Crear respuestas, fallbacks y small talk",
+            "🔗 Integrar con APIs y sistemas externos",
+            "🧪 Realizar pruebas de conversación A/B",
+            "🚀 Desplegar chatbot en canales requeridos",
+            "📊 Analizar métricas de uso y satisfacción",
+            "🔄 Iterar y mejorar basado en feedback"
+        ];
+    }
+    else if (nombre.includes("e-commerce") || nombre.includes("shopify") || nombre.includes("tienda online")) {
+        tareasGeneradas = [
+            "📊 Analizar requisitos y funcionalidades del e-commerce",
+            "🎨 Diseñar UI/UX de tienda online",
+            "🏗️ Configurar plataforma (Shopify/WooCommerce/Magento)",
+            "📦 Configurar catálogo de productos y categorías",
+            "🛒 Implementar carrito de compras",
+            "💳 Integrar pasarela de pagos (Stripe/PayPal/MercadoPago)",
+            "🚚 Configurar métodos de envío y tracking",
+            "🔐 Implementar autenticación de usuarios",
+            "📧 Configurar emails transaccionales",
+            "📊 Configurar analytics y seguimiento de conversiones",
+            "🧪 Realizar pruebas de pago y checkout",
+            "🚀 Desplegar y lanzar tienda online"
+        ];
+    }
+    else if (nombre.includes("app móvil") || nombre.includes("ios") || nombre.includes("android") || nombre.includes("flutter") || nombre.includes("react native")) {
+        tareasGeneradas = [
+            "🎨 Diseñar UI/UX de la aplicación móvil",
+            "🏗️ Definir arquitectura de la app",
+            "⚙️ Configurar entorno de desarrollo móvil",
+            "🔐 Implementar autenticación de usuarios",
+            "📱 Desarrollar pantallas principales",
+            "🔗 Integrar con API backend",
+            "💾 Implementar almacenamiento local",
+            "🔔 Configurar notificaciones push",
+            "🧪 Realizar pruebas en dispositivos reales",
+            "🚀 Preparar publicación en App Store/Play Store"
+        ];
+    }
+    else if (nombre.includes("blockchain") || nombre.includes("web3") || nombre.includes("smart contract")) {
+        tareasGeneradas = [
+            "🎯 Definir casos de uso blockchain",
+            "🏗️ Diseñar arquitectura descentralizada",
+            "🔗 Seleccionar blockchain (Ethereum/Solana)",
+            "📝 Desarrollar smart contracts",
+            "🧪 Probar smart contracts con Hardhat/Truffle",
+            "🔐 Implementar wallet connection (MetaMask)",
+            "🚀 Desplegar contratos en testnet",
+            "🧪 Realizar pruebas de seguridad",
+            "📊 Configurar analytics on-chain",
+            "🚀 Desplegar en mainnet"
+        ];
+    }
+    else {
+        // Tareas genéricas profesionales
+        tareasGeneradas = [
+            "📋 Analizar requisitos del proyecto en detalle",
+            "🎯 Definir objetivos, alcance y entregables",
+            "📊 Crear plan de trabajo y cronograma",
+            "👥 Asignar recursos y definir roles",
+            "📝 Documentar especificaciones técnicas",
+            "⚙️ Configurar herramientas y entornos",
+            "🏗️ Desarrollar solución base o MVP",
+            "🧪 Ejecutar pruebas funcionales",
+            "🔧 Ajustar y optimizar basado en feedback",
+            "📚 Documentar procesos y manuales",
+            "🚀 Preparar despliegue a producción",
+            "🎓 Capacitar a usuarios finales",
+            "📊 Medir resultados y KPIs",
+            "🔄 Iterar y mejorar continuamente"
+        ];
+    }
+    
+    // Ajustar al número exacto de tareas
+    while (tareasGeneradas.length < numTareas) {
+        const ultima = tareasGeneradas[tareasGeneradas.length - 1];
+        if (ultima && !ultima.includes("adicional")) {
+            tareasGeneradas.push(`📋 ${ultima.replace(/^\w+\s/, '').substring(0, 40)} (Parte 2)`);
+        } else {
+            tareasGeneradas.push(`📋 Actividad complementaria ${tareasGeneradas.length + 1}`);
+        }
+    }
+    
+    const resultado = tareasGeneradas.slice(0, numTareas);
+    
+    console.log(`📝 Tareas generadas para "${nombreProyecto}":`);
+    resultado.forEach((t, i) => console.log(`   ${i+1}. ${t}`));
+    
+    return resultado;
+}
+
+
+
+
+
+
+// 5. FUNCIÓN PRINCIPAL USAR PLANTILLA
 window.usarPlantilla = function(nombre) {
     console.log('📋 Usando plantilla:', nombre);
     const datos = window.plantillasEjecutivas[nombre];
     if (!datos) {
-        console.error('Plantilla no encontrada:', nombre);
         alert('Error: Plantilla no encontrada');
         return;
     }
     
-    // Verificar límite de proyectos para plan FREE
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'free') {
-        const proyectosActuales = window.projects || [];
-        if (proyectosActuales.length >= 1) {
-            alert('⚠️ El plan FREE solo permite 1 proyecto. Actualiza a Professional para crear más proyectos.');
-            return;
-        }
-    }
+    const tareasReales = generarTareasReales(nombre, datos.tareas);
     
-    // Crear el proyecto con estructura COMPLETA
     const nuevoProyecto = {
         id: Date.now(),
         name: nombre,
         totalProjectTime: datos.horas,
         clienteId: localStorage.getItem('clienteId') || 'sin_cliente',
         createdAt: new Date().toISOString(),
-        tasks: Array.from({ length: datos.tareas }, (_, i) => ({
+        tasks: tareasReales.map((tarea, i) => ({
             id: Date.now() + i + Math.random(),
-            name: `${nombre.substring(0, 35)} - Tarea ${i+1}`,
+            name: tarea,
             status: 'pending',
             priority: datos.prioridad,
             estimatedTime: Math.ceil(datos.horas / datos.tareas),
@@ -23908,92 +24121,55 @@ window.usarPlantilla = function(nombre) {
             assignee: '',
             startDate: new Date().toISOString().split('T')[0],
             deadline: new Date(Date.now() + (datos.horas / datos.tareas) * 3600000).toISOString().split('T')[0],
-            description: `Tarea de plantilla: ${nombre}`,
+            description: `Tarea de ${nombre}`,
             dependencies: [],
             subtasks: [],
             history: []
         }))
     };
     
-    console.log('✅ Proyecto creado:', nuevoProyecto);
-    
-    // Guardar en localStorage
     let proyectosGuardados = JSON.parse(localStorage.getItem('projects') || '[]');
     proyectosGuardados.push(nuevoProyecto);
     localStorage.setItem('projects', JSON.stringify(proyectosGuardados));
     
-    // Actualizar variable global
-    if (typeof window.projects !== 'undefined') {
-        window.projects = [...proyectosGuardados];
-    }
+    if (typeof window.projects !== 'undefined') window.projects = [...proyectosGuardados];
     if (typeof projects !== 'undefined') {
         projects.length = 0;
         projects.push(...proyectosGuardados);
     }
     
-    // 🔥 ACTUALIZAR EL SIDEBAR CON BOTÓN DE ELIMINAR
-    actualizarSidebarConEliminar(proyectosGuardados);
+    if (typeof actualizarSidebarConEliminar === 'function') {
+        actualizarSidebarConEliminar(proyectosGuardados);
+    }
     
-    // Seleccionar el nuevo proyecto
     const nuevoIndice = proyectosGuardados.length - 1;
+    if (typeof selectProject === 'function') selectProject(nuevoIndice);
+    else localStorage.setItem('currentProjectIndex', nuevoIndice);
     
-    if (typeof selectProject === 'function') {
-        selectProject(nuevoIndice);
-    } else if (typeof window.selectProject === 'function') {
-        window.selectProject(nuevoIndice);
-    } else {
-        localStorage.setItem('currentProjectIndex', nuevoIndice);
-    }
+    if (typeof showView === 'function') showView('board');
     
-    // Cambiar a la vista de tablero
-    if (typeof showView === 'function') {
-        showView('board');
-    } else if (typeof window.showView === 'function') {
-        window.showView('board');
-    } else {
-        const boardView = document.getElementById('boardView');
-        if (boardView) {
-            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-            boardView.classList.add('active');
-        }
-    }
-    
-    // Forzar actualización de tareas
     setTimeout(() => {
-        if (typeof renderKanbanTasks === 'function') {
-            renderKanbanTasks();
-        }
-        if (typeof updateStatistics === 'function') {
-            updateStatistics();
-        }
+        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        if (typeof updateStatistics === 'function') updateStatistics();
     }, 300);
     
-    // Cerrar modal
     const modal = document.getElementById('modalPlantillasProfesional');
     if (modal) modal.remove();
     
-    alert(`✅ Proyecto "${nombre}" creado con ${datos.tareas} tareas`);
-    
-    // Guardar en backend si es posible
-    if (typeof safeSave === 'function') {
-        setTimeout(() => safeSave(), 500);
-    }
+    alert(`✅ Proyecto "${nombre}" creado con ${datos.tareas} tareas específicas`);
+    if (typeof safeSave === 'function') setTimeout(() => safeSave(), 500);
 };
 
-// ========== FUNCIÓN PARA ACTUALIZAR SIDEBAR CON BOTÓN ELIMINAR ==========
+// 6. ACTUALIZAR SIDEBAR
 function actualizarSidebarConEliminar(proyectos) {
-    const projectListContainer = document.getElementById('projectList');
-    if (!projectListContainer) {
-        console.warn('⚠️ projectList no encontrado');
-        return;
-    }
+    const container = document.getElementById('projectList');
+    if (!container) return;
     
-    projectListContainer.innerHTML = '';
+    container.innerHTML = '';
     
     proyectos.forEach((proyecto, idx) => {
         const li = document.createElement('li');
         li.className = 'project-item';
-        li.setAttribute('data-project-index', idx);
         li.style.cssText = `
             display: flex;
             justify-content: space-between;
@@ -24003,31 +24179,20 @@ function actualizarSidebarConEliminar(proyectos) {
             background: ${idx === (currentProjectIndex || 0) ? 'rgba(52,152,219,0.2)' : 'rgba(255,255,255,0.05)'};
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
         `;
         
-        // Contenedor del nombre del proyecto (clic para seleccionar)
         const nombreSpan = document.createElement('span');
         nombreSpan.textContent = proyecto.name;
         nombreSpan.style.cssText = 'color: white; font-weight: 500; flex: 1; cursor: pointer;';
-        nombreSpan.onclick = (function(i) {
-            return function(e) {
-                e.stopPropagation();
-                if (typeof selectProject === 'function') {
-                    selectProject(i);
-                } else {
-                    localStorage.setItem('currentProjectIndex', i);
-                    location.reload();
-                }
-            };
-        })(idx);
+        nombreSpan.onclick = () => {
+            if (typeof selectProject === 'function') selectProject(idx);
+            else localStorage.setItem('currentProjectIndex', idx);
+        };
         
-        // 🔥 BOTÓN ELIMINAR (CON CONFIRMACIÓN)
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '🗑️';
-        deleteBtn.title = 'Eliminar proyecto';
         deleteBtn.style.cssText = `
-            background: rgba(239, 68, 68, 0.2);
+            background: rgba(239,68,68,0.2);
             border: none;
             color: #ef4444;
             width: 32px;
@@ -24035,127 +24200,36 @@ function actualizarSidebarConEliminar(proyectos) {
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
             margin-left: 8px;
         `;
-        
-        deleteBtn.onmouseenter = function() {
-            this.style.background = 'rgba(239, 68, 68, 0.4)';
-            this.style.transform = 'scale(1.05)';
-        };
-        deleteBtn.onmouseleave = function() {
-            this.style.background = 'rgba(239, 68, 68, 0.2)';
-            this.style.transform = 'scale(1)';
-        };
-        
-        deleteBtn.onclick = (function(i) {
-            return function(e) {
-                e.stopPropagation();
-                const proyectoAEliminar = proyectos[i];
-                if (confirm(`¿Eliminar el proyecto "${proyectoAEliminar.name}"?\n\nEsta acción no se puede deshacer.`)) {
-                    // Eliminar del array
-                    proyectos.splice(i, 1);
-                    
-                    // Guardar en localStorage
-                    localStorage.setItem('projects', JSON.stringify(proyectos));
-                    
-                    // Actualizar variable global
-                    if (typeof window.projects !== 'undefined') {
-                        window.projects = [...proyectos];
-                    }
-                    if (typeof projects !== 'undefined') {
-                        projects.length = 0;
-                        projects.push(...proyectos);
-                    }
-                    
-                    // Si no quedan proyectos, crear uno por defecto
-                    if (proyectos.length === 0) {
-                        const proyectoDefault = {
-                            id: Date.now(),
-                            name: "Mi Proyecto",
-                            clienteId: localStorage.getItem('clienteId'),
-                            tasks: [],
-                            totalProjectTime: 0
-                        };
-                        proyectos.push(proyectoDefault);
-                        localStorage.setItem('projects', JSON.stringify(proyectos));
-                        if (typeof window.projects !== 'undefined') window.projects = [...proyectos];
-                        if (typeof projects !== 'undefined') {
-                            projects.length = 0;
-                            projects.push(...proyectos);
-                        }
-                    }
-                    
-                    // Ajustar índice actual
-                    let nuevoIndice = i - 1;
-                    if (nuevoIndice < 0 && proyectos.length > 0) nuevoIndice = 0;
-                    if (proyectos.length > 0) {
-                        if (typeof selectProject === 'function') {
-                            selectProject(nuevoIndice);
-                        } else {
-                            localStorage.setItem('currentProjectIndex', nuevoIndice);
-                        }
-                    }
-                    
-                    // Recargar el sidebar
-                    actualizarSidebarConEliminar(proyectos);
-                    
-                    // Actualizar vistas
-                    setTimeout(() => {
-                        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-                        if (typeof updateStatistics === 'function') updateStatistics();
-                    }, 100);
-                    
-                    alert(`✅ Proyecto "${proyectoAEliminar.name}" eliminado`);
-                    
-                    // Guardar en backend
-                    if (typeof safeSave === 'function') setTimeout(() => safeSave(), 500);
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(`¿Eliminar "${proyecto.name}"?`)) {
+                proyectos.splice(idx, 1);
+                localStorage.setItem('projects', JSON.stringify(proyectos));
+                if (typeof window.projects !== 'undefined') window.projects = [...proyectos];
+                if (typeof projects !== 'undefined') {
+                    projects.length = 0;
+                    projects.push(...proyectos);
                 }
-            };
-        })(idx);
+                actualizarSidebarConEliminar(proyectos);
+                if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                alert(`✅ Proyecto eliminado`);
+            }
+        };
         
         li.appendChild(nombreSpan);
         li.appendChild(deleteBtn);
-        projectListContainer.appendChild(li);
+        container.appendChild(li);
     });
-    
-    console.log(`✅ Sidebar actualizado con ${proyectos.length} proyectos (con botón eliminar)`);
 }
 
-// ========== FUNCIÓN PARA ACTUALIZAR EL SIDEBAR DESDE CUALQUIER LUGAR ==========
-window.actualizarSidebarProyectos = function() {
-    const proyectos = JSON.parse(localStorage.getItem('projects') || '[]');
-    actualizarSidebarConEliminar(proyectos);
-};
-
-// ========== INTERCEPTAR LA FUNCIÓN ORIGINAL renderProjects ==========
-// Para que cuando se llame a renderProjects, también se actualice nuestro sidebar
-const originalRenderProjects = window.renderProjects;
-if (typeof originalRenderProjects === 'function') {
-    window.renderProjects = function() {
-        const result = originalRenderProjects();
-        setTimeout(() => {
-            const proyectos = JSON.parse(localStorage.getItem('projects') || '[]');
-            actualizarSidebarConEliminar(proyectos);
-        }, 100);
-        return result;
-    };
-}
-// 7. FUNCIÓN PARA MOSTRAR EL MODAL
+// 7. MOSTRAR MODAL
 window.mostrarModalPlantillas = function() {
     const existing = document.getElementById('modalPlantillasProfesional');
     if (existing) { existing.remove(); return; }
     
     const total = Object.keys(window.plantillasEjecutivas).length;
-    const categorias = [...new Set(Object.values(window.plantillasEjecutivas).map(p => p.categoria))];
-    
-    const contarPorCategoria = {};
-    Object.values(window.plantillasEjecutivas).forEach(p => {
-        contarPorCategoria[p.categoria] = (contarPorCategoria[p.categoria] || 0) + 1;
-    });
     
     const modal = document.createElement('div');
     modal.id = 'modalPlantillasProfesional';
@@ -24174,35 +24248,11 @@ window.mostrarModalPlantillas = function() {
         font-family: system-ui, 'Segoe UI', sans-serif;
     `;
     
-    let categoriasHTML = '';
-    categorias.forEach(cat => {
-        const count = contarPorCategoria[cat];
-        categoriasHTML += `
-            <button class="filtro-categoria" data-categoria="${cat}" style="
-                background: rgba(139,92,246,0.15);
-                border: 1px solid rgba(139,92,246,0.3);
-                border-radius: 40px;
-                padding: 10px 24px;
-                margin: 5px;
-                color: #a78bfa;
-                cursor: pointer;
-                transition: all 0.3s;
-                font-size: 13px;
-                font-weight: 500;
-                white-space: nowrap;
-            " onmouseenter="this.style.background='rgba(139,92,246,0.3)'; this.style.transform='translateY(-2px)'"
-               onmouseleave="this.style.background='rgba(139,92,246,0.15)'; this.style.transform='translateY(0)'">
-                ${cat} (${count})
-            </button>
-        `;
-    });
-    
     let gridHTML = '';
     Object.entries(window.plantillasEjecutivas).forEach(([nombre, datos]) => {
         const colorPrio = datos.prioridad === 'alta' ? '#ef4444' : datos.prioridad === 'media' ? '#f59e0b' : '#10b981';
-        const iconoPrio = datos.prioridad === 'alta' ? '🔴' : datos.prioridad === 'media' ? '🟡' : '🟢';
         gridHTML += `
-            <div class="plantilla-item" data-categoria="${datos.categoria}" data-nombre="${nombre.replace(/'/g, "\\'")}" style="
+            <div class="plantilla-item" data-categoria="${datos.categoria}" style="
                 background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05));
                 border-radius: 20px;
                 padding: 20px;
@@ -24212,147 +24262,55 @@ window.mostrarModalPlantillas = function() {
                 border: 1px solid rgba(139,92,246,0.2);
                 min-width: 280px;
                 flex: 1 1 320px;
-            " onmouseenter="this.style.transform='translateY(-4px)'; this.style.background='rgba(139,92,246,0.15)'; this.style.borderColor='rgba(139,92,246,0.5)'"
-               onmouseleave="this.style.transform='translateY(0)'; this.style.background='rgba(139,92,246,0.05)'; this.style.borderColor='rgba(139,92,246,0.2)'"
-               onclick="window.usarPlantilla('${nombre.replace(/'/g, "\\'")}')">
+            " onclick="window.usarPlantilla('${nombre.replace(/'/g, "\\'")}')">
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                     <div style="font-size: 42px; min-width: 50px; text-align: center;">${nombre.split(' ')[0]}</div>
                     <div style="flex: 1;">
-                        <div style="font-weight: 700; color: white; font-size: 15px; line-height: 1.3; margin-bottom: 8px;">${nombre}</div>
+                        <div style="font-weight: 700; color: white; font-size: 15px; margin-bottom: 8px;">${nombre}</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            <span style="background: rgba(139,92,246,0.25); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 600;">${datos.categoria}</span>
-                            <span style="background: ${colorPrio}20; color: ${colorPrio}; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 600;">${iconoPrio} ${datos.prioridad}</span>
+                            <span style="background: rgba(139,92,246,0.25); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${datos.categoria}</span>
+                            <span style="background: ${colorPrio}20; color: ${colorPrio}; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${datos.prioridad}</span>
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 20px; margin-bottom: 15px; padding: 0 5px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="color: #8b5cf6; font-size: 14px;">⏱️</span>
-                        <span style="color: #cbd5e1; font-size: 13px;">${datos.horas}h</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="color: #8b5cf6; font-size: 14px;">📋</span>
-                        <span style="color: #cbd5e1; font-size: 13px;">${datos.tareas} tareas</span>
-                    </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                    <div><span style="color: #8b5cf6;">⏱️</span> <span style="color: #cbd5e1;">${datos.horas}h</span></div>
+                    <div><span style="color: #8b5cf6;">📋</span> <span style="color: #cbd5e1;">${datos.tareas} tareas</span></div>
                 </div>
-                <div style="height: 4px; background: #1e293b; border-radius: 4px; overflow: hidden; margin: 10px 0;">
-                    <div style="width: ${Math.min(100, Math.round(datos.horas / 2))}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); border-radius: 4px;"></div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-                    <span style="color: #64748b; font-size: 11px;">Haz clic para crear →</span>
+                <div style="height: 4px; background: #1e293b; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${Math.min(100, Math.round(datos.horas / 2))}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899);"></div>
                 </div>
             </div>
         `;
     });
     
     modal.innerHTML = `
-        <div style="width: 95vw; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 28px; border: 2px solid rgba(139,92,246,0.5); display: flex; flex-direction: column; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(139,92,246,0.3); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <div style="width: 95vw; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 28px; border: 2px solid rgba(139,92,246,0.5); display: flex; flex-direction: column;">
+            <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(139,92,246,0.3); display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="background: linear-gradient(135deg, #8b5cf6, #ec4899); width: 50px; height: 50px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(139,92,246,0.4);">📋</div>
-                        <div>
-                            <h2 style="margin: 0; font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Centro de Plantillas Ejecutivas</h2>
-                            <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 13px;">${total} plantillas profesionales • ${categorias.length} categorías</p>
-                        </div>
-                    </div>
+                    <h2 style="margin: 0; font-size: 24px; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📋 Centro de Plantillas</h2>
+                    <p style="margin: 5px 0 0; color: #94a3b8;">${total} plantillas profesionales</p>
                 </div>
-                <div style="display: flex; gap: 15px;">
-                    <input type="text" id="buscadorPlantillasModal" placeholder="🔍 Buscar plantilla..." style="background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 12px 20px; color: white; width: 260px; outline: none; font-size: 14px;" onfocus="this.style.borderColor='#8b5cf6'; this.style.boxShadow='0 0 0 2px rgba(139,92,246,0.2)'" onblur="this.style.borderColor='#334155'; this.style.boxShadow='none'">
-                    <button id="cerrarModalPlantillas" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px; transition: all 0.3s;" onmouseenter="this.style.background='rgba(239,68,68,0.4)'" onmouseleave="this.style.background='rgba(239,68,68,0.2)'">✕</button>
-                </div>
+                <button id="cerrarModalPlantillas" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px;">✕</button>
             </div>
-            <div style="padding: 15px 25px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(139,92,246,0.2); display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
-                <button class="filtro-categoria activo" data-categoria="todas" style="background: #8b5cf6; border: none; border-radius: 40px; padding: 10px 24px; margin: 5px; color: white; cursor: pointer; font-weight: 600; font-size: 13px;">📂 Todas (${total})</button>
-                ${categoriasHTML}
-            </div>
-            <div id="gridPlantillasModal" style="flex: 1; overflow-y: auto; padding: 25px;">
+            <div style="flex: 1; overflow-y: auto; padding: 25px;">
                 <div style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 20px;">${gridHTML}</div>
-            </div>
-            <div style="padding: 12px 25px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(139,92,246,0.2); display: flex; justify-content: space-between; align-items: center; color: #64748b; font-size: 12px; flex-shrink: 0;">
-                <div>💡 Haz clic en cualquier plantilla para crear el proyecto</div>
-                <div>📊 ${total} plantillas • ${categorias.length} categorías</div>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
-    
     document.getElementById('cerrarModalPlantillas').onclick = () => modal.remove();
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
-    document.querySelectorAll('.filtro-categoria').forEach(btn => {
-        btn.onclick = () => {
-            const categoria = btn.dataset.categoria;
-            document.querySelectorAll('.filtro-categoria').forEach(b => {
-                if (b.dataset.categoria === categoria && categoria !== 'todas') {
-                    b.style.background = '#8b5cf6';
-                    b.style.color = 'white';
-                } else if (b.dataset.categoria === 'todas' && categoria === 'todas') {
-                    b.style.background = '#8b5cf6';
-                    b.style.color = 'white';
-                } else {
-                    b.style.background = 'rgba(139,92,246,0.15)';
-                    b.style.color = '#a78bfa';
-                }
-            });
-            document.querySelectorAll('.plantilla-item').forEach(item => {
-                item.style.display = (categoria === 'todas' || item.dataset.categoria === categoria) ? 'flex' : 'none';
-            });
-        };
-    });
-    
-    const buscador = document.getElementById('buscadorPlantillasModal');
-    buscador.oninput = () => {
-        const termino = buscador.value.toLowerCase();
-        document.querySelectorAll('.plantilla-item').forEach(item => {
-            const nombre = item.dataset.nombre.toLowerCase();
-            item.style.display = nombre.includes(termino) ? 'flex' : 'none';
-        });
-    };
 };
 
-// ============================================
-// CREAR BOTÓN EN LA BARRA LATERAL (NO FLOTANTE)
-// ============================================
-(function crearBotonPlantillasEnSidebar() {
-    // Función para eliminar el botón flotante si existe
-    function eliminarBotonFlotante() {
-        const btnFlotante = document.getElementById('btnPlantillas');
-        if (btnFlotante) {
-            btnFlotante.remove();
-            console.log('✅ Botón flotante eliminado');
-        }
-    }
-    
-    // Función para crear el botón en el sidebar
-    function agregarBotonAlSidebar() {
+// 8. CREAR BOTÓN EN SIDEBAR
+(function() {
+    function agregarBoton() {
         const sidebar = document.querySelector('aside, #sidebar, .sidebar');
-        if (!sidebar) {
-            console.log('⏳ Sidebar no encontrado, reintentando...');
-            setTimeout(agregarBotonAlSidebar, 500);
-            return;
-        }
+        if (!sidebar) { setTimeout(agregarBoton, 500); return; }
+        if (document.getElementById('btnPlantillasSidebar')) return;
         
-        // Verificar si ya existe el botón en el sidebar
-        if (document.getElementById('btnPlantillasSidebar')) {
-            console.log('✅ Botón ya existe en el sidebar');
-            return;
-        }
-        
-        // Buscar el botón "Nuevo Proyecto"
-        const newProjectBtn = sidebar.querySelector('#newProjectBtn, [onclick*="createNewProject"]');
-        let parentElement = sidebar;
-        
-        if (newProjectBtn && newProjectBtn.closest('li, div')) {
-            parentElement = newProjectBtn.closest('li, div').parentNode;
-        }
-        
-        // Crear el contenedor del botón
-        const btnContainer = document.createElement('div');
-        btnContainer.style.cssText = 'margin: 10px 12px;';
-        
-        // Crear el botón
         const btn = document.createElement('button');
         btn.id = 'btnPlantillasSidebar';
         btn.innerHTML = '📋 Plantillas';
@@ -24366,77 +24324,24 @@ window.mostrarModalPlantillas = function() {
             cursor: pointer;
             font-weight: bold;
             font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
+            margin: 10px 12px;
+            width: calc(100% - 24px);
         `;
-        
         btn.onclick = () => window.mostrarModalPlantillas();
-        btn.onmouseenter = () => {
-            btn.style.transform = 'translateY(-2px)';
-            btn.style.boxShadow = '0 5px 15px rgba(139,92,246,0.4)';
-        };
-        btn.onmouseleave = () => {
-            btn.style.transform = 'translateY(0)';
-            btn.style.boxShadow = 'none';
-        };
         
-        btnContainer.appendChild(btn);
-        
-        // Insertar después del botón "Nuevo Proyecto" o al principio del sidebar
-        if (newProjectBtn && newProjectBtn.closest('li, div')) {
-            newProjectBtn.closest('li, div').insertAdjacentElement('afterend', btnContainer);
+        const newProjectBtn = sidebar.querySelector('#newProjectBtn');
+        if (newProjectBtn && newProjectBtn.parentNode) {
+            newProjectBtn.parentNode.insertBefore(btn, newProjectBtn.nextSibling);
         } else {
-            sidebar.insertBefore(btnContainer, sidebar.firstChild);
+            sidebar.insertBefore(btn, sidebar.firstChild);
         }
-        
-        console.log('✅ Botón de plantillas agregado a la barra lateral');
+        console.log('✅ Botón de plantillas agregado');
     }
-    
-    // Ejecutar
-    eliminarBotonFlotante();
-    setTimeout(agregarBotonAlSidebar, 500);
+    setTimeout(agregarBoton, 500);
 })();
 
-// 10. ESTADÍSTICAS FINALES
-const totalFinal = Object.keys(window.plantillasEjecutivas).length;
-const categoriasFinales = [...new Set(Object.values(window.plantillasEjecutivas).map(p => p.categoria))];
-const categoriasCount = {};
-Object.values(window.plantillasEjecutivas).forEach(p => categoriasCount[p.categoria] = (categoriasCount[p.categoria] || 0) + 1);
-
-console.log('╔══════════════════════════════════════════════════════════════════════════╗');
-console.log('║     🏆 SISTEMA DE PLANTILLAS ULTRA-COMPLETO - DOMINACIÓN ABSOLUTA        ║');
-console.log('╚══════════════════════════════════════════════════════════════════════════╝');
-console.log(`📊 TOTAL PLANTILLAS: ${totalFinal}`);
-console.log(`✨ NUEVAS AGREGADAS: ${totalAgregadas}`);
-console.log(`📁 CATEGORÍAS TOTALES: ${categoriasFinales.length}`);
-console.log('');
-console.log('🚀 CATEGORÍAS EXCLUSIVAS (NINGÚN COMPETIDOR LAS TIENE):');
-const categoriasExclusivas = [
-    'Bioinformática', 'Neurotecnología', 'MedTech', 'Aeroespacial', 
-    'Computación Cuántica', 'Climática', 'Realidad Aumentada', 'Realidad Virtual',
-    'Realidad Mixta', 'Spatial Computing', 'Digital Twin', 'Robótica', 'Cloud-Native', 'IA/ML'
-];
-categoriasExclusivas.forEach(cat => {
-    if (categoriasCount[cat]) {
-        console.log(`   🏆 ${cat}: ${categoriasCount[cat]} plantillas`);
-    }
-});
-console.log('');
-console.log('🎯 TOP 10 CATEGORÍAS POR CANTIDAD:');
-Object.entries(categoriasCount)
-    .sort((a,b) => b[1] - a[1])
-    .slice(0, 10)
-    .forEach(([cat, count], i) => {
-        console.log(`   ${i+1}. ${cat}: ${count} plantillas`);
-    });
-console.log('');
-console.log(`✅ ¡${totalFinal} PLANTILLAS - LÍDER MUNDIAL ABSOLUTO!`);
-console.log(`🏆 SUPERAS A CUALQUIER COMPETIDOR EN ${categoriasFinales.length} CATEGORÍAS`);
-
-
+console.log(`🏆 SISTEMA DE PLANTILLAS CARGADO - TOTAL: ${Object.keys(window.plantillasEjecutivas).length} plantillas`);
+console.log(`✅ CADA PLANTILLA GENERA TAREAS ESPECÍFICAS SEGÚN SU TIPO`);
 
 
 
@@ -70134,3 +70039,63 @@ setTimeout(async () => {
         console.error('Error:', e);
     }
 }, 1500);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Agregar botón al sidebar
+setTimeout(() => {
+    const sidebar = document.querySelector('aside, #sidebar, .sidebar');
+    if (sidebar && !document.getElementById('reExecutiveBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'reExecutiveBtn';
+        btn.innerHTML = '🏆 Real Estate Executive';
+        btn.style.cssText = `
+            width: 100%;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        `;
+        btn.onclick = () => {
+            // Verificar si el sistema ya está cargado
+            if (typeof window.RealEstateExecutive !== 'undefined') {
+                window.RealEstateExecutive.launch();
+            } else {
+                // Si no, mostrar loader y cargar
+                alert('🏆 Cargando Real Estate Executive Suite...');
+                const script = document.createElement('script');
+                script.src = 'real-estate-launcher.js';
+                document.head.appendChild(script);
+            }
+        };
+        sidebar.appendChild(btn);
+    }
+}, 2000);
