@@ -1,94 +1,85 @@
+
+
+
+
+
 // ============================================
-// 🎯 UNIFICAR BOTONES - VERSIÓN OPTIMIZADA (SIN PALPITACIONES)
+// 🎯 ALINEAR COMPLETAMENTE EL HEADER
 // ============================================
-(function unificarBotones() {
-    console.log('🎯 Unificando tamaños de botones...');
-    
-    const ALTURA = 42;
-    
-    // Función para ajustar altura (sin tocar colores)
-    function ajustarAltura(btn) {
-        if (!btn) return;
-        
-        btn.style.setProperty('height', `${ALTURA}px`, 'important');
-        btn.style.setProperty('min-height', `${ALTURA}px`, 'important');
-        btn.style.setProperty('max-height', `${ALTURA}px`, 'important');
-        btn.style.setProperty('padding', '0 20px', 'important');
-        btn.style.setProperty('font-size', '13px', 'important');
-        btn.style.setProperty('border-radius', '8px', 'important');
-        btn.style.setProperty('display', 'inline-flex', 'important');
-        btn.style.setProperty('align-items', 'center', 'important');
-        btn.style.setProperty('justify-content', 'center', 'important');
-        btn.style.setProperty('gap', '8px', 'important');
-        btn.style.setProperty('font-weight', '600', 'important');
+(function alinearHeaderCompleto() {
+    // Alinear nombre
+    const nombre = document.querySelector('span');
+    if (nombre && nombre.textContent.includes('Zacky Gantt Executive Pro')) {
+        nombre.style.marginLeft = '12px';
+        nombre.style.verticalAlign = 'middle';
+        nombre.style.display = 'inline-block';
     }
     
-    // Aplicar a todos los botones UNA SOLA VEZ
-    const botones = [
-        'optimizar-ahora-btn',
-        'boardUltimateBtn', 
-        'reportButtonBoard',
-        'newProjectBtn',
-        'toggleSidebarBtn',
-        'voiceAssistantButton',
-        'logoutBtn',
-        'topNavGanttButton',
-        'configButton'
-    ];
-    
-    botones.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) {
-            ajustarAltura(btn);
-            console.log(`✅ ${id}: ${btn.offsetHeight}px`);
-        }
-    });
-    
-    // === TRATAMIENTO ESPECIAL PARA EL BOTÓN DE AUTOMATIZACIÓN ===
-    // (Usando el método que funcionó)
-    const estilosAuto = document.createElement('style');
-    estilosAuto.textContent = `
-        #autoBlueFinal {
-            height: 42px !important;
-            min-height: 42px !important;
-            max-height: 42px !important;
-            padding: 0 20px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            border-radius: 8px !important;
-            background: #3B82F6 !important;
-            color: white !important;
-            border: none !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            margin-left: 12px !important;
-            line-height: normal !important;
-            box-sizing: border-box !important;
-        }
-    `;
-    document.head.appendChild(estilosAuto);
-    
-    const botonAuto = document.getElementById('autoBlueFinal');
-    if (botonAuto) {
-        botonAuto.setAttribute('style', 'height: 42px !important; padding: 0 20px !important; font-size: 13px !important; background: #3B82F6 !important;');
-        console.log(`✅ autoBlueFinal: ${botonAuto.offsetHeight}px`);
+    // Alinear logo si existe
+    const logo = document.querySelector('.logo, [class*="logo"], header img');
+    if (logo) {
+        logo.style.verticalAlign = 'middle';
+        logo.style.display = 'inline-block';
     }
     
-    // Ajuste especial para botón de configuración
-    const configBtn = document.getElementById('configButton');
-    if (configBtn) {
-        configBtn.style.setProperty('width', `${ALTURA}px`, 'important');
-        configBtn.style.setProperty('padding', '0', 'important');
-        configBtn.style.setProperty('font-size', '18px', 'important');
+    // Asegurar que el contenedor del logo y nombre esté alineado
+    const contenedorIzquierdo = document.querySelector('.header-left, header > div:first-child');
+    if (contenedorIzquierdo) {
+        contenedorIzquierdo.style.display = 'flex';
+        contenedorIzquierdo.style.alignItems = 'center';
+        contenedorIzquierdo.style.gap = '5px';
     }
     
-    console.log('✅ Todos los botones unificados a 42px');
+    console.log('✅ Header completamente alineado');
 })();
 
+// ============================================
+// 📝 TAMAÑO RESPONSIVO DEL NOMBRE
+// ============================================
+(function reducirLetraNombre() {
+    const nombre = document.querySelector('span');
+    if (nombre && nombre.textContent.includes('Zacky Gantt Executive Pro')) {
+        if (window.innerWidth <= 1200) {
+            nombre.style.fontSize = '11px';
+        } else {
+            nombre.style.fontSize = '14px';
+        }
+        console.log('✅ Tamaño responsivo aplicado');
+    }
+})();
 
-
+// ============================================
+// 🔧 IGUALAR BOTONES OPTIMIZAR AHORA Y PM VIRTUAL
+// ============================================
+(function igualarBotonesFaltantes() {
+    const altura = 42;
+    const padding = '0 20px';
+    const fontSize = '13px';
+    
+    // Botón OPTIMIZAR AHORA
+    const optimizar = document.getElementById('optimizar-ahora-btn');
+    if (optimizar) {
+        optimizar.style.height = `${altura}px`;
+        optimizar.style.minHeight = `${altura}px`;
+        optimizar.style.maxHeight = `${altura}px`;
+        optimizar.style.padding = padding;
+        optimizar.style.fontSize = fontSize;
+        optimizar.style.borderRadius = '8px';
+        console.log('✅ OPTIMIZAR AHORA igualado');
+    }
+    
+    // Botón PM VIRTUAL
+    const pm = document.getElementById('boardUltimateBtn');
+    if (pm) {
+        pm.style.height = `${altura}px`;
+        pm.style.minHeight = `${altura}px`;
+        pm.style.maxHeight = `${altura}px`;
+        pm.style.padding = padding;
+        pm.style.fontSize = fontSize;
+        pm.style.borderRadius = '8px';
+        console.log('✅ PM VIRTUAL igualado');
+    }
+})();
 
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
