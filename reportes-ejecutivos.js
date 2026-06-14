@@ -892,14 +892,79 @@ window.generarReporteRiesgos = function() {
         const horasReg = tareas.reduce((s,t) => s + (Number(t.timeLogged) || 0), 0);
         const horasRest = horasEst - horasReg;
         const eficiencia = horasEst > 0 ? Math.round((horasReg / horasEst) * 100) : 0;
-        const tareasPorRango = { excelente: tareas.filter(t => (t.timeLogged || 0) <= (t.estimatedTime || 0) * 0.9).length, bien: tareas.filter(t => (t.timeLogged || 0) > (t.estimatedTime || 0) * 0.9 && (t.timeLogged || 0) <= (t.estimatedTime || 0)).length, excedido: tareas.filter(t => (t.timeLogged || 0) > (t.estimatedTime || 0)).length };
+        
+        // Contar tareas retrasadas (overdue, rezagado, delayed, o que exceden estimación >20%)
+        const tareasRetrasadas = tareas.filter(t => {
+            // Estados considerados como retrasados
+            if (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'delayed') return true;
+            if (t.status === 'completed' || t.status === 'inProgress') return false;
+            const tiempoRegistrado = t.timeLogged || 0;
+            const tiempoEstimado = t.estimatedTime || 0;
+            return tiempoEstimado > 0 && tiempoRegistrado > tiempoEstimado * 1.2;
+        }).length;
+        
+        const tareasPorRango = { 
+            excelente: tareas.filter(t => (t.timeLogged || 0) <= (t.estimatedTime || 0) * 0.9).length, 
+            bien: tareas.filter(t => (t.timeLogged || 0) > (t.estimatedTime || 0) * 0.9 && (t.timeLogged || 0) <= (t.estimatedTime || 0)).length, 
+            excedido: tareas.filter(t => (t.timeLogged || 0) > (t.estimatedTime || 0)).length 
+        };
+        
+        // Función para determinar el estado incluyendo overdue
+        const getTaskStatus = (t) => {
+            if (t.status === 'completed') return '✅ Completada';
+            if (t.status === 'inProgress') return '🔄 En progreso';
+            if (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'delayed') return '⚠️ Retrasada';
+            
+            // Verificar si está retrasada por tiempo (20% sobre tiempo estimado)
+            const tiempoRegistrado = t.timeLogged || 0;
+            const tiempoEstimado = t.estimatedTime || 0;
+            if (tiempoEstimado > 0 && tiempoRegistrado > tiempoEstimado * 1.2) {
+                return '⚠️ Retrasada';
+            }
+            return '⏳ Pendiente';
+        };
+        
         const contenido = `<div class="header"><h1>⏱️ TIME CONTROL REPORT</h1><p>${escapeHtml(proyecto.name)} • Análisis de tiempo y eficiencia</p><div style="margin-top: 16px;"><span style="background: ${eficiencia<=100?'#10b981':'#ef4444'}; padding: 6px 20px; border-radius: 30px;">Eficiencia: ${eficiencia}%</span></div></div>
             <div class="kpi-grid"><div class="kpi-card"><div class="kpi-value">${horasEst.toFixed(0)}h</div><div>⏱️ Estimadas</div></div><div class="kpi-card"><div class="kpi-value">${horasReg.toFixed(0)}h</div><div>📝 Registradas</div></div><div class="kpi-card"><div class="kpi-value ${horasRest>=0?'positive':'negative'}">${horasRest.toFixed(0)}h</div><div>⏳ Restantes</div></div><div class="kpi-card"><div class="kpi-value">${tareasPorRango.excelente}</div><div>✅ Bajo estimación</div></div></div>
             <div class="grid-2"><div class="chart-card"><h3>📊 Comparativa Horas</h3><canvas id="horasChart" style="height: 250px;"></canvas></div><div class="chart-card"><h3>📈 Precisión Estimaciones</h3><canvas id="precisionChart" style="height: 250px;"></canvas></div></div>
-            <div class="table-container"><h3>📋 Detalle de Tiempo por Tarea</h3><table><thead><tr><th>Tarea</th><th>Estimado</th><th>Registrado</th><th>Diferencia</th><th>Estado</th></tr></thead><tbody>${tareas.slice(0,15).map(t => { const diff = (t.estimatedTime || 0) - (t.timeLogged || 0); return `<tr><td><strong>${escapeHtml(t.name)}</strong></td><td>${t.estimatedTime || 0}h</td><td>${t.timeLogged || 0}h</td><td style="color:${diff>=0?'#10b981':'#ef4444'};">${diff>=0?'+':''}${diff.toFixed(1)}h</td><td>${t.status === 'completed' ? '✅ Completada' : t.status === 'inProgress' ? '🔄 En progreso' : '⏳ Pendiente'}</td></tr>` }).join('')}</tbody></tr></div>
-            <div class="grid-2"><div class="card"><h3>📊 Análisis por Estado</h3><div><span>✅ Completadas</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='completed').length/tareas.length)*100||0}%;background:#10b981;"></div></div></div><div><span>🔄 En Progreso</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='inProgress').length/tareas.length)*100||0}%;background:#3b82f6;"></div></div></div><div><span>⏳ Pendientes</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='pending').length/tareas.length)*100||0}%;background:#f59e0b;"></div></div></div></div>
-            <div class="card"><h3>🎯 Recomendaciones Tiempo</h3><ul style="margin-left:20px;"><li>Registrar tiempo diariamente para mejor precisión</li><li>Revisar estimaciones semanalmente</li><li>Identificar tareas que exceden estimación para ajustar procesos</li></ul></div></div>
-            <div class="recommendations"><h3>💡 Recomendaciones de Control de Tiempo</h3><ul><li>⏱️ Implementar registro de tiempo obligatorio diario</li><li>📊 Revisar desviaciones &gt; 20% mensualmente</li><li>🎯 Capacitar en técnicas de estimación de tiempo</li></ul></div>
+            <div class="table-container"><h3>📋 Detalle de Tiempo por Tarea</h3>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Tarea</th><th>Estimado</th><th>Registrado</th><th>Diferencia</th><th>Estado</th></tr>
+                </thead>
+                <tbody>${tareas.slice(0,15).map(t => { 
+                    const diff = (t.estimatedTime || 0) - (t.timeLogged || 0); 
+                    return `<tr>
+                        <td><strong>${escapeHtml(t.name)}</strong></td>
+                        <td>${t.estimatedTime || 0}h</td>
+                        <td>${t.timeLogged || 0}h</td>
+                        <td style="color:${diff>=0?'#10b981':'#ef4444'};">${diff>=0?'+':''}${diff.toFixed(1)}h</td>
+                        <td>${getTaskStatus(t)}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table></div>
+            <div class="grid-2"><div class="card"><h3>📊 Análisis por Estado</h3>
+                <div><span>✅ Completadas</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='completed').length/tareas.length)*100||0}%;background:#10b981;"></div></div></div>
+                <div><span>🔄 En Progreso</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='inProgress').length/tareas.length)*100||0}%;background:#3b82f6;"></div></div></div>
+                <div><span>⏳ Pendientes</span><div class="progress-bar"><div style="width:${(tareas.filter(t=>t.status==='pending').length/tareas.length)*100||0}%;background:#f59e0b;"></div></div></div>
+                <div><span>⚠️ Retrasadas</span><div class="progress-bar"><div style="width:${(tareasRetrasadas/tareas.length)*100||0}%;background:#ef4444;"></div></div></div>
+            </div>
+            <div class="card"><h3>🎯 Recomendaciones Tiempo</h3>
+                <ul style="margin-left:20px;">
+                    <li>Registrar tiempo diariamente para mejor precisión</li>
+                    <li>Revisar estimaciones semanalmente</li>
+                    <li>Identificar tareas que exceden estimación para ajustar procesos</li>
+                    <li>⚠️ <strong>${tareasRetrasadas}</strong> tareas retrasadas requieren atención inmediata</li>
+                </ul>
+            </div></div>
+            <div class="recommendations"><h3>💡 Recomendaciones de Control de Tiempo</h3>
+                <ul>
+                    <li>⏱️ Implementar registro de tiempo obligatorio diario</li>
+                    <li>📊 Revisar desviaciones &gt; 20% mensualmente</li>
+                    <li>🎯 Capacitar en técnicas de estimación de tiempo</li>
+                    <li>⚠️ Establecer alertas tempranas para tareas que superen el 80% del tiempo estimado</li>
+                </ul>
+            </div>
             <script>new Chart(document.getElementById('horasChart'),{type:'bar',data:{labels:['Estimadas','Registradas','Restantes'],datasets:[{label:'Horas',data:[${horasEst.toFixed(1)},${horasReg.toFixed(1)},${horasRest.toFixed(1)}],backgroundColor:['#3b82f6','#10b981','#f59e0b'],borderRadius:8}]}});
             new Chart(document.getElementById('precisionChart'),{type:'line',data:{labels:${JSON.stringify(tareas.slice(0,10).map(t=>t.name.substring(0,15)))},datasets:[{label:'Estimado',data:${JSON.stringify(tareas.slice(0,10).map(t=>t.estimatedTime||0))},borderColor:'#3b82f6',fill:false},{label:'Real',data:${JSON.stringify(tareas.slice(0,10).map(t=>t.timeLogged||0))},borderColor:'#ef4444',fill:false}]}});<\/script>`;
         abrirVentanaReporte(generarHTMLBase(contenido, 'Control de Tiempo', proyecto.name));
@@ -993,8 +1058,8 @@ window.generarReporteRiesgos = function() {
         abrirVentanaReporte(generarHTMLBase(contenido, 'Costos', proyecto.name));
     };
     
-    // ============================================
-// REPORTE 11: HITOS - CON SELECTOR VISUAL CORREGIDO
+ // ============================================
+// REPORTE 11: HITOS - VERSIÓN CORREGIDA
 // ============================================
 
 window.generarReporteHitos = function() {
@@ -1016,7 +1081,35 @@ window.generarReporteHitos = function() {
     const totalHitos = hitos.length;
     
     // ============================================
-    // CÁLCULO DE ESTADOS CORRECTO (cada hito cuenta UNA SOLA vez)
+    // FUNCIÓN PARA OBTENER PROGRESO CORRECTAMENTE
+    // ============================================
+    const getProgress = (t) => {
+        // Si está completada por status, retornar 100
+        if (t.status === 'completed') return 100;
+        
+        // Si tiene progress y es mayor que 0, usarlo
+        if (t.progress !== undefined && t.progress > 0) return Number(t.progress);
+        
+        // Calcular basado en tiempo logged vs estimated
+        const timeLogged = Number(t.timeLogged) || 0;
+        const estimatedTime = Number(t.estimatedTime) || 0;
+        
+        if (estimatedTime > 0) {
+            let progreso = Math.round((timeLogged / estimatedTime) * 100);
+            progreso = Math.min(100, Math.max(0, progreso));
+            
+            // Si hay tiempo logged pero el progreso calculado es 0, poner al menos 1%
+            if (timeLogged > 0 && progreso === 0) {
+                progreso = Math.max(1, Math.min(100, Math.round((timeLogged / estimatedTime) * 100)));
+            }
+            return progreso;
+        }
+        
+        return 0;
+    };
+    
+    // ============================================
+    // CÁLCULO DE ESTADOS
     // ============================================
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -1028,9 +1121,28 @@ window.generarReporteHitos = function() {
     
     hitos.forEach(hito => {
         const fechaVencimiento = hito.deadline ? new Date(hito.deadline) : null;
-        const estaCompletado = hito.status === 'completed' || hito.progress === 100;
-        const estaAtrasado = fechaVencimiento && fechaVencimiento < hoy && !estaCompletado;
-        const estaEnProgreso = (hito.status === 'inProgress' || (hito.progress > 0 && hito.progress < 100)) && !estaCompletado && !estaAtrasado;
+        const progreso = getProgress(hito);
+        const status = hito.status;
+        const timeLogged = Number(hito.timeLogged) || 0;
+        
+        // REGLA 1: Completado por status
+        const estaCompletado = (status === 'completed');
+        
+        // REGLA 2: Atrasado si estado overdue/rezagado/delayed O fecha vencida (y no completado)
+        const estaAtrasadoPorEstado = (status === 'overdue' || status === 'rezagado' || status === 'delayed');
+        const estaAtrasadoPorFecha = (fechaVencimiento && fechaVencimiento < hoy);
+        const estaAtrasado = !estaCompletado && (estaAtrasadoPorEstado || estaAtrasadoPorFecha);
+        
+        // REGLA 3: En progreso si (status inProgress O progreso > 0 O timeLogged > 0) y no completado/no atrasado
+        const estaEnProgreso = !estaCompletado && !estaAtrasado && (
+            status === 'inProgress' || progreso > 0 || timeLogged > 0
+        );
+        
+        // REGLA 4: Pendiente (todo lo demás)
+        const estaPendiente = !estaCompletado && !estaAtrasado && !estaEnProgreso;
+        
+        // Debug
+        console.log(`${hito.name}: status=${status}, progressOriginal=${hito.progress}, progresoCalculado=${progreso}%, timeLogged=${timeLogged}h, completado=${estaCompletado}, atrasado=${estaAtrasado}, enProgreso=${estaEnProgreso}`);
         
         if (estaCompletado) {
             completados++;
@@ -1038,10 +1150,12 @@ window.generarReporteHitos = function() {
             atrasados++;
         } else if (estaEnProgreso) {
             enProgreso++;
-        } else {
+        } else if (estaPendiente) {
             pendientes++;
         }
     });
+    
+    console.log(`📊 RESULTADO FINAL: Completados=${completados}, EnProgreso=${enProgreso}, Atrasados=${atrasados}, Pendientes=${pendientes}`);
     
     // Generar HTML de checkboxes para seleccionar hitos
     const checkboxesHTML = tareas.map(t => `
@@ -1073,21 +1187,21 @@ window.generarReporteHitos = function() {
             </div>
         </div>
         
-        <!-- KPIS SOLO DE HITOS - UNA SOLA LÍNEA -->
+        <!-- KPIS SOLO DE HITOS -->
         <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
             <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value">${totalHitos}</div><div>🎯 Total Hitos</div></div>
-            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value">${completados}</div><div>✅ Completados</div></div>
-            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value">${enProgreso}</div><div>🔄 En Progreso</div></div>
-            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value">${pendientes}</div><div>⏳ Pendientes</div></div>
-            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value">${atrasados}</div><div>⚠️ Atrasados</div></div>
+            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value" style="color:#10b981;">${completados}</div><div>✅ Completados</div></div>
+            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value" style="color:#14b8a6;">${enProgreso}</div><div>🔄 En Progreso</div></div>
+            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value" style="color:#f59e0b;">${pendientes}</div><div>⏳ Pendientes</div></div>
+            <div class="kpi-card" style="min-width: 100px;"><div class="kpi-value" style="color:#ef4444;">${atrasados}</div><div>⚠️ Atrasados</div></div>
         </div>
         
-        <!-- GRÁFICA SOLO DE HITOS -->
+        <!-- GRÁFICA -->
         <div style="max-width: 300px; margin: 0 auto;">
             <canvas id="hitosChart" style="height: 200px; width: 100%;"></canvas>
         </div>
         
-        <!-- TABLA SOLO DE HITOS -->
+        <!-- TABLA DE HITOS -->
         <div class="table-container">
             <h3>📋 Matriz de Hitos del Proyecto</h3>
             <table>
@@ -1097,9 +1211,16 @@ window.generarReporteHitos = function() {
                 <tbody>
                     ${hitos.slice(0,15).map(t => {
                         const fechaVencimiento = t.deadline ? new Date(t.deadline) : null;
-                        const estaCompletado = t.status === 'completed' || t.progress === 100;
-                        const estaAtrasado = fechaVencimiento && fechaVencimiento < hoy && !estaCompletado;
-                        const estaEnProgreso = (t.status === 'inProgress' || (t.progress > 0 && t.progress < 100)) && !estaCompletado && !estaAtrasado;
+                        const progreso = getProgress(t);
+                        const status = t.status;
+                        const timeLogged = Number(t.timeLogged) || 0;
+                        const estimatedTime = Number(t.estimatedTime) || 0;
+                        
+                        const estaCompletado = (status === 'completed');
+                        const estaAtrasadoPorEstado = (status === 'overdue' || status === 'rezagado' || status === 'delayed');
+                        const estaAtrasadoPorFecha = (fechaVencimiento && fechaVencimiento < hoy);
+                        const estaAtrasado = !estaCompletado && (estaAtrasadoPorEstado || estaAtrasadoPorFecha);
+                        const estaEnProgreso = !estaCompletado && !estaAtrasado && (status === 'inProgress' || progreso > 0 || timeLogged > 0);
                         
                         let estadoMostrado = '';
                         let colorEstado = '';
@@ -1119,19 +1240,20 @@ window.generarReporteHitos = function() {
                         }
                         
                         const responsable = t.team || t.assignee || t.asignado || t.responsable || 'Sin asignar';
-                        const progreso = t.progress || 0;
+                        const infoProgreso = (timeLogged > 0 && estimatedTime > 0 && progreso === 0) ? ` (${timeLogged}/${estimatedTime}h)` : '';
                         
                         return `
                             <tr>
                                 <td><strong>${escapeHtml(t.name || 'Tarea sin nombre')}</strong></td>
                                 <td><span style="background:${colorEstado}; padding:4px 12px; border-radius:20px; font-size:11px; color:white;">${estadoMostrado}</span></td>
-                                <td style="color:${estaAtrasado ? '#ef4444' : '#f59e0b'}">${t.deadline ? new Date(t.deadline).toLocaleDateString() : '-'}</td>
+                                <td style="color:${estaAtrasado ? '#ef4444' : '#f59e0b'}">${t.deadline ? new Date(t.deadline).toLocaleDateString() : '-'}${estaAtrasadoPorFecha ? ' ⚠️' : ''}</td>
                                 <td>${escapeHtml(responsable)}</td>
                                 <td>
                                     <div class="progress-bar" style="width:80px; display:inline-block; margin-right:8px;">
                                         <div style="width:${progreso}%; background:#8b5cf6;"></div>
                                     </div>
-                                    ${progreso}%
+                                    ${progreso}%${infoProgreso}
+                                    ${progreso === 100 ? ' ✅' : (progreso > 0 ? ' 🚀' : '')}
                                 </td>
                             </tr>
                         `;
@@ -1143,9 +1265,10 @@ window.generarReporteHitos = function() {
         <div class="recommendations">
             <h3>💡 Recomendaciones para Hitos</h3>
             <ul>
-                <li>🎯 Priorizar hitos atrasados para recuperar cronograma</li>
+                <li>🎯 Priorizar hitos atrasados (overdue/rezagado) para recuperar cronograma</li>
                 <li>📊 Revisar hitos críticos en reuniones semanales</li>
                 <li>✅ Celebrar hitos completados para motivar al equipo</li>
+                <li>⚠️ <strong style="color:#ef4444;">${atrasados}</strong> hito(s) atrasado(s) requieren atención inmediata</li>
             </ul>
         </div>
         
@@ -1164,15 +1287,15 @@ window.generarReporteHitos = function() {
                 window.location.reload();
             }
             
-            document.getElementById('btnSeleccionarTodos').addEventListener('click', function() {
+            document.getElementById('btnSeleccionarTodos')?.addEventListener('click', function() {
                 document.querySelectorAll('.hito-checkbox').forEach(cb => cb.checked = true);
             });
             
-            document.getElementById('btnDeseleccionarTodos').addEventListener('click', function() {
+            document.getElementById('btnDeseleccionarTodos')?.addEventListener('click', function() {
                 document.querySelectorAll('.hito-checkbox').forEach(cb => cb.checked = false);
             });
             
-            document.getElementById('btnAplicarFiltro').addEventListener('click', guardarYAbrirNuevo);
+            document.getElementById('btnAplicarFiltro')?.addEventListener('click', guardarYAbrirNuevo);
             
             const chartData = [];
             const chartLabels = [];
@@ -2098,8 +2221,8 @@ window.generarReporteStakeholders = function() {
 // Asegurar que la función esté disponible globalmente
 window.generarReporteStakeholders = window.generarReporteStakeholders;
     
-    // ============================================
-// REPORTE 15: FORECAST & PREDICCIONES - PROFESIONAL
+  // ============================================
+// REPORTE 15: FORECAST & PREDICCIONES - CORREGIDO
 // ============================================
 
 window.generarReporteForecast = function() {
@@ -2109,7 +2232,7 @@ window.generarReporteForecast = function() {
     const evm = calcularMetricasEVM(tareas);
     
     // ============================================
-    // CÁLCULOS AVANZADOS
+    // CÁLCULOS AVANZADOS CORREGIDOS
     // ============================================
     const completadas = tareas.filter(t => t.status === 'completed' || t.progress === 100).length;
     const total = tareas.length;
@@ -2117,34 +2240,86 @@ window.generarReporteForecast = function() {
     const pendientes = total - completadas - enProgreso;
     const atrasadas = tareas.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
     
-    // Velocidad del equipo (tareas completadas por día)
-    const velocidad = completadas / 30;
-    const diasRestantes = total > completadas && velocidad > 0 ? Math.ceil((total - completadas) / velocidad) : 0;
-    
-    // Fechas estimadas por escenario
+    // ============================================
+    // CALCULAR FECHA MÁXIMA REAL DE TAREAS
+    // ============================================
     const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    // Obtener la fecha de vencimiento más lejana
+    let fechaMaxima = null;
+    tareas.forEach(t => {
+        if (t.deadline) {
+            const fechaVen = new Date(t.deadline);
+            if (!fechaMaxima || fechaVen > fechaMaxima) {
+                fechaMaxima = fechaVen;
+            }
+        }
+    });
+    
+    console.log('📅 Fecha máxima de vencimiento:', fechaMaxima);
+    
+    // Calcular días desde hoy hasta fecha máxima
+    let diasTotales = 0;
+    if (fechaMaxima && fechaMaxima > hoy) {
+        const diffTime = Math.abs(fechaMaxima - hoy);
+        diasTotales = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    } else {
+        // Si no hay fechas o ya pasaron, usar 30 días por defecto
+        diasTotales = 30;
+    }
+    
+    console.log('📊 Días totales del proyecto:', diasTotales);
+    
+    // Velocidad del equipo (tareas completadas por día basado en tiempo real)
+    const diasTranscurridos = Math.max(1, diasTotales - (fechaMaxima && fechaMaxima > hoy ? Math.ceil((fechaMaxima - hoy) / (1000 * 60 * 60 * 24)) : diasTotales));
+    const velocidad = completadas > 0 ? completadas / Math.max(1, diasTranscurridos) : (enProgreso > 0 ? 0.5 : 0.2);
+    
+    console.log('⚡ Velocidad calculada:', velocidad, 'tareas/día');
+    
+    // Días restantes basados en velocidad real
+    let diasRestantes = 0;
+    if (velocidad > 0 && (total - completadas) > 0) {
+        diasRestantes = Math.ceil((total - completadas) / velocidad);
+    } else {
+        diasRestantes = Math.ceil(diasTotales * (pendientes / Math.max(1, total)));
+    }
+    
+    // Limitar días restantes a máximo razonable (90 días)
+    diasRestantes = Math.min(90, Math.max(0, diasRestantes));
+    
+    console.log('📅 Días restantes calculados:', diasRestantes);
+    
+    // Fechas estimadas por escenario (basadas en fechas reales)
     const fechaOptimista = new Date();
     fechaOptimista.setDate(hoy.getDate() + Math.max(0, Math.ceil(diasRestantes * 0.7)));
+    
     const fechaRealista = new Date();
-    fechaRealista.setDate(hoy.getDate() + diasRestantes);
+    if (fechaMaxima && fechaMaxima > hoy) {
+        // Usar fecha máxima realista
+        fechaRealista.setTime(fechaMaxima.getTime());
+    } else {
+        fechaRealista.setDate(hoy.getDate() + diasRestantes);
+    }
+    
     const fechaPesimista = new Date();
     fechaPesimista.setDate(hoy.getDate() + Math.ceil(diasRestantes * 1.3));
     
     // Probabilidad de éxito (más precisa)
-    let probabilidadExito = 100;
-    probabilidadExito -= atrasadas * 8;
-    probabilidadExito -= pendientes * 2;
-    if (evm?.SPI < 0.9) probabilidadExito -= 15;
-    if (evm?.CPI < 0.9) probabilidadExito -= 15;
-    probabilidadExito = Math.min(100, Math.max(0, Math.round(probabilidadExito)));
+    let probabilidadExito = 80; // Base
+    probabilidadExito -= atrasadas * 5;
+    probabilidadExito -= pendientes * 1;
+    if (evm?.SPI && evm.SPI < 0.9) probabilidadExito -= 10;
+    if (evm?.CPI && evm.CPI < 0.9) probabilidadExito -= 10;
+    probabilidadExito = Math.min(95, Math.max(5, Math.round(probabilidadExito)));
     
     // Nivel de riesgo
     let nivelRiesgo = '';
     let colorRiesgo = '';
-    if (probabilidadExito >= 80) {
+    if (probabilidadExito >= 70) {
         nivelRiesgo = 'BAJO';
         colorRiesgo = '#10b981';
-    } else if (probabilidadExito >= 50) {
+    } else if (probabilidadExito >= 40) {
         nivelRiesgo = 'MEDIO';
         colorRiesgo = '#f59e0b';
     } else {
@@ -2154,19 +2329,39 @@ window.generarReporteForecast = function() {
     
     // Porcentaje de avance
     const avance = total > 0 ? Math.round((completadas / total) * 100) : 0;
+    const tasaAtraso = total > 0 ? Math.round((atrasadas / total) * 100) : 0;
     
-    // Datos para gráfica de escenarios
-    const semanas = ['Actual', 'Sem 2', 'Sem 4', 'Sem 6', 'Final'];
-    const optimistaData = [completadas, Math.min(total, completadas + Math.ceil((total - completadas) * 0.35)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.65)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.85)), total];
-    const realistaData = [completadas, Math.min(total, completadas + Math.ceil((total - completadas) * 0.25)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.5)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.75)), total];
-    const pesimistaData = [completadas, Math.min(total, completadas + Math.ceil((total - completadas) * 0.15)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.3)), Math.min(total, completadas + Math.ceil((total - completadas) * 0.5)), total];
+    // Datos para gráfica de escenarios (simplificados)
+    const semanas = ['Actual', '2 Semanas', '4 Semanas', '6 Semanas', 'Final'];
+    const optimistaData = [
+        completadas,
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.25)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.5)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.75)),
+        total
+    ];
+    const realistaData = [
+        completadas,
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.2)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.4)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.6)),
+        total
+    ];
+    const pesimistaData = [
+        completadas,
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.1)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.2)),
+        Math.min(total, completadas + Math.ceil((total - completadas) * 0.3)),
+        total
+    ];
     
     // Recomendaciones dinámicas
     const recomendaciones = [];
-    if (evm?.SPI < 0.9) recomendaciones.push('⚠️ Acelerar tareas críticas para recuperar cronograma');
-    if (evm?.CPI < 0.9) recomendaciones.push('💰 Revisar estimaciones y controlar horas extras');
-    if (atrasadas > 0) recomendaciones.push(`⏰ Priorizar ${atrasadas} tareas atrasadas urgentemente`);
-    if (velocidad < 1) recomendaciones.push('🐌 Mejorar ritmo de trabajo y eliminar bloqueos');
+    if (evm?.SPI && evm.SPI < 0.9) recomendaciones.push('⚠️ Acelerar tareas críticas para recuperar cronograma');
+    if (evm?.CPI && evm.CPI < 0.9) recomendaciones.push('💰 Revisar estimaciones y controlar horas extras');
+    if (atrasadas > 0) recomendaciones.push(`⏰ Priorizar ${atrasadas} tarea(s) atrasada(s) urgentemente`);
+    if (velocidad < 0.3) recomendaciones.push('🐌 Mejorar ritmo de trabajo y eliminar bloqueos');
+    if (diasRestantes > 60) recomendaciones.push('📅 Replanificar hitos para ajustar expectativas');
     if (recomendaciones.length === 0) recomendaciones.push('✅ Mantener ritmo actual y monitorear semanalmente');
     
     const contenido = `
@@ -2193,7 +2388,7 @@ window.generarReporteForecast = function() {
                 <div style="font-size: 10px; color: #64748b;">Escenario realista</div>
             </div>
             <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
-                <div class="kpi-value" style="color: #f59e0b;">${evm?.EAC?.toFixed(0) || 0}h</div>
+                <div class="kpi-value" style="color: #f59e0b;">${evm?.EAC?.toFixed(0) || (tareas.reduce((s,t)=>s+(Number(t.timeLogged)||0),0) * (total/completadas || 1)).toFixed(0)}h</div>
                 <div>⏱️ Horas Proyectadas</div>
                 <div style="font-size: 10px; color: #64748b;">EAC al finalizar</div>
             </div>
@@ -2203,7 +2398,7 @@ window.generarReporteForecast = function() {
                 <div style="font-size: 10px; color: #64748b;">Tareas/día</div>
             </div>
             <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
-                <div class="kpi-value" style="color: ${colorRiesgo};">${Math.round((atrasadas / total) * 100)}%</div>
+                <div class="kpi-value" style="color: ${colorRiesgo};">${tasaAtraso}%</div>
                 <div>⚠️ Tasa Atraso</div>
                 <div style="font-size: 10px; color: #64748b;">${atrasadas} de ${total} tareas</div>
             </div>
@@ -2213,7 +2408,6 @@ window.generarReporteForecast = function() {
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 30px;">
             <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 20px;">
                 <h3 style="color: #8b5cf6; margin-bottom: 15px;">📈 Escenarios de Finalización</h3>
-                <br><br><br><br><br><br><br><br>
                 <canvas id="escenariosChart" style="height: 220px; width: 100%;"></canvas>
                 <div style="display: flex; justify-content: center; gap: 20px; margin-top: 15px;">
                     <div><span style="background: #10b981; width: 12px; height: 12px; display: inline-block; border-radius: 4px;"></span> Optimista</div>
@@ -2297,25 +2491,18 @@ window.generarReporteForecast = function() {
                         <div style="color: #8b5cf6; font-size: 14px;">${rec}</div>
                     </div>
                 `).join('')}
-                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px;">
-                    <div style="color: #8b5cf6; font-size: 14px;">📊 Revisar proyecciones semanalmente</div>
-                </div>
-                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px;">
-                    <div style="color: #8b5cf6; font-size: 14px;">🎯 Ajustar planificación según escenarios</div>
-                </div>
             </div>
         </div>
         
         <div style="margin-top: 25px; padding: 20px; background: #0f172a; border-radius: 16px; text-align: center;">
             <p style="color: #64748b; font-size: 12px;">
                 <strong>🔒 CONFIDENCIALIDAD:</strong> Este documento contiene proyecciones estratégicas del proyecto.<br>
-                <strong>📋 METODOLOGÍA:</strong> Basado en análisis EVM, velocidad de equipo y escenarios ponderados.<br>
+                <strong>📋 METODOLOGÍA:</strong> Basado en fechas reales de vencimiento y velocidad de equipo.<br>
                 <em>Generado automáticamente por PM Virtual Ejecutivo</em>
             </p>
         </div>
         
         <script>
-            // Gráfica de escenarios
             new Chart(document.getElementById('escenariosChart'), {
                 type: 'line',
                 data: {
@@ -2342,7 +2529,6 @@ window.generarReporteForecast = function() {
                 }
             });
             
-            // Gráfica de probabilidad
             new Chart(document.getElementById('probabilidadChart'), {
                 type: 'doughnut',
                 data: {
@@ -2367,8 +2553,8 @@ window.generarReporteForecast = function() {
     abrirVentanaReporte(generarHTMLBase(contenido, 'Forecast & Predicciones', proyecto.name));
 };
     
-    // ============================================
-// REPORTE 16: CUMPLIMIENTO PLAZOS - PROFESIONAL
+  // ============================================
+// REPORTE 16: CUMPLIMIENTO PLAZOS - GRÁFICA CORREGIDA
 // ============================================
 
 window.generarReporteCumplimiento = function() {
@@ -2382,27 +2568,46 @@ window.generarReporteCumplimiento = function() {
     // ANÁLISIS DE CUMPLIMIENTO
     // ============================================
     const conFecha = tareas.filter(t => t.deadline);
-    const cumplidas = conFecha.filter(t => new Date(t.deadline) >= hoy || t.status === 'completed');
-    const incumplidas = conFecha.filter(t => new Date(t.deadline) < hoy && t.status !== 'completed');
-    const cumplimiento = conFecha.length > 0 ? Math.round((cumplidas.length / conFecha.length) * 100) : 100;
     
-    // Tareas próximas a vencer (próximos 7 días)
-    const proximasVencer = conFecha.filter(t => {
+    const cumplidas = conFecha.filter(t => {
         const fechaVenc = new Date(t.deadline);
-        const diasDiff = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-        return diasDiff >= 0 && diasDiff <= 7 && t.status !== 'completed';
+        fechaVenc.setHours(0, 0, 0, 0);
+        return t.status === 'completed' || fechaVenc >= hoy;
     });
     
-    // Tareas críticas por fecha
-    const criticas = incumplidas.filter(t => t.priority === 'alta' || t.priority === 'high' || t.critical === true);
+    const incumplidas = conFecha.filter(t => {
+        const fechaVenc = new Date(t.deadline);
+        fechaVenc.setHours(0, 0, 0, 0);
+        return fechaVenc < hoy && t.status !== 'completed';
+    });
     
-    // Promedio de días de atraso
-    const promedioAtraso = incumplidas.length > 0 ? Math.round(incumplidas.reduce((sum, t) => {
-        const dias = Math.ceil((hoy - new Date(t.deadline)) / (1000 * 60 * 60 * 24));
-        return sum + dias;
-    }, 0) / incumplidas.length) : 0;
+    const cumplimiento = conFecha.length > 0 ? Math.round((cumplidas.length / conFecha.length) * 100) : 100;
     
-    // Calcular nivel de riesgo
+    const proximasVencer = conFecha.filter(t => {
+        if (t.status === 'completed') return false;
+        const fechaVenc = new Date(t.deadline);
+        fechaVenc.setHours(0, 0, 0, 0);
+        const diasDiff = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+        return diasDiff >= 0 && diasDiff <= 7;
+    });
+    
+    let promedioAtraso = 0;
+    if (incumplidas.length > 0) {
+        let sumaAtrasos = 0;
+        incumplidas.forEach(t => {
+            const fechaVenc = new Date(t.deadline);
+            fechaVenc.setHours(0, 0, 0, 0);
+            const diasAtraso = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+            sumaAtrasos += diasAtraso;
+        });
+        promedioAtraso = Math.round(sumaAtrasos / incumplidas.length);
+    }
+    
+    const criticas = incumplidas.filter(t => {
+        const prioridadAlta = t.priority === 'alta' || t.priority === 'high' || t.priority === 'Alta' || t.priority === 'High';
+        return prioridadAlta || t.critical === true;
+    });
+    
     let nivelRiesgo = '';
     let colorRiesgo = '';
     if (cumplimiento >= 90) {
@@ -2415,6 +2620,22 @@ window.generarReporteCumplimiento = function() {
         nivelRiesgo = 'CRÍTICO';
         colorRiesgo = '#ef4444';
     }
+    
+    const getEstadoReal = (t) => {
+        if (t.status === 'completed') return '✅ Completada';
+        if (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'delayed') return '⚠️ Atrasada';
+        if (t.status === 'inProgress') return '🔄 En progreso';
+        return '⏳ Pendiente';
+    };
+    
+    const getProgreso = (t) => {
+        if (t.progress > 0) return t.progress;
+        if (t.status === 'completed') return 100;
+        if (t.timeLogged > 0 && t.estimatedTime > 0) {
+            return Math.min(100, Math.round((t.timeLogged / t.estimatedTime) * 100));
+        }
+        return 0;
+    };
     
     const contenido = `
         <div class="header" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
@@ -2456,25 +2677,25 @@ window.generarReporteCumplimiento = function() {
             </div>
         </div>
         
-        <!-- GRÁFICA PRINCIPAL -->
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 30px;">
-            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <h3 style="color: #8b5cf6; margin-bottom: 15px;">📊 Cumplimiento de Plazos</h3>
-                <br><br><br><br>
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <canvas id="cumplimientoChart" style="height: 220px; width: 100%; max-width: 300px;"></canvas>
+        <!-- GRÁFICAS - SEPARADAS Y CON TAMAÑO MEJORADO -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-bottom: 40px; margin-top: 20px;">
+            <!-- Gráfica 1: Cumplimiento -->
+            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 25px;">
+                <h3 style="color: #8b5cf6; margin-bottom: 25px; text-align: center;">📊 Cumplimiento de Plazos</h3>
+                <div style="height: 260px; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="cumplimientoChart" style="height: 220px; width: 220px;"></canvas>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
+                <div style="text-align: center; margin-top: 20px;">
                     <span style="background: #10b981; width: 12px; height: 12px; display: inline-block; border-radius: 4px;"></span> Cumplidas (${cumplidas.length})
-                    <span style="background: #ef4444; width: 12px; height: 12px; display: inline-block; border-radius: 4px; margin-left: 15px;"></span> Incumplidas (${incumplidas.length})
+                    <span style="background: #ef4444; width: 12px; height: 12px; display: inline-block; border-radius: 4px; margin-left: 20px;"></span> Incumplidas (${incumplidas.length})
                 </div>
             </div>
-            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <h3 style="color: #8b5cf6; margin-bottom: 15px;">⏰ Estado de Plazos</h3>
-                <br><br><br><br><br><br><br><br><br><br>
-
-                <div style="display: flex; justify-content: center; align-items: center; min-height: 260px;">
-                    <canvas id="estadoPlazosChart" style="height: 260px; width: 80%; max-width: 500px;"></canvas>
+            
+            <!-- Gráfica 2: Estado de Plazos - MÁS GRANDE Y SEPARADA -->
+            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 25px;">
+                <h3 style="color: #8b5cf6; margin-bottom: 25px; text-align: center;">⏰ Estado de Plazos</h3>
+                <div style="height: 300px; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="estadoPlazosChart" style="height: 260px; width: 100%; max-width: 450px;"></canvas>
                 </div>
             </div>
         </div>
@@ -2486,36 +2707,37 @@ window.generarReporteCumplimiento = function() {
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #0f172a;">
-                        <th style="padding: 14px; text-align: left; color: #8b5cf6;">📋 Tarea</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">📅 Vencimiento</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">⏰ Días Restantes</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">📊 Progreso</th>
-                        <th style="padding: 14px; text-align: left; color: #8b5cf6;">👤 Responsable</th>
+                        <th style="padding: 12px; text-align: left; color: #8b5cf6;">📋 Tarea</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">📅 Vencimiento</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">⏰ Días Restantes</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">📊 Progreso</th>
+                        <th style="padding: 12px; text-align: left; color: #8b5cf6;">👤 Responsable</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${proximasVencer.map(t => {
                         const fechaVenc = new Date(t.deadline);
-                        const diasRestantes = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-                        const progreso = t.progress || 0;
+                        fechaVenc.setHours(0, 0, 0, 0);
+                        const diasRestantes = Math.max(0, Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24)));
+                        const progreso = getProgreso(t);
                         let colorDias = diasRestantes <= 2 ? '#ef4444' : (diasRestantes <= 4 ? '#f59e0b' : '#10b981');
                         return `
                             <tr style="border-bottom: 1px solid #334155;">
-                                <td style="padding: 14px;"><strong style="color: white;">${escapeHtml(t.name)}</strong></td>
-                                <td style="padding: 14px; text-align: center; color: ${colorDias};">${fechaVenc.toLocaleDateString()}</td>
-                                <td style="padding: 14px; text-align: center; color: ${colorDias};">${diasRestantes} día(s)</td>
-                                <td style="padding: 14px; text-align: center;">
-                                    <div style="background: #334155; border-radius: 10px; height: 8px; width: 100px; margin: 0 auto;">
-                                        <div style="background: #8b5cf6; border-radius: 10px; height: 8px; width: ${progreso}%;"></div>
+                                <td style="padding: 12px;"><strong style="color: white;">${escapeHtml(t.name)}</strong></td>
+                                <td style="padding: 12px; text-align: center; color: ${colorDias};">${fechaVenc.toLocaleDateString()}</td>
+                                <td style="padding: 12px; text-align: center; color: ${colorDias};">${diasRestantes} día(s)</td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <div style="background: #334155; border-radius: 10px; height: 6px; width: 80px; margin: 0 auto;">
+                                        <div style="background: #8b5cf6; border-radius: 10px; height: 6px; width: ${progreso}%;"></div>
                                     </div>
                                     ${progreso}%
-                                 </td>
-                                <td style="padding: 14px; color: #94a3b8;">${escapeHtml(t.assignee || t.team || '-')}</td>
+                                </td>
+                                <td style="padding: 12px; color: #94a3b8;">${escapeHtml(t.assignee || t.team || '-')}</td>
                              </tr>
                         `;
                     }).join('')}
                 </tbody>
-             </table>
+              </table>
         </div>
         ` : ''}
         
@@ -2526,31 +2748,32 @@ window.generarReporteCumplimiento = function() {
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #0f172a;">
-                        <th style="padding: 14px; text-align: left; color: #8b5cf6;">📋 Tarea</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">📅 Vencimiento</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">⏰ Días Atraso</th>
-                        <th style="padding: 14px; text-align: center; color: #8b5cf6;">📊 Estado</th>
-                        <th style="padding: 14px; text-align: left; color: #8b5cf6;">👤 Responsable</th>
+                        <th style="padding: 12px; text-align: left; color: #8b5cf6;">📋 Tarea</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">📅 Vencimiento</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">⏰ Días Atraso</th>
+                        <th style="padding: 12px; text-align: center; color: #8b5cf6;">📊 Estado</th>
+                        <th style="padding: 12px; text-align: left; color: #8b5cf6;">👤 Responsable</th>
                      </tr>
                 </thead>
                 <tbody>
                     ${incumplidas.slice(0, 15).map(t => {
-                        const dias = Math.ceil((hoy - new Date(t.deadline)) / (1000 * 60 * 60 * 24));
-                        let colorDias = dias >= 14 ? '#ef4444' : (dias >= 7 ? '#f59e0b' : '#f97316');
-                        let estadoTexto = t.status === 'inProgress' ? '🔄 En progreso' : '⏳ Pendiente';
+                        const fechaVenc = new Date(t.deadline);
+                        fechaVenc.setHours(0, 0, 0, 0);
+                        const diasAtraso = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+                        let colorDias = diasAtraso >= 14 ? '#ef4444' : (diasAtraso >= 7 ? '#f59e0b' : '#f97316');
+                        const estadoReal = getEstadoReal(t);
                         return `
                             <tr style="border-bottom: 1px solid #334155;">
-                                <td style="padding: 14px;"><strong style="color: #ef4444;">⚠️ ${escapeHtml(t.name)}</strong></td>
-                                <td style="padding: 14px; text-align: center; color: #ef4444;">${new Date(t.deadline).toLocaleDateString()}</td>
-                                <td style="padding: 14px; text-align: center; color: ${colorDias};">${dias} día(s)</td>
-                                <td style="padding: 14px; text-align: center; color: #f59e0b;">${estadoTexto}</td>
-                                <td style="padding: 14px; color: #94a3b8;">${escapeHtml(t.assignee || t.team || '-')}</td>
-                             </tr>
+                                <td style="padding: 12px;"><strong style="color: #ef4444;">⚠️ ${escapeHtml(t.name)}</strong></td>
+                                <td style="padding: 12px; text-align: center; color: #ef4444;">${fechaVenc.toLocaleDateString()}</td>
+                                <td style="padding: 12px; text-align: center; color: ${colorDias};">${diasAtraso} día(s)</td>
+                                <td style="padding: 12px; text-align: center; color: #ef4444;">${estadoReal}</td>
+                                <td style="padding: 12px; color: #94a3b8;">${escapeHtml(t.assignee || t.team || '-')}</td>
+                              </tr>
                         `;
                     }).join('')}
                 </tbody>
-             </table>
-            ${incumplidas.length > 15 ? `<div style="margin-top: 15px; text-align: center; color: #64748b;">... y ${incumplidas.length - 15} tareas más</div>` : ''}
+              </table>
         </div>
         ` : `
         <div style="background: #1e293b; border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px;">
@@ -2560,34 +2783,34 @@ window.generarReporteCumplimiento = function() {
         </div>
         `}
         
-        <!-- RECOMENDACIONES ESTRATÉGICAS CENTRADAS -->
-        <div class="recommendations" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px; text-align: center;">
-            <h3 style="color: #8b5cf6; margin-bottom: 20px;">💡 Recomendaciones Estratégicas</h3>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 800px; margin: 0 auto;">
+        <!-- RECOMENDACIONES ESTRATÉGICAS -->
+        <div class="recommendations" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px;">
+            <h3 style="color: #8b5cf6; margin-bottom: 20px; text-align: center;">💡 Recomendaciones Estratégicas</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
                 ${incumplidas.length > 0 ? `
-                    <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                    <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 12px;">
                         <div style="color: #ef4444; font-weight: bold;">🔴 Atención Inmediata</div>
-                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Priorizar ${incumplidas.length} tareas incumplidas</div>
+                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Priorizar ${incumplidas.length} tarea(s) incumplida(s) (${promedioAtraso} día(s) de atraso promedio)</div>
                     </div>
                 ` : ''}
                 ${proximasVencer.length > 0 ? `
-                    <div style="background: rgba(245, 158, 11, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                    <div style="background: rgba(245, 158, 11, 0.1); border-radius: 12px; padding: 12px;">
                         <div style="color: #f59e0b; font-weight: bold;">⚠️ Plan de Acción</div>
-                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Revisar ${proximasVencer.length} tareas próximas a vencer</div>
+                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Revisar ${proximasVencer.length} tarea(s) próximas a vencer</div>
                     </div>
                 ` : ''}
-                <div style="background: rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                <div style="background: rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #3b82f6; font-weight: bold;">📊 Monitoreo</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Establecer alertas tempranas para fechas próximas</div>
                 </div>
-                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #8b5cf6; font-weight: bold;">🎯 Planificación</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Ajustar fechas de vencimiento de manera realista</div>
                 </div>
             </div>
         </div>
         
-        <!-- PIE DE PÁGINA EN 4 CONTENEDORES -->
+        <!-- PIE DE PÁGINA -->
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 25px;">
             <div style="background: #0f172a; border-radius: 16px; padding: 20px; text-align: center;">
                 <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.6;">
@@ -2616,7 +2839,6 @@ window.generarReporteCumplimiento = function() {
         </div>
         
         <script>
-            // Gráfica de cumplimiento (dona)
             new Chart(document.getElementById('cumplimientoChart'), {
                 type: 'doughnut',
                 data: {
@@ -2631,13 +2853,10 @@ window.generarReporteCumplimiento = function() {
                     responsive: true,
                     maintainAspectRatio: true,
                     cutout: '60%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11 } } } }
                 }
             });
             
-            // Gráfica de estado de plazos (barras)
             new Chart(document.getElementById('estadoPlazosChart'), {
                 type: 'bar',
                 data: {
@@ -2646,7 +2865,9 @@ window.generarReporteCumplimiento = function() {
                         label: 'Cantidad de Tareas',
                         data: [${cumplidas.length}, ${incumplidas.length}, ${proximasVencer.length}],
                         backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
-                        borderRadius: 8
+                        borderRadius: 8,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
                     }]
                 },
                 options: {
@@ -2655,12 +2876,19 @@ window.generarReporteCumplimiento = function() {
                     scales: { 
                         y: { 
                             beginAtZero: true, 
-                            ticks: { stepSize: 1, color: '#e2e8f0' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
+                            ticks: { stepSize: 1, color: '#e2e8f0', font: { size: 12 } },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: { display: true, text: 'Cantidad de Tareas', color: '#94a3b8', font: { size: 11 } }
                         },
-                        x: { ticks: { color: '#e2e8f0' } }
+                        x: { 
+                            ticks: { color: '#e2e8f0', font: { size: 12 } },
+                            grid: { display: false }
+                        }
                     },
-                    plugins: { legend: { labels: { color: '#e2e8f0' } } }
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#0f172a', titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
+                    }
                 }
             });
         <\/script>`;
@@ -2668,8 +2896,8 @@ window.generarReporteCumplimiento = function() {
     abrirVentanaReporte(generarHTMLBase(contenido, 'Cumplimiento de Plazos', proyecto.name));
 };
     
-  // ============================================
-// REPORTE 17: SATISFACCIÓN CLIENTE - PROFESIONAL
+// ============================================
+// REPORTE 17: SATISFACCIÓN CLIENTE - GRÁFICA CORREGIDA
 // ============================================
 
 window.generarReporteSatisfaccion = function() {
@@ -2687,50 +2915,54 @@ window.generarReporteSatisfaccion = function() {
     const enProgreso = tareas.filter(t => t.status === 'inProgress' || (t.progress > 0 && t.progress < 100)).length;
     const pendientes = total - completadas - enProgreso;
     
-    // Entregas a tiempo (completadas antes o en la fecha de vencimiento)
-    const entregasATiempo = tareas.filter(t => {
-        if ((t.status !== 'completed' && t.progress !== 100)) return false;
-        if (!t.deadline) return true;
+    // Entregas a tiempo CORREGIDO
+    let entregasATiempo = 0;
+    tareas.forEach(t => {
+        if ((t.status !== 'completed' && t.progress !== 100)) return;
+        if (!t.deadline) {
+            entregasATiempo++;
+            return;
+        }
         const fechaVencimiento = new Date(t.deadline);
-        const fechaTermino = t.completedDate ? new Date(t.completedDate) : hoy;
-        return fechaTermino <= fechaVencimiento;
-    }).length;
+        fechaVencimiento.setHours(0, 0, 0, 0);
+        
+        if (t.completedDate) {
+            const fechaTermino = new Date(t.completedDate);
+            fechaTermino.setHours(0, 0, 0, 0);
+            if (fechaTermino <= fechaVencimiento) entregasATiempo++;
+        } else {
+            entregasATiempo++;
+        }
+    });
     
-    // Calcular satisfacción basada en entregas a tiempo y tasa de éxito
     const tasaExito = total > 0 ? (completadas / total) * 100 : 0;
     const tasaPuntualidad = completadas > 0 ? (entregasATiempo / completadas) * 100 : 0;
     let satisfaccion = Math.min(100, Math.round((tasaExito * 0.4) + (tasaPuntualidad * 0.4) + 20));
     if (enProgreso > 0 && pendientes === 0) satisfaccion = Math.min(100, satisfaccion + 5);
     if (pendientes > completadas) satisfaccion = Math.max(0, satisfaccion - 10);
     
-    // Nivel de satisfacción
     let nivelSatisfaccion = '';
     let colorSatisfaccion = '';
-    let mensajeSatisfaccion = '';
     if (satisfaccion >= 85) {
         nivelSatisfaccion = 'EXCELENTE';
         colorSatisfaccion = '#10b981';
-        mensajeSatisfaccion = 'El cliente está muy satisfecho con los resultados.';
     } else if (satisfaccion >= 70) {
         nivelSatisfaccion = 'BUENO';
         colorSatisfaccion = '#3b82f6';
-        mensajeSatisfaccion = 'El cliente está satisfecho, hay margen de mejora.';
     } else if (satisfaccion >= 50) {
         nivelSatisfaccion = 'REGULAR';
         colorSatisfaccion = '#f59e0b';
-        mensajeSatisfaccion = 'Se requiere atención para mejorar la experiencia.';
     } else {
         nivelSatisfaccion = 'CRÍTICO';
         colorSatisfaccion = '#ef4444';
-        mensajeSatisfaccion = 'Riesgo de insatisfacción. Acción inmediata requerida.';
     }
     
-    // Factores que afectan la satisfacción
+    // Factores
     const factoresPositivos = [];
     const factoresNegativos = [];
     
     if (tasaPuntualidad >= 80) factoresPositivos.push('Alta puntualidad en entregas');
-    else if (tasaPuntualidad < 60) factoresNegativos.push('Baja puntualidad en entregas');
+    else if (tasaPuntualidad < 60 && completadas > 0) factoresNegativos.push('Baja puntualidad en entregas');
     
     if (tasaExito >= 80) factoresPositivos.push('Alta tasa de éxito en tareas');
     else if (tasaExito < 60) factoresNegativos.push('Baja tasa de éxito en tareas');
@@ -2778,84 +3010,80 @@ window.generarReporteSatisfaccion = function() {
             </div>
         </div>
         
-        <!-- GRÁFICA PRINCIPAL Y FACTORES CLAVE PROFESIONALES -->
+        <!-- GRÁFICA PRINCIPAL Y FACTORES CLAVE - CON GRÁFICA CORREGIDA -->
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 30px;">
-            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <h3 style="color: #8b5cf6; margin-bottom: 15px;">📊 Índice de Satisfacción</h3>
-                <br><br><br><br>
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <canvas id="satisfaccionChart" style="height: 220px; width: 100%; max-width: 300px;"></canvas>
+            <!-- GRÁFICA DE SATISFACCIÓN - CORREGIDA (no se sale del cuadro) -->
+            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 25px; display: flex; flex-direction: column; align-items: center;">
+                <h3 style="color: #8b5cf6; margin-bottom: 25px; text-align: center;">📊 Índice de Satisfacción</h3>
+                <div style="width: 200px; height: 200px; margin: 0 auto; position: relative;">
+                    <canvas id="satisfaccionChart" style="width: 100% !important; height: 100% !important;"></canvas>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
+                <div style="text-align: center; margin-top: 25px;">
                     <span style="background: #10b981; width: 12px; height: 12px; display: inline-block; border-radius: 4px;"></span> Satisfacción (${satisfaccion}%)
                     <span style="background: #ef4444; width: 12px; height: 12px; display: inline-block; border-radius: 4px; margin-left: 15px;"></span> Brecha (${100 - satisfaccion}%)
                 </div>
             </div>
             
-            <!-- FACTORES CLAVE PROFESIONAL -->
-<div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 20px;">
-    <h3 style="color: #8b5cf6; margin-bottom: 20px;">📈 Análisis de Factores Clave</h3>
-    <br><br><br><br><br><br><br><br><br><br>
-
-    
-    <!-- Factores Positivos -->
-    <div style="background: rgba(16, 185, 129, 0.15); border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #10b981;">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-            <span style="background: #10b981; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-            <span style="color: #10b981; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">✅ Factores Positivos</span>
-            <span style="background: #10b98120; color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 20px;">${factoresPositivos.length} elementos</span>
-        </div>
-        ${factoresPositivos.length > 0 ? `
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                ${factoresPositivos.map(f => `
-                    <div style="background: rgba(16, 185, 129, 0.1); border-radius: 30px; padding: 6px 14px; display: flex; align-items: center; gap: 6px;">
-                        <span style="color: #10b981;">✅</span>
-                        <span style="color: #cbd5e1; font-size: 12px;">${f}</span>
+            <!-- FACTORES CLAVE -->
+            <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 25px;">
+                <h3 style="color: #8b5cf6; margin-bottom: 25px; text-align: center;">📈 Análisis de Factores Clave</h3>
+                
+                <!-- Factores Positivos -->
+                <div style="background: rgba(16, 185, 129, 0.15); border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #10b981;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <span style="background: #10b981; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
+                        <span style="color: #10b981; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">✅ Factores Positivos</span>
+                        <span style="background: #10b98120; color: #10b981; font-size: 10px; padding: 2px 8px; border-radius: 20px;">${factoresPositivos.length} elementos</span>
                     </div>
-                `).join('')}
-            </div>
-        ` : `
-            <div style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; padding: 20px; text-align: center;">
-                <span style="color: #10b981; font-size: 28px;">📊</span>
-                <div style="color: #64748b; font-size: 13px; margin-top: 5px;">No hay factores positivos destacados aún</div>
-                <div style="color: #64748b; font-size: 11px;">Continúa con el buen trabajo para generar puntos positivos</div>
-            </div>
-        `}
-    </div>
-    
-    <!-- Áreas de Mejora -->
-    <div style="background: rgba(239, 68, 68, 0.15); border-radius: 16px; padding: 15px; border-left: 4px solid #ef4444;">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-            <span style="background: #ef4444; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
-            <span style="color: #ef4444; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">⚠️ Áreas de Mejora</span>
-            <span style="background: #ef444420; color: #ef4444; font-size: 10px; padding: 2px 8px; border-radius: 20px;">${factoresNegativos.length} elementos</span>
-        </div>
-        ${factoresNegativos.length > 0 ? `
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                ${factoresNegativos.map(f => `
-                    <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;">
-                        <div style="background: #ef4444; width: 32px; height: 32px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: white; font-size: 14px;">⚠️</span>
+                    ${factoresPositivos.length > 0 ? `
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            ${factoresPositivos.map(f => `
+                                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 30px; padding: 6px 14px; display: flex; align-items: center; gap: 6px;">
+                                    <span style="color: #10b981;">✅</span>
+                                    <span style="color: #cbd5e1; font-size: 12px;">${f}</span>
+                                </div>
+                            `).join('')}
                         </div>
-                        <div style="flex: 1;">
-                            <div style="color: #ef4444; font-weight: bold; font-size: 13px;">${f}</div>
-                            <div style="color: #64748b; font-size: 10px; margin-top: 2px;">Acción requerida para mejora</div>
+                    ` : `
+                        <div style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; padding: 20px; text-align: center;">
+                            <span style="color: #10b981; font-size: 28px;">📊</span>
+                            <div style="color: #64748b; font-size: 13px; margin-top: 5px;">No hay factores positivos destacados aún</div>
                         </div>
-                        <div style="background: rgba(239, 68, 68, 0.2); border-radius: 20px; padding: 4px 10px;">
-                            <span style="color: #ef4444; font-size: 10px;">PRIORIDAD</span>
-                        </div>
+                    `}
+                </div>
+                
+                <!-- Áreas de Mejora -->
+                <div style="background: rgba(239, 68, 68, 0.15); border-radius: 16px; padding: 15px; border-left: 4px solid #ef4444;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <span style="background: #ef4444; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
+                        <span style="color: #ef4444; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">⚠️ Áreas de Mejora</span>
+                        <span style="background: #ef444420; color: #ef4444; font-size: 10px; padding: 2px 8px; border-radius: 20px;">${factoresNegativos.length} elementos</span>
                     </div>
-                `).join('')}
+                    ${factoresNegativos.length > 0 ? `
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            ${factoresNegativos.map(f => `
+                                <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #ef4444; width: 32px; height: 32px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <span style="color: white; font-size: 14px;">⚠️</span>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="color: #ef4444; font-weight: bold; font-size: 13px;">${f}</div>
+                                    </div>
+                                    <div style="background: rgba(239, 68, 68, 0.2); border-radius: 20px; padding: 4px 10px;">
+                                        <span style="color: #ef4444; font-size: 10px;">PRIORIDAD</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; padding: 20px; text-align: center;">
+                            <span style="color: #10b981; font-size: 28px;">🏆</span>
+                            <div style="color: #10b981; font-size: 13px; margin-top: 5px;">¡No hay áreas críticas de mejora!</div>
+                        </div>
+                    `}
+                </div>
             </div>
-        ` : `
-            <div style="background: rgba(16, 185, 129, 0.05); border-radius: 12px; padding: 20px; text-align: center;">
-                <span style="color: #10b981; font-size: 28px;">🏆</span>
-                <div style="color: #10b981; font-size: 13px; margin-top: 5px;">¡No hay áreas críticas de mejora!</div>
-                <div style="color: #64748b; font-size: 11px;">Excelente desempeño en todas las métricas clave</div>
-            </div>
-        `}
-    </div>
-</div>
+        </div>
         
         <!-- MÉTRICAS DE CALIDAD -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
@@ -2876,366 +3104,782 @@ window.generarReporteSatisfaccion = function() {
             </div>
         </div>
         
-        <!-- RECOMENDACIONES ESTRATÉGICAS -->
-        <div class="recommendations" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px; text-align: center;">
-            <h3 style="color: #8b5cf6; margin-bottom: 20px;">💡 Recomendaciones Estratégicas</h3>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 800px; margin: 0 auto;">
-                <div style="background: rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+        <!-- RECOMENDACIONES -->
+        <div class="recommendations" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px;">
+            <h3 style="color: #8b5cf6; margin-bottom: 20px; text-align: center;">💡 Recomendaciones Estratégicas</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                <div style="background: rgba(59, 130, 246, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #3b82f6; font-weight: bold;">📊 Encuestas Periódicas</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Realizar encuestas de satisfacción al finalizar cada hito</div>
                 </div>
-                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #10b981; font-weight: bold;">🎯 Mejorar Puntualidad</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Ajustar cronogramas y cumplir fechas comprometidas</div>
                 </div>
-                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                <div style="background: rgba(139, 92, 246, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #8b5cf6; font-weight: bold;">📢 Comunicación Proactiva</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Mantener al cliente informado del progreso semanal</div>
                 </div>
-                <div style="background: rgba(245, 158, 11, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                <div style="background: rgba(245, 158, 11, 0.1); border-radius: 12px; padding: 12px;">
                     <div style="color: #f59e0b; font-weight: bold;">✅ Documentar Feedback</div>
                     <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Registrar lecciones aprendidas y expectativas del cliente</div>
                 </div>
             </div>
         </div>
         
-        <!-- PIE DE PÁGINA -->
-      
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 15px;">
+        <!-- PIE -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 25px;">
             <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <p style="color: #64748b; font-size: 11px; margin: 0;">
-                    <strong>⭐ CONFIDENCIAL - Satisfacción Cliente</strong>
-                </p>
+                <p style="color: #64748b; font-size: 11px; margin: 0;"><strong>⭐ CONFIDENCIAL - Satisfacción Cliente</strong></p>
             </div>
             <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <p style="color: #64748b; font-size: 11px; margin: 0;">
-                    📅 Generado: ${new Date().toLocaleString()}
-                </p>
+                <p style="color: #64748b; font-size: 11px; margin: 0;">📅 Generado: ${new Date().toLocaleString()}</p>
             </div>
         </div>
         
         <script>
-            // Gráfica de satisfacción
-            new Chart(document.getElementById('satisfaccionChart'), {
-                type: 'doughnut',
+            const satisfaccionCtx = document.getElementById('satisfaccionChart');
+            if (satisfaccionCtx) {
+                new Chart(satisfaccionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Satisfacción', 'Brecha'],
+                        datasets: [{
+                            data: [${satisfaccion}, ${100 - satisfaccion}],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { color: '#e2e8f0', font: { size: 11 } },
+                                display: false
+                            },
+                            tooltip: { enabled: true }
+                        }
+                    }
+                });
+            }
+        <\/script>`;
+    
+    abrirVentanaReporte(generarHTMLBase(contenido, 'Satisfacción Cliente', proyecto.name));
+};
+
+// ============================================
+// REPORTE 18: CAPACIDAD EQUIPO - VERSIÓN FINAL CORREGIDA
+// ============================================
+
+window.generarReporteCapacidad = function() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) { alert('❌ No hay proyecto seleccionado'); return; }
+    const tareas = proyecto.tasks || [];
+    
+    // Función para obtener progreso real de una tarea
+    const getProgresoReal = (t) => {
+        if (t.progress !== undefined && t.progress > 0) return t.progress;
+        if (t.status === 'completed') return 100;
+        const timeLogged = Number(t.timeLogged) || 0;
+        const estimatedTime = Number(t.estimatedTime) || 0;
+        if (estimatedTime > 0) {
+            return Math.min(100, Math.round((timeLogged / estimatedTime) * 100));
+        }
+        return 0;
+    };
+    
+    // Función para obtener color del PROGRESO según el estado de la tarea
+    const getColorProgresoPorEstado = (estado, progreso) => {
+        switch(estado) {
+            case 'completed': return '#10b981'; // Verde
+            case 'inProgress': return '#14b8a6'; // Verde azulado
+            case 'overdue': return '#ef4444'; // Rojo
+            case 'rezagado': return '#ef4444'; // Rojo
+            case 'delayed': return '#ef4444'; // Rojo
+            case 'pending': return '#f59e0b'; // Amarillo
+            default: return '#64748b'; // Gris
+        }
+    };
+    
+    // Función para obtener color del PROGRESO GENERAL del recurso
+    const getColorProgresoGeneral = (recurso) => {
+        if (recurso.retrasadas > 0) return '#ef4444'; // Rojo si tiene retrasadas
+        if (recurso.enProgreso > 0) return '#14b8a6'; // Verde azulado si tiene en progreso
+        if (recurso.pendientes > 0) return '#f59e0b'; // Amarillo si solo tiene pendientes
+        if (recurso.completadas === recurso.total && recurso.total > 0) return '#10b981'; // Verde si completado
+        return '#64748b'; // Gris
+    };
+    
+    // Función para obtener texto del estado
+    const getTextoEstado = (estado) => {
+        switch(estado) {
+            case 'completed': return '✅ Completada';
+            case 'inProgress': return '🔄 En progreso';
+            case 'overdue': return '⚠️ Retrasada';
+            case 'rezagado': return '⚠️ Retrasada';
+            case 'delayed': return '⚠️ Retrasada';
+            case 'pending': return '⏳ Pendiente';
+            default: return '📋 ' + estado;
+        }
+    };
+    
+    // Función para obtener emoji del estado
+    const getEmojiEstado = (estado) => {
+        switch(estado) {
+            case 'completed': return '✅';
+            case 'inProgress': return '🔄';
+            case 'overdue': return '⚠️';
+            case 'rezagado': return '⚠️';
+            case 'delayed': return '⚠️';
+            case 'pending': return '⏳';
+            default: return '📋';
+        }
+    };
+    
+    // Estructura de recursos
+    const recursos = {};
+    
+    tareas.forEach(t => { 
+        if(t.assignee) { 
+            if(!recursos[t.assignee]) {
+                recursos[t.assignee] = { 
+                    total: 0, 
+                    completadas: 0, 
+                    pendientes: 0,
+                    retrasadas: 0,
+                    enProgreso: 0,
+                    progresoAcumulado: 0,
+                    tareasInfo: []
+                }; 
+            }
+            
+            const progreso = getProgresoReal(t);
+            recursos[t.assignee].total++;
+            recursos[t.assignee].progresoAcumulado += progreso;
+            recursos[t.assignee].tareasInfo.push({
+                nombre: t.name,
+                progreso: progreso,
+                estado: t.status,
+                estadoTexto: getTextoEstado(t.status),
+                estadoEmoji: getEmojiEstado(t.status),
+                colorProgreso: getColorProgresoPorEstado(t.status, progreso)
+            });
+            
+            if(t.status === 'completed') {
+                recursos[t.assignee].completadas++;
+            } else if(t.status === 'overdue' || t.status === 'rezagado' || t.status === 'delayed') {
+                recursos[t.assignee].retrasadas++;
+                recursos[t.assignee].pendientes++;
+            } else if(t.status === 'inProgress') {
+                recursos[t.assignee].enProgreso++;
+                recursos[t.assignee].pendientes++;
+            } else {
+                recursos[t.assignee].pendientes++;
+            }
+        } 
+    });
+    
+    // Calcular porcentaje de progreso promedio por recurso
+    Object.values(recursos).forEach(r => {
+        r.progresoPromedio = r.total > 0 ? Math.round(r.progresoAcumulado / r.total) : 0;
+        r.colorProgresoGeneral = getColorProgresoGeneral(r);
+    });
+    
+    const capacidadTotal = Object.values(recursos).reduce((s,r)=>s+r.total,0);
+    const capacidadUtilizada = Object.values(recursos).reduce((s,r)=>s+r.completadas,0);
+    const utilizacion = capacidadTotal > 0 ? Math.round((capacidadUtilizada / capacidadTotal) * 100) : 0;
+    const sobrecargados = Object.values(recursos).filter(r => r.pendientes > 3).length;
+    
+    const contenido = `
+        <div class="header" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+            <h1 style="font-size: 32px;">📊 TEAM CAPACITY</h1>
+            <p style="font-size: 16px; opacity: 0.9;">${escapeHtml(proyecto.name)} • Análisis de capacidad del equipo</p>
+            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <span style="background: #8b5cf6; padding: 8px 24px; border-radius: 40px; font-weight: bold;">Utilización: ${utilizacion}%</span>
+            </div>
+        </div>
+        
+        <!-- KPIs EJECUTIVOS -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+            <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+                <div class="kpi-value" style="color: #3b82f6;">${Object.keys(recursos).length}</div>
+                <div>👥 Recursos</div>
+                <div style="font-size: 10px; color: #64748b;">Miembros del equipo</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+                <div class="kpi-value" style="color: #8b5cf6;">${capacidadTotal}</div>
+                <div>📋 Capacidad total</div>
+                <div style="font-size: 10px; color: #64748b;">Tareas asignadas</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+                <div class="kpi-value" style="color: #10b981;">${capacidadUtilizada}</div>
+                <div>✅ Utilizada</div>
+                <div style="font-size: 10px; color: #64748b;">Tareas completadas</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+                <div class="kpi-value" style="color: ${sobrecargados > 0 ? '#ef4444' : '#10b981'};">${sobrecargados}</div>
+                <div>⚠️ Sobrecarga</div>
+                <div style="font-size: 10px; color: #64748b;">Recursos con >3 pendientes</div>
+            </div>
+        </div>
+        
+        <!-- TABLA DE CAPACIDAD POR RECURSO -->
+        <div class="table-container" style="background: #1e293b; border-radius: 20px; padding: 25px; margin-bottom: 30px;">
+            <h3 style="color: #8b5cf6; margin-bottom: 20px;">📋 Capacidad por Recurso</h3>
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #0f172a; border-bottom: 2px solid #334155;">
+                        <th style="padding: 14px; text-align: left; color: white;">👤 Recurso</th>
+                        <th style="padding: 14px; text-align: center; color: white;">📋 Capacidad</th>
+                        <th style="padding: 14px; text-align: center; color: white;">✅ Completadas</th>
+                        <th style="padding: 14px; text-align: center; color: white;">🔄 En Progreso</th>
+                        <th style="padding: 14px; text-align: center; color: white;">⚠️ Retrasadas</th>
+                        <th style="padding: 14px; text-align: center; color: white;">⏳ Pendientes</th>
+                        <th style="padding: 14px; text-align: center; color: white;">📊 Progreso</th>
+                        <th style="padding: 14px; text-align: left; color: white;">📋 Tareas</th>
+                     </tr>
+                </thead>
+                <tbody>
+                    ${Object.entries(recursos).map(([nombre, r]) => {
+                        const progresoReal = r.progresoPromedio;
+                        const colorProgreso = r.colorProgresoGeneral;
+                        
+                        // Estado general del recurso
+                        let estadoGeneral = '';
+                        let estadoGeneralColor = '';
+                        if (r.retrasadas > 0) {
+                            estadoGeneral = '⚠️ Con retrasos';
+                            estadoGeneralColor = '#ef4444';
+                        } else if (r.enProgreso > 0) {
+                            estadoGeneral = '🟢 En progreso';
+                            estadoGeneralColor = '#14b8a6';
+                        } else if (r.completadas === r.total && r.total > 0) {
+                            estadoGeneral = '✅ Completado';
+                            estadoGeneralColor = '#10b981';
+                        } else if (r.pendientes > 0) {
+                            estadoGeneral = '⏳ Pendiente';
+                            estadoGeneralColor = '#f59e0b';
+                        } else {
+                            estadoGeneral = '⚪ Sin tareas';
+                            estadoGeneralColor = '#64748b';
+                        }
+                        
+                        // Detalle de tareas - todas con el MISMO formato
+                        const tareasDetalle = r.tareasInfo.map(t => {
+                            let emoji = t.estadoEmoji;
+                            let color = t.colorProgreso;
+                            return `
+                                <div style="display: inline-flex; align-items: center; gap: 6px; background: #0f172a; padding: 4px 12px; border-radius: 20px; margin: 2px; font-size: 12px;">
+                                    <span style="color: ${color};">${emoji}</span>
+                                    <span style="color: white;">${escapeHtml(t.nombre)}</span>
+                                    <span style="color: ${color}; font-weight: bold;">${t.progreso}%</span>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        return `
+                            <tr style="border-bottom: 1px solid #334155;">
+                                <td style="padding: 14px;">
+                                    <strong style="color: white;">${escapeHtml(nombre)}</strong>
+                                    <div style="font-size: 10px; margin-top: 4px;">
+                                        <span style="color: ${estadoGeneralColor};">${estadoGeneral}</span>
+                                    </div>
+                                   </td>
+                                <td style="padding: 14px; text-align: center;"><span style="color: #8b5cf6; font-weight: bold;">${r.total}</span></td>
+                                <td style="padding: 14px; text-align: center;"><span style="color: #10b981; font-weight: bold;">${r.completadas}</span></td>
+                                <td style="padding: 14px; text-align: center;"><span style="color: #14b8a6; font-weight: bold;">${r.enProgreso}</span></td>
+                                <td style="padding: 14px; text-align: center;"><span style="color: #ef4444; font-weight: bold;">${r.retrasadas}</span></td>
+                                <td style="padding: 14px; text-align: center;"><span style="color: #f59e0b; font-weight: bold;">${r.pendientes}</span></td>
+                                <td style="padding: 14px; text-align: center;">
+                                    <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                        <div class="progress-bar" style="width: 80px; background: #334155; border-radius: 10px; overflow: hidden;">
+                                            <div style="width: ${progresoReal}%; background: ${colorProgreso}; height: 8px; border-radius: 10px;"></div>
+                                        </div>
+                                        <span style="color: ${colorProgreso}; font-weight: bold;">${progresoReal}%</span>
+                                    </div>
+                                   </td>
+                                <td style="padding: 14px;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; max-width: 300px;">
+                                        ${tareasDetalle}
+                                    </div>
+                                   </td>
+                              </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+             </table>
+        </div>
+        
+        <!-- LEYENDA DE COLORES -->
+        <div style="background: #0f172a; border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center;">
+            <h4 style="color: #8b5cf6; margin-bottom: 10px; font-size: 12px;">🎨 Leyenda de Estados</h4>
+            <div style="display: flex; justify-content: center; gap: 25px; flex-wrap: wrap;">
+                <div><span style="background: #10b981; width: 14px; height: 14px; display: inline-block; border-radius: 4px;"></span> ✅ Completada</div>
+                <div><span style="background: #14b8a6; width: 14px; height: 14px; display: inline-block; border-radius: 4px;"></span> 🔄 En progreso</div>
+                <div><span style="background: #ef4444; width: 14px; height: 14px; display: inline-block; border-radius: 4px;"></span> ⚠️ Retrasada</div>
+                <div><span style="background: #f59e0b; width: 14px; height: 14px; display: inline-block; border-radius: 4px;"></span> ⏳ Pendiente</div>
+            </div>
+        </div>
+        
+        <!-- GRÁFICA DE CAPACIDAD -->
+        <div class="chart-card" style="background: #1e293b; border-radius: 20px; padding: 25px; margin-bottom: 30px;">
+            <h3 style="color: #8b5cf6; margin-bottom: 25px; text-align: center;">📊 Capacidad por Recurso</h3>
+            <div style="height: 320px;">
+                <canvas id="capacidadChart" style="height: 280px; width: 100%;"></canvas>
+            </div>
+        </div>
+        
+        <!-- RECOMENDACIONES -->
+        <div class="recommendations" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px;">
+            <h3 style="color: #8b5cf6; margin-bottom: 20px; text-align: center;">💡 Recomendaciones de Capacidad</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                ${Object.entries(recursos).filter(([_, r]) => r.retrasadas > 0).map(([nombre, r]) => `
+                    <div style="background: rgba(239, 68, 68, 0.1); border-radius: 12px; padding: 12px;">
+                        <div style="color: #ef4444; font-weight: bold;">⚠️ ${nombre} tiene ${r.retrasadas} tarea(s) retrasada(s)</div>
+                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Priorizar revisión y recuperación</div>
+                    </div>
+                `).join('')}
+                ${Object.entries(recursos).filter(([_, r]) => r.enProgreso > 0 && r.retrasadas === 0).map(([nombre, r]) => `
+                    <div style="background: rgba(20, 184, 166, 0.1); border-radius: 12px; padding: 12px;">
+                        <div style="color: #14b8a6; font-weight: bold;">🔄 ${nombre} tiene ${r.enProgreso} tarea(s) en progreso</div>
+                        <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">Mantener ritmo y monitorear avance</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <!-- PIE DE PÁGINA -->
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 25px;">
+            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
+                <p style="color: #64748b; font-size: 11px; margin: 0;"><strong>🔒 CONFIDENCIAL - Capacidad Equipo</strong></p>
+            </div>
+            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
+                <p style="color: #64748b; font-size: 11px; margin: 0;">📅 Generado: ${new Date().toLocaleString()}</p>
+            </div>
+        </div>
+        
+        <script>
+            new Chart(document.getElementById('capacidadChart'), {
+                type: 'bar',
                 data: {
-                    labels: ['Satisfacción', 'Brecha'],
-                    datasets: [{
-                        data: [${satisfaccion}, ${100 - satisfaccion}],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderWidth: 0
-                    }]
+                    labels: ${JSON.stringify(Object.keys(recursos).map(n => n.split(' ')[0] || n.substring(0, 10)))},
+                    datasets: [
+                        {
+                            label: 'Capacidad Total',
+                            data: ${JSON.stringify(Object.values(recursos).map(r => r.total))},
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 8,
+                            barPercentage: 0.6
+                        },
+                        {
+                            label: 'Progreso Real (promedio)',
+                            data: ${JSON.stringify(Object.values(recursos).map(r => r.progresoPromedio))},
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 8,
+                            barPercentage: 0.6
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    cutout: '60%',
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { stepSize: 20, color: '#e2e8f0' },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: { display: true, text: 'Porcentaje', color: '#94a3b8' }
+                        },
+                        x: {
+                            ticks: { color: '#e2e8f0', font: { size: 12 } },
+                            grid: { display: false }
+                        }
+                    },
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
+                        legend: { position: 'top', labels: { color: '#e2e8f0', font: { size: 11 } } },
+                        tooltip: { backgroundColor: '#0f172a', titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
                     }
                 }
             });
         <\/script>`;
     
-    abrirVentanaReporte(generarHTMLBase(contenido, 'Satisfacción Cliente', proyecto.name));
-};
-    // ============================================
-    // REPORTE 18: CAPACIDAD EQUIPO
-    // ============================================
-    
-    window.generarReporteCapacidad = function() {
-        const proyecto = obtenerProyectoActual();
-        if (!proyecto) { alert('❌ No hay proyecto seleccionado'); return; }
-        const tareas = proyecto.tasks || [];
-        const recursos = {};
-        tareas.forEach(t => { if(t.assignee) { if(!recursos[t.assignee]) recursos[t.assignee] = { total:0, completadas:0, pendientes:0 }; recursos[t.assignee].total++; if(t.status==='completed') recursos[t.assignee].completadas++; else recursos[t.assignee].pendientes++; } });
-        const capacidadTotal = Object.values(recursos).reduce((s,r)=>s+r.total,0);
-        const capacidadUtilizada = Object.values(recursos).reduce((s,r)=>s+r.completadas,0);
-        const utilizacion = capacidadTotal > 0 ? Math.round((capacidadUtilizada / capacidadTotal) * 100) : 0;
-        const contenido = `<div class="header"><h1>📊 TEAM CAPACITY</h1><p>${escapeHtml(proyecto.name)} • Análisis de capacidad del equipo</p><div style="margin-top: 16px;"><span style="background: #8b5cf6; padding: 6px 20px; border-radius: 30px;">Utilización: ${utilizacion}%</span></div></div>
-            <div class="kpi-grid"><div class="kpi-card"><div class="kpi-value">${Object.keys(recursos).length}</div><div>👥 Recursos</div></div><div class="kpi-card"><div class="kpi-value">${capacidadTotal}</div><div>📋 Capacidad total</div></div><div class="kpi-card"><div class="kpi-value">${capacidadUtilizada}</div><div>✅ Utilizada</div></div><div class="kpi-card"><div class="kpi-value">${Object.values(recursos).filter(r=>r.pendientes>3).length}</div><div>⚠️ Sobrecarga</div></div></div>
-            <div class="chart-card"><canvas id="capacidadChart" style="height: 300px;"></canvas></div>
-            <div class="table-container"><h3>📋 Capacidad por Recurso</h3></tr><thead><tr><th>Recurso</th><th>Capacidad</th><th>Utilizada</th><th>Disponible</th><th>Estado</th></tr></thead><tbody>${Object.entries(recursos).map(([n,r]) => `<tr><td><strong>${escapeHtml(n)}</strong></td><td>${r.total} tareas</td><td>${r.completadas} tareas</td><td>${r.pendientes} tareas<td><div class="progress-bar" style="width:80px;"><div style="width:${Math.min(100,(r.completadas/r.total)*100)}%;background:${r.pendientes>3?'#ef4444':'#10b981'};"></div></div>${Math.min(100,Math.round((r.completadas/r.total)*100))}%</td></tr>`).join('')}</tbody></table></div>
-            <div class="recommendations"><h3>💡 Recomendaciones de Capacidad</h3><ul><li>📊 Balancear carga entre recursos sobrecargados</li><li>👥 Considerar contratación adicional si capacidad insuficiente</li><li>🎯 Establecer límites de trabajo en progreso (WIP)</li></ul></div>
-            <script>new Chart(document.getElementById('capacidadChart'),{type:'bar',data:{labels:${JSON.stringify(Object.keys(recursos).map(n=>n.split(' ')[0]))},datasets:[{label:'Capacidad Total',data:${JSON.stringify(Object.values(recursos).map(r=>r.total))},backgroundColor:'#3b82f6'},{label:'Capacidad Utilizada',data:${JSON.stringify(Object.values(recursos).map(r=>r.completadas))},backgroundColor:'#10b981'}]}});<\/script>`;
-        abrirVentanaReporte(generarHTMLBase(contenido, 'Capacidad Equipo', proyecto.name));
-    };
-    
+    abrirVentanaReporte(generarHTMLBase(contenido, 'Capacidad Equipo', proyecto.name));
+};    
   // ============================================
-// REPORTE 19: IMPACTO EJECUTIVO INTEGRAL
-// PARA DIRECTORES DE PROYECTOS, OPERACIONES Y FINANZAS
+// REPORTE 19: IMPACTO EJECUTIVO INTEGRAL - VIP EDITION CORREGIDA
+// DISEÑO PREMIUM PARA DIRECCIÓN EJECUTIVA
 // ============================================
 
 window.generarReporteImpactoEjecutivo = function() {
     const proyecto = obtenerProyectoActual();
     if (!proyecto) { alert('❌ No hay proyecto seleccionado'); return; }
     const tareas = proyecto.tasks || [];
-    const evm = calcularMetricasEVM(tareas);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     
     // ============================================
-    // MÉTRICAS PARA CADA DIRECCIÓN
+    // MÉTRICAS PARA DIRECTOR DE PROYECTO
     // ============================================
-    
-    // 📊 PARA DIRECTOR DE PROYECTO (Cronograma y ejecución)
     const total = tareas.length;
     const completadas = tareas.filter(t => t.status === 'completed' || t.progress === 100).length;
     const enProgreso = tareas.filter(t => t.status === 'inProgress' || (t.progress > 0 && t.progress < 100)).length;
     const pendientes = total - completadas - enProgreso;
     const atrasadas = tareas.filter(t => t.deadline && new Date(t.deadline) < hoy && t.status !== 'completed').length;
     const avanceTotal = total > 0 ? Math.round((completadas / total) * 100) : 0;
-    const velocidad = completadas / 30;
-    const diasRestantes = total > completadas && velocidad > 0 ? Math.ceil((total - completadas) / velocidad) : 0;
     
-    // 💰 PARA DIRECTOR DE FINANZAS (Costos y ROI)
+    // Días restantes basado en fechas reales
+    let diasRestantes = 0;
+    const fechasFuturas = tareas.filter(t => t.deadline && new Date(t.deadline) >= hoy && t.status !== 'completed');
+    if (fechasFuturas.length > 0) {
+        const fechaMasLejana = Math.max(...fechasFuturas.map(t => new Date(t.deadline).getTime()));
+        diasRestantes = Math.ceil((fechaMasLejana - hoy) / (1000 * 60 * 60 * 24));
+        diasRestantes = Math.min(90, Math.max(1, diasRestantes));
+    } else if (pendientes > 0) {
+        diasRestantes = Math.ceil(pendientes / 0.5);
+        diasRestantes = Math.min(90, diasRestantes);
+    } else {
+        diasRestantes = 0;
+    }
+    
+    // ============================================
+    // MÉTRICAS PARA DIRECTOR DE FINANZAS (CORREGIDAS)
+    // ============================================
     const horasEstimadas = tareas.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
     const horasReales = tareas.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
     const costoEstimado = horasEstimadas * 50;
     const costoReal = horasReales * 50;
-    const variacionCosto = costoReal - costoEstimado;
-    const eficienciaCosto = horasEstimadas > 0 ? Math.min(150, Math.round((horasEstimadas / horasReales) * 100)) : 0;
-    const roiProyectado = Math.max(-100, Math.min(200, Math.round((avanceTotal - (variacionCosto / costoEstimado * 100)))));
+    const variacionCosto = costoReal - costoEstimado; // Negativo = ahorro, Positivo = sobrecosto
+    const esAhorro = variacionCosto < 0;
+    const esSobrecosto = variacionCosto > 0;
     
-    // 🏭 PARA DIRECTOR DE OPERACIONES (Eficiencia y recursos)
+    // Eficiencia costo: mayor a 100% es buena, menor es mala
+    const eficienciaCosto = horasReales > 0 ? Math.min(200, Math.round((horasEstimadas / horasReales) * 100)) : 0;
+    
+    // ROI CORREGIDO - Fórmula realista
+    const valorEntregado = (avanceTotal / 100) * costoEstimado + (esAhorro ? Math.abs(variacionCosto) : 0);
+    let roiProyectado = costoReal > 0 ? Math.round((valorEntregado / costoReal - 1) * 100) : 0;
+    roiProyectado = Math.max(-100, Math.min(150, roiProyectado));
+    
+    // ============================================
+    // MÉTRICAS PARA DIRECTOR DE OPERACIONES
+    // ============================================
     const eficienciaEquipo = total > 0 ? Math.round((completadas / total) * 100) : 0;
-    const productividad = total > 0 ? Math.round((completadas / (horasReales / 40))) : 0;
+    const productividad = completadas > 0 ? Math.round(completadas / (horasReales / 40)) : 0;
     const cuellosBotella = tareas.filter(t => t.status === 'pending' && t.dependencies && t.dependencies.length > 0).length;
+    const personasDias = Math.round(horasReales / 8);
+    const velocidadEquipo = completadas > 0 ? (completadas / 30).toFixed(2) : '0.00';
     
-    // Niveles de alerta
+    // ============================================
+    // NIVEL DE ALERTA
+    // ============================================
     let nivelProyecto = '';
     let colorProyecto = '';
+    let gradienteProyecto = '';
     let mensajeProyecto = '';
     if (avanceTotal >= 80 && atrasadas === 0 && eficienciaCosto >= 90) {
         nivelProyecto = 'EXCELENTE';
         colorProyecto = '#10b981';
+        gradienteProyecto = 'linear-gradient(135deg, #10b981, #059669)';
         mensajeProyecto = 'Proyecto en estado óptimo. Continúa con el plan actual.';
     } else if (avanceTotal >= 60 && atrasadas <= 3 && eficienciaCosto >= 70) {
         nivelProyecto = 'BUENO';
         colorProyecto = '#3b82f6';
+        gradienteProyecto = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
         mensajeProyecto = 'Proyecto en buen camino. Monitorear áreas críticas.';
     } else if (avanceTotal >= 40 && atrasadas <= 5) {
         nivelProyecto = 'ATENCIÓN';
         colorProyecto = '#f59e0b';
+        gradienteProyecto = 'linear-gradient(135deg, #f59e0b, #d97706)';
         mensajeProyecto = 'Se requiere atención en cronograma y costos.';
     } else {
         nivelProyecto = 'CRÍTICO';
         colorProyecto = '#ef4444';
+        gradienteProyecto = 'linear-gradient(135deg, #ef4444, #dc2626)';
         mensajeProyecto = 'Intervención inmediata necesaria. Riesgo alto de incumplimiento.';
     }
     
-    // Recomendaciones por área
+    // ============================================
+    // RECOMENDACIONES POR ÁREA (CORREGIDAS)
+    // ============================================
     const recomendacionesPMO = [];
     const recomendacionesFinanzas = [];
     const recomendacionesOperaciones = [];
     
-    if (atrasadas > 0) recomendacionesPMO.push(`Priorizar ${atrasadas} tareas atrasadas inmediatamente`);
+    // PMO
+    if (atrasadas > 0) recomendacionesPMO.push(`Priorizar ${atrasadas} tarea(s) atrasada(s) inmediatamente`);
     if (diasRestantes > 60) recomendacionesPMO.push('Revisar línea base del cronograma - puede ser poco realista');
-    if (avanceTotal < 50 && pendientes > 10) recomendacionesPMO.push('Replanificar sprints y reasignar recursos críticos');
+    if (avanceTotal < 50 && pendientes > 5) recomendacionesPMO.push('Replanificar sprints y reasignar recursos críticos');
+    if (recomendacionesPMO.length === 0) recomendacionesPMO.push('✅ Proyecto en buen estado, continuar con el plan');
     
-    if (variacionCosto > 0) recomendacionesFinanzas.push(`Controlar desviación de $${variacionCosto.toFixed(0)} en costos`);
-    if (eficienciaCosto < 80) recomendacionesFinanzas.push('Revisar estimaciones de horas - sobrecostos recurrentes');
-    if (roiProyectado < 0) recomendacionesFinanzas.push('Evaluar ajustes de alcance para mejorar ROI');
+    // FINANZAS CORREGIDAS
+    if (esSobrecosto) {
+        recomendacionesFinanzas.push(`⚠️ SOBRECOSTE de $${Math.abs(variacionCosto).toLocaleString()} - Revisar estimaciones urgentemente`);
+        recomendacionesFinanzas.push('🔴 Controlar horas extras y revisar presupuesto');
+    } else if (esAhorro) {
+        recomendacionesFinanzas.push(`✅ AHORRO de $${Math.abs(variacionCosto).toLocaleString()} - Eficiencia financiera excelente`);
+        recomendacionesFinanzas.push('📊 Mantener estrategias de control de costos');
+    } else {
+        recomendacionesFinanzas.push('✅ Costos ajustados al presupuesto');
+    }
     
+    if (eficienciaCosto < 85) {
+        recomendacionesFinanzas.push('⚠️ Baja eficiencia de costo - Revisar productividad del equipo');
+    } else if (eficienciaCosto > 120 && esAhorro) {
+        recomendacionesFinanzas.push('🏆 Alta eficiencia de costo - Excelente desempeño');
+    }
+    
+    // OPERACIONES
     if (cuellosBotella > 0) recomendacionesOperaciones.push(`Resolver ${cuellosBotella} dependencias bloqueantes`);
-    if (productividad < 5) recomendacionesOperaciones.push('Mejorar ritmo de entrega del equipo');
-    if (enProgreso > pendientes) recomendacionesOperaciones.push('Capacidad del equipo desbalanceada - ajustar asignación');
+    if (productividad < 5 && completadas > 0) recomendacionesOperaciones.push('Mejorar ritmo de entrega del equipo');
+    if (enProgreso > pendientes && pendientes > 0) recomendacionesOperaciones.push('Capacidad del equipo desbalanceada - ajustar asignación');
+    if (recomendacionesOperaciones.length === 0) recomendacionesOperaciones.push('✅ Operaciones fluidas, sin bloqueos críticos');
     
-    const contenido = `
-        <div class="header" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
-            <h1 style="font-size: 32px;">📊 IMPACTO EJECUTIVO INTEGRAL</h1>
-            <p style="font-size: 16px; opacity: 0.9;">${escapeHtml(proyecto.name)} • Dashboard para Dirección</p>
-            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                <span style="background: ${colorProyecto}; padding: 8px 24px; border-radius: 40px; font-weight: bold;">🏆 Nivel: ${nivelProyecto}</span>
-                <span style="background: #8b5cf6; padding: 8px 24px; border-radius: 40px; font-weight: bold;">📊 Avance: ${avanceTotal}%</span>
-                <span style="background: #3b82f6; padding: 8px 24px; border-radius: 40px; font-weight: bold;">💰 ROI: ${roiProyectado}%</span>
-            </div>
-        </div>
-        
-        <!-- RESUMEN EJECUTIVO -->
-        <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 25px; margin-bottom: 30px; text-align: center;">
-            <p style="color: #cbd5e1; font-size: 14px; margin: 0; max-width: 800px; margin: 0 auto;">
-                ${mensajeProyecto}
-            </p>
-        </div>
-        
-        <!-- KPIs POR DIRECCIÓN -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
-            
-            <!-- KPI: DIRECTOR DE PROYECTO -->
-            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 20px; border-top: 4px solid #3b82f6;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                    <div style="background: #3b82f6; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: white; font-size: 20px;">📊</span>
-                    </div>
-                    <div>
-                        <div style="color: #3b82f6; font-weight: bold; font-size: 14px;">DIRECTOR DE PROYECTO</div>
-                        <div style="color: #64748b; font-size: 10px;">Cronograma y ejecución</div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Avance Total</div>
-                        <div style="color: white; font-size: 28px; font-weight: bold;">${avanceTotal}%</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Tareas Completadas</div>
-                        <div style="color: #10b981; font-size: 28px; font-weight: bold;">${completadas}/${total}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Días Restantes</div>
-                        <div style="color: #f59e0b; font-size: 28px; font-weight: bold;">${diasRestantes}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Tareas Atrasadas</div>
-                        <div style="color: ${atrasadas > 0 ? '#ef4444' : '#10b981'}; font-size: 28px; font-weight: bold;">${atrasadas}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- KPI: DIRECTOR DE FINANZAS -->
-            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 20px; border-top: 4px solid #10b981;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                    <div style="background: #10b981; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: white; font-size: 20px;">💰</span>
-                    </div>
-                    <div>
-                        <div style="color: #10b981; font-weight: bold; font-size: 14px;">DIRECTOR DE FINANZAS</div>
-                        <div style="color: #64748b; font-size: 10px;">Costos y ROI</div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Presupuesto Estimado</div>
-                        <div style="color: white; font-size: 20px; font-weight: bold;">$${costoEstimado.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Costo Real</div>
-                        <div style="color: ${variacionCosto > 0 ? '#ef4444' : '#10b981'}; font-size: 20px; font-weight: bold;">$${costoReal.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Variación</div>
-                        <div style="color: ${variacionCosto > 0 ? '#ef4444' : '#10b981'}; font-size: 20px; font-weight: bold;">${variacionCosto > 0 ? '+' : ''}$${variacionCosto.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Eficiencia Costo</div>
-                        <div style="color: ${eficienciaCosto >= 90 ? '#10b981' : eficienciaCosto >= 70 ? '#f59e0b' : '#ef4444'}; font-size: 20px; font-weight: bold;">${eficienciaCosto}%</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- KPI: DIRECTOR DE OPERACIONES -->
-            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 20px; border-top: 4px solid #8b5cf6;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                    <div style="background: #8b5cf6; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: white; font-size: 20px;">🏭</span>
-                    </div>
-                    <div>
-                        <div style="color: #8b5cf6; font-weight: bold; font-size: 14px;">DIRECTOR DE OPERACIONES</div>
-                        <div style="color: #64748b; font-size: 10px;">Eficiencia y recursos</div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Eficiencia Equipo</div>
-                        <div style="color: white; font-size: 28px; font-weight: bold;">${eficienciaEquipo}%</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Productividad</div>
-                        <div style="color: #f59e0b; font-size: 28px; font-weight: bold;">${productividad}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">En Progreso</div>
-                        <div style="color: #3b82f6; font-size: 28px; font-weight: bold;">${enProgreso}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; font-size: 11px;">Cuellos Botella</div>
-                        <div style="color: ${cuellosBotella > 0 ? '#ef4444' : '#10b981'}; font-size: 28px; font-weight: bold;">${cuellosBotella}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- RECOMENDACIONES POR ÁREA -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
-            
-            <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <span style="background: #3b82f6; width: 10px; height: 10px; border-radius: 50%;"></span>
-                    <span style="color: #3b82f6; font-weight: bold;">📋 RECOMENDACIONES PMO</span>
-                </div>
-                <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 12px;">
-                    ${recomendacionesPMO.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
-                    ${recomendacionesPMO.length === 0 ? '<li>✅ Proyecto en buen estado, continuar con el plan</li>' : ''}
-                </ul>
-            </div>
-            
-            <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <span style="background: #10b981; width: 10px; height: 10px; border-radius: 50%;"></span>
-                    <span style="color: #10b981; font-weight: bold;">💰 RECOMENDACIONES FINANZAS</span>
-                </div>
-                <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 12px;">
-                    ${recomendacionesFinanzas.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
-                    ${recomendacionesFinanzas.length === 0 ? '<li>✅ Costos controlados, eficiencia financiera óptima</li>' : ''}
-                </ul>
-            </div>
-            
-            <div style="background: #1e293b; border-radius: 20px; padding: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <span style="background: #8b5cf6; width: 10px; height: 10px; border-radius: 50%;"></span>
-                    <span style="color: #8b5cf6; font-weight: bold;">🏭 RECOMENDACIONES OPERACIONES</span>
-                </div>
-                <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 12px;">
-                    ${recomendacionesOperaciones.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('')}
-                    ${recomendacionesOperaciones.length === 0 ? '<li>✅ Operaciones fluidas, sin bloqueos críticos</li>' : ''}
-                </ul>
-            </div>
-        </div>
-        
-        <!-- MÉTRICAS CLAVE ADICIONALES -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
-            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <div style="color: #10b981; font-size: 24px; font-weight: bold;">${Math.round(velocidad * 10) / 10}</div>
-                <div style="color: #64748b; font-size: 10px;">Velocidad Equipo (t/día)</div>
-            </div>
-            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <div style="color: #3b82f6; font-size: 24px; font-weight: bold;">${Math.round((completadas / total) * 100)}%</div>
-                <div style="color: #64748b; font-size: 10px;">Tasa de Éxito</div>
-            </div>
-            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <div style="color: #f59e0b; font-size: 24px; font-weight: bold;">${Math.round((horasReales / 40))}</div>
-                <div style="color: #64748b; font-size: 10px;">Personas/Días</div>
-            </div>
-            <div style="background: #0f172a; border-radius: 16px; padding: 15px; text-align: center;">
-                <div style="color: #8b5cf6; font-size: 24px; font-weight: bold;">${Math.round(roiProyectado)}%</div>
-                <div style="color: #64748b; font-size: 10px;">ROI Proyectado</div>
-            </div>
-        </div>
-        
-        <!-- PIE DE PÁGINA -->
-        <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
-            <div style="background: #0f172a; border-radius: 16px; padding: 15px; max-width: 400px; width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <p style="color: #64748b; font-size: 11px; margin: 0;">
-                            <strong>⭐ IMPACTO EJECUTIVO - Dashboard Directivo</strong>
-                        </p>
-                    </div>
-                    <div>
-                        <p style="color: #64748b; font-size: 11px; margin: 0;">
-                            📅 ${new Date().toLocaleString()}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+    // Formatear variación para mostrar con signo correcto
+    const variacionFormateada = esAhorro ? `-$${Math.abs(variacionCosto).toLocaleString()}` : `+$${Math.abs(variacionCosto).toLocaleString()}`;
+    const colorVariacion = esAhorro ? '#10b981' : '#ef4444';
+    const textoVariacion = esAhorro ? 'AHORRO' : 'SOBRECOSTO';
     
-    abrirVentanaReporte(generarHTMLBase(contenido, 'Impacto Ejecutivo Integral', proyecto.name));
+    const contenido = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0a0c10 0%, #12151c 100%);
+            min-height: 100vh;
+            padding: 40px;
+        }
+        .executive-dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .premium-header {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 40px;
+            margin-bottom: 35px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .premium-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(0, 0); }
+            50% { opacity: 0.6; transform: translate(2%, 2%); }
+        }
+        .premium-title {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+        }
+        .card-3d {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-3d:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 30px 50px -15px rgba(0,0,0,0.5);
+            border-color: rgba(139,92,246,0.3);
+        }
+        .kpi-premium {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        .kpi-premium:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px -8px rgba(139,92,246,0.2);
+        }
+        .kpi-value-premium {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+        }
+        .badge-premium {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.1));
+            border: 1px solid rgba(139,92,246,0.3);
+            color: #a78bfa;
+        }
+        .icon-float {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px -4px rgba(139,92,246,0.4);
+        }
+        .grid-premium {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .glam-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8b5cf6, #3b82f6, #8b5cf6, transparent);
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="executive-dashboard">
+    <!-- HEADER VIP -->
+    <div class="premium-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div>
+                <div class="premium-title">📊 IMPACTO EJECUTIVO INTEGRAL</div>
+                <p style="color: #94a3b8; margin-top: 12px; font-size: 16px;">${escapeHtml(proyecto.name)} • Dashboard para Alta Dirección</p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <div class="badge-premium" style="background: ${gradienteProyecto}; color: white; border: none;">🏆 ${nivelProyecto}</div>
+                <div class="badge-premium">📊 Avance: ${avanceTotal}%</div>
+                <div class="badge-premium">💰 ROI: ${roiProyectado}%</div>
+            </div>
+        </div>
+        <div class="glam-divider"></div>
+        <p style="color: #cbd5e1; font-size: 15px; text-align: center; margin-top: 10px;">${mensajeProyecto}</p>
+    </div>
+    
+    <!-- KPIs 3D POR DIRECCIÓN -->
+    <div class="grid-premium">
+        <!-- DIRECTOR PROYECTO -->
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                <div class="icon-float"><span style="font-size: 24px;">📊</span></div>
+                <div><div style="color: #3b82f6; font-weight: 700; font-size: 14px;">DIRECTOR DE PROYECTO</div><div style="color: #64748b; font-size: 11px;">Cronograma y ejecución</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div><div style="color: #64748b; font-size: 11px;">Avance Total</div><div style="color: white; font-size: 32px; font-weight: 800;">${avanceTotal}%</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Tareas Completadas</div><div style="color: #10b981; font-size: 32px; font-weight: 800;">${completadas}/${total}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Días Restantes</div><div style="color: #f59e0b; font-size: 32px; font-weight: 800;">${diasRestantes}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Tareas Atrasadas</div><div style="color: ${atrasadas > 0 ? '#ef4444' : '#10b981'}; font-size: 32px; font-weight: 800;">${atrasadas}</div></div>
+            </div>
+        </div>
+        
+        <!-- DIRECTOR FINANZAS CORREGIDO -->
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                <div class="icon-float" style="background: linear-gradient(135deg, #10b981, #059669);"><span style="font-size: 24px;">💰</span></div>
+                <div><div style="color: #10b981; font-weight: 700; font-size: 14px;">DIRECTOR DE FINANZAS</div><div style="color: #64748b; font-size: 11px;">Costos y ROI</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div><div style="color: #64748b; font-size: 11px;">Presupuesto Estimado</div><div style="color: white; font-size: 20px; font-weight: 700;">$${costoEstimado.toLocaleString()}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Costo Real</div><div style="color: ${esAhorro ? '#10b981' : '#ef4444'}; font-size: 20px; font-weight: 700;">$${costoReal.toLocaleString()}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Variación (${textoVariacion})</div><div style="color: ${colorVariacion}; font-size: 20px; font-weight: 700;">${variacionFormateada}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Eficiencia Costo</div><div style="color: ${eficienciaCosto >= 100 ? '#10b981' : '#ef4444'}; font-size: 20px; font-weight: 700;">${eficienciaCosto}%</div></div>
+            </div>
+        </div>
+        
+        <!-- DIRECTOR OPERACIONES -->
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                <div class="icon-float" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><span style="font-size: 24px;">🏭</span></div>
+                <div><div style="color: #8b5cf6; font-weight: 700; font-size: 14px;">DIRECTOR DE OPERACIONES</div><div style="color: #64748b; font-size: 11px;">Eficiencia y recursos</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                <div><div style="color: #64748b; font-size: 11px;">Eficiencia Equipo</div><div style="color: white; font-size: 32px; font-weight: 800;">${eficienciaEquipo}%</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Productividad</div><div style="color: #f59e0b; font-size: 32px; font-weight: 800;">${productividad}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">En Progreso</div><div style="color: #3b82f6; font-size: 32px; font-weight: 800;">${enProgreso}</div></div>
+                <div><div style="color: #64748b; font-size: 11px;">Cuellos Botella</div><div style="color: ${cuellosBotella > 0 ? '#ef4444' : '#10b981'}; font-size: 32px; font-weight: 800;">${cuellosBotella}</div></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RECOMENDACIONES ESTRATÉGICAS -->
+    <div class="grid-premium">
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span style="background: #3b82f6; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px #3b82f6;"></span>
+                <span style="color: #3b82f6; font-weight: 700;">📋 RECOMENDACIONES PMO</span>
+            </div>
+            <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 13px; line-height: 1.8;">
+                ${recomendacionesPMO.map(r => `<li style="margin-bottom: 8px;">✨ ${r}</li>`).join('')}
+            </ul>
+        </div>
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span style="background: #10b981; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span>
+                <span style="color: #10b981; font-weight: 700;">💰 RECOMENDACIONES FINANZAS</span>
+            </div>
+            <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 13px; line-height: 1.8;">
+                ${recomendacionesFinanzas.map(r => `<li style="margin-bottom: 8px;">💎 ${r}</li>`).join('')}
+            </ul>
+        </div>
+        <div class="card-3d">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span style="background: #8b5cf6; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px #8b5cf6;"></span>
+                <span style="color: #8b5cf6; font-weight: 700;">🏭 RECOMENDACIONES OPERACIONES</span>
+            </div>
+            <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 13px; line-height: 1.8;">
+                ${recomendacionesOperaciones.map(r => `<li style="margin-bottom: 8px;">⚡ ${r}</li>`).join('')}
+            </ul>
+        </div>
+    </div>
+    
+    <!-- MÉTRICAS CLAVE -->
+    <div class="grid-premium" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="kpi-premium"><div class="kpi-value-premium">${velocidadEquipo}</div><div style="color: #64748b; margin-top: 8px;">Velocidad Equipo (t/día)</div></div>
+        <div class="kpi-premium"><div class="kpi-value-premium">${Math.round((completadas / total) * 100)}%</div><div style="color: #64748b; margin-top: 8px;">Tasa de Éxito</div></div>
+        <div class="kpi-premium"><div class="kpi-value-premium">${personasDias}</div><div style="color: #64748b; margin-top: 8px;">Personas/Días</div></div>
+        <div class="kpi-premium"><div class="kpi-value-premium">${roiProyectado}%</div><div style="color: #64748b; margin-top: 8px;">ROI Proyectado</div></div>
+    </div>
+    
+    <!-- FOOTER VIP -->
+    <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+        <p style="color: #64748b; font-size: 12px;">⭐ IMPACTO EJECUTIVO - Dashboard Directivo Premium | 📅 ${new Date().toLocaleString()}</p>
+        <p style="color: #475569; font-size: 10px; margin-top: 8px;">🔒 CONFIDENCIAL - Generado por PM Virtual Ejecutivo</p>
+    </div>
+</div>
+</body>
+</html>`;
+    
+    abrirVentanaReporte(contenido, 'Impacto Ejecutivo Integral', proyecto.name);
 };
 
-// Asegurar que la función esté disponible globalmente
 window.generarReporteImpactoEjecutivo = window.generarReporteImpactoEjecutivo;
     // ============================================
     // REPORTE 20: ESTRATEGIA EJECUTIVA
