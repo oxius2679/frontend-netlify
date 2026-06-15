@@ -42,7 +42,7 @@
         if (window.innerWidth <= 1200) {
             nombre.style.fontSize = '11px';
         } else {
-            nombre.style.fontSize = '18px';
+            nombre.style.fontSize = '20px';
         }
         console.log('✅ Tamaño responsivo aplicado');
     }
