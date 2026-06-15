@@ -1,15 +1,34 @@
 // ============================================
-// 🤖 SISTEMA DE AUTOMATIZACIÓN PREMIUM - VERSIÓN COMPLETA
+// 🤖 SISTEMA DE AUTOMATIZACIÓN PREMIUM - VERSIÓN DEFINITIVA
 // ============================================
 (function() {
     'use strict';
     
     // ============================================
-    // DATOS
+    // DATOS PERSISTENTES
     // ============================================
     let automationRules = JSON.parse(localStorage.getItem('automationRules_premium') || '[]');
     let executionHistory = JSON.parse(localStorage.getItem('automationHistory_premium') || '[]');
+    let tareasNotificadas = new Set();
+    let ejecuciones = { completada: 0, altaPrioridad: 0, ceo: 0, riesgo: 0 };
     
+    // Cargar datos persistentes
+    const savedNotif = localStorage.getItem('autoNotificadasFinal');
+    const savedStats = localStorage.getItem('autoStatsFinal');
+    
+    if (savedNotif) {
+        try {
+            tareasNotificadas = new Set(JSON.parse(savedNotif));
+        } catch(e) {}
+    }
+    
+    if (savedStats) {
+        try {
+            ejecuciones = JSON.parse(savedStats);
+        } catch(e) {}
+    }
+    
+    // Crear reglas por defecto si no existen
     if (automationRules.length === 0) {
         automationRules = [
             { id: 1, name: "✅ Tarea Completada", trigger: "task_completed", action: "notification", message: "La tarea {{task}} ha sido completada", active: true, icon: "✅", color: "#10b981", executions: 0 },
@@ -20,32 +39,311 @@
         localStorage.setItem('automationRules_premium', JSON.stringify(automationRules));
     }
     
-    // ============================================
-    // FUNCIONES BASE
-    // ============================================
-    function saveData() {
-        localStorage.setItem('automationRules_premium', JSON.stringify(automationRules));
-        localStorage.setItem('automationHistory_premium', JSON.stringify(executionHistory));
+    function guardarEstadoPersistente() {
+        localStorage.setItem('autoNotificadasFinal', JSON.stringify([...tareasNotificadas]));
+        localStorage.setItem('autoStatsFinal', JSON.stringify(ejecuciones));
     }
     
-    function addToHistory(ruleName, detail, icon = '⚙️') {
+    function guardarDatos() {
+        localStorage.setItem('automationRules_premium', JSON.stringify(automationRules));
+        localStorage.setItem('automationHistory_premium', JSON.stringify(executionHistory));
+        guardarEstadoPersistente();
+    }
+    
+    // ============================================
+    // NOTIFICACIONES VISUALES
+    // ============================================
+    function mostrarNotificacion(titulo, mensaje, color = '#10b981', icono = '✅') {
+        const notif = document.createElement('div');
+        notif.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-left: 4px solid ${color};
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            z-index: 1000002;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: slideInNotif 0.3s ease;
+            max-width: 350px;
+            font-family: system-ui, sans-serif;
+        `;
+        notif.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 24px;">${icono}</div>
+                <div>
+                    <div style="font-weight: bold; color: ${color}; font-size: 13px;">${titulo}</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${mensaje}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 4000);
+        
+        // Guardar en historial
         executionHistory.unshift({
             id: Date.now(),
-            rule: ruleName,
-            detail: detail,
-            icon: icon,
+            rule: titulo,
+            detail: mensaje,
+            icon: icono,
             date: new Date().toLocaleString(),
             timestamp: Date.now()
         });
         if (executionHistory.length > 100) executionHistory.pop();
-        saveData();
-        mostrarNotificacion(ruleName, detail, icon);
+        guardarDatos();
+    }
+    
+    // Agregar estilos de animación
+    if (!document.getElementById('notifStylesFinal')) {
+        const style = document.createElement('style');
+        style.id = 'notifStylesFinal';
+        style.textContent = `@keyframes slideInNotif{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}`;
+        document.head.appendChild(style);
+    }
+    
+    // ============================================
+    // GENERAR ID ÚNICO PARA CADA TAREA
+    // ============================================
+    function generarIdTarea(tarea) {
+        const taskId = tarea.getAttribute('data-task-id');
+        if (taskId) return taskId;
+        
+        const titulo = tarea.querySelector('.task-title, h4')?.innerText || '';
+        const fecha = tarea.querySelector('.task-deadline')?.innerText || '';
+        const asignado = tarea.querySelector('.task-assignee')?.innerText || '';
+        return `${titulo}_${fecha}_${asignado}`.replace(/\s/g, '_');
+    }
+    
+    // ============================================
+    // REGLA 1: TAREA COMPLETADA (SIN CICLOS)
+    // ============================================
+    let ultimaEjecucionCompletada = 0;
+    
+    function detectarTareaCompletada() {
+        const ahora = Date.now();
+        if (ahora - ultimaEjecucionCompletada < 2000) return;
+        ultimaEjecucionCompletada = ahora;
+        
+        const columnaCompletadas = document.querySelector('#completedList');
+        if (!columnaCompletadas) return;
+        
+        const tareas = columnaCompletadas.querySelectorAll('.task-card');
+        
+        tareas.forEach(tarea => {
+            const taskId = generarIdTarea(tarea);
+            
+            if (!tareasNotificadas.has(taskId)) {
+                const titulo = tarea.querySelector('.task-title, h4')?.innerText || 'Tarea';
+                
+                ejecuciones.completada++;
+                guardarEstadoPersistente();
+                
+                const rule = automationRules.find(r => r.trigger === 'task_completed' && r.active);
+                if (rule) {
+                    mostrarNotificacion(rule.name, rule.message.replace('{{task}}', titulo.substring(0, 40)), rule.color, rule.icon);
+                    rule.executions = (rule.executions || 0) + 1;
+                    guardarDatos();
+                }
+                
+                tareasNotificadas.add(taskId);
+                guardarEstadoPersistente();
+                
+                // Limpiar después de 1 hora (por si se mueve de nuevo)
+                setTimeout(() => {
+                    tareasNotificadas.delete(taskId);
+                    guardarEstadoPersistente();
+                }, 3600000);
+            }
+        });
+    }
+    
+    // ============================================
+    // REGLA 2: ALTA PRIORIDAD
+    // ============================================
+    let ultimaEjecucionAlta = 0;
+    
+    function detectarAltaPrioridad() {
+        const ahora = Date.now();
+        if (ahora - ultimaEjecucionAlta < 2000) return;
+        ultimaEjecucionAlta = ahora;
+        
+        const tareas = document.querySelectorAll('.task-card');
+        
+        tareas.forEach(tarea => {
+            const taskId = generarIdTarea(tarea);
+            const texto = tarea.innerText.toLowerCase();
+            const tieneAlta = texto.includes('alta') || texto.includes('priority-alta') || texto.includes('🔴');
+            
+            if (tieneAlta && !tareasNotificadas.has(`alta_${taskId}`)) {
+                const titulo = tarea.querySelector('.task-title, h4')?.innerText || 'Tarea';
+                
+                ejecuciones.altaPrioridad++;
+                guardarEstadoPersistente();
+                
+                const rule = automationRules.find(r => r.trigger === 'high_priority' && r.active);
+                if (rule) {
+                    mostrarNotificacion(rule.name, rule.message.replace('{{task}}', titulo.substring(0, 40)), rule.color, rule.icon);
+                    rule.executions = (rule.executions || 0) + 1;
+                    guardarDatos();
+                }
+                
+                tareasNotificadas.add(`alta_${taskId}`);
+                guardarEstadoPersistente();
+            }
+        });
+    }
+    
+    // ============================================
+    // REGLA 3: ESCALAMIENTO CEO (Crítica + Atrasada)
+    // ============================================
+    let ultimaEjecucionCEO = 0;
+    
+    function detectarCEO() {
+        const ahora = Date.now();
+        if (ahora - ultimaEjecucionCEO < 5000) return;
+        ultimaEjecucionCEO = ahora;
+        
+        const tareas = document.querySelectorAll('.task-card');
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        tareas.forEach(tarea => {
+            const taskId = generarIdTarea(tarea);
+            const texto = tarea.innerText.toLowerCase();
+            const esCritica = texto.includes('crítica') || texto.includes('critica') || texto.includes('critical');
+            
+            // Extraer fecha del texto (formato: dd/mm/yyyy)
+            const fechaMatch = texto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+            let estaAtrasada = false;
+            if (fechaMatch) {
+                const fechaTarea = new Date(fechaMatch[3], fechaMatch[2]-1, fechaMatch[1]);
+                estaAtrasada = fechaTarea < hoy && !texto.includes('completada');
+            }
+            
+            if (esCritica && estaAtrasada && !tareasNotificadas.has(`ceo_${taskId}`)) {
+                const titulo = tarea.querySelector('.task-title, h4')?.innerText || 'Tarea';
+                
+                ejecuciones.ceo++;
+                guardarEstadoPersistente();
+                
+                const rule = automationRules.find(r => r.trigger === 'critical_overdue' && r.active);
+                if (rule) {
+                    mostrarNotificacion(rule.name, rule.message.replace('{{task}}', titulo.substring(0, 40)), rule.color, rule.icon);
+                    rule.executions = (rule.executions || 0) + 1;
+                    guardarDatos();
+                }
+                
+                tareasNotificadas.add(`ceo_${taskId}`);
+                guardarEstadoPersistente();
+            }
+        });
+    }
+    
+    // ============================================
+    // REGLA 4: RIESGO DETECTADO
+    // ============================================
+    let ultimaEjecucionRiesgo = 0;
+    
+    function detectarRiesgo() {
+        const ahora = Date.now();
+        if (ahora - ultimaEjecucionRiesgo < 2000) return;
+        ultimaEjecucionRiesgo = ahora;
+        
+        const tareas = document.querySelectorAll('.task-card');
+        const palabrasRiesgo = ['riesgo', 'problema', 'retraso', 'peligro', 'alerta', 'dependencia', 'bloqueo', 'crítico', 'urgente'];
+        
+        tareas.forEach(tarea => {
+            const taskId = generarIdTarea(tarea);
+            const texto = tarea.innerText.toLowerCase();
+            const tieneRiesgo = palabrasRiesgo.some(p => texto.includes(p));
+            
+            if (tieneRiesgo && !tareasNotificadas.has(`riesgo_${taskId}`)) {
+                const titulo = tarea.querySelector('.task-title, h4')?.innerText || 'Tarea';
+                
+                ejecuciones.riesgo++;
+                guardarEstadoPersistente();
+                
+                const rule = automationRules.find(r => r.trigger === 'risk' && r.active);
+                if (rule) {
+                    mostrarNotificacion(rule.name, rule.message.replace('{{description}}', titulo.substring(0, 40)), rule.color, rule.icon);
+                    rule.executions = (rule.executions || 0) + 1;
+                    guardarDatos();
+                }
+                
+                tareasNotificadas.add(`riesgo_${taskId}`);
+                guardarEstadoPersistente();
+            }
+        });
+    }
+    
+    // ============================================
+    // INTERCEPTAR CREACIÓN DE TAREAS (Nuevo)
+    // ============================================
+    if (typeof window.createNewTask === 'function') {
+        const originalCreate = window.createNewTask;
+        window.createNewTask = function(e) {
+            const result = originalCreate(e);
+            setTimeout(() => {
+                setTimeout(() => {
+                    detectarAltaPrioridad();
+                    detectarCEO();
+                    detectarRiesgo();
+                }, 800);
+            }, 500);
+            return result;
+        };
+    }
+    
+    // ============================================
+    // INTERCEPTAR GUARDADO DE TAREAS (Edición)
+    // ============================================
+    if (typeof window.saveTaskChanges === 'function') {
+        const originalSave = window.saveTaskChanges;
+        window.saveTaskChanges = function(taskId) {
+            const result = originalSave(taskId);
+            setTimeout(() => {
+                detectarAltaPrioridad();
+                detectarCEO();
+                detectarRiesgo();
+            }, 500);
+            return result;
+        };
+    }
+    
+    // ============================================
+    // INICIAR DETECTORES
+    // ============================================
+    setInterval(detectarTareaCompletada, 3000);
+    setInterval(detectarAltaPrioridad, 3000);
+    setInterval(detectarCEO, 5000);
+    setInterval(detectarRiesgo, 3000);
+    
+    // Observer para cambios en el DOM
+    let timeoutObserver;
+    const observer = new MutationObserver(() => {
+        if (timeoutObserver) clearTimeout(timeoutObserver);
+        timeoutObserver = setTimeout(() => {
+            detectarTareaCompletada();
+            detectarAltaPrioridad();
+            detectarCEO();
+            detectarRiesgo();
+        }, 500);
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    
+    // ============================================
+    // FUNCIONES DE GESTIÓN DE REGLAS
+    // ============================================
+    function addToHistory(ruleName, detail, icon = '⚙️') {
+        mostrarNotificacion(ruleName, detail, '#3b82f6', icon);
     }
     
     function createRule(data) {
         const newRule = { id: Date.now(), ...data, active: true, executions: 0 };
         automationRules.push(newRule);
-        saveData();
+        guardarDatos();
         addToHistory("📝 Regla Creada", `Se creó la regla: ${data.name}`, "✨");
         return newRule;
     }
@@ -53,7 +351,7 @@
     function deleteRule(id) {
         const rule = automationRules.find(r => r.id === id);
         automationRules = automationRules.filter(r => r.id !== id);
-        saveData();
+        guardarDatos();
         addToHistory("🗑️ Regla Eliminada", `Se eliminó: ${rule?.name || 'Desconocida'}`, "🗑️");
     }
     
@@ -61,110 +359,10 @@
         const rule = automationRules.find(r => r.id === id);
         if (rule) {
             rule.active = !rule.active;
-            saveData();
+            guardarDatos();
             addToHistory("🔄 Regla Actualizada", `${rule.name} → ${rule.active ? 'Activada' : 'Desactivada'}`, "🔄");
         }
     }
-    
-    // ============================================
-    // NOTIFICACIONES SUPERIOR DERECHA
-    // ============================================
-    let colaNotificaciones = [];
-    let notificacionActiva = false;
-    
-    function mostrarNotificacion(ruleName, detail, icon) {
-        colaNotificaciones.push({ ruleName, detail, icon });
-        if (notificacionActiva) return;
-        
-        function procesar() {
-            if (colaNotificaciones.length === 0) { notificacionActiva = false; return; }
-            notificacionActiva = true;
-            const n = colaNotificaciones.shift();
-            
-            let container = document.getElementById('autoNotifContainer');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'autoNotifContainer';
-                container.style.cssText = 'position:fixed;top:70px;right:20px;z-index:10000001;display:flex;flex-direction:column;gap:10px;max-width:360px;';
-                document.body.appendChild(container);
-            }
-            
-            const div = document.createElement('div');
-            div.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a);border-left:4px solid #3b82f6;border-radius:12px;padding:12px 16px;color:white;box-shadow:0 10px 25px rgba(0,0,0,0.3);animation:slideDownAuto 0.3s ease;margin-bottom:10px;';
-            div.innerHTML = `
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="font-size:24px;">${n.icon || '⚙️'}</div>
-                    <div style="flex:1;">
-                        <div style="font-weight:bold;color:#3b82f6;font-size:13px;">${n.ruleName}</div>
-                        <div style="font-size:12px;color:#94a3b8;">${n.detail}</div>
-                        <div style="font-size:10px;color:#64748b;margin-top:4px;">${new Date().toLocaleTimeString()}</div>
-                    </div>
-                    <button class="closeNotif" style="background:none;border:none;color:#64748b;cursor:pointer;">✕</button>
-                </div>
-            `;
-            div.querySelector('.closeNotif').onclick = () => { div.remove(); procesar(); };
-            container.appendChild(div);
-            setTimeout(() => { if(div.parentNode) div.remove(); procesar(); }, 4500);
-            setTimeout(procesar, 500);
-        }
-        procesar();
-    }
-    
-    // ============================================
-    // MOTOR DE AUTOMATIZACIÓN
-    // ============================================
-    let estadoAnterior = new Map();
-    let notificadas = new Set();
-    
-    function detectarCambios() {
-        const tareas = document.querySelectorAll('.task-card, [class*="task-card"], [draggable="true"]');
-        tareas.forEach(tarea => {
-            let id = tarea.getAttribute('data-task-id');
-            if (!id) {
-                const title = tarea.querySelector('.task-title, h4');
-                id = title ? title.innerText : tarea.innerText.slice(0, 50);
-            }
-            
-            let estado = 'pending';
-            const txt = tarea.innerText.toLowerCase();
-            if (txt.includes('completada') || txt.includes('✅')) estado = 'completed';
-            else if (txt.includes('progreso')) estado = 'inProgress';
-            else if (txt.includes('atrasada')) estado = 'overdue';
-            
-            const anterior = estadoAnterior.get(id);
-            if (anterior && anterior !== 'completed' && estado === 'completed') {
-                const key = `comp_${id}_${Date.now()}`;
-                if (!notificadas.has(key)) {
-                    notificadas.add(key);
-                    const rule = automationRules.find(r => r.trigger === 'task_completed' && r.active);
-                    if (rule) {
-                        let nombre = id;
-                        const nameEl = tarea.querySelector('.task-title, h4');
-                        if (nameEl) nombre = nameEl.innerText;
-                        addToHistory(rule.name, rule.message.replace('{{task}}', nombre), rule.icon);
-                        rule.executions = (rule.executions || 0) + 1;
-                        saveData();
-                    }
-                    setTimeout(() => notificadas.delete(key), 5000);
-                }
-            }
-            estadoAnterior.set(id, estado);
-        });
-    }
-    
-    function cargarEstadoInicial() {
-        document.querySelectorAll('.task-card').forEach(t => {
-            let id = t.getAttribute('data-task-id');
-            if (!id) { const h = t.querySelector('.task-title, h4'); if(h) id = h.innerText; }
-            let estado = 'pending';
-            if (t.innerText.toLowerCase().includes('completada')) estado = 'completed';
-            estadoAnterior.set(id, estado);
-        });
-    }
-    
-    setTimeout(cargarEstadoInicial, 2000);
-    setInterval(detectarCambios, 1000);
-    new MutationObserver(detectarCambios).observe(document.body, { childList: true, subtree: true, attributes: true });
     
     // ============================================
     // ESFERA 3D
@@ -316,16 +514,11 @@
             if (container) create3DSphere(container);
         }, 100);
         
-        // TRIGGERS
         const TRIGGERS = [
             { value: "task_completed", label: "✅ Tarea Completada", desc: "Cuando se completa una tarea", color: "#10b981" },
             { value: "critical_overdue", label: "👑 Crítica Atrasada", desc: "Tarea crítica atrasada", color: "#ef4444" },
             { value: "high_priority", label: "🎯 Alta Prioridad", desc: "Tarea de alta prioridad", color: "#8b5cf6" },
             { value: "risk", label: "⚠️ Riesgo", desc: "Palabras de riesgo detectadas", color: "#f97316" }
-        ];
-        
-        const ACTIONS = [
-            { value: "notification", label: "🔔 Notificación", desc: "Notificación en pantalla" }
         ];
         
         function renderRules() {
@@ -466,7 +659,7 @@
                         </div>
                     `).join('')}
             `;
-            document.getElementById('clearHistoryBtn')?.addEventListener('click', () => { if(confirm('¿Limpiar historial?')){ executionHistory = []; saveData(); renderHistory(); updateKPIs(); } });
+            document.getElementById('clearHistoryBtn')?.addEventListener('click', () => { if(confirm('¿Limpiar historial?')){ executionHistory = []; guardarDatos(); renderHistory(); updateKPIs(); } });
         }
         
         function renderTriggers() {
@@ -514,23 +707,18 @@
     };
     
     // ============================================
-    // 🔥 BOTÓN EN EL MENÚ LATERAL - VERSIÓN ROBUSTA
+    // BOTÓN EN EL MENÚ LATERAL
     // ============================================
-    
-    // Función principal para agregar el botón al sidebar
     function agregarBotonAlSidebar() {
         const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
         
         if (!sidebar) {
-            // Si no hay sidebar, reintentar en 500ms
             setTimeout(agregarBotonAlSidebar, 500);
             return;
         }
         
-        // Verificar si ya existe el botón
         if (document.getElementById('autoBlueSidebar')) return;
         
-        // Crear el botón
         const btn = document.createElement('button');
         btn.id = 'autoBlueSidebar';
         btn.innerHTML = '⚙️ Automatización Premium';
@@ -553,128 +741,75 @@
             transition: all 0.3s ease !important;
         `;
         
-        // Efectos hover
         btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
         btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
-        
-        // Click handler
         btn.onclick = () => {
             if (typeof window.openAutomationCenter === 'function') {
                 window.openAutomationCenter();
-            } else {
-                console.error('❌ openAutomationCenter no está definida');
-                alert('La función de automatización aún no está disponible');
             }
         };
         
-        // Agregar al sidebar
         sidebar.appendChild(btn);
         
-        // Ocultar el botón original del header si existe
         const originalBtn = document.getElementById('autoBlueFinal');
-        if (originalBtn) {
-            originalBtn.style.display = 'none';
-        }
+        if (originalBtn) originalBtn.style.display = 'none';
         
         console.log('✅ Botón de automatización agregado al menú lateral');
     }
     
-    // Esperar a que el DOM esté completamente cargado
+    // ============================================
+    // COMANDOS ÚTILES PARA CONSOLA
+    // ============================================
+    window.autoStatsFinal = function() {
+        console.log('\n📊 ESTADÍSTICAS DE AUTOMATIZACIÓN:');
+        console.log(`   ✅ Tareas Completadas: ${ejecuciones.completada}`);
+        console.log(`   🎯 Alta Prioridad: ${ejecuciones.altaPrioridad}`);
+        console.log(`   👑 Escalamiento CEO: ${ejecuciones.ceo}`);
+        console.log(`   ⚠️ Riesgo Detectado: ${ejecuciones.riesgo}`);
+        console.log(`   📋 Tareas notificadas: ${tareasNotificadas.size}`);
+        return ejecuciones;
+    };
+    
+    window.resetAutoFinal = function() {
+        tareasNotificadas.clear();
+        ejecuciones = { completada: 0, altaPrioridad: 0, ceo: 0, riesgo: 0 };
+        guardarEstadoPersistente();
+        console.log('✅ Sistema reiniciado completamente');
+        mostrarNotificacion('🔄 Sistema Reiniciado', 'Todas las notificaciones reseteadas', '#3b82f6', '🔄');
+        return ejecuciones;
+    };
+    
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', agregarBotonAlSidebar);
     } else {
-        // Si ya está cargado, ejecutar inmediatamente
         agregarBotonAlSidebar();
     }
     
-    // También usar MutationObserver por si el sidebar se crea dinámicamente
-    const observer = new MutationObserver(function(mutations) {
+    const observerSidebar = new MutationObserver(function() {
         const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
         const btn = document.getElementById('autoBlueSidebar');
-        
-        if (sidebar && !btn) {
-            agregarBotonAlSidebar();
-        }
+        if (sidebar && !btn) agregarBotonAlSidebar();
     });
+    observerSidebar.observe(document.body, { childList: true, subtree: true });
     
-    observer.observe(document.body, { childList: true, subtree: true });
+    console.log('╔════════════════════════════════════════════════╗');
+    console.log('║     ✅ SISTEMA DE AUTOMATIZACIÓN PREMIUM      ║');
+    console.log('║         VERSIÓN DEFINITIVA CORREGIDA         ║');
+    console.log('╠════════════════════════════════════════════════╣');
+    console.log('║   📊 Reglas activas:                          ║');
+    console.log('║      ✅ Tarea Completada                      ║');
+    console.log('║      👑 Escalamiento CEO                      ║');
+    console.log('║      🎯 Alta Prioridad                        ║');
+    console.log('║      ⚠️ Riesgo Detectado                      ║');
+    console.log('╚════════════════════════════════════════════════╝');
     
-    // Estilos de animación
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = `
-        @keyframes slideDownAuto{from{opacity:0;transform:translateX(50px);}to{opacity:1;transform:translateX(0);}}
-        @keyframes slideUpAuto{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(50px);}}
-    `;
-    document.head.appendChild(styleSheet);
+    mostrarNotificacion('🚀 Sistema Definitivo', 'Todas las reglas están activas', '#3b82f6', '🔧');
     
-    addToHistory('🚀 Sistema Iniciado', 'Motor de automatización activo', '⚙️');
-    console.log('✅ SISTEMA COMPLETO - Botón en menú lateral + Motor funcionando');
-})();
-
-// ============================================
-// 🔵 FORZADO EXTREMO - Script independiente (se ejecuta después de todo)
-// ============================================
-(function forzarBotonSidebarExtremo() {
-    // Función que intenta agregar el botón
-    function intentarAgregarBoton() {
-        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
-        const btnExistente = document.getElementById('autoBlueSidebar');
-        
-        if (sidebar && !btnExistente) {
-            const nuevoBtn = document.createElement('button');
-            nuevoBtn.id = 'autoBlueSidebar';
-            nuevoBtn.innerHTML = '⚙️ Automatización Premium';
-            nuevoBtn.style.cssText = `
-                width: calc(100% - 24px) !important;
-                background: linear-gradient(135deg, #2563eb, #1e40af) !important;
-                border: none !important;
-                color: white !important;
-                padding: 12px 16px !important;
-                border-radius: 12px !important;
-                cursor: pointer !important;
-                font-weight: 600 !important;
-                font-size: 14px !important;
-                margin: 10px 12px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 8px !important;
-                transition: all 0.3s ease !important;
-            `;
-            nuevoBtn.onclick = () => {
-                if (typeof window.openAutomationCenter === 'function') {
-                    window.openAutomationCenter();
-                } else {
-                    console.error('❌ openAutomationCenter no disponible');
-                    alert('Recargando la página para cargar el sistema...');
-                    location.reload();
-                }
-            };
-            sidebar.appendChild(nuevoBtn);
-            
-            // Ocultar botón original
-            const originalBtn = document.getElementById('autoBlueFinal');
-            if (originalBtn) originalBtn.style.display = 'none';
-            
-            console.log('✅ Forzado extremo: botón agregado al sidebar');
-            return true;
-        }
-        return false;
-    }
-    
-    // Intentar inmediatamente
-    if (intentarAgregarBoton()) return;
-    
-    // Si no, esperar y reintentar varias veces
-    let intentos = 0;
-    const maxIntentos = 20;
-    const intervalo = setInterval(() => {
-        intentos++;
-        if (intentarAgregarBoton() || intentos >= maxIntentos) {
-            clearInterval(intervalo);
-            if (intentos >= maxIntentos) {
-                console.warn('⚠️ No se pudo agregar el botón al sidebar después de varios intentos');
-            }
-        }
-    }, 1000);
+    console.log('💡 Comandos disponibles:');
+    console.log('   autoStatsFinal() - Ver estadísticas');
+    console.log('   resetAutoFinal() - Reiniciar todo');
+    console.log('   openAutomationCenter() - Abrir panel premium');
 })();
