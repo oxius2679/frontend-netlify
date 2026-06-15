@@ -1,11 +1,11 @@
 // ============================================
-// 🎯 CENTRO DE CONTROL PM - VERSIÓN EJECUTIVA PREMIUM v11.5
+// 🎯 CENTRO DE CONTROL PM - VERSIÓN DEFINITIVA v11.7
 // ============================================
 
 (function() {
     'use strict';
     
-    console.log('🎯 [QUANTUM] v11.5 - Estilo Ejecutivo Premium + Riesgos Corregidos');
+    console.log('🎯 [QUANTUM] v11.7 - Todos los textos en blanco corregidos');
     
     function getCurrentProject() {
         try {
@@ -154,10 +154,6 @@
         });
     }
     
-    // ============================================
-    // FUNCIÓN PARA CALCULAR PROGRESO REAL (basado en horas)
-    // ============================================
-    
     function calcularProgresoReal(task) {
         if (!task) return 0;
         if (task.status === 'completed') return 100;
@@ -172,10 +168,6 @@
         
         return task.progress || 0;
     }
-    
-    // ============================================
-    // FUNCIÓN DE RIESGO CORREGIDA v11.5
-    // ============================================
     
     function calculateRisk(task) {
         if (!task) return 0;
@@ -402,10 +394,6 @@
         const styles = document.createElement('style');
         styles.id = 'quantum-v11-styles';
         styles.textContent = `
-            /* ============================================
-               ESTILO EJECUTIVO PREMIUM v11.5
-            ============================================ */
-            
             @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
             
             .quantum-overlay {
@@ -463,13 +451,13 @@
                 font-size: 16px;
                 font-weight: 600;
                 letter-spacing: 0.5px;
-                color: #e2e8f0;
+                color: #ffffff;
             }
             
             .quantum-title p {
                 margin: 4px 0 0;
                 font-size: 11px;
-                color: #5b6e8c;
+                color: #94a3b8;
             }
             
             .quantum-badge {
@@ -507,7 +495,6 @@
                 overflow-y: auto;
             }
             
-            /* KPIs EJECUTIVOS */
             .quantum-kpi-grid {
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
@@ -533,7 +520,6 @@
             .quantum-kpi-value {
                 font-size: 28px;
                 font-weight: 700;
-                color: #f1f5f9;
             }
             
             .quantum-kpi-label {
@@ -541,11 +527,10 @@
                 font-weight: 500;
                 letter-spacing: 0.5px;
                 text-transform: uppercase;
-                color: #5b6e8c;
+                color: #ffffff !important;
                 margin-top: 6px;
             }
             
-            /* CARDS */
             .quantum-grid-2 {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
@@ -576,14 +561,14 @@
             }
             
             .quantum-card-header span:first-child {
-                color: #94a3b8;
+                color: #ffffff !important;
                 font-weight: 600;
                 letter-spacing: 0.5px;
                 text-transform: uppercase;
             }
             
             .quantum-card-header span:last-child {
-                color: #3b82f6;
+                color: #60a5fa;
                 font-weight: 500;
             }
             
@@ -591,7 +576,6 @@
                 padding: 16px;
             }
             
-            /* 3D CUBE */
             .quantum-3d-container {
                 height: 280px;
                 background: #0a0c14;
@@ -600,7 +584,6 @@
                 border: 1px solid #1a1f2e;
             }
             
-            /* MONTE CARLO CON ESPACIADO */
             .quantum-mc-grid {
                 display: flex;
                 gap: 16px;
@@ -625,13 +608,12 @@
             
             .quantum-mc-label {
                 font-size: 9px;
-                color: #5b6e8c;
+                color: #ffffff !important;
                 margin-top: 8px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
             }
             
-            /* PROGRESS BAR */
             .quantum-progress {
                 background: #1a1f2e;
                 border-radius: 2px;
@@ -646,7 +628,6 @@
                 transition: width 0.5s;
             }
             
-            /* TABLA EJECUTIVA */
             .quantum-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -679,20 +660,20 @@
                 background: rgba(59, 130, 246, 0.05);
             }
             
-            /* SENTIMENT */
             .quantum-matrix {
-                font-family: monospace;
-                color: #1a4731;
-                background: #0a0c14;
-                padding: 8px;
-                font-size: 7px;
-                height: 50px;
-                overflow-y: auto;
-                border-radius: 6px;
-                margin-bottom: 12px;
-                opacity: 0.7;
-                border: 1px solid #1a1f2e;
-            }
+    font-family: monospace;
+    color: #4ade80;              /* ← VERDE MÁS BRILLANTE */
+    background: #0a0c14;
+    padding: 8px;
+    font-size: 7px;
+    height: 50px;
+    overflow-y: auto;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    opacity: 1;
+    border: 1px solid #4ade8030;
+    text-shadow: 0 0 5px #4ade80;
+}
             
             .sentiment-stats {
                 display: flex;
@@ -707,6 +688,17 @@
                 background: #0a0c14;
                 border: 1px solid #1a1f2e;
                 border-radius: 8px;
+            }
+            
+            .sentiment-stat div:first-child {
+                font-size: 20px;
+                font-weight: 700;
+            }
+            
+            .sentiment-stat div:last-child {
+                font-size: 8px;
+                color: #ffffff !important;
+                margin-top: 4px;
             }
             
             .sentiment-word-badge {
@@ -755,7 +747,6 @@
                 transition: width 0.5s;
             }
             
-            /* EXPLANATION BOX */
             .explanation-beautiful {
                 background: #0a0c14;
                 border: 1px solid #1e293b;
@@ -766,7 +757,6 @@
                 font-size: 11px;
             }
             
-            /* VOICE BUTTON */
             .quantum-voice {
                 position: fixed;
                 bottom: 24px;
@@ -791,7 +781,6 @@
                 transform: scale(1.05);
             }
             
-            /* SCROLLBAR */
             .quantum-content::-webkit-scrollbar {
                 width: 4px;
             }
@@ -813,7 +802,7 @@
     }
     
     async function showQuantumDashboard() {
-        console.log('[QUANTUM] Abriendo dashboard v11.5...');
+        console.log('[QUANTUM] Abriendo dashboard v11.7...');
         
         const project = getCurrentProject();
         if (!project) { alert('❌ No hay proyectos disponibles'); return; }
@@ -821,7 +810,6 @@
         const tasks = project.tasks || [];
         if (tasks.length === 0) { alert(`El proyecto "${project.name}" no tiene tareas`); return; }
         
-        // Actualizar progreso real
         tasks.forEach(task => {
             const progresoReal = calcularProgresoReal(task);
             task.progress = progresoReal;
@@ -852,7 +840,6 @@
         const sentiment = analyzeSentiment(tasks);
         const tasksWithRisk = tasks.map(t => ({ ...t, risk: calculateRisk(t) }));
         
-        // Colores para KPIs
         const kpiColors = {
             total: '#f1f5f9',
             completed: '#10b981',
@@ -883,7 +870,6 @@
                     <button class="quantum-close" id="quantumCloseBtn">✕</button>
                 </div>
                 <div class="quantum-content">
-                    <!-- KPIs -->
                     <div class="quantum-kpi-grid">
                         <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.total};">${tasks.length}</div><div class="quantum-kpi-label">TOTAL</div></div>
                         <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completed};">${completed}</div><div class="quantum-kpi-label">COMPLETADAS</div></div>
@@ -893,45 +879,44 @@
                         <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completion};">${completionRate}%</div><div class="quantum-kpi-label">COMPLETADO</div></div>
                     </div>
                     
-                    <!-- Fila 1: Cubo 3D + Monte Carlo -->
                     <div class="quantum-grid-2">
                         <div class="quantum-card">
                             <div class="quantum-card-header"><span>🌐 HOLOGRAPHIC CUBE</span><span>${completionRate}% completado</span></div>
                             <div class="quantum-card-body"><div id="quantum3dContainer" class="quantum-3d-container"></div></div>
                         </div>
                         <div class="quantum-card">
-                            <div class="quantum-card-header"><span>🔮 MONTE CARLO SIMULATION</span><span>${monteCarlo.confidence}% confianza</span></div>
-                            <div class="quantum-card-body">
-                                <div class="quantum-mc-grid">
-                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">OPTIMISTA</div></div>
-                                                                      <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">PESIMISTA</div></div>
-                                </div>
-                                <div style="padding:10px; background:#0a0c14; border-radius:6px; font-family:monospace; font-size:9px; color:#5b6e8c; border:1px solid #1a1f2e;">
-                                    > 500 iteraciones simuladas<br>
-                                    > Velocidad: ${(completed / Math.max(1,30)).toFixed(2)} tareas/día
-                                </div>
-                            </div>
-                        </div>
+    <div class="quantum-card-header"><span>🔮 MONTE CARLO SIMULATION</span><span>${monteCarlo.confidence}% confianza</span></div>
+    <div class="quantum-card-body" style="padding-top: 24px;">
+        <div class="quantum-mc-grid" style="margin-top: 8px;">
+            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">OPTIMISTA</div></div>
+            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.median}</div><div class="quantum-mc-label">MEDIANO</div></div>
+            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">PESIMISTA</div></div>
+        </div>
+        <div style="padding:12px 10px; background:#0a0c14; border-radius:6px; font-family:monospace; font-size:9px; color:#ffffff; border:1px solid #1a1f2e; margin-top: 12px;">
+            > 500 iteraciones simuladas<br>
+            > Velocidad: ${(completed / Math.max(1,30)).toFixed(2)} tareas/día
+        </div>
+    </div>
+</div>
                     </div>
                     
-                    <!-- Fila 2: Executive Metrics -->
                     <div class="quantum-card">
                         <div class="quantum-card-header"><span>⚡ EXECUTIVE METRICS</span><span>CPI / SPI</span></div>
                         <div class="quantum-card-body">
                             <div style="display:flex; gap:30px; justify-content:center; margin-bottom:16px;">
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${cpi>=1?'#10b981':'#ef4444'};">${cpi.toFixed(2)}</div>
-                                    <div style="font-size:11px; color:#5b6e8c; margin-top:4px;">Cost Performance Index</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Cost Performance Index</div>
                                     <div style="font-size:9px; color:${cpi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${cpi>=1 ? '✅ EFICIENTE' : '⚠️ SOBRE COSTO'}</div>
                                 </div>
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${spi>=1?'#10b981':'#ef4444'};">${spi.toFixed(2)}</div>
-                                    <div style="font-size:11px; color:#5b6e8c; margin-top:4px;">Schedule Performance Index</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Schedule Performance Index</div>
                                     <div style="font-size:9px; color:${spi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${spi>=1 ? '✅ A TIEMPO' : '⚠️ RETRASO'}</div>
                                 </div>
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'};">${healthScore}%</div>
-                                    <div style="font-size:11px; color:#5b6e8c; margin-top:4px;">Health Score</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Health Score</div>
                                     <div style="font-size:9px; color:${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'}; margin-top:2px;">${healthScore>=70 ? 'ÓPTIMO' : healthScore>=40 ? 'EN RIESGO' : 'CRÍTICO'}</div>
                                 </div>
                             </div>
@@ -955,17 +940,15 @@
                         </div>
                     </div>
                     
-                    <!-- Fila 3: Sentiment Analysis + Critical Risk Matrix (grid 2 columnas) -->
                     <div class="quantum-grid-2">
-                        <!-- Sentiment Analysis -->
                         <div class="quantum-card">
                             <div class="quantum-card-header"><span>💬 SENTIMENT ANALYSIS</span><span style="color:${sentiment.color};">${sentiment.label.toUpperCase()} ${sentiment.emoji}</span></div>
                             <div class="quantum-card-body">
                                 <div id="quantumMatrix" class="quantum-matrix">${generateMatrixText()}</div>
                                 <div class="sentiment-stats">
-                                    <div class="sentiment-stat"><div style="font-size:20px; font-weight:700; color:#10b981;">${sentiment.positiveCount}</div><div style="font-size:8px; color:#5b6e8c;">POSITIVAS</div></div>
-                                    <div class="sentiment-stat"><div style="font-size:20px; font-weight:700; color:#ef4444;">${sentiment.negativeCount}</div><div style="font-size:8px; color:#5b6e8c;">NEGATIVAS</div></div>
-                                    <div class="sentiment-stat"><div style="font-size:20px; font-weight:700; color:#60a5fa;">${sentiment.totalComments}</div><div style="font-size:8px; color:#5b6e8c;">COMENTARIOS</div></div>
+                                    <div class="sentiment-stat"><div style="color:#10b981;">${sentiment.positiveCount}</div><div style="color:#ffffff;">POSITIVAS</div></div>
+                                    <div class="sentiment-stat"><div style="color:#ef4444;">${sentiment.negativeCount}</div><div style="color:#ffffff;">NEGATIVAS</div></div>
+                                    <div class="sentiment-stat"><div style="color:#60a5fa;">${sentiment.totalComments}</div><div style="color:#ffffff;">COMENTARIOS</div></div>
                                 </div>
                                 <div style="margin-bottom:8px;">
                                     <div class="sentiment-bar-container">
@@ -986,7 +969,6 @@
                             </div>
                         </div>
                         
-                        <!-- Critical Risk Matrix -->
                         <div class="quantum-card">
                             <div class="quantum-card-header"><span>⚠️ CRITICAL RISK MATRIX</span><span>🔴 ${tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length} críticos | 🎉 ${tasksWithRisk.filter(t => t.status === 'completed').length} completadas</span></div>
                             <div class="quantum-card-body">
@@ -1003,9 +985,9 @@
                                                     return `<tr style="background: #0a1a0a; border-left: 3px solid #10b981;">
                                                         <td><strong>🎉 ${(t.name || 'Sin nombre').substring(0,30)}</strong> <span style="color:#10b981;">✓ COMPLETADA</span></td>
                                                         <td style="color:#10b981;">${t.assignee || '—'}</td>
-                                                        <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:100%; height:100%; background:#10b981; border-radius:4px;"></div></div> 100%</td>
-                                                        <td><span style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:4px;">✅ COMPLETADA</span></td>
-                                                        <td><span style="background:#0a2e1a; color:#10b981; padding:4px 10px; border-radius:4px;">✓ 0%</span></td>
+                                                        <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:100%; height:100%; background:#10b981; border-radius:4px;"></div></div> 100%</div></td>
+                                                        <td><span style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:4px;">✅ COMPLETADA</span></div></td>
+                                                        <td><span style="background:#0a2e1a; color:#10b981; padding:4px 10px; border-radius:4px;">✓ 0%</span></div></td>
                                                     </tr>`;
                                                 }
                                                 
@@ -1041,15 +1023,15 @@
                                                 return `<tr style="background: ${riskBg}; border-left: 3px solid ${riskColor};">
                                                     <td><strong style="color:${riskColor};">${statusIcon} ${(t.name || 'Sin nombre').substring(0,30)}${daysLeftText}</strong></td>
                                                     <td style="color:#94a3b8;">${t.assignee || '—'}</td>
-                                                    <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:${progresoMostrar}%; height:100%; background:${progresoColor}; border-radius:4px;"></div></div> ${progresoMostrar}%</td>
-                                                    <td><span style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:4px;">${statusIcon} ${statusText}</span></td>
-                                                    <td><span style="background:${riskBg}; color:${riskColor}; padding:4px 10px; border-radius:4px; font-weight:500;">${riskDisplay}</span></td>
+                                                    <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:${progresoMostrar}%; height:100%; background:${progresoColor}; border-radius:4px;"></div></div> ${progresoMostrar}%</div></td>
+                                                    <td><span style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:4px;">${statusIcon} ${statusText}</span></div></td>
+                                                    <td><span style="background:${riskBg}; color:${riskColor}; padding:4px 10px; border-radius:4px; font-weight:500;">${riskDisplay}</span></div></td>
                                                 </tr>`;
                                             }).join('')}
                                         </tbody>
                                     </table>
                                 </div>
-                                <div style="margin-top:12px; display:flex; gap:16px; justify-content:center; font-size:9px; color:#5b6e8c; padding:8px; border-top:1px solid #1a1f2e;">
+                                <div style="margin-top:12px; display:flex; gap:16px; justify-content:center; font-size:9px; color:#ffffff; padding:8px; border-top:1px solid #1a1f2e;">
                                     <span>🔴 80-100% → CRÍTICO</span>
                                     <span>🟠 60-79% → ALTO</span>
                                     <span>🟡 40-59% → MEDIO</span>
@@ -1154,7 +1136,7 @@
     window.showQuantumDashboard = showQuantumDashboard;
     window.QuantumExecutive = { 
         show: showQuantumDashboard, 
-        version: '11.5',
+        version: '11.7',
         getCurrentProject: getCurrentProject,
         calculateRisk: calculateRisk,
         calcularProgresoReal: calcularProgresoReal
@@ -1162,12 +1144,11 @@
     
     function init() {
         createSidebarButton();
-        console.log('✅ CENTRO DE CONTROL PM v11.5 - ESTILO EJECUTIVO PREMIUM');
-        console.log('   • Diseño corporativo oscuro (#0f111a)');
-        console.log('   • KPIs con colores sólidos y visibles');
-        console.log('   • Monte Carlo alineado correctamente');
-        console.log('   • Riesgos basados en progreso real por horas');
-        console.log('   • Totalmente responsive y elegante');
+        console.log('✅ CENTRO DE CONTROL PM v11.7 - TODOS LOS TEXTOS EN BLANCO');
+        console.log('   • KPIs de Sentiment Analysis: etiquetas BLANCO');
+        console.log('   • Executive Metrics: Cost Performance Index, Schedule Performance Index, Health Score → BLANCO');
+        console.log('   • Critical Risk Matrix: leyenda BLANCO');
+        console.log('   • Diseño ejecutivo premium completo');
     }
     
     if (document.readyState === 'loading') {
