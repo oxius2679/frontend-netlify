@@ -1,4 +1,48 @@
+// Función para sincronizar progreso con horas registradas
+function sincronizarProgresoGlobal() {
+    if (!projects || projects.length === 0) return;
+    
+    const project = projects[currentProjectIndex];
+    if (!project) return;
+    
+    let cambios = false;
+    
+    project.tasks.forEach(task => {
+        const horasEstimadas = task.estimatedTime || 0;
+        const horasRegistradas = task.timeLogged || 0;
+        let nuevoProgreso = task.progress || 0;
+        
+        if (task.status === 'completed') {
+            nuevoProgreso = 100;
+        } else if (horasEstimadas > 0 && horasRegistradas > 0) {
+            nuevoProgreso = Math.min(99, Math.round((horasRegistradas / horasEstimadas) * 100));
+        } else if (horasRegistradas === 0 && task.status !== 'completed') {
+            nuevoProgreso = 0;
+        }
+        
+        if (task.progress !== nuevoProgreso) {
+            task.progress = nuevoProgreso;
+            cambios = true;
+        }
+    });
+    
+    if (cambios) {
+        localStorage.setItem('projects', JSON.stringify(projects));
+        if (typeof safeSave === 'function') safeSave();
+        console.log('🔄 Progresos sincronizados automáticamente');
+    }
+}
 
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', sincronizarProgresoGlobal);
+// Ejecutar también al cambiar de proyecto
+if (typeof selectProject === 'function') {
+    const originalSelect = selectProject;
+    selectProject = function(index) {
+        originalSelect(index);
+        setTimeout(sincronizarProgresoGlobal, 100);
+    };
+}
 
 
 
@@ -40018,19 +40062,7 @@ function showTaskDetails(task) {
     });
   }
 
-  // Evento para registrar tiempo <=== ESTE YA EXISTE (NO LO MODIFIQUES)
-  document.getElementById('registerTimeBtn').addEventListener('click', () => {
-    const hours = parseFloat(document.getElementById('timeSpent').value);
-    const comment = document.getElementById('timeComment').value.trim() || 'Sin comentario';
-
-    if (!isNaN(hours) && hours > 0) {
-      // ... código existente ...
-    }
-  });
-
-
-
-  // Evento para registrar tiempo
+  // Evento para registrar tiempo (VERSIÓN CORREGIDA)
   document.getElementById('registerTimeBtn').addEventListener('click', () => {
     const hours = parseFloat(document.getElementById('timeSpent').value);
     const comment = document.getElementById('timeComment').value.trim() || 'Sin comentario';
@@ -40044,31 +40076,43 @@ function showTaskDetails(task) {
       };
 
       task.timeHistory = task.timeHistory || [];
-task.timeLogged = (task.timeLogged || 0) + hours;
-task.timeHistory.unshift(timeEntry);
+      task.timeLogged = (task.timeLogged || 0) + hours;
+      task.timeHistory.unshift(timeEntry);
 
-// ✅ FIX: asegurar entradas de tiempo para reportes
-if (!Array.isArray(task.timeLoggedEntries)) {
-    task.timeLoggedEntries = [];
-}
+      // ✅ FIX: asegurar entradas de tiempo para reportes
+      if (!Array.isArray(task.timeLoggedEntries)) {
+          task.timeLoggedEntries = [];
+      }
 
-task.timeLoggedEntries.unshift({
-    hours: Number(hours),
-    date: timeEntry?.date || new Date().toISOString()
-});
-
+      task.timeLoggedEntries.unshift({
+          hours: Number(hours),
+          date: timeEntry?.date || new Date().toISOString()
+      });
 
       const estimatedHoursInput = document.getElementById('editTaskEstimatedHours');
       if (estimatedHoursInput) {
         task.estimatedTime = parseFloat(estimatedHoursInput.value) || 0;
       }
 
+      // ✅ ✅ ✅ NUEVO: ACTUALIZAR EL PROGRESO AUTOMÁTICAMENTE ✅ ✅ ✅
+      const horasEstimadas = task.estimatedTime || 0;
+      if (horasEstimadas > 0) {
+        let nuevoProgreso = Math.min(99, Math.round((task.timeLogged / horasEstimadas) * 100));
+        // Si la tarea ya está completada, forzar 100%
+        if (task.status === 'completed') {
+          nuevoProgreso = 100;
+        }
+        task.progress = nuevoProgreso;
+        console.log(`📊 Progreso actualizado: ${task.progress}% (${task.timeLogged}/${horasEstimadas}h)`);
+      }
+      // ✅ ✅ ✅ FIN DE LA ACTUALIZACIÓN ✅ ✅ ✅
+
       updateLocalStorage();
       showTaskDetails(task);
       generateReports();
-      showNotification('Tiempo registrado exitosamente');
+      showNotification(`✅ Tiempo registrado: ${hours}h - Progreso: ${task.progress}%`);
     } else {
-      showNotification('Por favor ingrese un valor válido para las horas');
+      showNotification('❌ Por favor ingrese un valor válido para las horas');
     }
   });
 
@@ -64936,21 +64980,21 @@ function generarDocumentoProject() {
                     background: #f8f9fa; 
                 }
                 .completada { 
-                    color: #10b981; 
-                    font-weight: bold; 
-                }
-                .en-progreso { 
-                    color: #f59e0b; 
-                    font-weight: bold; 
-                }
-                .pendiente { 
-                    color: #6c757d; 
-                    font-weight: bold; 
-                }
-                .rezagada { 
-                    color: #ef4444; 
-                    font-weight: bold; 
-                }
+    color: #10b981 !important; 
+    font-weight: bold; 
+}
+.en-progreso { 
+    color: #2dd4bf !important; 
+    font-weight: bold; 
+}
+.pendiente { 
+    color: #fde047 !important; 
+    font-weight: bold; 
+}
+.rezagada { 
+    color: #ef4444 !important; 
+    font-weight: bold; 
+}
                 .footer { 
                     margin-top: 40px; 
                     text-align: center; 
