@@ -514,107 +514,167 @@
     };
     
     // ============================================
-    // BOTÓN AZUL EN EL HEADER
+    // 🔥 BOTÓN EN EL MENÚ LATERAL - VERSIÓN ROBUSTA
     // ============================================
-    function agregarBoton() {
-        const interval = setInterval(() => {
-            const header = document.querySelector('header, .header, #mainHeader');
-            if (header) {
-                clearInterval(interval);
-                if (document.getElementById('autoBlueFinal')) return;
-                const btn = document.createElement('button');
-                btn.id = 'autoBlueFinal';
-                btn.innerHTML = '⚙️ Automatización';
-                btn.style.cssText = 'background:#3b82f6!important;border:none!important;color:white!important;padding:8px 18px!important;border-radius:8px!important;cursor:pointer!important;font-weight:600!important;font-size:14px!important;margin-left:12px!important;display:inline-flex!important;align-items:center!important;gap:8px!important;';
-                btn.onmouseenter = () => btn.style.background = '#2563eb';
-                btn.onmouseleave = () => btn.style.background = '#3b82f6';
-                btn.onclick = () => window.openAutomationCenter();
-                header.appendChild(btn);
-                console.log('✅ Botón azul agregado');
+    
+    // Función principal para agregar el botón al sidebar
+    function agregarBotonAlSidebar() {
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
+        
+        if (!sidebar) {
+            // Si no hay sidebar, reintentar en 500ms
+            setTimeout(agregarBotonAlSidebar, 500);
+            return;
+        }
+        
+        // Verificar si ya existe el botón
+        if (document.getElementById('autoBlueSidebar')) return;
+        
+        // Crear el botón
+        const btn = document.createElement('button');
+        btn.id = 'autoBlueSidebar';
+        btn.innerHTML = '⚙️ Automatización Premium';
+        btn.style.cssText = `
+            width: calc(100% - 24px) !important;
+            background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+            border: none !important;
+            color: white !important;
+            padding: 12px 16px !important;
+            border-radius: 12px !important;
+            cursor: pointer !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            margin: 10px 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+            transition: all 0.3s ease !important;
+        `;
+        
+        // Efectos hover
+        btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
+        btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
+        
+        // Click handler
+        btn.onclick = () => {
+            if (typeof window.openAutomationCenter === 'function') {
+                window.openAutomationCenter();
+            } else {
+                console.error('❌ openAutomationCenter no está definida');
+                alert('La función de automatización aún no está disponible');
             }
-        }, 500);
+        };
+        
+        // Agregar al sidebar
+        sidebar.appendChild(btn);
+        
+        // Ocultar el botón original del header si existe
+        const originalBtn = document.getElementById('autoBlueFinal');
+        if (originalBtn) {
+            originalBtn.style.display = 'none';
+        }
+        
+        console.log('✅ Botón de automatización agregado al menú lateral');
     }
+    
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', agregarBotonAlSidebar);
+    } else {
+        // Si ya está cargado, ejecutar inmediatamente
+        agregarBotonAlSidebar();
+    }
+    
+    // También usar MutationObserver por si el sidebar se crea dinámicamente
+    const observer = new MutationObserver(function(mutations) {
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
+        const btn = document.getElementById('autoBlueSidebar');
+        
+        if (sidebar && !btn) {
+            agregarBotonAlSidebar();
+        }
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
     
     // Estilos de animación
     const styleSheet = document.createElement('style');
-    styleSheet.textContent = `@keyframes slideDownAuto{from{opacity:0;transform:translateX(50px);}to{opacity:1;transform:translateX(0);}}@keyframes slideUpAuto{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(50px);}}`;
+    styleSheet.textContent = `
+        @keyframes slideDownAuto{from{opacity:0;transform:translateX(50px);}to{opacity:1;transform:translateX(0);}}
+        @keyframes slideUpAuto{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(50px);}}
+    `;
     document.head.appendChild(styleSheet);
     
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', agregarBoton);
-    else agregarBoton();
-    
     addToHistory('🚀 Sistema Iniciado', 'Motor de automatización activo', '⚙️');
-    console.log('✅ SISTEMA COMPLETO - Botón azul + Modal elegante + Motor funcionando');
+    console.log('✅ SISTEMA COMPLETO - Botón en menú lateral + Motor funcionando');
 })();
 
-
-
-
-
 // ============================================
-// 🔵 FORZAR BOTÓN AZUL - VERSIÓN EXTREMA
+// 🔵 FORZADO EXTREMO - Script independiente (se ejecuta después de todo)
 // ============================================
-(function forzarBotonAzulExtremo() {
-    // Crear un intervalo que se ejecuta cada 200ms
-    const intervalo = setInterval(function() {
-        // Buscar el botón por cualquier selector posible
-        const btn = document.getElementById('autoBlueFinal') || 
-                    document.querySelector('button[id*="autoBlue"]') ||
-                    document.querySelector('button:contains("Automatización")') ||
-                    Array.from(document.querySelectorAll('button')).find(b => 
-                        b.textContent.includes('Automatización') || 
-                        b.innerHTML.includes('⚙️')
-                    );
+(function forzarBotonSidebarExtremo() {
+    // Función que intenta agregar el botón
+    function intentarAgregarBoton() {
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
+        const btnExistente = document.getElementById('autoBlueSidebar');
         
-        if (btn) {
-            // Aplicar estilos de forma agresiva
-            btn.style.cssText = `
-                background: #2563eb !important;
-                background-color: #2563eb !important;
+        if (sidebar && !btnExistente) {
+            const nuevoBtn = document.createElement('button');
+            nuevoBtn.id = 'autoBlueSidebar';
+            nuevoBtn.innerHTML = '⚙️ Automatización Premium';
+            nuevoBtn.style.cssText = `
+                width: calc(100% - 24px) !important;
+                background: linear-gradient(135deg, #2563eb, #1e40af) !important;
                 border: none !important;
                 color: white !important;
-                padding: 8px 18px !important;
-                border-radius: 8px !important;
+                padding: 12px 16px !important;
+                border-radius: 12px !important;
                 cursor: pointer !important;
                 font-weight: 600 !important;
                 font-size: 14px !important;
-                margin-left: 12px !important;
-                display: inline-flex !important;
+                margin: 10px 12px !important;
+                display: flex !important;
                 align-items: center !important;
+                justify-content: center !important;
                 gap: 8px !important;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+                transition: all 0.3s ease !important;
             `;
+            nuevoBtn.onclick = () => {
+                if (typeof window.openAutomationCenter === 'function') {
+                    window.openAutomationCenter();
+                } else {
+                    console.error('❌ openAutomationCenter no disponible');
+                    alert('Recargando la página para cargar el sistema...');
+                    location.reload();
+                }
+            };
+            sidebar.appendChild(nuevoBtn);
             
-            // Forzar con setAttribute
-            btn.setAttribute('style', `
-                background: #2563eb !important;
-                background-color: #2563eb !important;
-                border: none !important;
-                color: white !important;
-                padding: 8px 18px !important;
-                border-radius: 8px !important;
-                cursor: pointer !important;
-                font-weight: 600 !important;
-                font-size: 14px !important;
-                margin-left: 12px !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                gap: 8px !important;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-            `);
+            // Ocultar botón original
+            const originalBtn = document.getElementById('autoBlueFinal');
+            if (originalBtn) originalBtn.style.display = 'none';
+            
+            console.log('✅ Forzado extremo: botón agregado al sidebar');
+            return true;
         }
-    }, 200);
+        return false;
+    }
     
-    console.log('✅ Forzado extremo de botón azul activado');
+    // Intentar inmediatamente
+    if (intentarAgregarBoton()) return;
+    
+    // Si no, esperar y reintentar varias veces
+    let intentos = 0;
+    const maxIntentos = 20;
+    const intervalo = setInterval(() => {
+        intentos++;
+        if (intentarAgregarBoton() || intentos >= maxIntentos) {
+            clearInterval(intervalo);
+            if (intentos >= maxIntentos) {
+                console.warn('⚠️ No se pudo agregar el botón al sidebar después de varios intentos');
+            }
+        }
+    }, 1000);
 })();
-
-
-
-
-
-
-
-
-
-
-
