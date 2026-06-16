@@ -245,9 +245,10 @@ function filtrarProyectosPorUsuario() {
         return;
     }
     
-    // Filtrar proyectos donde el usuario es dueño O colaborador
+    // ✅ CORREGIDO: Filtrar proyectos donde el usuario es dueño O colaborador
     const proyectosFiltrados = projects.filter(proyecto => {
         const esDueno = proyecto.clienteId === clienteId;
+        // 🔥 CORREGIDO: Comparar emails correctamente
         const esColaborador = proyecto.colaboradores && 
                               Array.isArray(proyecto.colaboradores) && 
                               proyecto.colaboradores.includes(userEmail);
@@ -256,6 +257,8 @@ function filtrarProyectosPorUsuario() {
             console.log(`  ✅ DUEÑO: ${proyecto.name}`);
         } else if (esColaborador) {
             console.log(`  ✅ COLABORADOR: ${proyecto.name}`);
+        } else {
+            console.log(`  ❌ EXCLUIDO: ${proyecto.name}`);
         }
         
         return esDueno || esColaborador;
@@ -267,8 +270,7 @@ function filtrarProyectosPorUsuario() {
     // Reemplazar el array global
     projects.length = 0;
     projects.push(...proyectosFiltrados);
-}
-// ============================================
+}// ============================================
 // 🎯 CARGAR DATOS Y FILTRAR PROYECTOS
 // ============================================
 
