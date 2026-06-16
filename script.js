@@ -23125,6 +23125,46 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 async function safeLoad() {
     console.group('📥 Cargando datos desde backend o localStorage');
 
+    // ✅ NUEVO BLOQUE: Forzar recarga después de invitación
+    const forceRefresh = localStorage.getItem('forceProjectRefresh');
+    if (forceRefresh === 'true') {
+        console.log('🔄 FORZANDO RECARGA DESPUÉS DE INVITACIÓN...');
+        localStorage.removeItem('forceProjectRefresh');
+        
+        const token = localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        
+        if (token && clienteId) {
+            try {
+                const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
+                const response = await fetch(url, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.projects) {
+                        projects = data.projects;
+                        currentProjectIndex = data.currentProjectIndex || 0;
+                        filtrarProyectosPorUsuario();
+                        localStorage.setItem('projects', JSON.stringify(projects));
+                        localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                        console.log(`✅ ${projects.length} proyectos cargados (post-invitación)`);
+                        console.groupEnd();
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ Error cargando después de invitación:', error.message);
+            }
+        }
+    }
+
+    // === TU CÓDIGO ORIGINAL (sin cambios) ===
     const lastSave = localStorage.getItem('lastSaveTimestamp');
     const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
     
@@ -23136,7 +23176,6 @@ async function safeLoad() {
         const saved = localStorage.getItem('projects');
         if (saved) {
             projects = JSON.parse(saved);
-            // ✅ UBICACIÓN 1
             filtrarProyectosPorUsuario();
             localStorage.setItem('projects', JSON.stringify(projects));
             console.groupEnd();
@@ -23166,7 +23205,6 @@ async function safeLoad() {
                 if (data.projects) {
                     projects = data.projects;
                     currentProjectIndex = data.currentProjectIndex || 0;
-                    // ✅ UBICACIÓN 2
                     filtrarProyectosPorUsuario();
                     localStorage.setItem('projects', JSON.stringify(projects));
                     localStorage.setItem('currentProjectIndex', currentProjectIndex);
@@ -23189,7 +23227,6 @@ async function safeLoad() {
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
         currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-        // ✅ UBICACIÓN 3
         filtrarProyectosPorUsuario();
         localStorage.setItem('projects', JSON.stringify(projects));
         console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
@@ -23202,7 +23239,6 @@ async function safeLoad() {
     console.groupEnd();
     return false;
 }
-
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
 // ============================================
