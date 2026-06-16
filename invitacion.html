@@ -255,6 +255,10 @@
         };
         
         localStorage.setItem('pendingInvitation', JSON.stringify(invitationData));
+// ========== AGREGAR ESTAS 2 LÍNEAS ==========
+localStorage.setItem('clienteId', data.clienteId);
+localStorage.setItem('forceProjectRefresh', Date.now().toString());
+// ===========================================
         
         showSuccess(`✅ ¡Invitación aceptada! Por favor inicia sesión para acceder al proyecto "${data.proyectoNombre}".`);
         
