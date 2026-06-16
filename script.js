@@ -1,3 +1,66 @@
+// ============================================
+// SISTEMA DE RECARGA DESPUÉS DE INVITACIÓN
+// ============================================
+(function checkInvitationRefresh() {
+    const forceRefresh = localStorage.getItem('forceProjectRefresh');
+    if (forceRefresh) {
+        console.log('🔄 Recargando proyectos después de invitación aceptada...');
+        localStorage.removeItem('forceProjectRefresh');
+        
+        // Esperar a que el DOM cargue y luego forzar actualización
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(refreshProjectsAfterInvitation, 500);
+            });
+        } else {
+            setTimeout(refreshProjectsAfterInvitation, 500);
+        }
+    }
+    
+    function refreshProjectsAfterInvitation() {
+        console.log('🔄 Forzando actualización de proyectos...');
+        
+        const token = localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        
+        if (!token || !clienteId) {
+            console.log('⚠️ No hay token o clienteId, omitiendo');
+            return;
+        }
+        
+        fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects/cliente/${clienteId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.projects && data.projects.length > 0) {
+                window.projects = data.projects;
+                localStorage.setItem('projects', JSON.stringify(data.projects));
+                console.log('✅ Proyectos actualizados:', window.projects.map(p => p.name));
+                
+                // Aplicar filtro de colaboradores
+                if (typeof filtrarProyectosPorUsuario === 'function') {
+                    filtrarProyectosPorUsuario();
+                }
+                
+                // Renderizar interfaz
+                if (typeof renderProjects === 'function') {
+                    renderProjects();
+                }
+                if (typeof selectProject === 'function') {
+                    selectProject(0);
+                }
+                
+                console.log('✅ Interfaz actualizada después de invitación');
+            }
+        })
+        .catch(err => console.error('❌ Error:', err));
+    }
+})();
+
+
+
+
 // Función para sincronizar progreso con horas registradas
 function sincronizarProgresoGlobal() {
     if (!projects || projects.length === 0) return;
@@ -6134,10 +6197,26 @@ const widthPercent = Math.min(95-leftPercent, (duration / totalDays) * 100);
 
 // Colores por estado y prioridad
 const isCritical = t.priority === 'high' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
-const baseColor = t.status === 'completed' ? '#10b981' : (t.status === 'inProgress' ? '#3b82f6' : '#94a3b8');
-const barColor = isCritical ? '#ef4444' : baseColor;
-const borderColor = isCritical ? '#dc2626' : (t.status === 'completed' ? '#059669' : '#2563eb');
+// Detectar si está rezagada/atrasada
+const isOverdue = t.status === 'overdue' || t.status === 'rezagado' || 
+                  (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
 
+// 🎨 NUEVOS COLORES PARA LAS BARRAS
+let baseColor = '';
+if (t.status === 'completed') {
+    baseColor = '#10b981';      // VERDE
+} else if (t.status === 'inProgress') {
+    baseColor = '#2dd4bf';      // VERDE AZULADO
+} else if (isOverdue) {
+    baseColor = '#ef4444';      // ROJO
+} else {
+    baseColor = '#fde047';      // AMARILLO
+}
+
+const barColor = baseColor;
+const borderColor = isOverdue ? '#dc2626' : 
+                    (t.status === 'completed' ? '#059669' : 
+                    (t.status === 'inProgress' ? '#14b8a6' : '#ca8a04'));
 // Badge de prioridad
 const priorityBadge = t.priority === 'high' ? '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:8px;">🔴 Alta</span>' : 
 (t.priority === 'medium' ? '<span style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:bold; margin-left:8px;">🟡 Media</span>' : 
@@ -6169,11 +6248,28 @@ ${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES', {day:'numeric', 
 `;
 }).join('');
 
-// ✅ Tabla de cronograma ejecutiva
+// ✅ Tabla de cronograma ejecutiva (COLORES CORREGIDOS)
 const cronograma = tasks.map(t => {
 const isDelayed = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-const statusColor = t.status === 'completed' ? '#10b981' : (t.status === 'inProgress' ? '#3b82f6' : (isDelayed ? '#ef4444' : '#94a3b8'));
-const statusText = t.status === 'completed' ? '✅ Completada' : (t.status === 'inProgress' ? '🔄 En Progreso' : (isDelayed ? '🔴 Atrasada' : '⏳ Pendiente'));
+const isOverdue = t.status === 'overdue' || t.status === 'rezagado' || isDelayed;
+
+// 🎨 NUEVOS COLORES
+let statusColor = '';
+let statusText = '';
+
+if (t.status === 'completed') {
+    statusColor = '#10b981';      // VERDE
+    statusText = '✅ Completada';
+} else if (t.status === 'inProgress') {
+    statusColor = '#2dd4bf';      // VERDE AZULADO
+    statusText = '🔄 En Progreso';
+} else if (isOverdue) {
+    statusColor = '#ef4444';      // ROJO
+    statusText = '🔴 Rezagada';
+} else {
+    statusColor = '#fde047';      // AMARILLO
+    statusText = '⏳ Pendiente';
+}
 
 return `
 <tr style="background:#f8fafc;">
@@ -6182,11 +6278,14 @@ return `
 <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D'}</td>
 <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; color:#64748b;">${t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D'}</td>
 <td style="padding:12px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#1e40af;">${t.estimatedTime || 0}h</td>
-<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;"><span style="background:${statusColor}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${statusText}</span></td>
+<td style="padding:12px; border:1px solid #e2e8f0; text-align:center;">
+    <span style="background:${statusColor}; color:${statusColor === '#fde047' ? '#1e293b' : 'white'}; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">
+        ${statusText}
+    </span>
+</td>
 </tr>
 `;
 }).join('');
-
 // ✅ Contenido HTML ejecutivo espectacular
 const contenido = `
 <!-- Header Ejecutivo con Gradiente -->
@@ -6292,16 +6391,15 @@ secuencia de actividades, dependencias y fechas clave, permitiendo una gestión 
 <span style="width:16px; height:16px; background:#10b981; border:2px solid #059669; border-radius:4px;"></span> ✅ Completada
 </div>
 <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
-<span style="width:16px; height:16px; background:#3b82f6; border:2px solid #2563eb; border-radius:4px;"></span> 🔄 En Progreso
+<span style="width:16px; height:16px; background:#2dd4bf; border:2px solid #14b8a6; border-radius:4px;"></span> 🔄 En Progreso
 </div>
 <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
-<span style="width:16px; height:16px; background:#94a3b8; border:2px solid #64748b; border-radius:4px;"></span> ⏳ Pendiente
+<span style="width:16px; height:16px; background:#fde047; border:2px solid #ca8a04; border-radius:4px;"></span> ⏳ Pendiente
 </div>
 <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:#64748b;">
-<span style="width:16px; height:16px; background:#ef4444; border:2px solid #dc2626; border-radius:4px;"></span> 🔴 Crítica/Atrasada
+<span style="width:16px; height:16px; background:#ef4444; border:2px solid #dc2626; border-radius:4px;"></span> 🔴 Rezagada/Atrasada
 </div>
-</div>
-<!-- Barras del Gantt -->
+</div><!-- Barras del Gantt -->
 ${ganttRows}
 </div>
 </div>
