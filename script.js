@@ -233,10 +233,10 @@ function filtrarProyectosPorUsuario() {
     if (esAdmin) {
         console.log('👑 Admin - Mostrando todos los proyectos');
         // Restaurar proyectos originales para el admin
-        // if (window.originalProjects) {
-//     projects.length = 0;
-//     projects.push(...window.originalProjects);
-// }
+        if (window.originalProjects) {
+            projects.length = 0;
+            projects.push(...window.originalProjects);
+        }
         return;
     }
     
@@ -38846,8 +38846,7 @@ if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 // ============================================
 function renderProjects() {
 
- // 🔥 IMPORTANTE: Usar projects (ya filtrado) NO originalProjects
-    const proyectosAMostrar = projects; // ← YA ESTÁ FILTRADO
+
     const userStr = localStorage.getItem('user');
     let userEmail = null;
     try {
