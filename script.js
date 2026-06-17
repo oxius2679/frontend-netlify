@@ -1,3 +1,17 @@
+// Cargar el sistema de colaboración con UI
+(function cargarColaboracionUI() {
+    if (document.getElementById('colabFloatBtn')) return;
+    
+    const script = document.createElement('script');
+    script.src = 'colaboracion-ui.js';
+    script.onload = function() {
+        console.log('✅ Sistema de colaboración UI cargado');
+    };
+    document.head.appendChild(script);
+})();
+
+
+
 // ============================================
 // SISTEMA DE RECARGA DESPUÉS DE INVITACIÓN
 // ============================================
