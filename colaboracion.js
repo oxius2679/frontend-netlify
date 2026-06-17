@@ -1,11 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN FINAL DEFINITIVA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN NETLIFY
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🎯 Iniciando sistema de colaboración definitivo...');
+    console.log('🎯 Iniciando sistema de colaboración (Netlify)...');
     
     // ============================================
     // 1. CONFIGURACIÓN EMAILJS
@@ -16,39 +16,20 @@
         TEMPLATE_ID: 'template_we2gzml'
     };
     
-    // Cargar EmailJS si no está disponible
-    if (typeof emailjs === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
-        script.onload = function() {
-            emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
-            console.log('✅ EmailJS cargado e inicializado');
-        };
-        document.head.appendChild(script);
-    } else {
-        emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
-    }
-    
     // ============================================
     // 2. CONFIGURACIÓN GENERAL
     // ============================================
     const STORAGE_KEY = 'colaboracion_data';
+    let data = { proyectos: [], invitaciones: [], usuarios: [] };
+    let panelAbierto = false;
     
     // ============================================
-    // 3. DATOS
+    // 3. FUNCIONES DE DATOS
     // ============================================
-    let data = {
-        proyectos: [],
-        invitaciones: [],
-        usuarios: []
-    };
-    
     function loadData() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                data = JSON.parse(saved);
-            }
+            if (saved) data = JSON.parse(saved);
         } catch(e) {}
         return data;
     }
@@ -76,7 +57,6 @@
     // 4. NÚCLEO DEL SISTEMA
     // ============================================
     const Core = {
-        // Sincronizar proyectos del sistema principal al sistema externo
         syncProjects: function() {
             const user = getCurrentUser();
             if (!user) return;
@@ -86,7 +66,7 @@
             projects.forEach(p => {
                 const exists = data.proyectos.find(dp => dp.nombre === p.name);
                 if (!exists) {
-                    const nuevoProyecto = {
+                    data.proyectos.push({
                         id: Date.now() + Math.floor(Math.random() * 1000),
                         nombre: p.name,
                         descripcion: p.description || '',
@@ -100,8 +80,7 @@
                             asignado: t.assignee || ''
                         })),
                         activo: true
-                    };
-                    data.proyectos.push(nuevoProyecto);
+                    });
                     cambios++;
                 }
             });
@@ -109,13 +88,11 @@
             return data.proyectos;
         },
         
-        // SINCRONIZAR PROYECTOS EXTERNOS AL SISTEMA PRINCIPAL (COLABORADOR)
         syncProjectsToMainSystem: function() {
             const user = getCurrentUser();
             if (!user) return;
             if (typeof projects === 'undefined' || !Array.isArray(projects)) return;
             
-            // Obtener proyectos donde el usuario es colaborador en sistema externo
             const misProyectos = data.proyectos.filter(p => 
                 p.colaboradores && p.colaboradores.includes(user)
             );
@@ -151,7 +128,6 @@
                     projects.push(nuevoProyecto);
                     cambios++;
                 } else {
-                    // Asegurar que el colaborador esté en la lista
                     if (!existe.colaboradores) existe.colaboradores = [];
                     if (!existe.colaboradores.includes(user)) {
                         existe.colaboradores.push(user);
@@ -163,7 +139,6 @@
             if (cambios > 0) {
                 localStorage.setItem('projects', JSON.stringify(projects));
                 if (typeof renderProjects === 'function') renderProjects();
-                console.log(`✅ ${cambios} proyecto(s) sincronizados al sistema principal`);
             }
         },
         
@@ -265,7 +240,6 @@
             invitacion.fechaAceptacion = new Date().toISOString();
             saveData();
             
-            // Sincronizar con sistema principal
             this.syncProjectsToMainSystem();
             
             alert(`✅ ¡Bienvenido al proyecto "${invitacion.proyectoNombre}"!`);
@@ -280,10 +254,11 @@
     };
     
     // ============================================
-    // 5. INTERFAZ VISUAL
+    // 5. INTERFAZ VISUAL - BOTÓN INFERIOR IZQUIERDA
     // ============================================
     
     function createFloatingButton() {
+        // Eliminar botón existente
         const existing = document.getElementById('colabFloatBtn');
         if (existing) existing.remove();
         
@@ -291,37 +266,36 @@
         btn.id = 'colabFloatBtn';
         btn.innerHTML = '👥';
         btn.title = 'Colaboración';
-        btn.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    cursor: pointer;
-    z-index: 999999;
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
-    transition: all 0.3s ease;
-    border: 2px solid rgba(255,255,255,0.2);
-    user-select: none;
-    font-family: Arial, sans-serif;
-`;
         
-        btn.onclick = function() {
-            const panel = document.getElementById('colabPanel');
-            if (panel) {
-                panel.remove();
-            } else {
-                renderPanel();
-            }
+        btn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 999999;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.2);
+            user-select: none;
+            font-family: Arial, sans-serif;
+        `;
+        
+        btn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePanel();
         };
         
+        // Badge
         const badge = document.createElement('div');
         badge.id = 'colabBadge';
         badge.style.cssText = `
@@ -356,9 +330,13 @@
         badge.style.display = pendientes.length > 0 ? 'flex' : 'none';
     }
     
-    function renderPanel() {
+    function togglePanel() {
         const existing = document.getElementById('colabPanel');
-        if (existing) existing.remove();
+        if (existing) {
+            existing.remove();
+            panelAbierto = false;
+            return;
+        }
         
         loadData();
         const user = getCurrentUser();
@@ -370,8 +348,8 @@
         panel.id = 'colabPanel';
         panel.style.cssText = `
             position: fixed;
-            bottom: 260px;
-            right: 20px;
+            bottom: 100px;
+            left: 20px;
             width: 420px;
             max-height: 65vh;
             background: #0f172a;
@@ -401,7 +379,6 @@
             </div>
             
             <div style="padding: 16px; overflow-y: auto; flex: 1; max-height: 400px;">
-                <!-- Invitaciones -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #f59e0b; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📩 Invitaciones Pendientes</div>
                     ${pendientes.length === 0 ? `
@@ -421,7 +398,6 @@
                     `).join('')}
                 </div>
                 
-                <!-- Mis Proyectos -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Mis Proyectos Colaborativos</div>
                     ${misProyectos.length === 0 ? `
@@ -439,7 +415,6 @@
                     `).join('')}
                 </div>
                 
-                <!-- Invitar (solo admin) -->
                 ${esAdmin ? `
                     <div style="border-top: 1px solid #334155; padding-top: 16px;">
                         <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">➕ Invitar Colaborador</div>
@@ -462,6 +437,7 @@
         `;
         
         document.body.appendChild(panel);
+        panelAbierto = true;
         
         window.enviarInvitacion = function() {
             const select = document.getElementById('invitarProyectoSelect');
@@ -502,29 +478,28 @@
     // 6. INICIALIZACIÓN
     // ============================================
     function init() {
-        console.log('🚀 Inicializando sistema de colaboración...');
+        console.log('🚀 Inicializando sistema de colaboración (Netlify)...');
         loadData();
         
-        // Sincronizar proyectos del sistema principal al externo
+        // Sincronizar proyectos
         Core.syncProjects();
         
-        // Sincronizar proyectos externos al sistema principal
         setTimeout(function() {
             Core.syncProjectsToMainSystem();
         }, 500);
         
-        // Reintentar después de 2 segundos (por si projects no está listo)
         setTimeout(function() {
             Core.syncProjectsToMainSystem();
         }, 2000);
         
-        // Reintentar después de 5 segundos (por si projects se carga tarde)
         setTimeout(function() {
             Core.syncProjectsToMainSystem();
         }, 5000);
         
+        // Crear botón
         createFloatingButton();
         
+        // Sincronización periódica
         setInterval(function() {
             loadData();
             updateBadge();
@@ -535,14 +510,30 @@
             Core.syncProjectsToMainSystem();
         }, 30000);
         
-        console.log('✅ Sistema de colaboración listo');
-        console.log('📌 Busca el botón 👥 en la esquina inferior derecha');
+        console.log('✅ Sistema de colaboración listo (Netlify)');
+        console.log('📌 Busca el botón 👥 en la esquina inferior izquierda');
     }
     
+    // ============================================
+    // 7. EJECUTAR
+    // ============================================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
-        init();
+        // Si ya está cargado, ejecutar inmediatamente
+        setTimeout(init, 100);
     }
+    
+    // También ejecutar cuando cambie el usuario (login)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'user' || e.key === 'userEmail') {
+            console.log('👤 Usuario cambiado, reinicializando...');
+            setTimeout(function() {
+                loadData();
+                Core.syncProjectsToMainSystem();
+                updateBadge();
+            }, 500);
+        }
+    });
     
 })();
