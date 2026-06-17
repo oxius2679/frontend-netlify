@@ -546,3 +546,259 @@
     }
     
 })();
+
+
+// ============================================================
+// 🔄 SINCRONIZACIÓN EN TIEMPO REAL
+// ============================================================
+
+(function syncRealtime() {
+    'use strict';
+    
+    console.log('🔄 Iniciando sincronización en tiempo real...');
+    
+    // ============================================
+    // 1. ESCUCHAR CAMBIOS EN LOCALSTORAGE
+    // ============================================
+    window.addEventListener('storage', function(e) {
+        // Si cambia 'projects' en otra pestaña
+        if (e.key === 'projects' && e.newValue) {
+            console.log('📥 Cambio detectado en otra pestaña (projects)');
+            try {
+                const nuevosProyectos = JSON.parse(e.newValue);
+                if (Array.isArray(nuevosProyectos) && nuevosProyectos.length > 0) {
+                    // Actualizar projects
+                    projects.length = 0;
+                    projects.push(...nuevosProyectos);
+                    
+                    // Actualizar UI
+                    if (typeof renderProjects === 'function') {
+                        renderProjects();
+                        console.log('🔄 Menú actualizado');
+                    }
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                        console.log('📋 Kanban actualizado');
+                    }
+                    if (typeof updateStatistics === 'function') {
+                        updateStatistics();
+                        console.log('📊 Estadísticas actualizadas');
+                    }
+                    
+                    showNotification('🔄 Datos actualizados desde otra pestaña');
+                }
+            } catch(error) {
+                console.error('❌ Error sincronizando projects:', error);
+            }
+        }
+        
+        // Si cambia 'colaboracion_data' en otra pestaña
+        if (e.key === 'colaboracion_data' && e.newValue) {
+            console.log('📥 Cambio detectado en sistema de colaboración');
+            try {
+                loadData();
+                updateBadge();
+                // Si el panel está abierto, actualizarlo
+                if (document.getElementById('colabPanel')) {
+                    renderPanel();
+                }
+            } catch(error) {
+                console.error('❌ Error sincronizando colaboración:', error);
+            }
+        }
+    });
+    
+    // ============================================
+    // 2. GUARDAR CAMBIOS Y NOTIFICAR
+    // ============================================
+    // Guardar la función original de safeSave si existe
+    const originalSafeSave = window.safeSave;
+    
+    // Sobrescribir safeSave para notificar cambios
+    window.safeSave = async function(clienteId) {
+        console.log('💾 Guardando cambios y notificando...');
+        
+        // Guardar en localStorage
+        localStorage.setItem('projects', JSON.stringify(projects));
+        
+        // Si hay función original, ejecutarla
+        if (typeof originalSafeSave === 'function') {
+            await originalSafeSave(clienteId);
+        }
+        
+        // Notificar a otras pestañas (forzar evento storage)
+        localStorage.setItem('_sync_timestamp', Date.now().toString());
+        
+        // Sincronizar con sistema de colaboración
+        if (typeof Core !== 'undefined' && Core.syncProjects) {
+            Core.syncProjects();
+        }
+        
+        // Actualizar UI
+        if (typeof renderProjects === 'function') renderProjects();
+        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        
+        console.log('✅ Cambios guardados y sincronizados');
+        return true;
+    };
+    
+    // ============================================
+    // 3. INTERCEPTAR FUNCIONES DE TAREAS
+    // ============================================
+    
+    // Guardar funciones originales
+    const originalCreateTask = window.createNewTask;
+    const originalDeleteTask = window.deleteTask;
+    const originalSaveTaskChanges = window.saveTaskChanges;
+    const originalHandleDrop = window.handleDrop;
+    const originalMoveTaskUp = window.moveTaskUp;
+    const originalMoveTaskDown = window.moveTaskDown;
+    
+    // Interceptar creación de tareas
+    if (typeof originalCreateTask === 'function') {
+        window.createNewTask = function(e) {
+            const result = originalCreateTask(e);
+            // Notificar cambio
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Tarea creada, sincronizando...');
+            return result;
+        };
+    }
+    
+    // Interceptar eliminación de tareas
+    if (typeof originalDeleteTask === 'function') {
+        window.deleteTask = function(taskStr) {
+            const result = originalDeleteTask(taskStr);
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Tarea eliminada, sincronizando...');
+            return result;
+        };
+    }
+    
+    // Interceptar guardado de cambios
+    if (typeof originalSaveTaskChanges === 'function') {
+        window.saveTaskChanges = function(taskId) {
+            const result = originalSaveTaskChanges(taskId);
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Cambios guardados, sincronizando...');
+            return result;
+        };
+    }
+    
+    // Interceptar drag & drop
+    if (typeof originalHandleDrop === 'function') {
+        window.handleDrop = function(e) {
+            const result = originalHandleDrop(e);
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Tarea movida, sincronizando...');
+            return result;
+        };
+    }
+    
+    // Interceptar movimiento de tareas
+    if (typeof originalMoveTaskUp === 'function') {
+        window.moveTaskUp = function(taskId, status) {
+            const result = originalMoveTaskUp(taskId, status);
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Tarea movida UP, sincronizando...');
+            return result;
+        };
+    }
+    
+    if (typeof originalMoveTaskDown === 'function') {
+        window.moveTaskDown = function(taskId, status) {
+            const result = originalMoveTaskDown(taskId, status);
+            localStorage.setItem('_sync_timestamp', Date.now().toString());
+            console.log('📤 Tarea movida DOWN, sincronizando...');
+            return result;
+        };
+    }
+    
+    // ============================================
+    // 4. NOTIFICACIONES VISUALES
+    // ============================================
+    function showNotification(message) {
+        // Eliminar notificación anterior
+        const existing = document.getElementById('syncNotification');
+        if (existing) existing.remove();
+        
+        const notif = document.createElement('div');
+        notif.id = 'syncNotification';
+        notif.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        `;
+        notif.textContent = message;
+        document.body.appendChild(notif);
+        
+        setTimeout(() => {
+            notif.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notif.remove(), 300);
+        }, 3000);
+    }
+    
+    // Agregar estilos de animación
+    if (!document.getElementById('syncStyles')) {
+        const style = document.createElement('style');
+        style.id = 'syncStyles';
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // ============================================
+    // 5. POLLING DE SINCRONIZACIÓN (FALBACK)
+    // ============================================
+    let ultimoSync = localStorage.getItem('_sync_timestamp') || '0';
+    
+    setInterval(function() {
+        const nuevoSync = localStorage.getItem('_sync_timestamp') || '0';
+        if (nuevoSync !== ultimoSync) {
+            ultimoSync = nuevoSync;
+            console.log('🔄 Polling: detectado cambio, sincronizando...');
+            
+            // Recargar datos
+            const proyectosGuardados = localStorage.getItem('projects');
+            if (proyectosGuardados) {
+                try {
+                    const nuevosProyectos = JSON.parse(proyectosGuardados);
+                    if (JSON.stringify(projects) !== JSON.stringify(nuevosProyectos)) {
+                        projects.length = 0;
+                        projects.push(...nuevosProyectos);
+                        
+                        if (typeof renderProjects === 'function') renderProjects();
+                        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                        if (typeof updateStatistics === 'function') updateStatistics();
+                        
+                        showNotification('🔄 Datos sincronizados automáticamente');
+                        console.log('✅ Sincronización automática completada');
+                    }
+                } catch(e) {
+                    console.error('❌ Error en polling:', e);
+                }
+            }
+        }
+    }, 3000); // Cada 3 segundos
+    
+    console.log('✅ Sincronización en tiempo real activada');
+    
+})();
