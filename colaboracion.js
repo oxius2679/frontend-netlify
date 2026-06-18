@@ -1,11 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN SIMPLIFICADA Y FUNCIONAL
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN CON INVITACIONES FUNCIONALES
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN SIMPLIFICADA');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - INVITACIONES FUNCIONALES');
     
     // ============================================
     // CONFIGURACIÓN EMAILJS
@@ -41,6 +41,13 @@
             if (saved) {
                 data = JSON.parse(saved);
                 console.log('📂 Datos cargados:', data.proyectos.length, 'proyectos,', data.invitaciones.length, 'invitaciones');
+                // Mostrar todas las invitaciones para debug
+                if (data.invitaciones.length > 0) {
+                    console.log('📨 Todas las invitaciones:');
+                    data.invitaciones.forEach((inv, i) => {
+                        console.log(`  ${i+1}. Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
+                    });
+                }
             } else {
                 console.log('📂 Creando datos nuevos...');
                 data = { proyectos: [], invitaciones: [], usuarios: [] };
@@ -57,6 +64,7 @@
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             localStorage.setItem('_colab_timestamp', Date.now().toString());
+            console.log('💾 Datos guardados:', data.invitaciones.length, 'invitaciones');
         } catch(e) {
             console.error('Error guardando datos:', e);
         }
@@ -66,21 +74,33 @@
         try {
             // Intentar obtener de diferentes fuentes
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (user.email) return user.email;
+            if (user.email) {
+                console.log('👤 Usuario obtenido de user.email:', user.email);
+                return user.email;
+            }
             
             const token = localStorage.getItem('authToken');
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    if (payload.email) return payload.email;
-                    if (payload.sub) return payload.sub;
+                    if (payload.email) {
+                        console.log('👤 Usuario obtenido de token:', payload.email);
+                        return payload.email;
+                    }
+                    if (payload.sub) {
+                        console.log('👤 Usuario obtenido de token.sub:', payload.sub);
+                        return payload.sub;
+                    }
                 } catch(e) {}
             }
             
             const email = localStorage.getItem('userEmail');
-            if (email) return email;
+            if (email) {
+                console.log('👤 Usuario obtenido de userEmail:', email);
+                return email;
+            }
             
-            // Si no hay nada, devolver un valor por defecto para pruebas
+            // Si no hay nada, usar un valor por defecto
             console.warn('⚠️ No se encontró usuario, usando "admin@test.com"');
             return 'admin@test.com';
         } catch(e) {
@@ -90,7 +110,7 @@
     }
     
     // ============================================
-    // NÚCLEO DEL SISTEMA - SIMPLIFICADO
+    // NÚCLEO DEL SISTEMA
     // ============================================
     const Core = {
         // ✅ SINCRONIZAR PROYECTOS EXISTENTES
@@ -110,7 +130,6 @@
             projects.forEach(p => {
                 const existe = data.proyectos.find(dp => dp.nombre === p.name);
                 if (!existe) {
-                    // Crear nuevo proyecto en colaboración
                     const colaboradores = p.colaboradores || [user];
                     const nuevoProyecto = {
                         id: Date.now() + Math.floor(Math.random() * 1000),
@@ -131,9 +150,8 @@
                     };
                     data.proyectos.push(nuevoProyecto);
                     hayCambios = true;
-                    console.log(`  ✅ Proyecto "${p.name}" sincronizado con ${colaboradores.length} colaboradores`);
+                    console.log(`  ✅ Proyecto "${p.name}" sincronizado`);
                 } else {
-                    // Actualizar colaboradores
                     if (p.colaboradores && p.colaboradores.length > 0) {
                         let colaboradoresCambiaron = false;
                         p.colaboradores.forEach(c => {
@@ -146,7 +164,6 @@
                             const idx = data.proyectos.indexOf(existe);
                             data.proyectos[idx] = existe;
                             hayCambios = true;
-                            console.log(`  🔄 Colaboradores actualizados para "${p.name}"`);
                         }
                     }
                 }
@@ -160,7 +177,7 @@
             return data.proyectos;
         },
         
-        // ✅ OBTENER PROYECTOS DEL USUARIO (DONDE ES COLABORADOR O DUEÑO)
+        // ✅ OBTENER PROYECTOS DEL USUARIO
         getMyProjects: function() {
             const user = getCurrentUser();
             console.log('👤 Buscando proyectos para:', user);
@@ -168,19 +185,14 @@
             const todos = data.proyectos;
             console.log('📂 Total proyectos en data:', todos.length);
             
-            // Mostrar todos los proyectos con sus colaboradores
-            todos.forEach(p => {
-                console.log(`  - "${p.nombre}" colaboradores:`, p.colaboradores);
-            });
-            
-            // Filtrar proyectos donde el usuario está en la lista de colaboradores
             const misProyectos = todos.filter(p => {
                 if (!p.colaboradores || !Array.isArray(p.colaboradores)) {
-                    console.log(`  ⚠️ "${p.nombre}" no tiene colaboradores definidos`);
                     return false;
                 }
-                const esColaborador = p.colaboradores.includes(user);
-                console.log(`  - "${p.nombre}" ¿${user} es colaborador?`, esColaborador);
+                const esColaborador = p.colaboradores.some(c => c.trim().toLowerCase() === user.trim().toLowerCase());
+                if (esColaborador) {
+                    console.log(`  ✅ "${p.nombre}" - ${user} es colaborador`);
+                }
                 return esColaborador;
             });
             
@@ -188,16 +200,18 @@
             return misProyectos;
         },
         
-        // ✅ OBTENER PROYECTOS DONDE EL USUARIO ES DUEÑO
+        // ✅ OBTENER PROYECTOS DONDE ES DUEÑO
         getMisProyectosComoDueño: function() {
             const user = getCurrentUser();
             const misProyectos = this.getMyProjects();
             
-            // Un usuario es dueño si es el PRIMER colaborador o si su email coincide con el creador
             const proyectosDueño = misProyectos.filter(p => {
-                // Si tiene colaboradores y el primero es el usuario
                 if (p.colaboradores && p.colaboradores.length > 0) {
-                    return p.colaboradores[0] === user;
+                    const esDueño = p.colaboradores[0].trim().toLowerCase() === user.trim().toLowerCase();
+                    if (esDueño) {
+                        console.log(`  👑 "${p.nombre}" - ${user} es DUEÑO`);
+                    }
+                    return esDueño;
                 }
                 return false;
             });
@@ -206,7 +220,7 @@
             return proyectosDueño;
         },
         
-        // ✅ VERIFICAR SI ES DUEÑO DE UN PROYECTO ESPECÍFICO
+        // ✅ VERIFICAR SI ES DUEÑO
         esDueñoDeProyecto: function(proyectoId) {
             const user = getCurrentUser();
             const proyecto = data.proyectos.find(p => p.id == proyectoId);
@@ -214,29 +228,52 @@
             
             const esDueño = proyecto.colaboradores && 
                            proyecto.colaboradores.length > 0 && 
-                           proyecto.colaboradores[0] === user;
+                           proyecto.colaboradores[0].trim().toLowerCase() === user.trim().toLowerCase();
             
             console.log(`🔍 ¿${user} es dueño de "${proyecto.nombre}"?`, esDueño);
             return esDueño;
         },
         
-        // ✅ OBTENER INVITACIONES PENDIENTES
+        // ✅ OBTENER INVITACIONES PENDIENTES (CON COMPARACIÓN MEJORADA)
         getMyInvitations: function() {
             const user = getCurrentUser();
-            const pendientes = data.invitaciones.filter(i => 
-                i.email === user && i.estado === 'pendiente'
-            );
+            console.log('📩 Buscando invitaciones para:', user);
+            
+            // Normalizar el email del usuario (quitar espacios, minúsculas)
+            const userNormalizado = user.trim().toLowerCase();
+            
+            const pendientes = data.invitaciones.filter(i => {
+                const emailNormalizado = i.email.trim().toLowerCase();
+                const esParaMi = emailNormalizado === userNormalizado;
+                const estaPendiente = i.estado === 'pendiente';
+                
+                if (esParaMi && estaPendiente) {
+                    console.log(`  📨 Invitación encontrada: "${i.proyectoNombre}" de ${i.creador}`);
+                }
+                
+                return esParaMi && estaPendiente;
+            });
+            
             console.log(`📩 Invitaciones pendientes para ${user}:`, pendientes.length);
+            if (pendientes.length === 0) {
+                console.log('  ℹ️ No hay invitaciones pendientes. Todas las invitaciones:', data.invitaciones.length);
+                data.invitaciones.forEach(inv => {
+                    console.log(`    - Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
+                });
+            }
             return pendientes;
         },
         
-        // ✅ ENVIAR INVITACIÓN
+        // ✅ ENVIAR INVITACIÓN (CON VERIFICACIONES MEJORADAS)
         sendInvitation: function(proyectoId, email) {
             const user = getCurrentUser();
             console.log('📨 Enviando invitación...');
-            console.log('  - Usuario:', user);
+            console.log('  - Usuario emisor:', user);
             console.log('  - Proyecto ID:', proyectoId);
             console.log('  - Email destinatario:', email);
+            
+            // Normalizar email
+            const emailNormalizado = email.trim().toLowerCase();
             
             const proyecto = data.proyectos.find(p => p.id == proyectoId);
             if (!proyecto) {
@@ -253,14 +290,18 @@
                 return false;
             }
             
-            if (proyecto.colaboradores.includes(email)) {
+            // Verificar si ya es colaborador
+            const esColaborador = proyecto.colaboradores.some(c => c.trim().toLowerCase() === emailNormalizado);
+            if (esColaborador) {
                 alert(`⚠️ ${email} ya es colaborador de "${proyecto.nombre}"`);
                 return false;
             }
             
             // Verificar invitación duplicada
             const existeInvitacion = data.invitaciones.some(
-                i => i.proyectoId === proyecto.id && i.email === email && i.estado === 'pendiente'
+                i => i.proyectoId === proyecto.id && 
+                     i.email.trim().toLowerCase() === emailNormalizado && 
+                     i.estado === 'pendiente'
             );
             if (existeInvitacion) {
                 alert(`⚠️ Ya hay una invitación pendiente para ${email}`);
@@ -271,7 +312,7 @@
                 id: Date.now() + Math.floor(Math.random() * 1000),
                 proyectoId: proyecto.id,
                 proyectoNombre: proyecto.nombre,
-                email: email,
+                email: email, // Guardar el email exacto que ingresó el usuario
                 fecha: new Date().toISOString(),
                 estado: 'pendiente',
                 creador: user
@@ -279,18 +320,52 @@
             
             data.invitaciones.push(invitacion);
             saveData();
-            console.log('✅ Invitación creada:', invitacion);
+            console.log('✅ Invitación CREADA y GUARDADA:', invitacion);
+            
+            // Mostrar todas las invitaciones después de guardar
+            console.log('📨 Todas las invitaciones después de guardar:');
+            data.invitaciones.forEach((inv, idx) => {
+                console.log(`  ${idx+1}. Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
+            });
+            
+            // Enviar correo
+            if (typeof emailjs !== 'undefined') {
+                emailjs.send(
+                    EMAILJS_CONFIG.SERVICE_ID,
+                    EMAILJS_CONFIG.TEMPLATE_ID,
+                    {
+                        to_email: email,
+                        project_name: proyecto.nombre,
+                        reply_to: user,
+                        message: `Has sido invitado al proyecto "${proyecto.nombre}" por ${user}. Acepta la invitación en el panel de colaboración (botón 👥 en la esquina inferior izquierda).`
+                    }
+                ).then(() => {
+                    console.log('✅ Correo enviado a', email);
+                }).catch((error) => {
+                    console.error('❌ Error enviando correo:', error);
+                });
+            }
             
             alert(`✅ Invitación enviada a ${email} para "${proyecto.nombre}"`);
+            
+            // Forzar actualización del badge y panel
             updateBadge();
-            renderPanel();
+            
+            // Si el panel está abierto, cerrarlo y abrirlo para actualizar
+            if (document.getElementById('colabPanel')) {
+                const panel = document.getElementById('colabPanel');
+                panel.remove();
+                panelAbierto = false;
+                setTimeout(() => togglePanel(), 500);
+            }
+            
             return true;
         },
         
         // ✅ ACEPTAR INVITACIÓN
         acceptInvitation: function(invitacionId) {
             const user = getCurrentUser();
-            console.log('✅ Aceptando invitación:', invitacionId);
+            console.log('✅ Aceptando invitación ID:', invitacionId);
             
             const invitacion = data.invitaciones.find(i => i.id === invitacionId);
             if (!invitacion) {
@@ -298,38 +373,57 @@
                 return false;
             }
             
+            console.log('  - Invitación encontrada:', invitacion);
+            
             if (invitacion.estado !== 'pendiente') {
                 alert('⚠️ Esta invitación ya fue procesada');
                 return false;
             }
             
-            if (invitacion.email !== user) {
+            // Verificar que la invitación sea para el usuario actual
+            const userNormalizado = user.trim().toLowerCase();
+            const emailInvitacionNormalizado = invitacion.email.trim().toLowerCase();
+            
+            if (emailInvitacionNormalizado !== userNormalizado) {
                 alert(`❌ Esta invitación es para ${invitacion.email}`);
                 return false;
             }
             
             const proyecto = data.proyectos.find(p => p.id === invitacion.proyectoId);
             if (proyecto) {
-                if (!proyecto.colaboradores.includes(user)) {
+                // Verificar si ya es colaborador
+                const yaEsColaborador = proyecto.colaboradores.some(c => c.trim().toLowerCase() === userNormalizado);
+                if (!yaEsColaborador) {
                     proyecto.colaboradores.push(user);
                     console.log(`✅ ${user} agregado como colaborador de "${proyecto.nombre}"`);
+                } else {
+                    console.log(`ℹ️ ${user} ya es colaborador de "${proyecto.nombre}"`);
                 }
             }
             
             invitacion.estado = 'aceptada';
             invitacion.fechaAceptacion = new Date().toISOString();
             saveData();
+            console.log('✅ Invitación aceptada y guardada');
+            
+            alert(`✅ ¡Bienvenido al proyecto "${invitacion.proyectoNombre}"!`);
             
             // Sincronizar con sistema principal
             this.syncToMainSystem();
-            
-            alert(`✅ ¡Bienvenido al proyecto "${invitacion.proyectoNombre}"!`);
             
             if (typeof renderProjects === 'function') renderProjects();
             if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
             
             updateBadge();
-            renderPanel();
+            
+            // Actualizar panel
+            if (document.getElementById('colabPanel')) {
+                const panel = document.getElementById('colabPanel');
+                panel.remove();
+                panelAbierto = false;
+                setTimeout(() => togglePanel(), 500);
+            }
+            
             return true;
         },
         
@@ -430,8 +524,10 @@
         if (!badge) return;
         loadData();
         const pendientes = Core.getMyInvitations();
-        badge.textContent = pendientes.length;
-        badge.style.display = pendientes.length > 0 ? 'flex' : 'none';
+        const count = pendientes.length;
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+        console.log('🔴 Badge actualizado:', count, 'invitaciones');
     }
     
     function togglePanel() {
@@ -449,6 +545,7 @@
         const proyectosDueño = Core.getMisProyectosComoDueño();
         
         console.log('========================================');
+        console.log('📊 PANEL DE COLABORACIÓN');
         console.log('👤 Usuario actual:', user);
         console.log('📂 Proyectos donde es colaborador:', misProyectos.length);
         console.log('👑 Proyectos donde es dueño:', proyectosDueño.length);
@@ -477,7 +574,6 @@
             flex-direction: column;
         `;
         
-        // Proyectos para invitar (solo los que son dueño)
         const proyectosParaInvitar = proyectosDueño.map(p => 
             `<option value="${p.id}">${p.nombre}</option>`
         ).join('');
@@ -501,7 +597,6 @@
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
                 💡 Para invitar colaboradores necesitas ser dueño de un proyecto.
-                <br>El dueño es el primer colaborador agregado al proyecto.
             </div>
         `;
         
@@ -510,7 +605,7 @@
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 20px;">👥</span>
                     <span style="font-weight: 600; font-size: 16px;">Colaboración</span>
-                    ${pendientes.length > 0 ? `<span style="background: #ef4444; padding: 2px 10px; border-radius: 12px; font-size: 11px;">${pendientes.length}</span>` : ''}
+                    ${pendientes.length > 0 ? `<span style="background: #ef4444; padding: 2px 10px; border-radius: 12px; font-size: 11px; animation: pulse 1s infinite;">${pendientes.length}</span>` : ''}
                 </div>
                 <button onclick="document.getElementById('colabPanel').remove()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
             </div>
@@ -520,13 +615,18 @@
                 <div style="margin-bottom: 20px;">
                     <div style="color: #f59e0b; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📩 Invitaciones Pendientes</div>
                     ${pendientes.length === 0 ? `
-                        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No tienes invitaciones pendientes</div>
+                        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">
+                            No tienes invitaciones pendientes
+                            ${data.invitaciones.length > 0 ? `<br><span style="font-size: 11px;">(Hay ${data.invitaciones.length} invitaciones totales, pero ninguna para ti)</span>` : ''}
+                        </div>
                     ` : pendientes.map(inv => `
-                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #f59e0b;">
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #f59e0b; animation: slideIn 0.3s ease;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 600;">${inv.proyectoNombre}</div>
-                                    <div style="font-size: 11px; color: #94a3b8;">${new Date(inv.fecha).toLocaleDateString()} - De: ${inv.creador}</div>
+                                    <div style="font-size: 11px; color: #94a3b8;">
+                                        De: ${inv.creador} | ${new Date(inv.fecha).toLocaleDateString()}
+                                    </div>
                                 </div>
                                 <button onclick="aceptarInvitacion(${inv.id})" style="background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
                                     ✅ Aceptar
@@ -536,7 +636,7 @@
                     `).join('')}
                 </div>
                 
-                <!-- Mis Proyectos Colaborativos -->
+                <!-- Mis Proyectos -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Mis Proyectos Colaborativos</div>
                     ${misProyectos.length === 0 ? `
@@ -553,7 +653,6 @@
                                         <div style="font-weight: 600;">${p.nombre}</div>
                                         <div style="font-size: 11px; color: #94a3b8;">
                                             ${p.colaboradores?.length || 1} colaboradores
-                                            ${p.colaboradores ? `: ${p.colaboradores.join(', ')}` : ''}
                                         </div>
                                     </div>
                                     <span style="color: ${esDueño ? '#8b5cf6' : '#10b981'}; font-size: 11px; font-weight: 600;">
@@ -570,14 +669,15 @@
                 <!-- Debug info -->
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b;">
                     <details>
-                        <summary>🔍 Debug Info</summary>
-                        <div style="margin-top: 5px; font-family: monospace;">
-                            <div>Usuario: ${user}</div>
-                            <div>Proyectos en data: ${data.proyectos.length}</div>
-                            <div>Mis proyectos: ${misProyectos.length}</div>
-                            <div>Proyectos donde soy dueño: ${proyectosDueño.length}</div>
-                            <div>Invitaciones pendientes: ${pendientes.length}</div>
-                            <div>Total invitaciones: ${data.invitaciones.length}</div>
+                        <summary>🔍 Debug - Todas las invitaciones (${data.invitaciones.length})</summary>
+                        <div style="margin-top: 5px; font-family: monospace; max-height: 150px; overflow: auto;">
+                            ${data.invitaciones.length === 0 ? 'No hay invitaciones' : 
+                            data.invitaciones.map((inv, idx) => 
+                                `<div style="padding: 2px 0; border-bottom: 1px solid #1e293b;">
+                                    ${idx+1}. Para: <strong>${inv.email}</strong> | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado} | De: ${inv.creador}
+                                    ${inv.email.trim().toLowerCase() === user.trim().toLowerCase() ? ' 👈 (TÚ)' : ''}
+                                </div>`
+                            ).join('')}
                         </div>
                     </details>
                 </div>
@@ -626,7 +726,8 @@
         if (document.getElementById('colabPanel')) {
             const panel = document.getElementById('colabPanel');
             panel.remove();
-            setTimeout(() => togglePanel(), 100);
+            panelAbierto = false;
+            setTimeout(() => togglePanel(), 300);
         }
     }
     
@@ -634,20 +735,31 @@
     // INICIALIZACIÓN
     // ============================================
     function init() {
-        console.log('🚀 Inicializando sistema de colaboración (SIMPLIFICADO)...');
+        console.log('🚀 Inicializando sistema de colaboración...');
         loadData();
         Core.syncExistingProjects();
         createFloatingButton();
         
-        // Actualizar cada 10 segundos
+        // Sincronización periódica más frecuente para invitaciones
         setInterval(function() {
+            const oldData = JSON.stringify(data);
             loadData();
-            updateBadge();
-        }, 10000);
+            const newData = JSON.stringify(data);
+            if (oldData !== newData) {
+                console.log('🔄 Datos actualizados automáticamente');
+                updateBadge();
+                if (document.getElementById('colabPanel')) {
+                    const panel = document.getElementById('colabPanel');
+                    panel.remove();
+                    panelAbierto = false;
+                    setTimeout(() => togglePanel(), 300);
+                }
+            }
+        }, 5000); // Cada 5 segundos para detectar invitaciones nuevas
         
         console.log('✅ SISTEMA DE COLABORACIÓN LISTO');
-        console.log('👑 El DUEÑO es el PRIMER colaborador del proyecto');
         console.log('📌 Para debug: console.log(data)');
+        console.log('📌 Para ver invitaciones: Core.getMyInvitations()');
     }
     
     // ============================================
@@ -664,34 +776,39 @@
     // ============================================
     window.addEventListener('storage', function(e) {
         if (e.key === 'colaboracion_data' || e.key === '_colab_timestamp') {
-            console.log('📥 Cambio detectado en colaboración');
+            console.log('📥 Cambio detectado en colaboración desde otra pestaña');
             loadData();
             updateBadge();
             if (document.getElementById('colabPanel')) {
                 const panel = document.getElementById('colabPanel');
                 if (panel) {
                     panel.remove();
-                    setTimeout(() => togglePanel(), 100);
+                    panelAbierto = false;
+                    setTimeout(() => togglePanel(), 300);
                 }
             }
         }
     });
     
-    console.log('✅ Sistema de colaboración cargado correctamente');
-    console.log('🔧 Para forzar actualización: limpiarDatos()');
-    
-    // Función de limpieza manual
-    window.limpiarDatos = function() {
-        if (confirm('¿Limpiar todos los datos de colaboración?')) {
-            localStorage.removeItem(STORAGE_KEY);
-            data = { proyectos: [], invitaciones: [], usuarios: [] };
-            saveData();
-            updateBadge();
-            if (document.getElementById('colabPanel')) {
-                document.getElementById('colabPanel').remove();
+    // Estilos para animaciones
+    if (!document.getElementById('colabStyles')) {
+        const style = document.createElement('style');
+        style.id = 'colabStyles';
+        style.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateX(-20px); }
+                to { opacity: 1; transform: translateX(0); }
             }
-            alert('✅ Datos limpiados. Recarga la página.');
-        }
-    };
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    console.log('✅ Sistema de colaboración cargado');
+    console.log('🔧 Para forzar actualización: Core.syncExistingProjects()');
     
 })();
