@@ -1,11 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN CON LIMPIEZA DE DATOS
+// 🚀 SISTEMA DE COLABORACIÓN - CUALQUIER DUEÑO PUEDE INVITAR
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - CON LIMPIEZA DE DATOS');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - CUALQUIER DUEÑO PUEDE INVITAR');
     
     // ============================================
     // CONFIGURACIÓN EMAILJS
@@ -35,56 +35,6 @@
     let data = { proyectos: [], invitaciones: [], usuarios: [] };
     let panelAbierto = false;
     let sincronizacionEnCurso = false;
-    
-    // ============================================
-    // 🧹 FUNCIÓN DE LIMPIEZA DE DATOS HUÉRFANOS
-    // ============================================
-    function limpiarProyectosHuérfanos() {
-        if (typeof projects === 'undefined' || !Array.isArray(projects)) {
-            console.log('⚠️ projects no disponible, no se puede limpiar');
-            return;
-        }
-        
-        const nombresProyectosExistentes = new Set(projects.map(p => p.name));
-        console.log('📋 Proyectos existentes en sistema principal:', nombresProyectosExistentes);
-        
-        let proyectosEliminados = 0;
-        let invitacionesEliminadas = 0;
-        
-        // Filtrar proyectos que ya no existen
-        const proyectosFiltrados = data.proyectos.filter(p => {
-            const existe = nombresProyectosExistentes.has(p.nombre);
-            if (!existe) {
-                console.log(`🗑️ Eliminando proyecto huérfano: "${p.nombre}"`);
-                proyectosEliminados++;
-                
-                // También eliminar invitaciones relacionadas
-                const invitacionesRelacionadas = data.invitaciones.filter(i => i.proyectoId === p.id);
-                invitacionesEliminadas += invitacionesRelacionadas.length;
-                data.invitaciones = data.invitaciones.filter(i => i.proyectoId !== p.id);
-            }
-            return existe;
-        });
-        
-        if (proyectosEliminados > 0 || invitacionesEliminadas > 0) {
-            data.proyectos = proyectosFiltrados;
-            saveData();
-            console.log(`🧹 Limpieza completada: ${proyectosEliminados} proyectos y ${invitacionesEliminadas} invitaciones eliminadas`);
-            
-            // Actualizar badge y panel si está abierto
-            updateBadge();
-            if (document.getElementById('colabPanel')) {
-                // Recargar panel si está abierto
-                const panel = document.getElementById('colabPanel');
-                if (panel) {
-                    panel.remove();
-                    setTimeout(() => togglePanel(), 50);
-                }
-            }
-        } else {
-            console.log('✅ No se encontraron proyectos huérfanos');
-        }
-    }
     
     function loadData() {
         try {
@@ -128,7 +78,52 @@
     }
     
     // ============================================
-    // NÚCLEO DEL SISTEMA (CON LIMPIEZA)
+    // 🧹 FUNCIÓN DE LIMPIEZA DE DATOS HUÉRFANOS
+    // ============================================
+    function limpiarProyectosHuérfanos() {
+        if (typeof projects === 'undefined' || !Array.isArray(projects)) {
+            console.log('⚠️ projects no disponible, no se puede limpiar');
+            return;
+        }
+        
+        const nombresProyectosExistentes = new Set(projects.map(p => p.name));
+        console.log('📋 Proyectos existentes en sistema principal:', nombresProyectosExistentes);
+        
+        let proyectosEliminados = 0;
+        let invitacionesEliminadas = 0;
+        
+        const proyectosFiltrados = data.proyectos.filter(p => {
+            const existe = nombresProyectosExistentes.has(p.nombre);
+            if (!existe) {
+                console.log(`🗑️ Eliminando proyecto huérfano: "${p.nombre}"`);
+                proyectosEliminados++;
+                
+                const invitacionesRelacionadas = data.invitaciones.filter(i => i.proyectoId === p.id);
+                invitacionesEliminadas += invitacionesRelacionadas.length;
+                data.invitaciones = data.invitaciones.filter(i => i.proyectoId !== p.id);
+            }
+            return existe;
+        });
+        
+        if (proyectosEliminados > 0 || invitacionesEliminadas > 0) {
+            data.proyectos = proyectosFiltrados;
+            saveData();
+            console.log(`🧹 Limpieza completada: ${proyectosEliminados} proyectos y ${invitacionesEliminadas} invitaciones eliminadas`);
+            updateBadge();
+            if (document.getElementById('colabPanel')) {
+                const panel = document.getElementById('colabPanel');
+                if (panel) {
+                    panel.remove();
+                    setTimeout(() => togglePanel(), 50);
+                }
+            }
+        } else {
+            console.log('✅ No se encontraron proyectos huérfanos');
+        }
+    }
+    
+    // ============================================
+    // NÚCLEO DEL SISTEMA
     // ============================================
     const Core = {
         // ✅ SINCRONIZAR PROYECTOS EXISTENTES
@@ -144,10 +139,8 @@
                 return;
             }
             
-            // 🧹 PRIMERO: Limpiar proyectos huérfanos
             limpiarProyectosHuérfanos();
             
-            // LUEGO: Sincronizar proyectos existentes
             let hayCambios = false;
             
             projects.forEach(p => {
@@ -174,7 +167,6 @@
                     hayCambios = true;
                     console.log(`  ✅ "${p.name}" sincronizado`);
                 } else {
-                    // Actualizar colaboradores si es necesario
                     if (p.colaboradores && p.colaboradores.length > 0) {
                         let colaboradoresCambiaron = false;
                         p.colaboradores.forEach(c => {
@@ -274,6 +266,45 @@
             return data.proyectos.filter(p => p.colaboradores && p.colaboradores.includes(user));
         },
         
+        // ✅ VERIFICAR SI EL USUARIO ES DUEÑO DE UN PROYECTO
+        esDueñoDeProyecto: function(proyectoId) {
+            const user = getCurrentUser();
+            if (!user) return false;
+            
+            const proyecto = data.proyectos.find(p => p.id == proyectoId);
+            if (!proyecto) return false;
+            
+            // Buscar el proyecto en el sistema principal
+            const proyectoMain = projects.find(p => p.name === proyecto.nombre);
+            if (proyectoMain) {
+                // Si tiene clienteId, el dueño es quien tiene ese clienteId
+                if (proyectoMain.clienteId) {
+                    const clienteId = localStorage.getItem('clienteId');
+                    return proyectoMain.clienteId === clienteId;
+                }
+            }
+            
+            // Si no tiene clienteId, el dueño es el primer colaborador o el creador
+            return proyecto.colaboradores && proyecto.colaboradores.length > 0 && proyecto.colaboradores[0] === user;
+        },
+        
+        // ✅ OBTENER PROYECTOS DONDE EL USUARIO ES DUEÑO
+        getMisProyectosComoDueño: function() {
+            const user = getCurrentUser();
+            if (!user) return [];
+            
+            return data.proyectos.filter(p => {
+                // Buscar el proyecto en el sistema principal
+                const proyectoMain = projects.find(pp => pp.name === p.nombre);
+                if (proyectoMain && proyectoMain.clienteId) {
+                    const clienteId = localStorage.getItem('clienteId');
+                    return proyectoMain.clienteId === clienteId;
+                }
+                // Si no tiene clienteId, el dueño es el primer colaborador
+                return p.colaboradores && p.colaboradores.length > 0 && p.colaboradores[0] === user;
+            });
+        },
+        
         sendInvitation: function(proyectoId, email) {
             const user = getCurrentUser();
             if (!user) {
@@ -284,6 +315,12 @@
             const proyecto = data.proyectos.find(p => p.id == proyectoId);
             if (!proyecto) {
                 alert('❌ Proyecto no encontrado');
+                return false;
+            }
+            
+            // ✅ VERIFICAR QUE EL USUARIO SEA DUEÑO DEL PROYECTO
+            if (!this.esDueñoDeProyecto(proyectoId)) {
+                alert('❌ Solo el dueño del proyecto puede invitar colaboradores');
                 return false;
             }
             
@@ -462,24 +499,22 @@
         const user = getCurrentUser();
         const pendientes = Core.getMyInvitations();
         const misProyectos = Core.getMyProjects();
-        const clienteId = localStorage.getItem('clienteId');
+        const proyectosDondeSoyDueño = Core.getMisProyectosComoDueño();
         
         console.log('👤 Usuario:', user);
         console.log('📂 Proyectos del usuario (limpiados):', misProyectos.length);
+        console.log('👑 Proyectos donde es dueño:', proyectosDondeSoyDueño.length);
+        
         misProyectos.forEach(p => console.log(`  - ${p.nombre}`));
         
-        // ✅ DETERMINAR SI PUEDE INVITAR
-        const esAdmin = user === 'ajackson2672@gmail.com';
+        // ✅ AHORA CUALQUIERA QUE SEA DUEÑO PUEDE INVITAR
+        const puedeInvitar = proyectosDondeSoyDueño.length > 0;
         
-        const esDuenoDeProyecto = misProyectos.some(p => {
-            const proyectoMain = projects.find(pp => pp.name === p.nombre);
-            if (proyectoMain) {
-                return proyectoMain.clienteId === clienteId;
-            }
-            return p.colaboradores && p.colaboradores.length > 0 && p.colaboradores[0] === user;
-        });
-        
-        const puedeInvitar = esAdmin || esDuenoDeProyecto;
+        console.log('👑 ¿Puede invitar?', puedeInvitar);
+        if (puedeInvitar) {
+            console.log('📋 Proyectos donde es dueño:');
+            proyectosDondeSoyDueño.forEach(p => console.log(`  - ${p.nombre}`));
+        }
         
         const panel = document.createElement('div');
         panel.id = 'colabPanel';
@@ -501,7 +536,8 @@
             flex-direction: column;
         `;
         
-        const proyectosOptions = misProyectos.map(p => 
+        // ✅ SOLO MOSTRAR PROYECTOS DONDE ES DUEÑO PARA INVITAR
+        const proyectosOptions = proyectosDondeSoyDueño.map(p => 
             `<option value="${p.id}">${p.nombre}</option>`
         ).join('');
         
@@ -511,7 +547,6 @@
                 <div style="margin-bottom: 8px;">
                     <select id="invitarProyectoSelect" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 13px;">
                         ${proyectosOptions}
-                        ${misProyectos.length === 0 ? '<option value="">No tienes proyectos</option>' : ''}
                     </select>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -524,7 +559,8 @@
             </div>
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
-                💡 Solo los dueños de proyectos pueden invitar colaboradores.
+                💡 Para invitar colaboradores necesitas ser dueño de un proyecto.
+                <br>Crea un proyecto y podrás invitar a otros usuarios.
             </div>
         `;
         
@@ -564,17 +600,23 @@
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Mis Proyectos Colaborativos</div>
                     ${misProyectos.length === 0 ? `
                         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No estás en ningún proyecto colaborativo</div>
-                    ` : misProyectos.map(p => `
-                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #10b981;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 600;">${p.nombre}</div>
-                                    <div style="font-size: 11px; color: #94a3b8;">${p.colaboradores?.length || 1} colaboradores</div>
+                    ` : misProyectos.map(p => {
+                        // Verificar si el usuario es dueño de este proyecto
+                        const esDueño = proyectosDondeSoyDueño.some(dp => dp.id === p.id);
+                        return `
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid ${esDueño ? '#8b5cf6' : '#10b981'};">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 600;">${p.nombre}</div>
+                                        <div style="font-size: 11px; color: #94a3b8;">${p.colaboradores?.length || 1} colaboradores</div>
+                                    </div>
+                                    <span style="color: ${esDueño ? '#8b5cf6' : '#10b981'}; font-size: 11px;">
+                                        ${esDueño ? '👑 Dueño' : '✅ Colaborador'}
+                                    </span>
                                 </div>
-                                <span style="color: #10b981; font-size: 11px;">✅ Activo</span>
                             </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
                 
                 ${seccionInvitar}
@@ -620,12 +662,11 @@
     }
     
     // ============================================
-    // 🧹 FUNCIÓN PARA LIMPIAR MANUALMENTE
+    // FUNCIÓN PARA LIMPIAR MANUALMENTE
     // ============================================
     window.limpiarDatosColaboracion = function() {
         if (confirm('¿Estás seguro de que quieres limpiar todos los datos de colaboración huérfanos?')) {
             limpiarProyectosHuérfanos();
-            // También limpiar invitaciones viejas
             const user = getCurrentUser();
             if (user) {
                 const invitacionesViejas = data.invitaciones.filter(i => i.estado === 'pendiente' && i.email !== user);
@@ -649,20 +690,14 @@
     // INICIALIZACIÓN
     // ============================================
     function init() {
-        console.log('🚀 Inicializando sistema de colaboración (CON LIMPIEZA)...');
+        console.log('🚀 Inicializando sistema de colaboración (CUALQUIER DUEÑO PUEDE INVITAR)...');
         loadData();
         
-        // 🧹 Limpiar proyectos huérfanos al iniciar
         limpiarProyectosHuérfanos();
-        
-        // ✅ Sincronizar proyectos existentes
         Core.syncExistingProjects();
         Core.syncProjectsToMainSystem();
-        
-        // ✅ Crear botón flotante
         createFloatingButton();
         
-        // ✅ Sincronización periódica
         setInterval(function() {
             loadData();
             updateBadge();
@@ -676,7 +711,6 @@
                     const proyectosGuardados = localStorage.getItem('projects');
                     
                     if (proyectosActuales !== proyectosGuardados) {
-                        // Limpiar y sincronizar
                         limpiarProyectosHuérfanos();
                         Core.syncExistingProjects();
                         Core.syncProjectsToMainSystem();
@@ -690,8 +724,9 @@
             }
         }, 60000);
         
-        console.log('✅ SISTEMA DE COLABORACIÓN LISTO (CON LIMPIEZA)');
-        console.log('📌 Para limpiar manualmente, ejecuta en consola: limpiarDatosColaboracion()');
+        console.log('✅ SISTEMA DE COLABORACIÓN LISTO');
+        console.log('👑 CUALQUIER DUEÑO DE PROYECTO PUEDE INVITAR COLABORADORES');
+        console.log('📌 Para limpiar manualmente: limpiarDatosColaboracion()');
     }
     
     // ============================================
@@ -797,8 +832,8 @@
         document.head.appendChild(style);
     }
     
-    console.log('✅ Sincronización en tiempo real activada (CON LIMPIEZA)');
+    console.log('✅ Sincronización en tiempo real activada');
     console.log('⚠️ Las fechas de las tareas NO se modifican');
-    console.log('🧹 Los proyectos huérfanos se eliminan automáticamente');
+    console.log('👑 CUALQUIER DUEÑO DE PROYECTO PUEDE INVITAR');
     
 })();
