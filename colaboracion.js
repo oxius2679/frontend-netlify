@@ -1,11 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN OPTIMIZADA (SIN PARPADEOS)
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN CON LIMPIEZA DE DATOS
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN OPTIMIZADA');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - CON LIMPIEZA DE DATOS');
     
     // ============================================
     // CONFIGURACIÓN EMAILJS
@@ -35,7 +35,56 @@
     let data = { proyectos: [], invitaciones: [], usuarios: [] };
     let panelAbierto = false;
     let sincronizacionEnCurso = false;
-    let ultimoSyncCompleto = 0;
+    
+    // ============================================
+    // 🧹 FUNCIÓN DE LIMPIEZA DE DATOS HUÉRFANOS
+    // ============================================
+    function limpiarProyectosHuérfanos() {
+        if (typeof projects === 'undefined' || !Array.isArray(projects)) {
+            console.log('⚠️ projects no disponible, no se puede limpiar');
+            return;
+        }
+        
+        const nombresProyectosExistentes = new Set(projects.map(p => p.name));
+        console.log('📋 Proyectos existentes en sistema principal:', nombresProyectosExistentes);
+        
+        let proyectosEliminados = 0;
+        let invitacionesEliminadas = 0;
+        
+        // Filtrar proyectos que ya no existen
+        const proyectosFiltrados = data.proyectos.filter(p => {
+            const existe = nombresProyectosExistentes.has(p.nombre);
+            if (!existe) {
+                console.log(`🗑️ Eliminando proyecto huérfano: "${p.nombre}"`);
+                proyectosEliminados++;
+                
+                // También eliminar invitaciones relacionadas
+                const invitacionesRelacionadas = data.invitaciones.filter(i => i.proyectoId === p.id);
+                invitacionesEliminadas += invitacionesRelacionadas.length;
+                data.invitaciones = data.invitaciones.filter(i => i.proyectoId !== p.id);
+            }
+            return existe;
+        });
+        
+        if (proyectosEliminados > 0 || invitacionesEliminadas > 0) {
+            data.proyectos = proyectosFiltrados;
+            saveData();
+            console.log(`🧹 Limpieza completada: ${proyectosEliminados} proyectos y ${invitacionesEliminadas} invitaciones eliminadas`);
+            
+            // Actualizar badge y panel si está abierto
+            updateBadge();
+            if (document.getElementById('colabPanel')) {
+                // Recargar panel si está abierto
+                const panel = document.getElementById('colabPanel');
+                if (panel) {
+                    panel.remove();
+                    setTimeout(() => togglePanel(), 50);
+                }
+            }
+        } else {
+            console.log('✅ No se encontraron proyectos huérfanos');
+        }
+    }
     
     function loadData() {
         try {
@@ -79,10 +128,10 @@
     }
     
     // ============================================
-    // NÚCLEO DEL SISTEMA (OPTIMIZADO)
+    // NÚCLEO DEL SISTEMA (CON LIMPIEZA)
     // ============================================
     const Core = {
-        // ✅ SINCRONIZAR PROYECTOS EXISTENTES (UNA SOLA VEZ)
+        // ✅ SINCRONIZAR PROYECTOS EXISTENTES
         syncExistingProjects: function() {
             const user = getCurrentUser();
             if (!user) {
@@ -95,7 +144,10 @@
                 return;
             }
             
-            // Solo sincronizar si hay cambios reales
+            // 🧹 PRIMERO: Limpiar proyectos huérfanos
+            limpiarProyectosHuérfanos();
+            
+            // LUEGO: Sincronizar proyectos existentes
             let hayCambios = false;
             
             projects.forEach(p => {
@@ -148,7 +200,7 @@
             return data.proyectos;
         },
         
-        // ✅ SINCRONIZAR PROYECTOS EXTERNOS (SOLO CUANDO HAY CAMBIOS REALES)
+        // ✅ SINCRONIZAR PROYECTOS EXTERNOS
         syncProjectsToMainSystem: function() {
             const user = getCurrentUser();
             if (!user) return;
@@ -200,7 +252,6 @@
             
             if (cambios > 0) {
                 localStorage.setItem('projects', JSON.stringify(projects));
-                // Solo renderizar si hay cambios reales
                 if (typeof renderProjects === 'function') {
                     renderProjects();
                 }
@@ -414,8 +465,8 @@
         const clienteId = localStorage.getItem('clienteId');
         
         console.log('👤 Usuario:', user);
-        console.log('🔑 clienteId:', clienteId);
-        console.log('📂 Proyectos del usuario:', misProyectos.length);
+        console.log('📂 Proyectos del usuario (limpiados):', misProyectos.length);
+        misProyectos.forEach(p => console.log(`  - ${p.nombre}`));
         
         // ✅ DETERMINAR SI PUEDE INVITAR
         const esAdmin = user === 'ajackson2672@gmail.com';
@@ -429,8 +480,6 @@
         });
         
         const puedeInvitar = esAdmin || esDuenoDeProyecto;
-        
-        console.log('👑 ¿Puede invitar?', puedeInvitar);
         
         const panel = document.createElement('div');
         panel.id = 'colabPanel';
@@ -476,7 +525,6 @@
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
                 💡 Solo los dueños de proyectos pueden invitar colaboradores.
-                <br>Si eres dueño de un proyecto, aparecerá la opción aquí.
             </div>
         `;
         
@@ -572,38 +620,64 @@
     }
     
     // ============================================
-    // INICIALIZACIÓN OPTIMIZADA
+    // 🧹 FUNCIÓN PARA LIMPIAR MANUALMENTE
+    // ============================================
+    window.limpiarDatosColaboracion = function() {
+        if (confirm('¿Estás seguro de que quieres limpiar todos los datos de colaboración huérfanos?')) {
+            limpiarProyectosHuérfanos();
+            // También limpiar invitaciones viejas
+            const user = getCurrentUser();
+            if (user) {
+                const invitacionesViejas = data.invitaciones.filter(i => i.estado === 'pendiente' && i.email !== user);
+                if (invitacionesViejas.length > 0) {
+                    data.invitaciones = data.invitaciones.filter(i => i.estado !== 'pendiente' || i.email === user);
+                    saveData();
+                    console.log(`🧹 Eliminadas ${invitacionesViejas.length} invitaciones viejas`);
+                }
+            }
+            updateBadge();
+            if (document.getElementById('colabPanel')) {
+                const panel = document.getElementById('colabPanel');
+                panel.remove();
+                setTimeout(() => togglePanel(), 50);
+            }
+            alert('✅ Datos de colaboración limpiados correctamente');
+        }
+    };
+    
+    // ============================================
+    // INICIALIZACIÓN
     // ============================================
     function init() {
-        console.log('🚀 Inicializando sistema de colaboración (OPTIMIZADO)...');
+        console.log('🚀 Inicializando sistema de colaboración (CON LIMPIEZA)...');
         loadData();
         
-        // ✅ SOLO UNA SINCRONIZACIÓN INICIAL
+        // 🧹 Limpiar proyectos huérfanos al iniciar
+        limpiarProyectosHuérfanos();
+        
+        // ✅ Sincronizar proyectos existentes
         Core.syncExistingProjects();
         Core.syncProjectsToMainSystem();
         
         // ✅ Crear botón flotante
         createFloatingButton();
         
-        // ✅ Sincronización PERIÓDICA pero más ESPACIADA
+        // ✅ Sincronización periódica
         setInterval(function() {
-            // Solo actualizar el badge, no todo el sistema
             loadData();
             updateBadge();
-        }, 10000); // Cada 10 segundos en lugar de 5
+        }, 10000);
         
-        // ✅ Sincronización completa pero menos frecuente
         setInterval(function() {
-            // Evitar sincronizaciones simultáneas
             if (!sincronizacionEnCurso) {
                 sincronizacionEnCurso = true;
                 try {
-                    // Verificar si hay cambios antes de sincronizar
                     const proyectosActuales = JSON.stringify(projects);
                     const proyectosGuardados = localStorage.getItem('projects');
                     
-                    // Solo sincronizar si hay cambios
                     if (proyectosActuales !== proyectosGuardados) {
+                        // Limpiar y sincronizar
+                        limpiarProyectosHuérfanos();
                         Core.syncExistingProjects();
                         Core.syncProjectsToMainSystem();
                         console.log('🔄 Sincronización periódica ejecutada');
@@ -614,11 +688,10 @@
                     sincronizacionEnCurso = false;
                 }
             }
-        }, 60000); // Cada 60 segundos en lugar de 30
+        }, 60000);
         
-        console.log('✅ SISTEMA DE COLABORACIÓN LISTO (OPTIMIZADO)');
-        console.log('📌 Busca el botón 👥 en la esquina inferior izquierda');
-        console.log('📌 Los parpadeos deberían haber desaparecido');
+        console.log('✅ SISTEMA DE COLABORACIÓN LISTO (CON LIMPIEZA)');
+        console.log('📌 Para limpiar manualmente, ejecuta en consola: limpiarDatosColaboracion()');
     }
     
     // ============================================
@@ -631,12 +704,11 @@
     }
     
     // ============================================
-    // SINCRONIZACIÓN EN TIEMPO REAL (OPTIMIZADA)
+    // SINCRONIZACIÓN EN TIEMPO REAL
     // ============================================
     window.addEventListener('storage', function(e) {
         if (e.key === 'projects' && e.newValue) {
             console.log('📥 Cambio detectado en otra pestaña');
-            // Solo procesar si hay cambios reales
             try {
                 const nuevosProyectos = JSON.parse(e.newValue);
                 if (Array.isArray(nuevosProyectos) && nuevosProyectos.length > 0) {
@@ -644,7 +716,6 @@
                     if (cambios) {
                         projects.length = 0;
                         projects.push(...nuevosProyectos);
-                        // Solo renderizar si es necesario
                         if (typeof renderProjects === 'function') {
                             renderProjects();
                         }
@@ -654,10 +725,10 @@
                         if (typeof updateStatistics === 'function') {
                             updateStatistics();
                         }
-                        // Sincronizar colaboración solo si hay cambios
                         if (!sincronizacionEnCurso) {
                             sincronizacionEnCurso = true;
                             try {
+                                limpiarProyectosHuérfanos();
                                 Core.syncExistingProjects();
                                 showSyncNotification('🔄 Datos actualizados');
                             } finally {
@@ -676,19 +747,11 @@
             try {
                 loadData();
                 updateBadge();
-                // Solo actualizar panel si está abierto
                 if (document.getElementById('colabPanel')) {
-                    // Recargar el panel en lugar de toggle
                     const panel = document.getElementById('colabPanel');
                     if (panel) {
-                        // Actualizar solo el contenido, no cerrar/reabrir
-                        // Esto evita el parpadeo
-                        const oldPanel = panel;
-                        oldPanel.remove();
-                        // Recrear el panel
-                        setTimeout(() => {
-                            togglePanel();
-                        }, 50);
+                        panel.remove();
+                        setTimeout(() => togglePanel(), 50);
                     }
                 }
             } catch(error) {
@@ -734,8 +797,8 @@
         document.head.appendChild(style);
     }
     
-    console.log('✅ Sincronización en tiempo real activada (OPTIMIZADA)');
+    console.log('✅ Sincronización en tiempo real activada (CON LIMPIEZA)');
     console.log('⚠️ Las fechas de las tareas NO se modifican');
-    console.log('✅ ELIMINADO EL PARPADEO DE LOS NOMBRES DE PROYECTOS');
+    console.log('🧹 Los proyectos huérfanos se eliminan automáticamente');
     
 })();
