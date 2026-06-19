@@ -1,3 +1,7 @@
+
+
+
+
 // Cargar el sistema de colaboración con UI
 (function cargarColaboracionUI() {
     if (document.getElementById('colabFloatBtn')) return;
