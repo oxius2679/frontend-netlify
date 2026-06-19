@@ -20321,7 +20321,8 @@ function renderDocumentos(container) {
         };
     });
 }
-cargarContenido(activeTab);
+cargarContenido(activeTab);}
+
 // Exponer función principal globalmente
 window.abrirPanelCompleto = abrirPanelCompleto;
 
