@@ -1,4 +1,125 @@
+// ============================================
+// 🔄 SINCRONIZAR PROYECTOS COLABORATIVOS AL CARGAR
+// ============================================
+(async function syncCollaborativeProjectsOnLoad() {
+    console.log('🔄 Verificando proyectos colaborativos...');
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.log('ℹ️ No hay sesión activa');
+        return;
+    }
+    
+    // Esperar a que el sistema esté listo
+    setTimeout(async () => {
+        try {
+            console.log('📡 Consultando proyectos colaborativos...');
+            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            if (!response.ok) {
+                console.warn('⚠️ Error obteniendo proyectos colaborativos:', response.status);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.collaboratedProjects && data.collaboratedProjects.length > 0) {
+                console.log(`📦 ${data.collaboratedProjects.length} proyectos colaborativos encontrados`);
+                
+                // ✅ FUSIONAR CON projects ACTUALES
+                const proyectosExistentesIds = new Set(projects.map(p => p.id));
+                let cambios = 0;
+                
+                data.collaboratedProjects.forEach(proyectoCollab => {
+                    if (!proyectosExistentesIds.has(proyectoCollab.id)) {
+                        projects.push(proyectoCollab);
+                        cambios++;
+                        console.log(`   ✅ Proyecto colaborativo agregado: ${proyectoCollab.name}`);
+                    }
+                });
+                
+                if (cambios > 0) {
+                    // ✅ GUARDAR EN LOCALSTORAGE (caché)
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    console.log(`✅ ${cambios} proyectos colaborativos sincronizados`);
+                    
+                    // ✅ ACTUALIZAR MENÚ LATERAL
+                    if (typeof renderProjects === 'function') {
+                        renderProjects();
+                    }
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                    }
+                }
+            } else {
+                console.log('ℹ️ No hay proyectos colaborativos');
+            }
+        } catch (error) {
+            console.error('❌ Error sincronizando proyectos colaborativos:', error);
+        }
+    }, 3000); // Esperar 3 segundos para que todo cargue
+})();
 
+// ============================================
+// 🔧 FUNCIÓN PARA FORZAR SINCRONIZACIÓN DESDE CONSOLA
+// ============================================
+window.forceSyncCollaborativeProjects = async function() {
+    console.log('🔄 Forzando sincronización de proyectos colaborativos...');
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.error('❌ No hay token');
+        alert('❌ No hay sesión activa');
+        return;
+    }
+    
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!response.ok) {
+            alert('❌ Error: ' + response.status);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.collaboratedProjects) {
+            console.log(`📦 ${data.collaboratedProjects.length} proyectos colaborativos encontrados`);
+            
+            const proyectosExistentesIds = new Set(projects.map(p => p.id));
+            let cambios = 0;
+            
+            data.collaboratedProjects.forEach(proyecto => {
+                if (!proyectosExistentesIds.has(proyecto.id)) {
+                    projects.push(proyecto);
+                    cambios++;
+                    console.log(`   ✅ Agregado: ${proyecto.name}`);
+                }
+            });
+            
+            if (cambios > 0) {
+                localStorage.setItem('projects', JSON.stringify(projects));
+                console.log(`✅ ${cambios} proyectos sincronizados`);
+                
+                if (typeof renderProjects === 'function') renderProjects();
+                if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                
+                alert(`✅ ${cambios} proyectos colaborativos sincronizados`);
+            } else {
+                alert('ℹ️ No hay nuevos proyectos colaborativos');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al sincronizar');
+    }
+};
+
+console.log('💡 Para forzar sincronización usa: forceSyncCollaborativeProjects()');
 
 
 
@@ -23154,72 +23275,23 @@ localStorage.setItem('lastSaveTimestamp', Date.now().toString());
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
-    console.group('📥 Cargando datos desde backend o localStorage');
-
-    // ✅ NUEVO BLOQUE: Forzar recarga después de invitación
-    const forceRefresh = localStorage.getItem('forceProjectRefresh');
-    if (forceRefresh === 'true') {
-        console.log('🔄 FORZANDO RECARGA DESPUÉS DE INVITACIÓN...');
-        localStorage.removeItem('forceProjectRefresh');
-        
-        const token = localStorage.getItem('authToken');
-        const clienteId = localStorage.getItem('clienteId');
-        
-        if (token && clienteId) {
-            try {
-                const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
-                const response = await fetch(url, {
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.projects) {
-                        projects = data.projects;
-                        currentProjectIndex = data.currentProjectIndex || 0;
-                        filtrarProyectosPorUsuario();
-                        localStorage.setItem('projects', JSON.stringify(projects));
-                        localStorage.setItem('currentProjectIndex', currentProjectIndex);
-                        console.log(`✅ ${projects.length} proyectos cargados (post-invitación)`);
-                        console.groupEnd();
-                        return true;
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ Error cargando después de invitación:', error.message);
-            }
-        }
-    }
-
-    // === TU CÓDIGO ORIGINAL (sin cambios) ===
-    const lastSave = localStorage.getItem('lastSaveTimestamp');
-    const forceLocal = lastSave && (Date.now() - parseInt(lastSave) < 5000);
+    console.group('📥 Cargando datos desde MongoDB...');
     
-    const urlParams = new URLSearchParams(window.location.search);
-    const justAccepted = urlParams.get('accepted') === 'true';
-    
-    if (forceLocal && !justAccepted) {
-        console.log('🔄 Usando localStorage porque hubo un guardado reciente');
-        const saved = localStorage.getItem('projects');
-        if (saved) {
-            projects = JSON.parse(saved);
-            filtrarProyectosPorUsuario();
-            localStorage.setItem('projects', JSON.stringify(projects));
-            console.groupEnd();
-            return true;
-        }
-    }
-
     const token = localStorage.getItem('authToken');
     const clienteId = localStorage.getItem('clienteId');
+    const forceRefresh = localStorage.getItem('forceProjectRefresh');
+    
+    // 🔥 SI VIENE DE UNA INVITACIÓN ACEPTADA, FORZAR RECARGA
+    if (forceRefresh === 'true') {
+        console.log('🔄 Force refresh activado (después de invitación)');
+        localStorage.removeItem('forceProjectRefresh');
+    }
     
     if (token && clienteId) {
         try {
             console.log('🔄 Cargando desde MongoDB...');
+            
+            // ✅ CARGAR PROYECTOS DEL USUARIO (DUEÑO)
             const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
             const response = await fetch(url, {
                 headers: { 
@@ -23231,45 +23303,73 @@ async function safeLoad() {
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Datos cargados desde MongoDB Atlas');
+                console.log('✅ Datos del dueño cargados:', data.projects?.length || 0);
                 
-                if (data.projects) {
-                    projects = data.projects;
-                    currentProjectIndex = data.currentProjectIndex || 0;
-                    filtrarProyectosPorUsuario();
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                let proyectosTotales = data.projects || [];
+                
+                // ✅ 🔥 CARGAR PROYECTOS COLABORATIVOS (donde el usuario es invitado)
+                try {
+                    console.log('🔄 Cargando proyectos colaborativos...');
+                    const collabResponse = await fetch(`${API_URL}/api/user/projects`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
                     
-                    if (justAccepted) {
-                        window.history.replaceState({}, document.title, window.location.pathname);
+                    if (collabResponse.ok) {
+                        const collabData = await collabResponse.json();
+                        if (collabData.collaboratedProjects && collabData.collaboratedProjects.length > 0) {
+                            console.log(`✅ ${collabData.collaboratedProjects.length} proyectos colaborativos encontrados`);
+                            
+                            // Fusionar proyectos (evitar duplicados)
+                            const proyectosExistentesIds = new Set(proyectosTotales.map(p => p.id));
+                            collabData.collaboratedProjects.forEach(proyectoCollab => {
+                                if (!proyectosExistentesIds.has(proyectoCollab.id)) {
+                                    proyectosTotales.push(proyectoCollab);
+                                    console.log(`   ✅ Proyecto colaborativo agregado: ${proyectoCollab.name}`);
+                                }
+                            });
+                        }
                     }
-                    
-                    console.log(`✅ ${projects.length} proyectos cargados`);
-                    console.groupEnd();
-                    return true;
+                } catch (collabError) {
+                    console.warn('⚠️ Error cargando proyectos colaborativos:', collabError.message);
                 }
+                
+                // ✅ GUARDAR EN projects (variable global)
+                projects = proyectosTotales;
+                currentProjectIndex = data.currentProjectIndex || 0;
+                
+                // ✅ FILTRAR POR PERMISOS
+                filtrarProyectosPorUsuario();
+                
+                // ✅ GUARDAR EN LOCALSTORAGE (SOLO PARA CACHÉ)
+                localStorage.setItem('projects', JSON.stringify(projects));
+                localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                
+                console.log(`✅ ${projects.length} proyectos cargados (${proyectosTotales.length} totales)`);
+                console.groupEnd();
+                return true;
             }
         } catch (error) {
             console.warn('⚠️ Error cargando desde backend:', error.message);
         }
     }
-
+    
+    // Fallback: localStorage
     const savedProjects = localStorage.getItem('projects');
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
         currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
         filtrarProyectosPorUsuario();
-        localStorage.setItem('projects', JSON.stringify(projects));
-        console.log(`✅ ${projects.length} proyectos cargados desde localStorage`);
+        console.log(`✅ ${projects.length} proyectos cargados desde localStorage (fallback)`);
         console.groupEnd();
         return true;
     }
-
+    
     console.log('📝 No hay datos, se creará proyecto inicial');
     projects = [];
     console.groupEnd();
     return false;
 }
+
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
 // ============================================
@@ -38912,8 +39012,8 @@ if (window.SlackNotifier) SlackNotifier.projectCreated(newProject);
 // RENDERIZAR PROYECTOS CON FILTRO DE PERMISOS
 // ============================================
 function renderProjects() {
-
-
+    console.log('🎯 renderProjects ejecutándose...');
+    
     const userStr = localStorage.getItem('user');
     let userEmail = null;
     try {
@@ -38923,7 +39023,6 @@ function renderProjects() {
         }
     } catch(e) {}
     
-    // Si no hay email en user, intentar desde el token
     if (!userEmail) {
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -38934,41 +39033,51 @@ function renderProjects() {
         }
     }
     
+    const clienteId = localStorage.getItem('clienteId');
     const esAdmin = userEmail === 'ajackson2672@gmail.com';
     
-    // projects YA DEBE ESTAR FILTRADO por filtrarProyectosPorUsuario()
-    // Pero por si acaso, aplicamos el filtro nuevamente
-    let proyectosAMostrar = [];
+    console.log('👤 Usuario:', userEmail);
+    console.log('🔑 clienteId:', clienteId);
+    console.log('👑 Es admin:', esAdmin);
     
+    // ✅ ADMIN ve todos los proyectos
     if (esAdmin) {
-        // Admin ve todos los proyectos originales (desde window.originalProjects si existe)
+        console.log('👑 Admin - Mostrando todos los proyectos');
+        // Si hay originalProjects, usarlos
         if (window.originalProjects && window.originalProjects.length > 0) {
-            proyectosAMostrar = [...window.originalProjects];
-        } else {
-            proyectosAMostrar = [...projects];
+            projects = [...window.originalProjects];
         }
-        console.log(`👑 Admin - Mostrando ${proyectosAMostrar.length} proyectos`);
-    } else {
-        // Usuarios normales: solo proyectos donde son dueños o colaboradores
-        const clienteId = localStorage.getItem('clienteId');
-        
-        proyectosAMostrar = projects.filter(proyecto => {
-            const esDueno = proyecto.clienteId === clienteId;
-            const esColaborador = proyecto.colaboradores && 
-                                  Array.isArray(proyecto.colaboradores) && 
-                                  proyecto.colaboradores.includes(userEmail);
-            return esDueno || esColaborador;
-        });
-        
-        console.log(`👤 Usuario ${userEmail} - Mostrando ${proyectosAMostrar.length} proyectos`);
-        
-        // Mostrar cuáles son en consola para debug
-        proyectosAMostrar.forEach(p => {
-            const esDueno = p.clienteId === clienteId;
-            console.log(`  ${esDueno ? '👑 Dueño' : '🤝 Colaborador'}: ${p.name}`);
-        });
+        renderProjectList(projects);
+        return;
     }
     
+    // ✅ USUARIO NORMAL: filtrar por dueño O colaborador
+    const proyectosFiltrados = projects.filter(proyecto => {
+        // Es dueño (clienteId coincide)
+        const esDueno = proyecto.clienteId === clienteId;
+        
+        // Es colaborador (está en el array colaboradores)
+        const esColaborador = proyecto.colaboradores && 
+                              Array.isArray(proyecto.colaboradores) && 
+                              proyecto.colaboradores.includes(userEmail);
+        
+        if (esDueno) {
+            console.log(`  ✅ DUEÑO: ${proyecto.name}`);
+        } else if (esColaborador) {
+            console.log(`  ✅ COLABORADOR: ${proyecto.name}`);
+        }
+        
+        return esDueno || esColaborador;
+    });
+    
+    console.log(`📊 Proyectos originales: ${projects.length}`);
+    console.log(`📊 Proyectos visibles: ${proyectosFiltrados.length}`);
+    
+    renderProjectList(proyectosFiltrados);
+}
+
+// ✅ FUNCIÓN AUXILIAR PARA RENDERIZAR LA LISTA
+function renderProjectList(proyectosAMostrar) {
     const projectListContainer = document.getElementById('projectList');
     if (!projectListContainer) return;
     
@@ -38979,15 +39088,20 @@ function renderProjects() {
             <li style="color: #95a5a6; text-align: center; padding: 20px; list-style: none;">
                 <i class="fas fa-folder-open" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
                 No tienes proyectos
-                ${!esAdmin ? '<br><small>💡 Pídele al administrador que te invite</small>' : ''}
             </li>
         `;
         return;
     }
     
+    const userEmail = (() => {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            return user.email;
+        } catch(e) { return null; }
+    })();
+    
     proyectosAMostrar.forEach((project, idx) => {
-        // Encontrar el índice real en el array global projects
-        const realIndex = projects.findIndex(p => p.id === project.id || p.name === project.name);
+        const realIndex = projects.findIndex(p => p.id === project.id);
         const displayIndex = realIndex !== -1 ? realIndex : idx;
         
         const li = document.createElement('li');
@@ -39005,8 +39119,16 @@ function renderProjects() {
             transition: all 0.2s;
         `;
         
+        // ✅ INDICADOR VISUAL DE PROYECTO COLABORATIVO
+        const esColaborador = project.colaboradores && 
+                              Array.isArray(project.colaboradores) && 
+                              project.colaboradores.includes(userEmail);
+        const badge = esColaborador ? `<span style="background:#8b5cf6; color:white; padding:2px 8px; border-radius:10px; font-size:10px; margin-left:8px;">🤝</span>` : '';
+        
         li.innerHTML = `
-            <span style="color: white; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${project.name}</span>
+            <span style="color: white; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${project.name} ${badge}
+            </span>
             <div class="project-menu" onclick="event.stopPropagation(); toggleProjectMenu(event, ${displayIndex})" style="padding: 5px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; flex-shrink: 0;">⋮</div>
             <div class="project-context-menu" id="project-menu-${displayIndex}" style="display: none; position: fixed; background: #1a1a1a; border-radius: 8px; padding: 5px 0; z-index: 10000; min-width: 120px;">
                 <div class="project-context-menu-item edit" onclick="editProjectFromMenu(${displayIndex})" style="padding: 8px 15px; cursor: pointer;">Editar</div>
@@ -39021,7 +39143,7 @@ function renderProjects() {
     console.log(`✅ Renderizados ${proyectosAMostrar.length} proyectos en el menú`);
     setTimeout(updateProjectSelectionStyles, 100);
     
-    // ========== 🔥 SOLO ESTO SE AGREGA AL FINAL ==========
+    // Mover menús contextuales al body
     setTimeout(() => {
         document.querySelectorAll('.project-context-menu').forEach(menu => {
             if (menu.parentElement !== document.body) {
@@ -39029,9 +39151,7 @@ function renderProjects() {
             }
         });
     }, 50);
-    // ========== FIN DE LO AGREGADO ==========
 }
-
 
 // Función auxiliar para estilos
 function updateProjectSelectionStyles() {
@@ -69868,19 +69988,19 @@ if (!document.getElementById('notif-slack-styles')) {
             });
             
             const acceptData = await acceptResponse.json();
-            
-            if (acceptResponse.ok && acceptData.success) {
-                // Guardar el clienteId en localStorage
-                localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.CLIENTE_ID, acceptData.clienteId);
-                
-                alert(`✅ ¡Bienvenido al proyecto "${validateData.proyecto}"!\n\nAhora verás este proyecto en tu lista.`);
-                
-                // Recargar la página para mostrar el nuevo proyecto
-                window.location.href = window.location.pathname;
-            } else {
-                alert(`❌ Error al aceptar invitación: ${acceptData.error || 'Error desconocido'}`);
-                window.location.href = window.location.pathname;
-            }
+            // ✅ CÓDIGO CORRECTO PARA SISTEMA CON MONGODB
+if (acceptResponse.ok && acceptData.success) {
+    // Solo guardar el clienteId - el proyecto ya está en MongoDB
+    localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.CLIENTE_ID, acceptData.clienteId);
+    
+    // ✅ FORZAR RECARGA DE PROYECTOS DESDE MONGODB
+    localStorage.setItem('forceProjectRefresh', 'true');
+    
+    alert(`✅ ¡Bienvenido al proyecto "${validateData.proyecto}"!\n\nAhora verás este proyecto en tu lista.`);
+    
+    // Recargar la página para que safeLoad() traiga los proyectos desde MongoDB
+    window.location.href = window.location.pathname;
+}
         } catch (error) {
             console.error('Error procesando invitación:', error);
             alert('❌ Error al procesar la invitación');
