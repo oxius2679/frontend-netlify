@@ -1,11 +1,127 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN CON INVITACIONES FUNCIONALES
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN CON MONGODB
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - INVITACIONES FUNCIONALES');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - CON MONGODB');
+    
+    // ============================================
+    // CONFIGURACIÓN
+    // ============================================
+    
+    // 🔥 URL DE TU BACKEND - CAMBIA ESTO SEGÚN CORRESPONDA
+    const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com/api';
+    // Si estás en desarrollo local, usa:
+    // const API_URL = 'http://localhost:10000/api';
+    
+    const STORAGE_KEY = 'colaboracion_data';
+    let data = { proyectos: [], invitaciones: [], usuarios: [] };
+    let panelAbierto = false;    
+    // ============================================
+    // FUNCIONES DE API - MONGODB
+    // ============================================
+    const API = {
+        // 📨 OBTENER INVITACIONES DE MONGODB
+        async getInvitaciones(email) {
+            try {
+                const response = await fetch(`${API_URL}/invitaciones?email=${encodeURIComponent(email)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Error al obtener invitaciones');
+                const data = await response.json();
+                console.log('📨 Invitaciones desde MongoDB:', data.length);
+                return data;
+            } catch (error) {
+                console.error('❌ Error obteniendo invitaciones:', error);
+                return [];
+            }
+        },
+        
+        // 📨 CREAR INVITACIÓN EN MONGODB
+        async crearInvitacion(invitacion) {
+            try {
+                const response = await fetch(`${API_URL}/invitaciones`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(invitacion)
+                });
+                if (!response.ok) throw new Error('Error al crear invitación');
+                const data = await response.json();
+                console.log('✅ Invitación creada en MongoDB:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ Error creando invitación:', error);
+                return null;
+            }
+        },
+        
+        // 📨 ACEPTAR INVITACIÓN EN MONGODB
+        async aceptarInvitacion(invitacionId, usuario) {
+            try {
+                const response = await fetch(`${API_URL}/invitaciones/${invitacionId}/aceptar`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ usuario })
+                });
+                if (!response.ok) throw new Error('Error al aceptar invitación');
+                const data = await response.json();
+                console.log('✅ Invitación aceptada en MongoDB:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ Error aceptando invitación:', error);
+                return null;
+            }
+        },
+        
+        // 📨 RECHAZAR INVITACIÓN EN MONGODB
+        async rechazarInvitacion(invitacionId) {
+            try {
+                const response = await fetch(`${API_URL}/invitaciones/${invitacionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Error al rechazar invitación');
+                console.log('✅ Invitación rechazada');
+                return true;
+            } catch (error) {
+                console.error('❌ Error rechazando invitación:', error);
+                return false;
+            }
+        },
+        
+        // 📂 OBTENER PROYECTOS COLABORATIVOS
+        async getProyectosColaborativos(email) {
+            try {
+                const response = await fetch(`${API_URL}/proyectos/colaborativos?email=${encodeURIComponent(email)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) throw new Error('Error al obtener proyectos');
+                const data = await response.json();
+                console.log('📂 Proyectos colaborativos:', data.length);
+                return data;
+            } catch (error) {
+                console.error('❌ Error obteniendo proyectos:', error);
+                return [];
+            }
+        }
+    };
     
     // ============================================
     // CONFIGURACIÓN EMAILJS
@@ -29,29 +145,16 @@
     }
     
     // ============================================
-    // CONFIGURACIÓN GENERAL
+    // FUNCIONES LOCALES
     // ============================================
-    const STORAGE_KEY = 'colaboracion_data';
-    let data = { proyectos: [], invitaciones: [], usuarios: [] };
-    let panelAbierto = false;
-    
     function loadData() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 data = JSON.parse(saved);
-                console.log('📂 Datos cargados:', data.proyectos.length, 'proyectos,', data.invitaciones.length, 'invitaciones');
-                // Mostrar todas las invitaciones para debug
-                if (data.invitaciones.length > 0) {
-                    console.log('📨 Todas las invitaciones:');
-                    data.invitaciones.forEach((inv, i) => {
-                        console.log(`  ${i+1}. Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
-                    });
-                }
+                console.log('📂 Datos locales cargados:', data.proyectos.length, 'proyectos');
             } else {
-                console.log('📂 Creando datos nuevos...');
                 data = { proyectos: [], invitaciones: [], usuarios: [] };
-                saveData();
             }
         } catch(e) {
             console.error('Error cargando datos:', e);
@@ -63,8 +166,6 @@
     function saveData() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            localStorage.setItem('_colab_timestamp', Date.now().toString());
-            console.log('💾 Datos guardados:', data.invitaciones.length, 'invitaciones');
         } catch(e) {
             console.error('Error guardando datos:', e);
         }
@@ -72,128 +173,78 @@
     
     function getCurrentUser() {
         try {
-            // Intentar obtener de diferentes fuentes
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-            if (user.email) {
-                console.log('👤 Usuario obtenido de user.email:', user.email);
-                return user.email;
-            }
+            if (user.email) return user.email;
             
             const token = localStorage.getItem('authToken');
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    if (payload.email) {
-                        console.log('👤 Usuario obtenido de token:', payload.email);
-                        return payload.email;
-                    }
-                    if (payload.sub) {
-                        console.log('👤 Usuario obtenido de token.sub:', payload.sub);
-                        return payload.sub;
-                    }
+                    if (payload.email) return payload.email;
+                    if (payload.sub) return payload.sub;
                 } catch(e) {}
             }
             
             const email = localStorage.getItem('userEmail');
-            if (email) {
-                console.log('👤 Usuario obtenido de userEmail:', email);
-                return email;
-            }
+            if (email) return email;
             
-            // Si no hay nada, usar un valor por defecto
-            console.warn('⚠️ No se encontró usuario, usando "admin@test.com"');
-            return 'admin@test.com';
+            return null;
         } catch(e) {
-            console.error('Error obteniendo usuario:', e);
-            return 'admin@test.com';
+            return null;
         }
     }
     
     // ============================================
-    // NÚCLEO DEL SISTEMA
+    // NÚCLEO DEL SISTEMA - CON MONGODB
     // ============================================
     const Core = {
-        // ✅ SINCRONIZAR PROYECTOS EXISTENTES
-        syncExistingProjects: function() {
+        // ✅ CARGAR INVITACIONES DESDE MONGODB
+        async loadInvitacionesFromDB() {
             const user = getCurrentUser();
-            console.log('🔄 Sincronizando para usuario:', user);
-            
-            if (typeof projects === 'undefined' || !Array.isArray(projects)) {
-                console.log('⚠️ projects no disponible');
-                return;
+            if (!user) {
+                console.log('⏳ No hay usuario logueado');
+                return [];
             }
             
-            console.log('📋 Proyectos en sistema principal:', projects.length);
+            console.log('📨 Cargando invitaciones desde MongoDB para:', user);
+            const invitaciones = await API.getInvitaciones(user);
             
-            let hayCambios = false;
+            // Guardar en localStorage para caché
+            data.invitaciones = invitaciones;
+            saveData();
             
-            projects.forEach(p => {
-                const existe = data.proyectos.find(dp => dp.nombre === p.name);
-                if (!existe) {
-                    const colaboradores = p.colaboradores || [user];
-                    const nuevoProyecto = {
-                        id: Date.now() + Math.floor(Math.random() * 1000),
-                        nombre: p.name,
-                        descripcion: p.description || '',
-                        creador: p.clienteId || user,
-                        fecha: new Date().toISOString(),
-                        colaboradores: colaboradores,
-                        tareas: (p.tasks || []).map(t => ({
-                            id: t.id || Date.now(),
-                            nombre: t.name || 'Tarea',
-                            estado: t.status === 'completed' ? 'completada' : 'pendiente',
-                            asignado: t.assignee || '',
-                            startDate: t.startDate || '',
-                            deadline: t.deadline || ''
-                        })),
-                        activo: true
-                    };
-                    data.proyectos.push(nuevoProyecto);
-                    hayCambios = true;
-                    console.log(`  ✅ Proyecto "${p.name}" sincronizado`);
-                } else {
-                    if (p.colaboradores && p.colaboradores.length > 0) {
-                        let colaboradoresCambiaron = false;
-                        p.colaboradores.forEach(c => {
-                            if (!existe.colaboradores.includes(c)) {
-                                existe.colaboradores.push(c);
-                                colaboradoresCambiaron = true;
-                            }
-                        });
-                        if (colaboradoresCambiaron) {
-                            const idx = data.proyectos.indexOf(existe);
-                            data.proyectos[idx] = existe;
-                            hayCambios = true;
-                        }
-                    }
-                }
-            });
-            
-            if (hayCambios) {
-                saveData();
-                console.log('✅ Cambios guardados en colaboración');
-            }
-            
-            return data.proyectos;
+            console.log('📨 Invitaciones cargadas:', invitaciones.length);
+            return invitaciones;
         },
         
-        // ✅ OBTENER PROYECTOS DEL USUARIO
+        // ✅ CARGAR PROYECTOS COLABORATIVOS DESDE MONGODB
+        async loadProyectosFromDB() {
+            const user = getCurrentUser();
+            if (!user) return [];
+            
+            console.log('📂 Cargando proyectos colaborativos desde MongoDB para:', user);
+            const proyectos = await API.getProyectosColaborativos(user);
+            
+            // Guardar en localStorage para caché
+            data.proyectos = proyectos;
+            saveData();
+            
+            console.log('📂 Proyectos cargados:', proyectos.length);
+            return proyectos;
+        },
+        
+        // ✅ OBTENER PROYECTOS DEL USUARIO (desde caché local)
         getMyProjects: function() {
             const user = getCurrentUser();
-            console.log('👤 Buscando proyectos para:', user);
+            if (!user) return [];
             
-            const todos = data.proyectos;
-            console.log('📂 Total proyectos en data:', todos.length);
+            const userNormalizado = user.trim().toLowerCase();
             
-            const misProyectos = todos.filter(p => {
+            const misProyectos = data.proyectos.filter(p => {
                 if (!p.colaboradores || !Array.isArray(p.colaboradores)) {
                     return false;
                 }
-                const esColaborador = p.colaboradores.some(c => c.trim().toLowerCase() === user.trim().toLowerCase());
-                if (esColaborador) {
-                    console.log(`  ✅ "${p.nombre}" - ${user} es colaborador`);
-                }
-                return esColaborador;
+                return p.colaboradores.some(c => c.trim().toLowerCase() === userNormalizado);
             });
             
             console.log(`📂 Proyectos para ${user}:`, misProyectos.length);
@@ -203,15 +254,13 @@
         // ✅ OBTENER PROYECTOS DONDE ES DUEÑO
         getMisProyectosComoDueño: function() {
             const user = getCurrentUser();
-            const misProyectos = this.getMyProjects();
+            if (!user) return [];
             
-            const proyectosDueño = misProyectos.filter(p => {
+            const userNormalizado = user.trim().toLowerCase();
+            
+            const proyectosDueño = data.proyectos.filter(p => {
                 if (p.colaboradores && p.colaboradores.length > 0) {
-                    const esDueño = p.colaboradores[0].trim().toLowerCase() === user.trim().toLowerCase();
-                    if (esDueño) {
-                        console.log(`  👑 "${p.nombre}" - ${user} es DUEÑO`);
-                    }
-                    return esDueño;
+                    return p.colaboradores[0].trim().toLowerCase() === userNormalizado;
                 }
                 return false;
             });
@@ -223,66 +272,50 @@
         // ✅ VERIFICAR SI ES DUEÑO
         esDueñoDeProyecto: function(proyectoId) {
             const user = getCurrentUser();
+            if (!user) return false;
+            
+            const userNormalizado = user.trim().toLowerCase();
             const proyecto = data.proyectos.find(p => p.id == proyectoId);
             if (!proyecto) return false;
             
-            const esDueño = proyecto.colaboradores && 
-                           proyecto.colaboradores.length > 0 && 
-                           proyecto.colaboradores[0].trim().toLowerCase() === user.trim().toLowerCase();
-            
-            console.log(`🔍 ¿${user} es dueño de "${proyecto.nombre}"?`, esDueño);
-            return esDueño;
+            return proyecto.colaboradores && 
+                   proyecto.colaboradores.length > 0 && 
+                   proyecto.colaboradores[0].trim().toLowerCase() === userNormalizado;
         },
         
-        // ✅ OBTENER INVITACIONES PENDIENTES (CON COMPARACIÓN MEJORADA)
+        // ✅ OBTENER INVITACIONES PENDIENTES (desde caché local)
         getMyInvitations: function() {
             const user = getCurrentUser();
-            console.log('📩 Buscando invitaciones para:', user);
+            if (!user) return [];
             
-            // Normalizar el email del usuario (quitar espacios, minúsculas)
             const userNormalizado = user.trim().toLowerCase();
             
             const pendientes = data.invitaciones.filter(i => {
                 const emailNormalizado = i.email.trim().toLowerCase();
-                const esParaMi = emailNormalizado === userNormalizado;
-                const estaPendiente = i.estado === 'pendiente';
-                
-                if (esParaMi && estaPendiente) {
-                    console.log(`  📨 Invitación encontrada: "${i.proyectoNombre}" de ${i.creador}`);
-                }
-                
-                return esParaMi && estaPendiente;
+                return emailNormalizado === userNormalizado && i.estado === 'pendiente';
             });
             
             console.log(`📩 Invitaciones pendientes para ${user}:`, pendientes.length);
-            if (pendientes.length === 0) {
-                console.log('  ℹ️ No hay invitaciones pendientes. Todas las invitaciones:', data.invitaciones.length);
-                data.invitaciones.forEach(inv => {
-                    console.log(`    - Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
-                });
-            }
             return pendientes;
         },
         
-        // ✅ ENVIAR INVITACIÓN (CON VERIFICACIONES MEJORADAS)
-        sendInvitation: function(proyectoId, email) {
+        // ✅ ENVIAR INVITACIÓN - GUARDAR EN MONGODB
+        async sendInvitation(proyectoId, email) {
             const user = getCurrentUser();
-            console.log('📨 Enviando invitación...');
-            console.log('  - Usuario emisor:', user);
-            console.log('  - Proyecto ID:', proyectoId);
-            console.log('  - Email destinatario:', email);
+            if (!user) {
+                alert('❌ Inicia sesión primero');
+                return false;
+            }
             
-            // Normalizar email
+            console.log('📨 Enviando invitación a:', email);
+            
             const emailNormalizado = email.trim().toLowerCase();
-            
             const proyecto = data.proyectos.find(p => p.id == proyectoId);
+            
             if (!proyecto) {
                 alert('❌ Proyecto no encontrado');
                 return false;
             }
-            
-            console.log('  - Proyecto:', proyecto.nombre);
-            console.log('  - Colaboradores actuales:', proyecto.colaboradores);
             
             // Verificar si el usuario es dueño
             if (!this.esDueñoDeProyecto(proyectoId)) {
@@ -297,36 +330,41 @@
                 return false;
             }
             
-            // Verificar invitación duplicada
-            const existeInvitacion = data.invitaciones.some(
+            // Verificar invitación duplicada en MongoDB
+            const invitacionExistente = data.invitaciones.some(
                 i => i.proyectoId === proyecto.id && 
                      i.email.trim().toLowerCase() === emailNormalizado && 
                      i.estado === 'pendiente'
             );
-            if (existeInvitacion) {
-                alert(`⚠️ Ya hay una invitación pendiente para ${email}`);
+            if (invitacionExistente) {
+                alert(`⚠️ Ya hay una invitación pendiente para ${email} en "${proyecto.nombre}"`);
                 return false;
             }
             
-            const invitacion = {
-                id: Date.now() + Math.floor(Math.random() * 1000),
+            // Crear invitación
+            const nuevaInvitacion = {
                 proyectoId: proyecto.id,
                 proyectoNombre: proyecto.nombre,
-                email: email, // Guardar el email exacto que ingresó el usuario
+                email: email,
                 fecha: new Date().toISOString(),
                 estado: 'pendiente',
-                creador: user
+                creador: user,
+                creadorEmail: user
             };
             
-            data.invitaciones.push(invitacion);
-            saveData();
-            console.log('✅ Invitación CREADA y GUARDADA:', invitacion);
+            // Guardar en MongoDB
+            const resultado = await API.crearInvitacion(nuevaInvitacion);
             
-            // Mostrar todas las invitaciones después de guardar
-            console.log('📨 Todas las invitaciones después de guardar:');
-            data.invitaciones.forEach((inv, idx) => {
-                console.log(`  ${idx+1}. Para: ${inv.email} | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado}`);
-            });
+            if (!resultado) {
+                alert('❌ Error al guardar la invitación en la base de datos');
+                return false;
+            }
+            
+            // Actualizar caché local
+            data.invitaciones.push(resultado);
+            saveData();
+            
+            console.log('✅ Invitación guardada en MongoDB:', resultado);
             
             // Enviar correo
             if (typeof emailjs !== 'undefined') {
@@ -337,7 +375,7 @@
                         to_email: email,
                         project_name: proyecto.nombre,
                         reply_to: user,
-                        message: `Has sido invitado al proyecto "${proyecto.nombre}" por ${user}. Acepta la invitación en el panel de colaboración (botón 👥 en la esquina inferior izquierda).`
+                        message: `Has sido invitado al proyecto "${proyecto.nombre}" por ${user}.`
                     }
                 ).then(() => {
                     console.log('✅ Correo enviado a', email);
@@ -348,10 +386,8 @@
             
             alert(`✅ Invitación enviada a ${email} para "${proyecto.nombre}"`);
             
-            // Forzar actualización del badge y panel
+            // Actualizar UI
             updateBadge();
-            
-            // Si el panel está abierto, cerrarlo y abrirlo para actualizar
             if (document.getElementById('colabPanel')) {
                 const panel = document.getElementById('colabPanel');
                 panel.remove();
@@ -362,9 +398,14 @@
             return true;
         },
         
-        // ✅ ACEPTAR INVITACIÓN
-        acceptInvitation: function(invitacionId) {
+        // ✅ ACEPTAR INVITACIÓN - EN MONGODB
+        async acceptInvitation(invitacionId) {
             const user = getCurrentUser();
+            if (!user) {
+                alert('❌ Inicia sesión primero');
+                return false;
+            }
+            
             console.log('✅ Aceptando invitación ID:', invitacionId);
             
             const invitacion = data.invitaciones.find(i => i.id === invitacionId);
@@ -372,8 +413,6 @@
                 alert('❌ Invitación no encontrada');
                 return false;
             }
-            
-            console.log('  - Invitación encontrada:', invitacion);
             
             if (invitacion.estado !== 'pendiente') {
                 alert('⚠️ Esta invitación ya fue procesada');
@@ -389,34 +428,33 @@
                 return false;
             }
             
-            const proyecto = data.proyectos.find(p => p.id === invitacion.proyectoId);
-            if (proyecto) {
-                // Verificar si ya es colaborador
-                const yaEsColaborador = proyecto.colaboradores.some(c => c.trim().toLowerCase() === userNormalizado);
-                if (!yaEsColaborador) {
-                    proyecto.colaboradores.push(user);
-                    console.log(`✅ ${user} agregado como colaborador de "${proyecto.nombre}"`);
-                } else {
-                    console.log(`ℹ️ ${user} ya es colaborador de "${proyecto.nombre}"`);
-                }
+            // Aceptar en MongoDB
+            const resultado = await API.aceptarInvitacion(invitacionId, user);
+            
+            if (!resultado) {
+                alert('❌ Error al aceptar la invitación');
+                return false;
             }
             
+            // Actualizar caché local
             invitacion.estado = 'aceptada';
             invitacion.fechaAceptacion = new Date().toISOString();
             saveData();
-            console.log('✅ Invitación aceptada y guardada');
+            
+            // Agregar al proyecto en el sistema principal
+            const proyecto = data.proyectos.find(p => p.id === invitacion.proyectoId);
+            if (proyecto && !proyecto.colaboradores.includes(user)) {
+                proyecto.colaboradores.push(user);
+                saveData();
+            }
             
             alert(`✅ ¡Bienvenido al proyecto "${invitacion.proyectoNombre}"!`);
             
-            // Sincronizar con sistema principal
-            this.syncToMainSystem();
-            
+            // Actualizar interfaces
             if (typeof renderProjects === 'function') renderProjects();
             if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
             
             updateBadge();
-            
-            // Actualizar panel
             if (document.getElementById('colabPanel')) {
                 const panel = document.getElementById('colabPanel');
                 panel.remove();
@@ -424,33 +462,25 @@
                 setTimeout(() => togglePanel(), 500);
             }
             
+            // Recargar invitaciones desde MongoDB
+            await this.loadInvitacionesFromDB();
+            
             return true;
         },
         
-        // ✅ SINCRONIZAR CON SISTEMA PRINCIPAL
-        syncToMainSystem: function() {
-            const user = getCurrentUser();
-            if (typeof projects === 'undefined') return;
+        // ✅ RECARGAR DATOS DESDE MONGODB
+        async refreshData() {
+            console.log('🔄 Recargando datos desde MongoDB...');
+            await this.loadInvitacionesFromDB();
+            await this.loadProyectosFromDB();
+            updateBadge();
             
-            const misProyectos = this.getMyProjects();
-            misProyectos.forEach(p => {
-                const existe = projects.find(pp => pp.name === p.nombre);
-                if (!existe) {
-                    projects.push({
-                        id: Date.now(),
-                        name: p.nombre,
-                        description: p.descripcion || '',
-                        clienteId: localStorage.getItem('clienteId'),
-                        tasks: [],
-                        colaboradores: p.colaboradores || [user],
-                        createdAt: new Date().toISOString()
-                    });
-                    console.log(`✅ Proyecto "${p.nombre}" sincronizado al sistema principal`);
-                }
-            });
-            
-            localStorage.setItem('projects', JSON.stringify(projects));
-            if (typeof renderProjects === 'function') renderProjects();
+            if (document.getElementById('colabPanel')) {
+                const panel = document.getElementById('colabPanel');
+                panel.remove();
+                panelAbierto = false;
+                setTimeout(() => togglePanel(), 500);
+            }
         }
     };
     
@@ -527,10 +557,9 @@
         const count = pendientes.length;
         badge.textContent = count;
         badge.style.display = count > 0 ? 'flex' : 'none';
-        console.log('🔴 Badge actualizado:', count, 'invitaciones');
     }
     
-    function togglePanel() {
+    async function togglePanel() {
         const existing = document.getElementById('colabPanel');
         if (existing) {
             existing.remove();
@@ -538,7 +567,9 @@
             return;
         }
         
-        loadData();
+        // Cargar datos desde MongoDB antes de mostrar el panel
+        await Core.refreshData();
+        
         const user = getCurrentUser();
         const pendientes = Core.getMyInvitations();
         const misProyectos = Core.getMyProjects();
@@ -547,7 +578,7 @@
         console.log('========================================');
         console.log('📊 PANEL DE COLABORACIÓN');
         console.log('👤 Usuario actual:', user);
-        console.log('📂 Proyectos donde es colaborador:', misProyectos.length);
+        console.log('📂 Proyectos colaborativos:', misProyectos.length);
         console.log('👑 Proyectos donde es dueño:', proyectosDueño.length);
         console.log('📩 Invitaciones pendientes:', pendientes.length);
         console.log('========================================');
@@ -605,7 +636,7 @@
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 20px;">👥</span>
                     <span style="font-weight: 600; font-size: 16px;">Colaboración</span>
-                    ${pendientes.length > 0 ? `<span style="background: #ef4444; padding: 2px 10px; border-radius: 12px; font-size: 11px; animation: pulse 1s infinite;">${pendientes.length}</span>` : ''}
+                    ${pendientes.length > 0 ? `<span style="background: #ef4444; padding: 2px 10px; border-radius: 12px; font-size: 11px;">${pendientes.length}</span>` : ''}
                 </div>
                 <button onclick="document.getElementById('colabPanel').remove()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
             </div>
@@ -617,10 +648,10 @@
                     ${pendientes.length === 0 ? `
                         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">
                             No tienes invitaciones pendientes
-                            ${data.invitaciones.length > 0 ? `<br><span style="font-size: 11px;">(Hay ${data.invitaciones.length} invitaciones totales, pero ninguna para ti)</span>` : ''}
+                            <br><span style="font-size: 11px;">Las invitaciones se cargan desde la base de datos</span>
                         </div>
                     ` : pendientes.map(inv => `
-                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #f59e0b; animation: slideIn 0.3s ease;">
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #f59e0b;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-weight: 600;">${inv.proyectoNombre}</div>
@@ -666,20 +697,10 @@
                 
                 ${seccionInvitar}
                 
-                <!-- Debug info -->
-                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b;">
-                    <details>
-                        <summary>🔍 Debug - Todas las invitaciones (${data.invitaciones.length})</summary>
-                        <div style="margin-top: 5px; font-family: monospace; max-height: 150px; overflow: auto;">
-                            ${data.invitaciones.length === 0 ? 'No hay invitaciones' : 
-                            data.invitaciones.map((inv, idx) => 
-                                `<div style="padding: 2px 0; border-bottom: 1px solid #1e293b;">
-                                    ${idx+1}. Para: <strong>${inv.email}</strong> | Proyecto: ${inv.proyectoNombre} | Estado: ${inv.estado} | De: ${inv.creador}
-                                    ${inv.email.trim().toLowerCase() === user.trim().toLowerCase() ? ' 👈 (TÚ)' : ''}
-                                </div>`
-                            ).join('')}
-                        </div>
-                    </details>
+                <!-- Info de sincronización -->
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
+                    🔄 Datos sincronizados con MongoDB
+                    <br><span style="font-size: 9px;">Las invitaciones se comparten entre todos los usuarios</span>
                 </div>
             </div>
         `;
@@ -687,7 +708,7 @@
         document.body.appendChild(panel);
         panelAbierto = true;
         
-        window.enviarInvitacion = function() {
+        window.enviarInvitacion = async function() {
             const select = document.getElementById('invitarProyectoSelect');
             const emailInput = document.getElementById('invitarEmailInput');
             const mensaje = document.getElementById('invitarMensaje');
@@ -709,7 +730,7 @@
             }
             
             mensaje.innerHTML = '<span style="color: #f59e0b;">⏳ Enviando...</span>';
-            const resultado = Core.sendInvitation(Number(proyectoId), email);
+            const resultado = await Core.sendInvitation(Number(proyectoId), email);
             if (resultado) {
                 mensaje.innerHTML = `<span style="color: #10b981;">✅ Invitación enviada a ${email}</span>`;
                 emailInput.value = '';
@@ -717,49 +738,31 @@
             }
         };
         
-        window.aceptarInvitacion = function(id) {
-            Core.acceptInvitation(id);
+        window.aceptarInvitacion = async function(id) {
+            await Core.acceptInvitation(id);
         };
-    }
-    
-    function renderPanel() {
-        if (document.getElementById('colabPanel')) {
-            const panel = document.getElementById('colabPanel');
-            panel.remove();
-            panelAbierto = false;
-            setTimeout(() => togglePanel(), 300);
-        }
     }
     
     // ============================================
     // INICIALIZACIÓN
     // ============================================
-    function init() {
-        console.log('🚀 Inicializando sistema de colaboración...');
+    async function init() {
+        console.log('🚀 Inicializando sistema de colaboración con MongoDB...');
         loadData();
-        Core.syncExistingProjects();
+        
+        // Cargar datos desde MongoDB
+        await Core.loadInvitacionesFromDB();
+        await Core.loadProyectosFromDB();
+        
         createFloatingButton();
         
-        // Sincronización periódica más frecuente para invitaciones
-        setInterval(function() {
-            const oldData = JSON.stringify(data);
-            loadData();
-            const newData = JSON.stringify(data);
-            if (oldData !== newData) {
-                console.log('🔄 Datos actualizados automáticamente');
-                updateBadge();
-                if (document.getElementById('colabPanel')) {
-                    const panel = document.getElementById('colabPanel');
-                    panel.remove();
-                    panelAbierto = false;
-                    setTimeout(() => togglePanel(), 300);
-                }
-            }
-        }, 5000); // Cada 5 segundos para detectar invitaciones nuevas
+        // Sincronización periódica con MongoDB (cada 15 segundos)
+        setInterval(async function() {
+            await Core.refreshData();
+        }, 15000);
         
-        console.log('✅ SISTEMA DE COLABORACIÓN LISTO');
-        console.log('📌 Para debug: console.log(data)');
-        console.log('📌 Para ver invitaciones: Core.getMyInvitations()');
+        console.log('✅ SISTEMA DE COLABORACIÓN LISTO CON MONGODB');
+        console.log('📌 Las invitaciones ahora se comparten entre todos los usuarios');
     }
     
     // ============================================
@@ -776,39 +779,13 @@
     // ============================================
     window.addEventListener('storage', function(e) {
         if (e.key === 'colaboracion_data' || e.key === '_colab_timestamp') {
-            console.log('📥 Cambio detectado en colaboración desde otra pestaña');
+            console.log('📥 Cambio detectado en localStorage');
             loadData();
             updateBadge();
-            if (document.getElementById('colabPanel')) {
-                const panel = document.getElementById('colabPanel');
-                if (panel) {
-                    panel.remove();
-                    panelAbierto = false;
-                    setTimeout(() => togglePanel(), 300);
-                }
-            }
         }
     });
     
-    // Estilos para animaciones
-    if (!document.getElementById('colabStyles')) {
-        const style = document.createElement('style');
-        style.id = 'colabStyles';
-        style.textContent = `
-            @keyframes slideIn {
-                from { opacity: 0; transform: translateX(-20px); }
-                to { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.5; }
-                100% { opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    console.log('✅ Sistema de colaboración cargado');
-    console.log('🔧 Para forzar actualización: Core.syncExistingProjects()');
+    console.log('✅ Sistema de colaboración con MongoDB cargado');
+    console.log('📌 Para forzar actualización: Core.refreshData()');
     
 })();
