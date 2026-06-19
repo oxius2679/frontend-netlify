@@ -1,41 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA CON LIMPIEZA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA
 // ============================================================
 
 (function() {
     'use strict';
     
     console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA');
-    
-    // ============================================
-    // 🧹 LIMPIAR DATOS VIEJOS DEL LOCALSTORAGE
-    // ============================================
-    function limpiarDatosViejos() {
-        const keysToRemove = [
-            'colaboracion_data',
-            '_colab_timestamp',
-            'proyectos_colaborativos',
-            'invitaciones_cache',
-            'proyectos_cache'
-        ];
-        
-        let eliminados = 0;
-        keysToRemove.forEach(key => {
-            if (localStorage.getItem(key)) {
-                localStorage.removeItem(key);
-                eliminados++;
-                console.log(`🗑️ Eliminado: ${key}`);
-            }
-        });
-        
-        if (eliminados > 0) {
-            console.log(`🧹 Limpiados ${eliminados} items del localStorage`);
-        }
-        return eliminados;
-    }
-    
-    // Ejecutar limpieza inmediatamente
-    limpiarDatosViejos();
     
     // ============================================
     // CONFIGURACIÓN
@@ -138,7 +108,7 @@
             if (respProy.ok) {
                 const data = await respProy.json();
                 proyectosColaborativos = data.proyectos || [];
-                console.log('📂 Proyectos colaborativos (ÚNICOS):', proyectosColaborativos.length);
+                console.log('📂 Proyectos colaborativos:', proyectosColaborativos.length);
                 proyectosColaborativos.forEach(p => console.log(`  - ${p.nombre} (${p.colaboradores?.length || 0} colaboradores)`));
             }
             
@@ -147,6 +117,46 @@
         } catch (error) {
             console.error('❌ Error cargando datos:', error);
         }
+    }
+    
+    // ============================================
+    // ASIGNAR DUEÑOS AUTOMÁTICAMENTE
+    // ============================================
+    async function asignarDueños() {
+        const user = getCurrentUser();
+        if (!user) return;
+        
+        console.log('🔧 Asignando dueños a proyectos...');
+        
+        for (const proyecto of proyectosColaborativos) {
+            // Si no tiene colaboradores o el primer colaborador no es el usuario
+            if (!proyecto.colaboradores || proyecto.colaboradores.length === 0 || proyecto.colaboradores[0] !== user) {
+                console.log(`  - Asignando dueño a "${proyecto.nombre}"`);
+                
+                try {
+                    const response = await fetch(`${API_URL}/invitations`, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify({
+                            email: user,
+                            proyectoIndex: 0,
+                            proyectoNombre: proyecto.nombre,
+                            rol: 'dueño'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        console.log(`  ✅ Dueño asignado a "${proyecto.nombre}"`);
+                    }
+                } catch (error) {
+                    console.error(`  ❌ Error con "${proyecto.nombre}":`, error);
+                }
+            }
+        }
+        
+        // Recargar datos después de asignar dueños
+        await cargarDatos();
+        console.log('✅ Dueños asignados correctamente');
     }
     
     // ============================================
@@ -211,6 +221,12 @@
             
             if (!this.esDueñoDeProyecto(proyectoId)) {
                 alert('❌ Solo el dueño del proyecto puede invitar');
+                return false;
+            }
+            
+            // Verificar si el email ya es colaborador
+            if (proyecto.colaboradores && proyecto.colaboradores.includes(email)) {
+                alert(`⚠️ ${email} ya es colaborador de "${proyecto.nombre}"`);
                 return false;
             }
             
@@ -405,10 +421,10 @@
         console.log('========================================');
         console.log('📊 PANEL DE COLABORACIÓN');
         console.log('👤 Usuario:', user);
-        console.log('📂 Proyectos (desde MongoDB):', misProyectos.length);
+        console.log('📂 Proyectos colaborativos:', misProyectos.length);
         misProyectos.forEach(p => console.log(`  - ${p.nombre}`));
-        console.log('👑 Dueño:', proyectosDueño.length);
-        console.log('📩 Invitaciones:', pendientes.length);
+        console.log('👑 Proyectos donde eres dueño:', proyectosDueño.length);
+        console.log('📩 Invitaciones pendientes:', pendientes.length);
         console.log('========================================');
         
         const puedeInvitar = proyectosDueño.length > 0;
@@ -455,7 +471,7 @@
             </div>
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
-                💡 Para invitar necesitas ser dueño de un proyecto.
+                💡 Para invitar colaboradores necesitas ser dueño de un proyecto.
                 <br>El dueño es el primer colaborador en la lista.
             </div>
         `;
@@ -471,7 +487,7 @@
             </div>
             
             <div style="padding: 16px; overflow-y: auto; flex: 1; max-height: 400px;">
-                <!-- Invitaciones -->
+                <!-- Invitaciones Pendientes -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #f59e0b; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📩 Invitaciones Pendientes</div>
                     ${pendientes.length === 0 ? `
@@ -483,20 +499,15 @@
                                     <div style="font-weight: 600;">${inv.proyectoNombre}</div>
                                     <div style="font-size: 11px; color: #94a3b8;">De: ${inv.creador || 'Desconocido'}</div>
                                 </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button onclick="aceptarInvitacion('${inv._id || inv.id}')" style="background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
-                                        ✅ Aceptar
-                                    </button>
-                                    <button onclick="rechazarInvitacion('${inv._id || inv.id}')" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
-                                        ✕
-                                    </button>
-                                </div>
+                                <button onclick="aceptarInvitacion('${inv._id || inv.id}')" style="background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
+                                    ✅ Aceptar
+                                </button>
                             </div>
                         </div>
                     `).join('')}
                 </div>
                 
-                <!-- Proyectos -->
+                <!-- Mis Proyectos Colaborativos -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Mis Proyectos Colaborativos</div>
                     ${misProyectos.length === 0 ? `
@@ -513,6 +524,7 @@
                                         <div style="font-weight: 600;">${p.nombre}</div>
                                         <div style="font-size: 11px; color: #94a3b8;">
                                             ${p.colaboradores?.length || 0} colaboradores
+                                            ${p.colaboradores ? `: ${p.colaboradores.join(', ')}` : ''}
                                         </div>
                                     </div>
                                     <span style="color: ${esDueño ? '#8b5cf6' : '#10b981'}; font-size: 11px; font-weight: 600;">
@@ -527,8 +539,7 @@
                 ${seccionInvitar}
                 
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
-                    🔄 Datos desde MongoDB - ${misProyectos.length} proyectos únicos
-                    <br><span style="font-size: 9px;">${new Date().toLocaleTimeString()}</span>
+                    🔄 Datos desde MongoDB - ${misProyectos.length} proyectos
                 </div>
             </div>
         `;
@@ -582,9 +593,17 @@
     // ============================================
     async function init() {
         console.log('🚀 Inicializando sistema de colaboración...');
+        
+        // Cargar datos
         await cargarDatos();
+        
+        // Asignar dueños automáticamente
+        await asignarDueños();
+        
+        // Crear botón flotante
         createFloatingButton();
         
+        // Sincronización periódica
         setInterval(async function() {
             await cargarDatos();
         }, 15000);
@@ -596,6 +615,9 @@
         });
     }
     
+    // ============================================
+    // EJECUTAR
+    // ============================================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
