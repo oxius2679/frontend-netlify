@@ -1,17 +1,18 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN QUE SÍ FUNCIONA
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN QUE SÍ FUNCIONA');
     
     // ============================================
     // CONFIGURACIÓN
     // ============================================
     const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com/api';
     let invitaciones = [];
+    let misProyectos = [];
     let proyectosColaborativos = [];
     let panelAbierto = false;
     
@@ -77,7 +78,7 @@
     }
     
     // ============================================
-    // CARGAR DATOS - SOLO DESDE MONGODB
+    // CARGAR DATOS - CON MIS PROYECTOS
     // ============================================
     async function cargarDatos() {
         const user = getCurrentUser();
@@ -99,17 +100,29 @@
                 console.log('📨 Invitaciones:', invitaciones.length);
             }
             
-            // 2. Cargar proyectos colaborativos
-            console.log('📂 Cargando proyectos colaborativos...');
-            const respProy = await fetch(`${API_URL}/colaboracion/proyectos`, {
+            // 2. Cargar MIS PROYECTOS (importante para poder invitar)
+            console.log('📂 Cargando MIS proyectos...');
+            const respMis = await fetch(`${API_URL}/mis-proyectos`, {
                 headers: getHeaders()
             });
             
-            if (respProy.ok) {
-                const data = await respProy.json();
+            if (respMis.ok) {
+                const data = await respMis.json();
+                misProyectos = data.projects || [];
+                console.log('📂 MIS proyectos:', misProyectos.length);
+                misProyectos.forEach(p => console.log(`  - ${p.name}`));
+            }
+            
+            // 3. Cargar proyectos colaborativos
+            console.log('📂 Cargando proyectos colaborativos...');
+            const respCol = await fetch(`${API_URL}/colaboracion/proyectos`, {
+                headers: getHeaders()
+            });
+            
+            if (respCol.ok) {
+                const data = await respCol.json();
                 proyectosColaborativos = data.proyectos || [];
-                console.log('📂 Proyectos colaborativos:', proyectosColaborativos.length);
-                proyectosColaborativos.forEach(p => console.log(`  - ${p.nombre} (${p.colaboradores?.length || 0} colaboradores)`));
+                console.log('📂 Colaborativos:', proyectosColaborativos.length);
             }
             
             updateBadge();
@@ -120,78 +133,22 @@
     }
     
     // ============================================
-    // ASIGNAR DUEÑOS AUTOMÁTICAMENTE
-    // ============================================
-    async function asignarDueños() {
-        const user = getCurrentUser();
-        if (!user) return;
-        
-        console.log('🔧 Asignando dueños a proyectos...');
-        
-        for (const proyecto of proyectosColaborativos) {
-            // Si no tiene colaboradores o el primer colaborador no es el usuario
-            if (!proyecto.colaboradores || proyecto.colaboradores.length === 0 || proyecto.colaboradores[0] !== user) {
-                console.log(`  - Asignando dueño a "${proyecto.nombre}"`);
-                
-                try {
-                    const response = await fetch(`${API_URL}/invitations`, {
-                        method: 'POST',
-                        headers: getHeaders(),
-                        body: JSON.stringify({
-                            email: user,
-                            proyectoIndex: 0,
-                            proyectoNombre: proyecto.nombre,
-                            rol: 'dueño'
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        console.log(`  ✅ Dueño asignado a "${proyecto.nombre}"`);
-                    }
-                } catch (error) {
-                    console.error(`  ❌ Error con "${proyecto.nombre}":`, error);
-                }
-            }
-        }
-        
-        // Recargar datos después de asignar dueños
-        await cargarDatos();
-        console.log('✅ Dueños asignados correctamente');
-    }
-    
-    // ============================================
     // NÚCLEO DEL SISTEMA
     // ============================================
     const Core = {
-        getMyProjects: function() {
+        // TODOS los proyectos para mostrar en el panel
+        getAllProjects: function() {
+            return [...misProyectos, ...proyectosColaborativos];
+        },
+        
+        // Mis proyectos (donde soy dueño)
+        getMisProyectos: function() {
+            return misProyectos;
+        },
+        
+        // Proyectos donde me invitaron
+        getProyectosColaborativos: function() {
             return proyectosColaborativos;
-        },
-        
-        getMisProyectosComoDueño: function() {
-            const user = getCurrentUser();
-            if (!user) return [];
-            
-            const userNormalizado = user.trim().toLowerCase();
-            
-            return proyectosColaborativos.filter(p => {
-                if (p.colaboradores && p.colaboradores.length > 0) {
-                    return p.colaboradores[0].trim().toLowerCase() === userNormalizado;
-                }
-                return false;
-            });
-        },
-        
-        esDueñoDeProyecto: function(proyectoId) {
-            const user = getCurrentUser();
-            if (!user) return false;
-            
-            const userNormalizado = user.trim().toLowerCase();
-            const proyecto = proyectosColaborativos.find(p => p.id == proyectoId);
-            if (!proyecto) return false;
-            
-            return proyecto.colaboradores && 
-                   proyecto.colaboradores.length > 0 && 
-                   proyecto.colaboradores[0].trim().toLowerCase() === userNormalizado;
         },
         
         getMyInvitations: function() {
@@ -213,20 +170,16 @@
                 return false;
             }
             
-            const proyecto = proyectosColaborativos.find(p => p.id == proyectoId);
+            // Buscar en mis proyectos (solo dueño puede invitar)
+            const proyecto = misProyectos.find(p => p.id == proyectoId || p._id == proyectoId);
             if (!proyecto) {
-                alert('❌ Proyecto no encontrado');
-                return false;
-            }
-            
-            if (!this.esDueñoDeProyecto(proyectoId)) {
-                alert('❌ Solo el dueño del proyecto puede invitar');
+                alert('❌ Proyecto no encontrado o no eres dueño');
                 return false;
             }
             
             // Verificar si el email ya es colaborador
             if (proyecto.colaboradores && proyecto.colaboradores.includes(email)) {
-                alert(`⚠️ ${email} ya es colaborador de "${proyecto.nombre}"`);
+                alert(`⚠️ ${email} ya es colaborador de "${proyecto.name}"`);
                 return false;
             }
             
@@ -237,7 +190,7 @@
                     body: JSON.stringify({
                         email: email,
                         proyectoIndex: 0,
-                        proyectoNombre: proyecto.nombre,
+                        proyectoNombre: proyecto.name,
                         rol: 'colaborador'
                     })
                 });
@@ -410,24 +363,25 @@
             return;
         }
         
-        // Recargar datos desde MongoDB
         await cargarDatos();
         
         const user = getCurrentUser();
         const pendientes = Core.getMyInvitations();
-        const misProyectos = Core.getMyProjects();
-        const proyectosDueño = Core.getMisProyectosComoDueño();
+        const misProyectosList = Core.getMisProyectos();
+        const colaborativosList = Core.getProyectosColaborativos();
+        const todosLosProyectos = Core.getAllProjects();
         
         console.log('========================================');
         console.log('📊 PANEL DE COLABORACIÓN');
         console.log('👤 Usuario:', user);
-        console.log('📂 Proyectos colaborativos:', misProyectos.length);
-        misProyectos.forEach(p => console.log(`  - ${p.nombre}`));
-        console.log('👑 Proyectos donde eres dueño:', proyectosDueño.length);
-        console.log('📩 Invitaciones pendientes:', pendientes.length);
+        console.log('📂 MIS proyectos:', misProyectosList.length);
+        misProyectosList.forEach(p => console.log(`  - ${p.name}`));
+        console.log('📂 Colaborativos:', colaborativosList.length);
+        console.log('📩 Invitaciones:', pendientes.length);
         console.log('========================================');
         
-        const puedeInvitar = proyectosDueño.length > 0;
+        // Puede invitar si tiene proyectos propios
+        const puedeInvitar = misProyectosList.length > 0;
         
         const panel = document.createElement('div');
         panel.id = 'colabPanel';
@@ -449,8 +403,9 @@
             flex-direction: column;
         `;
         
-        const proyectosParaInvitar = proyectosDueño.map(p => 
-            `<option value="${p.id}">${p.nombre}</option>`
+        // Proyectos para invitar (MIS proyectos)
+        const proyectosParaInvitar = misProyectosList.map(p => 
+            `<option value="${p.id || p._id}">${p.name}</option>`
         ).join('');
         
         const seccionInvitar = puedeInvitar ? `
@@ -459,6 +414,7 @@
                 <div style="margin-bottom: 8px;">
                     <select id="invitarProyectoSelect" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 13px;">
                         ${proyectosParaInvitar}
+                        ${misProyectosList.length === 0 ? '<option value="">No tienes proyectos</option>' : ''}
                     </select>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -471,8 +427,7 @@
             </div>
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
-                💡 Para invitar colaboradores necesitas ser dueño de un proyecto.
-                <br>El dueño es el primer colaborador en la lista.
+                💡 Crea un proyecto en el menú lateral para poder invitar colaboradores.
             </div>
         `;
         
@@ -507,39 +462,50 @@
                     `).join('')}
                 </div>
                 
-                <!-- Mis Proyectos Colaborativos -->
+                <!-- MIS PROYECTOS (donde soy dueño) -->
                 <div style="margin-bottom: 20px;">
-                    <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Mis Proyectos Colaborativos</div>
-                    ${misProyectos.length === 0 ? `
-                        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">
-                            No estás en ningún proyecto colaborativo
-                            <br><span style="font-size: 11px;">Los proyectos aparecerán cuando alguien te invite</span>
-                        </div>
-                    ` : misProyectos.map(p => {
-                        const esDueño = proyectosDueño.some(dp => dp.id === p.id);
-                        return `
-                            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid ${esDueño ? '#8b5cf6' : '#10b981'};">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600;">${p.nombre}</div>
-                                        <div style="font-size: 11px; color: #94a3b8;">
-                                            ${p.colaboradores?.length || 0} colaboradores
-                                            ${p.colaboradores ? `: ${p.colaboradores.join(', ')}` : ''}
-                                        </div>
+                    <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">👑 Mis Proyectos (Dueño)</div>
+                    ${misProyectosList.length === 0 ? `
+                        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No tienes proyectos propios</div>
+                    ` : misProyectosList.map(p => `
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #8b5cf6;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">${p.name}</div>
+                                    <div style="font-size: 11px; color: #94a3b8;">
+                                        ${p.colaboradores?.length || 1} colaboradores
                                     </div>
-                                    <span style="color: ${esDueño ? '#8b5cf6' : '#10b981'}; font-size: 11px; font-weight: 600;">
-                                        ${esDueño ? '👑 DUEÑO' : '✅ Colaborador'}
-                                    </span>
                                 </div>
+                                <span style="color: #8b5cf6; font-size: 11px; font-weight: 600;">👑 DUEÑO</span>
                             </div>
-                        `;
-                    }).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <!-- Proyectos donde soy colaborador -->
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Proyectos Colaborativos</div>
+                    ${colaborativosList.length === 0 ? `
+                        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No estás en proyectos colaborativos</div>
+                    ` : colaborativosList.map(p => `
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #10b981;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">${p.nombre}</div>
+                                    <div style="font-size: 11px; color: #94a3b8;">
+                                        ${p.colaboradores?.length || 1} colaboradores
+                                    </div>
+                                </div>
+                                <span style="color: #10b981; font-size: 11px; font-weight: 600;">✅ Colaborador</span>
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
                 
                 ${seccionInvitar}
                 
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
-                    🔄 Datos desde MongoDB - ${misProyectos.length} proyectos
+                    🔄 ${misProyectosList.length} propios | ${colaborativosList.length} colaborativos
                 </div>
             </div>
         `;
@@ -569,7 +535,7 @@
             }
             
             mensaje.innerHTML = '<span style="color: #f59e0b;">⏳ Enviando...</span>';
-            const resultado = await Core.sendInvitation(Number(proyectoId), email);
+            const resultado = await Core.sendInvitation(proyectoId, email);
             if (resultado) {
                 mensaje.innerHTML = `<span style="color: #10b981;">✅ Invitación enviada a ${email}</span>`;
                 emailInput.value = '';
@@ -593,31 +559,18 @@
     // ============================================
     async function init() {
         console.log('🚀 Inicializando sistema de colaboración...');
-        
-        // Cargar datos
         await cargarDatos();
-        
-        // Asignar dueños automáticamente
-        await asignarDueños();
-        
-        // Crear botón flotante
         createFloatingButton();
         
-        // Sincronización periódica
         setInterval(async function() {
             await cargarDatos();
         }, 15000);
         
         console.log('✅ Sistema listo');
-        console.log('📂 Proyectos cargados:', proyectosColaborativos.length);
-        proyectosColaborativos.forEach(p => {
-            console.log(`  - ${p.nombre} (${p.colaboradores?.length || 0} colaboradores)`);
-        });
+        console.log('📂 Mis proyectos:', misProyectos.length);
+        console.log('📂 Colaborativos:', proyectosColaborativos.length);
     }
     
-    // ============================================
-    // EJECUTAR
-    // ============================================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
