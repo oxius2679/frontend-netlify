@@ -1,15 +1,12 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN QUE SÍ FUNCIONA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN FUNCIONAL
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN QUE SÍ FUNCIONA');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN FUNCIONAL');
     
-    // ============================================
-    // CONFIGURACIÓN
-    // ============================================
     const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com/api';
     let invitaciones = [];
     let misProyectos = [];
@@ -78,7 +75,7 @@
     }
     
     // ============================================
-    // CARGAR DATOS - CON MIS PROYECTOS
+    // CARGAR DATOS
     // ============================================
     async function cargarDatos() {
         const user = getCurrentUser();
@@ -88,19 +85,7 @@
         }
         
         try {
-            // 1. Cargar invitaciones
-            console.log('📨 Cargando invitaciones...');
-            const respInv = await fetch(`${API_URL}/colaboracion/invitaciones`, {
-                headers: getHeaders()
-            });
-            
-            if (respInv.ok) {
-                const data = await respInv.json();
-                invitaciones = data.invitaciones || [];
-                console.log('📨 Invitaciones:', invitaciones.length);
-            }
-            
-            // 2. Cargar MIS PROYECTOS (importante para poder invitar)
+            // 1. Cargar MIS PROYECTOS
             console.log('📂 Cargando MIS proyectos...');
             const respMis = await fetch(`${API_URL}/mis-proyectos`, {
                 headers: getHeaders()
@@ -111,6 +96,18 @@
                 misProyectos = data.projects || [];
                 console.log('📂 MIS proyectos:', misProyectos.length);
                 misProyectos.forEach(p => console.log(`  - ${p.name}`));
+            }
+            
+            // 2. Cargar invitaciones
+            console.log('📨 Cargando invitaciones...');
+            const respInv = await fetch(`${API_URL}/colaboracion/invitaciones`, {
+                headers: getHeaders()
+            });
+            
+            if (respInv.ok) {
+                const data = await respInv.json();
+                invitaciones = data.invitaciones || [];
+                console.log('📨 Invitaciones:', invitaciones.length);
             }
             
             // 3. Cargar proyectos colaborativos
@@ -133,20 +130,13 @@
     }
     
     // ============================================
-    // NÚCLEO DEL SISTEMA
+    // NÚCLEO
     // ============================================
     const Core = {
-        // TODOS los proyectos para mostrar en el panel
-        getAllProjects: function() {
-            return [...misProyectos, ...proyectosColaborativos];
-        },
-        
-        // Mis proyectos (donde soy dueño)
         getMisProyectos: function() {
             return misProyectos;
         },
         
-        // Proyectos donde me invitaron
         getProyectosColaborativos: function() {
             return proyectosColaborativos;
         },
@@ -170,16 +160,14 @@
                 return false;
             }
             
-            // Buscar en mis proyectos (solo dueño puede invitar)
-            const proyecto = misProyectos.find(p => p.id == proyectoId || p._id == proyectoId);
+            const proyecto = misProyectos.find(p => p.id == proyectoId);
             if (!proyecto) {
                 alert('❌ Proyecto no encontrado o no eres dueño');
                 return false;
             }
             
-            // Verificar si el email ya es colaborador
             if (proyecto.colaboradores && proyecto.colaboradores.includes(email)) {
-                alert(`⚠️ ${email} ya es colaborador de "${proyecto.name}"`);
+                alert(`⚠️ ${email} ya es colaborador`);
                 return false;
             }
             
@@ -213,12 +201,6 @@
         },
         
         async acceptInvitation(invitacionId) {
-            const user = getCurrentUser();
-            if (!user) {
-                alert('❌ Inicia sesión primero');
-                return false;
-            }
-            
             try {
                 const response = await fetch(`${API_URL}/colaboracion/aceptar-invitacion`, {
                     method: 'POST',
@@ -244,12 +226,6 @@
         },
         
         async rejectInvitation(invitacionId) {
-            const user = getCurrentUser();
-            if (!user) {
-                alert('❌ Inicia sesión primero');
-                return false;
-            }
-            
             try {
                 const response = await fetch(`${API_URL}/colaboracion/rechazar-invitacion`, {
                     method: 'POST',
@@ -369,10 +345,8 @@
         const pendientes = Core.getMyInvitations();
         const misProyectosList = Core.getMisProyectos();
         const colaborativosList = Core.getProyectosColaborativos();
-        const todosLosProyectos = Core.getAllProjects();
         
         console.log('========================================');
-        console.log('📊 PANEL DE COLABORACIÓN');
         console.log('👤 Usuario:', user);
         console.log('📂 MIS proyectos:', misProyectosList.length);
         misProyectosList.forEach(p => console.log(`  - ${p.name}`));
@@ -380,7 +354,6 @@
         console.log('📩 Invitaciones:', pendientes.length);
         console.log('========================================');
         
-        // Puede invitar si tiene proyectos propios
         const puedeInvitar = misProyectosList.length > 0;
         
         const panel = document.createElement('div');
@@ -403,9 +376,8 @@
             flex-direction: column;
         `;
         
-        // Proyectos para invitar (MIS proyectos)
         const proyectosParaInvitar = misProyectosList.map(p => 
-            `<option value="${p.id || p._id}">${p.name}</option>`
+            `<option value="${p.id}">${p.name}</option>`
         ).join('');
         
         const seccionInvitar = puedeInvitar ? `
@@ -414,7 +386,6 @@
                 <div style="margin-bottom: 8px;">
                     <select id="invitarProyectoSelect" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 13px;">
                         ${proyectosParaInvitar}
-                        ${misProyectosList.length === 0 ? '<option value="">No tienes proyectos</option>' : ''}
                     </select>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -442,7 +413,7 @@
             </div>
             
             <div style="padding: 16px; overflow-y: auto; flex: 1; max-height: 400px;">
-                <!-- Invitaciones Pendientes -->
+                <!-- Invitaciones -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #f59e0b; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📩 Invitaciones Pendientes</div>
                     ${pendientes.length === 0 ? `
@@ -462,9 +433,9 @@
                     `).join('')}
                 </div>
                 
-                <!-- MIS PROYECTOS (donde soy dueño) -->
+                <!-- MIS PROYECTOS -->
                 <div style="margin-bottom: 20px;">
-                    <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">👑 Mis Proyectos (Dueño)</div>
+                    <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">👑 Mis Proyectos</div>
                     ${misProyectosList.length === 0 ? `
                         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No tienes proyectos propios</div>
                     ` : misProyectosList.map(p => `
@@ -482,7 +453,7 @@
                     `).join('')}
                 </div>
                 
-                <!-- Proyectos donde soy colaborador -->
+                <!-- COLABORATIVOS -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Proyectos Colaborativos</div>
                     ${colaborativosList.length === 0 ? `
@@ -558,7 +529,7 @@
     // INICIALIZACIÓN
     // ============================================
     async function init() {
-        console.log('🚀 Inicializando sistema de colaboración...');
+        console.log('🚀 Inicializando sistema...');
         await cargarDatos();
         createFloatingButton();
         
