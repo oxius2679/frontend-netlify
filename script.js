@@ -35337,6 +35337,7 @@ function initWebSocket() {
         if (window.tiempoRealSocket) {
             window.tiempoRealSocket.disconnect();
             window.tiempoRealSocket = null;
+            tiempoRealSocket = null;
         }
         
         const socket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
@@ -35349,69 +35350,36 @@ function initWebSocket() {
         });
         
         window.tiempoRealSocket = socket;
+        tiempoRealSocket = socket;
         
-        // ============================================
-        // EVENTOS DE CONEXIÓN
-        // ============================================
         socket.on('connect', function() {
             console.log('🔗 WebSocket CONECTADO:', socket.id);
             window.socketConnected = true;
-            
+            socketConnected = true;
             if (currentProjectIndex !== undefined && currentProjectIndex !== null) {
                 console.log('📡 Unido a sala de proyecto:', currentProjectIndex);
                 socket.emit('join-project', currentProjectIndex);
             }
-            
             if (typeof showNotification === 'function') {
                 showNotification('🔗 Conectado en tiempo real', 'success');
             }
         });
         
-        socket.on('connect_error', function(error) {
-            console.error('❌ Error de conexión WebSocket:', error.message);
-            window.socketConnected = false;
-            if (error.message.includes('auth')) {
-                console.warn('⚠️ Error de autenticación - token inválido');
-            }
-        });
-        
-        socket.on('disconnect', function(reason) {
-            console.log('🔌 WebSocket desconectado:', reason);
-            window.socketConnected = false;
-            if (reason === 'io server disconnect') {
-                setTimeout(initWebSocket, 3000);
-            }
-        });
-        
-        socket.on('reconnect', function(attemptNumber) {
-            console.log('🔄 WebSocket reconectado después de', attemptNumber, 'intentos');
-            window.socketConnected = true;
-            if (currentProjectIndex !== undefined) {
-                socket.emit('join-project', currentProjectIndex);
-            }
-        });
-        
-        // ============================================
-        // EVENTOS DE PROYECTOS
-        // ============================================
         socket.on('project-updated', async (data) => {
             console.log('📡 Evento project-updated recibido', data);
-            
             const token = localStorage.getItem('authToken');
             const clienteId = localStorage.getItem('clienteId');
-            
             try {
                 const res = await fetch(`${API_URL}/api/projects?clienteId=${clienteId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const json = await res.json();
-                
                 if (json.projects) {
                     window.projects = json.projects;
                     localStorage.setItem('projects', JSON.stringify(json.projects));
-                    
-                    if (typeof renderProjects === 'function') renderProjects();
-                    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                    if (typeof window.renderKanbanTasks === 'function') {
+                        window.renderKanbanTasks();
+                    }
                     console.log('✅ Vista actualizada automáticamente');
                 }
             } catch (err) {
@@ -35419,200 +35387,179 @@ function initWebSocket() {
             }
         });
         
-        socket.on('project-created', (data) => {
-            console.log('🎉 Evento project-created recibido:', data);
-            
-            if (!data || !data.project) {
-                console.warn('⚠️ Datos de proyecto inválidos');
-                return;
-            }
-            
-            const existingIndex = projects.findIndex(p => p.id === data.project.id);
-            
-            if (existingIndex !== -1) {
-                console.log(`🔄 Proyecto ya existe, actualizando: ${data.project.name}`);
-                projects[existingIndex] = data.project;
-            } else {
-                console.log(`✅ Agregando nuevo proyecto: ${data.project.name}`);
-                projects.push(data.project);
-            }
-            
-            localStorage.setItem('projects', JSON.stringify(projects));
-            
-            // Actualizar selector de proyectos
-            const projectSelect = document.getElementById('projectSelect');
-            if (projectSelect) {
-                const currentValue = projectSelect.value;
-                projectSelect.innerHTML = '';
-                projects.forEach((project, idx) => {
-                    const option = document.createElement('option');
-                    option.value = idx;
-                    option.textContent = project.name;
-                    projectSelect.appendChild(option);
-                });
-                if (projects[currentValue]) {
-                    projectSelect.value = currentValue;
-                } else if (projects.length > 0) {
-                    projectSelect.value = 0;
-                    if (typeof selectProject === 'function') selectProject(0);
-                }
-            }
-            
-            // Actualizar menú lateral
-            if (typeof renderProjects === 'function') renderProjects();
-            
-            if (typeof showNotification === 'function') {
-                showNotification(`📡 Proyecto "${data.project.name}" ${existingIndex !== -1 ? 'actualizado' : 'creado'} por otro usuario`, 'info');
-            }
-            
-            if (typeof refreshCurrentView === 'function') refreshCurrentView();
+      socket.on('project-created', (data) => {
+    console.log('🎉 Evento project-created recibido:', data);
+    
+    if (!data || !data.project) {
+        console.warn('⚠️ Datos de proyecto inválidos');
+        return;
+    }
+    
+    // Verificar si el proyecto ya existe por ID
+    const existingIndex = projects.findIndex(p => p.id === data.project.id);
+    
+    if (existingIndex !== -1) {
+        console.log(`🔄 Proyecto ya existe, actualizando: ${data.project.name}`);
+        projects[existingIndex] = data.project;
+    } else {
+        console.log(`✅ Agregando nuevo proyecto: ${data.project.name}`);
+        projects.push(data.project);
+    }
+    
+    // Guardar en localStorage
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // ========== ACTUALIZAR SELECTOR DE PROYECTOS ==========
+    const projectSelect = document.getElementById('projectSelect');
+    console.log('🔍 Buscando projectSelect:', projectSelect);
+    
+    if (projectSelect) {
+        // Guardar el valor actual seleccionado
+        const currentValue = projectSelect.value;
+        console.log(`📌 Valor actual seleccionado: ${currentValue}`);
+        
+        // Limpiar y reconstruir el selector
+        projectSelect.innerHTML = '';
+        projects.forEach((project, idx) => {
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = project.name;
+            projectSelect.appendChild(option);
         });
         
-        // ✅ NUEVO: Colaborador unido
-        socket.on('collaborator-joined', (data) => {
-            console.log('👥 Colaborador unido al proyecto:', data);
-            if (data.projectId !== currentProjectIndex) return;
-            if (typeof showNotification === 'function') {
-                showNotification(`👤 ${data.userName || 'Alguien'} se unió al proyecto como colaborador`, 'info');
+        // Restaurar selección si el proyecto actual aún existe
+        if (projects[currentValue]) {
+            projectSelect.value = currentValue;
+            console.log(`✅ Selección restaurada: ${currentValue}`);
+        } else if (projects.length > 0) {
+            // Si el proyecto actual ya no existe, seleccionar el primero
+            projectSelect.value = 0;
+            // También actualizar currentProjectIndex si es necesario
+            if (typeof selectProject === 'function') {
+                selectProject(0);
             }
-        });
+            console.log(`⚠️ Proyecto anterior no existe, seleccionado índice 0`);
+        }
         
-        // ============================================
-        // EVENTOS DE TAREAS
-        // ============================================
+        console.log(`📋 Selector actualizado con ${projects.length} proyectos`);
+    } else {
+        console.warn('⚠️ No se encontró el elemento projectSelect en el DOM');
+        
+        // Intentar encontrar el selector por otros IDs comunes
+        const altSelect = document.getElementById('projectSelector') || 
+                          document.querySelector('select[id*="project"]') ||
+                          document.querySelector('select[name*="project"]');
+        
+        if (altSelect) {
+            console.log('🔍 Selector alternativo encontrado:', altSelect.id || altSelect.name);
+            // Actualizar el selector alternativo de manera similar
+            const currentValue = altSelect.value;
+            altSelect.innerHTML = '';
+            projects.forEach((project, idx) => {
+                const option = document.createElement('option');
+                option.value = idx;
+                option.textContent = project.name;
+                altSelect.appendChild(option);
+            });
+            if (projects[currentValue]) {
+                altSelect.value = currentValue;
+            } else if (projects.length > 0) {
+                altSelect.value = 0;
+            }
+        }
+    }
+    
+    // ========== ACTUALIZAR MENÚ LATERAL DE PROYECTOS ==========
+    const projectListContainer = document.getElementById('projectList') || 
+                                  document.querySelector('.project-list') ||
+                                  document.querySelector('[data-projects-container]');
+    
+    if (projectListContainer && typeof renderProjects === 'function') {
+        renderProjects();
+        console.log('✅ Lista de proyectos actualizada');
+    }
+    
+    // Mostrar notificación
+    if (typeof showNotification === 'function') {
+        showNotification(`📡 Proyecto "${data.project.name}" ${existingIndex !== -1 ? 'actualizado' : 'creado'} por otro usuario`, 'info');
+    }
+    
+    // Refrescar la vista actual si es necesario
+    if (typeof refreshCurrentView === 'function') {
+        refreshCurrentView();
+    }
+});
+        
         socket.on('task-created', (data) => {
             console.log('📢 Evento recibido: task-created', data);
-            
-            if (data.projectId != currentProjectIndex) {
-                console.log(`ℹ️ Evento para otro proyecto (${data.projectId}), ignorando`);
-                return;
-            }
-            
+            if (data.projectId != currentProjectIndex) return;
             const project = projects[currentProjectIndex];
-            if (!project) {
-                console.warn('⚠️ Proyecto no encontrado');
-                return;
-            }
-            
-            if (project.tasks.some(t => t.id === data.task.id)) {
-                console.log('ℹ️ Tarea ya existe, ignorando');
-                return;
-            }
-            
+            if (!project) return;
+            if (project.tasks.some(t => t.id === data.task.id)) return;
             project.tasks.push(data.task);
             updateLocalStorage();
             refreshCurrentView();
-            
             if (typeof showNotification === 'function') {
-                showNotification(`📡 Nueva tarea "${data.task.name}" agregada por ${data.userName || 'otro usuario'}`, 'info');
+                showNotification(`📡 Nueva tarea "${data.task.name}" agregada`, 'info');
             }
         });
         
-        // ✅ MEJORADO: task-updated con datos completos
         socket.on('task-updated', (data) => {
             console.log('📢 Evento recibido: task-updated', data);
-            
             if (!data || data.projectId === undefined || data.projectId === null) {
-                console.warn('⚠️ Datos inválidos en task-updated');
+                console.warn('⚠️ Datos inválidos');
                 return;
             }
-            
-            if (Number(data.projectId) !== Number(currentProjectIndex)) {
-                console.log(`ℹ️ Evento para otro proyecto (${data.projectId}), ignorando`);
-                return;
-            }
-            
+            if (Number(data.projectId) !== Number(currentProjectIndex)) return;
             const project = projects[currentProjectIndex];
-            if (!project || !project.tasks) {
-                console.warn('⚠️ Proyecto o tareas no disponibles');
-                return;
-            }
-            
+            if (!project || !project.tasks) return;
             const taskIndex = project.tasks.findIndex(t => t.id == data.taskId);
-            
             if (taskIndex !== -1 && data.task) {
-                // Actualizar la tarea con los datos completos
                 project.tasks[taskIndex] = data.task;
-                
                 localStorage.setItem('projects', JSON.stringify(projects));
-                
-                // Actualizar todas las vistas
-                refreshCurrentView();
                 if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-                if (typeof renderListTasks === 'function') renderListTasks();
-                if (typeof forceRefreshCalendar === 'function') forceRefreshCalendar();
-                if (typeof refreshBurndown === 'function') refreshBurndown();
-                
-                const cambios = data.changes ? data.changes.join(', ') : '';
-                const usuario = data.userName || 'otro usuario';
-                showNotification(`📡 Tarea "${data.task.name}" actualizada por ${usuario}${cambios ? ': ' + cambios : ''}`, 'info');
-                
-                console.log('🎉 Sincronización task-updated completada');
-            } else {
-                console.warn('⚠️ Tarea no encontrada localmente, forzando refresh...');
-                if (typeof forceRefreshFromBackend === 'function') {
-                    forceRefreshFromBackend();
+                if (typeof showNotification === 'function') {
+                    showNotification(`📡 Tarea "${data.task.name}" actualizada en tiempo real`, 'info');
                 }
+                console.log('🎉 Sincronización completada exitosamente');
+            } else {
+                if (typeof forceRefreshFromBackend === 'function') forceRefreshFromBackend();
             }
         });
         
         socket.on('task-deleted', (data) => {
             console.log('📢 Evento recibido: task-deleted', data);
-            
-            if (data.projectId != currentProjectIndex) {
-                console.log(`ℹ️ Evento para otro proyecto (${data.projectId}), ignorando`);
-                return;
-            }
-            
+            if (data.projectId != currentProjectIndex) return;
             const project = projects[currentProjectIndex];
             if (!project) return;
-            
             const idx = project.tasks.findIndex(t => t.id === data.taskId);
             if (idx !== -1) {
                 const taskName = project.tasks[idx].name;
                 project.tasks.splice(idx, 1);
                 updateLocalStorage();
                 refreshCurrentView();
-                
                 if (typeof showNotification === 'function') {
-                    showNotification(`📡 Tarea "${taskName}" eliminada por ${data.userName || 'otro usuario'}`, 'info');
+                    showNotification(`📡 Tarea "${taskName}" eliminada`, 'info');
                 }
             }
         });
         
         socket.on('task-moved', (data) => {
             console.log('📢 Evento recibido: task-moved', data);
-            
-            if (data.projectId != currentProjectIndex) {
-                console.log(`ℹ️ Evento para otro proyecto (${data.projectId}), ignorando`);
-                return;
-            }
-            
+            if (data.projectId != currentProjectIndex) return;
             const project = projects[currentProjectIndex];
             if (!project) return;
-            
             const task = project.tasks.find(t => t.id === data.taskId);
             if (task && task.status !== data.newStatus) {
-                const oldStatus = task.status;
                 task.status = data.newStatus;
-                
-                // Actualizar progreso según estado
-                if (data.newStatus === 'completed') task.progress = 100;
-                else if (data.newStatus === 'inProgress' && (!task.progress || task.progress < 50)) task.progress = 50;
-                else if (data.newStatus === 'pending') task.progress = 0;
-                
                 updateLocalStorage();
                 refreshCurrentView();
-                
                 if (typeof showNotification === 'function') {
-                    showNotification(`📡 Tarea "${task.name}" movida de ${oldStatus} a ${data.newStatus} por ${data.userName || 'otro usuario'}`, 'info');
+                    showNotification(`📡 Tarea "${task.name}" movida a ${data.newStatus}`, 'info');
                 }
             }
         });
         
-        // ============================================
-        // EVENTOS DE USUARIOS
-        // ============================================
         socket.on('user-joined', function(data) {
             console.log('👤 Usuario unido:', data);
             if (typeof showNotification === 'function') {
@@ -35624,10 +35571,39 @@ function initWebSocket() {
             console.log('👋 Usuario desconectado:', data);
         });
         
+        socket.on('connect_error', function(error) {
+            console.error('❌ Error de conexión WebSocket:', error.message);
+            window.socketConnected = false;
+            socketConnected = false;
+            if (error.message.includes('auth')) {
+                console.warn('⚠️ Error de autenticación - token inválido');
+            }
+        });
+        
+        socket.on('disconnect', function(reason) {
+            console.log('🔌 WebSocket desconectado:', reason);
+            window.socketConnected = false;
+            socketConnected = false;
+            if (reason === 'io server disconnect') {
+                setTimeout(initWebSocket, 3000);
+            }
+        });
+        
+        socket.on('reconnect', function(attemptNumber) {
+            console.log('🔄 WebSocket reconectado después de', attemptNumber, 'intentos');
+            window.socketConnected = true;
+            socketConnected = true;
+            if (currentProjectIndex !== undefined) {
+                socket.emit('join-project', currentProjectIndex);
+            }
+        });
+        
     } catch (error) {
         console.error('❌ Error en initWebSocket:', error);
         window.socketConnected = false;
+        socketConnected = false;
     }
+
 
 
 
@@ -39584,32 +39560,30 @@ function createNewTask(e) {
 
 function deleteTask(taskStr) {
     const task = JSON.parse(decodeURIComponent(taskStr));
-    
     if (confirm(`¿Estás seguro de eliminar "${task.name}"? Esta acción no se puede deshacer.`)) {
-
+        
+        // Notificaciones
         const project = projects[currentProjectIndex];
-        const projectName = project.name;
-
-        // ✅ 🔥 EMITIR EVENTO WEBSOCKET PARA ELIMINACIÓN
-        if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-            window.tiempoRealSocket.emit('task-deleted', {
+        if (window.SlackNotifier) {
+            window.SlackNotifier.taskDeleted(task.name, project.name);
+        }
+        
+        if (tiempoRealSocket && tiempoRealSocket.connected) {
+            tiempoRealSocket.emit('task-changed', {
                 projectId: currentProjectIndex,
                 taskId: task.id,
                 taskName: task.name,
-                projectName: projectName,
-                userName: localStorage.getItem('userName') || 'Usuario',
+                userName: 'Usuario actual',
+                type: 'task-deleted',
                 timestamp: new Date().toISOString()
             });
-            console.log('📤 Evento task-deleted emitido');
         }
-
-        if (window.SlackNotifier) {
-            SlackNotifier.taskDeleted(task.name, projectName);
-        }
-
+        
         // Eliminar tarea
         projects[currentProjectIndex].tasks = projects[currentProjectIndex].tasks.filter(t => t.id !== task.id);
         updateLocalStorage();
+        if (window.SlackNotifier) SlackNotifier.taskDeleted(task.name, projects[currentProjectIndex].name);
+
 
         // Actualizar vistas
         actualizarAsignados();
@@ -39617,16 +39591,18 @@ function deleteTask(taskStr) {
         generatePieChart(getStats());
         updateProjectProgress();
         showNotification(`Tarea "${task.name}" eliminada`);
-
+        
+        // Disparar eventos
         document.dispatchEvent(new Event('taskDeleted'));
         document.dispatchEvent(new Event('tasksRendered'));
-
-        // Actualizar todas las vistas
+        
+        // Actualizar todas las vistas después de un breve delay
         setTimeout(() => {
             if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
             if (typeof refreshBurndown === 'function') refreshBurndown();
             if (typeof forceRefreshCalendar === 'function') forceRefreshCalendar();
-
+            
+            // Actualizar vista activa
             const activeView = getActiveView();
             if (activeView === 'list' && typeof renderListTasks === 'function') renderListTasks();
             if (activeView === 'board' && typeof renderKanbanTasks === 'function') renderKanbanTasks();
@@ -39636,7 +39612,6 @@ function deleteTask(taskStr) {
         }, 100);
     }
 }
-
 /*********************
  * FUNCIÓN DE ESTIMACIÓN CON IA *
  *********************/
@@ -63135,74 +63110,64 @@ async function handleDrop(e) {
     e.currentTarget.style.background = '';
     e.currentTarget.style.transform = 'scale(1)';
     e.currentTarget.style.border = 'none';
-
+    
     const taskId = e.dataTransfer.getData('text/plain');
     const targetColumn = e.currentTarget;
-
+    
     const statusMap = {
         'pendingList': 'pending',
         'inProgressList': 'inProgress',
         'completedList': 'completed',
         'overdueList': 'overdue'
     };
-
+    
     const newStatus = statusMap[targetColumn.id];
     if (!newStatus) return;
-
+    
     const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
     const project = projects[projectIndex];
     if (!project || !project.tasks) return;
-
+    
     const task = project.tasks.find(t => String(t.id) === String(taskId));
     if (!task || task.status === newStatus) return;
-
+    
     // Capturar estado anterior antes de cambiarlo
     const oldStatus = task.status;
-
+    
     // Cambiar estado de la tarea
     task.status = newStatus;
     if (newStatus === 'completed') task.progress = 100;
     else if (newStatus === 'inProgress' && (!task.progress || task.progress < 50)) task.progress = 50;
     else if (newStatus === 'pending') task.progress = 0;
-
-    // ========== 🔥 NUEVO: EMITIR EVENTO WEBSOCKET PARA NOTIFICAR A COLABORADORES ==========
-    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+    
+    // ========== 🚨 NOTIFICACIÓN A SLACK ==========
+    // DESPUÉS (esto SÍ funciona)
+if (typeof sincronizarTarea === 'function') {
+    sincronizarTarea(task.name, project.name);
+    console.log('✅ Notificación enviada a Slack:', task.name, oldStatus, '→', newStatus);
+}
+    // =============================================
+    
+    // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
+    if (window.tiempoRealSocket && window.tiempoRealSocket.emit) {
         window.tiempoRealSocket.emit('task-moved', {
-            projectId: projectIndex,
+            projectId: project.id,
             taskId: task.id,
-            task: task,
-            taskName: task.name,
-            oldStatus: oldStatus,
             newStatus: newStatus,
-            projectName: project.name,
-            userName: localStorage.getItem('userName') || 'Usuario',
             timestamp: new Date().toISOString()
         });
-        console.log('📤 Evento task-moved emitido a colaboradores:', {
-            taskName: task.name,
-            oldStatus: oldStatus,
-            newStatus: newStatus,
-            projectName: project.name
-        });
-    } else {
-        console.warn('⚠️ WebSocket no conectado, no se pudo emitir task-moved');
+        console.log('📤 Emitido task-moved:', { projectId: project.id, taskId: task.id, newStatus: newStatus });
     }
-
-    // ========== 🔥 NUEVO: NOTIFICAR A SLACK ==========
-    if (window.SlackNotifier) {
-        SlackNotifier.taskMoved(task, oldStatus, newStatus, project.name);
-        console.log('📤 Notificación Slack enviada');
-    }
-
+    
     // Guardar en localStorage y refrescar vista local
     localStorage.setItem('projects', JSON.stringify(projects));
-
+    
     // === NUEVA LÍNEA: Forzar sincronización entre pestañas ===
     localStorage.setItem('sync-flag', Date.now().toString());
     // ======================================================
-
+    
     if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-
+    
     // FORZAR SINCRONIZACIÓN CON EL BACKEND para que las otras ventanas reciban project-updated
     if (typeof forceSync === 'function') {
         forceSync();
@@ -63212,7 +63177,7 @@ async function handleDrop(e) {
         console.log('🔄 Sincronización forzada con backend (saveProjectsToBackend)');
     } else {
         // Fallback: guardar manualmente con fetch
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         const clienteId = localStorage.getItem('clienteId');
         if (token && clienteId) {
             fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
@@ -63234,32 +63199,7 @@ async function handleDrop(e) {
             console.warn('⚠️ No se pudo sincronizar con backend: faltan token o clienteId');
         }
     }
-
-    // ========== 🔥 NUEVO: DISPARAR EVENTOS PARA EFECTOS VISUALES ==========
-    document.dispatchEvent(new Event('taskMoved'));
-    document.dispatchEvent(new Event('tasksRendered'));
-
-    // ========== 🔥 NUEVO: ACTUALIZAR CONTADORES Y VISTAS ==========
-    setTimeout(() => {
-        if (typeof actualizarContadoresColumnas === 'function') {
-            actualizarContadoresColumnas();
-        }
-        if (typeof refreshBurndown === 'function') {
-            refreshBurndown();
-        }
-        if (typeof forceRefreshCalendar === 'function') {
-            forceRefreshCalendar();
-        }
-        if (typeof renderListTasks === 'function') {
-            renderListTasks();
-        }
-        if (typeof renderDashboard === 'function') {
-            renderDashboard();
-        }
-        console.log('✅ Todas las vistas actualizadas después de mover tarea');
-    }, 100);
 }
-
 function forzarDragDrop() {
     const tareas = document.querySelectorAll('.task-card');
     tareas.forEach(tarea => {
