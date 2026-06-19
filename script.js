@@ -20245,71 +20245,83 @@ else if (tabId === 'archivo') renderArchivoDocumentos(contentDiv);
 else if (tabId === 'transferencia') renderTransferencia(contentDiv);
 else if (tabId === 'scrum') renderScrum(contentDiv);
 }
+
+
 function renderDocumentos(container) {
-container.innerHTML = `
-<h2>📄 Generación de Documentos</h2>
-<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:15px;">
- <button class="doc-btn" data-doc="kickoff">🚀 Kickoff Meeting</button>
- <button class="doc-btn" data-doc="charter">📑 Acta Constitutiva</button>
-<button class="doc-btn" data-doc="stakeholders">👥 Registro Stakeholders</button>
-<button class="doc-btn" data-doc="plan">📅 Plan Proyecto (con Gantt)</button>
-<button class="doc-btn" data-doc="wbs">📋 WBS</button>
-<button class="doc-btn" data-doc="raci">📊 Matriz RACI</button>
-<button class="doc-btn" data-doc="risks">⚠️ Plan Riesgos</button>
-<button class="doc-btn" data-doc="quality">✅ Plan Calidad</button>
-<button class="doc-btn" data-doc="communications">📢 Plan Comunicaciones</button>
-<button class="doc-btn" data-doc="lessons">📝 Lecciones Aprendidas</button>
-<button class="doc-btn" data-doc="closure">🔚 Acta de Cierre</button>
-<button class="doc-btn" data-doc="final">📊 Informe Final</button>
+    container.innerHTML = `
+    <h2>📄 Generación de Documentos</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:15px;">
+        <button class="doc-btn" data-doc="kickoff">🚀 Kickoff Meeting</button>
+        <button class="doc-btn" data-doc="charter">📑 Acta Constitutiva</button>
+        <button class="doc-btn" data-doc="stakeholders">👥 Registro Stakeholders</button>
+        <button class="doc-btn" data-doc="plan">📅 Plan Proyecto (con Gantt)</button>
+        <button class="doc-btn" data-doc="wbs">📋 WBS</button>
+        <button class="doc-btn" data-doc="raci">📊 Matriz RACI</button>
+        <button class="doc-btn" data-doc="risks">⚠️ Plan Riesgos</button>
+        <button class="doc-btn" data-doc="quality">✅ Plan Calidad</button>
+        <button class="doc-btn" data-doc="communications">📢 Plan Comunicaciones</button>
+        <button class="doc-btn" data-doc="lessons">📝 Lecciones Aprendidas</button>
+        <button class="doc-btn" data-doc="closure">🔚 Acta de Cierre</button>
+        <button class="doc-btn" data-doc="final">📊 Informe Final</button>
+        <!-- Nuevos documentos -->
+        <button class="doc-btn" data-doc="businesscase">📊 Business Case</button>
+        <button class="doc-btn" data-doc="statusreport">📈 Status Report</button>
+        <button class="doc-btn" data-doc="issuelog">⚠️ Issue Log</button>
+        <button class="doc-btn" data-doc="decisionlog">📝 Decision Log</button>
+        <button class="doc-btn" data-doc="resourceplan">👥 Resource Plan</button>
+        <button class="doc-btn" data-doc="procurement">📦 Procurement Plan</button>
+        <button class="doc-btn" data-doc="changemgmt">🔄 Change Management</button>
+        <button class="doc-btn" data-doc="benefits">🏆 Benefits Plan</button>
+    </div>`;
 
+    const style = document.createElement('style');
+    style.textContent = `.doc-btn{ background:linear-gradient(135deg,#3b82f6,#1e40af); border:none; padding:12px; border-radius:40px; color:white; cursor:pointer; font-weight:bold; transition:0.2s; } .doc-btn:hover{ transform:translateY(-2px); }`;
+    container.appendChild(style);
 
-<!-- Nuevos documentos -->
-            <button class="doc-btn" data-doc="businesscase">📊 Business Case</button>
-            <button class="doc-btn" data-doc="statusreport">📈 Status Report</button>
-            <button class="doc-btn" data-doc="issuelog">⚠️ Issue Log</button>
-            <button class="doc-btn" data-doc="decisionlog">📝 Decision Log</button>
-            <button class="doc-btn" data-doc="resourceplan">👥 Resource Plan</button>
-            <button class="doc-btn" data-doc="procurement">📦 Procurement Plan</button>
-            <button class="doc-btn" data-doc="changemgmt">🔄 Change Management</button>
-            <button class="doc-btn" data-doc="benefits">🏆 Benefits Plan</button>
-
-
-</div>
-`;
-const style = document.createElement('style'); style.textContent = `.doc-btn{ background:linear-gradient(135deg,#3b82f6,#1e40af); border:none; padding:12px; border-radius:40px; color:white; cursor:pointer; font-weight:bold; transition:0.2s; } .doc-btn:hover{ transform:translateY(-2px); }`;
-container.appendChild(style);
-document.querySelectorAll('.doc-btn').forEach(btn => {
-const doc = btn.dataset.doc;
-btn.onclick = () => {
-if (doc === 'charter') generarActaConstitutiva();
-else if (doc === 'stakeholders') generarRegistroStakeholders();
-            else if (doc === 'plan') generarPlanProyecto();
-            else if (doc === 'wbs') generarWBS();
-            else if (doc === 'raci') generarMatrizRACI();
-            else if (doc === 'risks') generarPlanRiesgos();
-            else if (doc === 'evm') generarInformeEVM();
-             else if (doc === 'evmpmi') generarInformeEVMPMI(); 
-                                 else if (doc === 'evmmex') generarInformeEVMMEX(); 
-            else if (doc === 'quality') generarPlanCalidad();
-            else if (doc === 'communications') generarPlanComunicaciones();
-            else if (doc === 'lessons') generarLeccionesAprendidas();
-            else if (doc === 'closure') generarActaCierre();
-            else if (doc === 'final') generarInformeFinal();
-            else if (doc === 'kickoff') generarKickoffDocument();
-            else if (doc === 'businesscase') generarBusinessCase();
-            else if (doc === 'statusreport') generarStatusReport();
-            else if (doc === 'issuelog') generarIssueLog();
-            else if (doc === 'decisionlog') generarDecisionLog();
-            else if (doc === 'resourceplan') generarResourcePlan();
-            else if (doc === 'procurement') generarProcurementPlan();
-            else if (doc === 'changemgmt') generarChangeManagementPlan();
-            else if (doc === 'benefits') generarBenefitsPlan();};
-});
-
+    document.querySelectorAll('.doc-btn').forEach(btn => {
+        const doc = btn.dataset.doc;
+        btn.onclick = () => {
+            try {
+                // Lista de documentos con sus funciones correspondientes
+                const map = {
+                    'charter': generarActaConstitutiva,
+                    'stakeholders': generarRegistroStakeholders,
+                    'plan': generarPlanProyecto,
+                    'wbs': generarWBS,
+                    'raci': generarMatrizRACI,
+                    'risks': generarPlanRiesgos,
+                    'evm': generarInformeEVM,
+                    'evmpmi': generarInformeEVMPMI,
+                    'evmmex': generarInformeEVMMEX,
+                    'quality': generarPlanCalidad,
+                    'communications': generarPlanComunicaciones,
+                    'lessons': generarLeccionesAprendidas,
+                    'closure': generarActaCierre,
+                    'final': generarInformeFinal,
+                    'kickoff': generarKickoffDocument,
+                    'businesscase': generarBusinessCase,
+                    'statusreport': generarStatusReport,
+                    'issuelog': generarIssueLog,
+                    'decisionlog': generarDecisionLog,
+                    'resourceplan': generarResourcePlan,
+                    'procurement': generarProcurementPlan,
+                    'changemgmt': generarChangeManagementPlan,
+                    'benefits': generarBenefitsPlan
+                };
+                if (map[doc]) {
+                    map[doc]();
+                } else {
+                    console.warn('Documento no implementado:', doc);
+                    alert('Función no implementada para: ' + doc);
+                }
+            } catch (error) {
+                console.error('Error en botón de documento:', error);
+                alert('Error al generar el documento: ' + error.message);
+            }
+        };
+    });
 }
 cargarContenido(activeTab);
-}
-
 // Exponer función principal globalmente
 window.abrirPanelCompleto = abrirPanelCompleto;
 
