@@ -1,11 +1,11 @@
 // ============================================================
-// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN FINAL CON SINCRO MEJORADA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN FINAL CORREGIDA
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN FINAL CON SINCRO MEJORADA');
+    console.log('🔥 SISTEMA DE COLABORACIÓN - VERSIÓN FINAL CORREGIDA');
     
     const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com/api';
     const STORAGE_KEY = 'proyectos_colaborativos_aceptados';
@@ -16,7 +16,11 @@
     let proyectosAceptadosLocal = [];
     let panelAbierto = false;
     let socket = null;
-    let socketConectado = false;
+    
+    // ✅ EXPONER ESTAS VARIABLES GLOBALMENTE
+    window.socketConectado = false;
+    window._interceptoresActivos = false;
+    window._socket = null;
     
     // ============================================
     // CONFIGURACIÓN EMAILJS
@@ -37,6 +41,21 @@
         document.head.appendChild(script);
     } else {
         emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+    }
+    
+    // ============================================
+    // FUNCIÓN DE LOG PARA DEBUG
+    // ============================================
+    function debugLog(...args) {
+        console.log('🔵 [COLLAB]', ...args);
+    }
+    
+    function debugWarn(...args) {
+        console.warn('🟡 [COLLAB]', ...args);
+    }
+    
+    function debugError(...args) {
+        console.error('🔴 [COLLAB]', ...args);
     }
     
     // ============================================
@@ -80,199 +99,290 @@
     }
     
     // ============================================
-    // WEB SOCKET - MEJORADO
+    // WEB SOCKET - CORREGIDO
     // ============================================
-    function initWebSocket() {
+    window.initWebSocket = function() {
+        debugLog('🔄 Iniciando WebSocket...');
+        
         if (socket) {
+            debugLog('🔄 Desconectando socket anterior...');
             socket.disconnect();
             socket = null;
         }
         
         const token = getAuthToken();
         if (!token) {
-            console.log('⏳ No hay token, WebSocket no iniciado');
+            debugWarn('⏳ No hay token, WebSocket no iniciado');
+            window.socketConectado = false;
             return;
         }
         
         try {
+            // Verificar que io esté definido
+            if (typeof io === 'undefined') {
+                debugError('❌ io no está definido. Cargando Socket.IO...');
+                // Cargar Socket.IO si no está disponible
+                const script = document.createElement('script');
+                script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+                script.onload = function() {
+                    debugLog('✅ Socket.IO cargado, reintentando...');
+                    window.initWebSocket();
+                };
+                document.head.appendChild(script);
+                return;
+            }
+            
             socket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
                 transports: ['websocket', 'polling'],
                 auth: { token: token },
                 reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000
+                reconnectionAttempts: 10,
+                reconnectionDelay: 1000,
+                timeout: 10000
             });
             
+            window._socket = socket;
+            
             socket.on('connect', function() {
-                console.log('🔗 WebSocket conectado (colaboración)');
-                socketConectado = true;
+                debugLog('✅ WebSocket conectado (colaboración)');
+                window.socketConectado = true;
                 socket.emit('join-collab-room', { 
                     userId: getCurrentUser() || 'Usuario' 
                 });
+                mostrarEstadoWebSocket(true);
+                debugLog('📊 Estado actualizado: socketConectado = true');
             });
             
             socket.on('collab-update', function(data) {
-                console.log('📡 Evento colaborativo recibido:', data);
+                debugLog('📡 Evento colaborativo recibido:', data);
                 
                 // Si es el mismo usuario, ignorar
                 const currentUser = getCurrentUser();
                 if (data.userId === currentUser) {
-                    console.log('ℹ️ Evento de mí mismo, ignorando');
+                    debugLog('ℹ️ Evento de mí mismo, ignorando');
                     return;
                 }
                 
-                // Si es una solicitud de sincronización
-                if (data.action === 'sync-request') {
-                    console.log('🔄 Solicitud de sincronización de', data.userId);
-                    // Responder con los datos actuales
-                    const project = window.projects[currentProjectIndex];
-                    if (project && socket && socketConectado) {
-                        socket.emit('collab-update', {
-                            projectId: project.id,
-                            task: null,
-                            action: 'sync-response',
-                            userId: currentUser,
-                            projectData: project,
-                            timestamp: new Date().toISOString()
-                        });
-                    }
-                    return;
-                }
-                
-                // Si es una respuesta de sincronización
-                if (data.action === 'sync-response' && data.projectData) {
-                    console.log('🔄 Recibiendo datos de sincronización de', data.userId);
-                    const projectIndex = window.projects.findIndex(p => p.id === data.projectData.id);
-                    if (projectIndex !== -1) {
-                        window.projects[projectIndex] = data.projectData;
-                        localStorage.setItem('projects', JSON.stringify(window.projects));
-                        if (typeof renderKanbanTasks === 'function') {
-                            renderKanbanTasks();
-                        }
-                        if (typeof renderProjects === 'function') {
-                            renderProjects();
-                        }
-                        console.log('✅ Datos sincronizados desde', data.userId);
-                        showNotification(`✅ Proyecto sincronizado con ${data.userId}`);
-                    }
-                    return;
-                }
-                
-                // Sincronizar proyectos al menú
-                window.sincronizarProyectosAlMenu();
-                
-                // Si es una acción de tarea, actualizar el board
-                if (data.task && data.action !== 'sync-request' && data.action !== 'sync-response') {
-                    // Buscar el proyecto en el array
-                    let projectIndex = window.projects.findIndex(p => p.id === data.projectId);
-                    if (projectIndex === -1) {
-                        // Buscar por nombre
-                        projectIndex = window.projects.findIndex(p => p.name === data.projectName);
-                    }
-                    
-                    if (projectIndex !== -1 && data.task) {
-                        const project = window.projects[projectIndex];
-                        
-                        // Actualizar la tarea según la acción
-                        switch (data.action) {
-                            case 'created':
-                                // Verificar que no exista duplicado
-                                const existe = project.tasks.some(t => t.id === data.task.id);
-                                if (!existe) {
-                                    project.tasks.push(data.task);
-                                    console.log('✅ Tarea creada:', data.task.name);
-                                }
-                                break;
-                            case 'updated':
-                                const updateIndex = project.tasks.findIndex(t => t.id === data.task.id);
-                                if (updateIndex !== -1) {
-                                    project.tasks[updateIndex] = data.task;
-                                    console.log('✅ Tarea actualizada:', data.task.name);
-                                }
-                                break;
-                            case 'moved':
-                                const moveIndex = project.tasks.findIndex(t => t.id === data.task.id);
-                                if (moveIndex !== -1) {
-                                    project.tasks[moveIndex] = data.task;
-                                    console.log('✅ Tarea movida:', data.task.name);
-                                }
-                                break;
-                            case 'deleted':
-                                const deleteIndex = project.tasks.findIndex(t => t.id === data.task.id);
-                                if (deleteIndex !== -1) {
-                                    project.tasks.splice(deleteIndex, 1);
-                                    console.log('✅ Tarea eliminada:', data.task.name);
-                                }
-                                break;
-                        }
-                        
-                        // Guardar cambios
-                        localStorage.setItem('projects', JSON.stringify(window.projects));
-                        
-                        // Refrescar vistas
-                        if (typeof renderKanbanTasks === 'function') {
-                            renderKanbanTasks();
-                        }
-                        if (typeof renderProjects === 'function') {
-                            renderProjects();
-                        }
-                        if (typeof updateProjectProgress === 'function') {
-                            updateProjectProgress();
-                        }
-                        
-                        console.log(`✅ Tarea ${data.action} sincronizada:`, data.task.name);
-                    }
-                }
-                
-                // Mostrar notificación
-                if (typeof showNotification === 'function') {
-                    const acciones = {
-                        'created': 'creó',
-                        'updated': 'actualizó',
-                        'moved': 'movió',
-                        'deleted': 'eliminó'
-                    };
-                    const accionTexto = acciones[data.action] || data.action;
-                    const nombreTarea = data.task?.name || data.task?.nombre || 'una tarea';
-                    showNotification(`📡 ${data.userId || 'Alguien'} ${accionTexto} "${nombreTarea}"`);
-                }
+                procesarEventoColaborativo(data);
             });
             
             socket.on('disconnect', function() {
-                console.log('🔌 WebSocket desconectado (colaboración)');
-                socketConectado = false;
+                debugLog('🔌 WebSocket desconectado (colaboración)');
+                window.socketConectado = false;
+                mostrarEstadoWebSocket(false);
             });
             
             socket.on('connect_error', function(error) {
-                console.error('❌ Error WebSocket:', error);
-                socketConectado = false;
+                debugError('❌ Error WebSocket:', error.message);
+                window.socketConectado = false;
+                mostrarEstadoWebSocket(false);
+            });
+            
+            socket.on('reconnect', function(attempt) {
+                debugLog(`🔄 Reconectado después de ${attempt} intentos`);
+                window.socketConectado = true;
+                mostrarEstadoWebSocket(true);
             });
             
         } catch (error) {
-            console.error('❌ Error iniciando WebSocket:', error);
-            socketConectado = false;
+            debugError('❌ Error iniciando WebSocket:', error);
+            window.socketConectado = false;
+        }
+    };
+    
+    // ============================================
+    // MOSTRAR ESTADO WEBSOCKET EN UI
+    // ============================================
+    function mostrarEstadoWebSocket(conectado) {
+        const indicator = document.getElementById('wsStatusIndicator') || (() => {
+            const el = document.createElement('div');
+            el.id = 'wsStatusIndicator';
+            el.style.cssText = `
+                position: fixed;
+                bottom: 90px;
+                left: 20px;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 10px;
+                font-family: monospace;
+                z-index: 999997;
+                color: white;
+                background: #333;
+                border: 1px solid #555;
+                pointer-events: none;
+            `;
+            document.body.appendChild(el);
+            return el;
+        })();
+        
+        indicator.textContent = conectado ? '🔗 WS Conectado' : '🔌 WS Desconectado';
+        indicator.style.background = conectado ? '#10b981' : '#ef4444';
+        indicator.style.border = conectado ? '1px solid #34d399' : '1px solid #f87171';
+    }
+    
+    // ============================================
+    // PROCESAR EVENTO COLABORATIVO
+    // ============================================
+    function procesarEventoColaborativo(data) {
+        debugLog('🔄 Procesando evento:', data.action);
+        
+        // Si es una solicitud de sincronización
+        if (data.action === 'sync-request') {
+            debugLog('🔄 Solicitud de sincronización de', data.userId);
+            const project = window.projects[currentProjectIndex];
+            if (project && socket && window.socketConectado) {
+                socket.emit('collab-update', {
+                    projectId: project.id,
+                    task: null,
+                    action: 'sync-response',
+                    userId: getCurrentUser(),
+                    projectData: project,
+                    timestamp: new Date().toISOString()
+                });
+                debugLog('📤 Respuesta de sincronización enviada');
+            }
+            return;
+        }
+        
+        // Si es una respuesta de sincronización
+        if (data.action === 'sync-response' && data.projectData) {
+            debugLog('🔄 Recibiendo datos de sincronización de', data.userId);
+            const projectIndex = window.projects.findIndex(p => p.id === data.projectData.id);
+            if (projectIndex !== -1) {
+                window.projects[projectIndex] = data.projectData;
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                }
+                if (typeof renderProjects === 'function') {
+                    renderProjects();
+                }
+                debugLog('✅ Datos sincronizados desde', data.userId);
+                if (typeof showNotification === 'function') {
+                    showNotification(`✅ Proyecto sincronizado con ${data.userId}`);
+                }
+            }
+            return;
+        }
+        
+        // Sincronizar proyectos al menú
+        if (typeof window.sincronizarProyectosAlMenu === 'function') {
+            window.sincronizarProyectosAlMenu();
+        }
+        
+        // Si es una acción de tarea, actualizar el board
+        if (data.task && data.action) {
+            debugLog(`🔄 Procesando acción ${data.action} para tarea:`, data.task.name || data.task.id);
+            
+            // Buscar el proyecto en el array
+            let projectIndex = window.projects.findIndex(p => p.id === data.projectId);
+            if (projectIndex === -1) {
+                projectIndex = window.projects.findIndex(p => p.name === data.projectName);
+            }
+            
+            if (projectIndex !== -1) {
+                const project = window.projects[projectIndex];
+                debugLog(`📂 Proyecto encontrado: ${project.name} (index: ${projectIndex})`);
+                
+                // Actualizar la tarea según la acción
+                switch (data.action) {
+                    case 'created':
+                        const existe = project.tasks.some(t => t.id === data.task.id);
+                        if (!existe) {
+                            project.tasks.push(data.task);
+                            debugLog('✅ Tarea creada:', data.task.name);
+                        } else {
+                            debugWarn('⚠️ Tarea ya existe, ignorando creación');
+                        }
+                        break;
+                    case 'updated':
+                        const updateIndex = project.tasks.findIndex(t => t.id === data.task.id);
+                        if (updateIndex !== -1) {
+                            project.tasks[updateIndex] = data.task;
+                            debugLog('✅ Tarea actualizada:', data.task.name);
+                        } else {
+                            debugWarn('⚠️ Tarea no encontrada para actualizar');
+                        }
+                        break;
+                    case 'moved':
+                        const moveIndex = project.tasks.findIndex(t => t.id === data.task.id);
+                        if (moveIndex !== -1) {
+                            project.tasks[moveIndex] = data.task;
+                            debugLog('✅ Tarea movida:', data.task.name);
+                        } else {
+                            debugWarn('⚠️ Tarea no encontrada para mover');
+                        }
+                        break;
+                    case 'deleted':
+                        const deleteIndex = project.tasks.findIndex(t => t.id === data.task.id);
+                        if (deleteIndex !== -1) {
+                            project.tasks.splice(deleteIndex, 1);
+                            debugLog('✅ Tarea eliminada:', data.task.name);
+                        } else {
+                            debugWarn('⚠️ Tarea no encontrada para eliminar');
+                        }
+                        break;
+                    default:
+                        debugWarn('⚠️ Acción desconocida:', data.action);
+                }
+                
+                // Guardar cambios
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+                
+                // Refrescar vistas
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                }
+                if (typeof renderProjects === 'function') {
+                    renderProjects();
+                }
+                if (typeof updateProjectProgress === 'function') {
+                    updateProjectProgress();
+                }
+                
+                debugLog(`✅ Tarea ${data.action} sincronizada:`, data.task.name);
+            } else {
+                debugWarn('⚠️ Proyecto no encontrado para:', data.projectId || data.projectName);
+            }
+        }
+        
+        // Mostrar notificación
+        if (typeof showNotification === 'function') {
+            const acciones = {
+                'created': 'creó',
+                'updated': 'actualizó',
+                'moved': 'movió',
+                'deleted': 'eliminó'
+            };
+            const accionTexto = acciones[data.action] || data.action;
+            const nombreTarea = data.task?.name || data.task?.nombre || 'una tarea';
+            showNotification(`📡 ${data.userId || 'Alguien'} ${accionTexto} "${nombreTarea}"`);
         }
     }
     
     // ============================================
-    // EMITIR CAMBIO - MEJORADO
+    // EMITIR CAMBIO - CORREGIDO
     // ============================================
     function emitirCambio(projectId, task, action) {
-        console.log(`📤 Intentando emitir: ${action} - "${task?.name || task?.nombre}"`);
+        debugLog(`📤 Intentando emitir: ${action} - "${task?.name || task?.nombre}"`);
+        debugLog(`📤 Estado socket: conectado=${window.socketConectado}, socket=${!!socket}`);
         
-        if (!socket || !socketConectado) {
-            console.warn('⚠️ WebSocket no conectado, cambio no emitido');
-            // Intentar reconectar
-            if (!socket || !socket.connected) {
-                console.log('🔄 Intentando reconectar WebSocket...');
-                initWebSocket();
-                // Reintentar después de reconectar
-                setTimeout(() => {
-                    if (socket && socketConectado) {
-                        emitirCambio(projectId, task, action);
-                    }
-                }, 1000);
-            }
+        if (!socket || !window.socketConectado) {
+            debugWarn('⚠️ WebSocket no conectado, intentando reconectar...');
+            window.initWebSocket();
+            setTimeout(() => {
+                if (socket && window.socketConectado) {
+                    debugLog('🔄 Reintentando emisión después de reconectar...');
+                    emitirCambio(projectId, task, action);
+                } else {
+                    debugError('❌ No se pudo reconectar WebSocket');
+                    // Guardar en localStorage para sincronización posterior
+                    const pendingEvents = JSON.parse(localStorage.getItem('pendingCollabEvents') || '[]');
+                    pendingEvents.push({ projectId, task, action, timestamp: Date.now() });
+                    localStorage.setItem('pendingCollabEvents', JSON.stringify(pendingEvents));
+                    debugLog('💾 Evento guardado para sincronización posterior');
+                }
+            }, 2000);
             return;
         }
         
@@ -285,18 +395,37 @@
             timestamp: new Date().toISOString()
         };
         
+        debugLog('📤 Enviando payload:', payload);
+        
         try {
             socket.emit('collab-update', payload);
-            console.log(`✅ Evento emitido: ${action} - "${task?.name || task?.nombre}" para usuario ${user}`);
+            debugLog(`✅ Evento emitido: ${action} - "${task?.name || task?.nombre}"`);
+            
+            // También guardar para sincronización local
+            if (action === 'created' || action === 'updated' || action === 'moved') {
+                const proyectosColab = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                const proyectoExistente = proyectosColab.find(p => p.id === projectId);
+                if (proyectoExistente) {
+                    const taskIndex = proyectoExistente.tasks?.findIndex(t => t.id === task.id);
+                    if (taskIndex !== -1) {
+                        proyectoExistente.tasks[taskIndex] = task;
+                    } else if (action === 'created') {
+                        if (!proyectoExistente.tasks) proyectoExistente.tasks = [];
+                        proyectoExistente.tasks.push(task);
+                    }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(proyectosColab));
+                }
+            }
+            
             return true;
         } catch (error) {
-            console.error('❌ Error emitiendo evento:', error);
+            debugError('❌ Error emitiendo evento:', error);
             return false;
         }
     }
     
     // ============================================
-    // GUARDAR PROYECTO ACEPTADO
+    // FUNCIONES DE PROYECTOS
     // ============================================
     function guardarProyectoAceptadoLocal(proyecto) {
         let aceptados = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -304,7 +433,7 @@
         if (!existe) {
             aceptados.push(proyecto);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(aceptados));
-            console.log('💾 Proyecto guardado:', proyecto.nombre || proyecto.name);
+            debugLog('💾 Proyecto guardado:', proyecto.nombre || proyecto.name);
         }
         proyectosAceptadosLocal = aceptados;
     }
@@ -318,7 +447,7 @@
     // SINCronizar al menú lateral - FUNCIÓN GLOBAL
     // ============================================
     window.sincronizarProyectosAlMenu = function() {
-        console.log('🔄 Sincronizando proyectos al menú lateral...');
+        debugLog('🔄 Sincronizando proyectos al menú lateral...');
         
         cargarProyectosAceptadosLocal();
         
@@ -333,13 +462,8 @@
         });
         
         if (proyectosUnicos.length === 0) {
-            console.log('📭 No hay proyectos');
+            debugLog('📭 No hay proyectos');
             return;
-        }
-        
-        // Guardar proyectos originales para referencia
-        if (!window.originalProjects) {
-            window.originalProjects = [...window.projects];
         }
         
         window.projects = proyectosUnicos.map(p => ({
@@ -355,7 +479,7 @@
         
         if (typeof renderProjects === 'function') {
             renderProjects();
-            console.log('✅ Menú lateral actualizado');
+            debugLog('✅ Menú lateral actualizado');
         }
         if (typeof renderKanbanTasks === 'function') {
             renderKanbanTasks();
@@ -371,9 +495,11 @@
     async function cargarDatos() {
         const user = getCurrentUser();
         if (!user) {
-            console.log('⏳ No hay usuario');
+            debugLog('⏳ No hay usuario');
             return;
         }
+        
+        debugLog('🔄 Cargando datos para usuario:', user);
         
         try {
             const respMis = await fetch(`${API_URL}/mis-proyectos`, {
@@ -383,6 +509,7 @@
             if (respMis.ok) {
                 const data = await respMis.json();
                 misProyectos = data.projects || [];
+                debugLog('✅ Mis proyectos:', misProyectos.length);
             }
             
             const respInv = await fetch(`${API_URL}/colaboracion/invitaciones`, {
@@ -392,6 +519,7 @@
             if (respInv.ok) {
                 const data = await respInv.json();
                 invitaciones = data.invitaciones || [];
+                debugLog('✅ Invitaciones:', invitaciones.length);
             }
             
             const respCol = await fetch(`${API_URL}/colaboracion/proyectos`, {
@@ -401,6 +529,7 @@
             if (respCol.ok) {
                 const data = await respCol.json();
                 proyectosColaborativos = data.proyectos || [];
+                debugLog('✅ Proyectos colaborativos:', proyectosColaborativos.length);
             }
             
             cargarProyectosAceptadosLocal();
@@ -409,7 +538,7 @@
             updateBadge();
             
         } catch (error) {
-            console.error('❌ Error:', error);
+            debugError('❌ Error cargando datos:', error);
         }
     }
     
@@ -537,10 +666,24 @@
     };
     
     // ============================================
-    // INTERCEPTAR CAMBIOS EN TAREAS - MEJORADO
+    // INTERCEPTAR CAMBIOS EN TAREAS - CORREGIDO
     // ============================================
     function interceptarCambiosTareas() {
-        console.log('🔄 Interceptando cambios en tareas...');
+        debugLog('🔄 Interceptando cambios en tareas...');
+        
+        // Verificar que las funciones existan
+        if (typeof window.createNewTask !== 'function') {
+            debugWarn('⚠️ createNewTask no encontrada');
+        }
+        if (typeof window.saveTaskChanges !== 'function') {
+            debugWarn('⚠️ saveTaskChanges no encontrada');
+        }
+        if (typeof window.handleDrop !== 'function') {
+            debugWarn('⚠️ handleDrop no encontrada');
+        }
+        if (typeof window.deleteTask !== 'function') {
+            debugWarn('⚠️ deleteTask no encontrada');
+        }
         
         // Guardar funciones originales
         const originalCreate = window.createNewTask;
@@ -550,41 +693,33 @@
         
         if (originalCreate) {
             window.createNewTask = function(e) {
-                console.log('🔍 createNewTask interceptado');
+                debugLog('🔍 createNewTask interceptado');
                 const result = originalCreate(e);
                 
-                // Esperar a que la tarea se haya creado
                 setTimeout(() => {
                     try {
                         const project = window.projects[currentProjectIndex];
+                        debugLog('📂 Proyecto actual para created:', project?.name);
                         if (project && project.tasks && project.tasks.length > 0) {
                             const task = project.tasks[project.tasks.length - 1];
                             if (task) {
-                                console.log('📤 Emitiendo task-created:', task.name);
+                                debugLog('📤 Emitiendo task-created:', task.name);
                                 emitirCambio(project.id, task, 'created');
-                                
-                                // También guardar en localStorage para sincronización
-                                const proyectosColab = JSON.parse(localStorage.getItem('proyectos_colaborativos_aceptados') || '[]');
-                                const proyectoExistente = proyectosColab.find(p => p.id === project.id);
-                                if (proyectoExistente) {
-                                    proyectoExistente.tasks = project.tasks;
-                                    localStorage.setItem('proyectos_colaborativos_aceptados', JSON.stringify(proyectosColab));
-                                }
                             }
                         }
                     } catch (error) {
-                        console.error('Error emitiendo task-created:', error);
+                        debugError('❌ Error emitiendo task-created:', error);
                     }
-                }, 300);
+                }, 500);
                 
                 return result;
             };
-            console.log('✅ createNewTask interceptado');
+            debugLog('✅ createNewTask interceptado');
         }
         
         if (originalSave) {
             window.saveTaskChanges = function(taskId) {
-                console.log('🔍 saveTaskChanges interceptado para:', taskId);
+                debugLog('🔍 saveTaskChanges interceptado para:', taskId);
                 const result = originalSave(taskId);
                 
                 setTimeout(() => {
@@ -592,22 +727,22 @@
                         const project = window.projects[currentProjectIndex];
                         const task = project?.tasks?.find(t => t.id === taskId);
                         if (project && task) {
-                            console.log('📤 Emitiendo task-updated:', task.name);
+                            debugLog('📤 Emitiendo task-updated:', task.name);
                             emitirCambio(project.id, task, 'updated');
                         }
                     } catch (error) {
-                        console.error('Error emitiendo task-updated:', error);
+                        debugError('❌ Error emitiendo task-updated:', error);
                     }
-                }, 300);
+                }, 500);
                 
                 return result;
             };
-            console.log('✅ saveTaskChanges interceptado');
+            debugLog('✅ saveTaskChanges interceptado');
         }
         
         if (originalDrop) {
             window.handleDrop = function(e) {
-                console.log('🔍 handleDrop interceptado');
+                debugLog('🔍 handleDrop interceptado');
                 const result = originalDrop(e);
                 
                 setTimeout(() => {
@@ -617,45 +752,36 @@
                         if (taskId) {
                             const task = project?.tasks?.find(t => String(t.id) === String(taskId));
                             if (project && task) {
-                                console.log('📤 Emitiendo task-moved:', task.name);
+                                debugLog('📤 Emitiendo task-moved:', task.name);
                                 emitirCambio(project.id, task, 'moved');
                             }
                         }
                     } catch (error) {
-                        console.error('Error emitiendo task-moved:', error);
+                        debugError('❌ Error emitiendo task-moved:', error);
                     }
-                }, 300);
+                }, 500);
                 
                 return result;
             };
-            console.log('✅ handleDrop interceptado');
+            debugLog('✅ handleDrop interceptado');
         }
         
         if (originalDelete) {
             window.deleteTask = function(taskStr) {
-                console.log('🔍 deleteTask interceptado');
+                debugLog('🔍 deleteTask interceptado');
                 let task = null;
                 let project = null;
                 
                 try {
-                    // Intentar obtener la tarea antes de eliminarla
                     if (typeof taskStr === 'string') {
                         try {
                             task = JSON.parse(decodeURIComponent(taskStr));
                         } catch(e) {
-                            // Si no es JSON, puede ser un ID
                             project = window.projects[currentProjectIndex];
                             task = project?.tasks?.find(t => String(t.id) === String(taskStr));
                             if (task) {
                                 taskStr = JSON.stringify(task);
                             }
-                        }
-                    } else if (typeof taskStr === 'number' || typeof taskStr === 'string') {
-                        // Si es un ID, buscar la tarea
-                        project = window.projects[currentProjectIndex];
-                        task = project?.tasks?.find(t => String(t.id) === String(taskStr));
-                        if (task) {
-                            taskStr = JSON.stringify(task);
                         }
                     }
                     
@@ -664,40 +790,25 @@
                     setTimeout(() => {
                         try {
                             if (project && task) {
-                                console.log('📤 Emitiendo task-deleted:', task.name);
+                                debugLog('📤 Emitiendo task-deleted:', task.name);
                                 emitirCambio(project.id, task, 'deleted');
-                            } else {
-                                // Intentar obtener el proyecto actual
-                                const currentProject = window.projects[currentProjectIndex];
-                                if (currentProject) {
-                                    // Buscar por ID en el string
-                                    let taskId = taskStr;
-                                    try {
-                                        const parsed = JSON.parse(decodeURIComponent(taskStr));
-                                        taskId = parsed.id;
-                                    } catch(e) {}
-                                    
-                                    const taskToDelete = currentProject.tasks.find(t => String(t.id) === String(taskId));
-                                    if (taskToDelete) {
-                                        console.log('📤 Emitiendo task-deleted (recuperado):', taskToDelete.name);
-                                        emitirCambio(currentProject.id, taskToDelete, 'deleted');
-                                    }
-                                }
                             }
                         } catch (error) {
-                            console.error('Error emitiendo task-deleted:', error);
+                            debugError('❌ Error emitiendo task-deleted:', error);
                         }
-                    }, 300);
+                    }, 500);
                     
                     return result;
                 } catch (error) {
-                    console.error('Error en deleteTask interceptado:', error);
-                    // Fallback: ejecutar original
+                    debugError('❌ Error en deleteTask interceptado:', error);
                     return originalDelete(taskStr);
                 }
             };
-            console.log('✅ deleteTask interceptado');
+            debugLog('✅ deleteTask interceptado');
         }
+        
+        window._interceptoresActivos = true;
+        debugLog('✅ Interceptores activados');
     }
     
     // ============================================
@@ -763,6 +874,7 @@
         
         document.body.appendChild(btn);
         updateBadge();
+        mostrarEstadoWebSocket(false);
     }
     
     function updateBadge() {
@@ -935,7 +1047,8 @@
                 
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
                     🔄 ${misProyectosList.length} propios | ${colaborativosList.length + aceptadosLocal.length} colaborativos
-                    ${socketConectado ? ' | 🔗 Conectado' : ' | 🔌 Desconectado'}
+                    ${window.socketConectado ? ' | 🔗 Conectado' : ' | 🔌 Desconectado'}
+                    ${window._interceptoresActivos ? ' | ✅ Interceptores activos' : ' | ❌ Sin interceptores'}
                 </div>
             </div>
         `;
@@ -993,18 +1106,18 @@
     // FUNCIÓN PARA FORZAR SINCRONIZACIÓN MANUAL
     // ============================================
     window.forceSyncNow = function() {
-        console.log('🔄 Forzando sincronización manual...');
+        debugLog('🔄 Forzando sincronización manual...');
         
-        // Guardar proyecto actual
         const project = window.projects[currentProjectIndex];
         if (!project) {
-            console.error('❌ No hay proyecto seleccionado');
+            debugError('❌ No hay proyecto seleccionado');
             alert('❌ No hay proyecto seleccionado');
             return;
         }
         
-        // Emitir cambio forzado
-        if (socket && socketConectado) {
+        debugLog('📂 Proyecto actual:', project.name);
+        
+        if (socket && window.socketConectado) {
             socket.emit('collab-update', {
                 projectId: project.id,
                 task: null,
@@ -1012,14 +1125,13 @@
                 userId: getCurrentUser() || 'Usuario',
                 timestamp: new Date().toISOString()
             });
-            console.log('📤 Solicitud de sincronización enviada');
+            debugLog('📤 Solicitud de sincronización enviada');
             alert('✅ Solicitud de sincronización enviada');
         } else {
-            console.error('❌ WebSocket no conectado');
-            // Intentar reconectar
-            initWebSocket();
+            debugError('❌ WebSocket no conectado');
+            window.initWebSocket();
             setTimeout(() => {
-                if (socket && socketConectado) {
+                if (socket && window.socketConectado) {
                     window.forceSyncNow();
                 } else {
                     alert('❌ No se pudo conectar el WebSocket');
@@ -1028,30 +1140,50 @@
             return;
         }
         
-        // Sincronizar menú
         window.sincronizarProyectosAlMenu();
+        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        if (typeof renderProjects === 'function') renderProjects();
         
-        // Recargar tareas
-        if (typeof renderKanbanTasks === 'function') {
-            renderKanbanTasks();
-        }
-        if (typeof renderProjects === 'function') {
-            renderProjects();
-        }
-        if (typeof updateProjectProgress === 'function') {
-            updateProjectProgress();
-        }
-        
-        console.log('✅ Sincronización forzada completada');
+        debugLog('✅ Sincronización forzada completada');
     };
+    
+    // ============================================
+    // FUNCIÓN PARA VER ESTADO
+    // ============================================
+    window.getCollabStatus = function() {
+        console.log('📊 === ESTADO COLABORACIÓN ===');
+        console.log('🔗 WebSocket conectado:', window.socketConectado);
+        console.log('🔄 Interceptores activos:', window._interceptoresActivos);
+        console.log('👤 Usuario actual:', getCurrentUser());
+        console.log('📂 Mis proyectos:', misProyectos.length);
+        console.log('📂 Colaborativos:', proyectosColaborativos.length + proyectosAceptadosLocal.length);
+        console.log('📋 Proyectos en window.projects:', window.projects?.length || 0);
+        console.log('📋 Proyecto actual:', window.projects[currentProjectIndex]?.name || 'Ninguno');
+        console.log('📋 Tareas:', window.projects[currentProjectIndex]?.tasks?.length || 0);
+        console.log('📋 Invitaciones pendientes:', Core.getMyInvitations().length);
+        console.log('=============================');
+    };
+    
+    // ============================================
+    // PROCESAR EVENTOS PENDIENTES
+    // ============================================
+    function procesarEventosPendientes() {
+        const pendingEvents = JSON.parse(localStorage.getItem('pendingCollabEvents') || '[]');
+        if (pendingEvents.length > 0) {
+            debugLog(`🔄 Procesando ${pendingEvents.length} eventos pendientes...`);
+            pendingEvents.forEach(event => {
+                emitirCambio(event.projectId, event.task, event.action);
+            });
+            localStorage.removeItem('pendingCollabEvents');
+        }
+    }
     
     // ============================================
     // INICIALIZACIÓN
     // ============================================
     async function init() {
-        console.log('🚀 Inicializando sistema de colaboración...');
+        debugLog('🚀 Inicializando sistema de colaboración...');
         
-        // Cargar proyecto guardado
         const proyectoGuardado = localStorage.getItem('proyecto_colaborativo_aceptado');
         if (proyectoGuardado) {
             try {
@@ -1060,33 +1192,30 @@
                 if (!existe) {
                     window.projects.push(proyecto);
                     localStorage.setItem('projects', JSON.stringify(window.projects));
-                    console.log('✅ Proyecto colaborativo cargado:', proyecto.name);
+                    debugLog('✅ Proyecto colaborativo cargado:', proyecto.name);
                 }
             } catch(e) {
-                console.warn('Error cargando proyecto:', e);
+                debugWarn('Error cargando proyecto:', e);
             }
         }
         
         // Iniciar WebSocket
-        initWebSocket();
+        window.initWebSocket();
         
-        // Cargar datos
         await cargarDatos();
-        
-        // Crear botón flotante
         createFloatingButton();
-        
-        // Sincronizar al menú
         window.sincronizarProyectosAlMenu();
         
-        // Interceptar cambios en tareas
         setTimeout(interceptarCambiosTareas, 1000);
         
-        console.log('✅ Sistema de colaboración listo');
-        console.log('📂 Mis proyectos:', misProyectos.length);
-        console.log('📂 Colaborativos:', proyectosColaborativos.length + proyectosAceptadosLocal.length);
-        console.log('🔗 WebSocket:', socketConectado ? '✅ Conectado' : '❌ Desconectado');
-        console.log('💡 Para forzar sincronización usa: forceSyncNow()');
+        // Procesar eventos pendientes
+        setTimeout(procesarEventosPendientes, 2000);
+        
+        debugLog('✅ Sistema de colaboración listo');
+        debugLog('💡 Para forzar sincronización usa: forceSyncNow()');
+        debugLog('💡 Para ver estado usa: getCollabStatus()');
+        
+        window.getCollabStatus();
     }
     
     if (document.readyState === 'loading') {
