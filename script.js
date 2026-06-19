@@ -1,66 +1,3 @@
-// ============================================
-// 🔄 SINCRONIZAR PROYECTOS COLABORATIVOS AL CARGAR
-// ============================================
-(async function syncCollaborativeProjectsOnLoad() {
-    console.log('🔄 Verificando proyectos colaborativos...');
-    
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        console.log('ℹ️ No hay sesión activa');
-        return;
-    }
-    
-    // Esperar a que el sistema esté listo
-    setTimeout(async () => {
-        try {
-            console.log('📡 Consultando proyectos colaborativos...');
-            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            
-            if (!response.ok) {
-                console.warn('⚠️ Error obteniendo proyectos colaborativos:', response.status);
-                return;
-            }
-            
-            const data = await response.json();
-            
-            if (data.collaboratedProjects && data.collaboratedProjects.length > 0) {
-                console.log(`📦 ${data.collaboratedProjects.length} proyectos colaborativos encontrados`);
-                
-                // ✅ FUSIONAR CON projects ACTUALES
-                const proyectosExistentesIds = new Set(projects.map(p => p.id));
-                let cambios = 0;
-                
-                data.collaboratedProjects.forEach(proyectoCollab => {
-                    if (!proyectosExistentesIds.has(proyectoCollab.id)) {
-                        projects.push(proyectoCollab);
-                        cambios++;
-                        console.log(`   ✅ Proyecto colaborativo agregado: ${proyectoCollab.name}`);
-                    }
-                });
-                
-                if (cambios > 0) {
-                    // ✅ GUARDAR EN LOCALSTORAGE (caché)
-                    localStorage.setItem('projects', JSON.stringify(projects));
-                    console.log(`✅ ${cambios} proyectos colaborativos sincronizados`);
-                    
-                    // ✅ ACTUALIZAR MENÚ LATERAL
-                    if (typeof renderProjects === 'function') {
-                        renderProjects();
-                    }
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
-                }
-            } else {
-                console.log('ℹ️ No hay proyectos colaborativos');
-            }
-        } catch (error) {
-            console.error('❌ Error sincronizando proyectos colaborativos:', error);
-        }
-    }, 3000); // Esperar 3 segundos para que todo cargue
-})();
 
 // ============================================
 // 🔧 FUNCIÓN PARA FORZAR SINCRONIZACIÓN DESDE CONSOLA
@@ -39152,7 +39089,6 @@ function renderProjectList(proyectosAMostrar) {
         });
     }, 50);
 }
-
 // Función auxiliar para estilos
 function updateProjectSelectionStyles() {
     document.querySelectorAll('.project-item').forEach(item => {
@@ -40819,14 +40755,15 @@ const dependencies = Array.from(
 // Busca la función saveTaskChanges y reemplázala con esta versión mejorada
 function saveTaskChanges(taskId) {
     console.log('💾 saveTaskChanges ejecutada para tarea ID:', taskId);
-
+    console.log('💾 Guardando cambios de tarea...');
+    
     const project = projects[currentProjectIndex];
     const taskIndex = project.tasks.findIndex(t => t.id === taskId);
-
+    
     if (taskIndex !== -1) {
         // ✅ GUARDAR VALORES ANTIGUOS
         const oldTask = {...project.tasks[taskIndex]};
-
+        
         // ✅ OBTENER VALORES EDITADOS
         const editedTask = {
             ...project.tasks[taskIndex],
@@ -40843,7 +40780,7 @@ function saveTaskChanges(taskId) {
                 .filter(id => !isNaN(id)),
             subtasks: project.tasks[taskIndex].subtasks || []
         };
-
+        
         // 🔥 DEFINIR ARRAY CHANGES
         const changes = [];
         if (oldTask.name !== editedTask.name) changes.push('nombre');
@@ -40852,10 +40789,10 @@ function saveTaskChanges(taskId) {
         if (oldTask.assignee !== editedTask.assignee) changes.push('responsable');
         if (oldTask.deadline !== editedTask.deadline) changes.push('fecha límite');
         if (oldTask.estimatedTime !== editedTask.estimatedTime) changes.push('tiempo estimado');
-
+        
         // Actualizar la tarea en el array
         project.tasks[taskIndex] = editedTask;
-
+        
         // Guardar y actualizar UI
         updateLocalStorage();
         renderKanbanTasks();
@@ -40864,84 +40801,105 @@ function saveTaskChanges(taskId) {
         generatePieChart(getStats());
         updateProjectProgress();
         actualizarAsignados();
-
-        // ✅ 🔥 EMITIR EVENTO WEBSOCKET PARA NOTIFICAR A COLABORADORES
-        if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
-            window.tiempoRealSocket.emit('task-updated', {
-                projectId: currentProjectIndex,
-                taskId: taskId,
-                task: editedTask,
-                taskName: editedTask.name,
-                changes: changes,
-                projectName: project.name,
-                userName: localStorage.getItem('userName') || 'Usuario',
-                timestamp: new Date().toISOString()
-            });
-            console.log('📤 Evento task-updated emitido');
-        }
-
-        if (window.SlackNotifier && changes.length) {
-            SlackNotifier.taskUpdated(editedTask, project.name, changes.join(', '));
-        }
-
+        
+        if (window.SlackNotifier && changes.length) SlackNotifier.taskUpdated(editedTask, projects[currentProjectIndex].name, changes.join(', '));
+        
+        // 🔥 NOTIFICAR A OTROS USUARIOS - VERSIÓN CORREGIDA CON TAREA COMPLETA
+       if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+    window.tiempoRealSocket.emit('task-updated', {
+        projectId: currentProjectIndex,
+        taskId: taskId,  // ← Asegúrate que sea el ID numérico
+        task: editedTask,  // ← La tarea completa
+        taskName: editedTask.name,
+        userName: localStorage.getItem('userName') || 'Usuario actual',
+        type: 'task-updated',
+        changes: changes,
+        timestamp: new Date().toISOString()
+    });
+    console.log('📢 Evento task-updated EMITIDO con datos:', {
+        projectId: currentProjectIndex,
+        taskId: taskId,
+        taskName: editedTask.name
+    });
+}
+        
         // Cerrar el modal
         const taskDetailsModal = document.getElementById('taskDetailsModal');
         if (taskDetailsModal) {
             taskDetailsModal.style.display = 'none';
         }
         showNotification('✅ Cambios guardados exitosamente');
-
-        // Disparar eventos
+        
+        // ========== DISPARAR EVENTOS PARA EFECTOS VISUALES ==========
         document.dispatchEvent(new Event('taskUpdated'));
         document.dispatchEvent(new Event('tasksRendered'));
-
-        // Actualizar todas las vistas
+        
+        // ========== ACTUALIZAR TODAS LAS VISTAS ==========
         setTimeout(() => {
+            // Actualizar contadores con animación
             if (typeof actualizarContadoresColumnas === 'function') {
                 actualizarContadoresColumnas();
             }
+            
+            // Actualizar burndown chart
             if (typeof refreshBurndown === 'function') {
                 refreshBurndown();
             }
+            
+            // Actualizar calendario automáticamente
             if (typeof forceRefreshCalendar === 'function') {
                 forceRefreshCalendar();
             }
-
+            
+            // Actualizar vista de lista si está activa
             const listView = document.getElementById('listView');
             if (listView && listView.classList.contains('active') && typeof renderListTasks === 'function') {
                 renderListTasks();
             }
-
+            
+            // Actualizar dashboard si está activo
             const dashboardView = document.getElementById('dashboardView');
             if (dashboardView && dashboardView.classList.contains('active') && typeof renderDashboard === 'function') {
                 renderDashboard();
             }
-
+            
+            // Actualizar vista de reportes si está activa
             const reportsView = document.getElementById('reportsView');
             if (reportsView && reportsView.classList.contains('active') && typeof generateReports === 'function') {
                 generateReports();
             }
-
+            
+            // Actualizar vista de asignación de horas si está activa
             const timeAllocationView = document.getElementById('timeAllocationView');
             if (timeAllocationView && timeAllocationView.classList.contains('active') && typeof loadTimeAllocationData === 'function') {
                 loadTimeAllocationData();
             }
-
+            
+            // Actualizar vista de rentabilidad si está activa
+            const profitabilityView = document.getElementById('profitabilityView');
+            if (profitabilityView && profitabilityView.classList.contains('active') && typeof renderProfitabilityView === 'function') {
+                renderProfitabilityView();
+            }
+            
+            // Actualizar gráficos si existen
             if (typeof generatePieChart === 'function' && typeof getStats === 'function') {
                 generatePieChart(getStats());
             }
+            
+            // Actualizar estadísticas
             if (typeof updateStatistics === 'function') {
                 updateStatistics();
             }
-
+            
             console.log('✅ Todas las vistas actualizadas después de guardar cambios');
         }, 100);
-
+        
     } else {
         console.error('❌ Error: No se encontró la tarea para actualizar');
         showNotification('❌ Error: No se encontró la tarea para actualizar');
     }
 }
+
 
 
 
@@ -70491,4 +70449,67 @@ setTimeout(() => {
 
 
 
+// ============================================
+// 🔄 SINCRONIZAR PROYECTOS COLABORATIVOS AL CARGAR
+// ============================================
+(async function syncCollaborativeProjectsOnLoad() {
+    console.log('🔄 Verificando proyectos colaborativos...');
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.log('ℹ️ No hay sesión activa');
+        return;
+    }
+    
+    // Esperar a que el sistema esté listo
+    setTimeout(async () => {
+        try {
+            console.log('📡 Consultando proyectos colaborativos...');
+            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            if (!response.ok) {
+                console.warn('⚠️ Error obteniendo proyectos colaborativos:', response.status);
+                return;
+            }
+            
+            const data = await response.json();
+            
+            if (data.collaboratedProjects && data.collaboratedProjects.length > 0) {
+                console.log(`📦 ${data.collaboratedProjects.length} proyectos colaborativos encontrados`);
+                
+                // ✅ FUSIONAR CON projects ACTUALES
+                const proyectosExistentesIds = new Set(projects.map(p => p.id));
+                let cambios = 0;
+                
+                data.collaboratedProjects.forEach(proyectoCollab => {
+                    if (!proyectosExistentesIds.has(proyectoCollab.id)) {
+                        projects.push(proyectoCollab);
+                        cambios++;
+                        console.log(`   ✅ Proyecto colaborativo agregado: ${proyectoCollab.name}`);
+                    }
+                });
+                
+                if (cambios > 0) {
+                    // ✅ GUARDAR EN LOCALSTORAGE (caché)
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    console.log(`✅ ${cambios} proyectos colaborativos sincronizados`);
+                    
+                    // ✅ ACTUALIZAR MENÚ LATERAL
+                    if (typeof renderProjects === 'function') {
+                        renderProjects();
+                    }
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                    }
+                }
+            } else {
+                console.log('ℹ️ No hay proyectos colaborativos');
+            }
+        } catch (error) {
+            console.error('❌ Error sincronizando proyectos colaborativos:', error);
+        }
+    }, 3000); // Esperar 3 segundos para que todo cargue
+})();
 
