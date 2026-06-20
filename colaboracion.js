@@ -1,76 +1,67 @@
 // ============================================================
-// 🔥 SISTEMA DE COLABORACIÓN - VERSIÓN DEFINITIVA COMPLETA
+// 🚀 SISTEMA DE COLABORACIÓN - VERSIÓN COMPLETA FUNCIONAL
 // ============================================================
 
 (function() {
     'use strict';
     
-    console.log('🔥 INSTALANDO SISTEMA DE COLABORACIÓN DEFINITIVO...');
+    console.log('🔥 INSTALANDO SISTEMA DE COLABORACIÓN COMPLETO...');
     
     // ============================================================
-    // 1. FUNCIÓN PARA RECARGAR PROYECTOS (CON RECARGA FORZADA)
+    // 1. SINCRONIZACIÓN ENTRE PESTAÑAS (LOCALSTORAGE)
     // ============================================================
-    window.recargarProyectosForzado = async function() {
-        console.log('🔄 RECARGANDO PROYECTOS (FORZADO)...');
-        
-        const token = localStorage.getItem('authToken');
-        const clienteId = localStorage.getItem('clienteId');
-        
-        if (!token || !clienteId) {
-            console.error('❌ No hay token o clienteId');
-            return false;
+    
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'projects' || e.key === 'sync-flag') {
+            console.log('📡 Cambio en localStorage detectado!');
+            setTimeout(() => {
+                recargarDesdeLocalStorage();
+            }, 100);
         }
-        
-        try {
-            const resp = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects?clienteId=${clienteId}`, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            
-            if (!resp.ok) {
-                console.error('❌ Error:', resp.status);
-                return false;
+    });
+    
+    // Interceptar safeSave para emitir flag
+    const originalSafeSave = window.safeSave;
+    if (originalSafeSave) {
+        window.safeSave = async function(clienteId) {
+            const result = await originalSafeSave(clienteId);
+            localStorage.setItem('sync-flag', Date.now().toString());
+            console.log('🚩 Flag de sincronización emitido');
+            return result;
+        };
+        console.log('✅ safeSave interceptado');
+    }
+    
+    // Recargar desde localStorage
+    function recargarDesdeLocalStorage() {
+        const stored = localStorage.getItem('projects');
+        if (stored) {
+            try {
+                const nuevosProyectos = JSON.parse(stored);
+                if (JSON.stringify(nuevosProyectos) !== JSON.stringify(window.projects)) {
+                    console.log('📦 Actualizando desde localStorage...');
+                    window.projects = nuevosProyectos;
+                    
+                    if (typeof renderProjects === 'function') renderProjects();
+                    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+                    if (typeof renderDashboard === 'function') renderDashboard();
+                    
+                    mostrarNotificacion('🔄 Proyectos actualizados desde otra pestaña');
+                }
+            } catch(e) {
+                console.error('Error:', e);
             }
-            
-            const data = await resp.json();
-            console.log('📦 Datos recibidos:', data.projects?.length || 0, 'proyectos');
-            
-            if (data.projects) {
-                window.projects = data.projects;
-                localStorage.setItem('projects', JSON.stringify(data.projects));
-                
-                console.log('🎯 FORZANDO ACTUALIZACIÓN DE INTERFAZ...');
-                
-                if (typeof renderProjects === 'function') {
-                    renderProjects();
-                    console.log('✅ renderProjects ejecutado');
-                }
-                
-                if (typeof renderKanbanTasks === 'function') {
-                    renderKanbanTasks();
-                    console.log('✅ renderKanbanTasks ejecutado');
-                }
-                
-                if (typeof refreshCurrentView === 'function') {
-                    refreshCurrentView();
-                    console.log('✅ refreshCurrentView ejecutado');
-                }
-                
-                mostrarNotificacion('✅ Proyectos actualizados (' + data.projects.length + ' proyectos)');
-                return true;
-            }
-            
-        } catch (error) {
-            console.error('❌ Error:', error);
-            return false;
         }
-    };
+    }
+    
+    // Polling de respaldo (cada 3 segundos)
+    setInterval(recargarDesdeLocalStorage, 3000);
     
     // ============================================================
     // 2. NOTIFICACIÓN VISUAL
     // ============================================================
     function mostrarNotificacion(mensaje) {
-        console.log('🔔 Notificación:', mensaje);
-        
         const anterior = document.getElementById('notifColaboracion');
         if (anterior) anterior.remove();
         
@@ -91,15 +82,10 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             max-width: 400px;
             animation: slideIn 0.3s ease;
-            backdrop-filter: blur(10px);
         `;
         notif.textContent = mensaje;
         document.body.appendChild(notif);
-        
-        setTimeout(() => {
-            notif.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notif.remove(), 300);
-        }, 4000);
+        setTimeout(() => notif.remove(), 3000);
     }
     
     // ============================================================
@@ -134,10 +120,9 @@
             transition: all 0.3s ease;
             border: 2px solid rgba(255,255,255,0.2);
             user-select: none;
-            font-family: Arial, sans-serif;
         `;
         
-        // Indicador de conexión (punto rojo/verde)
+        // Punto de conexión
         const dot = document.createElement('div');
         dot.id = 'colabDot';
         dot.style.cssText = `
@@ -147,7 +132,7 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: #ef4444;
+            background: #10b981;
             border: 2px solid #0f172a;
             transition: background 0.3s;
         `;
@@ -159,20 +144,9 @@
         
         document.body.appendChild(btn);
         console.log('✅ Botón de colaboración creado');
-        
-        // Actualizar estado del punto
-        setInterval(() => {
-            const dotEl = document.getElementById('colabDot');
-            if (dotEl) {
-                const socketConectado = window.miSocket && window.miSocket.connected;
-                dotEl.style.background = socketConectado ? '#10b981' : '#ef4444';
-            }
-        }, 2000);
-        
-        return btn;
     }
     
-    // Mostrar/ocultar panel de colaboración
+    // Mostrar/ocultar panel
     window.toggleColabPanel = async function() {
         const existing = document.getElementById('colabPanel');
         if (existing) {
@@ -310,7 +284,7 @@
                 </div>
             `;
             
-            // Invitar (solo si tiene proyectos propios)
+            // Invitar
             if (misProyectos.length > 0) {
                 html += `
                     <div style="border-top: 1px solid #334155; padding-top: 16px;">
@@ -334,7 +308,6 @@
             html += `
                     <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
                         🔄 ${misProyectos.length} propios | ${colaborativos.length} colaborativos
-                        <br><span style="font-size: 9px; color: #475569;">Conectado a MongoDB</span>
                     </div>
                 </div>
             `;
@@ -404,9 +377,7 @@
                     if (data.success) {
                         alert('✅ Invitación aceptada');
                         document.getElementById('colabPanel')?.remove();
-                        if (typeof recargarProyectosForzado === 'function') {
-                            recargarProyectosForzado();
-                        }
+                        recargarDesdeLocalStorage();
                     } else {
                         alert('❌ Error: ' + (data.error || 'Error desconocido'));
                     }
@@ -423,153 +394,16 @@
     };
     
     // ============================================================
-    // 4. SOCKET.IO - CREAR Y ESCUCHAR
+    // 4. INICIALIZAR
     // ============================================================
     
-    function crearSocket() {
-        if (window.miSocket && window.miSocket.connected) {
-            console.log('✅ Socket ya existe y está conectado');
-            return;
-        }
-        
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.error('❌ No hay token');
-            return;
-        }
-        
-        console.log('🔗 Creando socket...');
-        window.miSocket = io('https://mi-sistema-proyectos-backend-4.onrender.com', {
-            transports: ['websocket', 'polling'],
-            auth: { token: token },
-            reconnection: true,
-            reconnectionAttempts: 10,
-            reconnectionDelay: 1000
-        });
-        
-        window.miSocket.on('connect', function() {
-            console.log('✅ Socket CONECTADO! ID:', window.miSocket.id);
-            window.miSocket.emit('join-collab-room', { 
-                userId: localStorage.getItem('userEmail') || 'usuario_' + Date.now()
-            });
-            mostrarNotificacion('✅ Conectado al servidor de colaboración');
-        });
-        
-        // 🔥 ESCUCHAR EVENTOS DEL SOCKET
-        window.miSocket.on('collab-update', function(data) {
-            console.log('📡 EVENTO COLLAB RECIBIDO:', data);
-            
-            const mensaje = data.action === 'created' ? '✅ Nueva tarea creada' :
-                           data.action === 'moved' ? `🔄 Tarea "${data.task?.name}" movida` :
-                           data.action === 'updated' ? '✏️ Tarea actualizada' :
-                           data.action === 'deleted' ? '🗑️ Tarea eliminada' :
-                           '📡 Cambio detectado';
-            
-            mostrarNotificacion(`${mensaje} por ${data.userId || 'otro usuario'}`);
-            
-            setTimeout(() => {
-                window.recargarProyectosForzado();
-            }, 500);
-        });
-        
-        window.miSocket.on('task-moved', function(data) {
-            console.log('🔄 Tarea movida (evento específico):', data);
-            setTimeout(() => window.recargarProyectosForzado(), 500);
-        });
-        
-        window.miSocket.on('task-created', function(data) {
-            console.log('📦 Tarea creada (evento específico):', data);
-            setTimeout(() => window.recargarProyectosForzado(), 500);
-        });
-        
-        window.miSocket.on('task-updated', function(data) {
-            console.log('✏️ Tarea actualizada (evento específico):', data);
-            setTimeout(() => window.recargarProyectosForzado(), 500);
-        });
-        
-        window.miSocket.on('task-deleted', function(data) {
-            console.log('🗑️ Tarea eliminada (evento específico):', data);
-            setTimeout(() => window.recargarProyectosForzado(), 500);
-        });
-        
-        window.miSocket.on('connect_error', function(error) {
-            console.error('❌ Error de conexión:', error.message);
-        });
-        
-        window.miSocket.on('disconnect', function() {
-            console.log('🔌 Socket desconectado');
-        });
-    }
+    // Crear botón
+    crearBotonColaboracion();
     
-    // ============================================================
-    // 5. INTERCEPTAR CAMBIOS EN LOCALSTORAGE (SINCRONIZACIÓN ENTRE PESTAÑAS)
-    // ============================================================
+    // Recargar inicial
+    setTimeout(recargarDesdeLocalStorage, 500);
     
-    function setupLocalStorageSync() {
-        console.log('🔄 Configurando sincronización entre pestañas...');
-        
-        // Escuchar cambios en localStorage
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'projects' || e.key === 'sync-flag') {
-                console.log('📡 Cambio en localStorage detectado!');
-                window.recargarProyectosForzado();
-            }
-        });
-        
-        // Interceptar safeSave para emitir flag
-        const originalSafeSave = window.safeSave;
-        if (originalSafeSave) {
-            window.safeSave = async function(clienteId) {
-                const result = await originalSafeSave(clienteId);
-                localStorage.setItem('sync-flag', Date.now().toString());
-                console.log('🚩 Flag de sincronización emitido');
-                return result;
-            };
-            console.log('✅ safeSave interceptado');
-        }
-    }
-    
-    // ============================================================
-    // 6. INICIALIZACIÓN COMPLETA
-    // ============================================================
-    
-    function init() {
-        console.log('🚀 INICIALIZANDO SISTEMA DE COLABORACIÓN...');
-        
-        // Crear socket
-        crearSocket();
-        
-        // Crear botón flotante
-        crearBotonColaboracion();
-        
-        // Configurar sincronización entre pestañas
-        setupLocalStorageSync();
-        
-        // Recargar proyectos inicialmente
-        setTimeout(() => {
-            window.recargarProyectosForzado();
-        }, 500);
-        
-        // Polling de respaldo (cada 5 segundos)
-        setInterval(() => {
-            window.recargarProyectosForzado();
-        }, 5000);
-        
-        console.log('✅ SISTEMA DE COLABORACIÓN INSTALADO');
-        console.log('');
-        console.log('📋 COMANDOS DISPONIBLES:');
-        console.log('  recargarProyectosForzado()   → Recargar proyectos manualmente');
-        console.log('  toggleColabPanel()           → Abrir/cerrar panel de colaboración');
-        console.log('  window.miSocket              → Ver socket');
-        console.log('');
-        console.log('💡 Haz clic en el botón 👥 para abrir el panel de colaboración');
-    }
-    
-    // Ejecutar
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        setTimeout(init, 100);
-    }
+    console.log('✅ SISTEMA DE COLABORACIÓN INSTALADO');
+    console.log('💡 Los movimientos y el modal funcionan juntos');
     
 })();
