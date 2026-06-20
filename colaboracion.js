@@ -38,11 +38,9 @@
     
     function getCurrentUser() {
         try {
-            // Primero intentar desde el objeto user
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             if (user.email) return user.email;
             
-            // Luego desde el token JWT
             const token = getAuthToken();
             if (token) {
                 try {
@@ -52,11 +50,7 @@
                 } catch(e) {}
             }
             
-            // Fallback
-            const email = localStorage.getItem('userEmail');
-            if (email) return email;
-            
-            return null;
+            return localStorage.getItem('userEmail') || null;
         } catch(e) {
             return null;
         }
@@ -75,11 +69,145 @@
     }
     
     function getProyectoId(proyecto) {
-        return proyecto._id || proyecto.id;
+        return proyecto?._id || proyecto?.id;
     }
     
     // ============================================
-    // WEB SOCKET (SIN CAMBIOS)
+    // FUNCIÓN PRINCIPAL: CARGAR TODOS LOS PROYECTOS
+    // ============================================
+    window.sincronizarProyectosColaborativos = async function() {
+        console.log('🔄 SINCRONIZANDO PROYECTOS COLABORATIVOS...');
+        
+        const token = getAuthToken();
+        const clienteId = getClienteId();
+        const userEmail = getCurrentUser();
+        
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            alert('❌ Inicia sesión primero');
+            return false;
+        }
+        
+        try {
+            // 1. Cargar proyectos del usuario (dueño)
+            let misProyectos = [];
+            if (clienteId) {
+                console.log('📡 Cargando proyectos del dueño...');
+                const resp = await fetch(`${API_URL}/projects?clienteId=${clienteId}`, {
+                    headers: getHeaders()
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    misProyectos = data.projects || [];
+                    console.log('✅ Mis proyectos:', misProyectos.length);
+                }
+            }
+            
+            // 2. Cargar proyectos colaborativos
+            let proyectosColaborativos = [];
+            console.log('📡 Cargando proyectos colaborativos...');
+            try {
+                const resp = await fetch(`${API_URL}/colaboracion/proyectos`, {
+                    headers: getHeaders()
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    proyectosColaborativos = data.proyectos || [];
+                    console.log('✅ Proyectos colaborativos (backend):', proyectosColaborativos.length);
+                }
+            } catch (e) {
+                console.warn('⚠️ Error en /colaboracion/proyectos:', e.message);
+            }
+            
+            // 3. Cargar proyectos del usuario específico
+            let proyectosUser = [];
+            if (userEmail) {
+                try {
+                    const resp = await fetch(`${API_URL}/user/projects`, {
+                        headers: getHeaders()
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        proyectosUser = data.collaboratedProjects || [];
+                        console.log('✅ Proyectos user/projects:', proyectosUser.length);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Error en /user/projects:', e.message);
+                }
+            }
+            
+            // 4. Cargar proyectos guardados localmente
+            let proyectosLocales = [];
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                proyectosLocales = stored ? JSON.parse(stored) : [];
+                console.log('✅ Proyectos locales:', proyectosLocales.length);
+            } catch (e) {
+                console.warn('⚠️ Error cargando locales:', e.message);
+            }
+            
+            // 5. COMBINAR TODOS
+            const todos = [...misProyectos, ...proyectosColaborativos, ...proyectosUser, ...proyectosLocales];
+            console.log('📊 Total antes de filtrar:', todos.length);
+            
+            // 6. Eliminar duplicados
+            const idsVistos = new Set();
+            const proyectosUnicos = todos.filter(p => {
+                if (!p) return false;
+                const id = getProyectoId(p);
+                if (!id) return false;
+                if (idsVistos.has(id)) return false;
+                idsVistos.add(id);
+                return true;
+            });
+            
+            console.log('📊 Proyectos únicos:', proyectosUnicos.length);
+            
+            // 7. ACTUALIZAR window.projects
+            if (proyectosUnicos.length > 0) {
+                window.projects = proyectosUnicos.map(p => ({
+                    id: getProyectoId(p),
+                    _id: p._id || p.id,
+                    name: p.nombre || p.name,
+                    clienteId: p.clienteId,
+                    colaboradores: p.colaboradores || [],
+                    tasks: p.tasks || [],
+                    totalProjectTime: p.totalProjectTime || 0
+                }));
+                
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+                console.log('✅ window.projects actualizado con', window.projects.length, 'proyectos');
+                
+                // 8. ACTUALIZAR INTERFAZ
+                if (typeof renderProjects === 'function') {
+                    renderProjects();
+                }
+                if (typeof renderKanbanTasks === 'function') {
+                    renderKanbanTasks();
+                }
+                
+                console.log('📋 PROYECTOS:');
+                window.projects.forEach((p, i) => {
+                    console.log('  ' + (i+1) + '. ' + p.name + ' (ID: ' + p.id + ')');
+                });
+                
+                alert('✅ ' + window.projects.length + ' proyectos sincronizados');
+                return true;
+            } else {
+                console.log('📭 No hay proyectos para mostrar');
+                alert('📭 No hay proyectos disponibles');
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('❌ Error:', error);
+            alert('❌ Error al sincronizar: ' + error.message);
+            return false;
+        }
+    };
+    
+    // ============================================
+    // WEB SOCKET - SINCRONIZACIÓN EN TIEMPO REAL
     // ============================================
     function initWebSocket() {
         if (socket) {
@@ -109,10 +237,11 @@
                 });
             });
             
+            // Escuchar eventos de colaboración
             socket.on('collab-update', function(data) {
                 console.log('📡 Evento colaborativo recibido:', data);
                 if (data.userId === getCurrentUser()) return;
-                sincronizarProyectosAlMenu();
+                window.sincronizarProyectosColaborativos();
             });
             
             socket.on('disconnect', function() {
@@ -145,7 +274,7 @@
     }
     
     // ============================================
-    // GUARDAR PROYECTO ACEPTADO (MONGODB)
+    // GUARDAR PROYECTO ACEPTADO LOCALMENTE
     // ============================================
     function guardarProyectoAceptadoLocal(proyecto) {
         if (!proyecto) return;
@@ -155,300 +284,42 @@
         const existe = aceptados.some(p => getProyectoId(p) === id);
         
         if (!existe) {
-            // Normalizar proyecto para almacenamiento
-            const proyectoNormalizado = {
+            aceptados.push({
                 _id: proyecto._id || proyecto.id,
                 id: proyecto.id || proyecto._id,
                 name: proyecto.nombre || proyecto.name,
-                nombre: proyecto.nombre || proyecto.name,
                 clienteId: proyecto.clienteId,
                 colaboradores: proyecto.colaboradores || [],
                 tasks: proyecto.tasks || [],
                 totalProjectTime: proyecto.totalProjectTime || 0
-            };
-            
-            aceptados.push(proyectoNormalizado);
+            });
             localStorage.setItem(STORAGE_KEY, JSON.stringify(aceptados));
-            console.log('💾 Proyecto guardado localmente:', proyectoNormalizado.name);
+            console.log('💾 Proyecto guardado localmente');
         }
         proyectosAceptadosLocal = aceptados;
     }
     
-    function cargarProyectosAceptadosLocal() {
-        proyectosAceptadosLocal = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return proyectosAceptadosLocal;
-    }
-    
-    function eliminarProyectoAceptadoLocal(proyectoId) {
-        let aceptados = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        aceptados = aceptados.filter(p => getProyectoId(p) !== proyectoId);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(aceptados));
-        proyectosAceptadosLocal = aceptados;
-    }
-    
     // ============================================
-    // SINCRONIZAR AL MENÚ LATERAL - FUNCIÓN GLOBAL
+    // CARGAR INVITACIONES
     // ============================================
-    window.sincronizarProyectosAlMenu = function() {
-        console.log('🔄 Sincronizando proyectos al menú lateral (MongoDB)...');
-        
-        cargarProyectosAceptadosLocal();
-        
-        // Obtener proyectos del backend (si están disponibles)
-        const proyectosBackend = window.projects || [];
-        
-        // Combinar todos los proyectos
-        const todosLosProyectos = [...proyectosBackend, ...misProyectos, ...proyectosColaborativos, ...proyectosAceptadosLocal];
-        
-        // Eliminar duplicados por ID
-        const idsVistos = new Set();
-        const proyectosUnicos = todosLosProyectos.filter(p => {
-            if (!p) return false;
-            const id = getProyectoId(p);
-            if (!id) return false;
-            if (idsVistos.has(id)) return false;
-            idsVistos.add(id);
-            return true;
-        });
-        
-        if (proyectosUnicos.length === 0) {
-            console.log('📭 No hay proyectos para mostrar');
-            return;
-        }
-        
-        // Actualizar el array global de proyectos
-        window.projects = proyectosUnicos.map(p => ({
-            id: getProyectoId(p),
-            _id: p._id || p.id,
-            name: p.nombre || p.name,
-            clienteId: p.clienteId,
-            colaboradores: p.colaboradores || [],
-            tasks: p.tasks || [],
-            totalProjectTime: p.totalProjectTime || 0
-        }));
-        
-        // Guardar en localStorage para persistencia
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        
-        // Actualizar interfaz
-        if (typeof renderProjects === 'function') {
-            renderProjects();
-            console.log('✅ Menú lateral actualizado con', window.projects.length, 'proyectos');
-        }
-        if (typeof renderKanbanTasks === 'function') {
-            renderKanbanTasks();
-        }
-        
-        // Disparar evento de actualización
-        document.dispatchEvent(new CustomEvent('projectsUpdated', { 
-            detail: { projects: window.projects } 
-        }));
-    };
-    
-    // ============================================
-    // CARGAR DATOS DESDE MONGODB
-    // ============================================
-    async function cargarDatos() {
-        const user = getCurrentUser();
-        const clienteId = getClienteId();
-        
-        if (!user && !clienteId) {
-            console.log('⏳ No hay usuario o clienteId');
-            return;
-        }
-        
-        console.log('📡 Cargando datos para usuario:', user, 'clienteId:', clienteId);
-        
+    async function cargarInvitaciones() {
         try {
-            // 1. Cargar proyectos donde el usuario es dueño
-            if (clienteId) {
-                const respMis = await fetch(`${API_URL}/projects?clienteId=${clienteId}`, {
-                    headers: getHeaders()
-                });
-                
-                if (respMis.ok) {
-                    const data = await respMis.json();
-                    misProyectos = data.projects || [];
-                    console.log('✅ Mis proyectos:', misProyectos.length);
-                } else {
-                    console.warn('⚠️ Error cargando mis proyectos:', respMis.status);
-                }
-            }
-            
-            // 2. Cargar invitaciones pendientes
-            const respInv = await fetch(`${API_URL}/colaboracion/invitaciones`, {
+            const resp = await fetch(`${API_URL}/colaboracion/invitaciones`, {
                 headers: getHeaders()
             });
-            
-            if (respInv.ok) {
-                const data = await respInv.json();
+            if (resp.ok) {
+                const data = await resp.json();
                 invitaciones = data.invitaciones || [];
                 console.log('✅ Invitaciones:', invitaciones.length);
+                updateBadge();
             }
-            
-            // 3. Cargar proyectos colaborativos (donde el usuario ha sido invitado)
-            const respCol = await fetch(`${API_URL}/colaboracion/proyectos`, {
-                headers: getHeaders()
-            });
-            
-            if (respCol.ok) {
-                const data = await respCol.json();
-                proyectosColaborativos = data.proyectos || [];
-                console.log('✅ Proyectos colaborativos:', proyectosColaborativos.length);
-            }
-            
-            // 4. Cargar proyectos aceptados localmente
-            cargarProyectosAceptadosLocal();
-            
-            // 5. Sincronizar al menú
-            window.sincronizarProyectosAlMenu();
-            updateBadge();
-            
         } catch (error) {
-            console.error('❌ Error cargando datos:', error);
+            console.error('❌ Error cargando invitaciones:', error);
         }
     }
     
     // ============================================
-    // NÚCLEO DE COLABORACIÓN (VERSIÓN MONGODB)
-    // ============================================
-    const Core = {
-        getMisProyectos: function() {
-            return misProyectos;
-        },
-        
-        getProyectosColaborativos: function() {
-            return proyectosColaborativos;
-        },
-        
-        getMyInvitations: function() {
-            const user = getCurrentUser();
-            if (!user) return [];
-            
-            const userNormalizado = user.trim().toLowerCase();
-            
-            return invitaciones.filter(i => {
-                const emailNormalizado = (i.email || '').trim().toLowerCase();
-                return emailNormalizado === userNormalizado && i.estado === 'pendiente';
-            });
-        },
-        
-        async sendInvitation(proyectoId, email, rol = 'colaborador') {
-            const user = getCurrentUser();
-            if (!user) {
-                alert('❌ Inicia sesión para invitar colaboradores');
-                return false;
-            }
-            
-            // Buscar proyecto en mis proyectos o en el array global
-            let proyecto = misProyectos.find(p => getProyectoId(p) == proyectoId);
-            if (!proyecto) {
-                proyecto = window.projects.find(p => getProyectoId(p) == proyectoId);
-            }
-            
-            if (!proyecto) {
-                alert('❌ Proyecto no encontrado');
-                return false;
-            }
-            
-            const nombreProyecto = proyecto.nombre || proyecto.name;
-            
-            try {
-                const response = await fetch(`${API_URL}/invitations`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({
-                        email: email,
-                        proyectoIndex: 0,
-                        proyectoNombre: nombreProyecto,
-                        rol: rol,
-                        proyectoId: getProyectoId(proyecto)
-                    })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.error || 'Error al enviar invitación');
-                }
-                
-                const data = await response.json();
-                
-                // Recargar datos
-                await cargarDatos();
-                alert(`✅ Invitación enviada a ${email}`);
-                updateBadge();
-                renderPanel();
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Error enviando invitación:', error);
-                alert('❌ Error: ' + error.message);
-                return false;
-            }
-        },
-        
-        async acceptInvitation(invitacionId) {
-            try {
-                const response = await fetch(`${API_URL}/colaboracion/aceptar-invitacion`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ invitacionId })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.error || 'Error al aceptar');
-                }
-                
-                const data = await response.json();
-                
-                if (data.proyecto) {
-                    guardarProyectoAceptadoLocal(data.proyecto);
-                }
-                
-                await cargarDatos();
-                alert('✅ Invitación aceptada');
-                updateBadge();
-                renderPanel();
-                window.sincronizarProyectosAlMenu();
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Error aceptando invitación:', error);
-                alert('❌ Error: ' + error.message);
-                return false;
-            }
-        },
-        
-        async rejectInvitation(invitacionId) {
-            try {
-                const response = await fetch(`${API_URL}/colaboracion/rechazar-invitacion`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ invitacionId })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.error || 'Error al rechazar');
-                }
-                
-                await cargarDatos();
-                updateBadge();
-                renderPanel();
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Error rechazando invitación:', error);
-                alert('❌ Error: ' + error.message);
-                return false;
-            }
-        }
-    };
-    
-    // ============================================
-    // INTERCEPTAR CAMBIOS EN TAREAS (SIN CAMBIOS)
+    // INTERCEPTAR CAMBIOS EN TAREAS
     // ============================================
     function interceptarCambiosTareas() {
         console.log('🔄 Interceptando cambios en tareas...');
@@ -512,10 +383,131 @@
                 return result;
             };
         }
+        
+        console.log('✅ Cambios en tareas interceptados');
     }
     
     // ============================================
-    // INTERFAZ VISUAL (ACTUALIZADA)
+    // CORE - FUNCIONES PRINCIPALES
+    // ============================================
+    const Core = {
+        getMyInvitations: function() {
+            const user = getCurrentUser();
+            if (!user) return [];
+            const userNormalizado = user.trim().toLowerCase();
+            return invitaciones.filter(i => {
+                const email = (i.email || '').trim().toLowerCase();
+                return email === userNormalizado && i.estado === 'pendiente';
+            });
+        },
+        
+        async sendInvitation(proyectoId, email) {
+            const user = getCurrentUser();
+            if (!user) {
+                alert('❌ Inicia sesión para invitar');
+                return false;
+            }
+            
+            const proyecto = window.projects.find(p => getProyectoId(p) == proyectoId);
+            if (!proyecto) {
+                alert('❌ Proyecto no encontrado');
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/invitations`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        email: email,
+                        proyectoIndex: 0,
+                        proyectoNombre: proyecto.name,
+                        rol: 'colaborador',
+                        proyectoId: getProyectoId(proyecto)
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Error al enviar');
+                }
+                
+                const data = await response.json();
+                await cargarInvitaciones();
+                alert(`✅ Invitación enviada a ${email}`);
+                updateBadge();
+                renderPanel();
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error: ' + error.message);
+                return false;
+            }
+        },
+        
+        async acceptInvitation(invitacionId) {
+            try {
+                const response = await fetch(`${API_URL}/colaboracion/aceptar-invitacion`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ invitacionId })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Error al aceptar');
+                }
+                
+                const data = await response.json();
+                if (data.proyecto) {
+                    guardarProyectoAceptadoLocal(data.proyecto);
+                }
+                
+                await cargarInvitaciones();
+                await window.sincronizarProyectosColaborativos();
+                
+                alert('✅ Invitación aceptada');
+                updateBadge();
+                renderPanel();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error: ' + error.message);
+                return false;
+            }
+        },
+        
+        async rejectInvitation(invitacionId) {
+            try {
+                const response = await fetch(`${API_URL}/colaboracion/rechazar-invitacion`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ invitacionId })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Error al rechazar');
+                }
+                
+                await cargarInvitaciones();
+                updateBadge();
+                renderPanel();
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error: ' + error.message);
+                return false;
+            }
+        }
+    };
+    
+    // ============================================
+    // INTERFAZ VISUAL
     // ============================================
     
     function createFloatingButton() {
@@ -604,14 +596,15 @@
             return;
         }
         
-        await cargarDatos();
+        await cargarInvitaciones();
         
         const pendientes = Core.getMyInvitations();
-        const misProyectosList = Core.getMisProyectos();
-        const colaborativosList = Core.getProyectosColaborativos();
-        const aceptadosLocal = proyectosAceptadosLocal;
+        const proyectosActuales = window.projects || [];
         
-        const puedeInvitar = misProyectosList.length > 0 || window.projects.length > 0;
+        const misProyectos = proyectosActuales.filter(p => p.clienteId === getClienteId());
+        const colaborativos = proyectosActuales.filter(p => p.clienteId !== getClienteId());
+        
+        const puedeInvitar = misProyectos.length > 0;
         
         const panel = document.createElement('div');
         panel.id = 'colabPanel';
@@ -633,21 +626,14 @@
             flex-direction: column;
         `;
         
-        // Obtener proyectos para invitar
-        const proyectosParaInvitar = [...misProyectosList, ...window.projects].filter(p => {
-            // Solo proyectos donde el usuario es dueño
-            const clienteId = getClienteId();
-            return p.clienteId === clienteId;
-        });
-        
-        const optionsProyectos = proyectosParaInvitar.map(p => 
-            `<option value="${getProyectoId(p)}">${p.nombre || p.name}</option>`
+        const optionsProyectos = misProyectos.map(p => 
+            `<option value="${getProyectoId(p)}">${p.name}</option>`
         ).join('');
         
         const seccionInvitar = puedeInvitar ? `
             <div style="border-top: 1px solid #334155; padding-top: 16px;">
                 <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">➕ Invitar Colaborador</div>
-                ${proyectosParaInvitar.length > 0 ? `
+                ${misProyectos.length > 0 ? `
                     <div style="margin-bottom: 8px;">
                         <select id="invitarProyectoSelect" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; font-size: 13px;">
                             ${optionsProyectos}
@@ -662,22 +648,15 @@
                     <div id="invitarMensaje" style="margin-top: 8px; font-size: 12px; text-align: center;"></div>
                 ` : `
                     <div style="text-align: center; color: #64748b; font-size: 13px; padding: 10px;">
-                        💡 Crea un proyecto en el menú lateral para poder invitar colaboradores.
+                        💡 Crea un proyecto en el menú lateral para invitar colaboradores.
                     </div>
                 `}
             </div>
         ` : `
             <div style="border-top: 1px solid #334155; padding-top: 16px; text-align: center; color: #64748b; font-size: 13px;">
-                💡 Crea un proyecto en el menú lateral para poder invitar colaboradores.
+                💡 Crea un proyecto en el menú lateral para invitar colaboradores.
             </div>
         `;
-        
-        // Construir panel con todos los proyectos
-        const todosProyectos = [...misProyectosList, ...colaborativosList, ...aceptadosLocal];
-        const proyectosUnicos = todosProyectos.filter((p, i, arr) => {
-            const id = getProyectoId(p);
-            return arr.findIndex(x => getProyectoId(x) === id) === i;
-        });
         
         panel.innerHTML = `
             <div style="padding: 16px 20px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
@@ -690,7 +669,7 @@
             </div>
             
             <div style="padding: 16px; overflow-y: auto; flex: 1; max-height: 400px;">
-                <!-- Invitaciones Pendientes -->
+                <!-- Invitaciones -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #f59e0b; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📩 Invitaciones Pendientes</div>
                     ${pendientes.length === 0 ? `
@@ -699,7 +678,7 @@
                         <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid #f59e0b;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <div style="font-weight: 600;">${inv.proyectoNombre || inv.proyecto?.name || 'Proyecto'}</div>
+                                    <div style="font-weight: 600;">${inv.proyectoNombre || 'Proyecto'}</div>
                                     <div style="font-size: 11px; color: #94a3b8;">De: ${inv.creador || 'Desconocido'}</div>
                                 </div>
                                 <button onclick="aceptarInvitacionConSincronizacion('${inv._id || inv.id}')" style="background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px;">
@@ -713,13 +692,13 @@
                 <!-- MIS PROYECTOS -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #8b5cf6; font-size: 13px; font-weight: 600; margin-bottom: 10px;">👑 Mis Proyectos</div>
-                    ${misProyectosList.length === 0 ? `
+                    ${misProyectos.length === 0 ? `
                         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No tienes proyectos propios</div>
-                    ` : misProyectosList.map(p => `
+                    ` : misProyectos.map(p => `
                         <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #8b5cf6;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <div style="font-weight: 600;">${p.nombre || p.name}</div>
+                                    <div style="font-weight: 600;">${p.name}</div>
                                     <div style="font-size: 11px; color: #94a3b8;">
                                         ${p.colaboradores?.length || 0} colaboradores
                                     </div>
@@ -733,43 +712,31 @@
                 <!-- PROYECTOS COLABORATIVOS -->
                 <div style="margin-bottom: 20px;">
                     <div style="color: #10b981; font-size: 13px; font-weight: 600; margin-bottom: 10px;">📂 Proyectos Colaborativos</div>
-                    ${colaborativosList.length === 0 && aceptadosLocal.length === 0 ? `
+                    ${colaborativos.length === 0 ? `
                         <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">No estás en proyectos colaborativos</div>
-                    ` : `
-                        ${colaborativosList.map(p => `
-                            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #10b981;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600;">${p.nombre || p.name}</div>
-                                        <div style="font-size: 11px; color: #94a3b8;">
-                                            ${p.colaboradores?.length || 0} colaboradores
-                                        </div>
+                    ` : colaborativos.map(p => `
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #10b981;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">${p.name}</div>
+                                    <div style="font-size: 11px; color: #94a3b8;">
+                                        ${p.colaboradores?.length || 0} colaboradores
                                     </div>
-                                    <span style="color: #10b981; font-size: 11px; font-weight: 600;">✅ Colaborador</span>
                                 </div>
+                                <span style="color: #10b981; font-size: 11px; font-weight: 600;">✅ Colaborador</span>
                             </div>
-                        `).join('')}
-                        ${aceptadosLocal.filter(p => !colaborativosList.some(c => getProyectoId(c) === getProyectoId(p))).map(p => `
-                            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #f59e0b;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600;">${p.nombre || p.name}</div>
-                                        <div style="font-size: 11px; color: #94a3b8;">
-                                            💾 Guardado local
-                                        </div>
-                                    </div>
-                                    <span style="color: #f59e0b; font-size: 11px; font-weight: 600;">📦 LOCAL</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    `}
+                        </div>
+                    `).join('')}
                 </div>
                 
                 ${seccionInvitar}
                 
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 10px; color: #64748b; border: 1px solid #1e293b; text-align: center;">
-                    🔄 ${misProyectosList.length} propios | ${colaborativosList.length + aceptadosLocal.length} colaborativos
+                    🔄 ${misProyectos.length} propios | ${colaborativos.length} colaborativos
                     <br><span style="font-size: 9px; color: #475569;">Conectado a MongoDB</span>
+                    <br><button onclick="window.sincronizarProyectosColaborativos()" style="background: none; border: 1px solid #475569; color: #94a3b8; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-top: 4px;">
+                        🔄 Recargar
+                    </button>
                 </div>
             </div>
         `;
@@ -777,9 +744,7 @@
         document.body.appendChild(panel);
         panelAbierto = true;
         
-        // ============================================
-        // FUNCIONES GLOBALES PARA EL PANEL
-        // ============================================
+        // Funciones globales
         window.enviarInvitacion = async function() {
             const select = document.getElementById('invitarProyectoSelect');
             const emailInput = document.getElementById('invitarEmailInput');
@@ -813,15 +778,8 @@
         window.aceptarInvitacionConSincronizacion = async function(id) {
             const resultado = await Core.acceptInvitation(id);
             if (resultado) {
-                await cargarDatos();
-                window.sincronizarProyectosAlMenu();
+                await window.sincronizarProyectosColaborativos();
                 renderPanel();
-            }
-        };
-        
-        window.rechazarInvitacion = async function(id) {
-            if (confirm('¿Rechazar esta invitación?')) {
-                await Core.rejectInvitation(id);
             }
         };
     }
@@ -832,19 +790,19 @@
     async function init() {
         console.log('🚀 Inicializando sistema de colaboración (MongoDB)...');
         
-        // Asegurar que la función sincronizarProyectosAlMenu esté disponible
-        window.sincronizarProyectosAlMenu = window.sincronizarProyectosAlMenu || function() {
-            console.log('🔄 Sincronizando proyectos desde el menú...');
-            if (typeof renderProjects === 'function') {
-                renderProjects();
-            }
-            if (typeof renderKanbanTasks === 'function') {
-                renderKanbanTasks();
-            }
-        };
+        // Asegurar que la función esté disponible
+        if (typeof window.sincronizarProyectosColaborativos === 'undefined') {
+            window.sincronizarProyectosColaborativos = async function() {
+                console.log('🔄 Función de sincronización cargada');
+                return false;
+            };
+        }
         
-        // Cargar datos
-        await cargarDatos();
+        // Cargar proyectos
+        await window.sincronizarProyectosColaborativos();
+        
+        // Cargar invitaciones
+        await cargarInvitaciones();
         
         // Iniciar WebSocket
         initWebSocket();
@@ -855,30 +813,15 @@
         // Interceptar cambios en tareas
         setTimeout(interceptarCambiosTareas, 1000);
         
-        // Escuchar cambios en el proyecto seleccionado
-        const originalSelectProject = window.selectProject;
-        if (originalSelectProject) {
-            window.selectProject = function(index) {
-                const result = originalSelectProject(index);
-                if (socket && socketConectado) {
-                    socket.emit('join-project', index);
-                }
-                return result;
-            };
-        }
-        
-        // Escuchar eventos de sincronización
-        document.addEventListener('projectsUpdated', function(e) {
-            console.log('📡 Evento projectsUpdated recibido');
-            if (typeof renderProjects === 'function') {
-                renderProjects();
-            }
-        });
+        // Sincronizar cada 30 segundos
+        setInterval(() => {
+            window.sincronizarProyectosColaborativos();
+        }, 30000);
         
         console.log('✅ Sistema de colaboración MongoDB listo');
-        console.log('📂 Mis proyectos:', misProyectos.length);
-        console.log('📂 Colaborativos:', proyectosColaborativos.length + proyectosAceptadosLocal.length);
+        console.log('📂 Proyectos totales:', window.projects?.length || 0);
         console.log('🔗 WebSocket:', socketConectado ? '✅ Conectado' : '❌ Desconectado');
+        console.log('💡 Usa sincronizarProyectosColaborativos() para sincronizar manualmente');
     }
     
     // Inicializar
