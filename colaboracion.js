@@ -306,37 +306,39 @@
                 }
             };
             
-            window.aceptarInvitacion = async function(invitacionId) {
-                try {
-                    const resp = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/colaboracion/aceptar-invitacion', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        },
-                        body: JSON.stringify({ invitacionId })
-                    });
-                    
-                    const data = await resp.json();
-                    
-                    if (data.success) {
-                        alert('✅ Invitación aceptada');
-                        document.getElementById('colabPanel')?.remove();
-                        // Recargar datos sin recargar página
-                        const stored = localStorage.getItem('projects');
-                        if (stored) {
-                            window.projects = JSON.parse(stored);
-                            if (typeof renderProjects === 'function') renderProjects();
-                            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-                        }
-                    } else {
-                        alert('❌ Error: ' + (data.error || 'Error desconocido'));
-                    }
-                } catch (error) {
-                    alert('❌ Error de conexión');
-                    console.error(error);
-                }
-            };
+           window.aceptarInvitacion = async function(invitacionId) {
+    try {
+        const resp = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/colaboracion/aceptar-invitacion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+            },
+            body: JSON.stringify({ invitacionId })
+        });
+        
+        const data = await resp.json();
+        
+        if (data.success) {
+            // 🔥 GUARDAR EL CLIENTEID QUE DEVUELVE EL BACKEND
+            if (data.clienteId) {
+                localStorage.setItem('clienteId', data.clienteId);
+                console.log('✅ ClienteId actualizado a:', data.clienteId);
+            }
+            
+            alert('✅ Invitación aceptada');
+            document.getElementById('colabPanel')?.remove();
+            
+            // 🔥 RECARGAR PARA USAR EL NUEVO CLIENTEID
+            location.reload();
+        } else {
+            alert('❌ Error: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        alert('❌ Error de conexión');
+        console.error(error);
+    }
+};
             
         } catch (error) {
             console.error('❌ Error:', error);
