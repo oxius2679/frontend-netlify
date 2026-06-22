@@ -1,3 +1,369 @@
+// ============================================
+// 🎯 SISTEMA DE PRUEBA DE 7 DÍAS + BLOQUEO PARCIAL
+// ============================================
+
+(function sistemaPruebaCompleto() {
+    console.log('🎯 Iniciando sistema de prueba de 7 días...');
+    
+    const DIAS_PRUEBA = 7;
+    const PLAN_FREE = 'free';
+    const PLAN_PROFESSIONAL = 'professional';
+    
+    // ============================================
+    // FUNCIONES AUXILIARES
+    // ============================================
+    function haySesionActiva() {
+        const token = localStorage.getItem('authToken');
+        const user = localStorage.getItem('user');
+        return !!(token && user);
+    }
+    
+    function obtenerFechaInicioPrueba() {
+        let fechaInicio = localStorage.getItem('fechaInicioPrueba');
+        if (!fechaInicio) {
+            fechaInicio = new Date().toISOString();
+            localStorage.setItem('fechaInicioPrueba', fechaInicio);
+            console.log('📅 PRUEBA INICIADA:', new Date(fechaInicio).toLocaleDateString());
+        }
+        return new Date(fechaInicio);
+    }
+    
+    function calcularDiasRestantes() {
+        const fechaInicio = obtenerFechaInicioPrueba();
+        const hoy = new Date();
+        const diffDias = Math.floor((hoy - fechaInicio) / (1000 * 60 * 60 * 24));
+        const diasRestantes = DIAS_PRUEBA - diffDias;
+        return {
+            fechaInicio,
+            diasTranscurridos: diffDias,
+            diasRestantes: Math.max(0, diasRestantes),
+            expirada: diffDias >= DIAS_PRUEBA
+        };
+    }
+    
+    // ============================================
+    // VERIFICAR SI LA PRUEBA ESTÁ ACTIVA
+    // ============================================
+    function pruebaActiva() {
+        const userPlan = localStorage.getItem('userPlan') || PLAN_FREE;
+        if (userPlan === PLAN_PROFESSIONAL) return true;
+        
+        const estado = calcularDiasRestantes();
+        return !estado.expirada;
+    }
+    
+    // ============================================
+    // MOSTRAR MODAL DE EXPIRACIÓN
+    // ============================================
+    window.mostrarModalPruebaExpirada = function() {
+        const modalExistente = document.getElementById('modalPruebaExpirada');
+        if (modalExistente) modalExistente.remove();
+        
+        const modal = document.createElement('div');
+        modal.id = 'modalPruebaExpirada';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, #0f172a, #1e293b);
+                border-radius: 24px;
+                padding: 40px;
+                max-width: 500px;
+                width: 90%;
+                border: 2px solid #ef4444;
+                text-align: center;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            ">
+                <div style="font-size: 64px; margin-bottom: 20px;">⏰</div>
+                <h2 style="color: white; margin: 0 0 15px 0; font-size: 28px;">¡Tu prueba gratuita ha terminado!</h2>
+                <p style="color: #94a3b8; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                    Tu período de prueba de <strong style="color: #8b5cf6;">7 días</strong> ha finalizado.
+                    <br><br>
+                    <strong style="color: #f59e0b;">Puedes seguir viendo</strong> tus proyectos y tareas, pero <strong style="color: #ef4444;">no podrás crear ni modificar</strong> nada hasta que actualices.
+                    <br><br>
+                    Actualiza a <strong style="color: #f59e0b;">Professional</strong> o <strong style="color: #ec4899;">Premium</strong> para continuar.
+                </p>
+                
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="window.showLicensesView(); document.getElementById('modalPruebaExpirada').remove();" style="
+                        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                        border: none;
+                        color: white;
+                        padding: 14px 30px;
+                        border-radius: 40px;
+                        font-weight: 700;
+                        font-size: 16px;
+                        cursor: pointer;
+                        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+                    ">
+                        📈 Actualizar Ahora
+                    </button>
+                    <button onclick="document.getElementById('modalPruebaExpirada').remove()" style="
+                        background: transparent;
+                        border: 2px solid #475569;
+                        color: #94a3b8;
+                        padding: 14px 30px;
+                        border-radius: 40px;
+                        font-weight: 600;
+                        font-size: 16px;
+                        cursor: pointer;
+                    ">
+                        Cerrar (modo solo lectura)
+                    </button>
+                </div>
+                
+                <p style="color: #64748b; font-size: 12px; margin-top: 20px;">
+                    🔒 Tus datos están seguros. Puedes actualizar cuando quieras.
+                </p>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    };
+    
+    // ============================================
+    // MOSTRAR BADGE
+    // ============================================
+    window.mostrarBadgePrueba = function() {
+        const userPlan = localStorage.getItem('userPlan') || PLAN_FREE;
+        if (userPlan === PLAN_PROFESSIONAL) return;
+        
+        if (userPlan === PLAN_FREE) {
+            const estado = calcularDiasRestantes();
+            
+            if (estado.expirada) {
+                console.log('⛔ Prueba expirada - Modo solo lectura');
+                return;
+            }
+            
+            // Caso 1: Primer día - Badge de bienvenida
+            if (estado.diasTranscurridos === 0 && estado.diasRestantes === DIAS_PRUEBA) {
+                const badgeExistente = document.getElementById('pruebaBadge');
+                if (badgeExistente) badgeExistente.remove();
+                
+                const badge = document.createElement('div');
+                badge.id = 'pruebaBadge';
+                badge.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    z-index: 999999;
+                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+                    cursor: pointer;
+                    animation: pulseBadge 2s infinite;
+                    border: 1px solid rgba(255,255,255,0.2);
+                `;
+                badge.textContent = `🚀 ¡Prueba gratuita activa! 7 días`;
+                badge.onclick = function() {
+                    alert(
+                        `🎉 BIENVENIDO A TU PRUEBA GRATUITA\n\n` +
+                        `📅 Inicio: ${estado.fechaInicio.toLocaleDateString()}\n` +
+                        `⏳ Días restantes: ${estado.diasRestantes}\n` +
+                        `📆 Total: ${DIAS_PRUEBA} días\n\n` +
+                        `💡 Explora todas las funciones premium durante 7 días.`
+                    );
+                };
+                document.body.appendChild(badge);
+                console.log('✅ Badge de bienvenida');
+                return;
+            }
+            
+            // Caso 2: Días restantes (1-6 días)
+            if (estado.diasRestantes > 0 && estado.diasRestantes < DIAS_PRUEBA) {
+                const badgeExistente = document.getElementById('pruebaBadge');
+                if (badgeExistente) badgeExistente.remove();
+                
+                let color, mensaje;
+                if (estado.diasRestantes <= 1) {
+                    color = '#ef4444';
+                    mensaje = '⚠️ ¡ÚLTIMO DÍA!';
+                } else if (estado.diasRestantes <= 2) {
+                    color = '#f97316';
+                    mensaje = '⏳ ¡ÚLTIMOS DÍAS!';
+                } else {
+                    color = '#f59e0b';
+                    mensaje = '⏳ Prueba activa';
+                }
+                
+                const badge = document.createElement('div');
+                badge.id = 'pruebaBadge';
+                badge.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: ${color};
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    z-index: 999999;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    cursor: pointer;
+                    animation: pulseBadge 2s infinite;
+                `;
+                badge.textContent = `${mensaje} ${estado.diasRestantes} día${estado.diasRestantes > 1 ? 's' : ''}`;
+                badge.onclick = function() {
+                    alert(
+                        `📊 PRUEBA GRATUITA\n\n` +
+                        `📅 Inicio: ${estado.fechaInicio.toLocaleDateString()}\n` +
+                        `⏳ Días restantes: ${estado.diasRestantes}\n` +
+                        `📈 Días usados: ${estado.diasTranscurridos}\n\n` +
+                        `💡 Actualiza a Professional para continuar.`
+                    );
+                };
+                document.body.appendChild(badge);
+                console.log(`✅ Badge: ${estado.diasRestantes} días`);
+                return;
+            }
+        }
+    };
+    
+    // ============================================
+    // FUNCIÓN PRINCIPAL
+    // ============================================
+    window.iniciarSistemaPrueba = function() {
+        if (!haySesionActiva()) {
+            console.log('⏳ Sin sesión activa');
+            return;
+        }
+        window.mostrarBadgePrueba();
+    };
+    
+    // ============================================
+    // 🚀 INTERCEPTAR FUNCIONES PARA BLOQUEO PARCIAL
+    // ============================================
+    
+    // 1. Interceptar createNewProject
+    const originalCreateProject = window.createNewProject;
+    window.createNewProject = function() {
+        if (!pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+        }
+        if (originalCreateProject) originalCreateProject();
+    };
+    
+    // 2. Interceptar saveTaskChanges
+    const originalSaveTask = window.saveTaskChanges;
+    window.saveTaskChanges = function(taskId) {
+        if (!pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+        }
+        if (originalSaveTask) originalSaveTask(taskId);
+    };
+    
+    // 3. Interceptar deleteTask
+    const originalDeleteTask = window.deleteTask;
+    window.deleteTask = function(taskStr) {
+        if (!pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+        }
+        if (originalDeleteTask) originalDeleteTask(taskStr);
+    };
+    
+    // 4. Interceptar moveTaskUp
+    const originalMoveUp = window.moveTaskUp;
+    window.moveTaskUp = function(taskId, status) {
+        if (!pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+        }
+        if (originalMoveUp) originalMoveUp(taskId, status);
+    };
+    
+    // 5. Interceptar moveTaskDown
+    const originalMoveDown = window.moveTaskDown;
+    window.moveTaskDown = function(taskId, status) {
+        if (!pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+        }
+        if (originalMoveDown) originalMoveDown(taskId, status);
+    };
+    
+    // ============================================
+    // 🚀 EJECUCIÓN AUTOMÁTICA
+    // ============================================
+    function ejecutarPrueba() {
+        setTimeout(window.iniciarSistemaPrueba, 1000);
+    }
+    
+    if (haySesionActiva()) {
+        console.log('🔓 Sesión activa - Verificando prueba...');
+        ejecutarPrueba();
+    }
+    
+    if (typeof window.login === 'function' && !window._loginInterceptado) {
+        const loginOriginal = window.login;
+        window.login = async function() {
+            const result = await loginOriginal.apply(this, arguments);
+            ejecutarPrueba();
+            return result;
+        };
+        window._loginInterceptado = true;
+        console.log('✅ Login interceptado');
+    }
+    
+    let ultimoToken = localStorage.getItem('authToken');
+    setInterval(() => {
+        const tokenActual = localStorage.getItem('authToken');
+        if (tokenActual && tokenActual !== ultimoToken) {
+            ultimoToken = tokenActual;
+            ejecutarPrueba();
+        }
+    }, 3000);
+    
+    if (!document.getElementById('prueba-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'prueba-styles';
+        styles.textContent = `
+            @keyframes pulseBadge {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    console.log('✅ Sistema de prueba 7 días ACTIVADO (con bloqueo parcial)');
+    console.log('📌 Usuario puede VER pero no CREAR/MODIFICAR si la prueba expiró');
+    
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ============================================
 // 🔧 FUNCIÓN PARA FORZAR SINCRONIZACIÓN DESDE CONSOLA
@@ -2389,237 +2755,6 @@ if (originalSaveTaskChanges) {
 // ============================================
 // 🚫 BLOQUEO PREMIUM - 4 SECCIONES (VERSIÓN ROBUSTA)
 // ============================================
-(function bloquear4SeccionesPremiumRobusto() {
-    
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    
-    if (userPlan !== 'free') {
-        console.log(`✅ Plan ${userPlan.toUpperCase()} - Todas las funciones disponibles`);
-        return;
-    }
-    
-    console.log('🔒 Plan FREE - Bloqueando 4 secciones premium (versión robusta)...');
-    console.log('   Status del Proyecto - DISPONIBLE para FREE');
-    
-    // ============================================
-    // FUNCIÓN DE MENSAJE PREMIUM
-    // ============================================
-    function mostrarMensajeUpgrade(nombre, color = '#8b5cf6') {
-        if (document.querySelector('.upgrade-modal-premium')) return;
-        
-        const msg = document.createElement('div');
-        msg.className = 'upgrade-modal-premium';
-        msg.innerHTML = `
-            <div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:linear-gradient(135deg,#1e293b,#0f172a); border:2px solid ${color}; border-radius:20px; padding:30px; z-index:1000000; text-align:center; min-width:350px; box-shadow:0 0 30px ${color}40;">
-                <div style="font-size:48px; margin-bottom:15px;">🔒</div>
-                <h3 style="color:${color}; margin-bottom:10px;">Función Premium</h3>
-                <p style="color:#94a3b8; margin-bottom:20px;">
-                    "${nombre}" está disponible en los planes<br>
-                    <strong style="color:${color};">Professional</strong> o <strong style="color:#ff00ff;">Premium</strong>
-                </p>
-                <button onclick="this.closest('.upgrade-modal-premium').remove(); window.showLicensesView?.()" style="background:linear-gradient(135deg,${color},#6d28d9); border:none; color:white; padding:12px 24px; border-radius:40px; cursor:pointer; font-weight:bold; margin-right:10px;">📈 Actualizar ahora</button>
-                <button onclick="this.closest('.upgrade-modal-premium').remove()" style="background:transparent; border:1px solid ${color}; color:${color}; padding:12px 24px; border-radius:40px; cursor:pointer;">Cerrar</button>
-            </div>
-        `;
-        document.body.appendChild(msg);
-    }
-    
-    // ============================================
-    // FUNCIÓN PARA BLOQUEAR UN BOTÓN (con espera)
-    // ============================================
-    function bloquearBoton(selector, nombre, color, funcionAlternativa = null) {
-        const intervalo = setInterval(() => {
-            const boton = document.querySelector(selector);
-            if (boton) {
-                clearInterval(intervalo);
-                console.log(`✅ Bloqueando: ${nombre}`);
-                
-                boton.style.opacity = '0.5';
-                boton.style.cursor = 'not-allowed';
-                boton.title = '🔒 Plan Professional+ requerido';
-                
-                // Guardar onclick original y reemplazar
-                const nuevoBoton = boton.cloneNode(true);
-                boton.parentNode.replaceChild(nuevoBoton, boton);
-                
-                nuevoBoton.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    mostrarMensajeUpgrade(nombre, color);
-                    return false;
-                };
-            }
-        }, 500);
-    }
-    
-    // ============================================
-    // FUNCIÓN PARA BLOQUEAR FUNCIÓN GLOBAL
-    // ============================================
-    function bloquearFuncion(nombreFuncion, nombreMostrar, color) {
-        if (window[nombreFuncion]) {
-            const original = window[nombreFuncion];
-            window[nombreFuncion] = function() {
-                mostrarMensajeUpgrade(nombreMostrar, color);
-            };
-            console.log(`✅ Función ${nombreFuncion} bloqueada`);
-        } else {
-            // Esperar a que la función exista
-            const intervalo = setInterval(() => {
-                if (window[nombreFuncion]) {
-                    clearInterval(intervalo);
-                    const original = window[nombreFuncion];
-                    window[nombreFuncion] = function() {
-                        mostrarMensajeUpgrade(nombreMostrar, color);
-                    };
-                    console.log(`✅ Función ${nombreFuncion} bloqueada (tardía)`);
-                }
-            }, 500);
-        }
-    }
-    
-    // ============================================
-    // 1. BLOQUEAR CENTRO COMANDO 4D IA (INICIO)
-    // ============================================
-    bloquearBoton('#showInicioView', 'Centro Comando 4D IA', '#8b5cf6');
-    bloquearFuncion('renderCentroComandoIA', 'Centro Comando 4D IA', '#8b5cf6');
-    
-    // Bloquear showView para 'inicio'
-    if (window.showView) {
-        const originalShowView = window.showView;
-        window.showView = function(vista) {
-            if (vista === 'inicio') {
-                mostrarMensajeUpgrade('Centro Comando 4D IA', '#8b5cf6');
-                return;
-            }
-            return originalShowView(vista);
-        };
-    }
-    
-    // ============================================
-    // 2. BLOQUEAR CENTRO DE CONTROL PM
-    // ============================================
-    bloquearBoton('#quantumV10Btn', 'Centro de Control PM', '#00ffff');
-    bloquearFuncion('showQuantumDashboard', 'Centro de Control PM', '#00ffff');
-    
-    // Bloquear objeto QuantumExecutive
-    const intervaloQE = setInterval(() => {
-        if (window.QuantumExecutive) {
-            clearInterval(intervaloQE);
-            window.QuantumExecutive = {
-                show: function() { mostrarMensajeUpgrade('Centro de Control PM', '#00ffff'); },
-                version: 'bloqueado'
-            };
-            console.log('✅ QuantumExecutive bloqueado');
-        }
-    }, 500);
-    
-    // ============================================
-    // 3. BLOQUEAR CONTROL DE RECURSOS HUMANOS
-    // ============================================
-    bloquearBoton('#nexusRealSidebarBtn', 'Control de Recursos Humanos', '#10b981');
-    bloquearFuncion('showRealDashboard', 'Control de Recursos Humanos', '#10b981');
-    
-    // Eliminar dashboard de RH si aparece
-    const observerRH = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.id === 'nexusRealDashboard') {
-                        setTimeout(() => {
-                            const dashboard = document.getElementById('nexusRealDashboard');
-                            if (dashboard) {
-                                dashboard.remove();
-                                mostrarMensajeUpgrade('Control de Recursos Humanos', '#10b981');
-                            }
-                        }, 10);
-                    }
-                });
-            }
-        });
-    });
-    observerRH.observe(document.body, { childList: true, subtree: true });
-    
-    // ============================================
-    // 4. BLOQUEAR CENTRO DE REPORTES (20 reportes)
-    // ============================================
-    bloquearBoton('#btnReportesSidebar', 'Centro de Reportes Ejecutivos', '#f59e0b');
-    bloquearFuncion('mostrarModalReportes', 'Centro de Reportes Ejecutivos', '#f59e0b');
-    
-    // Bloquear todos los reportes ejecutivos
-    const reportesFunciones = [
-        'generarDashboardEjecutivo', 'generarInformeEVMReporte', 'generarReporteEquipo',
-        'generarReporteProyectos', 'generarReporteRiesgos', 'generarReporteTiempo',
-        'generarReporteCalidad', 'generarReporteBurndown', 'generarReporteRecursos',
-        'generarReporteCostos', 'generarReporteHitos', 'generarReporteComunicaciones',
-        'generarReporteLecciones', 'generarReporteStakeholders', 'generarReporteForecast',
-        'generarReporteCumplimiento', 'generarReporteSatisfaccion', 'generarReporteCapacidad',
-        'generarReporteImpactoEjecutivo', 'generarReporteEstrategia'
-    ];
-    
-    reportesFunciones.forEach(funcName => {
-        bloquearFuncion(funcName, 'Centro de Reportes Ejecutivos', '#f59e0b');
-    });
-    
-    // Bloquear objeto reportesEjecutivos
-    const intervaloRE = setInterval(() => {
-        if (window.reportesEjecutivos) {
-            clearInterval(intervaloRE);
-            for (let key in window.reportesEjecutivos) {
-                window.reportesEjecutivos[key] = function() {
-                    mostrarMensajeUpgrade('Centro de Reportes Ejecutivos', '#f59e0b');
-                };
-            }
-            console.log('✅ reportesEjecutivos bloqueado');
-        }
-    }, 500);
-    
-    // Eliminar modal de reportes si aparece
-    const observerReportes = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.id === 'modalReportesEjecutivos') {
-                        setTimeout(() => {
-                            const modal = document.getElementById('modalReportesEjecutivos');
-                            if (modal) {
-                                modal.remove();
-                                mostrarMensajeUpgrade('Centro de Reportes Ejecutivos', '#f59e0b');
-                            }
-                        }, 10);
-                    }
-                });
-            }
-        });
-    });
-    observerReportes.observe(document.body, { childList: true, subtree: true });
-    
-    // ============================================
-    // 5. BLOQUEAR showView PARA VISTAS PREMIUM
-    // ============================================
-    if (window.showView) {
-        const originalShowView = window.showView;
-        window.showView = function(vista) {
-            if (vista === 'inicio') {
-                mostrarMensajeUpgrade('Centro Comando 4D IA', '#8b5cf6');
-                return;
-            }
-            return originalShowView(vista);
-        };
-    }
-    
-    // ============================================
-    // RESUMEN FINAL
-    // ============================================
-    console.log('\n✅ BLOQUEO PREMIUM INICIADO (versión robusta):');
-    console.log('   🔒 Centro Comando 4D IA (Inicio)');
-    console.log('   🔒 Centro de Control PM');
-    console.log('   🔒 Control de Recursos Humanos');
-    console.log('   🔒 Centro de Reportes (20 reportes)');
-    console.log('');
-    console.log('   Los bloqueos se aplicarán automáticamente cuando los elementos aparezcan');
-    
-})();
-
 
 
 // ============================================
@@ -4754,61 +4889,53 @@ function updateConnectionIndicator(status) {
 // ============================================================
 // BOTÓN FLOTANTE (TU CÓDIGO ORIGINAL - SIN CAMBIOS)
 // ============================================================
+// ============================================================
+// BOTÓN FLOTANTE PM VIRTUAL - DESBLOQUEADO PARA FREE
+// ============================================================
 (function ultimateFloatingButton(){
 function spawn() {
-
-  // 🔥 SOLO CREAR SI HAY SESIÓN
+    // 🔥 SOLO CREAR SI HAY SESIÓN
     const token = localStorage.getItem('authToken');
     if (!token) {
         console.log('PM Virtual solo disponible con sesión activa');
         return;
     }
     
-    var userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'free') {
-        console.log('🔒 PM Virtual no disponible en plan FREE');
-        return;
-    }
-
-
-    // 🔒 VERIFICAR PLAN - NO CREAR BOTÓN SI ES FREE
-    var userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'free') {
-        console.log('🔒 PM Virtual no disponible en plan FREE');
-        return;
-    }
+    // 🔓 DESBLOQUEADO: Ahora disponible para todos los planes
+    // (se eliminó la verificación de userPlan === 'free')
     
     let btn = document.getElementById("boardUltimateBtn");
     if (!btn) {
         btn = document.createElement("button");
         btn.id = "boardUltimateBtn";
-        btn.textContent = "PM Virtual";                    // Cambia el texto
+        btn.textContent = "PM Virtual";
         btn.title = "Abrir PM Virtual";
         btn.style.cssText = `
-position: static !important;
-bottom: auto !important;
-left: auto !important;
-transform: none !important;
-width: auto !important;
-height: auto !important;
-margin-left: 10px !important;padding: 12px 28px !important;
-border-radius: 50px !important;
-background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
-color: white !important;
-font-size: 16px !important;
-font-weight: bold !important;
-border: none !important;
-cursor: pointer !important;
-z-index: 99999999999999 !important;
-display: flex !important;
-align-items: center !important;
-justify-content: center !important;
-gap: 8px !important;
-box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
-transition: all 0.3s ease !important;
-font-family: system-ui, 'Segoe UI', sans-serif !important;
-letter-spacing: 0.5px !important;
-`;
+            position: static !important;
+            bottom: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: auto !important;
+            height: auto !important;
+            margin-left: 10px !important;
+            padding: 12px 28px !important;
+            border-radius: 50px !important;
+            background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+            color: white !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            border: none !important;
+            cursor: pointer !important;
+            z-index: 99999999999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
+            transition: all 0.3s ease !important;
+            font-family: system-ui, 'Segoe UI', sans-serif !important;
+            letter-spacing: 0.5px !important;
+        `;
         btn.onclick = () => {
             console.log("✔ Botón Ultimate presionado");
             if (typeof abrirModalPM === "function") {
@@ -4820,15 +4947,14 @@ letter-spacing: 0.5px !important;
         let header = document.querySelector('header, header#mainHeader, .main-header');
         if (header) { header.appendChild(btn); }
         else { document.body.appendChild(btn); }
-        console.log("✔ Botón Ultimate generado");
+        console.log("✔ Botón Ultimate generado (desbloqueado para FREE)");
     }
 }
 // Crear inmediatamente
 document.addEventListener("DOMContentLoaded", spawn);
-// Re-crear si lo eliminan (pero verificará plan cada vez)
+// Re-crear si lo eliminan
 setInterval(spawn, 800);
 })();
-
 
 
 // ============================================================
@@ -23474,39 +23600,44 @@ window.methodologyManager = new MethodologyManager();
 
 
 // ✅ NUEVA CLASE DE LICENCIA REALISTA
+// ✅ NUEVA CLASE DE LICENCIA REALISTA (CON ACCESO TOTAL PARA PRUEBAS)
 class LicenseManager {
-  constructor() {
-    this.license = localStorage.getItem('userLicense') || 'free';
-  }
-
-  async getLicense() {
-    const user = firebase.auth().currentUser;
-    if (!user) return 'free';
-
-    try {
-      const res = await fetch(`${API_URL}/api/license/check/${user.uid}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-      });
-      const data = await res.json();
-      if (data.valid && data.plan) {
-        this.license = data.plan;
-        localStorage.setItem('userLicense', data.plan);
-        return data.plan;
-      }
-    } catch (err) {
-      console.warn('No se pudo verificar licencia:', err);
+    constructor() {
+        this.license = localStorage.getItem('userLicense') || 'free';
     }
-    return this.license;
-  }
 
-  canAccess(feature) {
-    const allowedPlans = {
-      'premiumExecutiveGantt': ['professional', 'premium']
-    };
-    return allowedPlans[feature]?.includes(this.license) || this.license === 'premium';
-  }
+    async getLicense() {
+        const user = firebase.auth().currentUser;
+        if (!user) return 'free';
+
+        try {
+            const res = await fetch(`${API_URL}/api/license/check/${user.uid}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            });
+            const data = await res.json();
+            if (data.valid && data.plan) {
+                this.license = data.plan;
+                localStorage.setItem('userLicense', data.plan);
+                return data.plan;
+            }
+        } catch (err) {
+            console.warn('No se pudo verificar licencia:', err);
+        }
+        return this.license;
+    }
+
+    canAccess(feature) {
+        // 🔓 PROTECCIÓN DESACTIVADA - Siempre retorna true
+        // Los usuarios FREE pueden acceder a todas las funciones
+        return true;
+        
+        // Código original comentado
+        // const allowedPlans = {
+        //     'premiumExecutiveGantt': ['professional', 'premium']
+        // };
+        // return allowedPlans[feature]?.includes(this.license) || this.license === 'premium';
+    }
 }
-
 
 
 
@@ -23531,13 +23662,13 @@ function requireModeAccess(view, callback) {
 
 // ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
 function requirePremiumAccess(featureName, callback) {
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
-    return;
-  }
-  callback();
+ // 🔓 PROTECCIÓN DESACTIVADA - Los usuarios FREE pueden acceder a todo
+    // if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
+    //     showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
+    //     return;
+    // }
+    callback();
 }
-
 
 
 
@@ -23836,8 +23967,6 @@ function filtrarProyectosPorUsuario() {
     // Guardar en localStorage
     localStorage.setItem('projects', JSON.stringify(projects));
 }
-
-
 
 
 // ============================================
@@ -39495,59 +39624,97 @@ function createNewTask(e) {
 
 
 function deleteTask(taskStr) {
-    const task = JSON.parse(decodeURIComponent(taskStr));
-    if (confirm(`¿Estás seguro de eliminar "${task.name}"? Esta acción no se puede deshacer.`)) {
-        
-        // Notificaciones
-        const project = projects[currentProjectIndex];
-        if (window.SlackNotifier) {
-            window.SlackNotifier.taskDeleted(task.name, project.name);
+    console.log('🗑️ deleteTask ejecutándose...');
+    
+    // Decodificar la tarea
+    let task;
+    try {
+        task = JSON.parse(decodeURIComponent(taskStr));
+    } catch (e) {
+        try {
+            task = JSON.parse(taskStr);
+        } catch (e2) {
+            console.error('❌ Error decodificando tarea:', taskStr);
+            return;
         }
-        
-        if (tiempoRealSocket && tiempoRealSocket.connected) {
-            tiempoRealSocket.emit('task-changed', {
-                projectId: currentProjectIndex,
-                taskId: task.id,
-                taskName: task.name,
-                userName: 'Usuario actual',
-                type: 'task-deleted',
-                timestamp: new Date().toISOString()
-            });
-        }
-        
-        // Eliminar tarea
-        projects[currentProjectIndex].tasks = projects[currentProjectIndex].tasks.filter(t => t.id !== task.id);
-        updateLocalStorage();
-        if (window.SlackNotifier) SlackNotifier.taskDeleted(task.name, projects[currentProjectIndex].name);
-
-
-        // Actualizar vistas
-        actualizarAsignados();
-        aplicarFiltros();
-        generatePieChart(getStats());
-        updateProjectProgress();
-        showNotification(`Tarea "${task.name}" eliminada`);
-        
-        // Disparar eventos
-        document.dispatchEvent(new Event('taskDeleted'));
-        document.dispatchEvent(new Event('tasksRendered'));
-        
-        // Actualizar todas las vistas después de un breve delay
-        setTimeout(() => {
-            if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
-            if (typeof refreshBurndown === 'function') refreshBurndown();
-            if (typeof forceRefreshCalendar === 'function') forceRefreshCalendar();
-            
-            // Actualizar vista activa
-            const activeView = getActiveView();
-            if (activeView === 'list' && typeof renderListTasks === 'function') renderListTasks();
-            if (activeView === 'board' && typeof renderKanbanTasks === 'function') renderKanbanTasks();
-            if (activeView === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
-            if (activeView === 'reports' && typeof generateReports === 'function') generateReports();
-            if (activeView === 'timeAllocation' && typeof loadTimeAllocationData === 'function') loadTimeAllocationData();
-        }, 100);
     }
+    
+    if (!task || !task.id) {
+        console.error('❌ Tarea inválida');
+        return;
+    }
+    
+    const project = projects[currentProjectIndex];
+    if (!project) {
+        console.error('❌ No hay proyecto');
+        return;
+    }
+    
+    // Confirmar eliminación
+    if (!confirm('¿Eliminar la tarea "' + task.name + '"?')) {
+        return;
+    }
+    
+    // Eliminar localmente
+    const before = project.tasks.length;
+    project.tasks = project.tasks.filter(function(t) {
+        return t.id !== task.id;
+    });
+    const after = project.tasks.length;
+    
+    // Guardar en localStorage
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // ✅ EMITIR EVENTO WEBSOCKET task-deleted
+    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+        const eventData = {
+            projectId: currentProjectIndex,
+            taskId: task.id,
+            taskName: task.name,
+            userId: localStorage.getItem('userId') || 'anonimo',
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('📤 Emitiendo task-deleted:', eventData);
+        window.tiempoRealSocket.emit('task-deleted', eventData);
+    } else {
+        console.warn('⚠️ WebSocket no conectado, no se pudo emitir task-deleted');
+    }
+    
+    // Notificar a Slack si existe
+    if (window.SlackNotifier) {
+        window.SlackNotifier.taskDeleted(task.name, project.name);
+    }
+    
+    // Actualizar vistas
+    actualizarAsignados();
+    aplicarFiltros();
+    generatePieChart(getStats());
+    updateProjectProgress();
+    showNotification('Tarea "' + task.name + '" eliminada');
+    
+    // Disparar eventos
+    document.dispatchEvent(new Event('taskDeleted'));
+    document.dispatchEvent(new Event('tasksRendered'));
+    
+    // Actualizar todas las vistas después de un breve delay
+    setTimeout(function() {
+        if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
+        if (typeof refreshBurndown === 'function') refreshBurndown();
+        if (typeof forceRefreshCalendar === 'function') forceRefreshCalendar();
+        
+        const activeView = getActiveView();
+        if (activeView === 'list' && typeof renderListTasks === 'function') renderListTasks();
+        if (activeView === 'board' && typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        if (activeView === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+        if (activeView === 'reports' && typeof generateReports === 'function') generateReports();
+        if (activeView === 'timeAllocation' && typeof loadTimeAllocationData === 'function') loadTimeAllocationData();
+    }, 100);
+    
+    console.log('✅ Tarea eliminada (' + before + ' → ' + after + '):', task.name);
 }
+
+
 /*********************
  * FUNCIÓN DE ESTIMACIÓN CON IA *
  *********************/
@@ -63007,16 +63174,16 @@ const originalShowViewFn = window.showView;
 window.showView = function(view) {
     console.log('🧭 Navegando a vista:', view);
     
-    // 🔒 VERIFICACIÓN DE LICENCIA
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
+     // 🔓 VERIFICACIÓN DE LICENCIA DESACTIVADA
+    // Los usuarios FREE pueden ver todas las vistas
+    // const userPlan = localStorage.getItem('userPlan') || 'free';
+    // const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
     
-    // Si es FREE y la vista no está permitida, bloquear
-    if (userPlan === 'free' && !vistasFree.includes(view)) {
-        showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
-        console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
-        return;
-    }
+    // if (userPlan === 'free' && !vistasFree.includes(view)) {
+    //     showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
+    //     console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
+    //     return;
+    // }
     
     // Vista de inicio (Centro de Comando IA)
     if (view === 'inicio') {
@@ -69103,38 +69270,54 @@ console.log('✅ SISTEMA ACTIVADO - Las críticas se pintan solas cada medio seg
 // Agrega esto al FINAL de tu script.js
 function actualizarMenuPorLicencia() {
     const userPlan = localStorage.getItem('userPlan') || 'free';
-    const vistasPremium = ['gantt', 'ganttPro', 'dashboard', 'dashboard4d', 'profitability', 'timeAllocation', 
+    const todasLasVistas = ['gantt', 'ganttPro', 'dashboard', 'dashboard4d', 'profitability', 'timeAllocation', 
                            'cambios', 'hitos', 'recursos', 'costos', 'control', 'reuniones', 'archivo', 
                            'transferencia', 'checklist', 'portal', 'encuestas', 'calidad', 'acciones', 
                            'riesgosMatriz', 'desempeno', 'habilidades', 'reconocimientos', 'scrum', 'reportes'];
     
+    // 🔓 MOSTRAR TODAS LAS VISTAS SIEMPRE (sin importar el plan)
+    todasLasVistas.forEach(vista => {
+        const nombreBoton = `show${vista.charAt(0).toUpperCase() + vista.slice(1)}View`;
+        const btn = document.getElementById(nombreBoton);
+        if (btn) {
+            btn.style.display = '';
+            const parentLi = btn.closest('li');
+            if (parentLi) parentLi.style.display = '';
+        }
+    });
+    
+    // ⭐ Si es FREE, agregar badge "PRO" a las vistas premium (opcional)
     if (userPlan === 'free') {
-        // Ocultar botones de vistas premium
-        vistasPremium.forEach(vista => {
+        const premiumViews = ['gantt', 'ganttPro', 'dashboard', 'dashboard4d', 'profitability', 
+                              'timeAllocation', 'scrum', 'reportes', 'cambios', 'hitos', 
+                              'recursos', 'costos', 'control', 'reuniones'];
+        
+        premiumViews.forEach(vista => {
             const nombreBoton = `show${vista.charAt(0).toUpperCase() + vista.slice(1)}View`;
             const btn = document.getElementById(nombreBoton);
-            if (btn) {
-                btn.style.display = 'none';
-                const parentLi = btn.closest('li');
-                if (parentLi) parentLi.style.display = 'none';
+            if (btn && !btn.querySelector('.pro-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'pro-badge';
+                badge.textContent = '⭐ PRO';
+                badge.style.cssText = `
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    color: white;
+                    padding: 2px 10px;
+                    border-radius: 20px;
+                    font-size: 9px;
+                    margin-left: 8px;
+                    font-weight: bold;
+                `;
+                btn.appendChild(badge);
             }
         });
-        console.log('🔒 Modo FREE activado - Vistas premium ocultas');
+        console.log('⭐ Modo FREE - Badges "PRO" mostrados en funciones premium');
     } else {
-        // Mostrar todas las vistas
-        vistasPremium.forEach(vista => {
-            const nombreBoton = `show${vista.charAt(0).toUpperCase() + vista.slice(1)}View`;
-            const btn = document.getElementById(nombreBoton);
-            if (btn) {
-                btn.style.display = '';
-                const parentLi = btn.closest('li');
-                if (parentLi) parentLi.style.display = '';
-            }
-        });
-        console.log(`✅ Modo ${userPlan.toUpperCase()} activado - Todas las vistas disponibles`);
+        // Remover badges PRO si existen (para usuarios premium)
+        document.querySelectorAll('.pro-badge').forEach(badge => badge.remove());
+        console.log(`✅ Modo ${userPlan.toUpperCase()} - Todas las vistas disponibles`);
     }
 }
-
 // Ejecutar al cargar
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
@@ -70512,13 +70695,6 @@ setTimeout(() => {
         }
     }, 3000); // Esperar 3 segundos para que todo cargue
 })();
-
-
-
-
-
-
-
 
 
 
