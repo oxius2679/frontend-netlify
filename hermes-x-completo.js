@@ -1,20 +1,18 @@
 // ============================================
-// 🚀 OPTIMIZAR AHORA - VERSIÓN CORREGIDA Y MEJORADA
-// Detecta correctamente fechas y acciones automáticas
+// 🚀 OPTIMIZAR AHORA - VERSIÓN FINAL DEFINITIVA
+// Títulos con el mismo ancho exacto que las tareas
 // ============================================
 
 (function() {
-    console.log('%c🎯 Creando "OPTIMIZAR AHORA" con checkboxes (VERSIÓN CORREGIDA)...', 'color: #3b82f6; font-size: 14px;');
+    console.log('%c🎯 Creando "OPTIMIZAR AHORA" VERSIÓN FINAL DEFINITIVA...', 'color: #3b82f6; font-size: 14px;');
     
-    // ========== 1. FUNCIÓN QUE ANALIZA Y DETECTA ACCIONES (CORREGIDA) ==========
+    // ========== 1. FUNCIÓN QUE ANALIZA Y DETECTA ACCIONES ==========
     function analizarAcciones() {
         const proyecto = projects[currentProjectIndex];
         if (!proyecto) return null;
         
         const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);  // Normalizar a inicio del día
-        
-        console.log('📅 Fecha actual (normalizada):', hoy.toISOString().split('T')[0]);
+        hoy.setHours(0, 0, 0, 0);
         
         const acciones = {
             asignar: [],
@@ -41,15 +39,6 @@
         for (const t of proyecto.tasks) {
             if (t.status === 'completed') continue;
             
-            // DEBUG: Mostrar tareas con deadline
-            if (t.deadline) {
-                const deadlineDate = new Date(t.deadline);
-                deadlineDate.setHours(0, 0, 0, 0);
-                const diffTime = deadlineDate - hoy;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                console.log(`📌 Tarea: "${t.name}", Deadline: ${t.deadline}, Días restantes: ${diffDays}, Prioridad: ${t.priority || 'media'}`);
-            }
-            
             // 1. DETECTAR TAREAS SIN ASIGNAR
             if (!t.assignee || t.assignee === '' || t.assignee === 'Sin asignar') {
                 if (miembrosDisponibles.length > 0) {
@@ -70,11 +59,10 @@
                 }
             }
             
-            // 2. DETECTAR TAREAS PARA MOVER A EN PROGRESO (CORREGIDO)
+            // 2. DETECTAR TAREAS PARA MOVER A EN PROGRESO
             if (t.status === 'pending') {
                 let razon = '';
                 
-                // Verificar fecha de inicio
                 if (t.startDate) {
                     const startDate = new Date(t.startDate);
                     startDate.setHours(0, 0, 0, 0);
@@ -83,19 +71,16 @@
                     }
                 }
                 
-                // Verificar prioridad alta (sin razon aún)
                 if (!razon && t.priority === 'alta') {
                     razon = `prioridad ALTA`;
                 }
                 
-                // Verificar deadline cercano (CORREGIDO: incluye hoy y hasta 3 días)
                 if (!razon && t.deadline) {
                     const deadlineDate = new Date(t.deadline);
                     deadlineDate.setHours(0, 0, 0, 0);
                     const diffTime = deadlineDate - hoy;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
-                    // CORRECCIÓN: Incluye días 0,1,2,3 (hoy, mañana, pasado, 3 días)
                     if (diffDays <= 3 && diffDays >= 0) {
                         razon = `vence en ${diffDays} días (${t.deadline})`;
                     } else if (diffDays < 0) {
@@ -109,18 +94,16 @@
                         nombre: t.name,
                         razon: razon
                     });
-                    console.log(`  ✅ Mover a progreso: "${t.name}" - ${razon}`);
                 }
             }
             
-            // 3. DETECTAR TAREAS PARA SUBIR PRIORIDAD (CORREGIDO)
+            // 3. DETECTAR TAREAS PARA SUBIR PRIORIDAD
             if (t.deadline && t.priority !== 'alta') {
                 const deadlineDate = new Date(t.deadline);
                 deadlineDate.setHours(0, 0, 0, 0);
                 const diffTime = deadlineDate - hoy;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 
-                // CORRECCIÓN: Subir prioridad si vence en 3 días o menos (incluye hoy)
                 if (diffDays <= 3 && diffDays >= 0) {
                     acciones.subirPrioridad.push({
                         tarea: t,
@@ -128,7 +111,6 @@
                         prioridadActual: t.priority || 'media',
                         dias: diffDays
                     });
-                    console.log(`  🔥 Subir prioridad: "${t.name}" - vence en ${diffDays} días (actual: ${t.priority || 'media'})`);
                 }
             }
             
@@ -146,11 +128,10 @@
                         nombre: t.name,
                         razon: razon
                     });
-                    console.log(`  ✅ Completar: "${t.name}" - ${razon}`);
                 }
             }
             
-            // 5. DETECTAR TAREAS REZAGADAS (CORREGIDO)
+            // 5. DETECTAR TAREAS REZAGADAS
             if (t.deadline && t.status !== 'overdue' && t.status !== 'completed') {
                 const deadlineDate = new Date(t.deadline);
                 deadlineDate.setHours(0, 0, 0, 0);
@@ -160,11 +141,9 @@
                         nombre: t.name,
                         razon: `deadline ${t.deadline} (pasado hace ${Math.ceil((hoy - deadlineDate) / (1000 * 60 * 60 * 24))} días)`
                     });
-                    console.log(`  ⚠️ Marcar rezagada: "${t.name}" - deadline pasado`);
                 }
             }
             
-            // Tareas en progreso con poco avance (CORREGIDO)
             if (t.status === 'inProgress' && t.status !== 'overdue' && t.startDate) {
                 const startDate = new Date(t.startDate);
                 startDate.setHours(0, 0, 0, 0);
@@ -178,18 +157,9 @@
                         progreso: t.progress || 0,
                         razon: `${diasEnProgreso} días y solo ${t.progress || 0}% completado`
                     });
-                    console.log(`  ⚠️ Marcar rezagada (progreso lento): "${t.name}" - ${diasEnProgreso} días, ${t.progress || 0}%`);
                 }
             }
         }
-        
-        // Mostrar resumen en consola
-        console.log('📊 RESUMEN DE ACCIONES DETECTADAS:');
-        console.log(`  - Asignar: ${acciones.asignar.length}`);
-        console.log(`  - Mover a progreso: ${acciones.moverAProgreso.length}`);
-        console.log(`  - Subir prioridad: ${acciones.subirPrioridad.length}`);
-        console.log(`  - Completar: ${acciones.completar.length}`);
-        console.log(`  - Marcar rezagada: ${acciones.marcarRezagada.length}`);
         
         return acciones;
     }
@@ -202,7 +172,6 @@
         let cambios = 0;
         let accionesRealizadas = [];
         
-        // Asignar tareas
         if (seleccion.asignar && seleccion.asignar.length > 0) {
             for (const item of seleccion.asignar) {
                 item.tarea.assignee = item.asignadoA;
@@ -211,7 +180,6 @@
             }
         }
         
-        // Mover a EN PROGRESO
         if (seleccion.moverAProgreso && seleccion.moverAProgreso.length > 0) {
             for (const item of seleccion.moverAProgreso) {
                 item.tarea.status = 'inProgress';
@@ -221,7 +189,6 @@
             }
         }
         
-        // Subir prioridad
         if (seleccion.subirPrioridad && seleccion.subirPrioridad.length > 0) {
             for (const item of seleccion.subirPrioridad) {
                 item.tarea.priority = 'alta';
@@ -230,7 +197,6 @@
             }
         }
         
-        // Completar
         if (seleccion.completar && seleccion.completar.length > 0) {
             for (const item of seleccion.completar) {
                 item.tarea.status = 'completed';
@@ -240,7 +206,6 @@
             }
         }
         
-        // Marcar rezagada
         if (seleccion.marcarRezagada && seleccion.marcarRezagada.length > 0) {
             for (const item of seleccion.marcarRezagada) {
                 item.tarea.status = 'overdue';
@@ -255,9 +220,10 @@
             else localStorage.setItem('projects', JSON.stringify(projects));
             if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
             
-            // Mostrar resumen bonito
             const mensaje = `✅ OPTIMIZACIÓN COMPLETADA\n\n${accionesRealizadas.join('\n')}\n\n📊 Total: ${cambios} acción(es) ejecutada(s)`;
             alert(mensaje);
+            
+            setTimeout(agregarContadoresColumnas, 500);
         } else {
             alert('✅ No se seleccionaron acciones para ejecutar');
         }
@@ -265,7 +231,85 @@
         return cambios;
     }
     
-    // ========== 3. MOSTRAR PANEL CON CHECKBOXES ==========
+    // ========== 3. FUNCIÓN PARA AGREGAR CONTADORES Y AJUSTAR TÍTULOS ==========
+    function agregarContadoresColumnas() {
+        console.log('🔄 Actualizando contadores y ajustando títulos...');
+        
+        const columnas = document.querySelectorAll('.column');
+        let totalColumnas = 0;
+        let totalTareas = 0;
+        
+        columnas.forEach(col => {
+            const titulo = col.querySelector('h3');
+            if (titulo) {
+                const tasksContainer = col.querySelector('.tasks');
+                if (tasksContainer) {
+                    // Obtener el ancho REAL del contenedor de tareas (incluyendo padding)
+                    const tasksWidth = tasksContainer.offsetWidth;
+                    
+                    // Obtener el padding del contenedor de tareas para ajustar exactamente
+                    const tasksStyle = window.getComputedStyle(tasksContainer);
+                    const tasksPaddingLeft = parseFloat(tasksStyle.paddingLeft) || 0;
+                    const tasksPaddingRight = parseFloat(tasksStyle.paddingRight) || 0;
+                    const tasksPaddingTotal = tasksPaddingLeft + tasksPaddingRight;
+                    
+                    // Calcular el ancho exacto que debe tener el título
+                    // Debe ser el ancho del contenedor menos el padding
+                    const tituloWidth = tasksWidth - tasksPaddingTotal;
+                    
+                    // Aplicar el ancho exacto al título
+                    titulo.style.width = tituloWidth + 'px';
+                    titulo.style.maxWidth = '100%';
+                    titulo.style.display = 'block';
+                    titulo.style.boxSizing = 'border-box';
+                    
+                    // Asegurar que el título no tenga margen que afecte el ancho
+                    titulo.style.marginLeft = '0';
+                    titulo.style.marginRight = '0';
+                    titulo.style.paddingLeft = '0';
+                    titulo.style.paddingRight = '0';
+                    
+                    // Mantener el margen inferior original para la altura
+                    // No modificamos marginBottom para mantener la altura original
+                    
+                    const tasks = tasksContainer.querySelectorAll('.task-card');
+                    const count = tasks.length;
+                    totalTareas += count;
+                    
+                    // Buscar o crear el contador
+                    let contador = col.querySelector('.task-counter');
+                    if (!contador) {
+                        contador = document.createElement('span');
+                        contador.className = 'task-counter';
+                        contador.style.cssText = `
+                            margin-left: 12px;
+                            background: rgba(59, 130, 246, 0.2);
+                            padding: 2px 12px;
+                            border-radius: 20px;
+                            font-size: 13px;
+                            color: #94a3b8;
+                            font-weight: 600;
+                            border: 1px solid rgba(59, 130, 246, 0.2);
+                            display: inline-block;
+                        `;
+                        titulo.appendChild(contador);
+                    }
+                    
+                    contador.textContent = `(${count})`;
+                    totalColumnas++;
+                }
+            }
+        });
+        
+        if (totalColumnas === 0) {
+            console.log('⚠️ No se encontraron columnas. Reintentando...');
+            setTimeout(agregarContadoresColumnas, 1000);
+        } else {
+            console.log(`✅ Contadores actualizados: ${totalTareas} tareas en ${totalColumnas} columnas`);
+        }
+    }
+    
+    // ========== 4. MOSTRAR PANEL CON CHECKBOXES ==========
     function mostrarPanel() {
         const acciones = analizarAcciones();
         if (!acciones) {
@@ -285,15 +329,14 @@
             return;
         }
         
-        // Crear modal
         const modal = document.createElement('div');
         modal.id = 'optimizar-modal';
         modal.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0,0,0,0.85);
             backdrop-filter: blur(10px);
             z-index: 10000000;
@@ -301,42 +344,46 @@
             align-items: center;
             justify-content: center;
             font-family: system-ui, sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
         `;
         
         let html = `
             <div style="
                 background: linear-gradient(135deg, #0f172a, #1e293b);
                 border-radius: 24px;
-                width: 600px;
-                max-width: 90vw;
+                width: 100%;
+                max-width: 950px;
                 max-height: 85vh;
                 overflow-y: auto;
                 border: 2px solid #3b82f6;
-                padding: 25px;
+                padding: 35px 40px;
                 color: #e2e8f0;
+                box-sizing: border-box;
+                margin: 0 auto;
             ">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #3b82f6;">🔍 OPTIMIZACIÓN DETECTADA</h2>
-                    <button id="cerrar-modal-opt" style="background: none; border: none; color: #ef4444; font-size: 24px; cursor: pointer;">✕</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; width: 100%;">
+                    <h2 style="margin: 0; color: #3b82f6; font-size: 26px;">🔍 OPTIMIZACIÓN DETECTADA</h2>
+                    <button id="cerrar-modal-opt" style="background: none; border: none; color: #ef4444; font-size: 30px; cursor: pointer; padding: 0 15px;">✕</button>
                 </div>
                 
-                <p style="margin-bottom: 20px; color: #94a3b8;">Se encontraron <strong style="color: #3b82f6;">${totalAcciones}</strong> acciones pendientes. Selecciona las que quieres aplicar:</p>
+                <p style="margin-bottom: 25px; color: #94a3b8; width: 100%; font-size: 17px;">Se encontraron <strong style="color: #3b82f6;">${totalAcciones}</strong> acciones pendientes. Selecciona las que quieres aplicar:</p>
         `;
         
         // ASIGNAR
         if (acciones.asignar.length > 0) {
             html += `
-                <div style="margin-bottom: 20px; border-left: 3px solid #10b981; padding-left: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="select-all-asignar" style="width: 18px; height: 18px; cursor: pointer;">
-                        <strong style="color: #10b981;">👤 ASIGNAR TAREAS SIN DUEÑO (${acciones.asignar.length})</strong>
-                    </label>
-                    <div id="lista-asignar" style="margin-left: 25px;">
+                <div style="margin-bottom: 22px; border-left: 4px solid #10b981; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-asignar" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #10b981; font-size: 17px; flex: 1;">👤 ASIGNAR TAREAS SIN DUEÑO (${acciones.asignar.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
                         ${acciones.asignar.map((a, idx) => `
-                            <label style="display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer;">
-                                <input type="checkbox" class="accion-asignar" data-idx="${idx}" style="width: 16px; height: 16px; cursor: pointer;">
-                                <span>📌 "${a.nombre.substring(0, 40)}" → <strong style="color: #10b981;">${a.asignadoA}</strong></span>
-                            </label>
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-asignar" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <strong style="color: #10b981;">${a.asignadoA}</strong></span>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -346,17 +393,17 @@
         // MOVER A PROGRESO
         if (acciones.moverAProgreso.length > 0) {
             html += `
-                <div style="margin-bottom: 20px; border-left: 3px solid #3b82f6; padding-left: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="select-all-progreso" style="width: 18px; height: 18px; cursor: pointer;">
-                        <strong style="color: #3b82f6;">🚀 MOVER A EN PROGRESO (${acciones.moverAProgreso.length})</strong>
-                    </label>
-                    <div id="lista-progreso" style="margin-left: 25px;">
+                <div style="margin-bottom: 22px; border-left: 4px solid #3b82f6; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-progreso" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #3b82f6; font-size: 17px; flex: 1;">🚀 MOVER A EN PROGRESO (${acciones.moverAProgreso.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
                         ${acciones.moverAProgreso.map((a, idx) => `
-                            <label style="display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer;">
-                                <input type="checkbox" class="accion-progreso" data-idx="${idx}" style="width: 16px; height: 16px; cursor: pointer;">
-                                <span>📌 "${a.nombre.substring(0, 40)}" → <span style="color: #3b82f6;">${a.razon}</span></span>
-                            </label>
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-progreso" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #3b82f6;">${a.razon}</span></span>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -366,17 +413,17 @@
         // SUBIR PRIORIDAD
         if (acciones.subirPrioridad.length > 0) {
             html += `
-                <div style="margin-bottom: 20px; border-left: 3px solid #f59e0b; padding-left: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="select-all-prioridad" style="width: 18px; height: 18px; cursor: pointer;">
-                        <strong style="color: #f59e0b;">🔥 SUBIR PRIORIDAD A ALTA (${acciones.subirPrioridad.length})</strong>
-                    </label>
-                    <div id="lista-prioridad" style="margin-left: 25px;">
+                <div style="margin-bottom: 22px; border-left: 4px solid #f59e0b; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-prioridad" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #f59e0b; font-size: 17px; flex: 1;">🔥 SUBIR PRIORIDAD A ALTA (${acciones.subirPrioridad.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
                         ${acciones.subirPrioridad.map((a, idx) => `
-                            <label style="display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer;">
-                                <input type="checkbox" class="accion-prioridad" data-idx="${idx}" style="width: 16px; height: 16px; cursor: pointer;">
-                                <span>📌 "${a.nombre.substring(0, 40)}" → <span style="color: #f59e0b;">${a.prioridadActual} → ALTA (vence en ${a.dias} días)</span></span>
-                            </label>
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-prioridad" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #f59e0b;">${a.prioridadActual} → ALTA (vence en ${a.dias} días)</span></span>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -386,17 +433,17 @@
         // COMPLETAR
         if (acciones.completar.length > 0) {
             html += `
-                <div style="margin-bottom: 20px; border-left: 3px solid #10b981; padding-left: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="select-all-completar" style="width: 18px; height: 18px; cursor: pointer;">
-                        <strong style="color: #10b981;">✅ COMPLETAR TAREAS (${acciones.completar.length})</strong>
-                    </label>
-                    <div id="lista-completar" style="margin-left: 25px;">
+                <div style="margin-bottom: 22px; border-left: 4px solid #10b981; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-completar" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #10b981; font-size: 17px; flex: 1;">✅ COMPLETAR TAREAS (${acciones.completar.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
                         ${acciones.completar.map((a, idx) => `
-                            <label style="display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer;">
-                                <input type="checkbox" class="accion-completar" data-idx="${idx}" style="width: 16px; height: 16px; cursor: pointer;">
-                                <span>📌 "${a.nombre.substring(0, 40)}" → <span style="color: #10b981;">${a.razon}</span></span>
-                            </label>
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-completar" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #10b981;">${a.razon}</span></span>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -406,17 +453,17 @@
         // REZAGADAS
         if (acciones.marcarRezagada.length > 0) {
             html += `
-                <div style="margin-bottom: 20px; border-left: 3px solid #ef4444; padding-left: 15px;">
-                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-                        <input type="checkbox" id="select-all-rezagada" style="width: 18px; height: 18px; cursor: pointer;">
-                        <strong style="color: #ef4444;">⚠️ MARCAR COMO REZAGADAS (${acciones.marcarRezagada.length})</strong>
-                    </label>
-                    <div id="lista-rezagada" style="margin-left: 25px;">
+                <div style="margin-bottom: 22px; border-left: 4px solid #ef4444; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-rezagada" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #ef4444; font-size: 17px; flex: 1;">⚠️ MARCAR COMO REZAGADAS (${acciones.marcarRezagada.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
                         ${acciones.marcarRezagada.map((a, idx) => `
-                            <label style="display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer;">
-                                <input type="checkbox" class="accion-rezagada" data-idx="${idx}" style="width: 16px; height: 16px; cursor: pointer;">
-                                <span>📌 "${a.nombre.substring(0, 40)}" → <span style="color: #ef4444;">${a.razon || (a.dias ? `${a.dias} días y solo ${a.progreso}%` : '')}</span></span>
-                            </label>
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-rezagada" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #ef4444;">${a.razon || (a.dias ? `${a.dias} días y solo ${a.progreso}%` : '')}</span></span>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
@@ -424,9 +471,9 @@
         }
         
         html += `
-                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #334155;">
-                    <button id="aplicar-seleccion" style="background: #10b981; border: none; color: white; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: bold;">✅ APLICAR SELECCIÓN</button>
-                    <button id="cancelar-seleccion" style="background: #475569; border: none; color: white; padding: 12px 25px; border-radius: 40px; cursor: pointer; font-weight: bold;">CANCELAR</button>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #334155; width: 100%;">
+                    <button id="aplicar-seleccion" style="background: #10b981; border: none; color: white; padding: 14px 40px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 17px;">✅ APLICAR SELECCIÓN</button>
+                    <button id="cancelar-seleccion" style="background: #475569; border: none; color: white; padding: 14px 40px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 17px;">CANCELAR</button>
                 </div>
             </div>
         `;
@@ -434,32 +481,15 @@
         modal.innerHTML = html;
         document.body.appendChild(modal);
         
-        // Seleccionar/deseleccionar todo
-        if (document.getElementById('select-all-asignar')) {
-            document.getElementById('select-all-asignar').onclick = (e) => {
-                document.querySelectorAll('.accion-asignar').forEach(cb => cb.checked = e.target.checked);
-            };
-        }
-        if (document.getElementById('select-all-progreso')) {
-            document.getElementById('select-all-progreso').onclick = (e) => {
-                document.querySelectorAll('.accion-progreso').forEach(cb => cb.checked = e.target.checked);
-            };
-        }
-        if (document.getElementById('select-all-prioridad')) {
-            document.getElementById('select-all-prioridad').onclick = (e) => {
-                document.querySelectorAll('.accion-prioridad').forEach(cb => cb.checked = e.target.checked);
-            };
-        }
-        if (document.getElementById('select-all-completar')) {
-            document.getElementById('select-all-completar').onclick = (e) => {
-                document.querySelectorAll('.accion-completar').forEach(cb => cb.checked = e.target.checked);
-            };
-        }
-        if (document.getElementById('select-all-rezagada')) {
-            document.getElementById('select-all-rezagada').onclick = (e) => {
-                document.querySelectorAll('.accion-rezagada').forEach(cb => cb.checked = e.target.checked);
-            };
-        }
+        // Eventos para seleccionar/deseleccionar todo
+        ['asignar', 'progreso', 'prioridad', 'completar', 'rezagada'].forEach(tipo => {
+            const selectAll = document.getElementById(`select-all-${tipo}`);
+            if (selectAll) {
+                selectAll.onclick = (e) => {
+                    document.querySelectorAll(`.accion-${tipo}`).forEach(cb => cb.checked = e.target.checked);
+                };
+            }
+        });
         
         document.getElementById('aplicar-seleccion').onclick = () => {
             const seleccion = {
@@ -498,42 +528,6 @@
         document.getElementById('cancelar-seleccion').onclick = () => modal.remove();
         document.getElementById('cerrar-modal-opt').onclick = () => modal.remove();
     }
-    
-    // ========== 4. FUNCIÓN DE DIAGNÓSTICO (Útil para pruebas) ==========
-    window.diagnosticarFechas = function() {
-        const proyecto = projects[currentProjectIndex];
-        if (!proyecto) return console.log('%c❌ No hay proyecto seleccionado', 'color: #ef4444;');
-        
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
-        console.log('%c=== DIAGNÓSTICO DE FECHAS ===', 'color: #8b5cf6; font-size: 14px; font-weight: bold;');
-        console.log('Fecha actual:', hoy.toISOString().split('T')[0]);
-        
-        let encontradas = 0;
-        proyecto.tasks.forEach(t => {
-            if (t.deadline && t.status !== 'completed') {
-                const deadline = new Date(t.deadline);
-                deadline.setHours(0, 0, 0, 0);
-                const diffDays = Math.ceil((deadline - hoy) / (1000 * 60 * 60 * 24));
-                
-                console.log(`%c📌 "${t.name}"`, 'color: #f59e0b;');
-                console.log(`   Deadline: ${t.deadline}`);
-                console.log(`   Días restantes: ${diffDays}`);
-                console.log(`   Prioridad actual: ${t.priority || 'media'}`);
-                console.log(`   Estado: ${t.status}`);
-                console.log(`   ¿Debería subir prioridad? ${diffDays <= 3 && diffDays >= 0 && t.priority !== 'alta' ? '✅ SÍ' : '❌ NO'}`);
-                console.log('---');
-                encontradas++;
-            }
-        });
-        
-        if (encontradas === 0) {
-            console.log('✅ No se encontraron tareas con deadline');
-        }
-        
-        return { total: encontradas };
-    };
     
     // ========== 5. CREAR BOTÓN EN HEADER ==========
     const oldBtn = document.getElementById('optimizar-ahora-btn');
@@ -574,9 +568,9 @@
     
     optimizarBtn.onclick = () => {
         mostrarPanel();
+        setTimeout(agregarContadoresColumnas, 300);
     };
     
-    // Insertar en header
     function encontrarYBotonPmVirtual() {
         let pmBtn = document.getElementById('boardUltimateBtn');
         if (!pmBtn) {
@@ -594,17 +588,29 @@
     const pmBtn = encontrarYBotonPmVirtual();
     if (pmBtn && pmBtn.parentNode) {
         pmBtn.parentNode.insertBefore(optimizarBtn, pmBtn.nextSibling);
-        console.log('✅ Botón "OPTIMIZAR AHORA" agregado al lado de PM Virtual');
+        console.log('✅ Botón "OPTIMIZAR AHORA" agregado');
     } else {
         const header = document.querySelector('header, .header, #header, .main-header');
         if (header) {
             header.appendChild(optimizarBtn);
-            console.log('✅ Botón agregado en el header');
         } else {
             document.body.appendChild(optimizarBtn);
         }
     }
     
-    console.log('%c✅ "OPTIMIZAR AHORA" con checkboxes - VERSIÓN CORREGIDA - Listo!', 'color: #10b981; font-size: 14px;');
-    console.log('%c💡 Para diagnosticar fechas, escribe: diagnosticarFechas()', 'color: #8b5cf6; font-size: 12px;');
+    // Agregar contadores automáticamente al cargar
+    setTimeout(agregarContadoresColumnas, 500);
+    
+    // Interceptar renderKanbanTasks para actualizar contadores
+    if (typeof renderKanbanTasks === 'function') {
+        const originalRender = renderKanbanTasks;
+        renderKanbanTasks = function() {
+            originalRender();
+            setTimeout(agregarContadoresColumnas, 300);
+        };
+    }
+    
+    console.log('%c✅ VERSIÓN FINAL DEFINITIVA - Lista!', 'color: #10b981; font-size: 16px; font-weight: bold;');
+    console.log('%c📊 Los contadores se actualizan automáticamente', 'color: #3b82f6; font-size: 13px;');
+    console.log('%c💡 Los títulos tienen el mismo ancho exacto que las tareas', 'color: #3b82f6; font-size: 13px;');
 })();
