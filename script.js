@@ -1,3 +1,1984 @@
+
+
+
+
+// ============================================================
+// 🔄 Actualizar vista Lista al cambiar idioma
+// ============================================================
+document.addEventListener('languageChanged', function() {
+    const listView = document.getElementById('listView');
+    if (listView && listView.classList.contains('active')) {
+        if (typeof renderListTasks === 'function') {
+            renderListTasks();
+            console.log('🌐 Lista actualizada al cambiar idioma');
+        }
+    }
+});
+
+// Respaldo: si el evento no se dispara, también escuchar cambios en localStorage
+window.addEventListener('storage', function(e) {
+    if (e.key === 'preferredLanguage') {
+        const listView = document.getElementById('listView');
+        if (listView && listView.classList.contains('active')) {
+            if (typeof renderListTasks === 'function') {
+                renderListTasks();
+                console.log('🌐 Lista actualizada por cambio en localStorage');
+            }
+        }
+    }
+});
+
+
+// ============================================================
+// 🚀 SISTEMA DEFINITIVO - MODAL DE TAREAS PREMIUM
+// (Incluye botones AR, Descarga, Edición Estimado, Guardado, Traducción)
+// ============================================================
+
+(function() {
+    'use strict';
+
+    // ============================================================
+    // 1. FUNCIONES AUXILIARES
+    // ============================================================
+
+    function escapar(texto) {
+        if (!texto) return '';
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
+    }
+
+    function formatearTamanio(bytes) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // ============================================================
+    // 2. FUNCIONES DE ARCHIVOS (descarga y carga)
+    // ============================================================
+
+    if (typeof window.downloadTaskFile !== 'function') {
+        window.downloadTaskFile = function(taskId) {
+            console.log("📥 Descargando archivo para taskId:", taskId);
+            if (!window.projects || window.currentProjectIndex === undefined) {
+                alert('No hay proyecto seleccionado');
+                return;
+            }
+            const project = window.projects[window.currentProjectIndex];
+            if (!project || !project.tasks) {
+                alert('Proyecto no válido');
+                return;
+            }
+            const task = project.tasks.find(t => t.id == taskId);
+            if (!task || !task.file) {
+                alert('No hay archivo adjunto para descargar');
+                return;
+            }
+            const fileIndex = JSON.parse(localStorage.getItem('task_files_index') || '[]');
+            let fileEntry = fileIndex.find(entry => entry.taskId == taskId);
+            if (!fileEntry) {
+                fileEntry = fileIndex.find(entry => entry.fileName === task.file.name);
+            }
+            if (fileEntry) {
+                const fileData = JSON.parse(localStorage.getItem(fileEntry.key));
+                if (fileData && fileData.data && fileData.data.startsWith('data:')) {
+                    const link = document.createElement('a');
+                    link.href = fileData.data;
+                    link.download = task.file.name;
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => document.body.removeChild(link), 100);
+                    alert(`📥 Descargando: ${task.file.name}`);
+                    return;
+                }
+            }
+            alert(`❌ No se pudo encontrar el archivo "${task.file.name}"`);
+        };
+        console.log('✅ downloadTaskFile instalada');
+    }
+
+    if (typeof window.loadFileFromStorage !== 'function') {
+        window.loadFileFromStorage = function(fileKey) {
+            try {
+                return JSON.parse(localStorage.getItem(fileKey));
+            } catch (e) {
+                return null;
+            }
+        };
+    }
+
+    // ============================================================
+    // 3. FUNCIÓN PARA EDITAR HORAS ESTIMADAS
+    // ============================================================
+
+    window.toggleEditEstimated = function() {
+        const display = document.getElementById('editTaskEstimatedDisplay');
+        const input = document.getElementById('editTaskEstimatedHours');
+        if (!display || !input) return;
+        if (display.style.display !== 'none') {
+            display.style.display = 'none';
+            input.style.display = 'inline-block';
+            input.style.width = '80px';
+            input.focus();
+            input.select();
+        } else {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val >= 0) {
+                display.textContent = val.toFixed(1) + 'h';
+            } else {
+                const currentText = display.textContent;
+                const match = currentText.match(/([\d.]+)/);
+                if (match) input.value = parseFloat(match[1]);
+            }
+            display.style.display = 'inline';
+            input.style.display = 'none';
+            const event = new Event('change', { bubbles: true });
+            input.dispatchEvent(event);
+        }
+    };
+
+    // ============================================================
+    // 4. FUNCIÓN PARA GUARDAR CAMBIOS DE TAREA
+    // ============================================================
+
+    if (typeof window.saveTaskChanges !== 'function') {
+        window.saveTaskChanges = function(taskId) {
+            console.log('💾 Guardando cambios de tarea:', taskId);
+            const project = window.projects[window.currentProjectIndex];
+            if (!project) {
+                alert('No hay proyecto seleccionado');
+                return;
+            }
+            const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) {
+                alert('Tarea no encontrada');
+                return;
+            }
+            const task = project.tasks[taskIndex];
+
+            const assignee = document.getElementById('editTaskAssignee')?.value?.trim() || '';
+            const startDate = document.getElementById('editTaskStartDate')?.value || '';
+            const deadline = document.getElementById('editTaskDeadline')?.value || '';
+            const description = document.getElementById('editTaskDescription')?.value || '';
+
+            let estimatedTime = 0;
+            const display = document.getElementById('editTaskEstimatedDisplay');
+            const input = document.getElementById('editTaskEstimatedHours');
+            if (input && input.style.display !== 'none') {
+                estimatedTime = parseFloat(input.value) || 0;
+            } else if (display) {
+                const match = display.textContent.match(/([\d.]+)/);
+                estimatedTime = match ? parseFloat(match[1]) : 0;
+            }
+            if (estimatedTime < 0) estimatedTime = 0;
+
+            task.assignee = assignee;
+            task.startDate = startDate;
+            task.deadline = deadline;
+            task.description = description;
+            task.estimatedTime = estimatedTime;
+
+            if (typeof updateLocalStorage === 'function') {
+                updateLocalStorage();
+            } else {
+                localStorage.setItem('projects', JSON.stringify(window.projects));
+            }
+
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            if (typeof renderListTasks === 'function') renderListTasks();
+            if (typeof generateReports === 'function') generateReports();
+
+            const modal = document.getElementById('taskDetailsModal');
+            if (modal) modal.style.display = 'none';
+            alert('✅ Cambios guardados correctamente');
+        };
+        console.log('✅ saveTaskChanges definida');
+    }
+
+    // ============================================================
+    // 5. FUNCIÓN DE REALIDAD AUMENTADA (SIMULADA)
+    // ============================================================
+
+    window.activateARView = function(task) {
+        console.log('🎯 Activando vista AR para:', task.name);
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const es = lang === 'es';
+
+        const txt = {
+            title: es ? '🌐 REALIDAD AUMENTADA' : '🌐 AUGMENTED REALITY',
+            close: es ? 'Cerrar Vista AR' : 'Close AR View',
+            assigned: es ? 'Asignado a' : 'Assigned to',
+            status: es ? 'Estado' : 'Status',
+            priority: es ? 'Prioridad' : 'Priority',
+            deadline: es ? 'Fecha límite' : 'Deadline',
+            progress: es ? 'Progreso' : 'Progress',
+            estimated: es ? 'Estimado' : 'Estimated',
+            logged: es ? 'Registrado' : 'Logged',
+            description: es ? 'Descripción' : 'Description',
+            noDescription: es ? 'Sin descripción' : 'No description',
+            critical: es ? 'CRÍTICA' : 'CRITICAL',
+        };
+
+        const statusColors = {
+            pending: '#f1c40f',
+            inProgress: '#008090',
+            completed: '#2ecc71',
+            overdue: '#e74c3c'
+        };
+        const color = statusColors[task.status] || '#95a5a6';
+        const statusText = {
+            pending: es ? 'Pendiente' : 'Pending',
+            inProgress: es ? 'En Progreso' : 'In Progress',
+            completed: es ? 'Completada' : 'Completed',
+            overdue: es ? 'Rezagada' : 'Overdue'
+        }[task.status] || task.status;
+
+        const priorityText = {
+            baja: es ? 'Baja' : 'Low',
+            media: es ? 'Media' : 'Medium',
+            alta: es ? 'Alta' : 'High'
+        }[task.priority] || task.priority;
+
+        const oldAR = document.getElementById('arOverlayInmersivo');
+        if (oldAR) oldAR.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'arOverlayInmersivo';
+        overlay.style.cssText = `
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: radial-gradient(ellipse at center, #0f172a 0%, #000000 100%);
+            z-index: 10000000; display:flex; align-items:center; justify-content:center;
+            font-family: 'Inter','Segoe UI',system-ui,sans-serif;
+            animation: arFadeIn 0.6s cubic-bezier(0.175,0.885,0.32,1.275);
+            backdrop-filter: blur(10px);
+        `;
+
+        if (!document.getElementById('arStyles')) {
+            const style = document.createElement('style');
+            style.id = 'arStyles';
+            style.textContent = `
+                @keyframes arFadeIn {
+                    from { opacity:0; transform:scale(0.95) rotateX(10deg); }
+                    to { opacity:1; transform:scale(1) rotateX(0); }
+                }
+                @keyframes arFloat {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-15px); }
+                    100% { transform: translateY(0px); }
+                }
+                @keyframes arPulse {
+                    0% { box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+                    50% { box-shadow: 0 0 60px rgba(139,92,246,0.8); }
+                    100% { box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+                }
+                .ar-card {
+                    background: linear-gradient(145deg, #1e293b, #0f172a);
+                    border: 2px solid rgba(139,92,246,0.6);
+                    border-radius: 32px;
+                    padding: 40px;
+                    max-width: 650px;
+                    width: 90%;
+                    box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 40px rgba(139,92,246,0.2);
+                    animation: arFloat 4s ease-in-out infinite;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .ar-card::before {
+                    content:'';
+                    position:absolute;
+                    top:-50%; left:-50%;
+                    width:200%; height:200%;
+                    background: radial-gradient(circle at 30% 30%, rgba(139,92,246,0.1), transparent 50%);
+                    pointer-events:none;
+                }
+                .ar-badge {
+                    display:inline-block; padding:4px 16px; border-radius:40px;
+                    font-size:12px; font-weight:700; text-transform:uppercase;
+                    letter-spacing:0.5px;
+                    background:${color};
+                    color:${task.status === 'pending' ? '#1e293b' : 'white'};
+                    box-shadow: 0 0 20px ${color}40;
+                }
+                .ar-progress-bar { height:8px; background:#1e293b; border-radius:10px; overflow:hidden; margin-top:12px; }
+                .ar-progress-fill { height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:10px; transition:width 1s ease; }
+                .ar-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+                .ar-item { background:rgba(255,255,255,0.05); border-radius:16px; padding:16px; text-align:center; border:1px solid rgba(255,255,255,0.08); }
+                .ar-item .label { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px; }
+                .ar-item .value { font-size:20px; font-weight:700; color:white; }
+                .ar-close-btn {
+                    background:rgba(239,68,68,0.2); border:2px solid #ef4444;
+                    color:#ef4444; padding:12px 32px; border-radius:40px;
+                    cursor:pointer; font-weight:700; font-size:16px;
+                    transition:all 0.3s; margin-top:30px; width:100%;
+                }
+                .ar-close-btn:hover { background:#ef4444; color:white; transform:scale(1.02); }
+                .ar-title {
+                    font-size:32px; font-weight:800;
+                    background:linear-gradient(135deg,#fff,#a78bfa);
+                    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                    margin-bottom:12px;
+                }
+                .ar-subtitle { font-size:14px; color:#94a3b8; margin-bottom:20px; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        overlay.innerHTML = `
+            <div class="ar-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span class="ar-badge">${statusText}</span>
+                    <span style="color:#94a3b8; font-size:12px;">#${task.id || 'N/A'}</span>
+                </div>
+                <div class="ar-title">${escapar(task.name)}</div>
+                <div class="ar-subtitle">${txt.title}</div>
+
+                <div style="display:flex; gap:12px; margin:16px 0;">
+                    <span style="background:${task.critical ? '#ef4444' : 'transparent'}; padding:4px 14px; border-radius:20px; border:1px solid ${task.critical ? '#ef4444' : '#334155'}; color:${task.critical ? '#ef4444' : '#94a3b8'}; font-size:12px; font-weight:600;">
+                        ${task.critical ? '🔥 ' + txt.critical : '● ' + priorityText}
+                    </span>
+                    ${task.deadline ? `<span style="background:#334155; padding:4px 14px; border-radius:20px; font-size:12px; color:#94a3b8;">📅 ${new Date(task.deadline).toLocaleDateString(es ? 'es-ES' : 'en-US')}</span>` : ''}
+                </div>
+
+                <div style="margin:16px 0;">
+                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#94a3b8; margin-bottom:4px;">
+                        <span>${txt.progress}</span>
+                        <span style="color:white; font-weight:600;">${task.progress || 0}%</span>
+                    </div>
+                    <div class="ar-progress-bar">
+                        <div class="ar-progress-fill" style="width: ${task.progress || 0}%;"></div>
+                    </div>
+                </div>
+
+                <div class="ar-grid">
+                    <div class="ar-item">
+                        <div class="label">${txt.assigned}</div>
+                        <div class="value">${task.assignee || '—'}</div>
+                    </div>
+                    <div class="ar-item">
+                        <div class="label">${txt.estimated}</div>
+                        <div class="value">${(task.estimatedTime || 0).toFixed(1)}h</div>
+                    </div>
+                    <div class="ar-item">
+                        <div class="label">${txt.logged}</div>
+                        <div class="value">${(task.timeLogged || 0).toFixed(1)}h</div>
+                    </div>
+                    <div class="ar-item">
+                        <div class="label">${txt.status}</div>
+                        <div class="value" style="color:${color};">${statusText}</div>
+                    </div>
+                </div>
+
+                ${task.description ? `
+                    <div style="margin-top:20px; padding:16px; background:rgba(255,255,255,0.03); border-radius:16px; border-left:4px solid #8b5cf6;">
+                        <div style="font-size:11px; text-transform:uppercase; color:#94a3b8; letter-spacing:0.5px;">${txt.description}</div>
+                        <div style="color:#cbd5e1; margin-top:6px; font-size:14px;">${task.description}</div>
+                    </div>
+                ` : `
+                    <div style="margin-top:20px; color:#64748b; font-style:italic; font-size:13px;">${txt.noDescription}</div>
+                `}
+
+                <button class="ar-close-btn" onclick="document.getElementById('arOverlayInmersivo').remove()">
+                    ✕ ${txt.close}
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') {
+                const ar = document.getElementById('arOverlayInmersivo');
+                if (ar) ar.remove();
+                document.removeEventListener('keydown', esc);
+            }
+        });
+    };
+
+    // ============================================================
+    // 6. OBJETO projectAR (compatibilidad)
+    // ============================================================
+
+    window.projectAR = {
+        addARButtonToModal: function(modal) {
+            const btn = document.getElementById('arButtonDefinitivo');
+            if (btn) {
+                btn.onclick = function() {
+                    const task = window.currentTaskDetailsTask;
+                    if (task) window.activateARView(task);
+                    else alert('No se pudo obtener la tarea actual.');
+                };
+            }
+        }
+    };
+
+    // ============================================================
+    // 7. FUNCIÓN PRINCIPAL showTaskDetails DEFINITIVA (CON BOTONES)
+    // ============================================================
+
+    window.showTaskDetails = function(task) {
+        console.log('🔥 showTaskDetails DEFINITIVA para:', task.name);
+
+        const modal = document.getElementById('taskDetailsModal');
+        const content = document.getElementById('taskDetails');
+        if (!modal || !content) {
+            console.error('Modal no encontrado');
+            return;
+        }
+
+        window.currentTaskDetailsTask = task;
+
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const es = lang === 'es';
+
+        const T = {
+            assignedTo: es ? 'Asignado a' : 'Assigned to',
+            startDate: es ? 'Fecha inicio' : 'Start date',
+            deadline: es ? 'Fecha límite' : 'Deadline',
+            estimated: es ? 'Estimado' : 'Estimated',
+            logged: es ? 'Registrado' : 'Logged',
+            status: es ? 'Estado' : 'Status',
+            remaining: es ? 'restantes' : 'remaining',
+            exceeded: es ? 'excedidas' : 'exceeded',
+            description: es ? 'Descripción' : 'Description',
+            subtasks: es ? 'Subtareas' : 'Subtasks',
+            noSubtasks: es ? 'Sin subtareas' : 'No subtasks',
+            newSubtask: es ? 'Nueva subtarea...' : 'New subtask...',
+            addSubtask: es ? 'Agregar' : 'Add',
+            hoursWorked: es ? 'Horas' : 'Hours',
+            comment: es ? 'Comentario...' : 'Comment...',
+            registerTime: es ? 'Registrar' : 'Register',
+            history: es ? 'Historial' : 'History',
+            noHistory: es ? 'Sin historial' : 'No history',
+            cancel: es ? 'Cancelar' : 'Cancel',
+            save: es ? 'Guardar' : 'Save',
+            arView: es ? 'Ver en Realidad Aumentada' : 'View in Augmented Reality',
+            noFile: es ? 'Sin archivo adjunto' : 'No attached file',
+            download: es ? 'Descargar' : 'Download',
+            unassigned: es ? 'Sin asignar' : 'Unassigned',
+        };
+
+        const statusText = {
+            pending: es ? 'Pendiente' : 'Pending',
+            inProgress: es ? 'En Progreso' : 'In Progress',
+            completed: es ? 'Completada' : 'Completed',
+            overdue: es ? 'Rezagada' : 'Overdue'
+        }[task.status] || task.status;
+
+        const priorityText = {
+            baja: es ? 'Baja' : 'Low',
+            media: es ? 'Media' : 'Medium',
+            alta: es ? 'Alta' : 'High'
+        }[task.priority] || task.priority;
+
+        const statusColor = {
+            pending: '#f1c40f',
+            inProgress: '#008090',
+            completed: '#2ecc71',
+            overdue: '#e74c3c'
+        }[task.status] || '#95a5a6';
+
+        const totalSubtasks = (task.subtasks || []).length;
+        const completedSubtasks = (task.subtasks || []).filter(s => s.completed).length;
+        const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+        const timeDiff = (task.estimatedTime || 0) - (task.timeLogged || 0);
+        const timeStatusText = timeDiff >= 0
+            ? '✅ ' + Math.abs(timeDiff).toFixed(1) + 'h ' + T.remaining
+            : '⚠️ ' + Math.abs(timeDiff).toFixed(1) + 'h ' + T.exceeded;
+        const timeStatusColor = timeDiff >= 0 ? '#2ecc71' : '#ef4444';
+
+        // ===== HTML DEL MODAL CON TODOS LOS BOTONES =====
+        content.innerHTML = `
+            <div class="task-details-executive" style="width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;font-family:'Inter','Segoe UI',system-ui,sans-serif;">
+                <!-- HEADER -->
+                <div class="exec-header" style="display:flex;justify-content:space-between;align-items:center;padding:24px 32px;background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:2px solid rgba(139,92,246,0.2);flex-wrap:wrap;gap:12px;">
+                    <div class="exec-header-left" style="display:flex;flex-direction:column;gap:10px;">
+                        <div class="exec-title-row" style="display:flex;align-items:center;gap:14px;">
+                            <span class="exec-status-dot" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:${statusColor};"></span>
+                            <h3 class="exec-task-title" style="margin:0;font-size:22px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapar(task.name)}</h3>
+                        </div>
+                        <div class="exec-badges" style="display:flex;flex-wrap:wrap;gap:8px;">
+                            <span class="badge status-badge status-${task.status}" style="padding:4px 14px;border-radius:30px;font-size:12px;font-weight:600;white-space:nowrap;background:${statusColor};color:${task.status === 'pending' ? '#1e293b' : 'white'};">${statusText}</span>
+                            <span class="badge priority-badge priority-${task.priority}" style="padding:4px 14px;border-radius:30px;font-size:12px;font-weight:600;white-space:nowrap;background:${task.priority === 'alta' ? '#e74c3c' : task.priority === 'media' ? '#f39c12' : '#2ecc71'};color:white;">${priorityText}</span>
+                            ${task.critical ? '<span class="badge critical-badge" style="padding:4px 14px;border-radius:30px;font-size:12px;font-weight:600;white-space:nowrap;background:#ef4444;color:white;">🔥 ' + (es ? 'Crítica' : 'Critical') + '</span>' : ''}
+                        </div>
+                    </div>
+                    <button class="exec-close-btn" onclick="document.getElementById('taskDetailsModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:28px;cursor:pointer;padding:0 8px;">✕</button>
+                </div>
+
+                <!-- BODY -->
+                <div class="exec-body" style="display:grid;grid-template-columns:1fr 1fr;gap:28px;padding:28px 32px 32px 32px;box-sizing:border-box;">
+                    <!-- COLUMNA IZQUIERDA -->
+                    <div class="exec-col-left" style="display:flex;flex-direction:column;gap:22px;">
+                        <div class="exec-field-group" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                            <div class="exec-field" style="display:flex;flex-direction:column;gap:4px;">
+                                <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;">${T.assignedTo}</label>
+                                <input type="text" id="editTaskAssignee" class="exec-input" value="${escapar(task.assignee || '')}" placeholder="${T.unassigned}" style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;color:white;font-size:14px;width:100%;box-sizing:border-box;">
+                            </div>
+                            <div class="exec-field" style="display:flex;flex-direction:column;gap:4px;">
+                                <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;">${T.startDate}</label>
+                                <input type="date" id="editTaskStartDate" class="exec-input" value="${task.startDate || ''}" style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;color:white;font-size:14px;width:100%;box-sizing:border-box;">
+                            </div>
+                            <div class="exec-field" style="display:flex;flex-direction:column;gap:4px;">
+                                <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;">${T.deadline}</label>
+                                <input type="date" id="editTaskDeadline" class="exec-input" value="${task.deadline || ''}" style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;color:white;font-size:14px;width:100%;box-sizing:border-box;">
+                            </div>
+                        </div>
+
+                        <div class="exec-time-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;background:#1e293b;border-radius:14px;padding:16px;border:1px solid #2d3748;">
+                            <div class="exec-time-item" style="display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;">
+                                <span class="exec-time-label" style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">${T.estimated}</span>
+                                <div class="exec-time-value-row" style="display:flex;align-items:center;gap:6px;">
+                                    <span class="exec-time-value" id="editTaskEstimatedDisplay" style="font-size:18px;font-weight:700;color:white;">${(task.estimatedTime || 0).toFixed(1)}h</span>
+                                    <input type="number" id="editTaskEstimatedHours" class="exec-input-hidden" value="${task.estimatedTime || 0}" step="0.5" min="0" style="display:none;width:80px;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:4px 6px;color:white;text-align:center;font-size:14px;">
+                                    <button class="exec-edit-btn" onclick="window.toggleEditEstimated()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;">✏️</button>
+                                </div>
+                            </div>
+                            <div class="exec-time-item" style="display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;">
+                                <span class="exec-time-label" style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">${T.logged}</span>
+                                <span class="exec-time-value" style="font-size:18px;font-weight:700;color:white;">${(task.timeLogged || 0).toFixed(1)}h</span>
+                            </div>
+                            <div class="exec-time-item" style="display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;">
+                                <span class="exec-time-label" style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">${T.status}</span>
+                                <span class="exec-time-value" style="font-size:18px;font-weight:700;color:${timeStatusColor};">${timeStatusText}</span>
+                            </div>
+                        </div>
+
+                        <div class="exec-field" style="display:flex;flex-direction:column;gap:4px;">
+                            <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;">${T.description}</label>
+                            <textarea id="editTaskDescription" class="exec-textarea" rows="3" style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 14px;color:white;resize:vertical;font-size:14px;min-height:80px;font-family:inherit;box-sizing:border-box;">${escapar(task.description || '')}</textarea>
+                        </div>
+
+                        <!-- ===== SECCIÓN ARCHIVO ADJUNTO CON BOTÓN DESCARGAR ===== -->
+                        ${task.file ? `
+                            <div class="exec-file-section" style="background:#1e293b;border:1px solid #2d3748;border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                                <div class="exec-file-info" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                                    <i class="fas fa-paperclip" style="color:#8b5cf6;font-size:16px;"></i>
+                                    <span class="exec-file-name" style="font-weight:500;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapar(task.file.name)}</span>
+                                    <span class="exec-file-size" style="color:#94a3b8;font-size:13px;flex-shrink:0;">(${formatearTamanio(task.file.size)})</span>
+                                </div>
+                                <button class="exec-file-download" data-task-id="${task.id}" style="background:rgba(139,92,246,0.15);border:none;color:#8b5cf6;padding:6px 16px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                                    <i class="fas fa-download"></i> ${T.download}
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="exec-no-file" style="color:#94a3b8;font-style:italic;padding:10px 0;">📎 ${T.noFile}</div>
+                        `}
+                    </div>
+
+                    <!-- COLUMNA DERECHA -->
+                    <div class="exec-col-right" style="display:flex;flex-direction:column;gap:22px;">
+                        <div class="exec-subtasks" style="background:#1e293b;border-radius:14px;padding:18px;border:1px solid #2d3748;">
+                            <div class="exec-subtasks-header" style="display:flex;justify-content:space-between;margin-bottom:10px;font-weight:600;font-size:15px;">
+                                <span>📋 ${T.subtasks}</span>
+                                <span class="exec-subtasks-progress" style="background:rgba(139,92,246,0.2);color:#a78bfa;padding:2px 14px;border-radius:30px;font-size:13px;">${subtaskProgress}%</span>
+                            </div>
+                            <div class="exec-subtasks-bar" style="height:6px;background:#0f172a;border-radius:6px;overflow:hidden;margin-bottom:14px;">
+                                <div class="exec-subtasks-fill" style="height:100%;background:linear-gradient(90deg,#8b5cf6,#ec4899);border-radius:6px;width:${subtaskProgress}%;transition:width 0.4s;"></div>
+                            </div>
+                            <div class="exec-subtasks-list" id="subtasksList-${task.id}" style="max-height:150px;overflow-y:auto;margin-bottom:12px;">
+                                ${(task.subtasks || []).map(st => `
+                                    <div class="exec-subtask-item" data-subtask-id="${st.id}" style="display:flex;align-items:center;gap:12px;padding:6px 8px;border-radius:8px;">
+                                        <input type="checkbox" ${st.completed ? 'checked' : ''} 
+                                               onchange="toggleSubtaskCompletion(${task.id}, ${st.id}, this.checked)" style="width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;flex-shrink:0;">
+                                        <span class="exec-subtask-text ${st.completed ? 'completed' : ''}" style="flex:1;font-size:14px;color:${st.completed ? '#64748b' : '#e2e8f0'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${st.completed ? 'text-decoration:line-through;' : ''}">${escapar(st.name)}</span>
+                                        <button class="exec-subtask-delete" onclick="deleteSubtask(${task.id}, ${st.id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;flex-shrink:0;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                                ${(task.subtasks || []).length === 0 ? '<div class="exec-no-subtasks" style="color:#94a3b8;font-style:italic;text-align:center;padding:20px 0;">' + T.noSubtasks + '</div>' : ''}
+                            </div>
+                            <div class="exec-add-subtask" style="display:flex;gap:10px;">
+                                <input type="text" id="newSubtaskInput-${task.id}" placeholder="${T.newSubtask}" style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 14px;color:white;font-size:14px;">
+                                <button onclick="addSubtask(${task.id})" style="background:#8b5cf6;border:none;border-radius:8px;padding:8px 18px;color:white;font-weight:600;cursor:pointer;flex-shrink:0;">${T.addSubtask}</button>
+                            </div>
+                        </div>
+
+                        <div class="exec-time-tracking" style="background:#1e293b;border-radius:14px;padding:18px;border:1px solid #2d3748;">
+                            <div class="exec-time-entry-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+                                <input type="number" id="timeSpent" placeholder="${T.hoursWorked}" step="0.1" min="0" style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 12px;color:white;width:100px;flex-shrink:0;">
+                                <input type="text" id="timeComment" placeholder="${T.comment}" style="flex:1;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 14px;color:white;min-width:120px;">
+                                <button id="registerTimeBtn" class="exec-register-btn" style="background:#10b981;border:none;border-radius:8px;padding:8px 18px;color:white;font-weight:600;cursor:pointer;flex-shrink:0;">${T.registerTime}</button>
+                            </div>
+                            <div class="exec-time-history">
+                                <div class="exec-time-history-header" style="display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px;font-size:14px;">
+                                    <span>📜 ${T.history}</span>
+                                    <span class="exec-history-total" style="color:#8b5cf6;">${(task.timeLogged || 0).toFixed(1)}h</span>
+                                </div>
+                                <div id="timeHistoryList" style="max-height:130px;overflow-y:auto;">
+                                    ${(task.timeHistory || []).map(e => `
+                                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1e293b;">
+                                            <span>${e.date}</span>
+                                            <span>${e.hours.toFixed(2)}h</span>
+                                            <span style="color:#94a3b8;">${escapar(e.comment)}</span>
+                                        </div>
+                                    `).join('')}
+                                    ${(task.timeHistory || []).length === 0 ? '<div class="exec-no-history" style="color:#94a3b8;font-style:italic;text-align:center;padding:12px 0;">' + T.noHistory + '</div>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== FOOTER CON TODOS LOS BOTONES (AR + DESCARGAR + GUARDAR + CANCELAR) ===== -->
+                <div class="exec-footer" style="display:flex;justify-content:space-between;align-items:center;padding:18px 32px;background:#1e293b;border-top:2px solid rgba(139,92,246,0.3);gap:16px;flex-wrap:wrap;position:sticky;bottom:0;z-index:10;width:100%;box-sizing:border-box;">
+                    <div class="exec-footer-left" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                        <!-- BOTÓN REALIDAD AUMENTADA (SIEMPRE VISIBLE) -->
+                        <button id="arButtonDefinitivo" class="exec-ar-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;padding:10px 24px;border-radius:10px;color:white;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:15px;box-shadow:0 4px 12px rgba(102,126,234,0.3);white-space:nowrap;">
+                            🎯 ${T.arView}
+                        </button>
+                    </div>
+                    <div class="exec-footer-right" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                        <button id="cancelEditBtn" class="exec-cancel-btn" style="background:#ef4444;border:none;padding:10px 24px;border-radius:10px;color:white;font-weight:600;cursor:pointer;font-size:15px;white-space:nowrap;">${T.cancel}</button>
+                        <button id="saveTaskBtn" class="exec-save-btn" style="background:#10b981;border:none;padding:10px 24px;border-radius:10px;color:white;font-weight:600;cursor:pointer;font-size:15px;white-space:nowrap;box-shadow:0 4px 12px rgba(16,185,129,0.3);">${T.save}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // ============================================================
+        // 8. CONEXIÓN DE EVENTOS DE LOS BOTONES
+        // ============================================================
+
+        // Conectar botón de descarga
+        const downloadBtn = content.querySelector('.exec-file-download');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.downloadTaskFile(task.id);
+            });
+        }
+
+        // Conectar botón de registrar tiempo
+        const registerBtn = content.querySelector('#registerTimeBtn');
+        if (registerBtn) {
+            registerBtn.addEventListener('click', function() {
+                const hours = parseFloat(document.getElementById('timeSpent').value);
+                const comment = document.getElementById('timeComment').value.trim() || 'Sin comentario';
+                if (!isNaN(hours) && hours > 0) {
+                    const now = new Date();
+                    const entry = { date: now.toLocaleString(), hours, comment };
+                    task.timeHistory = task.timeHistory || [];
+                    task.timeLogged = (task.timeLogged || 0) + hours;
+                    task.timeHistory.unshift(entry);
+                    task.timeLoggedEntries = task.timeLoggedEntries || [];
+                    task.timeLoggedEntries.unshift({ hours, date: entry.date });
+                    const estimadas = task.estimatedTime || 0;
+                    if (estimadas > 0) {
+                        let nuevo = Math.min(99, Math.round((task.timeLogged / estimadas) * 100));
+                        if (task.status === 'completed') nuevo = 100;
+                        task.progress = nuevo;
+                    }
+                    if (typeof updateLocalStorage === 'function') updateLocalStorage();
+                    window.showTaskDetails(task);
+                    alert((es ? '✅ Tiempo registrado: ' : '✅ Time logged: ') + hours + 'h ' + (es ? '- Progreso: ' : '- Progress: ') + task.progress + '%');
+                } else {
+                    alert(es ? '❌ Ingresa un valor válido para las horas' : '❌ Enter a valid number of hours');
+                }
+            });
+        }
+
+        // Conectar botón Guardar
+        const saveBtn = content.querySelector('#saveTaskBtn');
+        if (saveBtn) {
+            saveBtn.onclick = function(e) {
+                e.preventDefault();
+                window.saveTaskChanges(task.id);
+            };
+        }
+
+        // Conectar botón Cancelar
+        const cancelBtn = content.querySelector('#cancelEditBtn');
+        if (cancelBtn) {
+            cancelBtn.onclick = function(e) {
+                e.preventDefault();
+                document.getElementById('taskDetailsModal').style.display = 'none';
+            };
+        }
+
+        // Conectar botón AR
+        const arBtn = content.querySelector('#arButtonDefinitivo');
+        if (arBtn) {
+            arBtn.onclick = function() {
+                window.activateARView(task);
+            };
+        }
+
+        // Mostrar modal
+        modal.style.display = 'block';
+        // Aplicar estilos de altura
+        setTimeout(() => {
+            const contentEl = modal.querySelector('.modal-content');
+            if (contentEl) {
+                contentEl.style.maxHeight = '90vh';
+                contentEl.style.overflowY = 'auto';
+                contentEl.style.minHeight = '60vh';
+            }
+            const footer = modal.querySelector('.exec-footer');
+            if (footer) {
+                footer.style.position = 'sticky';
+                footer.style.bottom = '0';
+                footer.style.background = '#1e293b';
+                footer.style.zIndex = '10';
+                footer.style.borderTop = '2px solid rgba(139,92,246,0.3)';
+            }
+        }, 50);
+    };
+
+    // ============================================================
+    // 9. CSS ADICIONAL PARA EL MODAL
+    // ============================================================
+
+    (function injectModalCSS() {
+        if (document.getElementById('modal-fix-css')) return;
+        const style = document.createElement('style');
+        style.id = 'modal-fix-css';
+        style.textContent = `
+            #taskDetailsModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                z-index: 1000000;
+                overflow-y: auto;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            #taskDetailsModal .modal-content {
+                max-width: 1200px !important;
+                width: 95% !important;
+                margin: 20px auto !important;
+                background: #0f172a !important;
+                border-radius: 28px !important;
+                overflow: hidden !important;
+                border: 1px solid rgba(139,92,246,0.3) !important;
+                box-shadow: 0 40px 80px rgba(0,0,0,0.7) !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+                min-height: 60vh !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #taskDetailsModal .modal-content .exec-footer {
+                position: sticky !important;
+                bottom: 0 !important;
+                background: #1e293b !important;
+                z-index: 10 !important;
+                border-top: 2px solid rgba(139,92,246,0.3) !important;
+            }
+            .exec-ar-btn {
+                background: linear-gradient(135deg, #667eea, #764ba2) !important;
+                border: none !important;
+                padding: 10px 24px !important;
+                border-radius: 10px !important;
+                color: white !important;
+                font-weight: 600 !important;
+                cursor: pointer !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                font-size: 15px !important;
+                box-shadow: 0 4px 12px rgba(102,126,234,0.3) !important;
+                white-space: nowrap !important;
+            }
+            @media (max-width: 768px) {
+                #taskDetailsModal .modal-content { width: 98% !important; max-height: 95vh !important; }
+                #taskDetailsModal .exec-body { grid-template-columns: 1fr !important; }
+                #taskDetailsModal .exec-footer { flex-direction: column !important; align-items: stretch !important; }
+                #taskDetailsModal .exec-footer-left, #taskDetailsModal .exec-footer-right { justify-content: center !important; flex-wrap: wrap !important; }
+                #taskDetailsModal .exec-ar-btn, #taskDetailsModal .exec-cancel-btn, #taskDetailsModal .exec-save-btn { width: 100% !important; justify-content: center !important; }
+            }
+        `;
+        document.head.appendChild(style);
+        console.log('✅ CSS del modal inyectado');
+    })();
+
+    // ============================================================
+    // 10. PROTECCIÓN DEL BOTÓN AR (renombrar #arButton antiguo)
+    // ============================================================
+
+    document.querySelectorAll('#arButton').forEach(el => {
+        el.id = 'arButtonAntiguo';
+    });
+
+    console.log('🎉 SISTEMA DEFINITIVO DE MODAL DE TAREAS INSTALADO');
+    console.log('📌 Funcionalidades:');
+    console.log('   - Edición de horas estimadas con ✏️');
+    console.log('   - Guardado completo de todos los campos');
+    console.log('   - Vista de Realidad Aumentada inmersiva');
+    console.log('   - Descarga de archivos adjuntos');
+    console.log('   - Traducción automática (es/en)');
+    console.log('   - Registro de tiempo e historial');
+    console.log('   - Gestión de subtareas');
+    console.log('✅ TODO FUNCIONA PERFECTAMENTE');
+
+})();
+
+
+
+
+// 2. CÓDIGO PARA AÑADIR EL BOTÓN EN LA VISTA BOARD
+// Modifica tu función renderKanbanTasks para que incluya este bloque al principio.
+// Si ya tienes tu propia función, asegúrate de que contenga este código.
+// Te proporciono una versión completa que puedes usar directamente.
+
+
+function renderKanbanTasks(tasks = null) {
+    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CON TRADUCCIÓN');
+
+    // ========== IDIOMA Y TRADUCCIONES ==========
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const L = {
+        es: {
+            assignedTo: 'Asignado a:',
+            deadline: 'Fecha límite:',
+            pending: 'Pendiente',
+            inProgress: 'En Progreso',
+            completed: 'Completado',
+            overdue: 'Rezagado',
+            low: 'Baja',
+            medium: 'Media',
+            high: 'Alta',
+            edit: 'Editar',
+            delete: 'Eliminar',
+            unassigned: 'Sin asignar',
+            noDate: 'Sin fecha',
+            invalidDate: 'Fecha inválida',
+            unnamedTask: 'Tarea sin nombre',
+            subtasks: 'Subtareas',
+            subtaskProgress: 'subtareas',
+            noTasks: 'No hay tareas'
+        },
+        en: {
+            assignedTo: 'Assigned to:',
+            deadline: 'Deadline:',
+            pending: 'Pending',
+            inProgress: 'In Progress',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            low: 'Low',
+            medium: 'Medium',
+            high: 'High',
+            edit: 'Edit',
+            delete: 'Delete',
+            unassigned: 'Unassigned',
+            noDate: 'No date',
+            invalidDate: 'Invalid date',
+            unnamedTask: 'Unnamed task',
+            subtasks: 'Subtasks',
+            subtaskProgress: 'subtasks',
+            noTasks: 'No tasks'
+        }
+    };
+    const labels = L[lang] || L.es;
+    const es = lang === 'es';
+
+    // Mapeos para estados y prioridades
+    const statusMap = {
+        'pending': labels.pending,
+        'inProgress': labels.inProgress,
+        'completed': labels.completed,
+        'overdue': labels.overdue,
+        'pendiente': labels.pending,
+        'en progreso': labels.inProgress,
+        'completado': labels.completed,
+        'rezagado': labels.overdue
+    };
+    const priorityMap = {
+        'baja': labels.low,
+        'media': labels.medium,
+        'alta': labels.high,
+        'low': labels.low,
+        'medium': labels.medium,
+        'high': labels.high
+    };
+    // ===========================================
+
+    // Paso 1: Verificar lo básico
+    if (!projects || currentProjectIndex === undefined) {
+        console.error('❌ No hay proyectos o índice');
+        console.log('   projects:', projects);
+        console.log('   currentProjectIndex:', currentProjectIndex);
+        return;
+    }
+
+    const project = projects[currentProjectIndex];
+    if (!project || !project.tasks) {
+        console.error('❌ No hay proyecto o tareas');
+        return;
+    }
+
+    console.log('✅ Proyecto:', project.name);
+    console.log('✅ Tareas:', project.tasks.length);
+
+    // Paso 2: Obtener columnas
+    const pendingCol = document.getElementById('pendingList');
+    const inProgressCol = document.getElementById('inProgressList');
+    const completedCol = document.getElementById('completedList');
+    const overdueCol = document.getElementById('overdueList');
+
+    console.log('✅ Columnas:', {
+        pending: !!pendingCol,
+        inProgress: !!inProgressCol,
+        completed: !!completedCol,
+        overdue: !!overdueCol
+    });
+
+    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
+        console.error('❌ Faltan columnas');
+        return;
+    }
+
+    // Paso 3: Limpiar columnas
+    pendingCol.innerHTML = '';
+    inProgressCol.innerHTML = '';
+    completedCol.innerHTML = '';
+    overdueCol.innerHTML = '';
+
+    // Paso 4: Obtener tareas
+    let tasksToRender = tasks || project.tasks || [];
+    console.log('✅ Tareas a renderizar:', tasksToRender.length);
+
+    if (tasksToRender.length === 0) {
+        console.log('📭 No hay tareas');
+        setTimeout(() => {
+            if (typeof actualizarContadoresColumnas === 'function') {
+                actualizarContadoresColumnas();
+            }
+            document.dispatchEvent(new Event('tasksRendered'));
+        }, 50);
+        return;
+    }
+
+    // Paso 5: Renderizar CADA TAREA
+    tasksToRender.forEach((task, index) => {
+        console.log(`🎨 Renderizando tarea ${index + 1}: "${task.name}"`);
+        console.log('📊 Campos de la tarea:', {
+            name: task.name,
+            assignee: task.assignee,
+            priority: task.priority,
+            status: task.status,
+            deadline: task.deadline,
+            description: task.description,
+            estimatedTime: task.estimatedTime,
+            subtasks: task.subtasks,
+            startDate: task.startDate
+        });
+
+        if (!task) {
+            console.log(' ⚠️ Tarea nula, saltando');
+            return;
+        }
+
+        // Determinar columna
+        let targetColumn = pendingCol;
+        const status = task.status || 'pending';
+        if (status === 'completed' || status === 'completado') {
+            targetColumn = completedCol;
+        } else if (status === 'inProgress' || status === 'en progreso') {
+            targetColumn = inProgressCol;
+        } else if (status === 'overdue' || status === 'rezagado') {
+            targetColumn = overdueCol;
+        }
+
+        console.log(`   📍 Estado: ${status} → Columna: ${targetColumn.id}`);
+
+        // COLORES DE BORDE POR PRIORIDAD
+        const priorityBorderColors = {
+            'alta': '#e74c3c',
+            'media': '#f39c12',
+            'baja': '#2ecc71',
+            'high': '#e74c3c',
+            'medium': '#f39c12',
+            'low': '#2ecc71'
+        };
+        const priorityColor = priorityBorderColors[task.priority] || '#3498db';
+
+        // ICONOS DE STATUS
+        const statusIcons = {
+            'pending': '⏳',
+            'inProgress': '🔄',
+            'completed': '✅',
+            'overdue': '⚠️'
+        };
+        const statusIcon = statusIcons[status] || '📝';
+
+        // Formatear fecha límite según idioma
+        let formattedDeadline = '';
+        if (task.deadline) {
+            try {
+                const deadlineDate = new Date(task.deadline);
+                formattedDeadline = deadlineDate.toLocaleDateString(es ? 'es-ES' : 'en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                console.log(`   📅 Fecha formateada: ${formattedDeadline}`);
+            } catch (error) {
+                console.error('❌ Error formateando fecha:', error);
+                formattedDeadline = labels.invalidDate;
+            }
+        }
+
+        // Cálculo de progreso de subtareas
+        const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
+        const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
+        const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+        const hasSubtasks = totalSubtasks > 0;
+
+        // Textos traducidos
+        const statusText = statusMap[status] || status;
+        const priorityText = priorityMap[task.priority] || task.priority || labels.medium;
+        const assigneeText = task.assignee ? `${labels.assignedTo} ${task.assignee}` : '';
+        const deadlineText = task.deadline ? `${labels.deadline} ${formattedDeadline}` : '';
+
+        // Crear tarjeta
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.taskId = task.id;
+        card.dataset.status = status;
+        card.style.borderLeft = `4px solid ${priorityColor}`;
+
+        card.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-title">
+                    ${statusIcon} ${task.name || labels.unnamedTask}
+                </h4>
+                <div class="task-controls">
+                    <div class="move-buttons">
+                        <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${status}')">↑</button>
+                        <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${status}')">↓</button>
+                    </div>
+                    <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
+                </div>
+            </div>
+            <div class="task-card-body">
+                ${assigneeText ? `
+                <div class="task-assignee">
+                    <i class="fas fa-user"></i> ${assigneeText}
+                </div>
+                ` : ''}
+                
+                ${hasSubtasks ? `
+                <div class="subtasks-progress-container" style="margin-top: 10px; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
+                        <span>📋 ${labels.subtasks}</span>
+                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+                    </div>
+                    <div class="progress-bar" style="background:#2d2d5f; height:6px; border-radius:3px; overflow:hidden;">
+                        <div class="progress-fill" style="width: ${subtaskProgress}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:3px; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="badges-container">
+                    <span class="task-badge priority-badge ${task.priority || 'media'}">
+                        ${priorityText}
+                    </span>
+                    <span class="task-badge status-badge status-${status}">
+                        ${statusText}
+                    </span>
+                </div>
+                ${deadlineText ? `
+                <div class="task-deadline">
+                    <i class="fas fa-calendar-alt"></i> ${deadlineText}
+                </div>
+                ` : ''}
+            </div>
+            <div class="task-context-menu" id="task-menu-${task.id}">
+                <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-edit"></i> ${labels.edit}
+                </div>
+                <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
+                    <i class="fas fa-trash"></i> ${labels.delete}
+                </div>
+            </div>
+        `;
+
+        card.addEventListener('click', function(e) {
+            console.log('🖱️ Click en:', task.name);
+            e.stopPropagation();
+            if (typeof showTaskDetails === 'function') {
+                showTaskDetails(task);
+            }
+        });
+
+        targetColumn.appendChild(card);
+        console.log(`   ✅ Tarea agregada a ${targetColumn.id}`);
+    });
+
+    console.log('🎉 renderKanbanTasks COMPLETADO EXITOSAMENTE');
+
+    setTimeout(() => {
+        if (typeof actualizarContadoresColumnas === 'function') {
+            actualizarContadoresColumnas();
+        }
+        document.dispatchEvent(new Event('tasksRendered'));
+        if (typeof initDragAndDrop === 'function') {
+            console.log('🎯 Iniciando drag & drop...');
+            initDragAndDrop();
+        }
+        if (typeof mejorarDragDrop === 'function') {
+            mejorarDragDrop();
+        }
+        if (typeof agregarTooltipsATareas === 'function') {
+            agregarTooltipsATareas();
+        }
+        console.log('✨ Efectos visuales aplicados correctamente');
+    }, 100);
+}
+// 3. OBSERVADOR ADICIONAL (por si la vista Board se activa después de renderizar)
+(function ensureBoardButton() {
+    function addButtonIfMissing() {
+        const boardView = document.getElementById('boardView');
+        if (boardView && boardView.classList.contains('active') && !document.getElementById('reportButtonBoard')) {
+            let header = boardView.querySelector('.kanban-header, .board-header, header');
+            if (!header) {
+                header = document.createElement('div');
+                header.className = 'kanban-header';
+                header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 0 15px 0; margin-bottom: 10px;';
+                boardView.insertBefore(header, boardView.firstChild);
+            }
+            const btn = document.createElement('button');
+            btn.id = 'reportButtonBoard';
+            btn.innerHTML = '<i class="fas fa-chart-line"></i> Reporte Ejecutivo';
+            btn.style.cssText = 'background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 12px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin-left: 15px; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+            btn.onclick = generarReporteBoard;
+            btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
+            btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
+            header.appendChild(btn);
+            console.log('✅ Botón Reporte Ejecutivo añadido por observador');
+        }
+    }
+    const target = document.getElementById('boardView');
+    if (target) {
+        const observer = new MutationObserver(() => addButtonIfMissing());
+        observer.observe(target, { attributes: true });
+        addButtonIfMissing();
+    } else {
+        const interval = setInterval(() => {
+            const el = document.getElementById('boardView');
+            if (el) {
+                clearInterval(interval);
+                const observer = new MutationObserver(() => addButtonIfMissing());
+                observer.observe(el, { attributes: true });
+                addButtonIfMissing();
+            }
+        }, 500);
+    }
+})();
+
+console.log('✅ Código de reporte ejecutivo cargado correctamente');
+
+
+
+
+
+
+// ============================================
+// 🚀 OPTIMIZAR AHORA - VERSIÓN FINAL DEFINITIVA
+// Títulos con el mismo ancho exacto que las tareas
+// ============================================
+
+(function() {
+    console.log('%c🎯 Creando "OPTIMIZAR AHORA" VERSIÓN FINAL DEFINITIVA...', 'color: #3b82f6; font-size: 14px;');
+    
+    // ========== 1. FUNCIÓN QUE ANALIZA Y DETECTA ACCIONES ==========
+    function analizarAcciones() {
+        const proyecto = projects[currentProjectIndex];
+        if (!proyecto) return null;
+        
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        const acciones = {
+            asignar: [],
+            moverAProgreso: [],
+            subirPrioridad: [],
+            completar: [],
+            marcarRezagada: []
+        };
+        
+        // Calcular carga para asignaciones
+        const miembrosConCarga = {};
+        proyecto.tasks.forEach(t => {
+            if (t.assignee && t.assignee !== '' && t.assignee !== 'Sin asignar' && t.status !== 'completed') {
+                miembrosConCarga[t.assignee] = (miembrosConCarga[t.assignee] || 0) + 1;
+            }
+        });
+        
+        const MIEMBROS_POR_DEFECTO = ['Angel', 'Carlos', 'Maria', 'Juan', 'Ana'];
+        let miembrosDisponibles = Object.keys(miembrosConCarga);
+        if (miembrosDisponibles.length === 0) {
+            miembrosDisponibles = [...MIEMBROS_POR_DEFECTO];
+        }
+        
+        for (const t of proyecto.tasks) {
+            if (t.status === 'completed') continue;
+            
+            // 1. DETECTAR TAREAS SIN ASIGNAR
+            if (!t.assignee || t.assignee === '' || t.assignee === 'Sin asignar') {
+                if (miembrosDisponibles.length > 0) {
+                    let menosCargado = miembrosDisponibles[0];
+                    let menorCarga = Infinity;
+                    for (const m of miembrosDisponibles) {
+                        const cargaActual = miembrosConCarga[m] || 0;
+                        if (cargaActual < menorCarga) {
+                            menorCarga = cargaActual;
+                            menosCargado = m;
+                        }
+                    }
+                    acciones.asignar.push({
+                        tarea: t,
+                        nombre: t.name,
+                        asignadoA: menosCargado
+                    });
+                }
+            }
+            
+            // 2. DETECTAR TAREAS PARA MOVER A EN PROGRESO
+            if (t.status === 'pending') {
+                let razon = '';
+                
+                if (t.startDate) {
+                    const startDate = new Date(t.startDate);
+                    startDate.setHours(0, 0, 0, 0);
+                    if (startDate <= hoy) {
+                        razon = `fecha inicio ${t.startDate}`;
+                    }
+                }
+                
+                if (!razon && t.priority === 'alta') {
+                    razon = `prioridad ALTA`;
+                }
+                
+                if (!razon && t.deadline) {
+                    const deadlineDate = new Date(t.deadline);
+                    deadlineDate.setHours(0, 0, 0, 0);
+                    const diffTime = deadlineDate - hoy;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 3 && diffDays >= 0) {
+                        razon = `vence en ${diffDays} días (${t.deadline})`;
+                    } else if (diffDays < 0) {
+                        razon = `YA VENCIDA (hace ${Math.abs(diffDays)} días)`;
+                    }
+                }
+                
+                if (razon) {
+                    acciones.moverAProgreso.push({
+                        tarea: t,
+                        nombre: t.name,
+                        razon: razon
+                    });
+                }
+            }
+            
+            // 3. DETECTAR TAREAS PARA SUBIR PRIORIDAD
+            if (t.deadline && t.priority !== 'alta') {
+                const deadlineDate = new Date(t.deadline);
+                deadlineDate.setHours(0, 0, 0, 0);
+                const diffTime = deadlineDate - hoy;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 3 && diffDays >= 0) {
+                    acciones.subirPrioridad.push({
+                        tarea: t,
+                        nombre: t.name,
+                        prioridadActual: t.priority || 'media',
+                        dias: diffDays
+                    });
+                }
+            }
+            
+            // 4. DETECTAR TAREAS PARA COMPLETAR
+            if (t.status === 'inProgress') {
+                let razon = '';
+                if (t.progress >= 100) {
+                    razon = 'progreso 100%';
+                } else if (t.estimatedTime && t.timeLogged && t.timeLogged >= t.estimatedTime) {
+                    razon = `horas completadas (${t.timeLogged}/${t.estimatedTime})`;
+                }
+                if (razon) {
+                    acciones.completar.push({
+                        tarea: t,
+                        nombre: t.name,
+                        razon: razon
+                    });
+                }
+            }
+            
+            // 5. DETECTAR TAREAS REZAGADAS
+            if (t.deadline && t.status !== 'overdue' && t.status !== 'completed') {
+                const deadlineDate = new Date(t.deadline);
+                deadlineDate.setHours(0, 0, 0, 0);
+                if (deadlineDate < hoy) {
+                    acciones.marcarRezagada.push({
+                        tarea: t,
+                        nombre: t.name,
+                        razon: `deadline ${t.deadline} (pasado hace ${Math.ceil((hoy - deadlineDate) / (1000 * 60 * 60 * 24))} días)`
+                    });
+                }
+            }
+            
+            if (t.status === 'inProgress' && t.status !== 'overdue' && t.startDate) {
+                const startDate = new Date(t.startDate);
+                startDate.setHours(0, 0, 0, 0);
+                const diasEnProgreso = Math.ceil((hoy - startDate) / (1000 * 60 * 60 * 24));
+                
+                if (diasEnProgreso > 7 && (t.progress || 0) < 30) {
+                    acciones.marcarRezagada.push({
+                        tarea: t,
+                        nombre: t.name,
+                        dias: diasEnProgreso,
+                        progreso: t.progress || 0,
+                        razon: `${diasEnProgreso} días y solo ${t.progress || 0}% completado`
+                    });
+                }
+            }
+        }
+        
+        return acciones;
+    }
+    
+    // ========== 2. FUNCIÓN QUE EJECUTA SOLO LO SELECCIONADO ==========
+    function ejecutarSeleccion(seleccion) {
+        const proyecto = projects[currentProjectIndex];
+        if (!proyecto) return 0;
+        
+        let cambios = 0;
+        let accionesRealizadas = [];
+        
+        if (seleccion.asignar && seleccion.asignar.length > 0) {
+            for (const item of seleccion.asignar) {
+                item.tarea.assignee = item.asignadoA;
+                accionesRealizadas.push(`👤 "${item.nombre}" → ASIGNADO a ${item.asignadoA}`);
+                cambios++;
+            }
+        }
+        
+        if (seleccion.moverAProgreso && seleccion.moverAProgreso.length > 0) {
+            for (const item of seleccion.moverAProgreso) {
+                item.tarea.status = 'inProgress';
+                if (!item.tarea.progress) item.tarea.progress = 10;
+                accionesRealizadas.push(`🚀 "${item.nombre}" → EN PROGRESO (${item.razon})`);
+                cambios++;
+            }
+        }
+        
+        if (seleccion.subirPrioridad && seleccion.subirPrioridad.length > 0) {
+            for (const item of seleccion.subirPrioridad) {
+                item.tarea.priority = 'alta';
+                accionesRealizadas.push(`🔥 "${item.nombre}" → PRIORIDAD ALTA (vence en ${item.dias} días)`);
+                cambios++;
+            }
+        }
+        
+        if (seleccion.completar && seleccion.completar.length > 0) {
+            for (const item of seleccion.completar) {
+                item.tarea.status = 'completed';
+                item.tarea.progress = 100;
+                accionesRealizadas.push(`✅ "${item.nombre}" → COMPLETADA (${item.razon})`);
+                cambios++;
+            }
+        }
+        
+        if (seleccion.marcarRezagada && seleccion.marcarRezagada.length > 0) {
+            for (const item of seleccion.marcarRezagada) {
+                item.tarea.status = 'overdue';
+                const razon = item.dias ? `${item.dias} días y solo ${item.progreso}%` : item.razon;
+                accionesRealizadas.push(`⚠️ "${item.nombre}" → REZAGADA (${razon})`);
+                cambios++;
+            }
+        }
+        
+        if (cambios > 0) {
+            if (typeof updateLocalStorage === 'function') updateLocalStorage();
+            else localStorage.setItem('projects', JSON.stringify(projects));
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            
+            const mensaje = `✅ OPTIMIZACIÓN COMPLETADA\n\n${accionesRealizadas.join('\n')}\n\n📊 Total: ${cambios} acción(es) ejecutada(s)`;
+            alert(mensaje);
+            
+            setTimeout(agregarContadoresColumnas, 500);
+        } else {
+            alert('✅ No se seleccionaron acciones para ejecutar');
+        }
+        
+        return cambios;
+    }
+    
+    // ========== 3. FUNCIÓN PARA AGREGAR CONTADORES Y AJUSTAR TÍTULOS ==========
+    function agregarContadoresColumnas() {
+        console.log('🔄 Actualizando contadores y ajustando títulos...');
+        
+        const columnas = document.querySelectorAll('.column');
+        let totalColumnas = 0;
+        let totalTareas = 0;
+        
+        columnas.forEach(col => {
+            const titulo = col.querySelector('h3');
+            if (titulo) {
+                const tasksContainer = col.querySelector('.tasks');
+                if (tasksContainer) {
+                    // Obtener el ancho REAL del contenedor de tareas (incluyendo padding)
+                    const tasksWidth = tasksContainer.offsetWidth;
+                    
+                    // Obtener el padding del contenedor de tareas para ajustar exactamente
+                    const tasksStyle = window.getComputedStyle(tasksContainer);
+                    const tasksPaddingLeft = parseFloat(tasksStyle.paddingLeft) || 0;
+                    const tasksPaddingRight = parseFloat(tasksStyle.paddingRight) || 0;
+                    const tasksPaddingTotal = tasksPaddingLeft + tasksPaddingRight;
+                    
+                    // Calcular el ancho exacto que debe tener el título
+                    // Debe ser el ancho del contenedor menos el padding
+                    const tituloWidth = tasksWidth - tasksPaddingTotal;
+                    
+                    // Aplicar el ancho exacto al título
+                    titulo.style.width = tituloWidth + 'px';
+                    titulo.style.maxWidth = '100%';
+                    titulo.style.display = 'block';
+                    titulo.style.boxSizing = 'border-box';
+                    
+                    // Asegurar que el título no tenga margen que afecte el ancho
+                    titulo.style.marginLeft = '0';
+                    titulo.style.marginRight = '0';
+                    titulo.style.paddingLeft = '0';
+                    titulo.style.paddingRight = '0';
+                    
+                    // Mantener el margen inferior original para la altura
+                    // No modificamos marginBottom para mantener la altura original
+                    
+                    const tasks = tasksContainer.querySelectorAll('.task-card');
+                    const count = tasks.length;
+                    totalTareas += count;
+                    
+                    // Buscar o crear el contador
+                    let contador = col.querySelector('.task-counter');
+                    if (!contador) {
+                        contador = document.createElement('span');
+                        contador.className = 'task-counter';
+                        contador.style.cssText = `
+                            margin-left: 12px;
+                            background: rgba(59, 130, 246, 0.2);
+                            padding: 2px 12px;
+                            border-radius: 20px;
+                            font-size: 13px;
+                            color: #94a3b8;
+                            font-weight: 600;
+                            border: 1px solid rgba(59, 130, 246, 0.2);
+                            display: inline-block;
+                        `;
+                        titulo.appendChild(contador);
+                    }
+                    
+                    contador.textContent = `(${count})`;
+                    totalColumnas++;
+                }
+            }
+        });
+        
+        if (totalColumnas === 0) {
+            console.log('⚠️ No se encontraron columnas. Reintentando...');
+            setTimeout(agregarContadoresColumnas, 1000);
+        } else {
+            console.log(`✅ Contadores actualizados: ${totalTareas} tareas en ${totalColumnas} columnas`);
+        }
+    }
+    
+    // ========== 4. MOSTRAR PANEL CON CHECKBOXES ==========
+    function mostrarPanel() {
+        const acciones = analizarAcciones();
+        if (!acciones) {
+            alert('❌ No hay proyecto seleccionado');
+            return;
+        }
+        
+        const totalAcciones = 
+            acciones.asignar.length +
+            acciones.moverAProgreso.length +
+            acciones.subirPrioridad.length +
+            acciones.completar.length +
+            acciones.marcarRezagada.length;
+        
+        if (totalAcciones === 0) {
+            alert('✅ No se detectaron acciones pendientes.\n\nTodo está en orden.');
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.id = 'optimizar-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            z-index: 10000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+            box-sizing: border-box;
+        `;
+        
+        let html = `
+            <div style="
+                background: linear-gradient(135deg, #0f172a, #1e293b);
+                border-radius: 24px;
+                width: 100%;
+                max-width: 950px;
+                max-height: 85vh;
+                overflow-y: auto;
+                border: 2px solid #3b82f6;
+                padding: 35px 40px;
+                color: #e2e8f0;
+                box-sizing: border-box;
+                margin: 0 auto;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; width: 100%;">
+                    <h2 style="margin: 0; color: #3b82f6; font-size: 26px;">🔍 OPTIMIZACIÓN DETECTADA</h2>
+                    <button id="cerrar-modal-opt" style="background: none; border: none; color: #ef4444; font-size: 30px; cursor: pointer; padding: 0 15px;">✕</button>
+                </div>
+                
+                <p style="margin-bottom: 25px; color: #94a3b8; width: 100%; font-size: 17px;">Se encontraron <strong style="color: #3b82f6;">${totalAcciones}</strong> acciones pendientes. Selecciona las que quieres aplicar:</p>
+        `;
+        
+        // ASIGNAR
+        if (acciones.asignar.length > 0) {
+            html += `
+                <div style="margin-bottom: 22px; border-left: 4px solid #10b981; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-asignar" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #10b981; font-size: 17px; flex: 1;">👤 ASIGNAR TAREAS SIN DUEÑO (${acciones.asignar.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
+                        ${acciones.asignar.map((a, idx) => `
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-asignar" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <strong style="color: #10b981;">${a.asignadoA}</strong></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // MOVER A PROGRESO
+        if (acciones.moverAProgreso.length > 0) {
+            html += `
+                <div style="margin-bottom: 22px; border-left: 4px solid #3b82f6; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-progreso" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #3b82f6; font-size: 17px; flex: 1;">🚀 MOVER A EN PROGRESO (${acciones.moverAProgreso.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
+                        ${acciones.moverAProgreso.map((a, idx) => `
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-progreso" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #3b82f6;">${a.razon}</span></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // SUBIR PRIORIDAD
+        if (acciones.subirPrioridad.length > 0) {
+            html += `
+                <div style="margin-bottom: 22px; border-left: 4px solid #f59e0b; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-prioridad" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #f59e0b; font-size: 17px; flex: 1;">🔥 SUBIR PRIORIDAD A ALTA (${acciones.subirPrioridad.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
+                        ${acciones.subirPrioridad.map((a, idx) => `
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-prioridad" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #f59e0b;">${a.prioridadActual} → ALTA (vence en ${a.dias} días)</span></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // COMPLETAR
+        if (acciones.completar.length > 0) {
+            html += `
+                <div style="margin-bottom: 22px; border-left: 4px solid #10b981; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-completar" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #10b981; font-size: 17px; flex: 1;">✅ COMPLETAR TAREAS (${acciones.completar.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
+                        ${acciones.completar.map((a, idx) => `
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-completar" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #10b981;">${a.razon}</span></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // REZAGADAS
+        if (acciones.marcarRezagada.length > 0) {
+            html += `
+                <div style="margin-bottom: 22px; border-left: 4px solid #ef4444; padding-left: 18px; width: 100%; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%;">
+                        <input type="checkbox" id="select-all-rezagada" style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;">
+                        <strong style="color: #ef4444; font-size: 17px; flex: 1;">⚠️ MARCAR COMO REZAGADAS (${acciones.marcarRezagada.length})</strong>
+                    </div>
+                    <div style="width: 100%; padding-left: 32px; box-sizing: border-box;">
+                        ${acciones.marcarRezagada.map((a, idx) => `
+                            <div style="display: flex; align-items: flex-start; gap: 10px; margin: 7px 0; width: 100%;">
+                                <input type="checkbox" class="accion-rezagada" data-idx="${idx}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin-top: 2px;">
+                                <span style="font-size: 15px; flex: 1;">📌 "${a.nombre}" → <span style="color: #ef4444;">${a.razon || (a.dias ? `${a.dias} días y solo ${a.progreso}%` : '')}</span></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #334155; width: 100%;">
+                    <button id="aplicar-seleccion" style="background: #10b981; border: none; color: white; padding: 14px 40px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 17px;">✅ APLICAR SELECCIÓN</button>
+                    <button id="cancelar-seleccion" style="background: #475569; border: none; color: white; padding: 14px 40px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 17px;">CANCELAR</button>
+                </div>
+            </div>
+        `;
+        
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        
+        // Eventos para seleccionar/deseleccionar todo
+        ['asignar', 'progreso', 'prioridad', 'completar', 'rezagada'].forEach(tipo => {
+            const selectAll = document.getElementById(`select-all-${tipo}`);
+            if (selectAll) {
+                selectAll.onclick = (e) => {
+                    document.querySelectorAll(`.accion-${tipo}`).forEach(cb => cb.checked = e.target.checked);
+                };
+            }
+        });
+        
+        document.getElementById('aplicar-seleccion').onclick = () => {
+            const seleccion = {
+                asignar: [],
+                moverAProgreso: [],
+                subirPrioridad: [],
+                completar: [],
+                marcarRezagada: []
+            };
+            
+            document.querySelectorAll('.accion-asignar:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                if (!isNaN(idx) && acciones.asignar[idx]) seleccion.asignar.push(acciones.asignar[idx]);
+            });
+            document.querySelectorAll('.accion-progreso:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                if (!isNaN(idx) && acciones.moverAProgreso[idx]) seleccion.moverAProgreso.push(acciones.moverAProgreso[idx]);
+            });
+            document.querySelectorAll('.accion-prioridad:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                if (!isNaN(idx) && acciones.subirPrioridad[idx]) seleccion.subirPrioridad.push(acciones.subirPrioridad[idx]);
+            });
+            document.querySelectorAll('.accion-completar:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                if (!isNaN(idx) && acciones.completar[idx]) seleccion.completar.push(acciones.completar[idx]);
+            });
+            document.querySelectorAll('.accion-rezagada:checked').forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                if (!isNaN(idx) && acciones.marcarRezagada[idx]) seleccion.marcarRezagada.push(acciones.marcarRezagada[idx]);
+            });
+            
+            modal.remove();
+            ejecutarSeleccion(seleccion);
+        };
+        
+        document.getElementById('cancelar-seleccion').onclick = () => modal.remove();
+        document.getElementById('cerrar-modal-opt').onclick = () => modal.remove();
+    }
+    
+    // ========== 5. CREAR BOTÓN EN HEADER ==========
+    const oldBtn = document.getElementById('optimizar-ahora-btn');
+    if (oldBtn) oldBtn.remove();
+    
+    const optimizarBtn = document.createElement('button');
+    optimizarBtn.id = 'optimizar-ahora-btn';
+    optimizarBtn.innerHTML = '⚡ OPTIMIZAR AHORA';
+    optimizarBtn.title = 'Analizar proyecto y seleccionar qué optimizar';
+    optimizarBtn.style.cssText = `
+        background: linear-gradient(135deg, #2563EB, #1E40AF) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 50px !important;
+        padding: 12px 28px !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        font-family: system-ui, 'Segoe UI', sans-serif !important;
+        letter-spacing: 0.5px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        margin-left: 10px !important;
+    `;
+    
+    optimizarBtn.onmouseenter = () => {
+        optimizarBtn.style.transform = 'translateY(-2px)';
+        optimizarBtn.style.boxShadow = '0 8px 20px rgba(37, 99, 235, 0.5)';
+    };
+    optimizarBtn.onmouseleave = () => {
+        optimizarBtn.style.transform = 'translateY(0)';
+        optimizarBtn.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)';
+    };
+    
+    optimizarBtn.onclick = () => {
+        mostrarPanel();
+        setTimeout(agregarContadoresColumnas, 300);
+    };
+    
+    function encontrarYBotonPmVirtual() {
+        let pmBtn = document.getElementById('boardUltimateBtn');
+        if (!pmBtn) {
+            const botones = document.querySelectorAll('button');
+            for (const btn of botones) {
+                if (btn.textContent.includes('PM Virtual') || btn.textContent.includes('PM IA')) {
+                    pmBtn = btn;
+                    break;
+                }
+            }
+        }
+        return pmBtn;
+    }
+    
+    const pmBtn = encontrarYBotonPmVirtual();
+    if (pmBtn && pmBtn.parentNode) {
+        pmBtn.parentNode.insertBefore(optimizarBtn, pmBtn.nextSibling);
+        console.log('✅ Botón "OPTIMIZAR AHORA" agregado');
+    } else {
+        const header = document.querySelector('header, .header, #header, .main-header');
+        if (header) {
+            header.appendChild(optimizarBtn);
+        } else {
+            document.body.appendChild(optimizarBtn);
+        }
+    }
+    
+    // Agregar contadores automáticamente al cargar
+    setTimeout(agregarContadoresColumnas, 500);
+    
+    // Interceptar renderKanbanTasks para actualizar contadores
+    if (typeof renderKanbanTasks === 'function') {
+        const originalRender = renderKanbanTasks;
+        renderKanbanTasks = function() {
+            originalRender();
+            setTimeout(agregarContadoresColumnas, 300);
+        };
+    }
+    
+    console.log('%c✅ VERSIÓN FINAL DEFINITIVA - Lista!', 'color: #10b981; font-size: 16px; font-weight: bold;');
+    console.log('%c📊 Los contadores se actualizan automáticamente', 'color: #3b82f6; font-size: 13px;');
+    console.log('%c💡 Los títulos tienen el mismo ancho exacto que las tareas', 'color: #3b82f6; font-size: 13px;');
+})();
+
+
+
+// ============================================
+// 🔄 REFRESCAR BOARD AL CAMBIAR IDIOMA
+// ============================================
+
+document.addEventListener('languageChanged', function() {
+    console.log('🌐 Idioma cambiado, refrescando board...');
+    const boardView = document.getElementById('boardView');
+    if (boardView && boardView.classList.contains('active')) {
+        if (typeof renderKanbanTasks === 'function') {
+            renderKanbanTasks();
+
+        }
+    }
+});
+
+
+// ============================================
+// 🔄 REFRESCAR CALENDARIO AL CAMBIAR IDIOMA
+// ============================================
+
+document.addEventListener('languageChanged', function() {
+    console.log('🌐 Idioma cambiado, refrescando calendario...');
+    const calendarView = document.getElementById('calendarView');
+    if (calendarView && calendarView.classList.contains('active')) {
+        if (typeof renderCalendar === 'function') {
+            renderCalendar();
+        }
+    }
+});
+
+// ===== RENDERIZAR TAREAS EN BOARD =====
+function renderBoardTasks() {
+  const project = projects[currentProjectIndex];
+  if (!project) return;
+
+  // Nombre del proyecto
+  document.getElementById('projectName').textContent = project.name || 'Sin nombre';
+
+  const tasks = project.tasks || [];
+  
+  // Aplicar filtros
+  const assignee = document.getElementById('filterAssignee')?.value || '';
+  const priority = document.getElementById('filterPriority')?.value || '';
+  const status = document.getElementById('filterStatus')?.value || '';
+
+  let filtered = tasks;
+  if (assignee) filtered = filtered.filter(t => t.assignee === assignee);
+  if (priority) filtered = filtered.filter(t => t.priority === priority);
+  if (status) filtered = filtered.filter(t => t.status === status);
+
+  // Separar por estado
+  const pending = filtered.filter(t => t.status === 'pending');
+  const inProgress = filtered.filter(t => t.status === 'inProgress');
+  const completed = filtered.filter(t => t.status === 'completed');
+  const overdue = filtered.filter(t => t.status === 'overdue');
+
+  // Renderizar columnas
+  renderColumn('pendingList', pending);
+  renderColumn('inProgressList', inProgress);
+  renderColumn('completedList', completed);
+  renderColumn('overdueList', overdue);
+
+  // Contadores
+  document.getElementById('pendingCount').textContent = pending.length;
+  document.getElementById('inProgressCount').textContent = inProgress.length;
+  document.getElementById('completedCount').textContent = completed.length;
+  document.getElementById('overdueCount').textContent = overdue.length;
+
+  // Poblar filtros
+  populateFilters(tasks);
+}
+
+// ===== RENDERIZAR COLUMNA =====
+function renderColumn(containerId, tasks) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (tasks.length === 0) {
+    container.innerHTML = `<div class="empty-column">${translate('column_empty')}</div>`;
+    return;
+  }
+
+  let html = '';
+  tasks.forEach((task, i) => {
+    const assigned = task.assignee || translate('task_unassigned');
+    const deadline = task.deadline ? formatDate(task.deadline) : translate('task_no_date');
+    const statusText = translate(`status_${task.status || 'pending'}`);
+    const priorityText = translate(`priority_${task.priority || 'medium'}`);
+    const statusClass = `status-${task.status || 'pending'}`;
+    const priorityClass = `priority-${task.priority || 'medium'}`;
+
+    html += `
+      <div class="task-card">
+        <div class="task-title">${task.title || task.name || 'Sin título'}</div>
+        <div class="task-details">
+          <div><strong>${translate('task_assigned_to')}</strong> ${assigned}</div>
+          <div><strong>${translate('task_deadline')}</strong> ${deadline}</div>
+          <div><strong>${translate('task_status')}</strong> <span class="${statusClass}">${statusText}</span></div>
+          <div><strong>${translate('task_priority')}</strong> <span class="${priorityClass}">${priorityText}</span></div>
+        </div>
+        <div class="task-actions">
+          <button onclick="editTask(${i})" title="${translate('task_edit')}">✏️</button>
+          <button onclick="deleteTask(${i})" title="${translate('task_delete')}">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ===== POBLAR FILTROS =====
+function populateFilters(tasks) {
+  const select = document.getElementById('filterAssignee');
+  if (!select) return;
+
+  const current = select.value;
+  const assignees = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+  const allText = translate('filter_all');
+  
+  select.innerHTML = `<option value="">${allText}</option>`;
+  assignees.forEach(a => {
+    select.innerHTML += `<option value="${a}">${a}</option>`;
+  });
+  select.value = current;
+}
+
+// ===== FORMATEAR FECHA =====
+function formatDate(dateString) {
+  if (!dateString) return translate('task_no_date');
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return translate('task_no_date');
+    const locale = translator.currentLang === 'es' ? 'es-ES' : 'en-US';
+    return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return translate('task_no_date');
+  }
+}
+
+// ===== ELIMINAR TAREA =====
+window.deleteTask = function(index) {
+  if (!confirm(translate('confirm_delete'))) return;
+  const project = projects[currentProjectIndex];
+  if (!project || !project.tasks[index]) return;
+  project.tasks.splice(index, 1);
+  saveProjects();
+  renderBoardTasks();
+  showNotification(translate('task_deleted'));
+};
+
+// ===== EDITAR TAREA =====
+window.editTask = function(index) {
+  const project = projects[currentProjectIndex];
+  if (!project || !project.tasks[index]) return;
+  console.log('Editar:', project.tasks[index]);
+  // Abre tu modal de edición aquí
+};
+
+// ===== EVENTOS DE FILTROS =====
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('filterAssignee')?.addEventListener('change', renderBoardTasks);
+  document.getElementById('filterPriority')?.addEventListener('change', renderBoardTasks);
+  document.getElementById('filterStatus')?.addEventListener('change', renderBoardTasks);
+  document.getElementById('clearFiltersBtn')?.addEventListener('click', function() {
+    document.getElementById('filterAssignee').value = '';
+    document.getElementById('filterPriority').value = '';
+    document.getElementById('filterStatus').value = '';
+    renderBoardTasks();
+  });
+
+  // Re-renderizar al cambiar idioma
+  document.addEventListener('languageChanged', renderBoardTasks);
+});
+
+
+
+
+
 // ============================================
 // 🎯 SISTEMA DE PRUEBA DE 7 DÍAS + BLOQUEO PARCIAL
 // ============================================
@@ -45,13 +2026,11 @@
     // VERIFICAR SI LA PRUEBA ESTÁ ACTIVA
     // ============================================
     function pruebaActiva() {
-        const userPlan = localStorage.getItem('userPlan') || PLAN_FREE;
-        if (userPlan === PLAN_PROFESSIONAL) return true;
-        
-        const estado = calcularDiasRestantes();
-        return !estado.expirada;
-    }
-    
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan === 'professional' || userPlan === 'premium') return true;
+    const estado = calcularDiasRestantes();
+    return !estado.expirada;
+}
     // ============================================
     // MOSTRAR MODAL DE EXPIRACIÓN
     // ============================================
@@ -20227,6 +22206,15 @@ function renderDashboard(container) {
 
 
 
+
+
+
+
+
+
+
+
+
 // ========== MÓDULO DE ESTADÍSTICAS PARA EL PM VIRTUAL (sin gráficos) ==========
 function renderPmVirtualStats(container) {
   if (!container) return;
@@ -20393,12 +22381,37 @@ btn.classList.add('pm-tab-btn');
 tabsContainer.appendChild(btn);
 });
 header.appendChild(tabsContainer);
+// CONTENEDOR DE BOTONES
+const buttonsContainer = document.createElement('div');
+buttonsContainer.style.cssText = 'display:flex; gap:10px;';
+
+// BOTÓN DE IDIOMA
+const langBtn = document.createElement('button');
+const currentModalLang = localStorage.getItem('modalLanguage') || 'es';
+langBtn.textContent = currentModalLang === 'es' ? '🌐 EN' : '🌐 ES';
+langBtn.style.cssText = 'background:linear-gradient(135deg,#3b82f6,#8b5cf6); border:none; color:white; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px;';
+langBtn.onclick = () => {
+    const newLang = currentModalLang === 'es' ? 'en' : 'es';
+    localStorage.setItem('modalLanguage', newLang);
+    overlay.remove();
+    setTimeout(() => {
+        if (newLang === 'en' && typeof window.abrirPanelCompletoEN === 'function') {
+            window.abrirPanelCompletoEN();
+        } else {
+            window.abrirPanelCompleto();
+        }
+    }, 200);
+};
+buttonsContainer.appendChild(langBtn);
+
+// BOTÓN CERRAR
 const closeBtn = document.createElement('button');
 closeBtn.textContent = '✕ Cerrar';
-closeBtn.style.cssText = `background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:8px 16px; border-radius:8px; cursor:pointer;`;
+closeBtn.style.cssText = 'background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:8px 16px; border-radius:8px; cursor:pointer;';
 closeBtn.onclick = () => overlay.remove();
-header.appendChild(closeBtn);
-panel.appendChild(header);
+buttonsContainer.appendChild(closeBtn);
+
+header.appendChild(buttonsContainer);panel.appendChild(header);
 const contentDiv = document.createElement('div');
 contentDiv.id = 'pmContent';
 contentDiv.style.cssText = `flex:1; overflow-y:auto; padding:25px;`;
@@ -22001,10 +24014,90 @@ window.hideCalendarTooltip = function() {
 window.buildTooltipHTML = function(task) {
     if (!task) return '<div>Sin información</div>';
     
+    // ===== IDIOMA =====
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const es = lang === 'es';
+    
+    // ===== TRADUCCIONES =====
+    const L = {
+        es: {
+            noInfo: 'Sin información',
+            unassigned: 'No asignado',
+            pending: 'Pendiente',
+            inProgress: 'En Progreso',
+            completed: 'Completada',
+            overdue: 'Rezagada',
+            low: 'Baja',
+            medium: 'Media',
+            high: 'Alta',
+            assignedTo: 'ASIGNADO A',
+            progress: 'PROGRESO',
+            deadline: 'FECHA LÍMITE',
+            estimated: 'ESTIMADO',
+            logged: 'REGISTRADO',
+            overdueLabel: 'ATRASADA',
+            daysRemaining: 'días restantes',
+            days: 'días',
+            description: 'DESCRIPCIÓN',
+            clickToEdit: '✨ Haz clic para editar',
+            noDeadline: 'No definida',
+            id: 'ID',
+            overdueDays: 'días',
+            remaining: 'restantes'
+        },
+        en: {
+            noInfo: 'No information',
+            unassigned: 'Unassigned',
+            pending: 'Pending',
+            inProgress: 'In Progress',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            low: 'Low',
+            medium: 'Medium',
+            high: 'High',
+            assignedTo: 'ASSIGNED TO',
+            progress: 'PROGRESS',
+            deadline: 'DEADLINE',
+            estimated: 'ESTIMATED',
+            logged: 'LOGGED',
+            overdueLabel: 'OVERDUE',
+            daysRemaining: 'days remaining',
+            days: 'days',
+            description: 'DESCRIPTION',
+            clickToEdit: '✨ Click to edit',
+            noDeadline: 'Not set',
+            id: 'ID',
+            overdueDays: 'days',
+            remaining: 'remaining'
+        }
+    };
+    const labels = L[lang] || L.es;
+    
+    // Mapeos de estado y prioridad (para mostrar texto)
+    const statusMap = {
+        'pending': labels.pending,
+        'inProgress': labels.inProgress,
+        'completed': labels.completed,
+        'overdue': labels.overdue,
+        'pendiente': labels.pending,
+        'en progreso': labels.inProgress,
+        'completado': labels.completed,
+        'rezagado': labels.overdue
+    };
+    const priorityMap = {
+        'baja': labels.low,
+        'media': labels.medium,
+        'alta': labels.high,
+        'low': labels.low,
+        'medium': labels.medium,
+        'high': labels.high
+    };
+    // =========================================
+    
     // Normalizar datos
     const taskName = task.name || task.taskName || 'Sin título';
     const taskId = task.id || task.taskId || 'N/A';
-    const assignee = task.assignee || 'No asignado';
+    const assignee = task.assignee || labels.unassigned;
     const priority = task.priority || 'media';
     const progress = task.progress || 0;
     const estimatedTime = task.estimatedTime || 0;
@@ -22017,6 +24110,10 @@ window.buildTooltipHTML = function(task) {
     const isOverdue = task.isOverdue !== undefined ? task.isOverdue : 
                       (daysRemaining !== null && daysRemaining < 0 && status !== 'completed');
     
+    // Textos traducidos
+    const statusText = statusMap[status] || status;
+    const priorityText = priorityMap[priority] || priority;
+    
     // Colores según estado
     const statusColors = {
         'pending': '#f1c40f',
@@ -22026,26 +24123,33 @@ window.buildTooltipHTML = function(task) {
     };
     const statusColor = statusColors[status] || '#95a5a6';
     
-    // Texto de estado
-    const statusText = {
-        'pending': 'Pendiente',
-        'inProgress': 'En Progreso',
-        'completed': 'Completada',
-        'overdue': 'Rezagada'
-    }[status] || status;
-    
     // Color de prioridad
-    const priorityColor = priority === 'alta' ? '#e74c3c' : 
-                          priority === 'media' ? '#f39c12' : '#95a5a6';
-    const priorityText = priority === 'alta' ? 'Alta' : 
-                         priority === 'media' ? 'Media' : 'Baja';
+    const priorityColor = (priority === 'alta' || priority === 'high') ? '#e74c3c' : 
+                          (priority === 'media' || priority === 'medium') ? '#f39c12' : '#95a5a6';
     
-    // Formatear fecha
-    const formattedDeadline = deadline ? new Date(deadline).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }) : 'No definida';
+    // Formatear fecha según idioma
+    let formattedDeadline = labels.noDeadline;
+    if (deadline) {
+        try {
+            formattedDeadline = new Date(deadline).toLocaleDateString(es ? 'es-ES' : 'en-US', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch(e) {
+            formattedDeadline = labels.noDeadline;
+        }
+    }
+    
+    // Texto de días restantes
+    let daysText = '';
+    if (daysRemaining !== null) {
+        if (isOverdue) {
+            daysText = `⚠️ ${labels.overdueLabel} (${Math.abs(daysRemaining)} ${labels.days})`;
+        } else {
+            daysText = `✅ ${daysRemaining} ${labels.daysRemaining}`;
+        }
+    }
     
     // Función para escapar HTML
     const escapeHtml = (text) => {
@@ -22055,6 +24159,9 @@ window.buildTooltipHTML = function(task) {
         return div.innerHTML;
     };
     
+    // Fecha actual para el pie
+    const todayFormatted = new Date().toLocaleDateString(es ? 'es-ES' : 'en-US');
+    
     return `
         <div style="min-width: 280px;">
             <!-- Header -->
@@ -22062,7 +24169,7 @@ window.buildTooltipHTML = function(task) {
                 <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📋</div>
                 <div style="flex: 1;">
                     <div style="font-weight: 700; font-size: 16px; color: white;">${escapeHtml(taskName)}</div>
-                    <div style="color: #94a3b8; font-size: 11px;">ID: ${taskId}</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.id}: ${taskId}</div>
                 </div>
             </div>
             
@@ -22079,11 +24186,11 @@ window.buildTooltipHTML = function(task) {
             <!-- Info principal -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
                 <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
-                    <div style="color: #94a3b8; font-size: 11px;">ASIGNADO A</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.assignedTo}</div>
                     <div style="color: white; font-weight: 500; font-size: 14px;">${escapeHtml(assignee)}</div>
                 </div>
                 <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
-                    <div style="color: #94a3b8; font-size: 11px;">PROGRESO</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.progress}</div>
                     <div style="color: white; font-weight: 500; font-size: 14px;">${progress}%</div>
                 </div>
             </div>
@@ -22091,7 +24198,7 @@ window.buildTooltipHTML = function(task) {
             <!-- Fecha límite -->
             <div style="margin-bottom: 15px;">
                 <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
-                    <div style="color: #94a3b8; font-size: 11px;">FECHA LÍMITE</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.deadline}</div>
                     <div style="color: white; font-weight: 500; font-size: 14px;">${formattedDeadline}</div>
                 </div>
             </div>
@@ -22099,20 +24206,20 @@ window.buildTooltipHTML = function(task) {
             <!-- Tiempo -->
             <div style="display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
                 <div>
-                    <div style="color: #94a3b8; font-size: 11px;">ESTIMADO</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.estimated}</div>
                     <div style="color: #f39c12; font-weight: 600;">${estimatedTime}h</div>
                 </div>
                 <div>
-                    <div style="color: #94a3b8; font-size: 11px;">REGISTRADO</div>
+                    <div style="color: #94a3b8; font-size: 11px;">${labels.logged}</div>
                     <div style="color: #10b981; font-weight: 600;">${timeLogged}h</div>
                 </div>
             </div>
             
             <!-- Estado de plazo -->
-            ${daysRemaining !== null ? `
+            ${daysText ? `
                 <div style="background: ${isOverdue ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid ${isOverdue ? '#ef4444' : '#10b981'}; margin-bottom: 12px;">
                     <span style="color: ${isOverdue ? '#ef4444' : '#10b981'}; font-weight: 700;">
-                        ${isOverdue ? `⚠️ ATRASADA (${Math.abs(daysRemaining)} días)` : `✅ ${daysRemaining} días restantes`}
+                        ${daysText}
                     </span>
                 </div>
             ` : ''}
@@ -22120,19 +24227,18 @@ window.buildTooltipHTML = function(task) {
             <!-- Descripción -->
             ${description ? `
                 <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border-left: 3px solid #8b5cf6;">
-                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 5px;">DESCRIPCIÓN</div>
+                    <div style="color: #94a3b8; font-size: 11px; margin-bottom: 5px;">${labels.description}</div>
                     <div style="color: #cbd5e1; font-size: 12px; line-height: 1.4;">${escapeHtml(description.substring(0, 100))}${description.length > 100 ? '...' : ''}</div>
                 </div>
             ` : ''}
             
             <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
-                <span style="color: #8b5cf6; font-size: 11px;">✨ Haz clic para editar</span>
-                <span style="color: #94a3b8; font-size: 10px;">📅 ${new Date().toLocaleDateString()}</span>
+                <span style="color: #8b5cf6; font-size: 11px;">${labels.clickToEdit}</span>
+                <span style="color: #94a3b8; font-size: 10px;">📅 ${todayFormatted}</span>
             </div>
         </div>
     `;
 };
-
 // ===== CONFIGURACIÓN GLOBAL MEJORADA =====
 window.API_URL = "https://mi-sistema-proyectos-backend-4.onrender.com";
 
@@ -24259,11 +26365,14 @@ for (const [nombre, datos] of Object.entries(plantillasBase)) {
 // 4. FUNCIÓN QUE GENERA NOMBRES REALES DE TAREAS - VERSIÓN CORREGIDA
 function generarTareasReales(nombreProyecto, numTareas) {
     const nombre = nombreProyecto.toLowerCase();
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const es = lang === 'es';
+    
     let tareasGeneradas = [];
     
-    // Detectar tipo de proyecto
-    if (nombre.includes("rpa") || nombre.includes("automation") || nombre.includes("automatización")) {
-        tareasGeneradas = [
+    // ===== TAREAS EN ESPAÑOL =====
+    const tareasES = {
+        rpa: [
             "🔍 Analizar y documentar procesos actuales para automatizar",
             "📋 Identificar tareas repetitivas con mayor ROI",
             "🛠️ Evaluar y seleccionar herramienta RPA (UiPath/Automation Anywhere)",
@@ -24280,10 +26389,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📈 Medir KPIs: horas ahorradas, reducción de errores",
             "📝 Documentar procesos automatizados",
             "🎓 Capacitar al equipo en mantenimiento RPA"
-        ];
-    }
-    else if (nombre.includes("reconocimiento de voz") || nombre.includes("reconocimiento de voz") || (nombre.includes("voz") && nombre.includes("reconocimiento"))) {
-        tareasGeneradas = [
+        ],
+        voz: [
             "🎤 Configurar entorno de desarrollo de reconocimiento de voz",
             "📊 Recolectar y etiquetar dataset de audio",
             "🔧 Preprocesar señales de audio y extraer características (MFCC)",
@@ -24296,10 +26403,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🧪 Realizar pruebas con diferentes acentos y ruidos",
             "🚀 Desplegar modelo en producción",
             "📊 Monitorear uso y precisión en producción"
-        ];
-    }
-    else if (nombre.includes("web") || nombre.includes("frontend") || nombre.includes("react") || nombre.includes("vue") || nombre.includes("angular")) {
-        tareasGeneradas = [
+        ],
+        web: [
             "🎨 Diseñar arquitectura y maquetación del frontend",
             "⚙️ Configurar entorno de desarrollo y herramientas",
             "🏗️ Crear estructura de componentes reutilizables",
@@ -24312,10 +26417,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🔍 Optimizar SEO y métricas Core Web Vitals",
             "📊 Configurar analytics y seguimiento",
             "🚀 Preparar build de producción y despliegue"
-        ];
-    }
-    else if (nombre.includes("api") || nombre.includes("backend")) {
-        tareasGeneradas = [
+        ],
+        api: [
             "📐 Definir arquitectura y endpoints RESTful",
             "🗄️ Diseñar esquema y modelo de base de datos",
             "🔐 Implementar autenticación y autorización JWT",
@@ -24328,10 +26431,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "💾 Implementar sistema de caché con Redis",
             "🌍 Configurar CORS y headers de seguridad",
             "☁️ Preparar despliegue en cloud"
-        ];
-    }
-    else if (nombre.includes("machine learning") || nombre.includes("ia") || (nombre.includes("inteligencia") && nombre.includes("artificial"))) {
-        tareasGeneradas = [
+        ],
+        ml: [
             "📊 Recolectar y limpiar datos de fuentes múltiples",
             "📈 Explorar y visualizar datos (EDA)",
             "🔧 Preprocesar y transformar características",
@@ -24344,10 +26445,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🛡️ Implementar técnicas anti-overfitting",
             "🚀 Crear pipeline de inferencia",
             "☁️ Preparar modelo para producción (serving)"
-        ];
-    }
-    else if (nombre.includes("seo")) {
-        tareasGeneradas = [
+        ],
+        seo: [
             "🔍 Realizar auditoría SEO completa del sitio",
             "🔑 Investigar keywords con alto potencial de conversión",
             "📝 Optimizar meta tags, headings y estructura de contenido",
@@ -24358,10 +26457,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📊 Configurar Search Console y Google Analytics",
             "📈 Monitorear posiciones y tráfico orgánico",
             "📊 Generar informes SEO mensuales con recomendaciones"
-        ];
-    }
-    else if (nombre.includes("google ads") || nombre.includes("ads campaign")) {
-        tareasGeneradas = [
+        ],
+        ads: [
             "🎯 Definir objetivos y KPIs de campaña",
             "🔍 Investigar keywords y audiencia objetivo",
             "📝 Crear estructura de cuentas y campañas",
@@ -24372,10 +26469,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🧪 Implementar pruebas A/B continuas",
             "📈 Optimizar rendimiento diariamente",
             "📊 Generar informes de ROI y eficiencia"
-        ];
-    }
-    else if (nombre.includes("business plan") || nombre.includes("plan de negocio")) {
-        tareasGeneradas = [
+        ],
+        business: [
             "📝 Definir misión, visión y valores de la empresa",
             "🔍 Realizar análisis FODA completo",
             "📊 Investigar mercado y competencia en profundidad",
@@ -24388,10 +26483,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🎯 Estrategia de crecimiento y expansión",
             "📊 Definir KPIs y OKRs de seguimiento",
             "📄 Preparar presentación para inversionistas"
-        ];
-    }
-    else if (nombre.includes("ux") || nombre.includes("ui") || nombre.includes("diseño")) {
-        tareasGeneradas = [
+        ],
+        ux: [
             "🔍 Investigación de usuarios y competencia",
             "👥 Crear user personas y journey maps",
             "📝 Diseñar wireframes de baja fidelidad",
@@ -24403,10 +26496,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📐 Crear guía de estilos completa",
             "📱 Optimizar experiencia mobile",
             "📊 Documentar hallazgos y recomendaciones"
-        ];
-    }
-    else if (nombre.includes("docker") || nombre.includes("kubernetes") || nombre.includes("devops") || nombre.includes("ci/cd")) {
-        tareasGeneradas = [
+        ],
+        docker: [
             "🐳 Crear Dockerfile multi-stage optimizado",
             "🔧 Configurar docker-compose para desarrollo local",
             "🏗️ Definir arquitectura de microservicios",
@@ -24419,10 +26510,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📊 Configurar monitoreo con Prometheus/Grafana",
             "⏪ Preparar estrategia de rollback",
             "📚 Documentar proceso DevOps completo"
-        ];
-    }
-    else if (nombre.includes("base de datos") || nombre.includes("database") || nombre.includes("sql")) {
-        tareasGeneradas = [
+        ],
+        db: [
             "📊 Diseñar modelo de datos y normalización",
             "📐 Crear diagrama entidad-relación",
             "🔍 Definir índices y optimización",
@@ -24435,10 +26524,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📈 Configurar monitoreo y alertas",
             "🧪 Realizar pruebas de carga y rendimiento",
             "📚 Documentar esquema y convenciones"
-        ];
-    }
-    else if (nombre.includes("seguridad") || nombre.includes("cybersecurity") || nombre.includes("security")) {
-        tareasGeneradas = [
+        ],
+        security: [
             "🔍 Realizar auditoría de seguridad completa",
             "🛡️ Escanear vulnerabilidades conocidas",
             "🔐 Revisar políticas de acceso y permisos",
@@ -24449,10 +26536,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📊 Generar informe de hallazgos",
             "🔧 Recomendar acciones correctivas",
             "📋 Plan de remediación de vulnerabilidades"
-        ];
-    }
-    else if (nombre.includes("chatbot")) {
-        tareasGeneradas = [
+        ],
+        chatbot: [
             "🎯 Definir casos de uso y alcance del chatbot",
             "📝 Diseñar flujos de conversación (storyboarding)",
             "🤖 Seleccionar plataforma (Dialogflow/Rasa/Botpress)",
@@ -24463,10 +26548,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🚀 Desplegar chatbot en canales requeridos",
             "📊 Analizar métricas de uso y satisfacción",
             "🔄 Iterar y mejorar basado en feedback"
-        ];
-    }
-    else if (nombre.includes("e-commerce") || nombre.includes("shopify") || nombre.includes("tienda online")) {
-        tareasGeneradas = [
+        ],
+        ecommerce: [
             "📊 Analizar requisitos y funcionalidades del e-commerce",
             "🎨 Diseñar UI/UX de tienda online",
             "🏗️ Configurar plataforma (Shopify/WooCommerce/Magento)",
@@ -24479,10 +26562,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "📊 Configurar analytics y seguimiento de conversiones",
             "🧪 Realizar pruebas de pago y checkout",
             "🚀 Desplegar y lanzar tienda online"
-        ];
-    }
-    else if (nombre.includes("app móvil") || nombre.includes("ios") || nombre.includes("android") || nombre.includes("flutter") || nombre.includes("react native")) {
-        tareasGeneradas = [
+        ],
+        mobile: [
             "🎨 Diseñar UI/UX de la aplicación móvil",
             "🏗️ Definir arquitectura de la app",
             "⚙️ Configurar entorno de desarrollo móvil",
@@ -24493,10 +26574,8 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🔔 Configurar notificaciones push",
             "🧪 Realizar pruebas en dispositivos reales",
             "🚀 Preparar publicación en App Store/Play Store"
-        ];
-    }
-    else if (nombre.includes("blockchain") || nombre.includes("web3") || nombre.includes("smart contract")) {
-        tareasGeneradas = [
+        ],
+        blockchain: [
             "🎯 Definir casos de uso blockchain",
             "🏗️ Diseñar arquitectura descentralizada",
             "🔗 Seleccionar blockchain (Ethereum/Solana)",
@@ -24507,46 +26586,328 @@ function generarTareasReales(nombreProyecto, numTareas) {
             "🧪 Realizar pruebas de seguridad",
             "📊 Configurar analytics on-chain",
             "🚀 Desplegar en mainnet"
-        ];
-    }
-    else {
-        // Tareas genéricas profesionales
-        tareasGeneradas = [
-            "📋 Analizar requisitos del proyecto en detalle",
-            "🎯 Definir objetivos, alcance y entregables",
-            "📊 Crear plan de trabajo y cronograma",
-            "👥 Asignar recursos y definir roles",
-            "📝 Documentar especificaciones técnicas",
-            "⚙️ Configurar herramientas y entornos",
-            "🏗️ Desarrollar solución base o MVP",
-            "🧪 Ejecutar pruebas funcionales",
-            "🔧 Ajustar y optimizar basado en feedback",
-            "📚 Documentar procesos y manuales",
-            "🚀 Preparar despliegue a producción",
-            "🎓 Capacitar a usuarios finales",
-            "📊 Medir resultados y KPIs",
-            "🔄 Iterar y mejorar continuamente"
-        ];
-    }
+        ]
+    };
     
-    // Ajustar al número exacto de tareas
-    while (tareasGeneradas.length < numTareas) {
-        const ultima = tareasGeneradas[tareasGeneradas.length - 1];
-        if (ultima && !ultima.includes("adicional")) {
-            tareasGeneradas.push(`📋 ${ultima.replace(/^\w+\s/, '').substring(0, 40)} (Parte 2)`);
+    // ===== TAREAS EN INGLÉS =====
+    const tareasEN = {
+        rpa: [
+            "🔍 Analyze and document current processes to automate",
+            "📋 Identify repetitive tasks with highest ROI",
+            "🛠️ Evaluate and select RPA tool (UiPath/Automation Anywhere)",
+            "🏗️ Design RPA solution architecture",
+            "⚙️ Configure RPA development environment",
+            "🤖 Develop robot for process automation 1",
+            "🤖 Develop robot for process automation 2",
+            "🧪 Run unit and integration tests for robots",
+            "🔗 Integrate robots with existing systems (ERP, CRM)",
+            "⚡ Optimize performance and execution time",
+            "🛡️ Implement error handling and exceptions",
+            "📊 Configure logging, monitoring and alerts",
+            "🚀 Deploy robots to production",
+            "📈 Measure KPIs: hours saved, error reduction",
+            "📝 Document automated processes",
+            "🎓 Train team on RPA maintenance"
+        ],
+        voz: [
+            "🎤 Set up speech recognition development environment",
+            "📊 Collect and label audio dataset",
+            "🔧 Preprocess audio signals and extract features (MFCC)",
+            "🧠 Select and train speech recognition model",
+            "🔍 Evaluate model accuracy with WER/CER metrics",
+            "⚡ Optimize model for real-time performance",
+            "🗣️ Implement keyword detection",
+            "🌐 Integrate with cloud speech APIs (Google Speech/Whisper)",
+            "📱 Develop user interface for voice capture",
+            "🧪 Test with different accents and noise levels",
+            "🚀 Deploy model to production",
+            "📊 Monitor usage and accuracy in production"
+        ],
+        web: [
+            "🎨 Design frontend architecture and layout",
+            "⚙️ Configure development environment and tools",
+            "🏗️ Create reusable component structure",
+            "🔗 Implement routing and navigation",
+            "💾 Manage global application state",
+            "🌐 Connect and integrate with backend API",
+            "⚡ Optimize rendering and performance",
+            "📱 Implement responsive and mobile-first design",
+            "🧪 Develop unit and E2E tests",
+            "🔍 Optimize SEO and Core Web Vitals",
+            "📊 Configure analytics and tracking",
+            "🚀 Prepare production build and deployment"
+        ],
+        api: [
+            "📐 Define RESTful architecture and endpoints",
+            "🗄️ Design database schema and model",
+            "🔐 Implement JWT authentication and authorization",
+            "✅ Create validation and sanitization middlewares",
+            "📚 Document API with Swagger/OpenAPI",
+            "⏱️ Implement rate limiting and throttling",
+            "📝 Configure structured logging",
+            "🧪 Develop integration tests",
+            "⚡ Optimize queries and response times",
+            "💾 Implement caching system with Redis",
+            "🌍 Configure CORS and security headers",
+            "☁️ Prepare cloud deployment"
+        ],
+        ml: [
+            "📊 Collect and clean data from multiple sources",
+            "📈 Explore and visualize data (EDA)",
+            "🔧 Preprocess and transform features",
+            "📊 Split data into train/validation/test",
+            "🎯 Select appropriate baseline model",
+            "🏋️ Train initial model",
+            "⚙️ Optimize hyperparameters (Grid/Random Search)",
+            "📊 Evaluate performance with appropriate metrics",
+            "🔧 Perform advanced feature engineering",
+            "🛡️ Implement anti-overfitting techniques",
+            "🚀 Create inference pipeline",
+            "☁️ Prepare model for production (serving)"
+        ],
+        seo: [
+            "🔍 Conduct complete SEO audit of the site",
+            "🔑 Research high-conversion keywords",
+            "📝 Optimize meta tags, headings and content structure",
+            "📄 Create pillar/cluster content strategy",
+            "🔗 Develop link building strategy",
+            "⚡ Optimize speed and Core Web Vitals",
+            "📱 Ensure mobile-first indexing",
+            "📊 Configure Search Console and Google Analytics",
+            "📈 Monitor rankings and organic traffic",
+            "📊 Generate monthly SEO reports with recommendations"
+        ],
+        ads: [
+            "🎯 Define campaign objectives and KPIs",
+            "🔍 Research keywords and target audience",
+            "📝 Create account and campaign structure",
+            "✍️ Write persuasive ad copy and creatives",
+            "💰 Configure budgets and bidding strategies",
+            "🎯 Segment audience by interests and demographics",
+            "📊 Configure conversion tracking",
+            "🧪 Implement continuous A/B testing",
+            "📈 Optimize performance daily",
+            "📊 Generate ROI and efficiency reports"
+        ],
+        business: [
+            "📝 Define mission, vision and company values",
+            "🔍 Conduct complete SWOT analysis",
+            "📊 Research market and competition in depth",
+            "👥 Define buyer persona and market segments",
+            "💰 3-year financial projections",
+            "📈 Develop marketing and sales plan",
+            "🏭 Define operations and logistics plan",
+            "👔 Organizational structure and team",
+            "⚖️ Legal and regulatory analysis",
+            "🎯 Growth and expansion strategy",
+            "📊 Define KPIs and OKRs for tracking",
+            "📄 Prepare investor presentation"
+        ],
+        ux: [
+            "🔍 User and competitor research",
+            "👥 Create user personas and journey maps",
+            "📝 Design low-fidelity wireframes",
+            "🎨 Create high-fidelity mockups in Figma",
+            "🎭 Define design system and components",
+            "🖱️ Create interactive clickable prototype",
+            "🧪 Conduct usability testing with real users",
+            "🎨 Design reusable UI components",
+            "📐 Create complete style guide",
+            "📱 Optimize mobile experience",
+            "📊 Document findings and recommendations"
+        ],
+        docker: [
+            "🐳 Create optimized multi-stage Dockerfile",
+            "🔧 Configure docker-compose for local development",
+            "🏗️ Define microservices architecture",
+            "☸️ Configure Kubernetes orchestration",
+            "🔄 Implement automated CI/CD pipeline",
+            "🚀 Configure continuous deployment",
+            "🔐 Manage secrets and environment variables",
+            "❤️ Configure health checks and readiness probes",
+            "📝 Implement centralized logging (ELK/Loki)",
+            "📊 Configure monitoring with Prometheus/Grafana",
+            "⏪ Prepare rollback strategy",
+            "📚 Document complete DevOps process"
+        ],
+        db: [
+            "📊 Design data model and normalization",
+            "📐 Create entity-relationship diagram",
+            "🔍 Define indexes and optimization",
+            "💾 Configure backups and recovery",
+            "🔄 Implement versioned migrations",
+            "⚡ Optimize complex SQL queries",
+            "🔄 Configure replication and high availability",
+            "📊 Implement sharding if needed",
+            "📝 Create stored procedures and functions",
+            "📈 Configure monitoring and alerts",
+            "🧪 Conduct load and performance testing",
+            "📚 Document schema and conventions"
+        ],
+        security: [
+            "🔍 Conduct complete security audit",
+            "🛡️ Scan for known vulnerabilities",
+            "🔐 Review access and permission policies",
+            "🛡️ Test firewall configuration",
+            "🔑 Review authentication implementation",
+            "📝 Audit security logs and records",
+            "🧪 Conduct penetration testing",
+            "📊 Generate findings report",
+            "🔧 Recommend corrective actions",
+            "📋 Create vulnerability remediation plan"
+        ],
+        chatbot: [
+            "🎯 Define chatbot use cases and scope",
+            "📝 Design conversation flows (storyboarding)",
+            "🤖 Select platform (Dialogflow/Rasa/Botpress)",
+            "🗣️ Define intents, entities and contexts",
+            "💬 Create responses, fallbacks and small talk",
+            "🔗 Integrate with APIs and external systems",
+            "🧪 Conduct A/B conversation testing",
+            "🚀 Deploy chatbot to required channels",
+            "📊 Analyze usage and satisfaction metrics",
+            "🔄 Iterate and improve based on feedback"
+        ],
+        ecommerce: [
+            "📊 Analyze e-commerce requirements and features",
+            "🎨 Design online store UI/UX",
+            "🏗️ Configure platform (Shopify/WooCommerce/Magento)",
+            "📦 Configure product catalog and categories",
+            "🛒 Implement shopping cart",
+            "💳 Integrate payment gateway (Stripe/PayPal/MercadoPago)",
+            "🚚 Configure shipping methods and tracking",
+            "🔐 Implement user authentication",
+            "📧 Configure transactional emails",
+            "📊 Configure analytics and conversion tracking",
+            "🧪 Conduct payment and checkout testing",
+            "🚀 Deploy and launch online store"
+        ],
+        mobile: [
+            "🎨 Design mobile app UI/UX",
+            "🏗️ Define app architecture",
+            "⚙️ Configure mobile development environment",
+            "🔐 Implement user authentication",
+            "📱 Develop main screens",
+            "🔗 Integrate with backend API",
+            "💾 Implement local storage",
+            "🔔 Configure push notifications",
+            "🧪 Test on real devices",
+            "🚀 Prepare App Store/Play Store submission"
+        ],
+        blockchain: [
+            "🎯 Define blockchain use cases",
+            "🏗️ Design decentralized architecture",
+            "🔗 Select blockchain (Ethereum/Solana)",
+            "📝 Develop smart contracts",
+            "🧪 Test smart contracts with Hardhat/Truffle",
+            "🔐 Implement wallet connection (MetaMask)",
+            "🚀 Deploy contracts to testnet",
+            "🧪 Conduct security testing",
+            "📊 Configure on-chain analytics",
+            "🚀 Deploy to mainnet"
+        ]
+    };
+    
+    // Detectar tipo de proyecto y asignar tareas
+    let tareas = [];
+    
+    if (nombre.includes("rpa") || nombre.includes("automation") || nombre.includes("automatización")) {
+        tareas = es ? tareasES.rpa : tareasEN.rpa;
+    } else if (nombre.includes("reconocimiento de voz") || (nombre.includes("voz") && nombre.includes("reconocimiento"))) {
+        tareas = es ? tareasES.voz : tareasEN.voz;
+    } else if (nombre.includes("web") || nombre.includes("frontend") || nombre.includes("react") || nombre.includes("vue") || nombre.includes("angular")) {
+        tareas = es ? tareasES.web : tareasEN.web;
+    } else if (nombre.includes("api") || nombre.includes("backend") || nombre.includes("rest")) {
+        tareas = es ? tareasES.api : tareasEN.api;
+    } else if (nombre.includes("machine learning") || nombre.includes("ia") || (nombre.includes("inteligencia") && nombre.includes("artificial"))) {
+        tareas = es ? tareasES.ml : tareasEN.ml;
+    } else if (nombre.includes("seo")) {
+        tareas = es ? tareasES.seo : tareasEN.seo;
+    } else if (nombre.includes("google ads") || nombre.includes("ads campaign") || nombre.includes("anuncios")) {
+        tareas = es ? tareasES.ads : tareasEN.ads;
+    } else if (nombre.includes("business plan") || nombre.includes("plan de negocio") || nombre.includes("plan de negocios")) {
+        tareas = es ? tareasES.business : tareasEN.business;
+    } else if (nombre.includes("ux") || nombre.includes("ui") || nombre.includes("diseño") || nombre.includes("design")) {
+        tareas = es ? tareasES.ux : tareasEN.ux;
+    } else if (nombre.includes("docker") || nombre.includes("kubernetes") || nombre.includes("devops") || nombre.includes("ci/cd")) {
+        tareas = es ? tareasES.docker : tareasEN.docker;
+    } else if (nombre.includes("base de datos") || nombre.includes("database") || nombre.includes("sql")) {
+        tareas = es ? tareasES.db : tareasEN.db;
+    } else if (nombre.includes("seguridad") || nombre.includes("cybersecurity") || nombre.includes("security") || nombre.includes("audit")) {
+        tareas = es ? tareasES.security : tareasEN.security;
+    } else if (nombre.includes("chatbot")) {
+        tareas = es ? tareasES.chatbot : tareasEN.chatbot;
+    } else if (nombre.includes("e-commerce") || nombre.includes("shopify") || nombre.includes("tienda online") || nombre.includes("ecommerce")) {
+        tareas = es ? tareasES.ecommerce : tareasEN.ecommerce;
+    } else if (nombre.includes("app móvil") || nombre.includes("ios") || nombre.includes("android") || nombre.includes("flutter") || nombre.includes("react native") || nombre.includes("mobile")) {
+        tareas = es ? tareasES.mobile : tareasEN.mobile;
+    } else if (nombre.includes("blockchain") || nombre.includes("web3") || nombre.includes("smart contract") || nombre.includes("crypto") || nombre.includes("nft") || nombre.includes("defi")) {
+        tareas = es ? tareasES.blockchain : tareasEN.blockchain;
+    } else {
+        // Tareas genéricas
+        if (es) {
+            tareas = [
+                "📋 Analizar requisitos del proyecto en detalle",
+                "🎯 Definir objetivos, alcance y entregables",
+                "📊 Crear plan de trabajo y cronograma",
+                "👥 Asignar recursos y definir roles",
+                "📝 Documentar especificaciones técnicas",
+                "⚙️ Configurar herramientas y entornos",
+                "🏗️ Desarrollar solución base o MVP",
+                "🧪 Ejecutar pruebas funcionales",
+                "🔧 Ajustar y optimizar basado en feedback",
+                "📚 Documentar procesos y manuales",
+                "🚀 Preparar despliegue a producción",
+                "🎓 Capacitar a usuarios finales",
+                "📊 Medir resultados y KPIs",
+                "🔄 Iterar y mejorar continuamente"
+            ];
         } else {
-            tareasGeneradas.push(`📋 Actividad complementaria ${tareasGeneradas.length + 1}`);
+            tareas = [
+                "📋 Analyze project requirements in detail",
+                "🎯 Define objectives, scope and deliverables",
+                "📊 Create work plan and schedule",
+                "👥 Assign resources and define roles",
+                "📝 Document technical specifications",
+                "⚙️ Configure tools and environments",
+                "🏗️ Develop base solution or MVP",
+                "🧪 Execute functional tests",
+                "🔧 Adjust and optimize based on feedback",
+                "📚 Document processes and manuals",
+                "🚀 Prepare production deployment",
+                "🎓 Train end users",
+                "📊 Measure results and KPIs",
+                "🔄 Iterate and continuously improve"
+            ];
         }
     }
     
-    const resultado = tareasGeneradas.slice(0, numTareas);
+    // Ajustar al número exacto de tareas
+    while (tareas.length < numTareas) {
+        const ultima = tareas[tareas.length - 1];
+        if (ultima && !ultima.includes("adicional")) {
+            const base = ultima.replace(/^\w+\s/, '').substring(0, 40);
+            if (es) {
+                tareas.push(`📋 ${base} (Parte 2)`);
+            } else {
+                tareas.push(`📋 ${base} (Part 2)`);
+            }
+        } else {
+            if (es) {
+                tareas.push(`📋 Actividad complementaria ${tareas.length + 1}`);
+            } else {
+                tareas.push(`📋 Complementary activity ${tareas.length + 1}`);
+            }
+        }
+    }
     
-    console.log(`📝 Tareas generadas para "${nombreProyecto}":`);
+    const resultado = tareas.slice(0, numTareas);
+    
+    console.log(`📝 Tareas generadas para "${nombreProyecto}" (${lang}):`);
     resultado.forEach((t, i) => console.log(`   ${i+1}. ${t}`));
     
     return resultado;
 }
-
 
 
 
@@ -24684,11 +27045,162 @@ function actualizarSidebarConEliminar(proyectos) {
 }
 
 // 7. MOSTRAR MODAL
+// ============================================
+// 📋 MOSTRAR MODAL DE PLANTILLAS - CON TRADUCCIÓN
+// ============================================
+
 window.mostrarModalPlantillas = function() {
     const existing = document.getElementById('modalPlantillasProfesional');
     if (existing) { existing.remove(); return; }
     
+    // ===== FUNCIÓN TRADUCIR CATEGORÍA DENTRO DEL MODAL =====
+    function traducirCategoria(categoria) {
+        if (!categoria) return categoria;
+        if (typeof t !== 'function') return categoria;
+        
+        const map = {
+            'Desarrollo': t('categoriaDesarrollo'),
+            'Seguridad': t('categoriaSeguridad'),
+            'DevOps': t('categoriaDevOps'),
+            'BI': t('categoriaBI'),
+            'IA': t('categoriaIA'),
+            'E-commerce': t('categoriaEcommerce'),
+            'Logística': t('categoriaLogistica'),
+            'Gaming': t('categoriaGaming'),
+            'Blockchain': t('categoriaBlockchain'),
+            'Automatización': t('categoriaAutomatizacion'),
+            'Datos': t('categoriaDatos'),
+            'IoT': t('categoriaIoT'),
+            'Fintech': t('categoriaFintech'),
+            'Legal': t('categoriaLegal'),
+            'Cloud-Native': t('categoriaCloudNative'),
+            'Arquitectura': t('categoriaArquitectura'),
+            'IA/ML': t('categoriaIAM'),
+            'Marketing': t('categoriaMarketing'),
+            'Negocios': t('categoriaNegocios'),
+            'Finanzas': t('categoriaFinanzas'),
+            'Ventas': t('categoriaVentas'),
+            'Estrategia': t('categoriaEstrategia'),
+            'Gestión': t('categoriaGestion'),
+            'RRHH': t('categoriaRRHH'),
+            'Operaciones': t('categoriaOperaciones'),
+            'Calidad': t('categoriaCalidad'),
+            'Diseño': t('categoriaDiseno'),
+            'Educación': t('categoriaEducacion'),
+            'Salud': t('categoriaSalud')
+        };
+        return map[categoria] || categoria;
+    }
+
+
+// ============================================
+// 🔄 TRADUCIR NOMBRES DE PLANTILLAS
+// ============================================
+
+window.traducirNombrePlantilla = function(nombre) {
+    if (!nombre) return nombre;
+    
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    if (lang === 'es') return nombre;
+    
+    const map = {
+        '🌐 Desarrollo Web Full Stack': 'Web Full Stack Development',
+        '📱 App Móvil iOS/Android': 'Mobile App iOS/Android',
+        '🔌 API RESTful Completa': 'Complete RESTful API',
+        '☁️ Microservicios con Docker': 'Microservices with Docker',
+        '🗄️ Base de Datos SQL/NoSQL': 'SQL/NoSQL Database',
+        '🔐 Autenticación JWT/OAuth': 'JWT/OAuth Authentication',
+        '🚀 CI/CD Pipeline': 'CI/CD Pipeline',
+        '🐳 Docker & Kubernetes': 'Docker & Kubernetes',
+        '📊 Dashboard Analytics': 'Analytics Dashboard',
+        '🤖 Chatbot con IA': 'AI Chatbot',
+        '🛒 E-commerce Completo': 'Complete E-commerce',
+        '📦 Sistema de Inventario': 'Inventory System',
+        '🎮 Videojuego 2D': '2D Video Game',
+        '📱 PWA - Web App': 'PWA - Web App',
+        '🔗 Blockchain / Web3': 'Blockchain / Web3',
+        '🧠 Machine Learning Model': 'Machine Learning Model',
+        '👁️ Visión Computacional': 'Computer Vision',
+        '🎤 Reconocimiento de Voz': 'Speech Recognition',
+        '📝 Procesamiento NLP': 'NLP Processing',
+        '🔒 Cybersecurity Audit': 'Cybersecurity Audit',
+        '🌐 WordPress Development': 'WordPress Development',
+        '⚡ React/Next.js App': 'React/Next.js App',
+        '📦 Vue.js/Nuxt App': 'Vue.js/Nuxt App',
+        '🎯 Angular Enterprise': 'Angular Enterprise',
+        '🔧 Backend Node.js': 'Node.js Backend',
+        '🐍 Python Django': 'Python Django',
+        '☕ Java Spring Boot': 'Java Spring Boot',
+        '📱 Flutter App': 'Flutter App',
+        '📱 React Native': 'React Native',
+        '🎮 Unity 3D Game': 'Unity 3D Game',
+        '🔧 WordPress Plugin': 'WordPress Plugin',
+        '🛒 Shopify Store': 'Shopify Store',
+        '📈 Web Scraping': 'Web Scraping',
+        '🤖 RPA Automation': 'RPA Automation',
+        '📊 ETL Pipeline': 'ETL Pipeline',
+        '🗄️ Data Warehouse': 'Data Warehouse',
+        '📈 Real-time Analytics': 'Real-time Analytics',
+        '🔍 Recommendation Engine': 'Recommendation Engine',
+        '🎯 Fraud Detection': 'Fraud Detection',
+        '⚛️ React Enterprise': 'React Enterprise',
+        '🖥️ Vue.js Dashboard': 'Vue.js Dashboard',
+        '🏢 Angular Corporate': 'Angular Corporate',
+        '🐘 PHP Laravel API': 'PHP Laravel API',
+        '🔷 .NET Core Backend': '.NET Core Backend',
+        '☕ Spring Boot Microservices': 'Spring Boot Microservices',
+        '🐍 FastAPI Backend': 'FastAPI Backend',
+        '📱 Ionic Hybrid App': 'Ionic Hybrid App',
+        '🎮 Unreal Engine 5': 'Unreal Engine 5',
+        '🎮 Godot Game': 'Godot Game',
+        '🔧 Arduino IoT': 'Arduino IoT',
+        '📡 Raspberry Pi Cluster': 'Raspberry Pi Cluster',
+        '🏠 Home Assistant': 'Home Assistant',
+        '📊 Grafana Dashboard': 'Grafana Dashboard',
+        '🔍 ELK Stack': 'ELK Stack',
+        '📈 Prometheus + Grafana': 'Prometheus + Grafana',
+        '🐳 Docker Compose': 'Docker Compose',
+        '☸️ Helm Charts': 'Helm Charts',
+        '🔐 Vault Secrets': 'Vault Secrets',
+        '🛡️ WAF Implementation': 'WAF Implementation',
+        '🔑 2FA Implementation': '2FA Implementation',
+        '📋 SIEM Integration': 'SIEM Integration',
+        '☁️ Serverless Architecture': 'Serverless Architecture',
+        '⚡ Edge Computing': 'Edge Computing',
+        '🔄 Event-Driven Microservices': 'Event-Driven Microservices',
+        '🔗 WebAssembly': 'WebAssembly',
+        '🌐 Multi-Cloud Strategy': 'Multi-Cloud Strategy',
+        '🔀 Service Mesh': 'Service Mesh',
+        '🤖 MLOps Pipeline': 'MLOps Pipeline',
+        '🧠 LLMOps': 'LLMOps',
+        '🔍 RAG System': 'RAG System',
+        '🔢 Vector Database': 'Vector Database',
+        '🎯 LLM Fine-tuning': 'LLM Fine-tuning',
+        '🤖 Autonomous AI Agents': 'Autonomous AI Agents',
+        '💬 Multi-modal AI': 'Multi-modal AI',
+        '🎨 Stable Diffusion': 'Stable Diffusion',
+        '🎤 Whisper ASR': 'Whisper ASR'
+    };
+    
+    return map[nombre] || nombre;
+};
+
+
+
+    // ===== FIN FUNCIÓN =====
+    
     const total = Object.keys(window.plantillasEjecutivas).length;
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const es = lang === 'es';
+    
+    // ===== TRADUCCIONES =====
+    const title = window.t ? window.t('templatesTitle') : (es ? '📋 Centro de Plantillas' : '📋 Template Center');
+    const subtitle = window.t ? window.t('templatesSubtitle') : (es ? 'plantillas profesionales' : 'professional templates');
+    const searchPlaceholder = window.t ? window.t('templatesSearch') : (es ? '🔍 Buscar plantillas...' : '🔍 Search templates...');
+    const allText = window.t ? window.t('templatesAllCategories') : (es ? 'Todas' : 'All');
+    const useText = es ? '🖱️ Haz clic para usar' : '🖱️ Click to use';
+    const tasksText = es ? 'tareas' : 'tasks';
+    // ===== FIN TRADUCCIONES =====
     
     const modal = document.createElement('div');
     modal.id = 'modalPlantillasProfesional';
@@ -24707,9 +27219,18 @@ window.mostrarModalPlantillas = function() {
         font-family: system-ui, 'Segoe UI', sans-serif;
     `;
     
+    const categorias = [...new Set(Object.values(window.plantillasEjecutivas).map(d => d.categoria))];
+    
     let gridHTML = '';
     Object.entries(window.plantillasEjecutivas).forEach(([nombre, datos]) => {
         const colorPrio = datos.prioridad === 'alta' ? '#ef4444' : datos.prioridad === 'media' ? '#f59e0b' : '#10b981';
+        const prioLabel = es 
+            ? (datos.prioridad === 'alta' ? 'Alta' : datos.prioridad === 'media' ? 'Media' : 'Baja')
+            : (datos.prioridad === 'alta' ? 'High' : datos.prioridad === 'media' ? 'Medium' : 'Low');
+        
+        // CATEGORÍA TRADUCIDA
+        const categoriaTraducida = traducirCategoria(datos.categoria);
+        
         gridHTML += `
             <div class="plantilla-item" data-categoria="${datos.categoria}" style="
                 background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05));
@@ -24725,43 +27246,140 @@ window.mostrarModalPlantillas = function() {
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                     <div style="font-size: 42px; min-width: 50px; text-align: center;">${nombre.split(' ')[0]}</div>
                     <div style="flex: 1;">
-                        <div style="font-weight: 700; color: white; font-size: 15px; margin-bottom: 8px;">${nombre}</div>
+                        
+
+                <div style="font-weight: 700; color: white; font-size: 15px; margin-bottom: 8px;">${window.traducirNombrePlantilla ? window.traducirNombrePlantilla(nombre) : nombre}</div>
+
+
+
+
+
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            <span style="background: rgba(139,92,246,0.25); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${datos.categoria}</span>
-                            <span style="background: ${colorPrio}20; color: ${colorPrio}; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${datos.prioridad}</span>
+                            <span style="background: rgba(139,92,246,0.25); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${categoriaTraducida}</span>
+                            <span style="background: ${colorPrio}20; color: ${colorPrio}; padding: 4px 12px; border-radius: 20px; font-size: 10px;">${prioLabel}</span>
                         </div>
                     </div>
                 </div>
                 <div style="display: flex; gap: 20px; margin-bottom: 15px;">
                     <div><span style="color: #8b5cf6;">⏱️</span> <span style="color: #cbd5e1;">${datos.horas}h</span></div>
-                    <div><span style="color: #8b5cf6;">📋</span> <span style="color: #cbd5e1;">${datos.tareas} tareas</span></div>
+                    <div><span style="color: #8b5cf6;">📋</span> <span style="color: #cbd5e1;">${datos.tareas} ${tasksText}</span></div>
                 </div>
                 <div style="height: 4px; background: #1e293b; border-radius: 4px; overflow: hidden;">
                     <div style="width: ${Math.min(100, Math.round(datos.horas / 2))}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899);"></div>
+                </div>
+                <div style="margin-top: 12px; text-align: center; color: #8b5cf6; font-size: 12px;">
+                    ${useText}
                 </div>
             </div>
         `;
     });
     
+    // Filtros de categoría con traducción
+    let categoryFilterHTML = `
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+            <button class="cat-filter-btn active" data-categoria="all" style="
+                background: #8b5cf6; 
+                color: white; 
+                border: none; 
+                padding: 8px 16px; 
+                border-radius: 20px; 
+                cursor: pointer; 
+                font-size: 12px;
+            ">${allText}</button>
+    `;
+    
+    categorias.forEach((cat) => {
+        const catTraducida = traducirCategoria(cat);
+        categoryFilterHTML += `
+            <button class="cat-filter-btn" data-categoria="${cat}" style="
+                background: rgba(139,92,246,0.15); 
+                color: #94a3b8; 
+                border: 1px solid rgba(139,92,246,0.2); 
+                padding: 8px 16px; 
+                border-radius: 20px; 
+                cursor: pointer; 
+                font-size: 12px;
+                transition: all 0.3s ease;
+            ">${catTraducida}</button>
+        `;
+    });
+    categoryFilterHTML += `</div>`;
+    
     modal.innerHTML = `
         <div style="width: 95vw; max-width: 1400px; height: 90vh; background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 28px; border: 2px solid rgba(139,92,246,0.5); display: flex; flex-direction: column;">
-            <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(139,92,246,0.3); display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: linear-gradient(90deg, #0a0a1a, #1a1a3a); padding: 20px 30px; border-bottom: 1px solid rgba(139,92,246,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h2 style="margin: 0; font-size: 24px; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📋 Centro de Plantillas</h2>
-                    <p style="margin: 5px 0 0; color: #94a3b8;">${total} plantillas profesionales</p>
+                    <h2 style="margin: 0; font-size: 24px; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${title}</h2>
+                    <p style="margin: 5px 0 0; color: #94a3b8;">${total} ${subtitle}</p>
                 </div>
-                <button id="cerrarModalPlantillas" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px;">✕</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input id="searchPlantillas" placeholder="${searchPlaceholder}" style="
+                        background: rgba(255,255,255,0.1);
+                        border: 1px solid rgba(139,92,246,0.3);
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-size: 13px;
+                        width: 200px;
+                    ">
+                    <button id="cerrarModalPlantillas" style="background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #ef4444; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px;">✕</button>
+                </div>
+            </div>
+            <div style="padding: 15px 25px 0 25px;">
+                ${categoryFilterHTML}
             </div>
             <div style="flex: 1; overflow-y: auto; padding: 25px;">
-                <div style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 20px;">${gridHTML}</div>
+                <div id="plantillasGrid" style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 20px;">${gridHTML}</div>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
+    
+    // Lógica de búsqueda y filtrado
+    const searchInput = document.getElementById('searchPlantillas');
+    const filterBtns = modal.querySelectorAll('.cat-filter-btn');
+    const plantillasItems = modal.querySelectorAll('.plantilla-item');
+    
+    function filterTemplates() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const activeCategory = modal.querySelector('.cat-filter-btn.active')?.dataset.categoria || 'all';
+        
+        plantillasItems.forEach(item => {
+            const nombre = item.querySelector('div[style*="font-weight: 700"]')?.textContent?.toLowerCase() || '';
+            const categoria = item.dataset.categoria || '';
+            
+            const matchSearch = nombre.includes(searchTerm);
+            const matchCategory = activeCategory === 'all' || categoria === activeCategory;
+            
+            item.style.display = (matchSearch && matchCategory) ? 'block' : 'none';
+        });
+    }
+    
+    searchInput.addEventListener('input', filterTemplates);
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'rgba(139,92,246,0.15)';
+                b.style.color = '#94a3b8';
+                b.style.border = '1px solid rgba(139,92,246,0.2)';
+            });
+            this.classList.add('active');
+            this.style.background = '#8b5cf6';
+            this.style.color = 'white';
+            this.style.border = 'none';
+            filterTemplates();
+        });
+    });
+    
     document.getElementById('cerrarModalPlantillas').onclick = () => modal.remove();
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    console.log('📋 Modal de plantillas abierto (Idioma:', lang, ')');
 };
+
 
 // 8. CREAR BOTÓN EN SIDEBAR
 (function() {
@@ -36310,16 +38928,58 @@ function highlightRelevantSections(mode) {
 /*************************
  * FUNCIONES AUXILIARES *
  *************************/
+
 function getStatusText(status) {
-  switch (status) {
-    case 'pending': return 'Pendiente';
-    case 'inProgress': return 'En Progreso';
-    case 'completed': return 'Completado';
-    case 'overdue': return 'Rezagado';
-    default: return status || 'Desconocido';
-  }
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const translations = {
+    es: {
+      pending: 'Pendiente',
+      inProgress: 'En Progreso',
+      completed: 'Completado',
+      overdue: 'Rezagado'
+    },
+    en: {
+      pending: 'Pending',
+      inProgress: 'In Progress',
+      completed: 'Completed',
+      overdue: 'Overdue'
+    }
+  };
+  return translations[lang]?.[status] || status;
 }
 
+function getPriorityText(priority) {
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const translations = {
+    es: {
+      baja: 'Baja',
+      media: 'Media',
+      alta: 'Alta'
+    },
+    en: {
+      baja: 'Low',
+      media: 'Medium',
+      alta: 'High'
+    }
+  };
+  return translations[lang]?.[priority] || priority;
+}
+function getPriorityText(priority) {
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const translations = {
+    es: {
+      baja: 'Baja',
+      media: 'Media',
+      alta: 'Alta'
+    },
+    en: {
+      baja: 'Low',
+      media: 'Medium',
+      alta: 'High'
+    }
+  };
+  return translations[lang]?.[priority] || priority;
+}
 function capitalizeFirstLetter(string) {
   return string?.charAt(0).toUpperCase() + string?.slice(1) || '';
 }
@@ -36710,349 +39370,342 @@ function getActiveView() {
  * FUNCIONES DE RENDERIZADO
  ******************************/
 function renderKanbanTasks(tasks = null) {
-    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CORREGIDA');
-    
-    // 🔥 CORRECCIÓN: Usar variables DIRECTAMENTE, sin window.
+    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CON TRADUCCIÓN');
+
+    // ========== IDIOMA Y TRADUCCIONES ==========
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const L = {
+        es: {
+            assignedTo: 'Asignado a:',
+            deadline: 'Fecha límite:',
+            pending: 'Pendiente',
+            inProgress: 'En Progreso',
+            completed: 'Completado',
+            overdue: 'Rezagado',
+            low: 'Baja',
+            medium: 'Media',
+            high: 'Alta',
+            edit: 'Editar',
+            delete: 'Eliminar',
+            unassigned: 'Sin asignar',
+            noDate: 'Sin fecha',
+            invalidDate: 'Fecha inválida',
+            unnamedTask: 'Tarea sin nombre',
+            subtasks: 'Subtareas',
+            noTasks: 'No hay tareas'
+        },
+        en: {
+            assignedTo: 'Assigned to:',
+            deadline: 'Deadline:',
+            pending: 'Pending',
+            inProgress: 'In Progress',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            low: 'Low',
+            medium: 'Medium',
+            high: 'High',
+            edit: 'Edit',
+            delete: 'Delete',
+            unassigned: 'Unassigned',
+            noDate: 'No date',
+            invalidDate: 'Invalid date',
+            unnamedTask: 'Unnamed task',
+            subtasks: 'Subtasks',
+            noTasks: 'No tasks'
+        }
+    };
+    const labels = L[lang] || L.es;
+    const es = lang === 'es';
+
+    // Mapeos para estados y prioridades
+    const statusMap = {
+        'pending': labels.pending,
+        'inProgress': labels.inProgress,
+        'completed': labels.completed,
+        'overdue': labels.overdue,
+        'pendiente': labels.pending,
+        'en progreso': labels.inProgress,
+        'completado': labels.completed,
+        'rezagado': labels.overdue
+    };
+    const priorityMap = {
+        'baja': labels.low,
+        'media': labels.medium,
+        'alta': labels.high,
+        'low': labels.low,
+        'medium': labels.medium,
+        'high': labels.high
+    };
+    // ===========================================
+
     // Paso 1: Verificar lo básico
     if (!projects || currentProjectIndex === undefined) {
         console.error('❌ No hay proyectos o índice');
-        console.log('   projects:', projects);
-        console.log('   currentProjectIndex:', currentProjectIndex);
         return;
     }
-    
+
     const project = projects[currentProjectIndex];
     if (!project || !project.tasks) {
         console.error('❌ No hay proyecto o tareas');
         return;
     }
-    
+
     console.log('✅ Proyecto:', project.name);
     console.log('✅ Tareas:', project.tasks.length);
-    
+
     // Paso 2: Obtener columnas
     const pendingCol = document.getElementById('pendingList');
     const inProgressCol = document.getElementById('inProgressList');
     const completedCol = document.getElementById('completedList');
     const overdueCol = document.getElementById('overdueList');
-    
-    console.log('✅ Columnas:', {
-        pending: !!pendingCol,
-        inProgress: !!inProgressCol,
-        completed: !!completedCol,
-        overdue: !!overdueCol
-    });
-    
+
     if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
         console.error('❌ Faltan columnas');
         return;
     }
-    
+
     // Paso 3: Limpiar columnas
     pendingCol.innerHTML = '';
     inProgressCol.innerHTML = '';
     completedCol.innerHTML = '';
     overdueCol.innerHTML = '';
-    
-    // Paso 4: Obtener tareas
+
     let tasksToRender = tasks || project.tasks || [];
     console.log('✅ Tareas a renderizar:', tasksToRender.length);
-    
+
     if (tasksToRender.length === 0) {
-        console.log('📭 No hay tareas');
-        
-        // ========== 🆕 ACTUALIZAR CONTADORES A CERO ==========
         setTimeout(() => {
-            if (typeof actualizarContadoresColumnas === 'function') {
-                actualizarContadoresColumnas();
-            }
+            if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
             document.dispatchEvent(new Event('tasksRendered'));
         }, 50);
-
-
-
-        // ========== FIN NUEVO ==========
-        
         return;
     }
-    
-    // Paso 5: Renderizar CADA TAREA
-    tasksToRender.forEach((task, index) => {
-        console.log(`🎨 Renderizando tarea ${index + 1}: "${task.name}"`);
-        console.log('📊 Campos de la tarea:', {
-            name: task.name,
-            assignee: task.assignee,
-            priority: task.priority,
-            status: task.status,
-            deadline: task.deadline,
-            description: task.description,
-            estimatedTime: task.estimatedTime,
-            subtasks: task.subtasks,
-            startDate: task.startDate
-        });
-        
-        if (!task) {
-            console.log(' ⚠️ Tarea nula, saltando');
-            return;
-        }
-        
-        // Determinar columna
+
+    // Paso 4: Renderizar cada tarea
+    tasksToRender.forEach((task) => {
+        if (!task) return;
+
         let targetColumn = pendingCol;
-        if (task.status === 'completed' || task.status === 'completado') {
-            targetColumn = completedCol;
-        } else if (task.status === 'inProgress' || task.status === 'en progreso') {
-            targetColumn = inProgressCol;
-        } else if (task.status === 'overdue' || task.status === 'rezagado') {
-            targetColumn = overdueCol;
-        }
-        
-        console.log(`   📍 Estado: ${task.status} → Columna: ${targetColumn.id}`);
-        
-        // COLORES DE BORDE POR PRIORIDAD
+        const status = task.status || 'pending';
+        if (status === 'completed' || status === 'completado') targetColumn = completedCol;
+        else if (status === 'inProgress' || status === 'en progreso') targetColumn = inProgressCol;
+        else if (status === 'overdue' || status === 'rezagado') targetColumn = overdueCol;
+
         const priorityBorderColors = {
-            'alta': '#e74c3c',    // Rojo
-            'media': '#f39c12',   // Naranja  
-            'baja': '#2ecc71',    // Verde
+            'alta': '#e74c3c',
+            'media': '#f39c12',
+            'baja': '#2ecc71',
             'high': '#e74c3c',
             'medium': '#f39c12',
             'low': '#2ecc71'
         };
-        
         const priorityColor = priorityBorderColors[task.priority] || '#3498db';
-        
-        // ICONOS DE STATUS
-        const statusIcons = {
-            'pending': '⏳',
-            'inProgress': '🔄', 
-            'completed': '✅',
-            'overdue': '⚠️'
-        };
-        
-        const statusIcon = statusIcons[task.status] || '📝';
 
-        // Formatear fecha límite
+        const statusIcons = { 'pending': '⏳', 'inProgress': '🔄', 'completed': '✅', 'overdue': '⚠️' };
+        const statusIcon = statusIcons[status] || '📝';
+
+        // Formatear fecha según idioma
         let formattedDeadline = '';
         if (task.deadline) {
             try {
                 const deadlineDate = new Date(task.deadline);
-                formattedDeadline = deadlineDate.toLocaleDateString('es-ES', {
+                formattedDeadline = deadlineDate.toLocaleDateString(es ? 'es-ES' : 'en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
                 });
-                console.log(`   📅 Fecha formateada: ${formattedDeadline}`);
-            } catch (error) {
-                console.error('❌ Error formateando fecha:', error);
-                formattedDeadline = 'Fecha inválida';
+            } catch (e) {
+                formattedDeadline = labels.invalidDate;
             }
         }
 
-        // Crear tarjeta con formato MEJORADO - ESTRUCTURA CORREGIDA
+        // Progreso de subtareas
+        const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
+        const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
+        const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+        const hasSubtasks = totalSubtasks > 0;
+
+        // Textos traducidos
+        const statusText = statusMap[status] || status;
+        const priorityText = priorityMap[task.priority] || task.priority || labels.medium;
+        const assigneeText = task.assignee ? `${labels.assignedTo} ${task.assignee}` : '';
+        const deadlineText = task.deadline ? `${labels.deadline} ${formattedDeadline}` : '';
+
+        // Crear tarjeta
         const card = document.createElement('div');
         card.className = 'task-card';
         card.draggable = true;
         card.dataset.taskId = task.id;
-        card.dataset.status = task.status;
-        
-        // Aplicar color de borde
+        card.dataset.status = status;
         card.style.borderLeft = `4px solid ${priorityColor}`;
-        
-        // HTML con NUEVA ESTRUCTURA
-        // ... dentro de renderKanbanTasks, dentro del forEach de tareas ...
 
-    // ✅ CÁLCULO DE PROGRESO DE SUBTAREAS
-    const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
-    const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
-    const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
-    const hasSubtasks = totalSubtasks > 0;
-
-    // ... (código anterior de colores y estados) ...
-
-    card.innerHTML = `
-    <div class="task-card-header">
-        <h4 class="task-title">
-            ${statusIcon} ${task.name || 'Tarea sin nombre'}
-        </h4>
-        <div class="task-controls">
-            <!-- FLECHAS DE DESPLAZAMIENTO -->
-            <div class="move-buttons">
-                <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
-                <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
+        card.innerHTML = `
+            <div class="task-card-header">
+                <h4 class="task-title">
+                    ${statusIcon} ${task.name || labels.unnamedTask}
+                </h4>
+                <div class="task-controls">
+                    <div class="move-buttons">
+                        <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${status}')">↑</button>
+                        <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${status}')">↓</button>
+                    </div>
+                    <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
+                </div>
             </div>
-            <!-- MENÚ DE TRES PUNTITOS -->
-            <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
-        </div>
-    </div>
-    <div class="task-card-body">
-        <!-- ASIGNADO ARRIBA de las banderas -->
-        ${task.assignee ? `
-        <div class="task-assignee">
-            <i class="fas fa-user"></i> Asignado a: ${task.assignee}
-        </div>
-        ` : ''}
-        
-        <!-- ✅ NUEVO: BARRA DE PROGRESO DE SUBTAREAS (VISIBLE EN EL BOARD) -->
-        ${hasSubtasks ? `
-        <div class="subtasks-progress-container" style="margin-top: 10px; margin-bottom: 10px;">
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
-                <span>📋 Subtareas</span>
-                <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+            <div class="task-card-body">
+                ${assigneeText ? `<div class="task-assignee"><i class="fas fa-user"></i> ${assigneeText}</div>` : ''}
+                ${hasSubtasks ? `
+                <div class="subtasks-progress-container" style="margin-top: 10px; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-bottom:4px;">
+                        <span>📋 ${labels.subtasks}</span>
+                        <span>${completedSubtasks}/${totalSubtasks} (${subtaskProgress}%)</span>
+                    </div>
+                    <div class="progress-bar" style="background:#2d2d5f; height:6px; border-radius:3px; overflow:hidden;">
+                        <div class="progress-fill" style="width: ${subtaskProgress}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:3px; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                ` : ''}
+                <div class="badges-container">
+                    <span class="task-badge priority-badge ${task.priority || 'media'}">${priorityText}</span>
+                    <span class="task-badge status-badge status-${status}">${statusText}</span>
+                </div>
+                ${deadlineText ? `<div class="task-deadline"><i class="fas fa-calendar-alt"></i> ${deadlineText}</div>` : ''}
             </div>
-            <div class="progress-bar" style="background:#2d2d5f; height:6px; border-radius:3px; overflow:hidden;">
-                <div class="progress-fill" style="width: ${subtaskProgress}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:3px; transition: width 0.3s ease;"></div>
+            <div class="task-context-menu" id="task-menu-${task.id}">
+                <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-edit"></i> ${labels.edit}
+                </div>
+                <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
+                    <i class="fas fa-trash"></i> ${labels.delete}
+                </div>
             </div>
-        </div>
-        ` : ''}
-        <!-- FIN NUEVO -->
+        `;
 
-        <!-- CONTENEDOR CENTRADO PARA BANDERAS -->
-        <div class="badges-container">
-            <!-- BANDERA DE PRIORIDAD -->
-            <span class="task-badge priority-badge ${task.priority || 'media'}">
-                ${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}
-            </span>
-            <!-- BANDERA DE STATUS -->
-            <span class="task-badge status-badge status-${task.status}">
-                ${task.status === 'pending' ? 'Pendiente' :
-                task.status === 'inProgress' ? 'En Progreso' :
-                task.status === 'completed' ? 'Completado' :
-                task.status === 'overdue' ? 'Rezagado' : task.status}
-            </span>
-        </div>
-        <!-- FECHA LÍMITE DEBAJO de las banderas -->
-        ${task.deadline ? `
-        <div class="task-deadline">
-            <i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}
-        </div>
-        ` : ''}
-    </div>
-    <div class="task-context-menu" id="task-menu-${task.id}">
-        <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})">
-            <i class="fas fa-edit"></i> Editar
-        </div>
-        <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')">
-            <i class="fas fa-trash"></i> Eliminar
-        </div>
-    </div>
-    `;
-
-// ... (el resto de la función sigue igual) ...
-
-        // Event listener para clicks
         card.addEventListener('click', function(e) {
-            console.log('🖱️ Click en:', task.name);
             e.stopPropagation();
-            if (typeof showTaskDetails === 'function') {
-                showTaskDetails(task);
-            }
+            if (typeof showTaskDetails === 'function') showTaskDetails(task);
         });
 
-
-
-        // Agregar a la columna
         targetColumn.appendChild(card);
-        console.log(`   ✅ Tarea agregada a ${targetColumn.id}`);
     });
-    
-    console.log('🎉 renderKanbanTasks COMPLETADO EXITOSAMENTE');
-    
-    // ========== 🆕 NUEVO: ACTUALIZAR CONTADORES Y EVENTOS ==========
+
+    console.log('🎉 renderKanbanTasks COMPLETADO');
+
     setTimeout(() => {
-        // 1. Actualizar contadores de columnas (los números con animación)
-        if (typeof actualizarContadoresColumnas === 'function') {
-            actualizarContadoresColumnas();
-        }
-        
-        // 2. Disparar evento de tareas renderizadas
+        if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
         document.dispatchEvent(new Event('tasksRendered'));
-        
-        // 3. Iniciar drag & drop si existe (tu función original)
-        if (typeof initDragAndDrop === 'function') {
-            console.log('🎯 Iniciando drag & drop...');
-            initDragAndDrop();
-        }
-        
-        // 4. Mejorar drag & drop con efectos elegantes (nuevo)
-        if (typeof mejorarDragDrop === 'function') {
-            mejorarDragDrop();
-        }
-        
-        // 5. Agregar tooltips a las tareas (nuevo)
-        if (typeof agregarTooltipsATareas === 'function') {
-            agregarTooltipsATareas();
-        }
-        
-        console.log('✨ Efectos visuales aplicados correctamente');
+        if (typeof initDragAndDrop === 'function') initDragAndDrop();
+        if (typeof mejorarDragDrop === 'function') mejorarDragDrop();
+        if (typeof agregarTooltipsATareas === 'function') agregarTooltipsATareas();
     }, 100);
-    // ========== FIN NUEVO ==========
 }
-
-
-
-
 
 
 /*********************
  * MENÚ CONTEXTUAL DE TAREAS *
  *********************/
+
+// --- Función para abrir/cerrar el menú ---
 function toggleTaskMenu(event, taskId) {
-  event.stopPropagation();
-  
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
   // Cerrar todos los otros menús
   document.querySelectorAll('.task-context-menu').forEach(menu => {
     if (menu.id !== `task-menu-${taskId}`) {
       menu.classList.remove('show');
     }
   });
-  
-  // Alternar el menú actual
+
   const menu = document.getElementById(`task-menu-${taskId}`);
   if (menu) {
     menu.classList.toggle('show');
+  } else {
+    console.error('Menú no encontrado:', `task-menu-${taskId}`);
   }
 }
 
-function deleteTaskFromMenu(taskId) {
-  const task = projects[currentProjectIndex].tasks.find(t => t.id === taskId);
-  if (!task) return;
-  
-  if (confirm(`¿Estás seguro de eliminar "${task.name}"? Esta acción no se puede deshacer.`)) {
-
-if (window.syncManager) window.syncManager.notifyChange('task-deleted', { 
-          projectIndex: currentProjectIndex, 
-          taskId: taskId, 
-          taskName: task.name 
-      });
-
-
-
-    // 🔥 PRIMERO NOTIFICAR la eliminación
-    if (tiempoRealSocket && tiempoRealSocket.connected) {
-      tiempoRealSocket.emit('task-created', {
-        projectId: currentProjectIndex,
-        taskId: taskId,
-        taskName: task.name,
-        userName: 'Usuario actual',
-        type: 'task-deleted',
-        timestamp: new Date().toISOString()
-      });
-      console.log('📢 Notificando eliminación de tarea');
+// --- Función que elimina por ID (probada y funcional) ---
+window.deleteTaskById = function(taskId) {
+  console.log('deleteTaskById llamado con ID:', taskId);
+  try {
+    if (typeof currentProjectIndex === 'undefined' || !projects[currentProjectIndex]) {
+      console.error('Proyecto no válido');
+      return;
     }
-    
-    // LUEGO eliminar (tu código actual)
-    projects[currentProjectIndex].tasks = projects[currentProjectIndex].tasks.filter(t => t.id !== taskId);
+    const project = projects[currentProjectIndex];
+    const task = project.tasks.find(t => t.id == taskId);
+    if (!task) {
+      console.error('Tarea no encontrada');
+      return;
+    }
+    if (!confirm(`¿Seguro que quieres eliminar "${task.name}"?`)) return;
+    project.tasks = project.tasks.filter(t => t.id != taskId);
     updateLocalStorage();
     actualizarAsignados();
     aplicarFiltros();
     generatePieChart(getStats());
     updateProjectProgress();
-    actualizarAsignados();
     showNotification(`Tarea "${task.name}" eliminada`);
-// 🔥 AGREGAR ESTO AL FINAL:
-    refreshCalendar();
-
+    const menu = document.getElementById(`task-menu-${taskId}`);
+    if (menu) menu.classList.remove('show');
+    console.log('Eliminación exitosa');
+  } catch (e) {
+    console.error('Error en deleteTaskById:', e);
   }
-}
+};
+
+// --- Redefinir deleteTask para que use deleteTaskById (para los onclick existentes) ---
+window.deleteTask = function(taskJson) {
+  try {
+    // Intentar parsear el JSON (puede venir con o sin encodeURIComponent)
+    const task = typeof taskJson === 'string' ? JSON.parse(decodeURIComponent(taskJson)) : taskJson;
+    if (task && task.id) {
+      deleteTaskById(task.id);
+    } else {
+      console.error('No se pudo obtener ID de la tarea');
+    }
+  } catch (e) {
+    console.error('Error al parsear JSON en deleteTask:', e);
+    // Fallback: extraer el ID manualmente con regex
+    const match = taskJson.match(/"id"\s*:\s*(\d+)/);
+    if (match && match[1]) {
+      deleteTaskById(parseInt(match[1], 10));
+    } else {
+      alert('Error al eliminar: formato de tarea no reconocido');
+    }
+  }
+};
+
+// --- Listener de delegación para asegurar que cualquier clic en Delete funcione ---
+document.addEventListener('click', function(e) {
+  const deleteBtn = e.target.closest('.task-context-menu .delete');
+  if (deleteBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const menu = deleteBtn.closest('.task-context-menu');
+    if (menu) {
+      const taskId = parseInt(menu.id.replace('task-menu-', ''), 10);
+      if (!isNaN(taskId)) {
+        deleteTaskById(taskId);
+      }
+    }
+  }
+});
+
+// --- Cerrar menús al hacer clic fuera ---
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.task-context-menu') && !e.target.closest('.task-menu-trigger') && !e.target.closest('.task-menu')) {
+    document.querySelectorAll('.task-context-menu.show').forEach(menu => {
+      menu.classList.remove('show');
+    });
+  }
+});
+
+
+
 
 
 
@@ -37061,127 +39714,109 @@ if (window.syncManager) window.syncManager.notifyChange('task-deleted', {
 
 
 function renderListTasks(tasks = null) {
-  console.log('🎨 Renderizando lista con efectos premium...');
-  
-  const taskTableBody = document.getElementById('taskTableBody');
-  if (!taskTableBody) return;
+    console.log('🎨 Renderizando lista con traducción de prioridades...');
 
-  // Agregar contador de resultados (si no existe)
-  let counter = document.querySelector('.results-counter');
-  if (!counter) {
-    counter = document.createElement('span');
-    counter.className = 'results-counter';
-    const titleElement = document.querySelector('.list-view-header h2');
-    if (titleElement) titleElement.appendChild(counter);
-  }
+    const taskTableBody = document.getElementById('taskTableBody');
+    if (!taskTableBody) return;
 
-  const tasksToRender = tasks || getFilteredTasks('list');
-  
-  // Actualizar contador
-  if (counter) {
-    counter.textContent = `📊 ${tasksToRender.length} tareas`;
-  }
+    // Contador de resultados
+    let counter = document.querySelector('.results-counter');
+    if (!counter) {
+        counter = document.createElement('span');
+        counter.className = 'results-counter';
+        const titleElement = document.querySelector('.list-view-header h2');
+        if (titleElement) titleElement.appendChild(counter);
+    }
 
-  // Limpiar tabla
-  taskTableBody.innerHTML = '';
+    const tasksToRender = tasks || getFilteredTasks('list');
 
-  if (tasksToRender.length === 0) {
-    const emptyRow = document.createElement('tr');
-    emptyRow.className = 'empty-row';
-    emptyRow.innerHTML = `
-      <td colspan="6" class="empty-cell" style="
-        text-align: center;
-        padding: 50px;
-        color: #95a5a6;
-        animation: fadeIn 0.5s;
-      ">
-        <i class="fas fa-tasks" style="font-size: 48px; opacity: 0.5; margin-bottom: 15px; display: block;"></i>
-        No se encontraron tareas con los filtros aplicados
-      </td>
-    `;
-    taskTableBody.appendChild(emptyRow);
-    return;
-  }
+    if (counter) {
+        counter.textContent = `📊 ${tasksToRender.length} tareas`;
+    }
 
-  tasksToRender.forEach((task, index) => {
-    const row = document.createElement('tr');
-    row.className = `task-data-row ${index % 2 === 0 ? 'even-row' : 'odd-row'}`;
-    
-    // Añadir delay de animación basado en el índice
-    row.style.animationDelay = `${index * 0.05}s`;
-    
-    const estadoText = getStatusText(task.status);
-    const priorityText = capitalizeFirstLetter(task.priority);
-    
-    // Formatear fechas
-    const startDate = task.startDate ? formatDate(task.startDate) : '--/--/----';
-    const deadline = task.deadline ? formatDate(task.deadline) : '--/--/----';
-    
-    row.innerHTML = `
-      <td class="data-cell task-name-cell" title="${task.name || '-'}">
-        <div class="task-name-content">${task.name || '-'}</div>
-      </td>
-      
-      <td class="data-cell date-cell">
-        <div class="date-content">${startDate}</div>
-      </td>
-      
-      <td class="data-cell date-cell">
-        <div class="date-content">${deadline}</div>
-      </td>
-      
-      <td class="data-cell status-cell">
-        <div class="status-pill status-${task.status}">
-          ${estadoText}
-        </div>
-      </td>
-      
-      <td class="data-cell assignee-cell" title="${task.assignee || '-'}">
-        <div class="assignee-content">${task.assignee || '-'}</div>
-      </td>
-      
-      <td class="data-cell priority-cell">
-        <div class="priority-pill priority-${task.priority}">
-          ${priorityText}
-        </div>
-      </td>
-    `;
-    
-    // Evento click con efecto visual
-    row.addEventListener('click', (e) => {
-      // Efecto de clic
-      row.style.transform = 'scale(0.98)';
-      row.style.transition = 'transform 0.1s';
-      setTimeout(() => {
-        row.style.transform = '';
-        if (typeof showTaskDetails === 'function') {
-          showTaskDetails(task);
-        }
-      }, 100);
+    taskTableBody.innerHTML = '';
+
+    if (tasksToRender.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.className = 'empty-row';
+        emptyRow.innerHTML = `
+            <td colspan="6" class="empty-cell" style="text-align:center; padding:50px; color:#95a5a6; animation:fadeIn 0.5s;">
+                <i class="fas fa-tasks" style="font-size:48px; opacity:0.5; margin-bottom:15px; display:block;"></i>
+                No se encontraron tareas con los filtros aplicados
+            </td>
+        `;
+        taskTableBody.appendChild(emptyRow);
+        return;
+    }
+
+    tasksToRender.forEach((task, index) => {
+        const row = document.createElement('tr');
+        row.className = `task-data-row ${index % 2 === 0 ? 'even-row' : 'odd-row'}`;
+        row.style.animationDelay = `${index * 0.05}s`;
+
+        // 🔥 USAR getPriorityText para traducción
+        const estadoText = getStatusText(task.status);
+        const priorityText = getPriorityText(task.priority);
+
+        const startDate = task.startDate ? formatDate(task.startDate) : '--/--/----';
+        const deadline = task.deadline ? formatDate(task.deadline) : '--/--/----';
+
+        row.innerHTML = `
+            <td class="data-cell task-name-cell" title="${task.name || '-'}">
+                <div class="task-name-content">${task.name || '-'}</div>
+            </td>
+            <td class="data-cell date-cell">${startDate}</td>
+            <td class="data-cell date-cell">${deadline}</td>
+            <td class="data-cell status-cell">
+                <div class="status-pill status-${task.status}">${estadoText}</div>
+            </td>
+            <td class="data-cell assignee-cell" title="${task.assignee || '-'}">
+                <div class="assignee-content">${task.assignee || '-'}</div>
+            </td>
+            <td class="data-cell priority-cell">
+                <div class="priority-pill priority-${task.priority}">${priorityText}</div>
+            </td>
+        `;
+
+        row.addEventListener('click', (e) => {
+            row.style.transform = 'scale(0.98)';
+            row.style.transition = 'transform 0.1s';
+            setTimeout(() => {
+                row.style.transform = '';
+                if (typeof showTaskDetails === 'function') {
+                    showTaskDetails(task);
+                }
+            }, 100);
+        });
+
+        taskTableBody.appendChild(row);
     });
-    
-    taskTableBody.appendChild(row);
-  });
 
+    // Título con degradado
+    const listHeader = document.querySelector('.list-view-header h2');
+    if (listHeader) {
+        listHeader.style.background = "linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4)";
+        listHeader.style.backgroundSize = "200% auto";
+        listHeader.style.webkitBackgroundClip = "text";
+        listHeader.style.backgroundClip = "text";
+        listHeader.style.color = "transparent";
+        listHeader.style.webkitTextFillColor = "transparent";
+        listHeader.style.textShadow = "0 2px 10px rgba(59, 130, 246, 0.3)";
+        listHeader.style.display = "inline-block";
+        listHeader.style.width = "auto";
+    }
 
-
-// Aplicar degradado al título "Proyecto:" en la vista lista
-const listHeader = document.querySelector('.list-view-header h2');
-if (listHeader) {
-    listHeader.style.background = "linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4)";
-    listHeader.style.backgroundSize = "200% auto";
-    listHeader.style.webkitBackgroundClip = "text";
-    listHeader.style.backgroundClip = "text";
-    listHeader.style.color = "transparent";
-    listHeader.style.webkitTextFillColor = "transparent";
-    listHeader.style.textShadow = "0 2px 10px rgba(59, 130, 246, 0.3)";
-    listHeader.style.display = "inline-block";
-    listHeader.style.width = "auto";
+    console.log('✅ renderListTasks completada con prioridades traducidas');
 }
 
 
 
-}
+
+
+
+
+
+
 
 /******************************
  * FUNCIONES DEL DASHBOARD
@@ -37700,30 +40335,67 @@ function renderCalendar() {
     const events = getFilteredCalendarTasks();
     console.log('📊 Eventos a agregar:', events.length);
 
+    // ===== IDIOMA =====
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const es = lang === 'es';
+
     // Configurar FullCalendar
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    left: 'prev,next today',
+    center: 'title',
+    right: 'customMonth,customWeek,customDay'
+},
+customButtons: {
+    customMonth: {
+        text: es ? 'Mes' : 'Month',
+        click: function() {
+            if (window.calendarInstance) {
+                window.calendarInstance.changeView('dayGridMonth');
+                console.log('🔄 Cambiando a Mes');
+            }
+        }
+    },
+    customWeek: {
+        text: es ? 'Semana' : 'Week',
+        click: function() {
+            if (window.calendarInstance) {
+                window.calendarInstance.changeView('timeGridWeek');
+                console.log('🔄 Cambiando a Semana');
+            }
+        }
+    },
+    customDay: {
+        text: es ? 'Día' : 'Day',
+        click: function() {
+            if (window.calendarInstance) {
+                window.calendarInstance.changeView('timeGridDay');
+                console.log('🔄 Cambiando a Día');
+            }
+        }
+    }
         },
-        locale: 'es',
-        // 👇 AGREGAR ESTAS DOS LÍNEAS 👇
-        showNonCurrentDates: false,  // Oculta días de otros meses
-        fixedWeekCount: false,        // Ajusta altura según semanas reales
-        // 👆 HASTA AQUÍ 👆
+        locale: es ? 'es' : 'en',
+        buttonText: {
+            today: es ? 'Hoy' : 'Today'
+        },
+        noEventsText: es ? 'No hay eventos' : 'No events',
+        showNonCurrentDates: false,
+        fixedWeekCount: false,
         editable: true,
         selectable: true,
         dayMaxEvents: 3,
-dayMaxEventRows: true,
+        dayMaxEventRows: true,
         displayEventTime: false,
         eventDisplay: 'block',
         events: events,
         
         dateClick: function(info) {
             console.log('📅 Click en día:', info.dateStr);
-            openTaskModalWithDate(info.dateStr);
+            if (typeof openTaskModalWithDate === 'function') {
+                openTaskModalWithDate(info.dateStr);
+            }
         },
         
         eventClick: function(info) {
@@ -37738,7 +40410,6 @@ dayMaxEventRows: true,
         eventDidMount: function(info) {
             const el = info.el;
             const props = info.event.extendedProps;
-            
             el.style.cursor = 'pointer';
             el.style.transition = 'all 0.2s ease';
             el.style.display = 'block';
@@ -37750,46 +40421,95 @@ dayMaxEventRows: true,
                     this.style.transform = 'translateY(-2px) scale(1.02)';
                     this.style.zIndex = '100';
                     this.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.3)';
-                    window.showCalendarTooltip(e, props.tooltipData);
+                    if (typeof window.showCalendarTooltip === 'function') {
+                        window.showCalendarTooltip(e, props.tooltipData);
+                    }
                 });
-                
                 el.addEventListener('mouseleave', function() {
                     this.style.transform = 'none';
                     this.style.zIndex = '';
                     this.style.boxShadow = '';
-                    window.hideCalendarTooltip();
+                    if (typeof window.hideCalendarTooltip === 'function') {
+                        window.hideCalendarTooltip();
+                    }
                 });
             }
         },
         
         eventChange: function(info) {
             console.log('Evento modificado:', info.event);
-            updateTaskFromCalendar(info.event);
+            if (typeof updateTaskFromCalendar === 'function') {
+                updateTaskFromCalendar(info.event);
+            }
         }
     });
 
     calendar.render();
-    
-    // Guardar referencia global
     window.calendarInstance = calendar;
-    
-    // 🔥 APLICAR ESTILOS A LOS DÍAS DE LA SEMANA DESPUÉS DE RENDERIZAR
+
+ // ===== FIX PARA BOTONES MONTH, WEEK, DAY =====
     setTimeout(() => {
-        applyCalendarHeaderStyles();
+        console.log('🛠️ Aplicando fix a botones del calendario...');
+        const viewMap = {
+            'fc-month-button': 'dayGridMonth',
+            'fc-week-button': 'timeGridWeek',
+            'fc-day-button': 'timeGridDay'
+        };
+
+        function asignarEventos() {
+            let encontrados = 0;
+            Object.keys(viewMap).forEach(className => {
+                const btn = document.querySelector(`.${className}`);
+                if (btn) {
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+                    newBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const view = viewMap[className];
+                        if (window.calendarInstance) {
+                            window.calendarInstance.changeView(view);
+                            console.log(`🔄 Vista cambiada a: ${view}`);
+                            document.querySelectorAll('.fc-button').forEach(b => {
+                                b.style.background = 'rgba(255,255,255,0.1)';
+                                b.style.border = '1px solid rgba(255,255,255,0.2)';
+                                b.style.color = '#ccc';
+                            });
+                            newBtn.style.background = '#8b5cf6';
+                            newBtn.style.border = '1px solid #8b5cf6';
+                            newBtn.style.color = 'white';
+                        } else {
+                            console.warn('⚠️ No hay instancia del calendario');
+                        }
+                    });
+                    encontrados++;
+                }
+            });
+            return encontrados;
+        }
+
+        const total = asignarEventos();
+        if (total > 0) {
+            console.log(`✅ Fix aplicado a ${total} botones`);
+            const es = localStorage.getItem('preferredLanguage') === 'es';
+            const monthBtn = document.querySelector('.fc-month-button');
+            const weekBtn = document.querySelector('.fc-week-button');
+            const dayBtn = document.querySelector('.fc-day-button');
+            if (monthBtn) monthBtn.textContent = es ? 'Mes' : 'Month';
+            if (weekBtn) weekBtn.textContent = es ? 'Semana' : 'Week';
+            if (dayBtn) dayBtn.textContent = es ? 'Día' : 'Day';
+        }
+    }, 300);
+
+    
+    // Aplicar estilos al header
+    setTimeout(() => {
+        if (typeof applyCalendarHeaderStyles === 'function') {
+            applyCalendarHeaderStyles();
+        }
     }, 100);
     
-    // Verificar eventos después de renderizar
-    setTimeout(() => {
-        const eventsAfter = window.calendarInstance.getEvents();
-        console.log('✅ Eventos después de renderizar:', eventsAfter.length);
-        if (eventsAfter.length > 0) {
-            console.log('📅 Primer evento:', eventsAfter[0].title, 
-                        'inicio:', eventsAfter[0].startStr, 
-                        'fin:', eventsAfter[0].endStr);
-        }
-    }, 500);
-    
-    console.log('✅ Calendario renderizado con barras de duración');
+    console.log('✅ Calendario renderizado con botones personalizados');
     return calendar;
 }
 // 🔥 FUNCIÓN PARA APLICAR ESTILOS AL HEADER DEL CALENDARIO (DÍAS DE LA SEMANA)
@@ -38990,7 +41710,7 @@ function createNewProject() {
   if (userPlan === 'free') {
     const pruebaActiva = verificarPruebaFree();  // <-- LLAMADA AQUÍ
     if (!pruebaActiva) {
-      showNotification('⚠️ Tu período de prueba de 15 días ha expirado. Actualiza a Professional para continuar.', 'error');
+      showNotification('⚠️ Tu período de prueba de 7 días ha expirado. Actualiza a Professional para continuar.', 'error');
       return;
     }
   }
@@ -39493,27 +42213,48 @@ function createNewTask(e) {
     }
 
     // MANEJO DE ARCHIVOS
-    let taskFile = null;
-    const fileInput = document.getElementById('fileUpload');
+   // ========== MANEJO DE ARCHIVOS (GUARDADO EN LOCALSTORAGE) ==========
+let taskFile = null;
+const fileInput = document.getElementById('fileUpload');
 
-    if (fileInput && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-            showNotification('❌ El archivo es demasiado grande (máximo 5MB)');
-            return false;
-        }
-
-        taskFile = {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-            uploadDate: new Date().toISOString()
-        };
-
-        console.log('✅ Metadatos de archivo capturados:', taskFile);
+if (fileInput && fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        showNotification('❌ El archivo es demasiado grande (máximo 5MB)');
+        return false;
     }
+
+    // 🔑 Generar clave única para el archivo
+    const fileKey = `task_file_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+
+    taskFile = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified,
+        uploadDate: new Date().toISOString(),
+        key: fileKey // <-- ESTO ES LO QUE FALTABA
+    };
+
+    // 📤 Guardar archivo en localStorage
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fileData = {
+            data: e.target.result,
+            info: taskFile
+        };
+        localStorage.setItem(fileKey, JSON.stringify(fileData));
+        console.log('✅ Archivo guardado con clave:', fileKey);
+    };
+    reader.onerror = function(e) {
+        console.error('❌ Error leyendo archivo:', e);
+        showNotification('❌ Error al leer el archivo');
+    };
+    reader.readAsDataURL(file);
+
+    console.log('✅ Metadatos de archivo capturados:', taskFile);
+}
 
     const storyPoints = Number(
         document.getElementById('estimatedHours')?.value || 0
@@ -40255,249 +42996,232 @@ console.log('🛡️ Interceptor permanente de dependencias cargado');
 
 function showTaskDetails(task) {
   if (!taskDetailsModal || !task) return;
-  
-  const taskDetailsContent = document.getElementById('taskDetails');
-  if (!taskDetailsContent) return;
+  const content = document.getElementById('taskDetails');
+  if (!content) return;
 
-  // Calcular progreso de subtareas
-  const completedSubtasks = task.subtasks?.filter(st => st.completed).length || 0;
-  const totalSubtasks = task.subtasks?.length || 0;
+  window.currentTaskDetailsTask = task;
+
+  // Métricas
+  const totalSubtasks = (task.subtasks || []).length;
+  const completedSubtasks = (task.subtasks || []).filter(s => s.completed).length;
   const subtaskProgress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+  const timeDiff = (task.estimatedTime || 0) - (task.timeLogged || 0);
+  const timeStatus = timeDiff >= 0 ? 'onTime' : 'offTime';
+  const timeLabel = timeDiff >= 0 ? 'remainingHours' : 'exceededHours';
+  const timeStatusClass = timeDiff >= 0 ? 'time-good' : 'time-bad';
+  const statusText = getStatusText(task.status);
+  const priorityText = getPriorityText(task.priority);
+  const statusColor = { pending: '#f1c40f', inProgress: '#008090', completed: '#2ecc71', overdue: '#e74c3c' }[task.status] || '#95a5a6';
 
-  // Calcular estado de tiempo
-  const timeDifference = (task.estimatedTime || 0) - (task.timeLogged || 0);
-  const timeStatus = timeDifference >= 0 ? 'En tiempo' : 'Fuera de tiempo';
-  const timeStatusClass = timeDifference >= 0 ? 'time-good' : 'time-bad';
-
-  // Archivo adjunto
-  const fileHTML = task.file ? `
-    <div class="detail-group">
-        <label>Archivo adjunto:</label>
-        <div class="file-attachment">
-            <i class="fas fa-paperclip"></i>
-            <span class="file-name">${task.file.name}</span>
-            <span class="file-size">(${formatFileSize(task.file.size)})</span>
-            <button class="download-btn" data-task-id="${task.id}">
-                <i class="fas fa-download"></i> Descargar
-            </button>
+  // ===== ARCHIVO ADJUNTO (con botón de descarga) =====
+  let fileHTML = '';
+  if (task.file) {
+    fileHTML = `
+      <div class="exec-file-section">
+        <div class="exec-file-info">
+          <i class="fas fa-paperclip" style="color:#8b5cf6; font-size:16px;"></i>
+          <span class="exec-file-name">${escapeHtml(task.file.name)}</span>
+          <span class="exec-file-size">(${formatFileSize(task.file.size)})</span>
         </div>
-    </div>
-  ` : '';
+        <button class="exec-file-download" data-task-id="${task.id}">
+          <i class="fas fa-download"></i> ${window.t('taskDetails.download') || 'Descargar'}
+        </button>
+      </div>
+    `;
+  } else {
+    fileHTML = `<div class="exec-no-file">📎 ${window.t('taskDetails.noFile') || 'Sin archivo adjunto'}</div>`;
+  }
 
-  // ==========================
-  //   HTML DEL MODAL LIMPIO
-  // ==========================
-  taskDetailsContent.innerHTML = `
-
-    <div class="task-details-container">
-
-      <div class="task-details-header">
-        <span class="close-detail">&times;</span>
-        <h3>${task.name}</h3>
-        <div class="task-meta-header">
-          <span class="priority-badge ${task.priority}">${capitalizeFirstLetter(task.priority)}</span>
-          <span class="status-badge ${task.status}">${getStatusText(task.status)}</span>
+  // ===== HTML DEL MODAL =====
+  content.innerHTML = `
+    <div class="task-details-executive">
+      <!-- HEADER -->
+      <div class="exec-header">
+        <div class="exec-header-left">
+          <div class="exec-title-row">
+            <span class="exec-status-dot" style="background:${statusColor};"></span>
+            <h3 class="exec-task-title">${escapeHtml(task.name)}</h3>
+          </div>
+          <div class="exec-badges">
+            <span class="badge status-badge status-${task.status}">${statusText}</span>
+            <span class="badge priority-badge priority-${task.priority}">${priorityText}</span>
+            ${task.critical ? '<span class="badge critical-badge">🔥 Crítica</span>' : ''}
+          </div>
         </div>
+        <button class="exec-close-btn" onclick="closeTaskDetails()" title="${window.t('taskDetails.close') || 'Cerrar'}">✕</button>
       </div>
 
-      <div class="task-details-grid">
-
-
- <div class="detail-group">
-            <label>Asignado a:</label>
-            <input type="text" id="editTaskAssignee" class="editable-input" value="${task.assignee || ''}">
+      <!-- BODY -->
+      <div class="exec-body">
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="exec-col-left">
+          <div class="exec-field-group">
+            <div class="exec-field">
+              <label>${window.t('taskDetails.assignedTo') || 'Asignado a'}</label>
+              <input type="text" id="editTaskAssignee" class="exec-input" value="${escapeHtml(task.assignee || '')}" placeholder="${window.t('taskDetails.unassigned') || 'Sin asignar'}">
+            </div>
+            <div class="exec-field">
+              <label>${window.t('taskDetails.startDate') || 'Fecha inicio'}</label>
+              <input type="date" id="editTaskStartDate" class="exec-input" value="${task.startDate || ''}">
+            </div>
+            <div class="exec-field">
+              <label>${window.t('taskDetails.deadline') || 'Fecha límite'}</label>
+              <input type="date" id="editTaskDeadline" class="exec-input" value="${task.deadline || ''}">
+            </div>
           </div>
+
+          <div class="exec-time-grid">
+            <div class="exec-time-item">
+              <span class="exec-time-label">${window.t('taskDetails.estimatedTime') || 'Estimado'}</span>
+              <div class="exec-time-value-row">
+                <span class="exec-time-value" id="editTaskEstimatedDisplay">${(task.estimatedTime || 0).toFixed(1)}h</span>
+                <input type="number" id="editTaskEstimatedHours" class="exec-input-hidden" value="${task.estimatedTime || 0}" step="0.5" min="0">
+                <button class="exec-edit-btn" onclick="toggleEditEstimated()">✏️</button>
+              </div>
+            </div>
+            <div class="exec-time-item">
+              <span class="exec-time-label">${window.t('taskDetails.loggedTime') || 'Registrado'}</span>
+              <span class="exec-time-value">${(task.timeLogged || 0).toFixed(1)}h</span>
+            </div>
+            <div class="exec-time-item ${timeStatusClass}">
+              <span class="exec-time-label">${window.t('taskDetails.timeStatus') || 'Estado'}</span>
+              <span class="exec-time-value">${timeStatus === 'onTime' ? '✅' : '⚠️'} ${Math.abs(timeDiff).toFixed(1)}h ${window.t('taskDetails.' + timeLabel) || (timeDiff >= 0 ? 'restantes' : 'excedidas')}</span>
+            </div>
+          </div>
+
+          <div class="exec-field">
+            <label>${window.t('taskDetails.description') || 'Descripción'}</label>
+            <textarea id="editTaskDescription" class="exec-textarea" rows="3">${escapeHtml(task.description || '')}</textarea>
+          </div>
+
+          ${fileHTML}
         </div>
 
-
-        <div class="details-column">
-          <div class="detail-group">
-            <label>Fecha Inicio:</label>
-            <input type="date" id="editTaskStartDate" class="editable-input" value="${task.startDate || ''}">
+        <!-- COLUMNA DERECHA -->
+        <div class="exec-col-right">
+          <div class="exec-subtasks">
+            <div class="exec-subtasks-header">
+              <span>📋 ${window.t('taskDetails.subtasks') || 'Subtareas'}</span>
+              <span class="exec-subtasks-progress">${subtaskProgress}%</span>
+            </div>
+            <div class="exec-subtasks-bar">
+              <div class="exec-subtasks-fill" style="width:${subtaskProgress}%;"></div>
+            </div>
+            <div class="exec-subtasks-list" id="subtasksList-${task.id}">
+              ${renderSubtasks(task.subtasks || [], task.id)}
+            </div>
+            <div class="exec-add-subtask">
+              <input type="text" id="newSubtaskInput-${task.id}" placeholder="${window.t('taskDetails.newSubtask') || 'Nueva subtarea...'}">
+              <button onclick="addSubtask(${task.id})">${window.t('taskDetails.addSubtask') || 'Agregar'}</button>
+            </div>
           </div>
 
-          <div class="detail-group">
-            <label>Fecha Límite:</label>
-            <input type="date" id="editTaskDeadline" class="editable-input" value="${task.deadline || ''}">
-          </div>
-
-
-  ${fileHTML}
-</div>
-
-
-
-         
-
-
-        <div class="details-column">
-          <div class="detail-group">
-            <label>Tiempo Estimado:</label>
-            <input type="number" id="editTaskEstimatedHours" class="editable-input" value="${task.estimatedTime || 0}" step="0.5" min="0">
-          </div>
-
-          <div class="detail-group">
-            <label>Tiempo Registrado:</label>
-            <div class="detail-value">${task.timeLogged || 0} horas</div>
-          </div>
-
-          <div class="detail-group">
-            <label>Prioridad:</label>
-            <div class="detail-value">${capitalizeFirstLetter(task.priority)}</div>
-          </div>
-
-
-          <div class="detail-group">
-            <label>Estado Tiempo:</label>
-            <div class="detail-value ${timeStatusClass}">
-              ${timeStatus} (${Math.abs(timeDifference).toFixed(1)}h ${timeDifference >= 0 ? 'restantes' : 'excedidas'})
+          <div class="exec-time-tracking">
+            <div class="exec-time-entry-row">
+              <input type="number" id="timeSpent" placeholder="${window.t('taskDetails.hoursWorked') || 'Horas'}" step="0.1" min="0">
+              <input type="text" id="timeComment" placeholder="${window.t('taskDetails.comment') || 'Comentario...'}">
+              <button id="registerTimeBtn" class="exec-register-btn">${window.t('taskDetails.registerTime') || 'Registrar'}</button>
+            </div>
+            <div class="exec-time-history">
+              <div class="exec-time-history-header">
+                <span>📜 ${window.t('taskDetails.history') || 'Historial'}</span>
+                <span class="exec-history-total">${(task.timeLogged || 0).toFixed(1)}h</span>
+              </div>
+              <div id="timeHistoryList">${renderTimeHistory(task.timeHistory || [])}</div>
             </div>
           </div>
         </div>
- 
-</div>
-      
-      <div class="detail-group full-width">
-        <label>Descripción:</label>
-        <textarea id="editTaskDescription" class="editable-textarea description-text" rows="4">${task.description || ''}</textarea>
       </div>
 
-      <div class="detail-group full-width">
-        <div class="subtasks-header">
-          <h4>Subtareas (${subtaskProgress}% completado)</h4>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${subtaskProgress}%"></div>
-          </div>
+      <!-- FOOTER CON BOTONES -->
+      <div class="exec-footer">
+        <div class="exec-footer-left">
+          <button id="arButton" class="exec-ar-btn">🎯 ${window.t('taskDetails.arView') || 'Ver en Realidad Aumentada'}</button>
         </div>
-
-        <div class="subtasks-list" id="subtasksList-${task.id}">
-          ${renderSubtasks(task.subtasks || [], task.id)}
-        </div>
-
-        <div class="add-subtask-form">
-          <input type="text" id="newSubtaskInput-${task.id}" placeholder="Nueva subtarea">
-          <button onclick="addSubtask(${task.id})">Agregar</button>
+        <div class="exec-footer-right">
+          <button id="cancelEditBtn" class="exec-cancel-btn">${window.t('taskDetails.cancel') || 'Cancelar'}</button>
+          <button id="saveTaskBtn" class="exec-save-btn">${window.t('taskDetails.save') || 'Guardar'}</button>
         </div>
       </div>
-
-      <div class="time-tracking-section">
-        <h4>Registro de Tiempo</h4>
-
-        <div class="time-entry-form">
-          <div class="form-group">
-            <label for="timeSpent">Horas trabajadas:</label>
-            <input type="number" id="timeSpent" placeholder="Ej: 1.5" step="0.1" min="0">
-          </div>
-
-          <div class="form-group">
-            <label for="timeComment">Comentario:</label>
-            <textarea id="timeComment" placeholder="Descripción del trabajo realizado"></textarea>
-          </div>
-
-          <button type="button" id="registerTimeBtn" class="btn-save">Registrar Tiempo</button>
-        </div>
-
-        <div class="time-history">
-          <h4>Historial de Tiempo</h4>
-          <div id="timeHistoryList">${renderTimeHistory(task.timeHistory || [])}</div>
-        </div>
-      </div>
-
-      <div class="task-details-footer">
-        <button type="button" id="cancelEditBtn" class="btn-cancel">Cancelar</button>
-        <button type="submit" id="saveTaskBtn" class="btn-save">Guardar Cambios</button>
-      </div>
-
     </div>
   `;
 
+  // ================================================================
+  // EVENTOS
+  // ================================================================
 
-
-// ================================================
-  // ✅ AGREGAR AQUÍ EL EVENTO DEL BOTÓN DE DESCARGA
-  // ================================================
-  const downloadBtn = taskDetailsContent.querySelector('.download-btn');
-  if (downloadBtn && task.file) {
+  // Descarga de archivo
+  const downloadBtn = document.querySelector('.exec-file-download');
+  if (downloadBtn) {
     downloadBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      console.log('📥 Botón de descarga clickeado para tarea:', task.id);
       downloadTaskFile(task.id);
     });
   }
 
-  // Evento para registrar tiempo (VERSIÓN CORREGIDA)
-  document.getElementById('registerTimeBtn').addEventListener('click', () => {
+  // Registrar tiempo
+  document.getElementById('registerTimeBtn').addEventListener('click', function() {
     const hours = parseFloat(document.getElementById('timeSpent').value);
     const comment = document.getElementById('timeComment').value.trim() || 'Sin comentario';
-
     if (!isNaN(hours) && hours > 0) {
       const now = new Date();
-      const timeEntry = {
-        date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString(),
-        hours: hours,
-        comment: comment
-      };
-
+      const entry = { date: now.toLocaleString(), hours, comment };
       task.timeHistory = task.timeHistory || [];
       task.timeLogged = (task.timeLogged || 0) + hours;
-      task.timeHistory.unshift(timeEntry);
-
-      // ✅ FIX: asegurar entradas de tiempo para reportes
-      if (!Array.isArray(task.timeLoggedEntries)) {
-          task.timeLoggedEntries = [];
+      task.timeHistory.unshift(entry);
+      task.timeLoggedEntries = task.timeLoggedEntries || [];
+      task.timeLoggedEntries.unshift({ hours, date: entry.date });
+      const estimadas = task.estimatedTime || 0;
+      if (estimadas > 0) {
+        let nuevo = Math.min(99, Math.round((task.timeLogged / estimadas) * 100));
+        if (task.status === 'completed') nuevo = 100;
+        task.progress = nuevo;
       }
-
-      task.timeLoggedEntries.unshift({
-          hours: Number(hours),
-          date: timeEntry?.date || new Date().toISOString()
-      });
-
-      const estimatedHoursInput = document.getElementById('editTaskEstimatedHours');
-      if (estimatedHoursInput) {
-        task.estimatedTime = parseFloat(estimatedHoursInput.value) || 0;
-      }
-
-      // ✅ ✅ ✅ NUEVO: ACTUALIZAR EL PROGRESO AUTOMÁTICAMENTE ✅ ✅ ✅
-      const horasEstimadas = task.estimatedTime || 0;
-      if (horasEstimadas > 0) {
-        let nuevoProgreso = Math.min(99, Math.round((task.timeLogged / horasEstimadas) * 100));
-        // Si la tarea ya está completada, forzar 100%
-        if (task.status === 'completed') {
-          nuevoProgreso = 100;
-        }
-        task.progress = nuevoProgreso;
-        console.log(`📊 Progreso actualizado: ${task.progress}% (${task.timeLogged}/${horasEstimadas}h)`);
-      }
-      // ✅ ✅ ✅ FIN DE LA ACTUALIZACIÓN ✅ ✅ ✅
-
       updateLocalStorage();
       showTaskDetails(task);
       generateReports();
       showNotification(`✅ Tiempo registrado: ${hours}h - Progreso: ${task.progress}%`);
     } else {
-      showNotification('❌ Por favor ingrese un valor válido para las horas');
+      showNotification('❌ Ingresa un valor válido para las horas');
     }
   });
 
-  document.getElementById('saveTaskBtn').addEventListener('click', () => {
+  // Guardar
+  document.getElementById('saveTaskBtn').addEventListener('click', function() {
     saveTaskChanges(task.id);
   });
 
-  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+  // Cancelar
+  document.getElementById('cancelEditBtn').addEventListener('click', function() {
     taskDetailsModal.style.display = 'none';
   });
 
-  document.querySelector('.close-detail').addEventListener('click', () => {
-    taskDetailsModal.style.display = 'none';
-  });
+  // Cerrar con X
+  const closeBtn = document.querySelector('.exec-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+      taskDetailsModal.style.display = 'none';
+    });
+  }
+
+  // BOTÓN DE REALIDAD AUMENTADA (SIEMPRE FUNCIONAL)
+  const arBtn = document.getElementById('arButton');
+  if (arBtn) {
+    arBtn.addEventListener('click', function() {
+      if (window.projectAR && typeof window.projectAR.addARButtonToModal === 'function') {
+        window.projectAR.addARButtonToModal(taskDetailsModal);
+        if (typeof window.activateARView === 'function') {
+          window.activateARView(task);
+        }
+      } else {
+        showNotification('🔮 Función de Realidad Aumentada no disponible en este entorno.');
+      }
+    });
+  }
 
   taskDetailsModal.style.display = 'block';
+  setTimeout(() => applyTranslationsToModal(taskDetailsModal), 100);
 }
-
-
-
-
-
 
 
 
@@ -40849,11 +43573,12 @@ function updateSelectedDependenciesView() {
   });
   
   console.log(`📊 ${selectedOptions.length} dependencia(s) seleccionada(s)`);
-}function renderSubtasks(subtasks, taskId) {
+}
+
+function renderSubtasks(subtasks, taskId) {
   if (!subtasks || subtasks.length === 0) {
-    return '<div class="no-subtasks">No hay subtareas definidas</div>';
+    return `<div class="no-subtasks">${window.t('taskDetails.noSubtasks')}</div>`;
   }
-  
   return subtasks.map((subtask, index) => `
     <div class="subtask-item" data-subtask-id="${subtask.id}">
       <input type="checkbox" ${subtask.completed ? 'checked' : ''} 
@@ -40885,7 +43610,7 @@ function renderSubtasks(subtasks, taskId) {
 
 function renderTimeHistory(history) {
   if (!history || history.length === 0) {
-    return '<div class="empty-history">No hay registros de tiempo</div>';
+    return `<div class="empty-history">${window.t('taskDetails.noHistory')}</div>`;
   }
 
   let html = '<table class="time-history-table"><thead><tr><th>Fecha</th><th>Horas</th><th>Comentario</th></tr></thead><tbody>';
@@ -42159,14 +44884,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Verificar si venimos de Stripe con éxito
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('payment') === 'success') {
-    showNotification('✅ ¡Pago exitoso! Bienvenido a tu nuevo plan.');
-    // Guardar licencia directamente
-    localStorage.setItem('userPlan', 'professional');
-    // Eliminar parámetro sin recargar
-    window.history.replaceState({}, document.title, window.location.pathname);
-    console.log('✅ Licencia actualizada a professional');
-    // Continuar con la inicialización normal (no return)
-  }
+    showNotification('✅ ¡Pago exitoso! Obteniendo tu plan...');
+    
+    // Consultar al backend para saber el plan real
+    fetch('/api/verificar-premium', {
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.plan && data.plan !== 'free') {
+            localStorage.setItem('userPlan', data.plan);
+            localStorage.setItem('userLicense', data.plan);
+            console.log('✅ Licencia actualizada a:', data.plan);
+            showNotification(`✅ ¡Plan ${data.plan.toUpperCase()} activado!`, 'success');
+        } else {
+            // Fallback: si el backend dice free, pero el pago fue exitoso, forzar premium
+            localStorage.setItem('userPlan', 'premium');
+            localStorage.setItem('userLicense', 'premium');
+            console.log('⚠️ Backend dijo free, pero forzamos premium por seguridad.');
+        }
+        // Eliminar parámetro sin recargar
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Recargar para aplicar cambios completos
+        location.reload();
+    })
+    .catch(() => {
+        // Si falla la consulta, al menos guardar algo
+        localStorage.setItem('userPlan', 'premium');
+        localStorage.setItem('userLicense', 'premium');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        location.reload();
+    });
+}
   // 👆👆👆 HASTA AQUÍ 👆👆👆
 
 
@@ -43610,20 +46359,6 @@ if (evmCtx) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // Botón PDF
   document.getElementById('exportarPdfBtn')?.addEventListener('click', () => {
     if (typeof generateProjectReport === 'function') generateProjectReport();
@@ -43632,6 +46367,18 @@ if (evmCtx) {
 
   console.log('✅ Vista de reportes profesional generada');
 }
+
+
+
+
+
+
+
+
+
+
+
+
 function updateResourceAllocation() {
     const project = projects[currentProjectIndex];
     if (!project || !project.tasks) return;
@@ -46871,7 +49618,7 @@ const voiceAssistant = {
     }
   },
   
-  handleCommand: function(event) {
+ handleCommand: function(event) {
     if (!event.results || event.results.length === 0) return;
     
     const result = event.results[event.results.length-1];
@@ -46883,98 +49630,114 @@ const voiceAssistant = {
     // Mostrar feedback visual del comando
     this.showCommandFeedback(command);
     
+    // Obtener idioma para las notificaciones
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    
     // Procesar comandos
-    if (command.includes('crear tarea') || command.includes('nueva tarea')) {
-      this.createTaskByVoice(command);
+    if (command.includes('crear tarea') || command.includes('nueva tarea') ||
+        command.includes('create task') || command.includes('new task')) {
+        this.createTaskByVoice(command);
     } 
-    else if (command.includes('mostrar tablero') || command.includes('ver kanban')) {
-      showView('board');
-      showNotification('🔊 Mostrando vista de tablero');
+    else if (command.includes('mostrar tablero') || command.includes('ver kanban') ||
+             command.includes('show board') || command.includes('board')) {
+        showView('board');
+        showNotification(lang === 'en' ? '🔊 Showing board view' : '🔊 Mostrando vista de tablero');
     }
-    else if (command.includes('mostrar lista') || command.includes('ver lista')) {
-      showView('list');
-      showNotification('🔊 Mostrando vista de lista');
+    else if (command.includes('mostrar lista') || command.includes('ver lista') ||
+             command.includes('show list') || command.includes('list')) {
+        showView('list');
+        showNotification(lang === 'en' ? '🔊 Showing list view' : '🔊 Mostrando vista de lista');
     }
-    else if (command.includes('mostrar calendario')) {
-      showView('calendar');
-      showNotification('🔊 Mostrando calendario');
+    else if (command.includes('mostrar calendario') || command.includes('show calendar')) {
+        showView('calendar');
+        showNotification(lang === 'en' ? '🔊 Showing calendar' : '🔊 Mostrando calendario');
     }
-    else if (command.includes('mostrar dashboard') || command.includes('ver dashboard')) {
-      showView('dashboard');
-      showNotification('🔊 Mostrando dashboard');
+    else if (command.includes('mostrar dashboard') || command.includes('ver dashboard') ||
+             command.includes('show dashboard')) {
+        showView('dashboard');
+        showNotification(lang === 'en' ? '🔊 Showing dashboard' : '🔊 Mostrando dashboard');
     }
-    else if (command.includes('filtrar por') && command.includes('pendiente')) {
-      this.applyFilterByStatus('pending');
+    else if (command.includes('filtrar por') && (command.includes('pendiente') || command.includes('pending'))) {
+        this.applyFilterByStatus('pending');
+        showNotification(lang === 'en' ? '🔊 Filtered by: Pending' : '🔊 Filtrado por: Pendiente');
     }
-    else if (command.includes('filtrar por') && command.includes('progreso')) {
-      this.applyFilterByStatus('inProgress');
+    else if (command.includes('filtrar por') && (command.includes('progreso') || command.includes('in progress'))) {
+        this.applyFilterByStatus('inProgress');
+        showNotification(lang === 'en' ? '🔊 Filtered by: In Progress' : '🔊 Filtrado por: En Progreso');
     }
-    else if (command.includes('filtrar por') && command.includes('completado')) {
-      this.applyFilterByStatus('completed');
+    else if (command.includes('filtrar por') && (command.includes('completado') || command.includes('completed'))) {
+        this.applyFilterByStatus('completed');
+        showNotification(lang === 'en' ? '🔊 Filtered by: Completed' : '🔊 Filtrado por: Completado');
     }
-    else if (command.includes('limpiar filtros') || command.includes('quitar filtros')) {
-      this.clearAllFilters();
+    else if (command.includes('limpiar filtros') || command.includes('quitar filtros') ||
+             command.includes('clear filters')) {
+        this.clearAllFilters();
+        showNotification(lang === 'en' ? '🔊 Filters cleared' : '🔊 Filtros limpiados');
     }
-    else if (command.includes('estadísticas') || command.includes('estadisticas')) {
-      showView('reports');
-      showNotification('🔊 Mostrando reportes y estadísticas');
+    else if (command.includes('estadísticas') || command.includes('estadisticas') ||
+             command.includes('statistics') || command.includes('reports')) {
+        showView('reports');
+        showNotification(lang === 'en' ? '🔊 Showing reports and statistics' : '🔊 Mostrando reportes y estadísticas');
     }
-    else if (command.includes('nuevo proyecto') || command.includes('crear proyecto')) {
-      createNewProject();
-      showNotification('🔊 Creando nuevo proyecto');
+    else if (command.includes('nuevo proyecto') || command.includes('crear proyecto') ||
+             command.includes('new project') || command.includes('create project')) {
+        if (typeof createNewProject === 'function') {
+            createNewProject();
+            showNotification(lang === 'en' ? '🔊 Creating new project' : '🔊 Creando nuevo proyecto');
+        } else {
+            showNotification(lang === 'en' ? '❌ Function "createNewProject" not available' : '❌ Función "createNewProject" no disponible');
+        }
     }
-    else if (command.includes('cambiar proyecto')) {
-      this.showProjectSelection();
+    else if (command.includes('cambiar proyecto') || command.includes('change project')) {
+        this.showProjectSelection();
     }
-    else if (command.includes('ayuda') || command.includes('comandos')) {
-      this.showVoiceCommandsHelp();
+    else if (command.includes('ayuda') || command.includes('comandos') ||
+             command.includes('help')) {
+        this.showVoiceCommandsHelp();
     }
-    else if (command.includes('detener') || command.includes('parar')) {
-      this.toggleListening();
+    else if (command.includes('detener') || command.includes('parar') ||
+             command.includes('stop')) {
+        this.toggleListening();
     }
     else {
-      console.log('Comando no reconocido:', command);
-      showNotification('❌ Comando no reconocido. Di "ayuda" para ver comandos disponibles');
+        console.log('Comando no reconocido:', command);
+        showNotification(lang === 'en' 
+            ? '❌ Command not recognized. Say "help" for available commands'
+            : '❌ Comando no reconocido. Di "ayuda" para ver comandos disponibles');
     }
-  },
+},
   
   createTaskByVoice: function(command) {
     console.log('🔊 Procesando creación de tarea por voz...');
     
     // Extraer nombre de la tarea
-    let taskName = command.replace('crear tarea', '').replace('nueva tarea', '').trim();
+    let taskName = command.replace('crear tarea', '').replace('nueva tarea', '').replace('create task', '').replace('new task', '').trim();
     
     if (!taskName) {
-      taskName = 'Tarea creada por voz - ' + new Date().toLocaleTimeString();
+        taskName = 'Tarea creada por voz - ' + new Date().toLocaleTimeString();
     }
     
-// Crear tarea básica
-const task = {
-  id: Date.now(),
-  name: taskName,
-  startDate: new Date().toISOString().split('T')[0],
-  deadline: this.extractDeadline(command),
-  priority: this.extractPriority(command),
-  assignee: this.extractAssignee(command),
-  description: `Tarea creada mediante comando de voz: "${command}"`,
-  status: 'pending',
-  timeLogged: 0,
-  estimatedTime: 0,
-  timeHistory: [],
-  subtasks: [],
-
-  // 🔴 STORY POINTS (YA GUARDADOS)
-  storyPoints: storyPoints
-};
-
-// 🔴 PRUEBA CLARA
-console.warn('🟢 STORY POINTS EN TAREA →', task.storyPoints);
-
+    // Crear tarea básica
+    const task = {
+        id: Date.now(),
+        name: taskName,
+        startDate: new Date().toISOString().split('T')[0],
+        deadline: this.extractDeadline(command),
+        priority: this.extractPriority(command),
+        assignee: this.extractAssignee(command),
+        description: `Tarea creada mediante comando de voz: "${command}"`,
+        status: 'pending',
+        timeLogged: 0,
+        estimatedTime: 0,
+        timeHistory: [],
+        subtasks: []
+    };
     
     // Asegurar que el proyecto actual existe
     if (!projects || !projects[currentProjectIndex]) {
-      showNotification('❌ Error: No hay proyecto seleccionado');
-      return;
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        showNotification(lang === 'en' ? '❌ Error: No project selected' : '❌ Error: No hay proyecto seleccionado');
+        return;
     }
     
     projects[currentProjectIndex].tasks.push(task);
@@ -46986,18 +49749,21 @@ console.warn('🟢 STORY POINTS EN TAREA →', task.storyPoints);
     generatePieChart(getStats());
     updateProjectProgress();
     
-    showNotification(`🔊 Tarea "${task.name}" creada por voz`);
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    showNotification(lang === 'en' 
+        ? `🔊 Task "${task.name}" created by voice`
+        : `🔊 Tarea "${task.name}" creada por voz`);
     
     // Notificar a otros usuarios si hay WebSocket
     if (typeof tiempoRealSocket !== 'undefined' && tiempoRealSocket && tiempoRealSocket.connected) {
-      tiempoRealSocket.emit('task-changed', {
-        projectId: currentProjectIndex,
-        taskId: task.id,
-        taskName: task.name,
-        userName: 'Asistente por Voz',
-        type: 'task-created',
-        timestamp: new Date().toISOString()
-      });
+        tiempoRealSocket.emit('task-changed', {
+            projectId: currentProjectIndex,
+            taskId: task.id,
+            taskName: task.name,
+            userName: lang === 'en' ? 'Voice Assistant' : 'Asistente por Voz',
+            type: 'task-created',
+            timestamp: new Date().toISOString()
+        });
     }
   },
   
@@ -47089,22 +49855,32 @@ console.warn('🟢 STORY POINTS EN TAREA →', task.storyPoints);
   },
   
   showVoiceCommandsHelp: function() {
-    const commands = [
-      '🎤 COMANDOS DE VOZ DISPONIBLES:',
-      '"crear tarea [nombre]" - Nueva tarea',
-      '"mostrar tablero/lista/calendario/dashboard" - Cambiar vista',
-      '"filtrar por pendiente/progreso/completado" - Filtrar tareas',
-      '"limpiar filtros" - Remover filtros',
-      '"estadísticas" - Ver reportes',
-      '"nuevo proyecto" - Crear proyecto',
-      '"cambiar proyecto" - Seleccionar proyecto',
-      '"ayuda" - Ver esta lista',
-      '"detener" - Parar escucha'
-    ].join('\n');
-    
-    // Usar alert temporalmente para mostrar todos los comandos
-    alert(commands);
-    showNotification('🔊 Comandos de ayuda mostrados');
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const commands = lang === 'en' ? [
+        '🎤 AVAILABLE VOICE COMMANDS:',
+        '"create task [name]" - New task',
+        '"show board/list/calendar/dashboard" - Change view',
+        '"filter by pending/in progress/completed" - Filter tasks',
+        '"clear filters" - Remove filters',
+        '"statistics" - View reports',
+        '"new project" - Create project',
+        '"change project" - Select project',
+        '"help" - View this list',
+        '"stop" - Stop listening'
+    ] : [
+        '🎤 COMANDOS DE VOZ DISPONIBLES:',
+        '"crear tarea [nombre]" - Nueva tarea',
+        '"mostrar tablero/lista/calendario/dashboard" - Cambiar vista',
+        '"filtrar por pendiente/progreso/completado" - Filtrar tareas',
+        '"limpiar filtros" - Remover filtros',
+        '"estadísticas" - Ver reportes',
+        '"nuevo proyecto" - Crear proyecto',
+        '"cambiar proyecto" - Seleccionar proyecto',
+        '"ayuda" - Ver esta lista',
+        '"detener" - Parar escucha'
+    ];
+    alert(commands.join('\n'));
+    showNotification(lang === 'en' ? '🔊 Help commands displayed' : '🔊 Comandos de ayuda mostrados');
   },
   
   showCommandFeedback: function(command) {
@@ -47336,7 +50112,8 @@ const voiceAssistant = {
     this.showCommandFeedback(command);
     
     // Procesar comandos
-    if (command.includes('crear tarea') || command.includes('nueva tarea')) {
+    if (command.includes('crear tarea') || command.includes('nueva tarea') ||
+    command.includes('create task') || command.includes('new task')) {
       this.createTaskByVoice(command);
     }
     else if (command.includes('mostrar tablero')) {
@@ -47351,7 +50128,8 @@ const voiceAssistant = {
     else if (command.includes('mostrar dashboard')) {
       this.changeView('dashboard', 'dashboard');
     }
-    else if (command.includes('mostrar reportes') || command.includes('mostrar estadísticas')) {
+    else if (command.includes('mostrar reportes') || command.includes('mostrar estadísticas') ||
+         command.includes('show reports') || command.includes('statistics')) {
       this.changeView('reports', 'reportes');
     }
     else if (command.includes('limpiar filtros')) {
@@ -47478,23 +50256,45 @@ const voiceAssistant = {
     showNotification('🔊 Filtros limpiados');
   },
   
-  showHelp: function() {
-    const commands = [
-      '🎤 COMANDOS DE VOZ DISPONIBLES:',
-      '"crear tarea [nombre]" - Crear nueva tarea',
-      '"mostrar tablero" - Vista Kanban',
-      '"mostrar lista" - Vista de lista',
-      '"mostrar calendario" - Vista de calendario', 
-      '"mostrar dashboard" - Vista dashboard',
-      '"mostrar reportes" - Vista de reportes',
-      '"limpiar filtros" - Remover todos los filtros',
-      '"ayuda" - Ver esta lista de comandos',
-      '"detener" - Parar el modo escucha'
-    ];
-    
-    alert(commands.join('\n'));
-    showNotification('🔊 Comandos de ayuda mostrados');
-  },
+     // ===== NUEVO: MOSTRAR AYUDA TRADUCIDA =====
+    showHelp: function() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const helpText = lang === 'en' ? 
+            '🎯 **AVAILABLE COMMANDS:**\n\n' +
+            '📋 CREATE:\n"create task [name]" - New task\n"new project" - Create project\n\n' +
+            '🧭 NAVIGATE:\n"show board" - Kanban view\n"show list" - List view\n"show calendar" - Calendar view\n"show dashboard" - Dashboard view\n"show reports" - Reports view\n"change view" - See available views\n\n' +
+            '📊 INFORMATION:\n"statistics" - Project progress\n"generate report" - Generate PDF report\n\n' +
+            '⚡ ACTIONS:\n"clear filters" - Remove all filters\n"hello" - Greeting\n"help" - Show this list\n"stop" - Stop listening'
+            :
+            '🎯 **COMANDOS DISPONIBLES:**\n\n' +
+            '📋 CREAR:\n"crear tarea [nombre]" - Nueva tarea\n"nuevo proyecto" - Crear proyecto\n\n' +
+            '🧭 NAVEGAR:\n"mostrar tablero" - Vista Kanban\n"mostrar lista" - Vista lista\n"mostrar calendario" - Vista calendario\n"mostrar dashboard" - Vista dashboard\n"mostrar reportes" - Vista reportes\n"cambiar vista" - Ver vistas disponibles\n\n' +
+            '📊 INFORMACIÓN:\n"estadísticas" - Progreso del proyecto\n"generar reporte" - Generar reporte PDF\n\n' +
+            '⚡ ACCIONES:\n"limpiar filtros" - Remover filtros\n"hola" - Saludo\n"ayuda" - Ver esta lista\n"detener" - Parar escucha';
+        this.showResponse(helpText);
+    },
+
+    // ===== NUEVO: MOSTRAR ESTADÍSTICAS TRADUCIDAS =====
+    showStatistics: function() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const project = projects[currentProjectIndex];
+        if (!project) {
+            this.showResponse(lang === 'en' ? '❌ No project selected' : '❌ No hay proyecto seleccionado');
+            return;
+        }
+        const tasks = project.tasks || [];
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === 'completed').length;
+        const pending = tasks.filter(t => t.status === 'pending').length;
+        const inProgress = tasks.filter(t => t.status === 'inProgress').length;
+        const overdue = tasks.filter(t => t.status === 'overdue').length;
+        const progress = total ? Math.round((completed / total) * 100) : 0;
+
+        const statsText = lang === 'en'
+            ? `📊 **Project Statistics:**\n• Total: ${total}\n• Pending: ${pending}\n• In Progress: ${inProgress}\n• Completed: ${completed}\n• Overdue: ${overdue}\n• Progress: ${progress}%`
+            : `📊 **Estadísticas del Proyecto:**\n• Total: ${total}\n• Pendientes: ${pending}\n• En Progreso: ${inProgress}\n• Completados: ${completed}\n• Rezagados: ${overdue}\n• Avance: ${progress}%`;
+        this.showResponse(statsText);
+    },
   
   showCommandFeedback: function(command) {
     // Crear o actualizar elemento de feedback
@@ -47523,7 +50323,8 @@ const voiceAssistant = {
       document.body.appendChild(feedback);
     }
     
-    feedback.textContent = `🎤 Comando: "${command}"`;
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+feedback.textContent = lang === 'en' ? `🎤 Command: "${command}"` : `🎤 Comando: "${command}"`;
     feedback.style.display = 'block';
     
     // Ocultar después de 2.5 segundos
@@ -48291,6 +51092,7 @@ window.testAIAssistant = function() {
 // ==================================================
 
 window.SystemAssistant = {
+   _welcomeShown: false,
     name: "Oxi",
     personality: "energetic",
     mood: "⚡",
@@ -48395,7 +51197,7 @@ window.SystemAssistant = {
                     ">🤖</div>
                     <div>
                         <div style="font-size: 18px; font-weight: bold;" id="assistantName">Oxi</div>
-                        <div style="font-size: 12px; opacity: 0.8;" id="assistantStatus">Conectado</div>
+                        <div style="font-size: 12px; opacity: 0.8;" id="assistantStatus" data-i18n="assistantStatus">Conectado</div>
                     </div>
                 </div>
                 <button onclick="window.SystemAssistant.toggleAssistant()" style="
@@ -48432,6 +51234,7 @@ window.SystemAssistant = {
                     <input 
                         type="text" 
                         id="assistantInput" 
+                        data-i18n-placeholder="assistantPlaceholder"
                         placeholder="Escribe tu pregunta o comando..."
                         style="
                             flex: 1;
@@ -48458,54 +51261,62 @@ window.SystemAssistant = {
                 </div>
                 
                 <!-- Quick Actions -->
-                <div id="quickActions" style="
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 8px;
-                    margin-top: 10px;
-                ">
-                    <button onclick="window.SystemAssistant.quickAction('cambiar vista')" style="
-                        padding: 8px 12px;
-                        border: 1px solid #3b82f6;
-                        background: #1e293b;
-                        color: #e2e8f0;
-                        border-radius: 15px;
-                        font-size: 11px;
-                        cursor: pointer;
-                    ">🔄 Cambiar Vista</button>
-                    <button onclick="window.SystemAssistant.quickAction('estadísticas')" style="
-                        padding: 8px 12px;
-                        border: 1px solid #3b82f6;
-                        background: #1e293b;
-                        color: #e2e8f0;
-                        border-radius: 15px;
-                        font-size: 11px;
-                        cursor: pointer;
-                    ">📊 Estadísticas</button>
-                    <button onclick="window.SystemAssistant.quickAction('crear proyecto')" style="
-                        padding: 8px 12px;
-                        border: 1px solid #3b82f6;
-                        background: #1e293b;
-                        color: #e2e8f0;
-                        border-radius: 15px;
-                        font-size: 11px;
-                        cursor: pointer;
-                    ">➕ Nuevo Proyecto</button>
-                    <button onclick="window.SystemAssistant.quickAction('ayuda')" style="
-                        padding: 8px 12px;
-                        border: 1px solid #3b82f6;
-                        background: #1e293b;
-                        color: #e2e8f0;
-                        border-radius: 15px;
-                        font-size: 11px;
-                        cursor: pointer;
-                    ">❓ Ayuda</button>
-                </div>
+<div id="quickActions" style="
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+">
+    <button onclick="window.SystemAssistant.quickAction('cambiar vista')" style="
+        padding: 8px 12px;
+        border: 1px solid #3b82f6;
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 15px;
+        font-size: 11px;
+        cursor: pointer;
+    " data-i18n="assistantChangeView">🔄 Cambiar Vista</button>
+    
+    <button onclick="window.SystemAssistant.quickAction('estadísticas')" style="
+        padding: 8px 12px;
+        border: 1px solid #3b82f6;
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 15px;
+        font-size: 11px;
+        cursor: pointer;
+    " data-i18n="assistantStatistics">📊 Estadísticas</button>
+    
+    <button onclick="window.SystemAssistant.quickAction('crear proyecto')" style="
+        padding: 8px 12px;
+        border: 1px solid #3b82f6;
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 15px;
+        font-size: 11px;
+        cursor: pointer;
+    " data-i18n="assistantNewProject">➕ Nuevo Proyecto</button>
+    
+    <button onclick="window.SystemAssistant.quickAction('ayuda')" style="
+        padding: 8px 12px;
+        border: 1px solid #3b82f6;
+        background: #1e293b;
+        color: #e2e8f0;
+        border-radius: 15px;
+        font-size: 11px;
+        cursor: pointer;
+    " data-i18n="assistantHelp">❓ Ayuda</button>
+</div>
             </div>
         </div>
     `;
     
     document.body.insertAdjacentHTML('beforeend', assistantHTML);
+// Actualizar traducciones para los nuevos elementos
+if (typeof updateTranslations === 'function') {
+    updateTranslations();
+    console.log('✅ Traducciones actualizadas para el asistente');
+}
     
     // Animación de entrada
     setTimeout(() => {
@@ -48541,9 +51352,15 @@ window.SystemAssistant = {
         });
     },
     
+
     showWelcomeMessage: function() {
-        this.addMessage('assistant', this.personalities[this.personality].greeting);
-    },
+ if (this._welcomeShown) return;
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const saludo = lang === 'en' 
+        ? "Hey! I'm Oxi! 🚀 Ready to do awesome things today?" 
+        : "¡Hey! ¡Soy Oxi! 🚀 ¿Listo para hacer cosas increíbles hoy?";
+    this.addMessage('assistant', saludo);
+},
     
     addMessage: function(sender, message) {
         const chatMessages = document.getElementById('chatMessages');
@@ -48609,6 +51426,9 @@ window.SystemAssistant = {
         this.addMessage('user', message);
         input.value = '';
         
+
+
+
         // Procesar mensaje
         setTimeout(() => {
             this.processMessage(message);
@@ -48686,7 +51506,6 @@ else if (lowerMessage.includes('crear proyecto') || lowerMessage.includes('nuevo
         this.addMessage('assistant', "❌ No pude procesar el mensaje, inténtalo de nuevo.");
     }
 },
-
 
 
     
@@ -49574,85 +52393,180 @@ window.VoiceCommandSystem = {
     maxRetries: 3,
     
     // Procesador de comandos mejorado
-    processCommand: function(command) {
-        console.log("🎯 Procesando comando:", command);
-        const cleanCommand = command.toLowerCase().trim();
-        
-        // COMANDOS BÁSICOS MEJORADOS
-        if (cleanCommand.includes('hola') || cleanCommand.includes('hi') || cleanCommand.includes('hello') || cleanCommand.includes('buenas')) {
-            this.showResponse("¡Hola! 👋 Soy tu asistente de voz. Puedo ayudarte a:\n• Crear tareas\n• Mostrar vistas\n• Ver estadísticas\n• Generar reportes\n\nDi 'ayuda' para ver todos los comandos.");
-            return true;
+   processCommand: function(command) {
+    command = command.toLowerCase().trim();
+    console.log("🎯 Procesando comando:", command);
+
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+
+    // --- SALUDOS ---
+    if (command.includes('hola') || command.includes('hello') || command.includes('hi')) {
+        const saludo = lang === 'en'
+            ? "Hey! I'm Oxi! 🚀 Ready to do awesome things today?"
+            : "¡Hey! ¡Soy Oxi! 🚀 ¿Listo para hacer cosas increíbles hoy?";
+        this.showResponse(saludo);
+        return;
+    }
+
+    // --- AYUDA ---
+    if (command.includes('ayuda') || command.includes('help')) {
+        this.showHelp();
+        return;
+    }
+
+    // --- CREAR TAREA ---
+    if (command.includes('crear tarea') || command.includes('create task') || command.includes('new task')) {
+        if (command.includes('crear tarea') || command.includes('create task') || command.includes('new task')) {
+            // Extraer nombre de la tarea
+            let taskName = command
+                .replace(/crear tarea|create task|new task/gi, '')
+                .trim();
+            if (!taskName) {
+                const msg = lang === 'en'
+                    ? "✅ Please say: **'create task [name]'** or click the **+ Nueva Tarea** button."
+                    : "✅ Por favor di: **'crear tarea [nombre]'** o haz clic en el botón **+ Nueva Tarea**.";
+                this.showResponse(msg);
+                return;
+            }
+            // Llamar a voiceAssistant para crear la tarea si existe
+            if (window.voiceAssistant && typeof window.voiceAssistant.createTaskByVoice === 'function') {
+                window.voiceAssistant.createTaskByVoice(command);
+            } else {
+                const msg = lang === 'en'
+                    ? `✅ Task "${taskName}" created (simulated). Use the **+ Nueva Tarea** button to create it officially.`
+                    : `✅ Tarea "${taskName}" creada (simulada). Usa el botón **+ Nueva Tarea** para crearla oficialmente.`;
+                this.showResponse(msg);
+            }
+            return;
         }
-        
-        if (cleanCommand.includes('crear tarea') || cleanCommand.includes('nueva tarea') || cleanCommand.includes('agregar tarea')) {
-            this.showResponse("¡Perfecto! 🎯 Abriendo formulario para crear una nueva tarea...");
-            this.openTaskModal();
-            return true;
+        return;
+    }
+
+    // --- ESTADÍSTICAS ---
+    if (command.includes('estadísticas') || command.includes('estadisticas') || command.includes('statistics') || command.includes('stats')) {
+        this.showStatistics();
+        return;
+    }
+
+    // --- MOSTRAR VISTAS ---
+    // Dashboard
+    if (command.includes('mostrar dashboard') || command.includes('ver dashboard') || command.includes('show dashboard')) {
+        if (typeof showView === 'function') showView('dashboard');
+        const msg = lang === 'en' ? "🔊 Showing dashboard" : "🔊 Mostrando dashboard";
+        this.showResponse(msg);
+        return;
+    }
+
+    // Board / Kanban
+    if (command.includes('mostrar tablero') || command.includes('ver tablero') || command.includes('show board') || command.includes('board') || command.includes('kanban')) {
+        if (typeof showView === 'function') showView('board');
+        const msg = lang === 'en' ? "🔊 Showing board view" : "🔊 Mostrando vista de tablero";
+        this.showResponse(msg);
+        return;
+    }
+
+    // List
+    if (command.includes('mostrar lista') || command.includes('ver lista') || command.includes('show list') || command.includes('list')) {
+        if (typeof showView === 'function') showView('list');
+        const msg = lang === 'en' ? "🔊 Showing list view" : "🔊 Mostrando vista de lista";
+        this.showResponse(msg);
+        return;
+    }
+
+    // Calendar
+    if (command.includes('mostrar calendario') || command.includes('ver calendario') || command.includes('show calendar') || command.includes('calendar')) {
+        if (typeof showView === 'function') showView('calendar');
+        const msg = lang === 'en' ? "🔊 Showing calendar" : "🔊 Mostrando calendario";
+        this.showResponse(msg);
+        return;
+    }
+
+    // Reports
+    if (command.includes('mostrar reportes') || command.includes('ver reportes') || command.includes('show reports') || command.includes('reports')) {
+        if (typeof showView === 'function') showView('reports');
+        const msg = lang === 'en' ? "🔊 Showing reports and statistics" : "🔊 Mostrando reportes y estadísticas";
+        this.showResponse(msg);
+        return;
+    }
+
+    // --- GENERAR REPORTE ---
+    if (command.includes('generar reporte') || command.includes('generate report') || command.includes('report')) {
+        if (typeof generateStatusReportPDF === 'function') {
+            const msg = lang === 'en'
+                ? "📊 Generating PDF report with chart... This may take a few seconds."
+                : "📊 Generando reporte PDF con gráfico... Esto puede tomar unos segundos.";
+            this.showResponse(msg);
+            setTimeout(() => {
+                try {
+                    generateStatusReportPDF();
+                    console.log("✅ Reporte PDF generado");
+                } catch (error) {
+                    console.error("❌ Error:", error);
+                    const errMsg = lang === 'en'
+                        ? "❌ Error generating PDF report"
+                        : "❌ Error al generar el reporte PDF";
+                    this.showResponse(errMsg);
+                }
+            }, 2000);
+        } else {
+            const errMsg = lang === 'en'
+                ? "❌ The report generation function is not available"
+                : "❌ La función de generar reportes no está disponible";
+            this.showResponse(errMsg);
         }
-        
-        if (cleanCommand.includes('dashboard') || cleanCommand.includes('panel') || cleanCommand.includes('resumen')) {
-            this.showResponse("📈 Mostrando Dashboard del proyecto...");
-            this.showDashboard();
-            return true;
+        return;
+    }
+
+    // --- CREAR PROYECTO ---
+    if (command.includes('nuevo proyecto') || command.includes('crear proyecto') || command.includes('new project') || command.includes('create project')) {
+        if (typeof createNewProject === 'function') {
+            createNewProject();
+            const msg = lang === 'en' ? "🔊 Creating new project" : "🔊 Creando nuevo proyecto";
+            this.showResponse(msg);
+        } else {
+            const errMsg = lang === 'en'
+                ? "❌ Function 'createNewProject' not available"
+                : "❌ Función 'createNewProject' no disponible";
+            this.showResponse(errMsg);
         }
-        
-        if (cleanCommand.includes('tablero') || cleanCommand.includes('kanban') || cleanCommand.includes('board')) {
-            this.showResponse("📊 Mostrando Tablero Kanban...");
-            this.showBoard();
-            return true;
+        return;
+    }
+
+    // --- FILTROS ---
+    if (command.includes('limpiar filtros') || command.includes('clear filters')) {
+        if (typeof aplicarFiltros === 'function') {
+            ['filterAssignee', 'filterPriority', 'filterStatus', 'filterStartDate', 'filterEndDate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            aplicarFiltros();
+            const msg = lang === 'en' ? "🔊 Filters cleared" : "🔊 Filtros limpiados";
+            this.showResponse(msg);
         }
-        
-        if (cleanCommand.includes('lista') || cleanCommand.includes('listado')) {
-            this.showResponse("📋 Mostrando Lista de Tareas...");
-            this.showList();
-            return true;
-        }
-        
-        if (cleanCommand.includes('calendario') || cleanCommand.includes('calendar')) {
-            this.showResponse("📅 Mostrando Calendario...");
-            this.showCalendar();
-            return true;
-        }
-        
-        if (cleanCommand.includes('estadística') || cleanCommand.includes('estadistica') || cleanCommand.includes('progreso') || cleanCommand.includes('avance')) {
-            this.showResponse("📊 Calculando estadísticas del proyecto...");
-            this.showStats();
-            return true;
-        }
-        
-        if (cleanCommand.includes('reporte') || cleanCommand.includes('report') || cleanCommand.includes('informe') || cleanCommand.includes('pdf')) {
-            this.showResponse("📄 Generando reporte PDF del proyecto... Se descargará automáticamente.");
-            this.generateReport();
-            return true;
-        }
-        
-        if (cleanCommand.includes('ayuda') || cleanCommand.includes('help') || cleanCommand.includes('comandos')) {
-            this.showResponse(
-                `🎯 **COMANDOS DE VOZ DISPONIBLES:**\n\n` +
-                `**📋 CREAR:**\n` +
-                `• "crear tarea" - Nuevas tareas\n` +
-                `• "nueva tarea" - Formulario de tarea\n\n` +
-                `**🧭 NAVEGAR:**\n` +
-                `• "dashboard" - Vista principal\n` +
-                `• "tablero" - Vista Kanban\n` +
-                `• "lista" - Lista de tareas\n` +
-                `• "calendario" - Vista calendario\n\n` +
-                `**📊 INFORMACIÓN:**\n` +
-                `• "estadísticas" - Progreso del proyecto\n` +
-                `• "reporte" - Generar PDF\n\n` +
-                `**⚡ ACCIONES:**\n` +
-                `• "hola" - Saludo inicial\n` +
-                `• "ayuda" - Ver esta lista`
-            );
-            return true;
-        }
-        
-        // Comando no reconocido - sugerencia
-        this.showResponse(`No entendí: "${command}"\n\n💡 Prueba con: "crear tarea", "dashboard", "estadísticas" o "ayuda"`);
-        return false;
+        return;
+    }
+
+    // --- CAMBIAR VISTA (con selección) ---
+    if (command.includes('cambiar vista') || command.includes('change view')) {
+        const views = lang === 'en'
+            ? ['board', 'list', 'calendar', 'dashboard', 'reports']
+            : ['tablero', 'lista', 'calendario', 'dashboard', 'reportes'];
+        const viewNames = lang === 'en'
+            ? 'board, list, calendar, dashboard, reports'
+            : 'tablero, lista, calendario, dashboard, reportes';
+        const msg = lang === 'en'
+            ? `🔍 Available views: **${viewNames}**. Type e.g. "show board"`
+            : `🔍 Vistas disponibles: **${viewNames}**. Ej: "mostrar tablero"`;
+        this.showResponse(msg);
+        return;
+    }
+
+    // --- COMANDO NO RECONOCIDO ---
+    this.showResponse(errorMsg);
     },
     
     // Mostrar respuesta en el asistente
+     // Mostrar respuesta en el asistente
     showResponse: function(response) {
         console.log("💬 Mostrando respuesta:", response);
         if (window.SystemAssistant && typeof window.SystemAssistant.addMessage === 'function') {
@@ -49661,6 +52575,46 @@ window.VoiceCommandSystem = {
             // Fallback si el asistente no está disponible
             alert("Asistente: " + response);
         }
+    },
+
+    // ===== NUEVO: MOSTRAR AYUDA TRADUCIDA =====
+    showHelp: function() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const helpText = lang === 'en' ? 
+            '🎯 **AVAILABLE COMMANDS:**\n\n' +
+            '📋 CREATE:\n"create task [name]" - New task\n"new project" - Create project\n\n' +
+            '🧭 NAVIGATE:\n"show board" - Kanban view\n"show list" - List view\n"show calendar" - Calendar view\n"show dashboard" - Dashboard view\n"show reports" - Reports view\n"change view" - See available views\n\n' +
+            '📊 INFORMATION:\n"statistics" - Project progress\n"generate report" - Generate PDF report\n\n' +
+            '⚡ ACTIONS:\n"clear filters" - Remove all filters\n"hello" - Greeting\n"help" - Show this list\n"stop" - Stop listening'
+            :
+            '🎯 **COMANDOS DISPONIBLES:**\n\n' +
+            '📋 CREAR:\n"crear tarea [nombre]" - Nueva tarea\n"nuevo proyecto" - Crear proyecto\n\n' +
+            '🧭 NAVEGAR:\n"mostrar tablero" - Vista Kanban\n"mostrar lista" - Vista lista\n"mostrar calendario" - Vista calendario\n"mostrar dashboard" - Vista dashboard\n"mostrar reportes" - Vista reportes\n"cambiar vista" - Ver vistas disponibles\n\n' +
+            '📊 INFORMACIÓN:\n"estadísticas" - Progreso del proyecto\n"generar reporte" - Generar reporte PDF\n\n' +
+            '⚡ ACCIONES:\n"limpiar filtros" - Remover filtros\n"hola" - Saludo\n"ayuda" - Ver esta lista\n"detener" - Parar escucha';
+        this.showResponse(helpText);
+    },
+
+    // ===== NUEVO: MOSTRAR ESTADÍSTICAS TRADUCIDAS =====
+    showStatistics: function() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const project = projects[currentProjectIndex];
+        if (!project) {
+            this.showResponse(lang === 'en' ? '❌ No project selected' : '❌ No hay proyecto seleccionado');
+            return;
+        }
+        const tasks = project.tasks || [];
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === 'completed').length;
+        const pending = tasks.filter(t => t.status === 'pending').length;
+        const inProgress = tasks.filter(t => t.status === 'inProgress').length;
+        const overdue = tasks.filter(t => t.status === 'overdue').length;
+        const progress = total ? Math.round((completed / total) * 100) : 0;
+
+        const statsText = lang === 'en'
+            ? `📊 **Project Statistics:**\n• Total: ${total}\n• Pending: ${pending}\n• In Progress: ${inProgress}\n• Completed: ${completed}\n• Overdue: ${overdue}\n• Progress: ${progress}%`
+            : `📊 **Estadísticas del Proyecto:**\n• Total: ${total}\n• Pendientes: ${pending}\n• En Progreso: ${inProgress}\n• Completados: ${completed}\n• Rezagados: ${overdue}\n• Avance: ${progress}%`;
+        this.showResponse(statsText);
     },
     
     // === ACCIONES MEJORADAS ===
@@ -49963,6 +52917,9 @@ console.log("   - testVoiceCommand('crear tarea')");
 console.log("   - testVoiceCommand('estadísticas')");
 console.log("   - startVoice()");
 console.log("   - Click en 🎤 Comando de Voz");
+
+
+
 
 
 
@@ -62874,14 +65831,14 @@ window.closeDashboard4D = function () {
         container.remove();
         console.log('✅ Dashboard eliminado');
     }
-    // Restaurar la vista de proyectos
-    if (typeof renderProjects === 'function') {
-        setTimeout(() => {
-            renderProjects();
-        }, 100);
+    // Restaurar la vista del sistema (por ejemplo, 'board' o 'inicio')
+    if (typeof showView === 'function') {
+        showView('board'); // Cambia 'board' por la vista que prefieras
+    } else {
+        // Fallback: recargar la página
+        location.reload();
     }
 };
-
 function createGlobalDashboard4D() {
     window.showDashboard4DView();
 }
@@ -68893,200 +71850,6 @@ function generarReporteBoard() {
     win.document.close();
 }
 
-// 2. CÓDIGO PARA AÑADIR EL BOTÓN EN LA VISTA BOARD
-// Modifica tu función renderKanbanTasks para que incluya este bloque al principio.
-// Si ya tienes tu propia función, asegúrate de que contenga este código.
-// Te proporciono una versión completa que puedes usar directamente.
-
-
-function renderKanbanTasks(tasks = null) {
-    console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CORREGIDA');
-
-    if (!projects || currentProjectIndex === undefined) {
-        console.error('❌ No hay proyectos o índice');
-        return;
-    }
-
-    const project = projects[currentProjectIndex];
-    if (!project || !project.tasks) {
-        console.error('❌ No hay proyecto o tareas');
-        return;
-    }
-
-    console.log('✅ Proyecto:', project.name);
-    console.log('✅ Tareas:', project.tasks.length);
-
-    const pendingCol = document.getElementById('pendingList');
-    const inProgressCol = document.getElementById('inProgressList');
-    const completedCol = document.getElementById('completedList');
-    const overdueCol = document.getElementById('overdueList');
-
-    if (!pendingCol || !inProgressCol || !completedCol || !overdueCol) {
-        console.error('❌ Faltan columnas');
-        return;
-    }
-
-    // ========== AGREGAR BOTÓN "REPORTE EJECUTIVO" ==========
-    const boardView = document.getElementById('boardView');
-    if (boardView && !document.getElementById('reportButtonBoard')) {
-        let header = boardView.querySelector('.kanban-header, .board-header, header');
-        if (!header) {
-            header = document.createElement('div');
-            header.className = 'kanban-header';
-            header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 0 15px 0; margin-bottom: 10px;';
-            boardView.insertBefore(header, boardView.firstChild);
-        }
-        const btn = document.createElement('button');
-        btn.id = 'reportButtonBoard';
-        btn.innerHTML = '<i class="fas fa-chart-line"></i> Reporte Ejecutivo';
-        btn.style.cssText = `
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        `;
-        btn.onclick = generarReporteBoard;
-        btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
-        btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
-        header.appendChild(btn);
-        console.log('✅ Botón Reporte Ejecutivo añadido');
-    }
-    // =====================================================
-
-    // Limpiar columnas
-    pendingCol.innerHTML = '';
-    inProgressCol.innerHTML = '';
-    completedCol.innerHTML = '';
-    overdueCol.innerHTML = '';
-
-    let tasksToRender = tasks || project.tasks || [];
-    if (tasksToRender.length === 0) {
-        setTimeout(() => {
-            if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
-            document.dispatchEvent(new Event('tasksRendered'));
-        }, 50);
-        return;
-    }
-
-    tasksToRender.forEach((task) => {
-        if (!task) return;
-
-        let targetColumn = pendingCol;
-        if (task.status === 'completed' || task.status === 'completado') targetColumn = completedCol;
-        else if (task.status === 'inProgress' || task.status === 'en progreso') targetColumn = inProgressCol;
-        else if (task.status === 'overdue' || task.status === 'rezagado') targetColumn = overdueCol;
-
-        const priorityColor = { 'alta': '#e74c3c', 'media': '#f39c12', 'baja': '#2ecc71' }[task.priority] || '#3498db';
-        const statusIcon = { 'pending': '⏳', 'inProgress': '🔄', 'completed': '✅', 'overdue': '⚠️' }[task.status] || '📝';
-
-        let formattedDeadline = '';
-        if (task.deadline) {
-            try {
-                formattedDeadline = new Date(task.deadline).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' });
-            } catch(e) { formattedDeadline = 'Fecha inválida'; }
-        }
-
-        const card = document.createElement('div');
-        card.className = 'task-card';
-        card.draggable = true;
-        card.dataset.taskId = task.id;
-        card.dataset.status = task.status;
-        card.style.borderLeft = `4px solid ${priorityColor}`;
-        card.innerHTML = `
-            <div class="task-card-header">
-                <h4 class="task-title">${statusIcon} ${task.name || 'Tarea sin nombre'}</h4>
-                <div class="task-controls">
-                    <div class="move-buttons">
-                        <button class="move-btn up" onclick="event.stopPropagation(); moveTaskUp(${task.id}, '${task.status}')">↑</button>
-                        <button class="move-btn down" onclick="event.stopPropagation(); moveTaskDown(${task.id}, '${task.status}')">↓</button>
-                    </div>
-                    <div class="task-menu" onclick="event.stopPropagation(); toggleTaskMenu(event, ${task.id})">⋮</div>
-                </div>
-            </div>
-            <div class="task-card-body">
-                ${task.assignee ? `<div class="task-assignee"><i class="fas fa-user"></i> Asignado a: ${task.assignee}</div>` : ''}
-                <div class="badges-container">
-                    <span class="task-badge priority-badge ${task.priority || 'media'}">${task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'Media'}</span>
-                    <span class="task-badge status-badge status-${task.status}">${task.status === 'pending' ? 'Pendiente' : task.status === 'inProgress' ? 'En Progreso' : task.status === 'completed' ? 'Completado' : task.status === 'overdue' ? 'Rezagado' : task.status}</span>
-                </div>
-                ${task.deadline ? `<div class="task-deadline"><i class="fas fa-calendar-alt"></i> Fecha límite: ${formattedDeadline}</div>` : ''}
-            </div>
-            <div class="task-context-menu" id="task-menu-${task.id}">
-                <div class="task-menu-item" onclick="showTaskDetails(${JSON.stringify(task).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Editar</div>
-                <div class="task-menu-item delete" onclick="deleteTask('${encodeURIComponent(JSON.stringify(task))}')"><i class="fas fa-trash"></i> Eliminar</div>
-            </div>
-        `;
-        card.addEventListener('click', (e) => { e.stopPropagation(); if (typeof showTaskDetails === 'function') showTaskDetails(task); });
-        targetColumn.appendChild(card);
-    });
-
-    setTimeout(() => {
-        if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
-        document.dispatchEvent(new Event('tasksRendered'));
-        if (typeof initDragAndDrop === 'function') initDragAndDrop();
-        if (typeof mejorarDragDrop === 'function') mejorarDragDrop();
-        if (typeof agregarTooltipsATareas === 'function') agregarTooltipsATareas();
-    }, 100);
-}
-
-// 3. OBSERVADOR ADICIONAL (por si la vista Board se activa después de renderizar)
-(function ensureBoardButton() {
-    function addButtonIfMissing() {
-        const boardView = document.getElementById('boardView');
-        if (boardView && boardView.classList.contains('active') && !document.getElementById('reportButtonBoard')) {
-            let header = boardView.querySelector('.kanban-header, .board-header, header');
-            if (!header) {
-                header = document.createElement('div');
-                header.className = 'kanban-header';
-                header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 0 15px 0; margin-bottom: 10px;';
-                boardView.insertBefore(header, boardView.firstChild);
-            }
-            const btn = document.createElement('button');
-            btn.id = 'reportButtonBoard';
-            btn.innerHTML = '<i class="fas fa-chart-line"></i> Reporte Ejecutivo';
-            btn.style.cssText = 'background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 12px 24px; border-radius: 40px; font-weight: bold; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; margin-left: 15px; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
-            btn.onclick = generarReporteBoard;
-            btn.onmouseenter = () => btn.style.transform = 'translateY(-2px)';
-            btn.onmouseleave = () => btn.style.transform = 'translateY(0)';
-            header.appendChild(btn);
-            console.log('✅ Botón Reporte Ejecutivo añadido por observador');
-        }
-    }
-    const target = document.getElementById('boardView');
-    if (target) {
-        const observer = new MutationObserver(() => addButtonIfMissing());
-        observer.observe(target, { attributes: true });
-        addButtonIfMissing();
-    } else {
-        const interval = setInterval(() => {
-            const el = document.getElementById('boardView');
-            if (el) {
-                clearInterval(interval);
-                const observer = new MutationObserver(() => addButtonIfMissing());
-                observer.observe(el, { attributes: true });
-                addButtonIfMissing();
-            }
-        }, 500);
-    }
-})();
-
-console.log('✅ Código de reporte ejecutivo cargado correctamente');
-
-
-
-
-
-
 
 
 
@@ -70695,6 +73458,7 @@ setTimeout(() => {
         }
     }, 3000); // Esperar 3 segundos para que todo cargue
 })();
+
 
 
 

@@ -1,12 +1,215 @@
 // ============================================
-// 🎯 CENTRO DE CONTROL PM - VERSIÓN DEFINITIVA v11.7
+// 🎯 CENTRO DE CONTROL PM - v12.2 - DEFINITIVO FUNCIONAL
 // ============================================
 
 (function() {
     'use strict';
-    
-    console.log('🎯 [QUANTUM] v11.7 - Todos los textos en blanco corregidos');
-    
+
+    // ============================================================
+    // 1. SISTEMA DE TRADUCCIÓN (COMPLETO)
+    // ============================================================
+    const translations = {
+        es: {
+            tituloDashboard: 'CENTRO DE CONTROL PM',
+            subtituloDashboard: 'Panel ejecutivo de control de proyectos',
+            badge3d: '⚡ 3D ACTIVE',
+            cerrar: '✕',
+            kpi_total: 'TOTAL',
+            kpi_completadas: 'COMPLETADAS',
+            kpi_enProgreso: 'EN PROGRESO',
+            kpi_pendientes: 'PENDIENTES',
+            kpi_atrasadas: 'ATRASADAS',
+            kpi_completado: 'COMPLETADO',
+            card_cubo: '🌐 HOLOGRAPHIC CUBE',
+            card_montecarlo: '🔮 MONTE CARLO SIMULATION',
+            card_optimista: 'OPTIMISTA',
+            card_mediano: 'MEDIANO',
+            card_pesimista: 'PESIMISTA',
+            card_executive: '⚡ EXECUTIVE METRICS',
+            card_sentiment: '💬 SENTIMENT ANALYSIS',
+            card_riesgos: '⚠️ CRITICAL RISK MATRIX',
+            metric_cpi: 'Cost Performance Index',
+            metric_spi: 'Schedule Performance Index',
+            metric_health: 'Health Score',
+            metric_cpi_eficiente: '✅ EFICIENTE',
+            metric_cpi_sobrecosto: '⚠️ SOBRE COSTO',
+            metric_spi_tiempo: '✅ A TIEMPO',
+            metric_spi_retraso: '⚠️ RETRASO',
+            metric_health_optimo: 'ÓPTIMO',
+            metric_health_riesgo: 'EN RIESGO',
+            metric_health_critico: 'CRÍTICO',
+            interpretacion_titulo: '📊 INTERPRETACIÓN DE MÉTRICAS',
+            interpretacion_cpi_positivo: '✅ Eficiencia de costos positiva: gastas menos de lo planeado',
+            interpretacion_cpi_negativo: '⚠️ Alerta de costos: estás gastando más de lo presupuestado',
+            interpretacion_spi_positivo: '✅ Cronograma saludable: vas adelantado o a tiempo',
+            interpretacion_spi_negativo: '⚠️ Retraso en cronograma: necesitas acelerar el ritmo',
+            interpretacion_health_excelente: '🟢 Salud excelente',
+            interpretacion_health_atencion: '🟡 Atención requerida',
+            interpretacion_health_critico: '🔴 Estado crítico - acción inmediata',
+            sentiment_positivas: 'POSITIVAS',
+            sentiment_negativas: 'NEGATIVAS',
+            sentiment_comentarios: 'COMENTARIOS',
+            sentiment_recomendacion: '💡 RECOMENDACIÓN',
+            sentiment_palabras_negativas: '⚠️ PALABRAS CLAVE NEGATIVAS:',
+            sentiment_label_muy_positivo: 'MUY POSITIVO',
+            sentiment_label_positivo: 'POSITIVO',
+            sentiment_label_muy_negativo: 'MUY NEGATIVO',
+            sentiment_label_negativo: 'NEGATIVO',
+            sentiment_label_levemente_negativo: 'LEVEMENTE NEGATIVO',
+            sentiment_label_levemente_positivo: 'LEVEMENTE POSITIVO',
+            sentiment_label_neutral: 'NEUTRAL',
+            riesgo_tarea: 'Tarea',
+            riesgo_asignado: 'Asignado',
+            riesgo_progreso: 'Progreso',
+            riesgo_estado: 'Estado',
+            riesgo_riesgo: 'Riesgo',
+            riesgo_completada: 'COMPLETADA',
+            riesgo_atrasada: 'ATRASADA',
+            riesgo_en_progreso: 'EN PROGRESO',
+            riesgo_pendiente: 'PENDIENTE',
+            riesgo_leyenda_critico: '🔴 80-100% → CRÍTICO',
+            riesgo_leyenda_alto: '🟠 60-79% → ALTO',
+            riesgo_leyenda_medio: '🟡 40-59% → MEDIO',
+            riesgo_leyenda_bajo: '🟢 0-39% → BAJO',
+            riesgo_criticos: 'críticos',
+            riesgo_completadas: 'completadas',
+            riesgo_hace_dias: 'HACE {días} DÍAS',
+            riesgo_vence_hoy: 'VENCE HOY',
+            riesgo_dias_restantes: '{días} DÍAS',
+            sentiment_recomendacion_muy_positivo: '✅ El equipo está motivado. Sigue así.',
+            sentiment_recomendacion_positivo: '👍 Buen ambiente general.',
+            sentiment_recomendacion_muy_negativo: '🔴 ¡ALERTA! Reúnete urgentemente con el equipo.',
+            sentiment_recomendacion_negativo: '⚠️ Agenda una retrospectiva para abordar problemas.',
+            sentiment_recomendacion_levemente_negativo: '📌 Monitorea las tareas con comentarios negativos.',
+            sentiment_recomendacion_levemente_positivo: '💪 Buen rumbo. Sigue reforzando lo positivo.',
+            sentiment_recomendacion_neutral: '📊 Sentimiento neutral. Fomenta más feedback.',
+            montecarlo_confianza: 'confianza',
+            montecarlo_iteraciones: 'iteraciones simuladas',
+            montecarlo_velocidad: 'velocidad',
+            montecarlo_tareas_dia: 'tareas/día',
+            sidebar_boton: '🎯 CENTRO DE CONTROL PM',
+            voz_cerrar: 'cerrar',
+            voz_estado: 'estado',
+            alert_no_proyectos: '❌ No hay proyectos disponibles',
+            alert_sin_tareas: 'El proyecto "{nombre}" no tiene tareas',
+            alert_comando: '🎤 Comando: "{comando}"',
+            alert_estado: '📊 {nombre}\n✅ Progreso: {completado}%\n📋 Tareas: {completadas}/{total}\n⚠️ Riesgo: {criticas} tareas críticas',
+            alert_agrega_comentarios: 'Agrega comentarios a las tareas para obtener análisis de sentimiento'
+        },
+        en: {
+            tituloDashboard: 'PM CONTROL CENTER',
+            subtituloDashboard: 'Executive project control dashboard',
+            badge3d: '⚡ 3D ACTIVE',
+            cerrar: '✕',
+            kpi_total: 'TOTAL',
+            kpi_completadas: 'COMPLETED',
+            kpi_enProgreso: 'IN PROGRESS',
+            kpi_pendientes: 'PENDING',
+            kpi_atrasadas: 'OVERDUE',
+            kpi_completado: 'COMPLETED',
+            card_cubo: '🌐 HOLOGRAPHIC CUBE',
+            card_montecarlo: '🔮 MONTE CARLO SIMULATION',
+            card_optimista: 'OPTIMISTIC',
+            card_mediano: 'MEDIAN',
+            card_pesimista: 'PESSIMISTIC',
+            card_executive: '⚡ EXECUTIVE METRICS',
+            card_sentiment: '💬 SENTIMENT ANALYSIS',
+            card_riesgos: '⚠️ CRITICAL RISK MATRIX',
+            metric_cpi: 'Cost Performance Index',
+            metric_spi: 'Schedule Performance Index',
+            metric_health: 'Health Score',
+            metric_cpi_eficiente: '✅ EFFICIENT',
+            metric_cpi_sobrecosto: '⚠️ OVER COST',
+            metric_spi_tiempo: '✅ ON TIME',
+            metric_spi_retraso: '⚠️ DELAYED',
+            metric_health_optimo: 'OPTIMAL',
+            metric_health_riesgo: 'AT RISK',
+            metric_health_critico: 'CRITICAL',
+            interpretacion_titulo: '📊 METRICS INTERPRETATION',
+            interpretacion_cpi_positivo: '✅ Positive cost efficiency: you spend less than planned',
+            interpretacion_cpi_negativo: '⚠️ Cost alert: you are spending more than budgeted',
+            interpretacion_spi_positivo: '✅ Healthy schedule: you are ahead or on time',
+            interpretacion_spi_negativo: '⚠️ Schedule delay: you need to speed up',
+            interpretacion_health_excelente: '🟢 Excellent health',
+            interpretacion_health_atencion: '🟡 Attention required',
+            interpretacion_health_critico: '🔴 Critical state - immediate action',
+            sentiment_positivas: 'POSITIVE',
+            sentiment_negativas: 'NEGATIVE',
+            sentiment_comentarios: 'COMMENTS',
+            sentiment_recomendacion: '💡 RECOMMENDATION',
+            sentiment_palabras_negativas: '⚠️ NEGATIVE KEYWORDS:',
+            sentiment_label_muy_positivo: 'VERY POSITIVE',
+            sentiment_label_positivo: 'POSITIVE',
+            sentiment_label_muy_negativo: 'VERY NEGATIVE',
+            sentiment_label_negativo: 'NEGATIVE',
+            sentiment_label_levemente_negativo: 'SLIGHTLY NEGATIVE',
+            sentiment_label_levemente_positivo: 'SLIGHTLY POSITIVE',
+            sentiment_label_neutral: 'NEUTRAL',
+            riesgo_tarea: 'Task',
+            riesgo_asignado: 'Assignee',
+            riesgo_progreso: 'Progress',
+            riesgo_estado: 'Status',
+            riesgo_riesgo: 'Risk',
+            riesgo_completada: 'COMPLETED',
+            riesgo_atrasada: 'OVERDUE',
+            riesgo_en_progreso: 'IN PROGRESS',
+            riesgo_pendiente: 'PENDING',
+            riesgo_leyenda_critico: '🔴 80-100% → CRITICAL',
+            riesgo_leyenda_alto: '🟠 60-79% → HIGH',
+            riesgo_leyenda_medio: '🟡 40-59% → MEDIUM',
+            riesgo_leyenda_bajo: '🟢 0-39% → LOW',
+            riesgo_criticos: 'critical',
+            riesgo_completadas: 'completed',
+            riesgo_hace_dias: '{días} DAYS AGO',
+            riesgo_vence_hoy: 'DUE TODAY',
+            riesgo_dias_restantes: '{días} DAYS',
+            sentiment_recomendacion_muy_positivo: '✅ Team is motivated. Keep it up.',
+            sentiment_recomendacion_positivo: '👍 Good general environment.',
+            sentiment_recomendacion_muy_negativo: '🔴 ALERT! Meet urgently with the team.',
+            sentiment_recomendacion_negativo: '⚠️ Schedule a retrospective to address issues.',
+            sentiment_recomendacion_levemente_negativo: '📌 Monitor tasks with negative comments.',
+            sentiment_recomendacion_levemente_positivo: '💪 Good direction. Keep reinforcing the positive.',
+            sentiment_recomendacion_neutral: '📊 Neutral sentiment. Encourage more feedback.',
+            montecarlo_confianza: 'confidence',
+            montecarlo_iteraciones: 'simulated iterations',
+            montecarlo_velocidad: 'speed',
+            montecarlo_tareas_dia: 'tasks/day',
+            sidebar_boton: '🎯 PM CONTROL CENTER',
+            voz_cerrar: 'close',
+            voz_estado: 'status',
+            alert_no_proyectos: '❌ No projects available',
+            alert_sin_tareas: 'Project "{nombre}" has no tasks',
+            alert_comando: '🎤 Command: "{comando}"',
+            alert_estado: '📊 {nombre}\n✅ Progress: {completado}%\n📋 Tasks: {completadas}/{total}\n⚠️ Risk: {criticas} critical tasks',
+            alert_agrega_comentarios: 'Add comments to tasks to get sentiment analysis'
+        }
+    };
+
+    // Función de traducción
+    function t(key) {
+        if (!key) return key;
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const langCode = lang.split('-')[0];
+        const keys = key.split('.');
+        let value = translations[langCode];
+        for (const k of keys) {
+            if (value && value[k] !== undefined) value = value[k];
+            else return key;
+        }
+        return value || key;
+    }
+
+    window.t = t;
+
+    document.addEventListener('languageChanged', function() {
+        const btn = document.getElementById('quantumV10Btn');
+        if (btn) btn.innerHTML = t('sidebar_boton');
+    });
+
+    // ============================================================
+    // 2. FUNCIONES AUXILIARES (COMPLETAS)
+    // ============================================================
+
     function getCurrentProject() {
         try {
             let savedIndex = localStorage.getItem('currentProjectIndex');
@@ -50,7 +253,7 @@
             return null;
         }
     }
-    
+
     function loadThreeJS() {
         return new Promise((resolve) => {
             if (typeof THREE !== 'undefined') { resolve(); return; }
@@ -61,9 +264,9 @@
             document.head.appendChild(script);
         });
     }
-    
+
     let cubeScene = null, cubeCamera = null, cubeRenderer = null, cubeMesh = null, cubeAnimationId = null;
-    
+
     function init3DCube(containerId, completionRate) {
         const container = document.getElementById(containerId);
         if (!container || typeof THREE === 'undefined') {
@@ -153,7 +356,7 @@
             }
         });
     }
-    
+
     function calcularProgresoReal(task) {
         if (!task) return 0;
         if (task.status === 'completed') return 100;
@@ -168,7 +371,7 @@
         
         return task.progress || 0;
     }
-    
+
     function calculateRisk(task) {
         if (!task) return 0;
         if (task.status === 'completed') return 0;
@@ -240,7 +443,7 @@
         
         return Math.min(100, Math.max(0, Math.round(riesgo)));
     }
-    
+
     function monteCarloSimulation(tasks, iterations = 500) {
         const totalTasks = tasks.length;
         const completed = tasks.filter(t => t.status === 'completed').length;
@@ -262,7 +465,7 @@
             confidence: Math.round((results.filter(d => d <= (results[Math.floor(results.length * 0.5)] || 0) + 7).length / iterations) * 100)
         };
     }
-    
+
     function analyzeSentiment(tasks) {
         const allComments = [];
         tasks.forEach(task => {
@@ -278,11 +481,19 @@
         
         if (allComments.length === 0) {
             return { 
-                label: 'neutral', intensity: 0, color: '#888', emoji: '😐', 
-                positiveCount: 0, negativeCount: 0, totalComments: 0,
+                label: t('sentiment_label_neutral'),
+                intensity: 0,
+                color: '#888',
+                emoji: '😐',
+                positiveCount: 0,
+                negativeCount: 0,
+                totalComments: 0,
                 sample: 'No hay comentarios en las tareas.',
-                positiveWords: [], negativeWords: [], negativePercent: 0, positivePercent: 0,
-                recommendations: 'Agrega comentarios a las tareas para obtener análisis de sentimiento',
+                positiveWords: [],
+                negativeWords: [],
+                negativePercent: 0,
+                positivePercent: 0,
+                recommendations: t('alert_agrega_comentarios'),
                 taskAnalysis: []
             };
         }
@@ -341,15 +552,25 @@
         const negativePercent = total > 0 ? Math.round((totalNegativeCount / total) * 100) : 0;
         const positivePercent = total > 0 ? Math.round((totalPositiveCount / total) * 100) : 0;
         
-        let label = 'neutral', color = '#888', emoji = '😐', recommendations = '';
+        let labelKey = 'neutral';
+        let color = '#888', emoji = '😐';
+        if (positivePercent > 60) { labelKey = 'muy_positivo'; color = '#10b981'; emoji = '😊✨'; }
+        else if (positivePercent > 40) { labelKey = 'positivo'; color = '#34d399'; emoji = '😊'; }
+        else if (negativePercent > 60) { labelKey = 'muy_negativo'; color = '#ef4444'; emoji = '😫💔'; }
+        else if (negativePercent > 40) { labelKey = 'negativo'; color = '#f87171'; emoji = '😞'; }
+        else if (negativePercent > 20) { labelKey = 'levemente_negativo'; color = '#fbbf24'; emoji = '😕'; }
+        else if (positivePercent > 20) { labelKey = 'levemente_positivo'; color = '#6ee7b7'; emoji = '🙂'; }
         
-        if (positivePercent > 60) { label = 'muy positivo'; color = '#10b981'; emoji = '😊✨'; recommendations = '✅ El equipo está motivado. Sigue así.'; }
-        else if (positivePercent > 40) { label = 'positivo'; color = '#34d399'; emoji = '😊'; recommendations = '👍 Buen ambiente general.'; }
-        else if (negativePercent > 60) { label = 'muy negativo'; color = '#ef4444'; emoji = '😫💔'; recommendations = '🔴 ¡ALERTA! Reúnete urgentemente con el equipo.'; }
-        else if (negativePercent > 40) { label = 'negativo'; color = '#f87171'; emoji = '😞'; recommendations = '⚠️ Agenda una retrospectiva para abordar problemas.'; }
-        else if (negativePercent > 20) { label = 'levemente negativo'; color = '#fbbf24'; emoji = '😕'; recommendations = '📌 Monitorea las tareas con comentarios negativos.'; }
-        else if (positivePercent > 20) { label = 'levemente positivo'; color = '#6ee7b7'; emoji = '🙂'; recommendations = '💪 Buen rumbo. Sigue reforzando lo positivo.'; }
-        else { recommendations = '📊 Sentimiento neutral. Fomenta más feedback.'; }
+        const label = t('sentiment_label_' + labelKey);
+        
+        let recommendations = '';
+        if (labelKey === 'muy_positivo') recommendations = t('sentiment_recomendacion_muy_positivo');
+        else if (labelKey === 'positivo') recommendations = t('sentiment_recomendacion_positivo');
+        else if (labelKey === 'muy_negativo') recommendations = t('sentiment_recomendacion_muy_negativo');
+        else if (labelKey === 'negativo') recommendations = t('sentiment_recomendacion_negativo');
+        else if (labelKey === 'levemente_negativo') recommendations = t('sentiment_recomendacion_levemente_negativo');
+        else if (labelKey === 'levemente_positivo') recommendations = t('sentiment_recomendacion_levemente_positivo');
+        else recommendations = t('sentiment_recomendacion_neutral');
         
         const intensity = Math.min(100, Math.round((total / 30) * 100));
         let sample = 'Sin ejemplo destacado';
@@ -358,14 +579,25 @@
         else if (taskAnalysis.length > 0) sample = taskAnalysis[0].comment;
         
         return { 
-            label, intensity, color, emoji, positiveCount: totalPositiveCount, negativeCount: totalNegativeCount,
-            totalComments: allComments.length, sample, positiveWords: Array.from(foundPositiveWords),
-            negativeWords: Array.from(foundNegativeWords), negativePercent, positivePercent, recommendations,
+            label,
+            intensity,
+            color,
+            emoji,
+            positiveCount: totalPositiveCount,
+            negativeCount: totalNegativeCount,
+            totalComments: allComments.length,
+            sample,
+            positiveWords: Array.from(foundPositiveWords),
+            negativeWords: Array.from(foundNegativeWords),
+            negativePercent,
+            positivePercent,
+            recommendations,
             taskAnalysis: taskAnalysis.sort((a,b) => Math.abs(b.score) - Math.abs(a.score)).slice(0,5)
         };
     }
-    
+
     let matrixInterval = null;
+
     function generateMatrixText() {
         const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
         let text = '';
@@ -375,7 +607,7 @@
         }
         return text;
     }
-    
+
     function startMatrixAnimation() {
         if (matrixInterval) clearInterval(matrixInterval);
         const matrixEl = document.getElementById('quantumMatrix');
@@ -387,7 +619,7 @@
             }
         }, 150);
     }
-    
+
     function injectStyles() {
         if (document.getElementById('quantum-v11-styles')) return;
         
@@ -661,19 +893,19 @@
             }
             
             .quantum-matrix {
-    font-family: monospace;
-    color: #4ade80;              /* ← VERDE MÁS BRILLANTE */
-    background: #0a0c14;
-    padding: 8px;
-    font-size: 7px;
-    height: 50px;
-    overflow-y: auto;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    opacity: 1;
-    border: 1px solid #4ade8030;
-    text-shadow: 0 0 5px #4ade80;
-}
+                font-family: monospace;
+                color: #4ade80;
+                background: #0a0c14;
+                padding: 8px;
+                font-size: 7px;
+                height: 50px;
+                overflow-y: auto;
+                border-radius: 6px;
+                margin-bottom: 12px;
+                opacity: 1;
+                border: 1px solid #4ade8030;
+                text-shadow: 0 0 5px #4ade80;
+            }
             
             .sentiment-stats {
                 display: flex;
@@ -800,15 +1032,24 @@
         `;
         document.head.appendChild(styles);
     }
-    
+
+    // ============================================================
+    // 3. DASHBOARD
+    // ============================================================
     async function showQuantumDashboard() {
-        console.log('[QUANTUM] Abriendo dashboard v11.7...');
+        console.log('[QUANTUM] Abriendo dashboard v12.2...');
         
         const project = getCurrentProject();
-        if (!project) { alert('❌ No hay proyectos disponibles'); return; }
+        if (!project) {
+            alert(t('alert_no_proyectos'));
+            return;
+        }
         
         const tasks = project.tasks || [];
-        if (tasks.length === 0) { alert(`El proyecto "${project.name}" no tiene tareas`); return; }
+        if (tasks.length === 0) {
+            alert(t('alert_sin_tareas').replace('{nombre}', project.name));
+            return;
+        }
         
         tasks.forEach(task => {
             const progresoReal = calcularProgresoReal(task);
@@ -856,85 +1097,207 @@
         dashboard.id = 'quantumV10Dashboard';
         dashboard.className = 'quantum-overlay';
         
+        // ---- OBTENER TODAS LAS TRADUCCIONES ----
+        const titulo = t('tituloDashboard');
+        const badge3d = t('badge3d');
+        const cerrar = t('cerrar');
+        const kpiTotal = t('kpi_total');
+        const kpiCompletadas = t('kpi_completadas');
+        const kpiEnProgreso = t('kpi_enProgreso');
+        const kpiPendientes = t('kpi_pendientes');
+        const kpiAtrasadas = t('kpi_atrasadas');
+        const kpiCompletado = t('kpi_completado');
+        const cardCubo = t('card_cubo');
+        const cardMontecarlo = t('card_montecarlo');
+        const cardOptimista = t('card_optimista');
+        const cardMediano = t('card_mediano');
+        const cardPesimista = t('card_pesimista');
+        const cardExecutive = t('card_executive');
+        const cardSentiment = t('card_sentiment');
+        const cardRiesgos = t('card_riesgos');
+        const metricCpi = t('metric_cpi');
+        const metricSpi = t('metric_spi');
+        const metricHealth = t('metric_health');
+        const metricCpiEficiente = t('metric_cpi_eficiente');
+        const metricCpiSobrecosto = t('metric_cpi_sobrecosto');
+        const metricSpiTiempo = t('metric_spi_tiempo');
+        const metricSpiRetraso = t('metric_spi_retraso');
+        const metricHealthOptimo = t('metric_health_optimo');
+        const metricHealthRiesgo = t('metric_health_riesgo');
+        const metricHealthCritico = t('metric_health_critico');
+        const interpretacionTitulo = t('interpretacion_titulo');
+        const interpretacionCpiPositivo = t('interpretacion_cpi_positivo');
+        const interpretacionCpiNegativo = t('interpretacion_cpi_negativo');
+        const interpretacionSpiPositivo = t('interpretacion_spi_positivo');
+        const interpretacionSpiNegativo = t('interpretacion_spi_negativo');
+        const interpretacionHealthExcelente = t('interpretacion_health_excelente');
+        const interpretacionHealthAtencion = t('interpretacion_health_atencion');
+        const interpretacionHealthCritico = t('interpretacion_health_critico');
+        const sentimentPositivas = t('sentiment_positivas');
+        const sentimentNegativas = t('sentiment_negativas');
+        const sentimentComentarios = t('sentiment_comentarios');
+        const sentimentRecomendacion = t('sentiment_recomendacion');
+        const sentimentPalabrasNegativas = t('sentiment_palabras_negativas');
+        const riesgoTarea = t('riesgo_tarea');
+        const riesgoAsignado = t('riesgo_asignado');
+        const riesgoProgreso = t('riesgo_progreso');
+        const riesgoEstado = t('riesgo_estado');
+        const riesgoRiesgo = t('riesgo_riesgo');
+        const riesgoLeyendaCritico = t('riesgo_leyenda_critico');
+        const riesgoLeyendaAlto = t('riesgo_leyenda_alto');
+        const riesgoLeyendaMedio = t('riesgo_leyenda_medio');
+        const riesgoLeyendaBajo = t('riesgo_leyenda_bajo');
+        const riesgoCriticos = t('riesgo_criticos');
+        const riesgoCompletadas = t('riesgo_completadas');
+        const riesgoCompletada = t('riesgo_completada');
+        const riesgoAtrasada = t('riesgo_atrasada');
+        const riesgoEnProgreso = t('riesgo_en_progreso');
+        const riesgoPendiente = t('riesgo_pendiente');
+        const riesgoHaceDias = t('riesgo_hace_dias');
+        const riesgoVenceHoy = t('riesgo_vence_hoy');
+        const riesgoDiasRestantes = t('riesgo_dias_restantes');
+        const montecarloConfianza = t('montecarlo_confianza');
+        const montecarloIteraciones = t('montecarlo_iteraciones');
+        const montecarloVelocidad = t('montecarlo_velocidad');
+        const montecarloTareasDia = t('montecarlo_tareas_dia');
+
+        // ---- GENERAR FILAS DE LA TABLA ----
+        const tableRows = tasksWithRisk.sort((a,b) => b.risk - a.risk).slice(0,20).map(t => {
+            const progresoMostrar = calcularProgresoReal(t);
+            
+            if (t.status === 'completed') {
+                return `<tr style="background: #0a1a0a; border-left: 3px solid #10b981;">
+                    <td><strong>🎉 ${(t.name || 'Sin nombre').substring(0,30)}</strong> <span style="color:#10b981;">✓ ${riesgoCompletada}</span></td>
+                    <td style="color:#10b981;">${t.assignee || '—'}</td>
+                    <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:100%; height:100%; background:#10b981; border-radius:4px;"></div></div> 100%</td>
+                    <td><span style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:4px;">✅ ${riesgoCompletada}</span></td>
+                    <td><span style="background:#0a2e1a; color:#10b981; padding:4px 10px; border-radius:4px;">✓ 0%</span></td>
+                </tr>`;
+            }
+            
+            let riskColor = '', riskBg = '', riskDisplay = '';
+            if (t.risk >= 80) { riskColor = '#ef4444'; riskBg = '#2a0a0a'; riskDisplay = `🔴 ${t.risk}%`; }
+            else if (t.risk >= 60) { riskColor = '#f97316'; riskBg = '#2a1a0a'; riskDisplay = `🟠 ${t.risk}%`; }
+            else if (t.risk >= 40) { riskColor = '#f59e0b'; riskBg = '#2a2a0a'; riskDisplay = `🟡 ${t.risk}%`; }
+            else { riskColor = '#10b981'; riskBg = '#0a2e1a'; riskDisplay = `🟢 ${t.risk}%`; }
+            
+            let statusIcon = '', statusText = '', statusColor = '';
+            if (t.status === 'overdue') { statusIcon = '🔴'; statusText = riesgoAtrasada; statusColor = '#ef4444'; }
+            else if (t.status === 'inProgress') { statusIcon = '🔄'; statusText = riesgoEnProgreso; statusColor = '#3b82f6'; }
+            else { statusIcon = '⏳'; statusText = riesgoPendiente; statusColor = '#f59e0b'; }
+            
+            let daysLeftText = '';
+            if (t.deadline && t.status !== 'completed') {
+                const deadline = new Date(t.deadline);
+                const today = new Date();
+                const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+                if (daysLeft < 0) {
+                    daysLeftText = ` ⚠️ ${riesgoHaceDias.replace('{días}', Math.abs(daysLeft))}`;
+                } else if (daysLeft === 0) {
+                    daysLeftText = ` 🔴 ${riesgoVenceHoy}`;
+                } else if (daysLeft <= 3) {
+                    daysLeftText = ` 🟡 ${riesgoDiasRestantes.replace('{días}', daysLeft)}`;
+                } else {
+                    daysLeftText = ` 🟢 ${riesgoDiasRestantes.replace('{días}', daysLeft)}`;
+                }
+            }
+            
+            let progresoColor = riskColor;
+            if (progresoMostrar >= 80) progresoColor = '#10b981';
+            else if (progresoMostrar >= 60) progresoColor = '#22c55e';
+            else if (progresoMostrar >= 40) progresoColor = '#f59e0b';
+            else if (progresoMostrar >= 20) progresoColor = '#f97316';
+            else progresoColor = '#ef4444';
+            
+            return `<tr style="background: ${riskBg}; border-left: 3px solid ${riskColor};">
+                <td><strong style="color:${riskColor};">${statusIcon} ${(t.name || 'Sin nombre').substring(0,30)}${daysLeftText}</strong></td>
+                <td style="color:#94a3b8;">${t.assignee || '—'}</td>
+                <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:${progresoMostrar}%; height:100%; background:${progresoColor}; border-radius:4px;"></div></div> ${progresoMostrar}%</td>
+                <td><span style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:4px;">${statusIcon} ${statusText}</span></td>
+                <td><span style="background:${riskBg}; color:${riskColor}; padding:4px 10px; border-radius:4px; font-weight:500;">${riskDisplay}</span></td>
+            </tr>`;
+        }).join('');
+
+        // ---- ARMAR HTML ----
         dashboard.innerHTML = `
             <div class="quantum-dashboard">
                 <div class="quantum-header">
                     <div class="quantum-logo">
                         <div class="quantum-icon">🎯</div>
                         <div class="quantum-title">
-                            <h1>CENTRO DE CONTROL PM</h1>
+                            <h1>${titulo}</h1>
                             <p>${project.name} · ${new Date().toLocaleDateString()}</p>
                         </div>
                     </div>
-                    <div class="quantum-badge">⚡ 3D ACTIVE</div>
-                    <button class="quantum-close" id="quantumCloseBtn">✕</button>
+                    <div class="quantum-badge">${badge3d}</div>
+                    <button class="quantum-close" id="quantumCloseBtn">${cerrar}</button>
                 </div>
                 <div class="quantum-content">
                     <div class="quantum-kpi-grid">
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.total};">${tasks.length}</div><div class="quantum-kpi-label">TOTAL</div></div>
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completed};">${completed}</div><div class="quantum-kpi-label">COMPLETADAS</div></div>
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.inProgress};">${inProgress}</div><div class="quantum-kpi-label">EN PROGRESO</div></div>
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.pending};">${pending}</div><div class="quantum-kpi-label">PENDIENTES</div></div>
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.overdue};">${overdue}</div><div class="quantum-kpi-label">ATRASADAS</div></div>
-                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completion};">${completionRate}%</div><div class="quantum-kpi-label">COMPLETADO</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.total};">${tasks.length}</div><div class="quantum-kpi-label">${kpiTotal}</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completed};">${completed}</div><div class="quantum-kpi-label">${kpiCompletadas}</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.inProgress};">${inProgress}</div><div class="quantum-kpi-label">${kpiEnProgreso}</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.pending};">${pending}</div><div class="quantum-kpi-label">${kpiPendientes}</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.overdue};">${overdue}</div><div class="quantum-kpi-label">${kpiAtrasadas}</div></div>
+                        <div class="quantum-kpi"><div class="quantum-kpi-value" style="color:${kpiColors.completion};">${completionRate}%</div><div class="quantum-kpi-label">${kpiCompletado}</div></div>
                     </div>
                     
                     <div class="quantum-grid-2">
                         <div class="quantum-card">
-                            <div class="quantum-card-header"><span>🌐 HOLOGRAPHIC CUBE</span><span>${completionRate}% completado</span></div>
+                            <div class="quantum-card-header"><span>${cardCubo}</span><span>${completionRate}% completado</span></div>
                             <div class="quantum-card-body"><div id="quantum3dContainer" class="quantum-3d-container"></div></div>
                         </div>
                         <div class="quantum-card">
-    <div class="quantum-card-header"><span>🔮 MONTE CARLO SIMULATION</span><span>${monteCarlo.confidence}% confianza</span></div>
-    <div class="quantum-card-body" style="padding-top: 24px;">
-        <div class="quantum-mc-grid" style="margin-top: 8px;">
-            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">OPTIMISTA</div></div>
-            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.median}</div><div class="quantum-mc-label">MEDIANO</div></div>
-            <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">PESIMISTA</div></div>
-        </div>
-        <div style="padding:12px 10px; background:#0a0c14; border-radius:6px; font-family:monospace; font-size:9px; color:#ffffff; border:1px solid #1a1f2e; margin-top: 12px;">
-            > 500 iteraciones simuladas<br>
-            > Velocidad: ${(completed / Math.max(1,30)).toFixed(2)} tareas/día
-        </div>
-    </div>
-</div>
+                            <div class="quantum-card-header"><span>${cardMontecarlo}</span><span>${monteCarlo.confidence}% ${montecarloConfianza}</span></div>
+                            <div class="quantum-card-body" style="padding-top: 24px;">
+                                <div class="quantum-mc-grid" style="margin-top: 8px;">
+                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.optimistic}</div><div class="quantum-mc-label">${cardOptimista}</div></div>
+                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.median}</div><div class="quantum-mc-label">${cardMediano}</div></div>
+                                    <div class="quantum-mc-card"><div class="quantum-mc-value">${monteCarlo.pessimistic}</div><div class="quantum-mc-label">${cardPesimista}</div></div>
+                                </div>
+                                <div style="padding:12px 10px; background:#0a0c14; border-radius:6px; font-family:monospace; font-size:9px; color:#ffffff; border:1px solid #1a1f2e; margin-top: 12px;">
+                                    > 500 ${montecarloIteraciones}<br>
+                                    > ${montecarloVelocidad}: ${(completed / Math.max(1,30)).toFixed(2)} ${montecarloTareasDia}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="quantum-card">
-                        <div class="quantum-card-header"><span>⚡ EXECUTIVE METRICS</span><span>CPI / SPI</span></div>
+                        <div class="quantum-card-header"><span>${cardExecutive}</span><span>CPI / SPI</span></div>
                         <div class="quantum-card-body">
                             <div style="display:flex; gap:30px; justify-content:center; margin-bottom:16px;">
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${cpi>=1?'#10b981':'#ef4444'};">${cpi.toFixed(2)}</div>
-                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Cost Performance Index</div>
-                                    <div style="font-size:9px; color:${cpi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${cpi>=1 ? '✅ EFICIENTE' : '⚠️ SOBRE COSTO'}</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">${metricCpi}</div>
+                                    <div style="font-size:9px; color:${cpi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${cpi>=1 ? metricCpiEficiente : metricCpiSobrecosto}</div>
                                 </div>
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${spi>=1?'#10b981':'#ef4444'};">${spi.toFixed(2)}</div>
-                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Schedule Performance Index</div>
-                                    <div style="font-size:9px; color:${spi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${spi>=1 ? '✅ A TIEMPO' : '⚠️ RETRASO'}</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">${metricSpi}</div>
+                                    <div style="font-size:9px; color:${spi>=1?'#10b981':'#ef4444'}; margin-top:2px;">${spi>=1 ? metricSpiTiempo : metricSpiRetraso}</div>
                                 </div>
                                 <div style="text-align:center;">
                                     <div style="font-size:36px; font-weight:700; color:${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'};">${healthScore}%</div>
-                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">Health Score</div>
-                                    <div style="font-size:9px; color:${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'}; margin-top:2px;">${healthScore>=70 ? 'ÓPTIMO' : healthScore>=40 ? 'EN RIESGO' : 'CRÍTICO'}</div>
+                                    <div style="font-size:11px; color:#ffffff; margin-top:4px;">${metricHealth}</div>
+                                    <div style="font-size:9px; color:${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'}; margin-top:2px;">${healthScore>=70 ? metricHealthOptimo : healthScore>=40 ? metricHealthRiesgo : metricHealthCritico}</div>
                                 </div>
                             </div>
                             <div class="quantum-progress"><div class="quantum-progress-fill" style="width: ${healthScore}%;"></div></div>
                             
                             <div class="explanation-beautiful">
-                                <div style="text-align:center; margin-bottom:12px; color:#60a5fa; font-weight:600; font-size:12px; letter-spacing:1px;">📊 INTERPRETACIÓN DE MÉTRICAS</div>
+                                <div style="text-align:center; margin-bottom:12px; color:#60a5fa; font-weight:600; font-size:12px; letter-spacing:1px;">${interpretacionTitulo}</div>
                                 <div style="margin-bottom:10px; padding:8px; background:#0c0e16; border-radius:6px; border-left:3px solid ${cpi>=1?'#10b981':'#ef4444'};">
                                     <strong style="color:#e2e8f0;">CPI = ${cpi.toFixed(2)}</strong>
-                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${cpi >= 1 ? '✅ Eficiencia de costos positiva: gastas menos de lo planeado' : '⚠️ Alerta de costos: estás gastando más de lo presupuestado'}</div>
+                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${cpi >= 1 ? interpretacionCpiPositivo : interpretacionCpiNegativo}</div>
                                 </div>
                                 <div style="margin-bottom:10px; padding:8px; background:#0c0e16; border-radius:6px; border-left:3px solid ${spi>=1?'#10b981':'#ef4444'};">
                                     <strong style="color:#e2e8f0;">SPI = ${spi.toFixed(2)}</strong>
-                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${spi >= 1 ? '✅ Cronograma saludable: vas adelantado o a tiempo' : '⚠️ Retraso en cronograma: necesitas acelerar el ritmo'}</div>
+                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${spi >= 1 ? interpretacionSpiPositivo : interpretacionSpiNegativo}</div>
                                 </div>
                                 <div style="padding:8px; background:#0c0e16; border-radius:6px; border-left:3px solid ${healthScore>=70?'#10b981':healthScore>=40?'#f59e0b':'#ef4444'};">
                                     <strong style="color:#e2e8f0;">HEALTH SCORE = ${healthScore}%</strong>
-                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${healthScore >= 70 ? '🟢 Salud excelente' : healthScore >= 40 ? '🟡 Atención requerida' : '🔴 Estado crítico - acción inmediata'}</div>
+                                    <div style="color:#94a3b8; font-size:10px; margin-top:4px;">${healthScore >= 70 ? interpretacionHealthExcelente : healthScore >= 40 ? interpretacionHealthAtencion : interpretacionHealthCritico}</div>
                                 </div>
                             </div>
                         </div>
@@ -942,13 +1305,13 @@
                     
                     <div class="quantum-grid-2">
                         <div class="quantum-card">
-                            <div class="quantum-card-header"><span>💬 SENTIMENT ANALYSIS</span><span style="color:${sentiment.color};">${sentiment.label.toUpperCase()} ${sentiment.emoji}</span></div>
+                            <div class="quantum-card-header"><span>${cardSentiment}</span><span style="color:${sentiment.color};">${sentiment.label.toUpperCase()} ${sentiment.emoji}</span></div>
                             <div class="quantum-card-body">
                                 <div id="quantumMatrix" class="quantum-matrix">${generateMatrixText()}</div>
                                 <div class="sentiment-stats">
-                                    <div class="sentiment-stat"><div style="color:#10b981;">${sentiment.positiveCount}</div><div style="color:#ffffff;">POSITIVAS</div></div>
-                                    <div class="sentiment-stat"><div style="color:#ef4444;">${sentiment.negativeCount}</div><div style="color:#ffffff;">NEGATIVAS</div></div>
-                                    <div class="sentiment-stat"><div style="color:#60a5fa;">${sentiment.totalComments}</div><div style="color:#ffffff;">COMENTARIOS</div></div>
+                                    <div class="sentiment-stat"><div style="color:#10b981;">${sentiment.positiveCount}</div><div style="color:#ffffff;">${sentimentPositivas}</div></div>
+                                    <div class="sentiment-stat"><div style="color:#ef4444;">${sentiment.negativeCount}</div><div style="color:#ffffff;">${sentimentNegativas}</div></div>
+                                    <div class="sentiment-stat"><div style="color:#60a5fa;">${sentiment.totalComments}</div><div style="color:#ffffff;">${sentimentComentarios}</div></div>
                                 </div>
                                 <div style="margin-bottom:8px;">
                                     <div class="sentiment-bar-container">
@@ -958,84 +1321,35 @@
                                 </div>
                                 ${sentiment.negativeWords.length > 0 ? `
                                 <div style="margin-bottom:8px;">
-                                    <div style="font-size:9px; color:#ef4444; margin-bottom:4px;">⚠️ PALABRAS CLAVE NEGATIVAS:</div>
+                                    <div style="font-size:9px; color:#ef4444; margin-bottom:4px;">${sentimentPalabrasNegativas}</div>
                                     <div style="font-size:8px;">${sentiment.negativeWords.slice(0,5).map(w => `<span class="sentiment-word-badge">${w}</span>`).join('')}</div>
                                 </div>
                                 ` : ''}
                                 <div class="recommendation-box">
-                                    <div style="color:#60a5fa; font-weight:600; margin-bottom:4px; font-size:10px;">💡 RECOMENDACIÓN</div>
+                                    <div style="color:#60a5fa; font-weight:600; margin-bottom:4px; font-size:10px;">${sentimentRecomendacion}</div>
                                     <div style="font-size:9px; color:#94a3b8;">${sentiment.recommendations}</div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="quantum-card">
-                            <div class="quantum-card-header"><span>⚠️ CRITICAL RISK MATRIX</span><span>🔴 ${tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length} críticos | 🎉 ${tasksWithRisk.filter(t => t.status === 'completed').length} completadas</span></div>
+                            <div class="quantum-card-header"><span>${cardRiesgos}</span><span>🔴 ${tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length} ${riesgoCriticos} | 🎉 ${tasksWithRisk.filter(t => t.status === 'completed').length} ${riesgoCompletadas}</span></div>
                             <div class="quantum-card-body">
                                 <div style="overflow-x:auto; max-height:280px; overflow-y:auto;">
                                     <table class="quantum-table">
                                         <thead>
-                                            <tr><th>Tarea</th><th>Asignado</th><th>Progreso</th><th>Estado</th><th>Riesgo</th></tr>
+                                            <tr><th>${riesgoTarea}</th><th>${riesgoAsignado}</th><th>${riesgoProgreso}</th><th>${riesgoEstado}</th><th>${riesgoRiesgo}</th></tr>
                                         </thead>
                                         <tbody>
-                                            ${tasksWithRisk.sort((a,b) => b.risk - a.risk).slice(0,20).map(t => {
-                                                const progresoMostrar = calcularProgresoReal(t);
-                                                
-                                                if (t.status === 'completed') {
-                                                    return `<tr style="background: #0a1a0a; border-left: 3px solid #10b981;">
-                                                        <td><strong>🎉 ${(t.name || 'Sin nombre').substring(0,30)}</strong> <span style="color:#10b981;">✓ COMPLETADA</span></td>
-                                                        <td style="color:#10b981;">${t.assignee || '—'}</td>
-                                                        <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:100%; height:100%; background:#10b981; border-radius:4px;"></div></div> 100%</div></td>
-                                                        <td><span style="background:#10b98120; color:#10b981; padding:2px 8px; border-radius:4px;">✅ COMPLETADA</span></div></td>
-                                                        <td><span style="background:#0a2e1a; color:#10b981; padding:4px 10px; border-radius:4px;">✓ 0%</span></div></td>
-                                                    </tr>`;
-                                                }
-                                                
-                                                let riskColor = '', riskBg = '', riskDisplay = '';
-                                                if (t.risk >= 80) { riskColor = '#ef4444'; riskBg = '#2a0a0a'; riskDisplay = `🔴 ${t.risk}%`; }
-                                                else if (t.risk >= 60) { riskColor = '#f97316'; riskBg = '#2a1a0a'; riskDisplay = `🟠 ${t.risk}%`; }
-                                                else if (t.risk >= 40) { riskColor = '#f59e0b'; riskBg = '#2a2a0a'; riskDisplay = `🟡 ${t.risk}%`; }
-                                                else { riskColor = '#10b981'; riskBg = '#0a2e1a'; riskDisplay = `🟢 ${t.risk}%`; }
-                                                
-                                                let statusIcon = '', statusText = '', statusColor = '';
-                                                if (t.status === 'overdue') { statusIcon = '🔴'; statusText = 'ATRASADA'; statusColor = '#ef4444'; }
-                                                else if (t.status === 'inProgress') { statusIcon = '🔄'; statusText = 'EN PROGRESO'; statusColor = '#3b82f6'; }
-                                                else { statusIcon = '⏳'; statusText = 'PENDIENTE'; statusColor = '#f59e0b'; }
-                                                
-                                                let daysLeftText = '';
-                                                if (t.deadline && t.status !== 'completed') {
-                                                    const deadline = new Date(t.deadline);
-                                                    const today = new Date();
-                                                    const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
-                                                    if (daysLeft < 0) daysLeftText = ` ⚠️ HACE ${Math.abs(daysLeft)} DÍAS`;
-                                                    else if (daysLeft === 0) daysLeftText = ` 🔴 VENCE HOY`;
-                                                    else if (daysLeft <= 3) daysLeftText = ` 🟡 ${daysLeft} DÍAS`;
-                                                    else daysLeftText = ` 🟢 ${daysLeft} DÍAS`;
-                                                }
-                                                
-                                                let progresoColor = riskColor;
-                                                if (progresoMostrar >= 80) progresoColor = '#10b981';
-                                                else if (progresoMostrar >= 60) progresoColor = '#22c55e';
-                                                else if (progresoMostrar >= 40) progresoColor = '#f59e0b';
-                                                else if (progresoMostrar >= 20) progresoColor = '#f97316';
-                                                else progresoColor = '#ef4444';
-                                                
-                                                return `<tr style="background: ${riskBg}; border-left: 3px solid ${riskColor};">
-                                                    <td><strong style="color:${riskColor};">${statusIcon} ${(t.name || 'Sin nombre').substring(0,30)}${daysLeftText}</strong></td>
-                                                    <td style="color:#94a3b8;">${t.assignee || '—'}</td>
-                                                    <td><div style="width:70px; background:#1a1f2e; border-radius:4px; height:4px;"><div style="width:${progresoMostrar}%; height:100%; background:${progresoColor}; border-radius:4px;"></div></div> ${progresoMostrar}%</div></td>
-                                                    <td><span style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:4px;">${statusIcon} ${statusText}</span></div></td>
-                                                    <td><span style="background:${riskBg}; color:${riskColor}; padding:4px 10px; border-radius:4px; font-weight:500;">${riskDisplay}</span></div></td>
-                                                </tr>`;
-                                            }).join('')}
+                                            ${tableRows}
                                         </tbody>
                                     </table>
                                 </div>
                                 <div style="margin-top:12px; display:flex; gap:16px; justify-content:center; font-size:9px; color:#ffffff; padding:8px; border-top:1px solid #1a1f2e;">
-                                    <span>🔴 80-100% → CRÍTICO</span>
-                                    <span>🟠 60-79% → ALTO</span>
-                                    <span>🟡 40-59% → MEDIO</span>
-                                    <span>🟢 0-39% → BAJO</span>
+                                    <span>${riesgoLeyendaCritico}</span>
+                                    <span>${riesgoLeyendaAlto}</span>
+                                    <span>${riesgoLeyendaMedio}</span>
+                                    <span>${riesgoLeyendaBajo}</span>
                                 </div>
                             </div>
                         </div>
@@ -1083,9 +1397,20 @@
                         recognition.onend = () => { isListening = false; };
                         recognition.onresult = (event) => {
                             const command = event.results[0][0].transcript.toLowerCase();
-                            if (command.includes('cerrar')) dashboard.remove();
-                            else if (command.includes('estado')) alert(`📊 ${project.name}\n✅ Progreso: ${completionRate}%\n📋 Tareas: ${completed}/${tasks.length}\n⚠️ Riesgo: ${tasksWithRisk.filter(t => t.risk >= 80).length} tareas críticas`);
-                            else alert(`🎤 Comando: "${command}"`);
+                            const vozCerrar = t('voz_cerrar');
+                            const vozEstado = t('voz_estado');
+                            if (command.includes(vozCerrar)) dashboard.remove();
+                            else if (command.includes(vozEstado)) {
+                                const alertEstado = t('alert_estado')
+                                    .replace('{nombre}', project.name)
+                                    .replace('{completado}', completionRate)
+                                    .replace('{completadas}', completed)
+                                    .replace('{total}', tasks.length)
+                                    .replace('{criticas}', tasksWithRisk.filter(t => t.risk >= 80 && t.status !== 'completed').length);
+                                alert(alertEstado);
+                            } else {
+                                alert(t('alert_comando').replace('{comando}', command));
+                            }
                         };
                         recognition.start();
                     }
@@ -1093,7 +1418,10 @@
             }
         }
     }
-    
+
+    // ============================================================
+    // 4. CREAR BOTÓN EN EL SIDEBAR
+    // ============================================================
     function createSidebarButton() {
         if (document.getElementById('quantumV10Btn')) return;
         
@@ -1102,7 +1430,7 @@
             if (sidebar && !document.getElementById('quantumV10Btn')) {
                 const btn = document.createElement('button');
                 btn.id = 'quantumV10Btn';
-                btn.innerHTML = '🎯 CENTRO DE CONTROL PM';
+                btn.innerHTML = t('sidebar_boton');
                 btn.style.cssText = `
                     width: 90%;
                     margin: 15px auto;
@@ -1132,28 +1460,30 @@
             }
         }, 500);
     }
-    
+
+    // ============================================================
+    // 5. EXPONER Y INICIALIZAR
+    // ============================================================
     window.showQuantumDashboard = showQuantumDashboard;
     window.QuantumExecutive = { 
         show: showQuantumDashboard, 
-        version: '11.7',
+        version: '12.2',
         getCurrentProject: getCurrentProject,
         calculateRisk: calculateRisk,
         calcularProgresoReal: calcularProgresoReal
     };
-    
+
     function init() {
         createSidebarButton();
-        console.log('✅ CENTRO DE CONTROL PM v11.7 - TODOS LOS TEXTOS EN BLANCO');
-        console.log('   • KPIs de Sentiment Analysis: etiquetas BLANCO');
-        console.log('   • Executive Metrics: Cost Performance Index, Schedule Performance Index, Health Score → BLANCO');
-        console.log('   • Critical Risk Matrix: leyenda BLANCO');
-        console.log('   • Diseño ejecutivo premium completo');
+        console.log('✅ CENTRO DE CONTROL PM v12.2 - DEFINITIVO FUNCIONAL');
+        console.log('   • Todas las traducciones aplicadas correctamente');
+        console.log('   • Proyectos cargados desde localStorage');
     }
-    
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
     }
+
 })();
