@@ -38631,6 +38631,30 @@ async function login() {
       // Guardar usuario completo
       localStorage.setItem('user', JSON.stringify(data.user));
       
+
+// ==================== 🔥 VERIFICAR LICENCIA (COLOCAR AQUÍ) ====================
+  try {
+    const userId = data.user?.uid || data.user?.id || clienteIdGuardado;
+    const licenseRes = await fetch(`${API_URL}/api/verificar-premium`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    const licenseData = await licenseRes.json();
+    
+  if (licenseData.plan === 'premium' || licenseData.plan === 'professional') {
+  localStorage.setItem('userPlan', licenseData.plan);
+      localStorage.setItem('userLicense', licenseData.plan);
+      console.log(`✅ Licencia activa: ${licenseData.plan}`);
+    } else {
+      localStorage.setItem('userPlan', 'free');
+      localStorage.setItem('userLicense', 'free');
+      console.log('⚠️ Licencia expirada o free');
+    }
+  } catch (err) {
+    console.error('❌ Error verificando licencia:', err);
+    localStorage.setItem('userPlan', 'free');
+    localStorage.setItem('userLicense', 'free');
+  }
+
       // Recargar para aplicar cambios
       location.reload();
 
@@ -38713,7 +38737,6 @@ function showRegisterForm() {
     if (loginForm) loginForm.style.display = 'none';
     if (registerForm) registerForm.style.display = 'block';
 }
-
 
 
 
@@ -73463,8 +73486,73 @@ setTimeout(() => {
 
 
 
+// ==================== REFRESCAR LICENCIA (AL CARGAR PÁGINA) ====================
+async function refrescarLicencia() {
+  const token = localStorage.getItem('authToken');
+  if (!token) return;
+  
+  try {
+    const res = await fetch(`${API_URL}/api/verificar-premium`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    const planAnterior = localStorage.getItem('userPlan') || 'free';
+    const nuevoPlan = data.plan || 'free';  // ← Aquí el cambio
+    
+    localStorage.setItem('userPlan', nuevoPlan);
+    localStorage.setItem('userLicense', nuevoPlan);
+    
+    if (planAnterior !== 'free' && nuevoPlan === 'free') {
+      mostrarModalRenovacion();
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('❌ Error refrescando licencia:', err);
+  }
+}
+// ==================== MODAL DE RENOVACIÓN ====================
+function mostrarModalRenovacion() {
+  if (document.getElementById('modalRenovacion')) return;
+  
+  const modal = document.createElement('div');
+  modal.id = 'modalRenovacion';
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  `;
+  modal.innerHTML = `
+    <div style="background: #1a1a2e; padding: 30px; border-radius: 16px; max-width: 400px; text-align: center; color: white; border: 1px solid #ff6b6b;">
+      <h2 style="color: #ff6b6b;">⚠️ Licencia Expirada</h2>
+      <p style="margin: 15px 0;">Tu licencia premium ha vencido. Para seguir usando todas las funciones, renueva tu suscripción.</p>
+      <button onclick="window.location.href='https://starlit-phoenix-8ff1bb.netlify.app/pricing.html'" style="background: #ff6b6b; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px;">
+        🔄 Renovar Ahora
+      </button>
+      <button onclick="this.closest('#modalRenovacion').remove()" style="background: transparent; color: #aaa; border: 1px solid #555; padding: 8px 16px; border-radius: 6px; margin-left: 10px; cursor: pointer;">
+        Cerrar
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
 
 
+// 🔥 EXPONER FUNCIONES GLOBALMENTE (para que estén disponibles en consola y eventos)
+window.refrescarLicencia = refrescarLicencia;
+window.mostrarModalRenovacion = mostrarModalRenovacion;
+
+
+
+// ============================================================
+// 🔥 AL FINAL DEL ARCHIVO, AGREGAR ESTO
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  if (localStorage.getItem('authToken')) {
+    await refrescarLicencia();
+  }
+});
 
 
 
