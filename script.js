@@ -5040,30 +5040,99 @@ if (originalSaveTaskChanges) {
             overdue: tasks.filter(t => t.isOverdue && t.status !== 'completed').length
         };
         
-        const distributionCtx = document.getElementById('nexusDistributionChart')?.getContext('2d');
-        if (distributionCtx) {
-            if (charts.distributionChart) charts.distributionChart.destroy();
-            charts.distributionChart = new Chart(distributionCtx, {
-                type: 'pie',
-                data: { labels: ['✅ Completadas', '🔄 En Progreso', '⏳ Pendientes', '🔴 Retrasadas'], datasets: [{ data: [statusCounts.completed, statusCounts.inProgress, statusCounts.pending, statusCounts.overdue], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'], borderWidth: 0, hoverOffset: 15 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw} tareas` } } } }
-            });
+        // Detectar idioma actual
+const lang = localStorage.getItem('preferredLanguage') || 'es';
+const es = lang === 'es';
+
+// Etiquetas según idioma
+const labelsDistribution = es 
+    ? ['✅ Completadas', '🔄 En Progreso', '⏳ Pendientes', '🔴 Retrasadas']
+    : ['✅ Completed', '🔄 In Progress', '⏳ Pending', '🔴 Overdue'];
+
+const labelsBurndown = es 
+    ? ['Inicio', 'Sem 1', 'Sem 2', 'Sem 3', 'Actual']
+    : ['Start', 'Wk 1', 'Wk 2', 'Wk 3', 'Now'];
+
+const labelLineaIdeal = es ? '📈 Línea Ideal' : '📈 Ideal Line';
+const labelProgresoReal = es ? '📉 Progreso Real' : '📉 Actual Progress';
+const tooltipTareas = es ? 'tareas' : 'tasks';
+
+const distributionCtx = document.getElementById('nexusDistributionChart')?.getContext('2d');
+if (distributionCtx) {
+    if (charts.distributionChart) charts.distributionChart.destroy();
+    charts.distributionChart = new Chart(distributionCtx, {
+        type: 'pie',
+        data: { 
+            labels: labelsDistribution, 
+            datasets: [{ 
+                data: [statusCounts.completed, statusCounts.inProgress, statusCounts.pending, statusCounts.overdue], 
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'], 
+                borderWidth: 0, 
+                hoverOffset: 15 
+            }] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { font: { size: 11 } } }, 
+                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw} ${tooltipTareas}` } } 
+            } 
         }
-        
-        const totalHours = totalEstimatedHours;
-        const remainingHours = totalHours - totalLoggedHours;
-        const idealBurndown = [totalHours, totalHours * 0.75, totalHours * 0.5, totalHours * 0.25, 0];
-        const actualBurndown = [totalHours, totalHours - totalLoggedHours * 0.25, totalHours - totalLoggedHours * 0.5, totalHours - totalLoggedHours * 0.75, remainingHours];
-        
-        const burndownCtx = document.getElementById('nexusBurndownChart')?.getContext('2d');
-        if (burndownCtx) {
-            if (charts.burndownChart) charts.burndownChart.destroy();
-            charts.burndownChart = new Chart(burndownCtx, {
-                type: 'line',
-                data: { labels: ['Inicio', 'Sem 1', 'Sem 2', 'Sem 3', 'Actual'], datasets: [{ label: '📈 Línea Ideal', data: idealBurndown, borderColor: '#10b981', borderWidth: 3, borderDash: [8, 6], fill: false, tension: 0.4, pointRadius: 0 }, { label: '📉 Progreso Real', data: actualBurndown, borderColor: '#f59e0b', borderWidth: 4, backgroundColor: 'rgba(245, 158, 11, 0.05)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#f59e0b', pointBorderColor: '#fff', pointBorderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}h` } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'h' } } } }
-            });
+    });
+}
+
+const totalHours = totalEstimatedHours;
+const remainingHours = totalHours - totalLoggedHours;
+const idealBurndown = [totalHours, totalHours * 0.75, totalHours * 0.5, totalHours * 0.25, 0];
+const actualBurndown = [totalHours, totalHours - totalLoggedHours * 0.25, totalHours - totalLoggedHours * 0.5, totalHours - totalLoggedHours * 0.75, remainingHours];
+
+const burndownCtx = document.getElementById('nexusBurndownChart')?.getContext('2d');
+if (burndownCtx) {
+    if (charts.burndownChart) charts.burndownChart.destroy();
+    charts.burndownChart = new Chart(burndownCtx, {
+        type: 'line',
+        data: { 
+            labels: labelsBurndown, 
+            datasets: [
+                { 
+                    label: labelLineaIdeal, 
+                    data: idealBurndown, 
+                    borderColor: '#10b981', 
+                    borderWidth: 3, 
+                    borderDash: [8, 6], 
+                    fill: false, 
+                    tension: 0.4, 
+                    pointRadius: 0 
+                }, 
+                { 
+                    label: labelProgresoReal, 
+                    data: actualBurndown, 
+                    borderColor: '#f59e0b', 
+                    borderWidth: 4, 
+                    backgroundColor: 'rgba(245, 158, 11, 0.05)', 
+                    fill: true, 
+                    tension: 0.3, 
+                    pointRadius: 5, 
+                    pointBackgroundColor: '#f59e0b', 
+                    pointBorderColor: '#fff', 
+                    pointBorderWidth: 2 
+                }
+            ] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'top', labels: { font: { size: 11 } } }, 
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}h` } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, ticks: { callback: v => v + 'h' } } 
+            } 
         }
+    });
+}
         
         const workloadCtx = document.getElementById('workloadChart')?.getContext('2d');
         if (workloadCtx) {
@@ -25189,10 +25258,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 👇 Solo si hay token, continuar con la app
   console.log('🎯 Iniciando aplicación con validación...');
-  const dataLoaded = safeLoad();
+  
+  // 🔥 CAMBIO 1: AWAIT para esperar que los datos se carguen
+  const dataLoaded = await safeLoad();
+  
   if (!dataLoaded || projects.length === 0) {
     console.log('📝 No hay datos, creando proyecto inicial...');
-   
+    // (Aquí podrías agregar lógica para crear un proyecto por defecto si quieres)
   } else {
     console.log('✅ Datos cargados correctamente');
     renderProjects();
@@ -25221,8 +25293,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // ========== FIN NUEVO ==========
 
-}); // ← CIERRE DEL DOMContentLoaded (asegúrate de que esta llave exista)
+  // ✅🔥 FORZAR ACTUALIZACIÓN INICIAL DE VISTAS (con retraso)
+  setTimeout(() => {
+      document.dispatchEvent(new Event('languageChanged'));
+  }, 1000);
 
+}); // ← CIERRE DEL DOMContentLoaded
 /**************************************
  * SISTEMA DE VALIDACIÓN Y RESPALDO *
  **************************************/
@@ -30820,15 +30896,20 @@ function createCompleteGanttForCurrentProject() {
             📊
           </div>
           <div style="flex: 1;">
-            <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;">
-              <span style="font-weight: 700; color: #2ecc71;">${yourProject.name}</span>
-              <span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">- GANTT EXECUTIVE</span>
-            </h2>
-            <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;">
-              <span style="color: #3498db;">📅 ${todayFormatted}</span> • 
-              🔥 ${criticalTasks} críticas • 🔗 ${tasksWithDeps} dependencias • 📊 ${avgProgress}% progreso
-              <br><span style="color: #f39c12; font-size: 12px;">Timeline: ${DIAS_PASADO} días pasado | HOY | ${DIAS_FUTURO} días futuro</span>
-            </p>
+            <h2 style="
+  margin: 0;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+">
+  
+  <span style="font-weight: 700; color: #2ecc71; white-space: nowrap;">${yourProject.name}</span>
+</h2>
+            
           </div>
         </div>
       </div>
@@ -44106,8 +44187,10 @@ function checkOverdueTasks() {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   let hasChanges = false;
+  const project = projects[currentProjectIndex];
+  if (!project) return;
 
-  projects[currentProjectIndex].tasks.forEach(task => {
+  project.tasks.forEach(task => {
     if (task.deadline && task.status !== 'completed') {
       const deadlineDate = new Date(task.deadline);
       deadlineDate.setHours(0, 0, 0, 0);
@@ -44123,14 +44206,16 @@ function checkOverdueTasks() {
     actualizarAsignados();
     aplicarFiltros();
     generatePieChart(getStats());
-           updateProjectProgress();
-           actualizarAsignados();
+    updateProjectProgress();
+    // Notificación a Slack (corregido)
+    const vencidas = project.tasks.filter(t => t.status === 'overdue');
+    if (window.SlackNotifier && vencidas.length) {
+      SlackNotifier.overdueTasks(vencidas, project.name);
+    }
     showNotification('Tareas actualizadas: algunas han sido marcadas como "Rezagadas"');
-
-if (window.SlackNotifier && overdueTasks.length) SlackNotifier.overdueTasks(overdueTasks, projects[currentProjectIndex].name);
-
+  }
 }
-}
+
 /***********************
  * FUNCIONES DE REPORTES *
  ***********************/
@@ -54330,22 +54415,66 @@ function handleBackupFile(fileOrEvent) {
     
     reader.readAsText(file);
 }
-// === CONEXIÓN AUTOMÁTICA AL CARGAR LA PÁGINA ===
+// === CONEXIÓN AUTOMÁTICA AL CARGAR LA PÁGINA (VERSIÓN ROBUSTA) ===
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que los elementos estén disponibles
+    // Esperar a que el DOM esté listo
     setTimeout(() => {
+        // Botón de descarga (ya funciona, lo dejamos igual)
         const downloadBtn = document.getElementById('backupToLocal');
-        const uploadBtn = document.getElementById('restoreFromLocal');
+        if (downloadBtn) {
+            downloadBtn.onclick = downloadBackup;
+            console.log('✅ Botón de descarga conectado');
+        }
+
+        // --- BOTÓN DE CARGA DE RESPALDO (VERSIÓN QUE FUNCIONÓ) ---
+        const restoreBtn = document.getElementById('restoreFromLocal');
+        if (restoreBtn) {
+            // Remover eventos anteriores clonando y reemplazando
+            const newBtn = restoreBtn.cloneNode(true);
+            restoreBtn.parentNode.replaceChild(newBtn, restoreBtn);
+
+            // Asignar el evento click
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('📂 Botón "Cargar desde archivo" clickeado');
+
+                if (typeof window.uploadBackup === 'function') {
+                    window.uploadBackup();
+                } else {
+                    // Fallback: crear input file
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    input.style.display = 'none';
+                    input.onchange = function(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            if (typeof window.handleBackupFile === 'function') {
+                                window.handleBackupFile(file);
+                            } else {
+                                alert('⚠️ Función handleBackupFile no disponible. El archivo no se procesará.');
+                            }
+                        }
+                        input.remove();
+                    };
+                    document.body.appendChild(input);
+                    input.click();
+                }
+            });
+            console.log('✅ Botón "Cargar desde archivo" reconectado correctamente');
+        } else {
+            console.warn('⚠️ No se encontró el botón con ID "restoreFromLocal"');
+        }
+
+        // Input de archivo para adjuntos (lo dejamos igual)
         const fileInput = document.getElementById('fileUpload');
-        
-        if (downloadBtn) downloadBtn.onclick = downloadBackup;
-        if (uploadBtn) uploadBtn.onclick = uploadBackup;
-        if (fileInput) fileInput.onchange = handleBackupFile;
-        
+        if (fileInput) {
+            fileInput.onchange = handleBackupFile;
+        }
+
         console.log('🔧 Sistema de respaldo conectado automáticamente');
     }, 1000);
 });
-
 
 
 // === SOLUCIÓN DEFINITIVA BOTÓN MENÚ - PEGAR AL FINAL DEL ARCHIVO ===
@@ -56562,54 +56691,87 @@ function renderEVMForecast(evm) {
     const mode = window.__EVM_MODE__ || 'hours';
     
     if (mode === 'costs') {
-        // 🔥 MODO COSTOS - Usar €
-        const forecast = calcularPronosticoCostos(evm);
-        
-        eacEl.textContent = `€${forecast.EAC.toFixed(2)}`;
-        etcEl.textContent = `€${forecast.ETC.toFixed(2)}`;
-        vacEl.textContent = (forecast.VAC >= 0 ? '+' : '') + `€${Math.abs(forecast.VAC).toFixed(2)}`;
-        
-        // 🔥 Corregir las etiquetas (unidades)
-        const eacParent = eacEl.parentElement;
-        const etcParent = etcEl.parentElement;
-        const vacParent = vacEl.parentElement;
-        
-        if (eacParent) {
-            const labelEl = eacParent.querySelector('div:first-child, .evm-label, .metric-label');
-            if (labelEl && labelEl.textContent.includes('Horas al finalizar')) {
-                labelEl.textContent = 'Euros al finalizar';
-            }
+    // 🔥 MODO COSTOS - Usar €
+    const forecast = calcularPronosticoCostos(evm);
+    
+    eacEl.textContent = `€${forecast.EAC.toFixed(2)}`;
+    etcEl.textContent = `€${forecast.ETC.toFixed(2)}`;
+    vacEl.textContent = (forecast.VAC >= 0 ? '+' : '') + `€${Math.abs(forecast.VAC).toFixed(2)}`;
+    
+    // 🔥 NUEVA LÓGICA CON UMBRAL PARA COSTOS
+    const BAC = evm.BAC || evm.bac || 0;
+    const umbralPorcentaje = 0.05; // 5% de tolerancia
+    let mensaje = '';
+    let color = '#a7f3d0'; // Verde por defecto
+
+    if (BAC > 0) {
+        const desviacionPorcentaje = Math.abs(forecast.VAC) / BAC;
+        if (forecast.VAC < 0 && desviacionPorcentaje > umbralPorcentaje) {
+            mensaje = `🔴 ¡ALERTA! Sobrecosto proyectado significativo (${(desviacionPorcentaje*100).toFixed(1)}% del presupuesto).`;
+            color = '#fca5a5';
+        } else if (forecast.VAC < 0) {
+            mensaje = `🟡 Desviación de costos mínima (${(desviacionPorcentaje*100).toFixed(2)}% del BAC). Dentro del margen de tolerancia.`;
+            color = '#fde68a';
+        } else {
+            mensaje = '✅ El proyecto se mantiene dentro del presupuesto.';
+            color = '#a7f3d0';
         }
-        
-        if (etcParent) {
-            const labelEl = etcParent.querySelector('div:first-child, .evm-label, .metric-label');
-            if (labelEl && labelEl.textContent.includes('Horas restantes')) {
-                labelEl.textContent = 'Euros restantes';
-            }
-        }
-        
-        if (vacParent) {
-            const labelEl = vacParent.querySelector('div:first-child, .evm-label, .metric-label');
-            // No cambiar "Variación final" porque es genérica
-        }
-        
-        narrative.textContent = forecast.VAC < 0
+    } else {
+        // Fallback si no hay BAC
+        mensaje = forecast.VAC < 0
             ? '⚠️ El proyecto presenta riesgo de sobrecosto. Se recomienda controlar gastos.'
             : '✅ El proyecto se mantiene dentro del presupuesto.';
-        
+    }
+
+    // Añadir advertencia de cronograma si SPI bajo (opcional)
+    if (evm.SPI && evm.SPI < 0.8) {
+        mensaje += ` ⚠️ Atención: retraso crítico en el cronograma (SPI ${evm.SPI.toFixed(2)}).`;
+    }
+
+    narrative.textContent = mensaje;
+    narrative.style.color = color;  // Para dar color al texto
+
+} else {
+        // 🔥 MODO HORAS - CON UMBRAL DE TOLERANCIA
+const EAC = evm.EAC || 0;
+const ETC = evm.ETC || 0;
+const VAC = evm.VAC || 0;
+const BAC = evm.BAC || evm.bac || 0; // Asegurar que tenemos BAC
+
+eacEl.textContent = `${EAC.toFixed(2)} h`;
+etcEl.textContent = `${ETC.toFixed(2)} h`;
+vacEl.textContent = (VAC >= 0 ? '+' : '') + `${VAC.toFixed(2)} h`;
+
+// 🔥 NUEVA LÓGICA CON UMBRAL
+const umbralPorcentaje = 0.05; // 5% de tolerancia
+let mensaje = '';
+let color = '#a7f3d0'; // Verde por defecto
+
+if (BAC > 0) {
+    const desviacionPorcentaje = Math.abs(VAC) / BAC;
+    
+    if (VAC < 0 && desviacionPorcentaje > umbralPorcentaje) {
+        mensaje = `🔴 ¡ALERTA! Sobreconsumo proyectado significativo (${(desviacionPorcentaje*100).toFixed(1)}% del presupuesto).`;
+        color = '#fca5a5';
+    } else if (VAC < 0) {
+        mensaje = `🟡 Desviación de horas mínima (${(desviacionPorcentaje*100).toFixed(2)}% del BAC). Dentro del margen de tolerancia.`;
+        color = '#fde68a';
     } else {
-        // 🔥 MODO HORAS
-        const EAC = evm.EAC || 0;
-        const ETC = evm.ETC || 0;
-        const VAC = evm.VAC || 0;
-        
-        eacEl.textContent = `${EAC.toFixed(2)} h`;
-        etcEl.textContent = `${ETC.toFixed(2)} h`;
-        vacEl.textContent = (VAC >= 0 ? '+' : '') + `${VAC.toFixed(2)} h`;
-        
-        narrative.textContent = VAC < 0
-            ? '⚠️ El proyecto presenta riesgo de sobreconsumo de horas.'
-            : '✅ El proyecto se mantiene dentro del plan de horas.';
+        mensaje = '✅ El proyecto se mantiene dentro del plan de horas.';
+        color = '#a7f3d0';
+    }
+} else {
+    // Fallback si no hay BAC
+    mensaje = VAC < 0 ? '⚠️ El proyecto presenta riesgo de sobreconsumo de horas.' : '✅ El proyecto se mantiene dentro del plan de horas.';
+}
+
+// Añadir advertencia de cronograma si SPI bajo (opcional)
+if (evm.SPI && evm.SPI < 0.8) {
+    mensaje += ` ⚠️ Atención: retraso crítico en el cronograma (SPI ${evm.SPI.toFixed(2)}).`;
+}
+
+narrative.textContent = mensaje;
+narrative.style.color = color; // Para darle el color al texto
     }
 }
 
@@ -64800,7 +64962,7 @@ function generateDashboard4DHTML() {
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="background: linear-gradient(45deg, #9b59b6, #8e44ad); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);">🌐</div>
                 <div>
-                    <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300;"><span style="font-weight: 700; color: #9b59b6;">Dashboard 4D Ejecutivo</span><span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">• Todos los Proyectos</span></h2>
+                    <h2 style="margin: 0; color: white; font-size: 20px; font-weight: 300;"><span style="font-weight: 700; color: #9b59b6;">Dashboard 4D Ejecutivo</span><span style="color: #95a5a6; font-size: 20px; margin-left: 10px;">• Todos los Proyectos</span></h2>
                     <p style="margin: 5px 0 0 0; color: #95a5a6; font-size: 14px;"><span style="color: #3498db;">📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span> • 📂 ${projects.length} proyectos • 🔥 ${getCriticalTasksCount()} críticas • ✅ ${getOverallProgress()}% progreso promedio</p>
                 </div>
             </div>
@@ -65712,142 +65874,926 @@ window.refreshDashboard4D = function () {
 };
 
 window.exportDashboard4DReport = function() {
-    console.log('📤 Exportando PDF ejecutivo...');
+    console.log('🏆 Exportando Reporte VIP Dashboard 4D...');
+    
+    // 1. Detectar idioma actual
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const isEn = lang === 'en';
+    const locale = isEn ? 'en-US' : 'es-ES';
+
+    // 2. Diccionario de traducciones
+    const T = {
+        title: isEn ? 'VIP EXECUTIVE REPORT' : 'REPORTE EJECUTIVO VIP',
+        subtitle: isEn ? 'Dashboard 4D - Strategic Project Analysis' : 'Dashboard 4D - Análisis Estratégico de Proyectos',
+        date: isEn ? 'Generated' : 'Generado',
+        system: isEn ? 'Project Management System' : 'Sistema de Gestión de Proyectos',
+        
+        // KPIs
+        executiveSummary: isEn ? 'EXECUTIVE SUMMARY' : 'RESUMEN EJECUTIVO',
+        globalKPIs: isEn ? 'GLOBAL KEY PERFORMANCE INDICATORS' : 'INDICADORES CLAVE DE DESEMPEÑO GLOBAL',
+        activeProjects: isEn ? 'Active Projects' : 'Proyectos Activos',
+        totalTasks: isEn ? 'Total Tasks' : 'Total de Tareas',
+        completedTasks: isEn ? 'Completed Tasks' : 'Tareas Completadas',
+        inProgressTasks: isEn ? 'In Progress' : 'En Progreso',
+        pendingTasks: isEn ? 'Pending Tasks' : 'Tareas Pendientes',
+        overdueTasks: isEn ? 'Overdue Tasks' : 'Tareas Atrasadas',
+        criticalTasks: isEn ? 'Critical Tasks' : 'Tareas Críticas',
+        overallProgress: isEn ? 'Overall Progress' : 'Progreso Global',
+        systemHealth: isEn ? 'System Health Score' : 'Puntuación de Salud del Sistema',
+        
+        // Gráficas
+        progressTrend: isEn ? 'PROGRESS TREND ANALYSIS' : 'ANÁLISIS DE TENDENCIA DE PROGRESO',
+        progressTrendDesc: isEn ? 'Last 7 days performance evolution' : 'Evolución del rendimiento de los últimos 7 días',
+        taskStatus: isEn ? 'TASK STATUS DISTRIBUTION' : 'DISTRIBUCIÓN DEL ESTADO DE TAREAS',
+        taskStatusDesc: isEn ? 'Current allocation by status' : 'Asignación actual por estado',
+        burndownChart: isEn ? 'BURNDOWN ANALYSIS' : 'ANÁLISIS BURNDOWN',
+        burndownDesc: isEn ? 'Critical tasks completion vs ideal plan' : 'Finalización de tareas críticas vs plan ideal',
+        riskMatrix: isEn ? 'RISK MATRIX' : 'MATRIZ DE RIESGOS',
+        riskMatrixDesc: isEn ? 'Priority vs deadline urgency analysis' : 'Análisis de prioridad vs urgencia de plazo',
+        efficiencyChart: isEn ? 'EFFICIENCY BY PROJECT' : 'EFICIENCIA POR PROYECTO',
+        efficiencyDesc: isEn ? 'Completion rate per project' : 'Tasa de finalización por proyecto',
+        
+        // Tablas
+        projectDetails: isEn ? 'DETAILED PROJECT ANALYSIS' : 'ANÁLISIS DETALLADO DE PROYECTOS',
+        projectCol: isEn ? 'Project' : 'Proyecto',
+        tasksCol: isEn ? 'Tasks' : 'Tareas',
+        completedCol: isEn ? 'Completed' : 'Completadas',
+        progressCol: isEn ? 'Progress' : 'Progreso',
+        overdueCol: isEn ? 'Overdue' : 'Atrasadas',
+        riskCol: isEn ? 'Risk Level' : 'Nivel de Riesgo',
+        statusCol: isEn ? 'Status' : 'Estado',
+        
+        // Análisis
+        riskAnalysis: isEn ? 'RISK ANALYSIS & ALERTS' : 'ANÁLISIS DE RIESGOS Y ALERTAS',
+        identifiedIssues: isEn ? 'IDENTIFIED ISSUES' : 'PROBLEMAS IDENTIFICADOS',
+        strategicRecommendations: isEn ? 'STRATEGIC RECOMMENDATIONS' : 'RECOMENDACIONES ESTRATÉGICAS',
+        
+        // Problemas
+        criticalIssues: isEn ? 'Critical Issues' : 'Problemas Críticos',
+        highPriority: isEn ? 'High Priority' : 'Alta Prioridad',
+        mediumPriority: isEn ? 'Medium Priority' : 'Prioridad Media',
+        lowPriority: isEn ? 'Low Priority' : 'Prioridad Baja',
+        
+        // Recomendaciones
+        immediateActions: isEn ? 'Immediate Actions Required' : 'Acciones Inmediatas Requeridas',
+        shortTerm: isEn ? 'Short-term Recommendations' : 'Recomendaciones a Corto Plazo',
+        longTerm: isEn ? 'Long-term Strategy' : 'Estrategia a Largo Plazo',
+        
+        // Estados
+        excellent: isEn ? 'EXCELLENT' : 'EXCELENTE',
+        good: isEn ? 'GOOD' : 'BUENO',
+        acceptable: isEn ? 'ACCEPTABLE' : 'ACEPTABLE',
+        critical: isEn ? 'CRITICAL' : 'CRÍTICO',
+        healthy: isEn ? 'HEALTHY' : 'SALUDABLE',
+        atRisk: isEn ? 'AT RISK' : 'EN RIESGO',
+        
+        // Footer
+        footer: isEn ? 'Confidential Document - For Executive Use Only' : 'Documento Confidencial - Solo para Uso Ejecutivo',
+        generatedBy: isEn ? 'Generated by Dashboard 4D Executive System' : 'Generado por Sistema Dashboard 4D Ejecutivo',
+        
+        // Botones
+        printBtn: isEn ? '🖨️ Print Report' : '🖨️ Imprimir Reporte',
+        closeBtn: isEn ? '✕ Close' : '✕ Cerrar'
+    };
+
+    // 3. Obtener métricas
+    const totalTasks = getTotalTasks();
+    const completedTasks = getCompletedTasks();
+    const inProgressTasks = getAllTasks().filter(t => t.status === 'inProgress').length;
+    const pendingTasks = getAllTasks().filter(t => t.status === 'pending').length;
+    const overdueTasksCount = getOverdueTasks();
+    const criticalTasksCount = getCriticalTasksCount();
+    const overallProgress = getOverallProgress();
+    
+    // Calcular score de salud del sistema
+    const healthScore = Math.max(0, Math.min(100, 
+        overallProgress - (overdueTasksCount * 5) - (criticalTasksCount * 3)
+    ));
+    
+    const healthStatus = healthScore >= 80 ? T.excellent :
+                         healthScore >= 60 ? T.good :
+                         healthScore >= 40 ? T.acceptable : T.critical;
+    
+    const healthColor = healthScore >= 80 ? '#10b981' :
+                        healthScore >= 60 ? '#3b82f6' :
+                        healthScore >= 40 ? '#f59e0b' : '#ef4444';
+
+    // 4. Generar datos para gráficas
+    const last7Days = [];
+    const dayNames = isEn ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : 
+                            ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(today.getDate() - i);
+        last7Days.push(dayNames[date.getDay()]);
+    }
+    
+    // Progreso histórico simulado (basado en progreso actual)
+    const historicalProgress = last7Days.map((_, i) => {
+        const dayRatio = (7 - i) / 7;
+        return Math.round(overallProgress * dayRatio);
+    });
+
+    // Datos por proyecto
+    const projectData = projects.map(p => {
+        const tasks = p.tasks || [];
+        const completed = tasks.filter(t => t.status === 'completed').length;
+        const overdue = tasks.filter(t => 
+            t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date()
+        ).length;
+        const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+        const risk = overdue > tasks.length * 0.2 ? T.critical :
+                     overdue > tasks.length * 0.1 ? T.highPriority :
+                     overdue > 0 ? T.mediumPriority : T.lowPriority;
+        return {
+            name: p.name,
+            total: tasks.length,
+            completed,
+            progress,
+            overdue,
+            risk
+        };
+    });
+
+    // 5. Generar HTML del reporte
     const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Reporte Ejecutivo Dashboard 4D</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 40px; }
-                .header { text-align: center; margin-bottom: 40px; border-bottom: 3px solid #9b59b6; padding-bottom: 20px; }
-                .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 30px 0; }
-                .kpi-card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; text-align: center; }
-                .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 10px; }
-                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-                th { background: #9b59b6; color: white; }
-                .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; }
-                @media print {
-                    .no-print { display: none; }
-                    body { margin: 20px; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1 style="color: #9b59b6;">Reporte Ejecutivo Dashboard 4D</h1>
-                <p>Fecha: ${new Date().toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                })}</p>
-                <p>Generado automáticamente por el sistema de gestión</p>
+<!DOCTYPE html>
+<html lang="${isEn ? 'en' : 'es'}">
+<head>
+    <meta charset="UTF-8">
+    <title>${T.title} - Dashboard 4D</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"><\/script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%);
+            color: #e2e8f0;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(155, 89, 182, 0.3);
+        }
+        
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #9b59b6;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            font-weight: 300;
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .header h2 {
+            font-size: 20px;
+            color: #95a5a6;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+        
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            color: #64748b;
+            font-size: 14px;
+        }
+        
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* HEALTH SCORE */
+        .health-score {
+            background: linear-gradient(135deg, ${healthColor}20, ${healthColor}10);
+            border: 2px solid ${healthColor};
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .health-score h3 {
+            font-size: 18px;
+            color: ${healthColor};
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .health-score .score {
+            font-size: 72px;
+            font-weight: 800;
+            color: ${healthColor};
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        
+        .health-score .status {
+            font-size: 24px;
+            color: ${healthColor};
+            font-weight: 600;
+        }
+        
+        /* KPIs GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+        
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(155, 89, 182, 0.3);
+        }
+        
+        .kpi-card .icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .kpi-card .value {
+            font-size: 42px;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-card .label {
+            font-size: 13px;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* SECTIONS */
+        .section {
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section h2 {
+            font-size: 24px;
+            color: #9b59b6;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section .description {
+            color: #95a5a6;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        
+        /* CHARTS */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chart-container h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .risk-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .risk-critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .risk-high { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid #f97316; }
+        .risk-medium { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .risk-low { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+        
+        /* RECOMMENDATIONS */
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid #9b59b6;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .recommendation-card h4 {
+            color: #9b59b6;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .recommendation-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recommendation-card li {
+            color: #e2e8f0;
+            font-size: 14px;
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .recommendation-card li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #9b59b6;
+        }
+        
+        /* ISSUES */
+        .issue-card {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .issue-card h4 {
+            color: #ef4444;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .issue-card p {
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(155, 89, 182, 0.3);
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .footer .confidential {
+            color: #ef4444;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        /* BUTTONS */
+        .buttons {
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-print {
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+            color: white;
+        }
+        
+        .btn-print:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(155, 89, 182, 0.4);
+        }
+        
+        .btn-close {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+        
+        .btn-close:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        /* PRINT STYLES */
+        @media print {
+            body { background: white; color: black; padding: 20px; }
+            .container { box-shadow: none; border: none; }
+            .buttons { display: none; }
+            .section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🏆 ${T.title}</h1>
+            <h2>${T.subtitle}</h2>
+            <div class="header-meta">
+                <span>📅 ${T.date}: ${new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <span>🕐 ${new Date().toLocaleTimeString(locale)}</span>
+                <span>🌐 ${T.system}</span>
             </div>
+        </div>
+
+        <!-- HEALTH SCORE -->
+        <div class="health-score">
+            <h3>${T.systemHealth}</h3>
+            <div class="score">${healthScore}</div>
+            <div class="status">${healthStatus}</div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="section">
+            <h2>📊 ${T.globalKPIs}</h2>
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <h3>${projects.length}</h3>
-                    <p>Proyectos Activos</p>
+                    <div class="icon">📂</div>
+                    <div class="value">${projects.length}</div>
+                    <div class="label">${T.activeProjects}</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>${getTotalTasks()}</h3>
-                    <p>Tareas Totales</p>
+                    <div class="icon">📋</div>
+                    <div class="value">${totalTasks}</div>
+                    <div class="label">${T.totalTasks}</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>${getOverallProgress()}%</h3>
-                    <p>Progreso Global</p>
+                    <div class="icon">✅</div>
+                    <div class="value">${completedTasks}</div>
+                    <div class="label">${T.completedTasks}</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>${getOverdueTasks()}</h3>
-                    <p>Tareas Atrasadas</p>
+                    <div class="icon">🔄</div>
+                    <div class="value">${inProgressTasks}</div>
+                    <div class="label">${T.inProgressTasks}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">⏳</div>
+                    <div class="value">${pendingTasks}</div>
+                    <div class="label">${T.pendingTasks}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">⚠️</div>
+                    <div class="value">${overdueTasksCount}</div>
+                    <div class="label">${T.overdueTasks}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">🔥</div>
+                    <div class="value">${criticalTasksCount}</div>
+                    <div class="label">${T.criticalTasks}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">📈</div>
+                    <div class="value">${overallProgress}%</div>
+                    <div class="label">${T.overallProgress}</div>
                 </div>
             </div>
-            <div class="section">
-                <h2>📊 Estado de Tareas</h2>
-                <table>
-                    <tr>
-                        <th>Estado</th>
-                        <th>Cantidad</th>
-                        <th>Porcentaje</th>
-                    </tr>
-                    <tr>
-                        <td>✅ Completadas</td>
-                        <td>${getCompletedTasks()}</td>
-                        <td>${getTotalTasks() > 0 ? Math.round((getCompletedTasks()/getTotalTasks())*100) : 0}%</td>
-                    </tr>
-                    <tr>
-                        <td>🔄 En Progreso</td>
-                        <td>${getAllTasks().filter(t => t.status === 'inProgress').length}</td>
-                        <td>${getTotalTasks() > 0 ? Math.round((getAllTasks().filter(t => t.status === 'inProgress').length/getTotalTasks())*100) : 0}%</td>
-                    </tr>
-                    <tr>
-                        <td>⏳ Pendientes</td>
-                        <td>${getAllTasks().filter(t => t.status === 'pending').length}</td>
-                        <td>${getTotalTasks() > 0 ? Math.round((getAllTasks().filter(t => t.status === 'pending').length/getTotalTasks())*100) : 0}%</td>
-                    </tr>
-                    <tr>
-                        <td>⚠️ Atrasadas</td>
-                        <td>${getOverdueTasks()}</td>
-                        <td>${getTotalTasks() > 0 ? Math.round((getOverdueTasks()/getTotalTasks())*100) : 0}%</td>
-                    </tr>
-                </table>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="section">
+            <h2>📊 ${T.progressTrend}</h2>
+            <p class="description">${T.progressTrendDesc}</p>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>${T.progressTrend}</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>${T.taskStatus}</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="section">
-                <h2>📋 Resumen Ejecutivo</h2>
-                <p>El sistema actual presenta un progreso global del <strong>${getOverallProgress()}%</strong>.</p>
-                <p>${getOverdueTasks() > 0 ?
-                    `⚠️ Se requiere atención en ${getOverdueTasks()} tareas atrasadas.` :
-                    '✅ Todas las tareas están al día.'}</p>
-                <p>${getOverallProgress() >= 80 ?
-                    '🎯 Excelente rendimiento, se superan los objetivos establecidos.' :
-                    getOverallProgress() >= 60 ?
-                    '📊 Rendimiento aceptable, se recomienda seguimiento continuo.' :
-                    '🔴 Se requiere revisión estratégica para mejorar el progreso.'}</p>
+        </div>
+
+        <div class="section">
+            <h2>📉 ${T.burndownChart}</h2>
+            <p class="description">${T.burndownDesc}</p>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>${T.burndownChart}</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="burndownChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>${T.efficiencyChart}</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="footer">
-                <p>Reporte generado por Dashboard 4D Ejecutivo</p>
-                <p>Documento para uso interno - ${new Date().getFullYear()}</p>
+        </div>
+
+        <!-- PROJECT DETAILS TABLE -->
+        <div class="section">
+            <h2>📋 ${T.projectDetails}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>${T.projectCol}</th>
+                        <th>${T.tasksCol}</th>
+                        <th>${T.completedCol}</th>
+                        <th>${T.progressCol}</th>
+                        <th>${T.overdueCol}</th>
+                        <th>${T.riskCol}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${projectData.map(p => {
+                        const progressColor = p.progress >= 75 ? '#10b981' :
+                                            p.progress >= 50 ? '#f59e0b' : '#ef4444';
+                        const riskClass = p.risk === T.critical ? 'risk-critical' :
+                                        p.risk === T.highPriority ? 'risk-high' :
+                                        p.risk === T.mediumPriority ? 'risk-medium' : 'risk-low';
+                        return `
+                            <tr>
+                                <td><strong>${p.name}</strong></td>
+                                <td>${p.total}</td>
+                                <td>${p.completed}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span>${p.progress}%</span>
+                                        <div class="progress-bar" style="flex: 1;">
+                                            <div class="progress-fill" style="width: ${p.progress}%; background: ${progressColor};"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${p.overdue}</td>
+                                <td><span class="risk-badge ${riskClass}">${p.risk}</span></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ISSUES -->
+        ${overdueTasksCount > 0 || criticalTasksCount > 0 ? `
+        <div class="section">
+            <h2>⚠️ ${T.riskAnalysis}</h2>
+            ${overdueTasksCount > 0 ? `
+                <div class="issue-card">
+                    <h4>🚨 ${T.criticalIssues}</h4>
+                    <p>${isEn ? 
+                        `There are ${overdueTasksCount} overdue tasks that require immediate attention. These tasks have exceeded their deadlines and may impact project delivery.` :
+                        `Hay ${overdueTasksCount} tareas atrasadas que requieren atención inmediata. Estas tareas han superado sus plazos y pueden afectar la entrega del proyecto.`
+                    }</p>
+                </div>
+            ` : ''}
+            ${criticalTasksCount > 0 ? `
+                <div class="issue-card">
+                    <h4>🔥 ${T.criticalTasks}</h4>
+                    <p>${isEn ?
+                        `${criticalTasksCount} tasks are marked as critical. These tasks require priority handling and dedicated resources.` :
+                        `${criticalTasksCount} tareas están marcadas como críticas. Estas tareas requieren manejo prioritario y recursos dedicados.`
+                    }</p>
+                </div>
+            ` : ''}
+        </div>
+        ` : ''}
+
+        <!-- RECOMMENDATIONS -->
+        <div class="section">
+            <h2>💡 ${T.strategicRecommendations}</h2>
+            <div class="recommendations">
+                <div class="recommendation-card">
+                    <h4>⚡ ${T.immediateActions}</h4>
+                    <ul>
+                        ${overdueTasksCount > 0 ? `<li>${isEn ? 'Address all overdue tasks immediately' : 'Abordar todas las tareas atrasadas inmediatamente'}</li>` : ''}
+                        ${criticalTasksCount > 0 ? `<li>${isEn ? 'Assign dedicated resources to critical tasks' : 'Asignar recursos dedicados a tareas críticas'}</li>` : ''}
+                        <li>${isEn ? 'Review and update project timelines' : 'Revisar y actualizar los cronogramas del proyecto'}</li>
+                        <li>${isEn ? 'Conduct daily stand-up meetings' : 'Realizar reuniones diarias de seguimiento'}</li>
+                    </ul>
+                </div>
+                <div class="recommendation-card">
+                    <h4>📅 ${T.shortTerm}</h4>
+                    <ul>
+                        <li>${isEn ? 'Implement weekly progress reviews' : 'Implementar revisiones semanales de progreso'}</li>
+                        <li>${isEn ? 'Optimize resource allocation' : 'Optimizar la asignación de recursos'}</li>
+                        <li>${isEn ? 'Improve task estimation accuracy' : 'Mejorar la precisión de estimación de tareas'}</li>
+                        <li>${isEn ? 'Establish clear priority guidelines' : 'Establecer pautas claras de prioridad'}</li>
+                    </ul>
+                </div>
+                <div class="recommendation-card">
+                    <h4>🎯 ${T.longTerm}</h4>
+                    <ul>
+                        <li>${isEn ? 'Develop predictive analytics capabilities' : 'Desarrollar capacidades de análisis predictivo'}</li>
+                        <li>${isEn ? 'Implement automated risk monitoring' : 'Implementar monitoreo automático de riesgos'}</li>
+                        <li>${isEn ? 'Create knowledge base for best practices' : 'Crear base de conocimiento de mejores prácticas'}</li>
+                        <li>${isEn ? 'Establish continuous improvement processes' : 'Establecer procesos de mejora continua'}</li>
+                    </ul>
+                </div>
             </div>
-            <div class="no-print" style="margin-top: 30px; text-align: center;">
-                <button onclick="window.print()" style="
-                    background: #9b59b6;
-                    color: white;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 16px;
-                ">
-                    🖨️ Imprimir Reporte
-                </button>
-                <button onclick="window.close()" style="
-                    background: #95a5a6;
-                    color: white;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    margin-left: 10px;
-                ">
-                    ✕ Cerrar
-                </button>
-            </div>
-            <script>
-                // Abrir diálogo de impresión automáticamente
-                setTimeout(() => {
-                    window.print();
-                }, 500);
-            </script>
-        </body>
-        </html>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="confidential">🔒 ${T.footer}</div>
+            <p>${T.generatedBy}</p>
+            <p>© ${new Date().getFullYear()} - ${isEn ? 'All rights reserved' : 'Todos los derechos reservados'}</p>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="buttons">
+            <button class="btn btn-print" onclick="window.print()">${T.printBtn}</button>
+            <button class="btn btn-close" onclick="window.close()">${T.closeBtn}</button>
+        </div>
+    </div>
+
+    <script>
+        // Wait for Chart.js to load
+        window.addEventListener('load', function() {
+            // 1. Progress Trend Chart
+            new Chart(document.getElementById('progressChart'), {
+                type: 'line',
+                data: {
+                    labels: ${JSON.stringify(last7Days)},
+                    datasets: [{
+                        label: '${isEn ? 'Progress' : 'Progreso'} (%)',
+                        data: ${JSON.stringify(historicalProgress)},
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#9b59b6',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: v => v + '%' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Status Distribution Chart
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['${T.completedTasks}', '${T.inProgressTasks}', '${T.pendingTasks}', '${T.overdueTasks}'],
+                    datasets: [{
+                        data: [${completedTasks}, ${inProgressTasks}, ${pendingTasks}, ${overdueTasksCount}],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e2e8f0', padding: 15 }
+                        }
+                    }
+                }
+            });
+
+            // 3. Burndown Chart
+            const idealBurndown = Array.from({length: 7}, (_, i) => Math.round(100 - (100 / 6) * i));
+            const actualBurndown = [...historicalProgress].reverse();
+            
+            new Chart(document.getElementById('burndownChart'), {
+                type: 'line',
+                data: {
+                    labels: ${JSON.stringify(last7Days)},
+                    datasets: [
+                        {
+                            label: '${isEn ? 'Ideal Plan' : 'Plan Ideal'}',
+                            data: idealBurndown,
+                            borderColor: 'rgba(100, 149, 237, 0.7)',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0
+                        },
+                        {
+                            label: '${isEn ? 'Actual Progress' : 'Progreso Real'}',
+                            data: actualBurndown,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#e2e8f0' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: v => v + '%' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // 4. Efficiency by Project Chart
+            const projectNames = ${JSON.stringify(projectData.map(p => p.name.substring(0, 20)))};
+            const projectProgress = ${JSON.stringify(projectData.map(p => p.progress))};
+            
+            new Chart(document.getElementById('efficiencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [{
+                        label: '${isEn ? 'Efficiency' : 'Eficiencia'} (%)',
+                        data: projectProgress,
+                        backgroundColor: projectProgress.map(p => 
+                            p >= 75 ? '#10b981' : p >= 50 ? '#f59e0b' : '#ef4444'
+                        ),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: v => v + '%' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Auto print after 1 second
+        setTimeout(() => {
+            window.print();
+        }, 1000);
+    <\/script>
+</body>
+</html>
     `;
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printContent);
     printWindow.document.close();
 };
-
 window.closeDashboard4D = function () {
     const container = document.getElementById('mainAppContainer');
     if (container) {
@@ -65862,6 +66808,7 @@ window.closeDashboard4D = function () {
         location.reload();
     }
 };
+
 function createGlobalDashboard4D() {
     window.showDashboard4DView();
 }
@@ -65870,7 +66817,6 @@ function createGlobalDashboard4D() {
 function showDashboard4DView() {
     window.showDashboard4DView();
 }
-
 
 
 
@@ -67060,6 +68006,44 @@ window.reunionesIA = JSON.parse(localStorage.getItem('iaReuniones') || '[]');
 window.abrirTranscriptorAgent = function() {
     console.log('🎙️ Abriendo Transcriptor IA (versión completa)...');
     
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const translations = {
+        es: {
+            ready: 'Listo para grabar',
+            recording: 'Grabando...',
+            duration: 'Duración:',
+            start: '🔴 Iniciar',
+            stop: '⏹️ Detener',
+            titlePlaceholder: 'Título de la reunión...',
+            save: '💾 Guardar',
+            discard: '🗑️ Descartar',
+            export: '📤 Exportar',
+            transcript: '📝 Transcripción',
+            executiveSummary: '📋 Executive Summary',
+            actions: '✅ Actions',
+            keyPoints: '📌 Key Points',
+            decisions: '⚖️ Decisions',
+            noData: 'La transcripción aparecerá aquí...'
+        },
+        en: {
+            ready: 'Ready to record',
+            recording: 'Recording...',
+            duration: 'Duration:',
+            start: '🔴 Start',
+            stop: '⏹️ Stop',
+            titlePlaceholder: 'Meeting title...',
+            save: '💾 Save',
+            discard: '🗑️ Discard',
+            export: '📤 Export',
+            transcript: '📝 Transcription',
+            executiveSummary: '📋 Executive Summary',
+            actions: '✅ Actions',
+            keyPoints: '📌 Key Points',
+            decisions: '⚖️ Decisions',
+            noData: 'Transcription will appear here...'
+        }
+    };
+    
     const overlay = document.createElement('div');
     overlay.id = 'transcriptorOverlay';
     overlay.style.cssText = `
@@ -67177,47 +68161,68 @@ window.abrirTranscriptorAgent = function() {
 // ============================================
 
 // Función para borrar TODO el historial (VERSIÓN CORREGIDA)
-window.limpiarHistorialReuniones = function() {
-    console.log('🧹 Intentando limpiar historial...');
-    
-    if (confirm('⚠️ ¿Estás seguro de eliminar TODAS las reuniones del historial?\n\nEsta acción no se puede deshacer.')) {
-        
-        // 1. Vaciar el array global
-        window.reunionesIA = [];
-        
-        // 2. Guardar en localStorage (array vacío)
-        localStorage.setItem('iaReuniones', JSON.stringify([]));
-        
-        console.log('✅ Historial borrado de localStorage');
-        
-        // 3. Forzar actualización de la UI
-        window.actualizarListaReuniones();
-        
-        // 4. Mostrar notificación visual
-        const notificacion = document.createElement('div');
-        notificacion.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            z-index: 1000001;
-            font-weight: bold;
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
-            animation: slideIn 0.3s ease;
-        `;
-        notificacion.textContent = '✅ Historial limpiado correctamente';
-        document.body.appendChild(notificacion);
-        
-        setTimeout(() => {
-            notificacion.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notificacion.remove(), 300);
-        }, 3000);
+window.limpiarHistorialReuniones = async function() {
+    if (!confirm('⚠️ ¿Estás seguro de eliminar TODAS las reuniones del historial?\n\nEsta acción no se puede deshacer.')) {
+        return;
     }
-};
 
+    const clienteId = localStorage.getItem('clienteId');
+    const token = localStorage.getItem('authToken');   // 🔥 OBTENER TOKEN
+
+    console.log('🧹 Limpiando historial para cliente:', clienteId);
+
+    if (clienteId && token) {
+        try {
+            const response = await fetch(
+                `https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones/cliente/${clienteId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`   // 🔥 ENVIAR TOKEN
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al eliminar en la nube');
+            }
+
+            const data = await response.json();
+            console.log(`✅ Transcripciones eliminadas de MongoDB: ${data.deletedCount}`);
+        } catch (error) {
+            console.error('❌ Error eliminando de MongoDB:', error);
+            alert('⚠️ No se pudieron eliminar las transcripciones de la nube. Solo se borrarán las locales.');
+            // Si quieres que continúe, no retornes; solo muestra el alert
+        }
+    } else {
+        console.warn('⚠️ Falta clienteId o token. Solo se borrarán las locales.');
+    }
+
+    // Vaciar localStorage
+    window.reunionesIA = [];
+    localStorage.setItem('iaReuniones', JSON.stringify([]));
+    await window.actualizarListaReuniones();
+    mostrarNotificacion('✅ Historial limpiado correctamente', '#10b981');
+};
+// Función auxiliar para notificaciones (si no la tienes, agrégala)
+function mostrarNotificacion(texto, color = '#10b981') {
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed; top: 20px; right: 20px;
+        background: ${color}; color: white;
+        padding: 15px 25px; border-radius: 10px;
+        z-index: 1000001; font-weight: bold;
+        box-shadow: 0 5px 20px rgba(16,185,129,0.4);
+        animation: slideIn 0.3s ease;
+    `;
+    notif.textContent = texto;
+    document.body.appendChild(notif);
+    setTimeout(() => {
+        notif.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
 // Función ACTUALIZADA para refrescar la lista
 window.actualizarListaReuniones = function() {
     console.log('🔄 Actualizando lista de reuniones...');
@@ -67358,7 +68363,7 @@ window.inicializarGrabadorCompleto = function() {
         stopBtn.style.display = 'none';
         titleInput.disabled = false;
         indicator.style.background = '#6b7280';
-        statusText.textContent = 'Listo para grabar';
+        statusText.textContent = t.ready;
         statusText.style.color = '#94a3b8';
         clearInterval(recordingTimer);
         if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
@@ -67393,17 +68398,37 @@ window.inicializarGrabadorCompleto = function() {
     stream.getTracks().forEach(t => t.stop());
     
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'grabacion.webm');
-    formData.append('title', titulo);
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+const formData = new FormData();
+formData.append('audio', audioBlob, 'grabacion.webm');
+formData.append('title', titulo);
+formData.append('lang', lang);  // ← NUEVO
     
     try {
         const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
+    method: 'POST',
+    body: formData
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+    // ✅ El backend ya devuelve el error en el idioma correcto
+    const errorMsg = data.error || data.message || 'Error desconocido';
+    liveArea.innerHTML = `<span style="color:#ef4444;">❌ ${errorMsg}</span>`;
+    summaryEl.innerHTML = '❌ ' + errorMsg;
+    actionsEl.innerHTML = '';
+    keyPointsEl.innerHTML = '';
+    decisionsEl.innerHTML = '';
+    return; // Salir para no continuar
+}
+
+// Si todo fue bien, mostrar la transcripción y análisis
+liveArea.innerHTML = `<span style="color:#10b981;">📝 Transcripción:</span><br>${data.transcripcion || 'Sin transcripción'}`
+
+
+// 🔥 NUEVA LÍNEA PARA DEPURAR
+        console.log('📦 Respuesta COMPLETA del backend:', JSON.stringify(data, null, 2));
         
         // ============================================
         // ÁREA DE RESPUESTA - COLOCA AQUÍ EL CÓDIGO
@@ -67414,27 +68439,24 @@ window.inicializarGrabadorCompleto = function() {
         
         // 1. RESUMEN EJECUTIVO
         summaryEl.innerHTML = data.resumen || data.executiveSummary || 'Sin resumen';
-        
-        // 2. ACCIONES
-        if (data.acciones && Array.isArray(data.acciones)) {
-            actionsEl.innerHTML = data.acciones.map(a => `<div style="margin-bottom:8px;">• ${a}</div>`).join('');
-        } else {
-            actionsEl.innerHTML = 'No se detectaron acciones específicas';
-        }
-        
-        // 3. PUNTOS CLAVE
-        if (data.keyPoints && Array.isArray(data.keyPoints)) {
-            keyPointsEl.innerHTML = data.keyPoints.map(p => `<div style="margin-bottom:5px;">• ${p}</div>`).join('');
-        } else {
-            keyPointsEl.innerHTML = 'No se detectaron puntos clave';
-        }
-        
-        // 4. DECISIONES
-        if (data.decisions && Array.isArray(data.decisions)) {
-            decisionsEl.innerHTML = data.decisions.map(d => `<div style="margin-bottom:5px;">• ${d}</div>`).join('');
-        } else {
-            decisionsEl.innerHTML = 'No se detectaron decisiones';
-        }
+
+if (data.acciones && Array.isArray(data.acciones) && data.acciones.length > 0) {
+    actionsEl.innerHTML = data.acciones.map(a => `<div style="margin-bottom:8px;">• ${a}</div>`).join('');
+} else {
+    actionsEl.innerHTML = 'No se detectaron acciones específicas';
+}
+
+if (data.keyPoints && Array.isArray(data.keyPoints) && data.keyPoints.length > 0) {
+    keyPointsEl.innerHTML = data.keyPoints.map(p => `<div style="margin-bottom:5px;">• ${p}</div>`).join('');
+} else {
+    keyPointsEl.innerHTML = 'No se detectaron puntos clave';
+}
+
+if (data.decisions && Array.isArray(data.decisions) && data.decisions.length > 0) {
+    decisionsEl.innerHTML = data.decisions.map(d => `<div style="margin-bottom:5px;">• ${d}</div>`).join('');
+} else {
+    decisionsEl.innerHTML = 'No se detectaron decisiones';
+}
         
         // Guardar para después
         window.currentProcessedMeeting = {
@@ -67451,12 +68473,16 @@ window.inicializarGrabadorCompleto = function() {
         if (durationEl) durationEl.textContent = `Duración: ${timerEl.textContent}`;
         
     } catch (error) {
-        liveArea.innerHTML = `<span style="color:#ef4444;">❌ Error: ${error.message}</span>`;
-        summaryEl.innerHTML = 'Error al procesar';
-        actionsEl.innerHTML = 'Intenta nuevamente';
-        keyPointsEl.innerHTML = 'Error';
-        decisionsEl.innerHTML = 'Error';
-    }
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const errorMsg = lang === 'en' ? 'Error processing' : 'Error al procesar';
+    const tryAgainMsg = lang === 'en' ? 'Try again' : 'Intenta nuevamente';
+    
+    liveArea.innerHTML = `<span style="color:#ef4444;">❌ ${errorMsg}: ${error.message}</span>`;
+    summaryEl.innerHTML = errorMsg;
+    actionsEl.innerHTML = tryAgainMsg;
+    keyPointsEl.innerHTML = errorMsg;
+    decisionsEl.innerHTML = errorMsg;
+}
 };
             
             mediaRecorder.start();
@@ -67466,7 +68492,7 @@ window.inicializarGrabadorCompleto = function() {
             stopBtn.style.display = 'inline-block';
             titleInput.disabled = true;
             indicator.style.background = '#ef4444';
-            statusText.textContent = 'Grabando...';
+            statusText.textContent = t.recording;
             statusText.style.color = 'white';
             aiSection.style.display = 'none';
             
@@ -67507,20 +68533,23 @@ document.getElementById('saveMeetingBtn').onclick = async () => {
     
     try {
         // 1. Guardar en MongoDB vía backend
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                clienteId: clienteId,
-                titulo: window.currentProcessedMeeting.titulo,
-                transcripcion: window.currentProcessedMeeting.transcripcion,
-                resumen: window.currentProcessedMeeting.resumen,
-                acciones: window.currentProcessedMeeting.acciones,
-                keyPoints: window.currentProcessedMeeting.keyPoints,
-                decisions: window.currentProcessedMeeting.decisions,
-                duracion: window.currentProcessedMeeting.duracion
-            })
-        });
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/transcribe-meeting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        clienteId: clienteId,
+        titulo: window.currentProcessedMeeting.titulo,
+        transcripcion: window.currentProcessedMeeting.transcripcion,
+   
+        resumen: window.currentProcessedMeeting.resumen,
+        acciones: window.currentProcessedMeeting.acciones,
+        keyPoints: window.currentProcessedMeeting.keyPoints,
+        decisions: window.currentProcessedMeeting.decisions,
+        duracion: window.currentProcessedMeeting.duracion,
+        lang: lang  // ← NUEVO
+    })
+});
         
         const data = await response.json();
         console.log('✅ Respuesta del backend:', data);
@@ -67855,11 +68884,18 @@ window.cerrarAnalistaAgent = function() {
     const overlay = document.getElementById('analistaOverlay');
     if (overlay) overlay.remove();
 };
+
+
+
 // ============================================
-// 11. AGENTE 4: ASISTENTE PERSONAL EJECUTIVO
+// AGENTE 4: ASISTENTE EJECUTIVO PROFESIONAL
 // ============================================
+
+window.asistenteHistorial = [];
+window.asistenteContexto = { ultimoProyecto: null, ultimaConsulta: null };
+
 window.abrirAsistentePersonal = function() {
-    console.log('💬 Abriendo Asistente Personal...');
+    console.log('💬 Abriendo Asistente Ejecutivo Profesional...');
     
     const overlay = document.createElement('div');
     overlay.id = 'asistenteOverlay';
@@ -67870,68 +68906,771 @@ window.abrirAsistentePersonal = function() {
     `;
     
     overlay.innerHTML = `
-        <div class="glass-card-4d" style="width: 600px; padding: 40px; border: 2px solid #ec4899;">
-            <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px;">
-                <div style="width:70px; height:70px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:36px;">💬</div>
-                <div>
-                    <h2 style="margin:0; font-size:28px;" class="gradient-text-4d">ASISTENTE EJECUTIVO</h2>
-                    <p style="color:#94a3b8;">Tu aliado estratégico 24/7</p>
+        <div class="glass-card-4d" style="width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 2px solid #ec4899;">
+            
+            <!-- HEADER -->
+            <div style="display:flex; align-items:center; gap:20px; padding:25px 30px; border-bottom:1px solid rgba(236,72,153,0.3);">
+                <div style="width:60px; height:60px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:30px;">💬</div>
+                <div style="flex:1;">
+                    <h2 style="margin:0; font-size:24px;" class="gradient-text-4d">ASISTENTE EJECUTIVO IA</h2>
+                    <p style="color:#94a3b8; margin:5px 0 0 0; font-size:13px;">Tu aliado estratégico 24/7 • Análisis inteligente en tiempo real</p>
                 </div>
-                <button onclick="window.cerrarAsistentePersonal()" style="margin-left:auto; background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:50px; height:50px; border-radius:25px; cursor:pointer;">✕</button>
+                <button onclick="window.exportarConversacion()" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; color:#10b981; padding:8px 15px; border-radius:8px; cursor:pointer; font-size:12px; margin-right:10px;">📤 Exportar</button>
+                <button onclick="window.cerrarAsistentePersonal()" style="background:rgba(255,255,255,0.1); border:none; color:white; font-size:24px; width:45px; height:45px; border-radius:12px; cursor:pointer;">✕</button>
             </div>
             
-            <div style="margin-bottom:20px;">
-                <input type="text" id="asistentePregunta" placeholder="Escribe tu consulta ejecutiva..." class="glass-card-4d" style="width:100%; padding:18px; color:white; border:1px solid #ec4899;">
+            <!-- ÁREA DE CHAT -->
+            <div id="asistenteChat" style="flex:1; overflow-y:auto; padding:25px 30px; display:flex; flex-direction:column; gap:15px;">
+                
+                <!-- Mensaje de bienvenida -->
+                <div style="display:flex; gap:12px; align-items:flex-start;">
+                    <div style="width:40px; height:40px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">💬</div>
+                    <div style="flex:1; background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.3); border-radius:12px; padding:15px;">
+                        <div style="color:white; line-height:1.6; margin-bottom:10px;">
+                            👋 <strong>Hola, soy tu Asistente Ejecutivo IA.</strong><br>
+                            Puedo ayudarte con análisis de proyectos, riesgos, equipo, predicciones y más.
+                        </div>
+                        <div style="color:#94a3b8; font-size:12px;">
+                            💡 <em>Prueba preguntando sobre proyectos, tareas, riesgos, equipo, o usa los comandos rápidos abajo.</em>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resumen rápido automático -->
+                <div style="display:flex; gap:12px; align-items:flex-start;">
+                    <div style="width:40px; height:40px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">💬</div>
+                    <div style="flex:1; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); border-radius:12px; padding:15px;">
+                        <div style="color:#c4b5fd; font-size:12px; margin-bottom:8px;">📊 RESUMEN RÁPIDO</div>
+                        <div style="color:white; font-size:14px; line-height:1.6;" id="resumenRapidoInicial">
+                            Calculando...
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button onclick="window.preguntarAsistente()" class="btn-4d" style="background:linear-gradient(135deg,#ec4899,#db2777); width:100%; margin-bottom:20px;">Enviar</button>
             
-            <div id="asistenteRespuesta" class="glass-card-4d" style="padding:25px; min-height:150px; border-left:6px solid #ec4899;">
-                👋 Hola, soy tu asistente ejecutivo. Puedo ayudarte con:
-                • Resumen de proyectos
-                • Estadísticas globales
-                • Alertas y riesgos
-                • Próximos hitos
+            <!-- COMANDOS RÁPIDOS -->
+            <div style="padding:15px 30px; border-top:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3);">
+                <div style="color:#94a3b8; font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">⚡ Comandos Rápidos</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    <button onclick="window.ejecutarComandoRapido('resumen')" class="quick-cmd" style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#3b82f6; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">📋 Resumen General</button>
+                    <button onclick="window.ejecutarComandoRapido('riesgos')" class="quick-cmd" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">⚠️ Análisis de Riesgos</button>
+                    <button onclick="window.ejecutarComandoRapido('equipo')" class="quick-cmd" style="background:rgba(16,185,129,0.2); border:1px solid #10b981; color:#10b981; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">👥 Rendimiento Equipo</button>
+                    <button onclick="window.ejecutarComandoRapido('prediccion')" class="quick-cmd" style="background:rgba(139,92,246,0.2); border:1px solid #8b5cf6; color:#8b5cf6; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🔮 Predicción</button>
+                    <button onclick="window.ejecutarComandoRapido('criticas')" class="quick-cmd" style="background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#f59e0b; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🔥 Tareas Críticas</button>
+                    <button onclick="window.ejecutarComandoRapido('recomendaciones')" class="quick-cmd" style="background:rgba(236,72,153,0.2); border:1px solid #ec4899; color:#ec4899; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">💡 Recomendaciones</button>
+                    <button onclick="window.ejecutarComandoRapido('limpiar')" class="quick-cmd" style="background:rgba(148,163,184,0.2); border:1px solid #94a3b8; color:#94a3b8; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">🗑️ Limpiar Chat</button>
+                </div>
+            </div>
+            
+            <!-- INPUT -->
+            <div style="padding:20px 30px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px;">
+                <input type="text" id="asistentePregunta" placeholder="Escribe tu consulta ejecutiva..." style="flex:1; padding:14px 18px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(236,72,153,0.3); border-radius:10px; font-size:14px; outline:none;" onkeypress="if(event.key==='Enter') window.preguntarAsistente()">
+                <button onclick="window.preguntarAsistente()" style="background:linear-gradient(135deg,#ec4899,#db2777); border:none; color:white; padding:14px 25px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:14px;">Enviar</button>
             </div>
         </div>
     `;
     
     document.body.appendChild(overlay);
+    
+    // Generar resumen rápido inicial
+    setTimeout(() => {
+        generarResumenRapidoInicial();
+    }, 100);
 };
 
+// ============================================
+// GENERAR RESUMEN RÁPIDO INICIAL
+// ============================================
+function generarResumenRapidoInicial() {
+    const el = document.getElementById('resumenRapidoInicial');
+    if (!el) return;
+    
+    const totalProyectos = projects.length;
+    const totalTareas = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
+    const completadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const atrasadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
+    const porcentaje = totalTareas ? Math.round(completadas/totalTareas*100) : 0;
+    
+    let estado = '🟢 Saludable';
+    let color = '#10b981';
+    if (atrasadas > totalTareas * 0.2) { estado = '🔴 Crítico'; color = '#ef4444'; }
+    else if (atrasadas > totalTareas * 0.1) { estado = '🟡 Atención'; color = '#f59e0b'; }
+    
+    el.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:10px;">
+            <div><span style="color:#94a3b8; font-size:11px;">Proyectos</span><div style="font-size:20px; font-weight:bold; color:white;">${totalProyectos}</div></div>
+            <div><span style="color:#94a3b8; font-size:11px;">Tareas</span><div style="font-size:20px; font-weight:bold; color:white;">${totalTareas}</div></div>
+            <div><span style="color:#94a3b8; font-size:11px;">Progreso</span><div style="font-size:20px; font-weight:bold; color:#10b981;">${porcentaje}%</div></div>
+            <div><span style="color:#94a3b8; font-size:11px;">Estado</span><div style="font-size:14px; font-weight:bold; color:${color};">${estado}</div></div>
+        </div>
+        <div style="color:#94a3b8; font-size:12px;">
+            ${atrasadas > 0 ? `⚠️ <strong style="color:#ef4444;">${atrasadas} tareas atrasadas</strong> requieren atención.` : '✅ Todas las tareas están al día.'}
+        </div>
+    `;
+}
+
+// ============================================
+// COMANDOS RÁPIDOS CON TRADUCCIÓN
+// ============================================
+window.comandosTraducciones = {
+    es: {
+        'resumen': 'Dame un resumen general del estado de los proyectos',
+        'riesgos': 'Analiza los riesgos actuales del proyecto',
+        'equipo': '¿Cómo está el rendimiento del equipo?',
+        'prediccion': '¿Cuándo se completará el proyecto?',
+        'criticas': '¿Cuáles son las tareas críticas pendientes?',
+        'recomendaciones': '¿Qué recomendaciones tienes para mejorar?',
+        'limpiar': 'limpiar'
+    },
+    en: {
+        'resumen': 'Give me a general summary of project status',
+        'riesgos': 'Analyze current project risks',
+        'equipo': "How is the team's performance?",
+        'prediccion': 'When will the project be completed?',
+        'criticas': 'What are the pending critical tasks?',
+        'recomendaciones': 'What recommendations do you have to improve?',
+        'limpiar': 'clear'
+    }
+};
+
+// Restaurar idioma guardado o usar español por defecto
+window.idiomaActual = localStorage.getItem('idiomaComandos') || 'es';
+
+window.ejecutarComandoRapido = function(comando) {
+    if (comando === 'limpiar') {
+        const msg = window.idiomaActual === 'es' 
+            ? '¿Limpiar todo el historial del chat?' 
+            : 'Clear entire chat history?';
+        if (confirm(msg)) {
+            window.asistenteHistorial = [];
+            const chat = document.getElementById('asistenteChat');
+            if (chat) {
+                chat.innerHTML = `
+                    <div style="text-align:center; padding:40px; color:#94a3b8;">
+                        <div style="font-size:48px; margin-bottom:15px;">🗑️</div>
+                        <div>${window.idiomaActual === 'es' ? 'Chat limpiado. Haz una nueva consulta.' : 'Chat cleared. Ask a new question.'}</div>
+                    </div>
+                `;
+            }
+        }
+        return;
+    }
+    
+    // Obtener mensaje traducido
+    const mensaje = (window.comandosTraducciones[window.idiomaActual] && window.comandosTraducciones[window.idiomaActual][comando]) ||
+                    (window.comandosTraducciones.es && window.comandosTraducciones.es[comando]) ||
+                    comando;
+    
+    document.getElementById('asistentePregunta').value = mensaje;
+    window.preguntarAsistente();
+};
+
+// Función para cambiar idioma desde el botón o consola
+window.cambiarIdiomaComandos = function(idioma) {
+    if (!window.comandosTraducciones[idioma]) {
+        console.error('❌ Idioma no válido. Usa "es" o "en"');
+        return;
+    }
+    window.idiomaActual = idioma;
+    localStorage.setItem('idiomaComandos', idioma);
+    console.log(`✅ Idioma de comandos cambiado a: ${idioma.toUpperCase()}`);
+    // Actualizar texto del botón si existe
+    const btn = document.getElementById('langToggleBtn');
+    if (btn) {
+        btn.textContent = idioma === 'es' ? '🌐 EN/ES' : '🌐 ES/EN';
+    }
+};
+
+// Conectar el botón de idioma (si existe)
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('langToggleBtn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            const nuevo = window.idiomaActual === 'es' ? 'en' : 'es';
+            window.cambiarIdiomaComandos(nuevo);
+        });
+        // Actualizar texto inicial
+        btn.textContent = window.idiomaActual === 'es' ? '🌐 EN/ES' : '🌐 ES/EN';
+    }
+});
+// ============================================
+// CERRAR ASISTENTE
+// ============================================
 window.cerrarAsistentePersonal = function() {
     const overlay = document.getElementById('asistenteOverlay');
     if (overlay) overlay.remove();
 };
 
+// ============================================
+// FUNCIÓN PRINCIPAL: PROCESAR PREGUNTA
+// ============================================
 window.preguntarAsistente = function() {
-    console.log('💬 Procesando pregunta...');
-    const pregunta = document.getElementById('asistentePregunta')?.value;
-    const respuesta = document.getElementById('asistenteRespuesta');
+    const input = document.getElementById('asistentePregunta');
+    const chat = document.getElementById('asistenteChat');
+    if (!input || !chat) return;
+    
+    const pregunta = input.value.trim();
     if (!pregunta) return;
     
-    const msg = pregunta.toLowerCase();
-    let res = '';
+    // Agregar mensaje del usuario
+    agregarMensajeChat('usuario', pregunta);
+    input.value = '';
     
-    if (msg.includes('proyecto')) {
-        res = `📁 Tienes ${projects.length} proyectos activos. El más reciente es "${projects[projects.length-1]?.name}".`;
-    } else if (msg.includes('tarea')) {
-        const total = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
-        const comp = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
-        res = `✅ Total tareas: ${total}, Completadas: ${comp} (${Math.round(comp/total*100)}%)`;
-    } else if (msg.includes('riesgo') || msg.includes('alerta')) {
-        const atr = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
-        res = `⚠️ Alertas: ${atr} tareas atrasadas requieren atención inmediata.`;
-    } else if (msg.includes('equipo')) {
-        const miembros = new Set();
-        projects.forEach(p => (p.tasks || []).forEach(t => { if (t.assignee) miembros.add(t.assignee); }));
-        res = `👥 Equipo total: ${miembros.size} miembros asignados.`;
+    // Guardar en historial
+    window.asistenteHistorial.push({ tipo: 'usuario', texto: pregunta, fecha: new Date() });
+    window.asistenteContexto.ultimaConsulta = pregunta;
+    
+    // Mostrar indicador de "pensando"
+    const pensandoId = 'pensando-' + Date.now();
+    chat.insertAdjacentHTML('beforeend', `
+        <div id="${pensandoId}" style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:40px; height:40px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">💬</div>
+            <div style="background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.3); border-radius:12px; padding:15px; color:#94a3b8;">
+                <span style="display:inline-block; animation: pulse 1.5s infinite;">🤔 Analizando...</span>
+            </div>
+        </div>
+    `);
+    chat.scrollTop = chat.scrollHeight;
+    
+    // Procesar después de un pequeño delay (simula pensamiento)
+    setTimeout(() => {
+        const respuesta = generarRespuestaInteligente(pregunta);
+        
+        // Remover indicador de pensando
+        const pensando = document.getElementById(pensandoId);
+        if (pensando) pensando.remove();
+        
+        // Agregar respuesta
+        agregarMensajeChat('asistente', respuesta);
+        
+        // Guardar en historial
+        window.asistenteHistorial.push({ tipo: 'asistente', texto: respuesta, fecha: new Date() });
+    }, 800);
+};
+
+// ============================================
+// AGREGAR MENSAJE AL CHAT
+// ============================================
+function agregarMensajeChat(tipo, contenido) {
+    const chat = document.getElementById('asistenteChat');
+    if (!chat) return;
+    
+    if (tipo === 'usuario') {
+        chat.insertAdjacentHTML('beforeend', `
+            <div style="display:flex; gap:12px; align-items:flex-start; flex-direction:row-reverse;">
+                <div style="width:40px; height:40px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">👤</div>
+                <div style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); border-radius:12px; padding:15px; max-width:70%;">
+                    <div style="color:white; line-height:1.5;">${contenido}</div>
+                </div>
+            </div>
+        `);
     } else {
-        res = 'No entendí. Prueba preguntar por "proyectos", "tareas", "riesgos" o "equipo".';
+        chat.insertAdjacentHTML('beforeend', `
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div style="width:40px; height:40px; background:linear-gradient(135deg,#ec4899,#db2777); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">💬</div>
+                <div style="flex:1; background:rgba(236,72,153,0.1); border:1px solid rgba(236,72,153,0.3); border-radius:12px; padding:15px;">
+                    <div style="color:white; line-height:1.6;">${contenido}</div>
+                </div>
+            </div>
+        `);
     }
     
-    respuesta.innerHTML = `<strong>Tú:</strong> ${pregunta}<br><br><strong>Asistente:</strong> ${res}`;
-    document.getElementById('asistentePregunta').value = '';
-};// ============================================
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// ============================================
+// GENERAR RESPUESTA INTELIGENTE
+// ============================================
+function generarRespuestaInteligente(pregunta) {
+    const msg = pregunta.toLowerCase();
+    
+    // Recopilar datos globales
+    const totalProyectos = projects.length;
+    const totalTareas = projects.reduce((s,p) => s + (p.tasks?.length || 0), 0);
+    const completadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+    const enProgreso = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'inProgress').length || 0), 0);
+    const pendientes = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.status === 'pending').length || 0), 0);
+    const atrasadas = projects.reduce((s,p) => s + (p.tasks?.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length || 0), 0);
+    const porcentaje = totalTareas ? Math.round(completadas/totalTareas*100) : 0;
+    
+    const miembros = new Set();
+    projects.forEach(p => (p.tasks || []).forEach(t => { if (t.assignee) miembros.add(t.assignee); }));
+    
+    const horasEst = projects.reduce((s,p) => s + (p.tasks || []).reduce((ss,t) => ss + (Number(t.estimatedTime) || 0), 0), 0);
+    const horasReal = projects.reduce((s,p) => s + (p.tasks || []).reduce((ss,t) => ss + (Number(t.timeLogged) || 0), 0), 0);
+    
+    // Detectar intención
+    if (msg.includes('resumen') || msg.includes('general') || msg.includes('estado')) {
+        return generarRespuestaResumen(totalProyectos, totalTareas, completadas, enProgreso, pendientes, atrasadas, porcentaje, miembros.size);
+    }
+    
+    if (msg.includes('riesgo') || msg.includes('alerta') || msg.includes('peligro')) {
+        return generarRespuestaRiesgos(atrasadas, totalTareas, proyectosConRiesgo());
+    }
+    
+    if (msg.includes('equipo') || msg.includes('miembro') || msg.includes('rendimiento') || msg.includes('desempeño')) {
+        return generarRespuestaEquipo(miembros);
+    }
+    
+    if (msg.includes('predicción') || msg.includes('prediccion') || msg.includes('cuándo') || msg.includes('cuando') || msg.includes('fecha') || msg.includes('terminar')) {
+        return generarRespuestaPrediccion(completadas, totalTareas);
+    }
+    
+    if (msg.includes('crítica') || msg.includes('critica') || msg.includes('crítico') || msg.includes('critico') || msg.includes('importante') || msg.includes('urgente')) {
+        return generarRespuestaCriticas();
+    }
+    
+    if (msg.includes('recomendación') || msg.includes('recomendacion') || msg.includes('sugerencia') || msg.includes('consejo') || msg.includes('mejorar')) {
+        return generarRespuestaRecomendaciones(atrasadas, enProgreso, porcentaje, miembros.size);
+    }
+    
+    if (msg.includes('proyecto')) {
+        return generarRespuestaProyectos(totalProyectos);
+    }
+    
+    if (msg.includes('tarea') || msg.includes('pendiente') || msg.includes('completar')) {
+        return generarRespuestaTareas(totalTareas, completadas, enProgreso, pendientes, porcentaje);
+    }
+    
+    if (msg.includes('hora') || msg.includes('tiempo') || msg.includes('eficiencia')) {
+        return generarRespuestaTiempo(horasEst, horasReal);
+    }
+    
+    if (msg.includes('hola') || msg.includes('buenos') || msg.includes('hey')) {
+        return `¡Hola! 👋 Estoy aquí para ayudarte. Puedo asistirte con:<br><br>
+        • <strong>📋 Resumen general</strong> del estado de tus proyectos<br>
+        • <strong>⚠️ Análisis de riesgos</strong> y tareas atrasadas<br>
+        • <strong>👥 Rendimiento del equipo</strong> y distribución de carga<br>
+        • <strong>🔮 Predicciones</strong> de finalización<br>
+        • <strong>🔥 Tareas críticas</strong> y urgentes<br>
+        • <strong>💡 Recomendaciones</strong> estratégicas<br><br>
+        ¿Sobre qué te gustaría consultar?`;
+    }
+    
+    if (msg.includes('gracias') || msg.includes('thanks')) {
+        return `¡De nada! 😊 Estoy aquí para ayudarte cuando lo necesites. ¿Hay algo más en lo que pueda asistirte?`;
+    }
+    
+    // Respuesta por defecto mejorada
+    return `Entiendo tu consulta sobre "<em>${pregunta}</em>". Puedo ayudarte con análisis más específicos si me preguntas sobre:<br><br>
+    📋 <strong>Resumen</strong> - Estado general de proyectos<br>
+    ⚠️ <strong>Riesgos</strong> - Análisis de tareas atrasadas<br>
+    👥 <strong>Equipo</strong> - Rendimiento y distribución<br>
+    🔮 <strong>Predicción</strong> - Fechas estimadas<br>
+    🔥 <strong>Críticas</strong> - Tareas urgentes<br>
+    💡 <strong>Recomendaciones</strong> - Sugerencias estratégicas<br>
+    ⏱️ <strong>Tiempo</strong> - Eficiencia y horas<br><br>
+    <em>💡 Tip: Usa los comandos rápidos abajo para consultas frecuentes.</em>`;
+}
+
+// ============================================
+// FUNCIONES DE RESPUESTA ESPECÍFICAS
+// ============================================
+
+function generarRespuestaResumen(totalProyectos, totalTareas, completadas, enProgreso, pendientes, atrasadas, porcentaje, numMiembros) {
+    let estado = '🟢 Saludable';
+    let colorEstado = '#10b981';
+    let mensajeEstado = 'Todos los indicadores están en rangos óptimos.';
+    
+    if (atrasadas > totalTareas * 0.2) {
+        estado = '🔴 Crítico';
+        colorEstado = '#ef4444';
+        mensajeEstado = 'Se requiere intervención inmediata.';
+    } else if (atrasadas > totalTareas * 0.1 || porcentaje < 50) {
+        estado = '🟡 Atención';
+        colorEstado = '#f59e0b';
+        mensajeEstado = 'Algunos indicadores requieren monitoreo.';
+    }
+    
+    return `
+        <div style="color:#c4b5fd; font-size:12px; margin-bottom:8px;">📋 RESUMEN EJECUTIVO</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:15px;">
+            <div style="background:rgba(59,130,246,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#93c5fd; font-size:11px;">Proyectos</div>
+                <div style="font-size:24px; font-weight:bold; color:white;">${totalProyectos}</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Progreso</div>
+                <div style="font-size:24px; font-weight:bold; color:#10b981;">${porcentaje}%</div>
+            </div>
+            <div style="background:rgba(236,72,153,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#f9a8d4; font-size:11px;">Estado</div>
+                <div style="font-size:16px; font-weight:bold; color:${colorEstado};">${estado}</div>
+            </div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="color:#94a3b8; font-size:12px; margin-bottom:5px;">Distribución de tareas:</div>
+            <div style="display:flex; height:20px; border-radius:4px; overflow:hidden; margin-bottom:8px;">
+                <div style="width:${(completadas/totalTareas*100)||0}%; background:#10b981;" title="Completadas"></div>
+                <div style="width:${(enProgreso/totalTareas*100)||0}%; background:#3b82f6;" title="En progreso"></div>
+                <div style="width:${(pendientes/totalTareas*100)||0}%; background:#f59e0b;" title="Pendientes"></div>
+                <div style="width:${(atrasadas/totalTareas*100)||0}%; background:#ef4444;" title="Atrasadas"></div>
+            </div>
+            <div style="display:flex; gap:15px; font-size:12px; flex-wrap:wrap;">
+                <span><span style="color:#10b981;">■</span> Completadas: ${completadas}</span>
+                <span><span style="color:#3b82f6;">■</span> En progreso: ${enProgreso}</span>
+                <span><span style="color:#f59e0b;">■</span> Pendientes: ${pendientes}</span>
+                <span><span style="color:#ef4444;">■</span> Atrasadas: ${atrasadas}</span>
+            </div>
+        </div>
+        <div style="color:#94a3b8; font-size:13px; margin-top:10px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px;">
+            💡 ${mensajeEstado} Equipo activo: <strong>${numMiembros} miembros</strong>.
+        </div>
+    `;
+}
+
+function generarRespuestaRiesgos(atrasadas, totalTareas, proyectosRiesgo) {
+    const nivelRiesgo = atrasadas === 0 ? '🟢 Bajo' : atrasadas < 3 ? '🟡 Medio' : '🔴 Alto';
+    const colorRiesgo = atrasadas === 0 ? '#10b981' : atrasadas < 3 ? '#f59e0b' : '#ef4444';
+    
+    let tareasAtrasadasHTML = '';
+    projects.forEach(p => {
+        const atrasadasProyecto = (p.tasks || []).filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
+        if (atrasadasProyecto.length > 0) {
+            tareasAtrasadasHTML += `<div style="margin-bottom:10px;"><strong style="color:#3b82f6;">📁 ${p.name}</strong>`;
+            atrasadasProyecto.slice(0,3).forEach(t => {
+                const dias = Math.ceil((new Date() - new Date(t.deadline)) / (1000*60*60*24));
+                tareasAtrasadasHTML += `<div style="margin-left:15px; font-size:12px; color:#fca5a5;">• ${t.name} <span style="color:#94a3b8;">(${dias}d atraso)</span></div>`;
+            });
+            tareasAtrasadasHTML += `</div>`;
+        }
+    });
+    
+    return `
+        <div style="color:#fca5a5; font-size:12px; margin-bottom:8px;">⚠️ ANÁLISIS DE RIESGOS</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:15px;">
+            <div style="background:rgba(239,68,68,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fca5a5; font-size:11px;">Nivel de Riesgo</div>
+                <div style="font-size:18px; font-weight:bold; color:${colorRiesgo};">${nivelRiesgo}</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fca5a5; font-size:11px;">Tareas Atrasadas</div>
+                <div style="font-size:24px; font-weight:bold; color:#ef4444;">${atrasadas}</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fca5a5; font-size:11px;">% del Total</div>
+                <div style="font-size:24px; font-weight:bold; color:#ef4444;">${totalTareas ? Math.round(atrasadas/totalTareas*100) : 0}%</div>
+            </div>
+        </div>
+        ${atrasadas > 0 ? `
+            <div style="background:rgba(239,68,68,0.1); border-left:3px solid #ef4444; padding:12px; border-radius:6px; margin-bottom:10px;">
+                <div style="color:#fca5a5; font-size:12px; margin-bottom:8px;">🔴 Tareas Atrasadas por Proyecto:</div>
+                ${tareasAtrasadasHTML}
+            </div>
+            <div style="color:#94a3b8; font-size:13px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px;">
+                💡 <strong>Recomendación:</strong> Prioriza las tareas críticas y considera reasignar recursos o ajustar plazos.
+            </div>
+        ` : `
+            <div style="color:#a7f3d0; text-align:center; padding:20px; background:rgba(16,185,129,0.1); border-radius:8px;">
+                ✅ ¡Excelente! No hay tareas atrasadas. Todos los proyectos están al día.
+            </div>
+        `}
+    `;
+}
+
+function generarRespuestaEquipo(miembros) {
+    const equipoData = {};
+    projects.forEach(p => {
+        (p.tasks || []).forEach(t => {
+            if (t.assignee) {
+                if (!equipoData[t.assignee]) equipoData[t.assignee] = { tareas: 0, completadas: 0, horas: 0 };
+                equipoData[t.assignee].tareas++;
+                equipoData[t.assignee].horas += Number(t.estimatedTime) || 0;
+                if (t.status === 'completed') equipoData[t.assignee].completadas++;
+            }
+        });
+    });
+    
+    const miembrosArr = Object.entries(equipoData).sort((a,b) => b[1].completadas - a[1].completadas);
+    
+    let listaHTML = miembrosArr.map(([nombre, data]) => {
+        const eficiencia = data.tareas > 0 ? Math.round(data.completadas/data.tareas*100) : 0;
+        const color = eficiencia >= 70 ? '#10b981' : eficiencia >= 40 ? '#f59e0b' : '#ef4444';
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(255,255,255,0.03); border-radius:6px; margin-bottom:5px;">
+                <div>
+                    <div style="color:white; font-size:13px; font-weight:bold;">👤 ${nombre}</div>
+                    <div style="color:#94a3b8; font-size:11px;">${data.tareas} tareas • ${data.horas}h • ${data.completadas} completadas</div>
+                </div>
+                <div style="background:${color}20; color:${color}; padding:5px 12px; border-radius:12px; font-size:12px; font-weight:bold;">${eficiencia}%</div>
+            </div>
+        `;
+    }).join('');
+    
+    return `
+        <div style="color:#a7f3d0; font-size:12px; margin-bottom:8px;">👥 RENDIMIENTO DEL EQUIPO</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:15px;">
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Miembros</div>
+                <div style="font-size:24px; font-weight:bold; color:#10b981;">${miembros.size}</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Promedio Tareas</div>
+                <div style="font-size:24px; font-weight:bold; color:#10b981;">${miembros.size ? (projects.reduce((s,p) => s + (p.tasks?.length || 0), 0) / miembros.size).toFixed(1) : 0}</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Carga Media</div>
+                <div style="font-size:24px; font-weight:bold; color:#10b981;">${miembros.size ? Math.round(projects.reduce((s,p) => s + (p.tasks || []).reduce((ss,t) => ss + (Number(t.estimatedTime) || 0), 0), 0) / miembros.size) : 0}h</div>
+            </div>
+        </div>
+        <div style="max-height:250px; overflow-y:auto;">
+            ${listaHTML || '<div style="color:#94a3b8; text-align:center; padding:20px;">No hay miembros asignados</div>'}
+        </div>
+    `;
+}
+
+function generarRespuestaPrediccion(completadas, totalTareas) {
+    const velocidad = completadas / 30; // tareas por día (estimado últimos 30 días)
+    const restantes = totalTareas - completadas;
+    const diasRestantes = velocidad > 0 ? Math.ceil(restantes / velocidad) : 0;
+    const fechaEstimada = new Date();
+    fechaEstimada.setDate(fechaEstimada.getDate() + diasRestantes);
+    
+    const porcentaje = totalTareas ? Math.round(completadas/totalTareas*100) : 0;
+    
+    return `
+        <div style="color:#c4b5fd; font-size:12px; margin-bottom:8px;">🔮 PREDICCIÓN DE FINALIZACIÓN</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:15px;">
+            <div style="background:rgba(139,92,246,0.15); padding:15px; border-radius:8px; text-align:center;">
+                <div style="color:#c4b5fd; font-size:11px;">Velocidad Actual</div>
+                <div style="font-size:24px; font-weight:bold; color:#8b5cf6;">${velocidad.toFixed(2)}</div>
+                <div style="color:#94a3b8; font-size:11px;">tareas/día</div>
+            </div>
+            <div style="background:rgba(139,92,246,0.15); padding:15px; border-radius:8px; text-align:center;">
+                <div style="color:#c4b5fd; font-size:11px;">Días Restantes</div>
+                <div style="font-size:24px; font-weight:bold; color:#8b5cf6;">${diasRestantes}</div>
+                <div style="color:#94a3b8; font-size:11px;">días estimados</div>
+            </div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(236,72,153,0.2)); padding:20px; border-radius:10px; text-align:center; margin-bottom:15px;">
+            <div style="color:#f9a8d4; font-size:12px; margin-bottom:8px;">📅 Fecha Estimada de Finalización</div>
+            <div style="font-size:28px; font-weight:bold; color:white;">${fechaEstimada.toLocaleDateString()}</div>
+            <div style="color:#94a3b8; font-size:12px; margin-top:5px;">Basado en velocidad actual (${velocidad.toFixed(2)} tareas/día)</div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span style="color:#94a3b8; font-size:12px;">Progreso actual</span>
+                <span style="color:#8b5cf6; font-weight:bold;">${porcentaje}%</span>
+            </div>
+            <div style="height:10px; background:rgba(255,255,255,0.1); border-radius:5px; overflow:hidden;">
+                <div style="width:${porcentaje}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:5px;"></div>
+            </div>
+        </div>
+        <div style="color:#94a3b8; font-size:13px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px;">
+            💡 <em>Esta predicción asume que la velocidad actual se mantiene constante. Acelerar el ritmo reducirá la fecha estimada.</em>
+        </div>
+    `;
+}
+
+function generarRespuestaCriticas() {
+    let tareasCriticas = [];
+    projects.forEach(p => {
+        (p.tasks || []).forEach(t => {
+            if (t.critical || t.priority === 'alta' || t.priority === 'high' || t.status === 'overdue') {
+                tareasCriticas.push({ ...t, proyecto: p.name });
+            }
+        });
+    });
+    
+    if (tareasCriticas.length === 0) {
+        return `
+            <div style="color:#a7f3d0; text-align:center; padding:30px; background:rgba(16,185,129,0.1); border-radius:8px;">
+                <div style="font-size:48px; margin-bottom:10px;">✅</div>
+                <div style="font-size:16px; font-weight:bold; margin-bottom:5px;">¡No hay tareas críticas!</div>
+                <div style="color:#94a3b8; font-size:13px;">Todos los proyectos están bajo control.</div>
+            </div>
+        `;
+    }
+    
+    const listaHTML = tareasCriticas.slice(0,8).map(t => {
+        const color = t.status === 'overdue' ? '#ef4444' : t.status === 'completed' ? '#10b981' : '#f59e0b';
+        const estado = t.status === 'overdue' ? 'Atrasada' : t.status === 'completed' ? 'Completada' : 'Pendiente';
+        return `
+            <div style="padding:10px; background:rgba(245,158,11,0.1); border-left:3px solid ${color}; border-radius:6px; margin-bottom:8px;">
+                <div style="color:white; font-weight:bold; font-size:13px;">🔥 ${t.name}</div>
+                <div style="color:#94a3b8; font-size:11px; margin-top:3px;">
+                    📁 ${t.proyecto} • 👤 ${t.assignee || 'Sin asignar'} • <span style="color:${color};">${estado}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    return `
+        <div style="color:#fde68a; font-size:12px; margin-bottom:8px;">🔥 TAREAS CRÍTICAS (${tareasCriticas.length})</div>
+        <div style="max-height:300px; overflow-y:auto;">
+            ${listaHTML}
+        </div>
+        ${tareasCriticas.length > 8 ? `<div style="color:#94a3b8; font-size:12px; text-align:center; margin-top:10px;">Mostrando 8 de ${tareasCriticas.length} tareas críticas</div>` : ''}
+        <div style="color:#94a3b8; font-size:13px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-top:10px;">
+            💡 <strong>Acción recomendada:</strong> Prioriza estas tareas y asigna recursos senior para su resolución.
+        </div>
+    `;
+}
+
+function generarRespuestaRecomendaciones(atrasadas, enProgreso, porcentaje, numMiembros) {
+    const recomendaciones = [];
+    
+    if (atrasadas > 0) recomendaciones.push({ icono: '⚠️', texto: `Revisar urgentemente las ${atrasadas} tareas atrasadas`, prioridad: 'alta' });
+    if (enProgreso > 10) recomendaciones.push({ icono: '🔄', texto: 'Limitar trabajo en progreso (WIP) para mejorar enfoque', prioridad: 'media' });
+    if (porcentaje < 50) recomendaciones.push({ icono: '📈', texto: 'Acelerar el ritmo de trabajo - progreso por debajo del 50%', prioridad: 'alta' });
+    if (numMiembros < 3) recomendaciones.push({ icono: '👥', texto: 'Considerar ampliar el equipo para distribuir carga', prioridad: 'media' });
+    recomendaciones.push({ icono: '📊', texto: 'Realizar revisión semanal de métricas y KPIs', prioridad: 'baja' });
+    recomendaciones.push({ icono: '🎯', texto: 'Definir hitos claros para cada fase del proyecto', prioridad: 'media' });
+    if (porcentaje >= 80) recomendaciones.push({ icono: '🏆', texto: 'Documentar lecciones aprendidas para futuros proyectos', prioridad: 'baja' });
+    
+    const listaHTML = recomendaciones.map(r => {
+        const color = r.prioridad === 'alta' ? '#ef4444' : r.prioridad === 'media' ? '#f59e0b' : '#10b981';
+        const label = r.prioridad === 'alta' ? 'ALTA' : r.prioridad === 'media' ? 'MEDIA' : 'BAJA';
+        return `
+            <div style="padding:10px; background:rgba(255,255,255,0.03); border-left:3px solid ${color}; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="flex:1;">
+                    <div style="color:white; font-size:13px;">${r.icono} ${r.texto}</div>
+                </div>
+                <div style="background:${color}20; color:${color}; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">${label}</div>
+            </div>
+        `;
+    }).join('');
+    
+    return `
+        <div style="color:#f9a8d4; font-size:12px; margin-bottom:8px;">💡 RECOMENDACIONES ESTRATÉGICAS</div>
+        <div style="max-height:300px; overflow-y:auto;">
+            ${listaHTML}
+        </div>
+        <div style="color:#94a3b8; font-size:13px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-top:10px;">
+            💡 <em>Estas recomendaciones se basan en el análisis automático de tus proyectos. Prioriza las de prioridad ALTA.</em>
+        </div>
+    `;
+}
+
+function generarRespuestaProyectos(totalProyectos) {
+    let listaHTML = projects.map(p => {
+        const total = (p.tasks || []).length;
+        const comp = (p.tasks || []).filter(t => t.status === 'completed').length;
+        const porcentaje = total ? Math.round(comp/total*100) : 0;
+        const color = porcentaje >= 80 ? '#10b981' : porcentaje >= 50 ? '#3b82f6' : porcentaje >= 25 ? '#f59e0b' : '#ef4444';
+        
+        return `
+            <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="color:white; font-weight:bold;">📁 ${p.name}</div>
+                    <div style="color:${color}; font-weight:bold;">${porcentaje}%</div>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                    <div style="width:${porcentaje}%; height:100%; background:${color};"></div>
+                </div>
+                <div style="color:#94a3b8; font-size:11px; margin-top:5px;">${comp}/${total} tareas completadas</div>
+            </div>
+        `;
+    }).join('');
+    
+    return `
+        <div style="color:#93c5fd; font-size:12px; margin-bottom:8px;">📁 ESTADO DE PROYECTOS (${totalProyectos})</div>
+        <div style="max-height:300px; overflow-y:auto;">
+            ${listaHTML || '<div style="color:#94a3b8; text-align:center; padding:20px;">No hay proyectos</div>'}
+        </div>
+    `;
+}
+
+function generarRespuestaTareas(total, comp, prog, pend, porcentaje) {
+    return `
+        <div style="color:#a7f3d0; font-size:12px; margin-bottom:8px;">✅ ANÁLISIS DE TAREAS</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:15px;">
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Total</div>
+                <div style="font-size:24px; font-weight:bold; color:white;">${total}</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#a7f3d0; font-size:11px;">Completadas</div>
+                <div style="font-size:24px; font-weight:bold; color:#10b981;">${comp}</div>
+            </div>
+            <div style="background:rgba(59,130,246,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#93c5fd; font-size:11px;">En Progreso</div>
+                <div style="font-size:24px; font-weight:bold; color:#3b82f6;">${prog}</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fde68a; font-size:11px;">Pendientes</div>
+                <div style="font-size:24px; font-weight:bold; color:#f59e0b;">${pend}</div>
+            </div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span style="color:#94a3b8; font-size:12px;">Progreso general</span>
+                <span style="color:#10b981; font-weight:bold;">${porcentaje}%</span>
+            </div>
+            <div style="height:10px; background:rgba(255,255,255,0.1); border-radius:5px; overflow:hidden;">
+                <div style="width:${porcentaje}%; height:100%; background:linear-gradient(90deg,#10b981,#3b82f6);"></div>
+            </div>
+        </div>
+    `;
+}
+
+function generarRespuestaTiempo(horasEst, horasReal) {
+    const eficiencia = horasEst > 0 ? Math.round((horasReal / horasEst) * 100) : 0;
+    const diferencia = horasEst - horasReal;
+    const colorEficiencia = eficiencia > 100 ? '#ef4444' : eficiencia > 80 ? '#10b981' : '#f59e0b';
+    
+    return `
+        <div style="color:#fde68a; font-size:12px; margin-bottom:8px;">⏱️ ANÁLISIS DE TIEMPO Y EFICIENCIA</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:15px;">
+            <div style="background:rgba(245,158,11,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fde68a; font-size:11px;">Horas Estimadas</div>
+                <div style="font-size:22px; font-weight:bold; color:white;">${horasEst}h</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fde68a; font-size:11px;">Horas Registradas</div>
+                <div style="font-size:22px; font-weight:bold; color:${colorEficiencia};">${horasReal}h</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.15); padding:12px; border-radius:8px; text-align:center;">
+                <div style="color:#fde68a; font-size:11px;">Eficiencia</div>
+                <div style="font-size:22px; font-weight:bold; color:${colorEficiencia};">${eficiencia}%</div>
+            </div>
+        </div>
+        <div style="color:#94a3b8; font-size:13px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px;">
+            ${eficiencia > 100 ? 
+                `⚠️ <strong style="color:#ef4444;">Sobrecosto detectado:</strong> Se han registrado ${Math.abs(diferencia)}h más de lo estimado. Revisa las estimaciones.` :
+                eficiencia > 80 ? 
+                `✅ <strong style="color:#10b981;">Eficiencia óptima:</strong> El equipo está trabajando dentro de los parámetros esperados.` :
+                `💡 <strong style="color:#f59e0b;">Atención:</strong> La eficiencia está por debajo del 80%. Considera revisar procesos.`
+            }
+        </div>
+    `;
+}
+
+function proyectosConRiesgo() {
+    return projects.filter(p => (p.tasks || []).some(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+}
+
+// ============================================
+// EXPORTAR CONVERSACIÓN
+// ============================================
+window.exportarConversacion = function() {
+    if (window.asistenteHistorial.length === 0) {
+        alert('No hay conversación para exportar');
+        return;
+    }
+    
+    let contenido = `CONVERSACIÓN CON ASISTENTE EJECUTIVO IA\n`;
+    contenido += `Fecha: ${new Date().toLocaleString()}\n`;
+    contenido += `${'='.repeat(50)}\n\n`;
+    
+    window.asistenteHistorial.forEach(msg => {
+        const tipo = msg.tipo === 'usuario' ? '👤 TÚ' : '💬 ASISTENTE';
+        const texto = msg.texto.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+        contenido += `[${tipo}]\n${texto}\n\n`;
+    });
+    
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `conversacion_asistente_${Date.now()}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Conversación exportada');
+};
+
+// ============================================
 // 12. VISUALIZAR EQUIPO (MEJORADO)
 // ============================================
 function cargarEquipoProyecto() {
@@ -73553,6 +75292,312 @@ window.addEventListener('DOMContentLoaded', async () => {
     await refrescarLicencia();
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================================
+// 🛠️ UNIFICACIÓN DE PERSISTENCIA PARA RIESGOS, ACCIONES E HITOS
+// ============================================================
+(function fixPersistence() {
+    console.log('🔄 Aplicando parche de persistencia unificada...');
+
+    // Obtener proyecto actual con ID
+    function getCurrentProject() {
+        if (typeof projects === 'undefined' || currentProjectIndex === undefined) return null;
+        return projects[currentProjectIndex] || null;
+    }
+
+    // Generar clave única basada en ID del proyecto
+    function getStorageKey(type) {
+        const project = getCurrentProject();
+        if (!project) return null;
+        return `project_${project.id}_${type}`;
+    }
+
+    // ---- MIGRACIÓN DE DATOS ANTIGUOS ----
+    function migrateOldData() {
+        const project = getCurrentProject();
+        if (!project) return;
+
+        const projectId = project.id;
+        const oldKeyRisks = `risks_${currentProjectIndex}`;
+        const oldKeyActions = `actions_${currentProjectIndex}`;
+        const oldKeyMilestones = `milestones_${currentProjectIndex}`;
+
+        const newKeyRisks = `project_${projectId}_risks`;
+        const newKeyActions = `project_${projectId}_actions`;
+        const newKeyMilestones = `project_${projectId}_milestones`;
+
+        // Migrar riesgos
+        if (localStorage.getItem(oldKeyRisks) && !localStorage.getItem(newKeyRisks)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyRisks));
+            localStorage.setItem(newKeyRisks, JSON.stringify(data));
+            localStorage.removeItem(oldKeyRisks);
+            console.log('✅ Riesgos migrados a nueva clave');
+        }
+
+        // Migrar acciones
+        if (localStorage.getItem(oldKeyActions) && !localStorage.getItem(newKeyActions)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyActions));
+            localStorage.setItem(newKeyActions, JSON.stringify(data));
+            localStorage.removeItem(oldKeyActions);
+            console.log('✅ Acciones migradas a nueva clave');
+        }
+
+        // Migrar hitos
+        if (localStorage.getItem(oldKeyMilestones) && !localStorage.getItem(newKeyMilestones)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyMilestones));
+            localStorage.setItem(newKeyMilestones, JSON.stringify(data));
+            localStorage.removeItem(oldKeyMilestones);
+            console.log('✅ Hitos migrados a nueva clave');
+        }
+    }
+
+    // ---- SOBRESCRIBIR FUNCIONES DE AGREGAR ----
+    const originalAgregarRiesgo = window.agregarRiesgo;
+    window.agregarRiesgo = function() {
+        const texto = prompt('Nuevo riesgo:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_risks`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Riesgo guardado en ${key}`);
+    };
+
+    const originalAgregarAccion = window.agregarAccion;
+    window.agregarAccion = function() {
+        const texto = prompt('Nueva acción:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_actions`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Acción guardada en ${key}`);
+    };
+
+    const originalAgregarHito = window.agregarHito;
+    window.agregarHito = function() {
+        const texto = prompt('Nuevo hito:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_milestones`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Hito guardado en ${key}`);
+    };
+
+    // ---- SOBRESCRIBIR FUNCIONES DE ELIMINAR ----
+    const originalEliminarRiesgo = window.eliminarRiesgo;
+    window.eliminarRiesgo = function(projectId, index) {
+        if (!confirm('¿Eliminar este riesgo?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_risks`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    const originalEliminarAccion = window.eliminarAccion;
+    window.eliminarAccion = function(projectId, index) {
+        if (!confirm('¿Eliminar esta acción?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_actions`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    const originalEliminarHito = window.eliminarHito;
+    window.eliminarHito = function(projectId, index) {
+        if (!confirm('¿Eliminar este hito?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_milestones`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    // ---- SOBRESCRIBIR CARGA DE DATOS (loadDashboardProjectData) ----
+    const originalLoad = window.loadDashboardProjectData;
+    window.loadDashboardProjectData = function() {
+        const project = getCurrentProject();
+        if (!project) {
+            console.warn('⚠️ No hay proyecto para cargar datos');
+            return;
+        }
+
+        const projectId = project.id;
+        const risksKey = `project_${projectId}_risks`;
+        const actionsKey = `project_${projectId}_actions`;
+        const milestonesKey = `project_${projectId}_milestones`;
+
+        // Cargar riesgos
+        const risksContainer = document.getElementById('risksContainer');
+        if (risksContainer) {
+            risksContainer.innerHTML = '';
+            let riesgos = JSON.parse(localStorage.getItem(risksKey) || '[]');
+            if (riesgos.length === 0) {
+                risksContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay riesgos</div>';
+            } else {
+                riesgos.forEach((riesgo, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #e74c3c;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${riesgo.texto}</span>
+                        <button class="delete-risk-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    risksContainer.appendChild(div);
+                });
+                // Re-asignar eventos a los botones de eliminar
+                document.querySelectorAll('.delete-risk-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarRiesgo(pid, idx);
+                    };
+                });
+            }
+        }
+
+        // Cargar acciones (similar)
+        const actionsContainer = document.getElementById('requiredActions');
+        if (actionsContainer) {
+            actionsContainer.innerHTML = '';
+            let acciones = JSON.parse(localStorage.getItem(actionsKey) || '[]');
+            if (acciones.length === 0) {
+                actionsContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay acciones</div>';
+            } else {
+                acciones.forEach((accion, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #3498db;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${accion.texto}</span>
+                        <button class="delete-action-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    actionsContainer.appendChild(div);
+                });
+                document.querySelectorAll('.delete-action-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarAccion(pid, idx);
+                    };
+                });
+            }
+        }
+
+        // Cargar hitos (similar)
+        const milestonesContainer = document.getElementById('milestonesList');
+        if (milestonesContainer) {
+            milestonesContainer.innerHTML = '';
+            let hitos = JSON.parse(localStorage.getItem(milestonesKey) || '[]');
+            if (hitos.length === 0) {
+                milestonesContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay hitos</div>';
+            } else {
+                hitos.forEach((hito, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #f39c12;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${hito.texto}</span>
+                        <button class="delete-milestone-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    milestonesContainer.appendChild(div);
+                });
+                document.querySelectorAll('.delete-milestone-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarHito(pid, idx);
+                    };
+                });
+            }
+        }
+
+        console.log(`✅ Datos cargados para proyecto ${project.name} (ID: ${projectId})`);
+    };
+
+    // ---- MIGRAR DATOS AL INICIO ----
+    migrateOldData();
+
+    // ---- REEMPLAZAR EL SELECTPROJECT PARA RECARGAR DATOS ----
+    const originalSelectProject = window.selectProject;
+    window.selectProject = function(index) {
+        if (originalSelectProject) originalSelectProject(index);
+        setTimeout(() => {
+            if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        }, 100);
+    };
+
+    console.log('✅ Parche de persistencia aplicado correctamente');
+})();
+
+
+
+
 
 
 
