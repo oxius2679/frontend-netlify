@@ -1,4 +1,62 @@
 // ============================================
+// 🛡️ BLOQUEO AUTOMÁTICO DE COLUMNAS EN LOGIN
+// ============================================
+(function autoBloquearLogin() {
+    // Solo ejecutar si NO hay token (pantalla de login)
+    const token = localStorage.getItem('authToken');
+    if (token) return; // Si hay sesión, no hacer nada
+
+    console.log('🔒 Modo login detectado - Activando bloqueo de columnas');
+
+    // Función que elimina las columnas
+    function eliminarColumnas() {
+        const ids = ['pendingList', 'inProgressList', 'completedList', 'overdueList',
+                     'pendingTasks', 'inProgressTasks', 'completedTasks', 'overdueTasks'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+
+        document.querySelectorAll('.kanban-column, .task-card, .column, .tasks, .kanban-container')
+            .forEach(el => el.remove());
+
+        document.querySelectorAll('[id*="pending"], [id*="completed"], [id*="inProgress"], [id*="overdue"]')
+            .forEach(el => {
+                if (!el.closest('#authFormContainer')) el.remove();
+            });
+    }
+
+    // Ejecutar limpieza inmediata
+    eliminarColumnas();
+
+    // 🔄 Repetir cada 500ms mientras estemos en login
+    const intervalo = setInterval(() => {
+        if (localStorage.getItem('authToken')) {
+            // Si aparece token, detener el intervalo
+            clearInterval(intervalo);
+            console.log('✅ Sesión detectada - Bloqueo desactivado');
+            return;
+        }
+        eliminarColumnas();
+    }, 500);
+
+    // 🛑 Observer para prevenir nuevas inserciones
+    const observer = new MutationObserver(() => {
+        if (localStorage.getItem('authToken')) {
+            observer.disconnect();
+            return;
+        }
+        eliminarColumnas();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Guardar referencias para poder detenerlas después del login
+    window._loginBloqueo = { intervalo, observer };
+})();
+
+
+
+// ============================================
 // 📐 ALINEAR BOTONES DE RESPALDO Y TEMPLATES
 // ============================================
 function alinearBotonesRespaldo() {
