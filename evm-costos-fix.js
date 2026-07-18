@@ -360,7 +360,7 @@
                                 <canvas id="evmChartCostos_${dashboardId}"></canvas>
                             </div>
                             <div style="display: flex; justify-content: center; gap: 25px; margin-top: 15px; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: #3b82f6; border-radius: 3px;"></span><span style="color: #94a3b8; font-size: 12px;">PV (€${BAC.toFixed(2)})</span></div>
+                                <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: #3b82f6; border-radius: 3px;"></span><span style="color: #94a3b8; font-size: 12px;">PV (€${PV.toFixed(2)})</span></div>
                                 <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: #10b981; border-radius: 3px;"></span><span style="color: #94a3b8; font-size: 12px;">EV (€${EV.toFixed(2)})</span></div>
                                 <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: #ef4444; border-radius: 3px;"></span><span style="color: #94a3b8; font-size: 12px;">AC (€${AC.toFixed(2)})</span></div>
                             </div>
@@ -488,17 +488,18 @@
             const ctx1 = document.getElementById(`evmChartCostos_${dashboardId}`)?.getContext('2d');
             if (ctx1 && typeof Chart !== 'undefined') {
                 new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: ['PV', 'EV', 'AC'],
-                        datasets: [{
-                            label: 'Euros (€)',
-                            data: [BAC, EV, AC],
-                            backgroundColor: ['#3b82f6', '#10b981', AC > EV ? '#ef4444' : '#f59e0b'],
-                            borderRadius: 8,
-                            barPercentage: 0.6
-                        }]
-                    },
+    type: 'bar',
+    data: {
+        labels: ['PV', 'EV', 'AC'],
+        datasets: [{
+            label: 'Euros (€)',
+            data: [PV, EV, AC],  // ✅ AHORA USA LA VARIABLE PV CORRECTA
+            backgroundColor: ['#3b82f6', '#10b981', AC > EV ? '#ef4444' : '#f59e0b'],
+            borderRadius: 8,
+            barPercentage: 0.6
+        }]
+    },
+
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,

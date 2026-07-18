@@ -16033,3 +16033,37 @@ button[onclick*="toggleMobileViewPremium"] {
   .exec-file-section { flex-direction: column; align-items: stretch; }
   .exec-file-download { align-self: flex-start; }
 }
+
+
+
+
+
+
+
+
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* separación entre imagen y texto */
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.logo img {
+  height: 50px; /* o el tamaño que tengas */
+  width: auto;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.logo span {
+  display: inline-block !important;
+  margin-left: 0 !important; /* elimina el margin negativo */
+  font-size: 22px !important;
+  font-weight: bold !important;
+  color: #A6CAEC !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+}
+

@@ -24740,7 +24740,7 @@ function showLicensesView() {
             POPULAR
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€24/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
             <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
@@ -24762,7 +24762,7 @@ function showLicensesView() {
             EMPRESAS
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€32/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€35/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
             <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
@@ -30808,6 +30808,165 @@ function createCompleteGanttForCurrentProject() {
         : (task.estimatedTime ? `${task.estimatedTime}h` : '')
     };
   });
+
+
+
+(function makePermanent() {
+  console.log('🔧 Haciendo permanente el fix de dependencias...');
+
+  // Guardar la función original que crea el Gantt
+  const originalCreateGantt = window.createCompleteGanttForCurrentProject;
+
+  if (!originalCreateGantt) {
+    console.error('❌ No se encontró createCompleteGanttForCurrentProject');
+    return;
+  }
+
+  // Sobrescribir la función para que ejecute nuestro fix después de crear el Gantt
+  window.createCompleteGanttForCurrentProject = function() {
+    console.log('🔄 Creando Gantt con fix permanente...');
+    
+    // Llamar a la función original
+    const result = originalCreateGantt.apply(this, arguments);
+
+    // Esperar a que el Gantt esté completamente renderizado
+    const checkAndApply = () => {
+      const ganttContainer = document.getElementById('premiumExecutiveGantt');
+      if (ganttContainer && document.querySelector('.gantt-dependency-svg')) {
+        console.log('✅ Gantt listo, aplicando overlay...');
+        applyOverlayFix();
+      } else {
+        // Reintentar si el SVG aún no existe
+        setTimeout(checkAndApply, 500);
+      }
+    };
+
+    // Esperar un poco para que el Gantt se renderice
+    setTimeout(checkAndApply, 1000);
+
+    return result;
+  };
+
+  // Función que aplica el overlay (basada en tu script que funcionó)
+  function applyOverlayFix() {
+    console.log('🚀 Aplicando overlay de dependencias...');
+    
+    let svg = document.querySelector('.gantt-dependency-svg');
+    if (!svg) {
+      const layer = document.getElementById('dependencyLayer');
+      if (layer) svg = layer.querySelector('svg');
+    }
+    if (!svg) {
+      console.log('ℹ️ No hay SVG de dependencias (quizás no hay dependencias definidas)');
+      return;
+    }
+
+    const ganttContainer = document.getElementById('premiumExecutiveGantt');
+    if (!ganttContainer) {
+      console.error('❌ Gantt no encontrado');
+      return;
+    }
+
+    // Verificar si el overlay ya existe
+    let overlay = document.getElementById('dependency-overlay-fixed');
+    if (overlay) {
+      // Si ya existe, actualizar posición y mover el SVG si es necesario
+      if (svg.parentElement !== overlay) {
+        overlay.appendChild(svg);
+      }
+      updateOverlayPosition();
+      return;
+    }
+
+    // Crear overlay
+    overlay = document.createElement('div');
+    overlay.id = 'dependency-overlay-fixed';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999999;
+      overflow: visible;
+    `;
+
+    // Mover SVG al overlay
+    overlay.appendChild(svg);
+    
+    // Ajustar posición del SVG
+    const ganttRect = ganttContainer.getBoundingClientRect();
+    svg.style.position = 'fixed';
+    svg.style.top = ganttRect.top + 'px';
+    svg.style.left = ganttRect.left + 'px';
+    svg.style.width = ganttRect.width + 'px';
+    svg.style.height = ganttRect.height + 'px';
+    svg.style.pointerEvents = 'none';
+    svg.style.zIndex = '9999999';
+    svg.style.background = 'transparent';
+    svg.style.overflow = 'visible';
+
+    // Aplicar estilos a paths y líneas
+    svg.querySelectorAll('path, line, .dependency-line, .dependency-arrow').forEach(el => {
+      el.style.zIndex = '9999999';
+      el.style.position = 'relative';
+      el.style.pointerEvents = 'none';
+    });
+
+    // Insertar overlay en el body
+    document.body.appendChild(overlay);
+
+    // Inyectar CSS para bajar z-index de tarjetas críticas
+    const styleId = 'critical-fixed-overlay';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .premium-task.critical,
+        .premium-task[style*="background: #ff0000"],
+        .premium-task[style*="background: rgb(255,0,0)"],
+        .premium-task[style*="background: rgba(255,0,0"] {
+          z-index: 1 !important;
+          position: relative !important;
+        }
+        .premium-task {
+          z-index: auto !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Función para actualizar posición
+    function updateOverlayPosition() {
+      const rect = ganttContainer.getBoundingClientRect();
+      svg.style.top = rect.top + 'px';
+      svg.style.left = rect.left + 'px';
+      svg.style.width = rect.width + 'px';
+      svg.style.height = rect.height + 'px';
+    }
+
+    // Event listeners
+    window.addEventListener('scroll', updateOverlayPosition);
+    window.addEventListener('resize', updateOverlayPosition);
+
+    // Observer para mantener el SVG en el overlay
+    const observer = new MutationObserver(() => {
+      if (svg.parentElement !== overlay) {
+        overlay.appendChild(svg);
+      }
+      updateOverlayPosition();
+    });
+    observer.observe(ganttContainer, { childList: true, subtree: true });
+
+    console.log('✅ Overlay fijo creado y aplicado correctamente');
+  }
+
+  console.log('✅ Fix permanente instalado. Ahora cada vez que abras el Gantt, las líneas estarán por encima.');
+})();
+
+
+
 
   // ========================================
   // 🧪 VERIFICACIÓN DE TIMELINE
