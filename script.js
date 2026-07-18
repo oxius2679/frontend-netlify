@@ -1,4 +1,217 @@
+// ============================================
+// 📐 ALINEAR BOTONES DE RESPALDO Y TEMPLATES
+// ============================================
+function alinearBotonesRespaldo() {
+    console.log('📐 Alineando botones de respaldo...');
 
+    // 1. Botón Templates
+    const btnTemplates = document.getElementById('btnPlantillasSidebar');
+    if (btnTemplates) {
+        btnTemplates.style.setProperty('width', '100%', 'important');
+        btnTemplates.style.setProperty('margin', '6px 0', 'important');
+        btnTemplates.style.setProperty('padding', '12px 16px', 'important');
+        btnTemplates.style.setProperty('border-radius', '10px', 'important');
+        btnTemplates.style.setProperty('font-size', '14px', 'important');
+        btnTemplates.style.setProperty('font-weight', '600', 'important');
+    }
+
+    // 2. Botón Download Backup
+    const btnBackup = document.getElementById('backupToLocal');
+    if (btnBackup) {
+        btnBackup.style.setProperty('width', '100%', 'important');
+        btnBackup.style.setProperty('margin', '6px 0', 'important');
+        btnBackup.style.setProperty('padding', '12px 16px', 'important');
+        btnBackup.style.setProperty('border-radius', '10px', 'important');
+        btnBackup.style.setProperty('font-size', '14px', 'important');
+        btnBackup.style.setProperty('font-weight', '600', 'important');
+    }
+
+    // 3. Botón Upload from file
+    const btnRestore = document.getElementById('restoreFromLocal');
+    if (btnRestore) {
+        btnRestore.style.setProperty('width', '100%', 'important');
+        btnRestore.style.setProperty('margin', '6px 0', 'important');
+        btnRestore.style.setProperty('padding', '12px 16px', 'important');
+        btnRestore.style.setProperty('border-radius', '10px', 'important');
+        btnRestore.style.setProperty('font-size', '14px', 'important');
+        btnRestore.style.setProperty('font-weight', '600', 'important');
+    }
+
+    // 4. Opcional: agrupar en un contenedor si están separados
+    // Buscar si los tres botones están dentro de un mismo contenedor
+    const container = document.querySelector('.backup-section, #backupSection, .config-section');
+    if (container) {
+        container.style.setProperty('display', 'flex', 'important');
+        container.style.setProperty('flex-direction', 'column', 'important');
+        container.style.setProperty('gap', '8px', 'important');
+        container.style.setProperty('padding', '10px', 'important');
+    }
+
+    console.log('✅ Botones alineados correctamente');
+}
+
+// Ejecutar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(alinearBotonesRespaldo, 1500);
+    });
+} else {
+    setTimeout(alinearBotonesRespaldo, 1500);
+}
+
+
+// ============================================
+// 🎨 ARREGLAR COLORES DE BOTONES OSCUROS
+// ============================================
+function arreglarBotonesOscuros() {
+    console.log('🎨 Aplicando colores claros a botones...');
+
+    // ============================================
+    // 1. BOTÓN PLANTILLAS (Amarillo)
+    // ============================================
+    const btnTemplates = document.getElementById('btnPlantillasSidebar');
+    if (btnTemplates) {
+        function aplicarEstiloPlantillas() {
+            btnTemplates.style.setProperty('background', 'linear-gradient(135deg, #f472b6, #ec4899)', 'important');
+            btnTemplates.style.setProperty('border', 'none', 'important');
+            btnTemplates.style.setProperty('color', 'white', 'important');
+            btnTemplates.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.4)', 'important');
+            btnTemplates.style.setProperty('border-radius', '12px', 'important');
+            btnTemplates.style.setProperty('font-weight', 'bold', 'important');
+            btnTemplates.style.setProperty('font-size', '14px', 'important');
+            btnTemplates.style.setProperty('padding', '12px 16px', 'important');
+            btnTemplates.style.setProperty('width', 'calc(100% - 24px)', 'important');
+            btnTemplates.style.setProperty('margin', '10px 12px', 'important');
+            btnTemplates.style.setProperty('cursor', 'pointer', 'important');
+        }
+        aplicarEstiloPlantillas();
+
+        btnTemplates.addEventListener('mouseenter', function() {
+            this.style.setProperty('transform', 'translateY(-2px)', 'important');
+            this.style.setProperty('box-shadow', '0 8px 20px rgba(251, 191, 36, 0.6)', 'important');
+              this.style.setProperty('background', 'linear-gradient(135deg, #f9a8d4, #f472b6)', 'important');
+        });
+        btnTemplates.addEventListener('mouseleave', function() {
+            this.style.setProperty('transform', 'translateY(0)', 'important');
+            this.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.4)', 'important');
+            this.style.setProperty('background', 'linear-gradient(135deg, #fbbf24, #f59e0b)', 'important');
+        });
+
+        // Protección contra sobrescritura
+        let intentos1 = 0;
+        const interval1 = setInterval(() => {
+            const bg = btnTemplates.style.background || '';
+            if (!bg.includes('fbbf24') && !bg.includes('f59e0b')) {
+                aplicarEstiloPlantillas();
+                console.log('🔄 Estilo de Plantillas restaurado');
+            }
+            intentos1++;
+            if (intentos1 > 10) clearInterval(interval1);
+        }, 2000);
+
+        console.log('✅ Botón Plantillas → Amarillo');
+    }
+
+    // ============================================
+    // 2. BOTÓN DESCARGAR RESPALDO (Verde)
+    // ============================================
+    const btnBackup = document.getElementById('backupToLocal');
+    if (btnBackup) {
+        function aplicarEstiloBackup() {
+            btnBackup.style.setProperty('background', 'linear-gradient(135deg, #34d399, #10b981)', 'important');
+            btnBackup.style.setProperty('border', 'none', 'important');
+            btnBackup.style.setProperty('color', 'white', 'important');
+            btnBackup.style.setProperty('box-shadow', '0 4px 12px rgba(16, 185, 129, 0.4)', 'important');
+            btnBackup.style.setProperty('border-radius', '8px', 'important');
+            btnBackup.style.setProperty('font-weight', '600', 'important');
+            btnBackup.style.setProperty('font-size', '0.9em', 'important');
+            btnBackup.style.setProperty('padding', '10px 16px', 'important');
+            btnBackup.style.setProperty('width', '100%', 'important');
+            btnBackup.style.setProperty('margin', '0 0 5px 0', 'important');
+            btnBackup.style.setProperty('cursor', 'pointer', 'important');
+        }
+        aplicarEstiloBackup();
+
+        btnBackup.addEventListener('mouseenter', function() {
+            this.style.setProperty('transform', 'translateY(-2px)', 'important');
+            this.style.setProperty('box-shadow', '0 8px 20px rgba(16, 185, 129, 0.6)', 'important');
+            this.style.setProperty('background', 'linear-gradient(135deg, #6ee7b7, #34d399)', 'important');
+        });
+        btnBackup.addEventListener('mouseleave', function() {
+            this.style.setProperty('transform', 'translateY(0)', 'important');
+            this.style.setProperty('box-shadow', '0 4px 12px rgba(16, 185, 129, 0.4)', 'important');
+            this.style.setProperty('background', 'linear-gradient(135deg, #34d399, #10b981)', 'important');
+        });
+
+        let intentos2 = 0;
+        const interval2 = setInterval(() => {
+            const bg = btnBackup.style.background || '';
+            if (!bg.includes('34d399') && !bg.includes('10b981')) {
+                aplicarEstiloBackup();
+                console.log('🔄 Estilo de Backup restaurado');
+            }
+            intentos2++;
+            if (intentos2 > 10) clearInterval(interval2);
+        }, 2000);
+
+        console.log('✅ Botón Descargar Respaldo → Verde');
+    }
+
+    // ============================================
+    // 3. BOTÓN CARGAR ARCHIVO (Azul Cielo)
+    // ============================================
+    const btnRestore = document.getElementById('restoreFromLocal');
+    if (btnRestore) {
+        function aplicarEstiloRestore() {
+            btnRestore.style.setProperty('background', 'linear-gradient(135deg, #22d3ee, #06b6d4)', 'important');
+            btnRestore.style.setProperty('border', 'none', 'important');
+            btnRestore.style.setProperty('color', 'white', 'important');
+            btnRestore.style.setProperty('box-shadow', '0 4px 12px rgba(14, 165, 233, 0.4)', 'important');
+            btnRestore.style.setProperty('border-radius', '8px', 'important');
+            btnRestore.style.setProperty('font-weight', '600', 'important');
+            btnRestore.style.setProperty('font-size', '0.9em', 'important');
+            btnRestore.style.setProperty('padding', '10px 16px', 'important');
+            btnRestore.style.setProperty('width', '100%', 'important');
+            btnRestore.style.setProperty('cursor', 'pointer', 'important');
+        }
+        aplicarEstiloRestore();
+
+        btnRestore.addEventListener('mouseenter', function() {
+            this.style.setProperty('transform', 'translateY(-2px)', 'important');
+            this.style.setProperty('box-shadow', '0 8px 20px rgba(14, 165, 233, 0.6)', 'important');
+             this.style.setProperty('background', 'linear-gradient(135deg, #67e8f9, #22d3ee)', 'important');
+        });
+        btnRestore.addEventListener('mouseleave', function() {
+            this.style.setProperty('transform', 'translateY(0)', 'important');
+            this.style.setProperty('box-shadow', '0 4px 12px rgba(14, 165, 233, 0.4)', 'important');
+            this.style.setProperty('background', 'linear-gradient(135deg, #38bdf8, #0ea5e9)', 'important');
+        });
+
+        let intentos3 = 0;
+        const interval3 = setInterval(() => {
+            const bg = btnRestore.style.background || '';
+            if (!bg.includes('38bdf8') && !bg.includes('0ea5e9')) {
+                aplicarEstiloRestore();
+                console.log('🔄 Estilo de Restore restaurado');
+            }
+            intentos3++;
+            if (intentos3 > 10) clearInterval(interval3);
+        }, 2000);
+
+        console.log('✅ Botón Cargar archivo → Azul Cielo');
+    }
+}
+
+// ============================================
+// EJECUTAR CUANDO EL DOM ESTÉ LISTO
+// ============================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(arreglarBotonesOscuros, 1000);
+    });
+} else {
+    setTimeout(arreglarBotonesOscuros, 1000);
+}
 
 
 
