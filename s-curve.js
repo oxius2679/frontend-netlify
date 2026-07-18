@@ -1,12 +1,17 @@
 // ============================================
-// 📈 CURVA S - MÓDULO EJECUTIVO (VERSIÓN CORREGIDA)
+// 📈 CURVA S - MÓDULO DEFINITIVO CON SELECTOR MANUAL
+// ============================================
+// ✅ Incluye un desplegable para seleccionar el proyecto manualmente
+// ✅ También detecta automáticamente el proyecto activo (por si la interfaz lo actualiza)
+// ✅ Sin valores hardcodeados
+// ✅ Botón amarillo después de Dashboard 4D
 // ============================================
 
 (function(global) {
     'use strict';
 
     // ============================================
-    // 1. CONFIGURACIÓN E IDIOMA (dinámico)
+    // 1. CONFIGURACIÓN E IDIOMA
     // ============================================
     function getLang() {
         return localStorage.getItem('preferredLanguage') || 'es';
@@ -18,13 +23,8 @@
             subtitle: 'Análisis de Avance Planificado vs Real',
             planned: 'Planificado',
             actual: 'Real',
-            week: 'Semana',
-            month: 'Mes',
-            noData: 'No hay datos suficientes para generar la curva S.',
-            noTasks: 'El proyecto no tiene tareas con fechas y horas estimadas.',
             progressLabel: 'Avance Acumulado (%)',
             weekLabel: 'Semanas',
-            monthLabel: 'Meses',
             exportBtn: '📥 Exportar Gráfico',
             closeBtn: '✕ Cerrar',
             totalHoursPlanned: 'Horas Planificadas',
@@ -32,20 +32,18 @@
             deviation: 'Desviación',
             ahead: 'Adelantado',
             behind: 'Retrasado',
-            onTrack: 'En línea'
+            onTrack: 'En línea',
+            noData: 'No hay datos suficientes para generar la curva S.',
+            noTasks: 'El proyecto no tiene tareas con fechas y horas estimadas.',
+            selectProject: 'Seleccionar proyecto:'
         },
         en: {
             title: '📈 Project S-Curve',
             subtitle: 'Planned vs Actual Progress Analysis',
             planned: 'Planned',
             actual: 'Actual',
-            week: 'Week',
-            month: 'Month',
-            noData: 'Not enough data to generate S-Curve.',
-            noTasks: 'Project has no tasks with dates and estimated hours.',
             progressLabel: 'Cumulative Progress (%)',
             weekLabel: 'Weeks',
-            monthLabel: 'Months',
             exportBtn: '📥 Export Chart',
             closeBtn: '✕ Close',
             totalHoursPlanned: 'Planned Hours',
@@ -53,7 +51,10 @@
             deviation: 'Deviation',
             ahead: 'Ahead',
             behind: 'Behind',
-            onTrack: 'On Track'
+            onTrack: 'On Track',
+            noData: 'Not enough data to generate S-Curve.',
+            noTasks: 'Project has no tasks with dates and estimated hours.',
+            selectProject: 'Select project:'
         }
     };
 
@@ -63,7 +64,42 @@
     }
 
     // ============================================
-    // 2. FUNCIÓN DE CÁLCULO DE CURVA S (sin cambios)
+    // 2. OBTENER PROYECTOS Y PROYECTO ACTIVO
+    // ============================================
+    function getProjects() {
+        return global.projects || [];
+    }
+
+    function getCurrentProject() {
+        // Primero intentar detectar por DOM (elemento activo)
+        const activeEl = document.querySelector('.project-item.active, .menu-item.active, li.active, .nav-link.active');
+        if (activeEl) {
+            let name = activeEl.dataset?.name || activeEl.dataset?.projectName || activeEl.textContent.trim();
+            name = name.replace(/[📁📂🗂️📊]/g, '').trim();
+            const projects = getProjects();
+            for (let p of projects) {
+                if (p.name === name) {
+                    return p;
+                }
+            }
+        }
+
+        // Fallback: usar índice global
+        const idx = global.currentProjectIndex;
+        const projects = getProjects();
+        if (typeof idx === 'number' && idx >= 0 && idx < projects.length) {
+            return projects[idx];
+        }
+
+        // Último recurso: primer proyecto
+        if (projects.length > 0) {
+            return projects[0];
+        }
+        return null;
+    }
+
+    // ============================================
+    // 3. CÁLCULO DE CURVA S
     // ============================================
     function calculateSCurve(tasks) {
         if (!tasks || tasks.length === 0) return null;
@@ -172,22 +208,46 @@
     }
 
     // ============================================
-    // 3. RENDERIZADO (con traducciones dinámicas)
+    // 4. VARIABLES GLOBALES DEL MÓDULO
     // ============================================
     let sCurveChartInstance = null;
     let sCurveContainer = null;
     let sCurveData = null;
+    let currentProject = null;
 
-    function render(container) {
-        const project = global.projects?.[global.currentProjectIndex];
+    // ============================================
+    // 5. RENDERIZADO (con selector de proyecto)
+    // ============================================
+    function render(container, project) {
+        const projects = getProjects();
+        if (projects.length === 0) {
+            container.innerHTML = `<div style="padding: 40px; text-align: center; color: #94a3b8;">${t('noData')}</div>`;
+            return;
+        }
+
+        // Si no se pasa proyecto, intentar obtener el activo
+        if (!project) {
+            project = getCurrentProject();
+        }
+        // Si aún no hay proyecto, usar el primero
+        if (!project && projects.length > 0) {
+            project = projects[0];
+        }
         if (!project) {
             container.innerHTML = `<div style="padding: 40px; text-align: center; color: #94a3b8;">${t('noData')}</div>`;
             return;
         }
 
+        currentProject = project;
+
         const tasks = project.tasks || [];
         if (tasks.length === 0) {
-            container.innerHTML = `<div style="padding: 40px; text-align: center; color: #94a3b8;">${t('noTasks')}</div>`;
+            container.innerHTML = `
+                <div style="padding: 40px; text-align: center; color: #94a3b8;">
+                    <p>${t('noTasks')}</p>
+                    <p style="font-size: 14px; margin-top: 10px;">Proyecto: ${project.name}</p>
+                </div>
+            `;
             return;
         }
 
@@ -197,6 +257,10 @@
             return;
         }
         sCurveData = data;
+
+        // --- Mostrar resultados en consola ---
+        console.log(`📈 Curva S para "${project.name}":`);
+        console.log(`  Planificado: ${data.totalPlanned.toFixed(2)}h, Real: ${data.totalActual.toFixed(2)}h, Desviación: ${data.deviation.toFixed(2)}%`);
 
         const diff = data.deviation;
         let statusText = t('onTrack');
@@ -209,12 +273,10 @@
             statusColor = '#ef4444';
         }
 
-        // Si ya existe un contenedor, lo limpiamos y reutilizamos
+        // Crear o limpiar contenedor
         if (sCurveContainer && sCurveContainer.parentNode) {
-            // Limpiar contenido anterior pero mantener el contenedor
             sCurveContainer.innerHTML = '';
         } else {
-            // Crear nuevo contenedor
             sCurveContainer = document.createElement('div');
             sCurveContainer.id = 'sCurveContainer';
             sCurveContainer.style.cssText = `
@@ -235,7 +297,12 @@
             document.body.appendChild(sCurveContainer);
         }
 
-        // Generar HTML
+        // Generar opciones del selector
+        let optionsHtml = projects.map(p =>
+            `<option value="${p.name}" ${p.name === project.name ? 'selected' : ''}>${p.name} (${p.tasks?.length || 0} tareas)</option>`
+        ).join('');
+
+        // HTML con selector
         sCurveContainer.innerHTML = `
             <div style="
                 background: linear-gradient(145deg, #0f172a, #1e293b);
@@ -250,15 +317,28 @@
                 flex-direction: column;
                 overflow: hidden;
             ">
-                <!-- HEADER -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
-                    <div>
+                <!-- HEADER con selector -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <h2 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">
                             ${t('title')}
                         </h2>
-                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 15px;">
-                            ${project.name} • ${t('subtitle')}
-                        </p>
+                        <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 40px;">
+                            <span style="color: #94a3b8; font-size: 13px;">${t('selectProject')}</span>
+                            <select id="sCurveProjectSelector" style="
+                                background: rgba(255,255,255,0.1);
+                                color: white;
+                                border: 1px solid rgba(255,255,255,0.2);
+                                border-radius: 20px;
+                                padding: 8px 16px;
+                                font-size: 14px;
+                                cursor: pointer;
+                                outline: none;
+                                font-weight: 500;
+                            ">
+                                ${optionsHtml}
+                            </select>
+                        </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <div style="background: ${statusColor}20; border: 1px solid ${statusColor}; border-radius: 40px; padding: 8px 20px;">
@@ -431,6 +511,7 @@
 
         // Eventos
         document.getElementById('sCurveCloseBtn')?.addEventListener('click', closeSCurve);
+
         document.getElementById('sCurveExportBtn')?.addEventListener('click', function() {
             const canvas = document.getElementById('sCurveChart');
             if (canvas) {
@@ -438,6 +519,21 @@
                 link.download = `s-curve_${project.name.replace(/\s+/g, '_')}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            }
+        });
+
+        // Selector de proyecto
+        document.getElementById('sCurveProjectSelector')?.addEventListener('change', function(e) {
+            const selectedName = e.target.value;
+            const selectedProject = projects.find(p => p.name === selectedName);
+            if (selectedProject) {
+                // Actualizar el índice global para sincronizar con la interfaz
+                const idx = projects.indexOf(selectedProject);
+                if (idx !== -1) {
+                    global.currentProjectIndex = idx;
+                }
+                // Re-renderizar con el nuevo proyecto
+                render(sCurveContainer, selectedProject);
             }
         });
 
@@ -476,198 +572,163 @@
             sCurveChartInstance = null;
         }
         sCurveData = null;
+        currentProject = null;
     }
 
     // ============================================
-    // 4. REFRESCAR IDIOMA
+    // 6. REFRESCAR IDIOMA
     // ============================================
     function refreshLanguage() {
-        if (sCurveContainer && sCurveData) {
-            // Recrear el contenedor con el nuevo idioma
-            const project = global.projects?.[global.currentProjectIndex];
-            if (project) {
-                // Guardar referencia al contenedor actual
-                const oldContainer = sCurveContainer;
-                // Crear uno nuevo y reemplazar
-                const newContainer = document.createElement('div');
-                newContainer.id = 'sCurveContainer';
-                oldContainer.parentNode.replaceChild(newContainer, oldContainer);
-                sCurveContainer = newContainer;
-                // Renderizar de nuevo
-                render(sCurveContainer);
-            }
+        if (sCurveContainer && currentProject) {
+            render(sCurveContainer, currentProject);
         }
     }
 
     // ============================================
-    // 5. FUNCIÓN PRINCIPAL DE INICIO
+    // 7. LANZAR CURVA S
     // ============================================
     function launch() {
         if (sCurveContainer) {
             closeSCurve();
             return;
         }
+        const project = getCurrentProject();
+        const projects = getProjects();
+        if (projects.length === 0) {
+            alert('❌ No hay proyectos disponibles.');
+            return;
+        }
         const tempContainer = document.createElement('div');
         tempContainer.id = 'sCurveTemp';
         document.body.appendChild(tempContainer);
-        render(tempContainer);
-        // Eliminar el temporal después de renderizar (el render crea su propio contenedor fijo)
+        render(tempContainer, project || projects[0]);
         setTimeout(() => {
             if (tempContainer.parentNode) tempContainer.remove();
         }, 100);
     }
 
-
-   // ============================================
-// 6. AGREGAR BOTÓN CURVA S (DESPUÉS DE DASHBOARD 4D)
-// ============================================
-function addSCurveButton() {
-    const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu, .menu-lateral');
-    if (!sidebar) {
-        setTimeout(addSCurveButton, 500);
-        return;
-    }
-
-    // Eliminar duplicado si existe
-    const existingBtn = document.getElementById('sCurveSidebarBtn');
-    if (existingBtn) existingBtn.remove();
-
-    // Buscar el elemento "Dashboard 4D"
-    let dashboard4D = document.getElementById('showDashboard4DView');
-    if (!dashboard4D) {
-        // Buscar por texto si no encuentra por ID
-        const allItems = sidebar.querySelectorAll('li, .menu-item, .nav-item');
-        for (const item of allItems) {
-            if (item.textContent.includes('Dashboard 4D') || item.textContent.includes('Dashboard4D')) {
-                dashboard4D = item;
-                break;
-            }
-        }
-    }
-
-    // Si no encuentra Dashboard 4D, insertar después de proyectos (fallback)
-    if (!dashboard4D) {
-        console.warn('⚠️ No se encontró "Dashboard 4D", insertando después de proyectos');
-        const projectSection = document.getElementById('projectList');
-        if (projectSection && projectSection.parentNode) {
-            dashboard4D = projectSection;
-        } else {
-            // Fallback final: al final del sidebar
-            const btn = crearBotonCurvaS();
-            sidebar.appendChild(btn);
+    // ============================================
+    // 8. BOTÓN CURVA S (AMARILLO, DESPUÉS DE DASHBOARD 4D)
+    // ============================================
+    function addSCurveButton() {
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu, .menu-lateral');
+        if (!sidebar) {
+            setTimeout(addSCurveButton, 500);
             return;
         }
-    }
 
-    // Obtener el li padre (el elemento del menú)
-    const targetLi = dashboard4D.closest('li');
-    if (!targetLi) {
-        console.warn('⚠️ Dashboard 4D no está dentro de un li, insertando después del elemento');
-        const btn = crearBotonCurvaS();
-        dashboard4D.parentNode.insertBefore(btn, dashboard4D.nextSibling);
-        return;
-    }
+        const existingBtn = document.getElementById('sCurveSidebarBtn');
+        if (existingBtn) existingBtn.remove();
 
-    // Crear el botón (será un button, no un li, para que tenga el mismo tamaño que los de abajo)
-    const btn = document.createElement('button');
-    btn.id = 'sCurveSidebarBtn';
-    btn.innerHTML = '📈 Curva S';
+        // Buscar Dashboard 4D
+        let dashboard4D = document.getElementById('showDashboard4DView');
+        if (!dashboard4D) {
+            const allItems = sidebar.querySelectorAll('li, .menu-item, .nav-item');
+            for (const item of allItems) {
+                if (item.textContent.includes('Dashboard 4D') || item.textContent.includes('Dashboard4D')) {
+                    dashboard4D = item;
+                    break;
+                }
+            }
+        }
 
-    // ========================================
-    // ESTILOS AMARILLOS (los que funcionaron)
-    // ========================================
-    function aplicarEstilos() {
-        btn.style.setProperty('width', 'calc(100% - 24px)', 'important');
-        btn.style.setProperty('background', 'linear-gradient(135deg, #fbbf24, #f59e0b)', 'important');
-        btn.style.setProperty('border', 'none', 'important');
-        btn.style.setProperty('color', 'white', 'important');
-        btn.style.setProperty('padding', '14px 20px', 'important'); // Más padding para que sea más grande
-        btn.style.setProperty('height', '48px', 'important'); // Más alto
-        btn.style.setProperty('border-radius', '10px', 'important');
-        btn.style.setProperty('cursor', 'pointer', 'important');
-        btn.style.setProperty('font-weight', '600', 'important');
-        btn.style.setProperty('font-size', '15px', 'important');
-        btn.style.setProperty('margin', '8px 12px', 'important');
-        btn.style.setProperty('display', 'flex', 'important');
-        btn.style.setProperty('align-items', 'center', 'important');
-        btn.style.setProperty('justify-content', 'center', 'important');
-        btn.style.setProperty('gap', '10px', 'important');
-        btn.style.setProperty('transition', 'all 0.3s ease', 'important');
-        btn.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.4)', 'important');
-        btn.style.setProperty('letter-spacing', '0.5px', 'important');
-        btn.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
-    }
+        const btn = document.createElement('button');
+        btn.id = 'sCurveSidebarBtn';
+        btn.innerHTML = '📈 Curva S';
 
-    aplicarEstilos();
+        const applyStyles = () => {
+            btn.style.cssText = `
+                width: calc(100% - 24px) !important;
+                background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+                border: none !important;
+                color: white !important;
+                padding: 14px 20px !important;
+                height: 48px !important;
+                border-radius: 10px !important;
+                cursor: pointer !important;
+                font-weight: 600 !important;
+                font-size: 15px !important;
+                margin: 8px 12px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 10px !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4) !important;
+                letter-spacing: 0.5px !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            `;
+        };
+        applyStyles();
 
-    // Eventos hover
-    btn.addEventListener('mouseenter', () => {
-        btn.style.setProperty('transform', 'translateY(-2px)', 'important');
-        btn.style.setProperty('box-shadow', '0 8px 20px rgba(251, 191, 36, 0.6)', 'important');
-        btn.style.setProperty('background', 'linear-gradient(135deg, #fcd34d, #f59e0b)', 'important');
-    });
-    btn.addEventListener('mouseleave', () => {
-        btn.style.setProperty('transform', 'translateY(0)', 'important');
-        btn.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.4)', 'important');
-        btn.style.setProperty('background', 'linear-gradient(135deg, #fbbf24, #f59e0b)', 'important');
-    });
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'translateY(-2px)';
+            btn.style.boxShadow = '0 8px 20px rgba(251, 191, 36, 0.6)';
+            btn.style.background = 'linear-gradient(135deg, #fcd34d, #f59e0b)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'translateY(0)';
+            btn.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.4)';
+            btn.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
+        });
 
-    // Evento click
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Lanzar Curva S
-        if (typeof launch === 'function') {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             launch();
-        } else if (typeof window.SCurve?.launch === 'function') {
-            window.SCurve.launch();
-        }
-    });
+        });
 
-    // Insertar DESPUÉS de Dashboard 4D
-    targetLi.parentNode.insertBefore(btn, targetLi.nextSibling);
-
-    console.log('✅ Botón Curva S insertado después de Dashboard 4D');
-
-    // ========================================
-    // PROTECCIÓN CONTRA SOBRESCRITURA
-    // ========================================
-    let intentos = 0;
-    const interval = setInterval(() => {
-        const currentBg = btn.style.background || '';
-        if (!currentBg.includes('fbbf24') && !currentBg.includes('f59e0b')) {
-            aplicarEstilos();
-            console.log('🔄 Estilo del botón Curva S restaurado (intento ' + (intentos + 1) + ')');
+        if (dashboard4D) {
+            const targetLi = dashboard4D.closest('li');
+            if (targetLi) {
+                targetLi.parentNode.insertBefore(btn, targetLi.nextSibling);
+            } else {
+                dashboard4D.parentNode.insertBefore(btn, dashboard4D.nextSibling);
+            }
+        } else {
+            sidebar.appendChild(btn);
         }
-        intentos++;
-        if (intentos > 10) {
-            clearInterval(interval);
-            console.log('✅ Protección de estilos finalizada');
-        }
-    }, 2000);
-}
-   // ============================================
-    // 7. EXPOSICIÓN GLOBAL Y EVENTOS
+
+        console.log('✅ Botón Curva S insertado.');
+
+        // Proteger estilos
+        let attempts = 0;
+        const protectInterval = setInterval(() => {
+            const bg = btn.style.background || '';
+            if (!bg.includes('fbbf24') && !bg.includes('f59e0b')) {
+                applyStyles();
+                console.log('🔄 Estilo del botón Curva S restaurado (intento ' + (attempts + 1) + ')');
+            }
+            attempts++;
+            if (attempts > 10) clearInterval(protectInterval);
+        }, 2000);
+    }
+
+    // ============================================
+    // 9. EXPOSICIÓN GLOBAL
     // ============================================
     global.SCurve = {
         launch: launch,
         render: render,
         refreshLanguage: refreshLanguage,
         close: closeSCurve,
-        addButton: addSCurveButton
+        addButton: addSCurveButton,
+        getCurrentProject: getCurrentProject,
+        debug: {
+            projects: getProjects,
+            currentIndex: () => global.currentProjectIndex
+        }
     };
 
-    // Escuchar evento de cambio de idioma
     document.addEventListener('languageChanged', refreshLanguage);
 
-    // Inicializar automáticamente al cargar
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', addSCurveButton);
     } else {
         addSCurveButton();
     }
 
-    console.log('📈 Módulo Curva S cargado correctamente (versión corregida)');
+    console.log('📈 Módulo Curva S cargado con selector manual de proyectos.');
+    console.log('💡 Ahora puedes elegir el proyecto desde el desplegable dentro de la Curva S.');
 
 })(window);
