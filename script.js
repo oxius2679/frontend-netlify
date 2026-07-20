@@ -1,3 +1,6 @@
+
+
+
 // ============================================
 // 🛡️ BLOQUEO AUTOMÁTICO DE COLUMNAS EN LOGIN
 // ============================================
@@ -2498,6 +2501,14 @@ document.addEventListener('DOMContentLoaded', function() {
         window.mostrarBadgePrueba();
     };
     
+
+
+
+
+
+
+
+
     // ============================================
     // 🚀 INTERCEPTAR FUNCIONES PARA BLOQUEO PARCIAL
     // ============================================
@@ -25652,239 +25663,136 @@ checkBackendStatus(); // ejecutar inmediatamente al iniciar
 
 // ==================== SAFE SAVE MEJORADO ====================
 async function safeSave(clienteId) {
-  console.group('📤 Guardando datos en backend o localStorage');
-
-  // Si no recibimos clienteId, intentamos obtenerlo de localStorage
+  console.group('📤 Guardando datos...');
+  
+  // Obtener clienteId
   if (!clienteId) {
     clienteId = localStorage.getItem('clienteId');
   }
+  if (!clienteId) {
+    console.error('❌ No se pudo obtener clienteId');
+    console.groupEnd();
+    return false;
+  }
 
-  // 🔥 DETECTAR SI ES CLIENTE GENERADO
-  const esClienteGenerado = clienteId && clienteId.startsWith('user_');
-
-  // SIEMPRE guardar en localStorage
+  // 1. Guardar en localStorage SIEMPRE
   localStorage.setItem('projects', JSON.stringify(projects));
+  localStorage.setItem('currentProjectIndex', String(currentProjectIndex));
   console.log('📦 Datos guardados en localStorage');
-  console.log('🏢 Cliente ID:', clienteId || 'No definido');
 
-  // 🔥 Si es cliente generado, NO intentar con backend
-  if (esClienteGenerado) {
-    console.log('🔧 Cliente generado - Modo LOCAL ONLY');
-    console.log('✅ Proyectos guardados SOLO en localStorage');
+  // 2. Obtener token
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.warn('⚠️ No hay token, solo guardado local');
     console.groupEnd();
     return true;
   }
 
-  // Verificar backend al momento de guardar (solo para clientes NO generados)
-  if (await checkBackendStatus()) {
-    console.log("➡️ Intentando guardar en backend...");
-
-    const token = window.authToken;
-    if (!token) {
-      console.warn('⚠️ No hay token, guardando solo en localStorage');
-      console.groupEnd();
-      return true;
-    }
-
-    try {
-      console.log("🔐 Token usado para guardar:", token);
-
-      const bodyData = {
+  // 3. Intentar guardar en backend
+  try {
+    console.log('➡️ Guardando en backend...');
+    const response = await fetch(`${API_URL}/api/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
         projects: projects,
         currentProjectIndex: currentProjectIndex,
-        timestamp: new Date().toISOString()
-      };
+        clienteId: clienteId
+      })
+    });
 
-      if (clienteId) {
-        bodyData.clienteId = clienteId;
-      }
-
-      const response = await fetch(`${API_URL}/api/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(bodyData)
-      });
-
-      if (response.ok) {
-        console.log('✅ Datos guardados en MongoDB Atlas');
-
-
-  // 🚀 WebSocket: notificar a otros clientes
-  try {
-    var sock = window.tiempoRealSocket || window.rtSocket;
-    if (sock && sock.connected) {
-      var proj = projects[currentProjectIndex] || {};
-      sock.emit('task-changed', {
-        projectId: proj._id,
-        taskId: window.currentTaskId || taskId,
-        changes: { updated: new Date().toISOString() },
-        updatedBy: localStorage.getItem('userId') || 'unknown'
-      });
-      console.log('📡 Evento emitido');
-    }
-  } catch(e) {
-    console.log('⚠️ WebSocket skip:', e.message);
-  }
-
-
-  // 🚀 Notificar a otros clientes (WebSocket)
-  if (typeof window.initWebSocket === 'function' && currentProject?._id && taskId) {
-    try {
-      var socket = window.rtSocket || window.realtimeSocket;
-      if (socket && socket.connected) {
-        socket.emit('task-changed', {
-          projectId: currentProject._id,
-          taskId: taskId,
-          changes: { updated: new Date().toISOString() },
-          updatedBy: localStorage.getItem('userId') || 'unknown'
+    if (response.ok) {
+      console.log('✅ Datos guardados en MongoDB');
+      
+      // Notificar a WebSocket
+      if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+        window.tiempoRealSocket.emit('project-updated', {
+          projectId: currentProjectIndex,
+          action: 'saved',
+          timestamp: Date.now(),
+          clienteId: clienteId
         });
       }
-    } catch(e) {}
-  }
-
-
-
-  
-        console.log(`📊 Proyectos guardados para cliente: ${clienteId}`);
-        
-               // ===== 🔥 NOTIFICACIÓN EN TIEMPO REAL - VERSIÓN FINAL =====
-        if (typeof tiempoRealSocket !== 'undefined' && tiempoRealSocket && tiempoRealSocket.connected) {
-          console.log('📢 Enviando notificación en tiempo real...');
-          
-          // Obtener projectId correcto (usando projects array, NO currentProject)
-          var project = projects[currentProjectIndex];
-          var projectId = project ? (project._id || project.id) : null;
-          var taskId = window.currentTaskId || window.taskId || 'unknown';
-          
-          if (projectId && taskId) {
-            window.tiempoRealSocket.emit('task-updated', {
-              projectId: projectId,
-              taskId: taskId,
-              changes: { updated: new Date().toISOString() },
-              updatedBy: localStorage.getItem('userId') || 'unknown'
-            });
-            console.log('✅ Notificación enviada:', { projectId, taskId });
-          } else {
-            console.log('⚠️ Faltan projectId o taskId para WebSocket');
-          }
-        } else {
-          console.log('⚠️ WebSocket no conectado, otros usuarios verán cambios en 30s');
-        }
-        // ===== FIN NOTIFICACIÓN =====
-        
-      } else {
-        console.warn('⚠️ Error guardando en backend:', response.status);
-        const errorData = await response.json().catch(() => ({}));
-        console.warn('Detalle:', errorData);
-      }
-    } catch (error) {
-      // console.warn silenciado
+    } else {
+      console.warn('⚠️ Error en backend:', response.status);
     }
+  } catch (error) {
+    console.warn('⚠️ Error de red al guardar en backend:', error.message);
   }
-localStorage.setItem('lastSaveTimestamp', Date.now().toString());
+
   console.groupEnd();
   return true;
 }
 
 // ==================== SAFE LOAD MEJORADO ====================
 async function safeLoad() {
-    console.group('📥 Cargando datos desde MongoDB...');
+    console.group('📥 Cargando datos...');
+    console.log('⏰ Inicio de safeLoad:', new Date().toISOString());
     
-    const token = localStorage.getItem('authToken');
-    const clienteId = localStorage.getItem('clienteId');
-    const forceRefresh = localStorage.getItem('forceProjectRefresh');
-    
-    // 🔥 SI VIENE DE UNA INVITACIÓN ACEPTADA, FORZAR RECARGA
-    if (forceRefresh === 'true') {
-        console.log('🔄 Force refresh activado (después de invitación)');
-        localStorage.removeItem('forceProjectRefresh');
-    }
-    
-    if (token && clienteId) {
+    // 1. Cargar desde localStorage
+    const savedProjects = localStorage.getItem('projects');
+    let localProjects = [];
+    if (savedProjects) {
         try {
-            console.log('🔄 Cargando desde MongoDB...');
-            
-            // ✅ CARGAR PROYECTOS DEL USUARIO (DUEÑO)
-            const url = `${API_URL}/api/projects?clienteId=${clienteId}&_t=${Date.now()}`;
-            const response = await fetch(url, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Datos del dueño cargados:', data.projects?.length || 0);
-                
-                let proyectosTotales = data.projects || [];
-                
-                // ✅ 🔥 CARGAR PROYECTOS COLABORATIVOS (donde el usuario es invitado)
-                try {
-                    console.log('🔄 Cargando proyectos colaborativos...');
-                    const collabResponse = await fetch(`${API_URL}/api/user/projects`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    
-                    if (collabResponse.ok) {
-                        const collabData = await collabResponse.json();
-                        if (collabData.collaboratedProjects && collabData.collaboratedProjects.length > 0) {
-                            console.log(`✅ ${collabData.collaboratedProjects.length} proyectos colaborativos encontrados`);
-                            
-                            // Fusionar proyectos (evitar duplicados)
-                            const proyectosExistentesIds = new Set(proyectosTotales.map(p => p.id));
-                            collabData.collaboratedProjects.forEach(proyectoCollab => {
-                                if (!proyectosExistentesIds.has(proyectoCollab.id)) {
-                                    proyectosTotales.push(proyectoCollab);
-                                    console.log(`   ✅ Proyecto colaborativo agregado: ${proyectoCollab.name}`);
-                                }
-                            });
-                        }
-                    }
-                } catch (collabError) {
-                    console.warn('⚠️ Error cargando proyectos colaborativos:', collabError.message);
-                }
-                
-                // ✅ GUARDAR EN projects (variable global)
-                projects = proyectosTotales;
-                currentProjectIndex = data.currentProjectIndex || 0;
-                
-                // ✅ FILTRAR POR PERMISOS
-                filtrarProyectosPorUsuario();
-                
-                // ✅ GUARDAR EN LOCALSTORAGE (SOLO PARA CACHÉ)
-                localStorage.setItem('projects', JSON.stringify(projects));
-                localStorage.setItem('currentProjectIndex', currentProjectIndex);
-                
-                console.log(`✅ ${projects.length} proyectos cargados (${proyectosTotales.length} totales)`);
-                console.groupEnd();
-                return true;
-            }
-        } catch (error) {
-            console.warn('⚠️ Error cargando desde backend:', error.message);
+            localProjects = JSON.parse(savedProjects);
+            console.log(`📦 [LOCALSTORAGE] ${localProjects.length} proyectos:`, localProjects.map(p => p.name));
+        } catch (e) {
+            console.warn('Error parsing localStorage:', e);
         }
     }
-    
-    // Fallback: localStorage
-    const savedProjects = localStorage.getItem('projects');
-    if (savedProjects) {
-        projects = JSON.parse(savedProjects);
+
+    // 2. Si hay proyectos locales, usarlos directamente SIN consultar backend
+    if (localProjects.length > 0) {
+        projects = localProjects;
         currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-        filtrarProyectosPorUsuario();
-        console.log(`✅ ${projects.length} proyectos cargados desde localStorage (fallback)`);
+        console.log(`✅ [FINAL] ${projects.length} proyectos cargados desde LOCALSTORAGE (sin tocar backend)`);
         console.groupEnd();
         return true;
     }
-    
-    console.log('📝 No hay datos, se creará proyecto inicial');
-    projects = [];
+
+    // 3. Si NO hay proyectos locales, intentar cargar desde backend
+    console.log('🔍 No hay datos locales, consultando backend...');
+    const token = localStorage.getItem('authToken');
+    const clienteId = localStorage.getItem('clienteId');
+    if (token && clienteId) {
+        try {
+            const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.projects && data.projects.length > 0) {
+                    projects = data.projects;
+                    currentProjectIndex = data.currentProjectIndex || 0;
+                    localStorage.setItem('projects', JSON.stringify(projects));
+                    localStorage.setItem('currentProjectIndex', currentProjectIndex);
+                    console.log(`✅ [BACKEND] ${projects.length} proyectos cargados desde backend`);
+                    console.groupEnd();
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.warn('Error cargando desde backend:', error.message);
+        }
+    }
+
+    // 4. Crear proyecto de ejemplo si no hay nada
+    projects = [{
+        id: Date.now(),
+        name: 'Mi Primer Proyecto',
+        clienteId: clienteId || 'sin_cliente',
+        tasks: [],
+        totalProjectTime: 0
+    }];
+    localStorage.setItem('projects', JSON.stringify(projects));
+    console.log('📝 Proyecto de ejemplo creado');
     console.groupEnd();
-    return false;
+    return true;
 }
+
 
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
@@ -25968,7 +25876,7 @@ function filtrarProyectosPorUsuario() {
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
-    console.log('🔄 Forzando refresh desde backend...');
+    console.log('🔄 [FORCE REFRESH] Iniciando...');
     
     try {
         const token = localStorage.getItem('authToken');
@@ -25988,23 +25896,33 @@ async function forceRefreshFromBackend() {
         
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Datos frescos recibidos');
+            const backendProjects = data.projects || [];
             
-            if (data.projects) {
-                window.projects = data.projects;
+            console.log(`📦 [BACKEND] ${backendProjects.length} proyectos recibidos`);
+            
+            // 🔥 CONDICIÓN DE SEGURIDAD: Solo actualizar si el backend tiene datos
+            if (backendProjects.length > 0) {
+                // Verificar que los proyectos locales no sean más recientes
+                const localProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+                
+                if (localProjects.length > backendProjects.length) {
+                    console.warn('⚠️ Local tiene más proyectos que backend. NO se sobrescribirá.');
+                    return;
+                }
+                
+                // Solo actualizar si el backend tiene más proyectos (caso colaboración)
+                window.projects = backendProjects;
+                localStorage.setItem('projects', JSON.stringify(backendProjects));
                 if (typeof refreshCurrentView === 'function') refreshCurrentView();
+                console.log('✅ Proyectos actualizados desde backend');
+            } else {
+                console.log('ℹ️ Backend vacío, manteniendo datos locales');
             }
         }
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ Error en forceRefreshFromBackend:', error);
     }
 }
-
-
-
-
-
-
 
 
 
@@ -48000,6 +47918,12 @@ function initializeTimeAllocationView() {
     // Cargar datos iniciales (sin filtros)
     loadTimeAllocationData();
 }
+
+
+
+
+
+
 
 // === VISTA: Asignación de Horas ===
 
@@ -75872,6 +75796,658 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     console.log('✅ Parche de persistencia aplicado correctamente');
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// 🔧 FIX DEFINITIVO: SISTEMA DE CLAVES ROBUSTO
+// ============================================
+(function fixRobustPersistence() {
+    console.log('🔧 Aplicando sistema de persistencia robusto...');
+    
+    // 1. ASIGNAR IDs A PROYECTOS QUE NO LOS TIENEN
+    function assignMissingIds() {
+        let changed = false;
+        projects.forEach((project, index) => {
+            if (!project.id || project.id === undefined) {
+                project.id = Date.now() + index + Math.random();
+                changed = true;
+                console.log(`✅ ID asignado a "${project.name}": ${project.id}`);
+            }
+        });
+        
+        if (changed) {
+            localStorage.setItem('projects', JSON.stringify(projects));
+            console.log('✅ Proyectos actualizados con IDs');
+        }
+    }
+    
+    // 2. GENERAR CLAVE ÚNICA (usa índice + ID)
+    function getStorageKey(type, projectIndex) {
+        const project = projects[projectIndex];
+        if (!project) return null;
+        
+        // Usar índice como parte de la clave para garantizar unicidad
+        return `project_${projectIndex}_${project.id || 'no-id'}_${type}`;
+    }
+    
+    // 3. MIGRAR DATOS ANTIGUOS (de project_undefined_* a nuevas claves)
+    function migrateOldData() {
+        console.log('🔄 Migrando datos antiguos...');
+        
+        // Buscar claves antiguas
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            
+            // Detectar claves antiguas (project_undefined_*)
+            if (key && key.startsWith('project_undefined_')) {
+                const type = key.replace('project_undefined_', '');
+                const data = localStorage.getItem(key);
+                
+                // Buscar el proyecto correspondiente
+                projects.forEach((project, index) => {
+                    if (project.name === 'Talent Garden 2026') {
+                        const newKey = getStorageKey(type, index);
+                        if (!localStorage.getItem(newKey)) {
+                            localStorage.setItem(newKey, data);
+                            console.log(`✅ Migrado: ${key} → ${newKey}`);
+                        }
+                    }
+                });
+                
+                // Eliminar clave antigua
+                localStorage.removeItem(key);
+                console.log(`🗑️ Eliminado: ${key}`);
+            }
+        }
+    }
+    
+    // 4. SOBRESCRIBIR FUNCIONES DE AGREGAR
+    const originalAgregarRiesgo = window.agregarRiesgo;
+    window.agregarRiesgo = function() {
+        const texto = prompt('Nuevo riesgo:');
+        if (!texto || texto.trim() === '') return;
+        
+        const projectIndex = currentProjectIndex;
+        const key = getStorageKey('risks', projectIndex);
+        
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Riesgo guardado en ${key}`);
+    };
+    
+    const originalAgregarAccion = window.agregarAccion;
+    window.agregarAccion = function() {
+        const texto = prompt('Nueva acción:');
+        if (!texto || texto.trim() === '') return;
+        
+        const projectIndex = currentProjectIndex;
+        const key = getStorageKey('actions', projectIndex);
+        
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Acción guardada en ${key}`);
+    };
+    
+    const originalAgregarHito = window.agregarHito;
+    window.agregarHito = function() {
+        const texto = prompt('Nuevo hito:');
+        if (!texto || texto.trim() === '') return;
+        
+        const projectIndex = currentProjectIndex;
+        const key = getStorageKey('milestones', projectIndex);
+        
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Hito guardado en ${key}`);
+    };
+    
+    // 5. SOBRESCRIBIR FUNCIONES DE ELIMINAR
+    window.eliminarRiesgo = function(projectIndex, index) {
+        if (!confirm('¿Eliminar este riesgo?')) return;
+        
+        const key = getStorageKey('risks', projectIndex);
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+    
+    window.eliminarAccion = function(projectIndex, index) {
+        if (!confirm('¿Eliminar esta acción?')) return;
+        
+        const key = getStorageKey('actions', projectIndex);
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+    
+    window.eliminarHito = function(projectIndex, index) {
+        if (!confirm('¿Eliminar este hito?')) return;
+        
+        const key = getStorageKey('milestones', projectIndex);
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+    
+    // 6. SOBRESCRIBIR CARGA DE DATOS
+    window.loadDashboardProjectData = function() {
+        const projectIndex = currentProjectIndex;
+        const project = projects[projectIndex];
+        
+        if (!project) {
+            console.warn('⚠️ No hay proyecto para cargar datos');
+            return;
+        }
+        
+        const risksKey = getStorageKey('risks', projectIndex);
+        const actionsKey = getStorageKey('actions', projectIndex);
+        const milestonesKey = getStorageKey('milestones', projectIndex);
+        
+        // Cargar riesgos
+        const risksContainer = document.getElementById('risksContainer');
+        if (risksContainer) {
+            risksContainer.innerHTML = '';
+            let riesgos = JSON.parse(localStorage.getItem(risksKey) || '[]');
+            
+            if (riesgos.length === 0) {
+                risksContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay riesgos</div>';
+            } else {
+                riesgos.forEach((riesgo, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #e74c3c;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${riesgo.texto}</span>
+                        <button class="delete-risk-btn" data-project="${projectIndex}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    risksContainer.appendChild(div);
+                });
+                
+                // Re-asignar eventos
+                document.querySelectorAll('.delete-risk-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pIndex = parseInt(this.dataset.project);
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarRiesgo(pIndex, idx);
+                    };
+                });
+            }
+        }
+        
+        // Cargar acciones
+        const actionsContainer = document.getElementById('requiredActions');
+        if (actionsContainer) {
+            actionsContainer.innerHTML = '';
+            let acciones = JSON.parse(localStorage.getItem(actionsKey) || '[]');
+            
+            if (acciones.length === 0) {
+                actionsContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay acciones</div>';
+            } else {
+                acciones.forEach((accion, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #3498db;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${accion.texto}</span>
+                        <button class="delete-action-btn" data-project="${projectIndex}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    actionsContainer.appendChild(div);
+                });
+                
+                document.querySelectorAll('.delete-action-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pIndex = parseInt(this.dataset.project);
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarAccion(pIndex, idx);
+                    };
+                });
+            }
+        }
+        
+        // Cargar hitos
+        const milestonesContainer = document.getElementById('milestonesList');
+        if (milestonesContainer) {
+            milestonesContainer.innerHTML = '';
+            let hitos = JSON.parse(localStorage.getItem(milestonesKey) || '[]');
+            
+            if (hitos.length === 0) {
+                milestonesContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay hitos</div>';
+            } else {
+                hitos.forEach((hito, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #f39c12;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${hito.texto}</span>
+                        <button class="delete-milestone-btn" data-project="${projectIndex}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    milestonesContainer.appendChild(div);
+                });
+                
+                document.querySelectorAll('.delete-milestone-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pIndex = parseInt(this.dataset.project);
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarHito(pIndex, idx);
+                    };
+                });
+            }
+        }
+        
+        console.log(`✅ Datos cargados para proyecto "${project.name}" (índice: ${projectIndex})`);
+    };
+    
+    // 7. EJECUTAR AL INICIO
+    assignMissingIds();
+    migrateOldData();
+    
+    // 8. REEMPLAZAR selectProject PARA RECARGAR DATOS
+    const originalSelectProject = window.selectProject;
+    window.selectProject = function(index) {
+        if (originalSelectProject) originalSelectProject(index);
+        setTimeout(() => {
+            if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        }, 100);
+    };
+    
+    console.log('✅ Sistema de persistencia robusto aplicado');
+    console.log('📌 Las claves ahora usan: project_[índice]_[id]_[tipo]');
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================================
+// 🛠️ UNIFICACIÓN DE PERSISTENCIA PARA RIESGOS, ACCIONES E HITOS
+// ============================================================
+(function fixPersistence() {
+    console.log('🔄 Aplicando parche de persistencia unificada...');
+
+    // Obtener proyecto actual con ID
+    function getCurrentProject() {
+        if (typeof projects === 'undefined' || currentProjectIndex === undefined) return null;
+        return projects[currentProjectIndex] || null;
+    }
+
+    // Generar clave única basada en ID del proyecto
+    function getStorageKey(type) {
+        const project = getCurrentProject();
+        if (!project) return null;
+        return `project_${project.id}_${type}`;
+    }
+
+    // ---- MIGRACIÓN DE DATOS ANTIGUOS ----
+    function migrateOldData() {
+        const project = getCurrentProject();
+        if (!project) return;
+
+        const projectId = project.id;
+        const oldKeyRisks = `risks_${currentProjectIndex}`;
+        const oldKeyActions = `actions_${currentProjectIndex}`;
+        const oldKeyMilestones = `milestones_${currentProjectIndex}`;
+
+        const newKeyRisks = `project_${projectId}_risks`;
+        const newKeyActions = `project_${projectId}_actions`;
+        const newKeyMilestones = `project_${projectId}_milestones`;
+
+        // Migrar riesgos
+        if (localStorage.getItem(oldKeyRisks) && !localStorage.getItem(newKeyRisks)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyRisks));
+            localStorage.setItem(newKeyRisks, JSON.stringify(data));
+            localStorage.removeItem(oldKeyRisks);
+            console.log('✅ Riesgos migrados a nueva clave');
+        }
+
+        // Migrar acciones
+        if (localStorage.getItem(oldKeyActions) && !localStorage.getItem(newKeyActions)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyActions));
+            localStorage.setItem(newKeyActions, JSON.stringify(data));
+            localStorage.removeItem(oldKeyActions);
+            console.log('✅ Acciones migradas a nueva clave');
+        }
+
+        // Migrar hitos
+        if (localStorage.getItem(oldKeyMilestones) && !localStorage.getItem(newKeyMilestones)) {
+            const data = JSON.parse(localStorage.getItem(oldKeyMilestones));
+            localStorage.setItem(newKeyMilestones, JSON.stringify(data));
+            localStorage.removeItem(oldKeyMilestones);
+            console.log('✅ Hitos migrados a nueva clave');
+        }
+    }
+
+    // ---- SOBRESCRIBIR FUNCIONES DE AGREGAR ----
+    const originalAgregarRiesgo = window.agregarRiesgo;
+    window.agregarRiesgo = function() {
+        const texto = prompt('Nuevo riesgo:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_risks`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Riesgo guardado en ${key}`);
+    };
+
+    const originalAgregarAccion = window.agregarAccion;
+    window.agregarAccion = function() {
+        const texto = prompt('Nueva acción:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_actions`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Acción guardada en ${key}`);
+    };
+
+    const originalAgregarHito = window.agregarHito;
+    window.agregarHito = function() {
+        const texto = prompt('Nuevo hito:');
+        if (!texto || texto.trim() === '') return;
+        const project = getCurrentProject();
+        if (!project) { alert('No hay proyecto seleccionado'); return; }
+        const key = `project_${project.id}_milestones`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push({ texto: texto.trim() });
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        console.log(`✅ Hito guardado en ${key}`);
+    };
+
+    // ---- SOBRESCRIBIR FUNCIONES DE ELIMINAR ----
+    const originalEliminarRiesgo = window.eliminarRiesgo;
+    window.eliminarRiesgo = function(projectId, index) {
+        if (!confirm('¿Eliminar este riesgo?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_risks`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    const originalEliminarAccion = window.eliminarAccion;
+    window.eliminarAccion = function(projectId, index) {
+        if (!confirm('¿Eliminar esta acción?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_actions`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    const originalEliminarHito = window.eliminarHito;
+    window.eliminarHito = function(projectId, index) {
+        if (!confirm('¿Eliminar este hito?')) return;
+        const project = projects.find(p => p.id == projectId);
+        if (!project) return;
+        const key = `project_${project.id}_milestones`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+    };
+
+    // ---- SOBRESCRIBIR CARGA DE DATOS (loadDashboardProjectData) ----
+    const originalLoad = window.loadDashboardProjectData;
+    window.loadDashboardProjectData = function() {
+        const project = getCurrentProject();
+        if (!project) {
+            console.warn('⚠️ No hay proyecto para cargar datos');
+            return;
+        }
+
+        const projectId = project.id;
+        const risksKey = `project_${projectId}_risks`;
+        const actionsKey = `project_${projectId}_actions`;
+        const milestonesKey = `project_${projectId}_milestones`;
+
+        // Cargar riesgos
+        const risksContainer = document.getElementById('risksContainer');
+        if (risksContainer) {
+            risksContainer.innerHTML = '';
+            let riesgos = JSON.parse(localStorage.getItem(risksKey) || '[]');
+            if (riesgos.length === 0) {
+                risksContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay riesgos</div>';
+            } else {
+                riesgos.forEach((riesgo, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #e74c3c;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${riesgo.texto}</span>
+                        <button class="delete-risk-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    risksContainer.appendChild(div);
+                });
+                // Re-asignar eventos a los botones de eliminar
+                document.querySelectorAll('.delete-risk-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarRiesgo(pid, idx);
+                    };
+                });
+            }
+        }
+
+        // Cargar acciones (similar)
+        const actionsContainer = document.getElementById('requiredActions');
+        if (actionsContainer) {
+            actionsContainer.innerHTML = '';
+            let acciones = JSON.parse(localStorage.getItem(actionsKey) || '[]');
+            if (acciones.length === 0) {
+                actionsContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay acciones</div>';
+            } else {
+                acciones.forEach((accion, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #3498db;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${accion.texto}</span>
+                        <button class="delete-action-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    actionsContainer.appendChild(div);
+                });
+                document.querySelectorAll('.delete-action-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarAccion(pid, idx);
+                    };
+                });
+            }
+        }
+
+        // Cargar hitos (similar)
+        const milestonesContainer = document.getElementById('milestonesList');
+        if (milestonesContainer) {
+            milestonesContainer.innerHTML = '';
+            let hitos = JSON.parse(localStorage.getItem(milestonesKey) || '[]');
+            if (hitos.length === 0) {
+                milestonesContainer.innerHTML = '<div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">No hay hitos</div>';
+            } else {
+                hitos.forEach((hito, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #f39c12;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${hito.texto}</span>
+                        <button class="delete-milestone-btn" data-project="${projectId}" data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    milestonesContainer.appendChild(div);
+                });
+                document.querySelectorAll('.delete-milestone-btn').forEach(btn => {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
+                        const pid = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        window.eliminarHito(pid, idx);
+                    };
+                });
+            }
+        }
+
+        console.log(`✅ Datos cargados para proyecto ${project.name} (ID: ${projectId})`);
+    };
+
+    // ---- MIGRAR DATOS AL INICIO ----
+    migrateOldData();
+
+    // ---- REEMPLAZAR EL SELECTPROJECT PARA RECARGAR DATOS ----
+    const originalSelectProject = window.selectProject;
+    window.selectProject = function(index) {
+        if (originalSelectProject) originalSelectProject(index);
+        setTimeout(() => {
+            if (typeof loadDashboardProjectData === 'function') loadDashboardProjectData();
+        }, 100);
+    };
+
+    console.log('✅ Parche de persistencia aplicado correctamente');
+})();
+
+
+
+
+
+
+
+
+
+
 
 
 

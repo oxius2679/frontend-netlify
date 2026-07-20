@@ -2076,7 +2076,7 @@
    <script src="traducciones-completas.js"></script>
     <script src="pm-virtual-ingles.js"></script>
    <script src="s-curve.js" defer></script>
-   
+ 
 
 
 
@@ -3654,9 +3654,7 @@ window.setLanguage = function(lang) {
     }
   </style>
 
-  <button onclick="toggleModoOscuro()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #8b5cf6; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3); font-size: 24px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
-    🌙
-  </button>
+ 
 
 <!-- ================================================================ -->
 <!-- 🔧 TRADUCCIÓN DEL CONTADOR "X TAREAS" EN VISTA LIST -->
@@ -28795,6 +28793,888 @@ console.log('📌 MutationObserver como respaldo');
     console.log(`✅ Sistema de traducción activado permanentemente. Idioma actual: ${idiomaActual.toUpperCase()}`);
     console.log('💡 El botón ES/EN cambiará el idioma de los comandos.');
     console.log('💡 También puedes usar cambiarIdiomaComandos("en") desde consola.');
+})();
+</script>
+
+
+<script>
+(function() {
+    'use strict';
+
+    // ============================================================
+    // DICCIONARIO DE TRADUCCIONES
+    // ============================================================
+    const TRANSLATIONS = {
+        // --- Mensajes del asistente (respuestas) ---
+        '🚀 Creando nuevo proyecto...': { es: '🚀 Creando nuevo proyecto...', en: '🚀 Creating a new project...' },
+        '¡Claro! Abriendo el diálogo para crear un nuevo proyecto...': { es: '¡Claro! Abriendo el diálogo para crear un nuevo proyecto...', en: 'Sure! Opening the dialog to create a new project...' },
+        '📝 Abriendo formulario para nueva tarea...': { es: '📝 Abriendo formulario para nueva tarea...', en: '📝 Opening form to create a new task...' },
+        '🔄 Generando reporte PDF del proyecto actual... Se descargará automáticamente.': { es: '🔄 Generando reporte PDF del proyecto actual... Se descargará automáticamente.', en: '🔄 Generating PDF report of the current project... It will download automatically.' },
+        '📊 **Estadísticas del Proyecto Actual:**\n• Total: {total} tareas\n• Pendientes: {pending}\n• En progreso: {inProgress}\n• Completadas: {completed}\n• Rezagadas: {overdue}': { es: '📊 **Estadísticas del Proyecto Actual:**\n• Total: {total} tareas\n• Pendientes: {pending}\n• En progreso: {inProgress}\n• Completadas: {completed}\n• Rezagadas: {overdue}', en: '📊 **Current Project Statistics:**\n• Total: {total} tasks\n• Pending: {pending}\n• In progress: {inProgress}\n• Completed: {completed}\n• Overdue: {overdue}' },
+        '📊 **Estadísticas del Proyecto Actual:**': { es: '📊 **Estadísticas del Proyecto Actual:**', en: '📊 **Current Project Statistics:**' },
+        'En progreso': { es: 'En progreso', en: 'In progress' },
+        'Pendientes': { es: 'Pendientes', en: 'Pending' },
+        'Completadas': { es: 'Completadas', en: 'Completed' },
+        'Rezagadas': { es: 'Rezagadas', en: 'Overdue' },
+        'tareas': { es: 'tareas', en: 'tasks' },
+        '🛠️ **Comandos disponibles:**\n\n• **"Cambiar vista [nombre]"** - Navegar entre vistas\n• **"Crear proyecto"** - Nuevo proyecto\n• **"Estadísticas"** - Ver métricas\n• **"Generar reporte"** - Crear PDF\n• **"Ayuda"** - Esta lista\n\nTambién puedes usar los botones rápidos. ¿Qué necesitas?': { es: '🛠️ **Comandos disponibles:**\n\n• **"Cambiar vista [nombre]"** - Navegar entre vistas\n• **"Crear proyecto"** - Nuevo proyecto\n• **"Estadísticas"** - Ver métricas\n• **"Generar reporte"** - Crear PDF\n• **"Ayuda"** - Esta lista\n\nTambién puedes usar los botones rápidos. ¿Qué necesitas?', en: '🛠️ **Available commands:**\n\n• **"Change view [name]"** - Navigate between views\n• **"Create project"** - New project\n• **"Statistics"** - View metrics\n• **"Generate report"** - Create PDF\n• **"Help"** - This list\n\nYou can also use the quick buttons. What do you need?' },
+        '✅ Perfecto! Te llevo a la vista de {view}.': { es: '✅ Perfecto! Te llevo a la vista de {view}.', en: '✅ Perfect! I\'ll take you to the {view} view.' },
+        'Puedo ayudarte a cambiar a estas vistas: {views}. ¿A cuál quieres ir?': { es: 'Puedo ayudarte a cambiar a estas vistas: {views}. ¿A cuál quieres ir?', en: 'I can help you switch to these views: {views}. Which one do you want to go to?' },
+        '❌ No pude procesar el mensaje, inténtalo de nuevo.': { es: '❌ No pude procesar el mensaje, inténtalo de nuevo.', en: "❌ I couldn't process your message, please try again." },
+        '¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?': { es: '¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?', en: "You're welcome! 😊 Is there anything else I can help you with?" },
+        'Puedo ayudarte con estimaciones de tiempo. ¿Quieres que analice una tarea específica?': { es: 'Puedo ayudarte con estimaciones de tiempo. ¿Quieres que analice una tarea específica?', en: 'I can help you with time estimates. Do you want me to analyze a specific task?' },
+        'Para la gestión de proyectos, puedo ayudarte con: crear proyectos, organizar tareas, generar reportes y analizar progreso.': { es: 'Para la gestión de proyectos, puedo ayudarte con: crear proyectos, organizar tareas, generar reportes y analizar progreso.', en: 'For project management, I can help you with: creating projects, organizing tasks, generating reports, and analyzing progress.' },
+        'Puedo ayudarte con las tareas: creación, estimación de tiempo, asignación y seguimiento.': { es: 'Puedo ayudarte con las tareas: creación, estimación de tiempo, asignación y seguimiento.', en: 'I can help you with tasks: creation, time estimation, assignment, and tracking.' },
+        'Interesante pregunta. Como asistente de gestión de proyectos, puedo ayudarte con: planificación, seguimiento, reportes y optimización de tus proyectos. ¿En qué aspecto específico necesitas ayuda?': { es: 'Interesante pregunta. Como asistente de gestión de proyectos, puedo ayudarte con: planificación, seguimiento, reportes y optimización de tus proyectos. ¿En qué aspecto específico necesitas ayuda?', en: 'Interesting question. As a project management assistant, I can help you with: planning, tracking, reporting, and optimizing your projects. What specific aspect do you need help with?' },
+        'La función de crear proyectos está disponible. Puedes hacer clic en "Nuevo Proyecto" en el sidebar.': { es: 'La función de crear proyectos está disponible. Puedes hacer clic en "Nuevo Proyecto" en el sidebar.', en: 'The create project function is available. You can click "New Project" in the sidebar.' },
+        'Puedo mostrarte estadísticas detalladas en la vista de Dashboard o Reports.': { es: 'Puedo mostrarte estadísticas detalladas en la vista de Dashboard o Reports.', en: 'You can see detailed statistics in the Dashboard or Reports view.' },
+        'La generación de reportes PDF está disponible en la vista de Reports.': { es: 'La generación de reportes PDF está disponible en la vista de Reports.', en: 'PDF report generation is available in the Reports view.' },
+        '❌ Comando no reconocido. Escribe **\'ayuda\'** para ver los comandos disponibles.': { es: '❌ Comando no reconocido. Escribe **\'ayuda\'** para ver los comandos disponibles.', en: '❌ Command not recognized. Type **\'help\'** to see available commands.' },
+
+        // --- Mensajes de voz (minimalVoiceSystem) ---
+        '🎤 No detecté voz... Reintentando (1/3) **Habla ahora**': { es: '🎤 No detecté voz... Reintentando (1/3) **Habla ahora**', en: '🎤 No speech detected... Retrying (1/3) **Speak now**' },
+        '🎤 No detecté voz... Reintentando ({retry}/{max}) **Habla ahora**': { es: '🎤 No detecté voz... Reintentando ({retry}/{max}) **Habla ahora**', en: '🎤 No speech detected... Retrying ({retry}/{max}) **Speak now**' },
+        '🎤 **Escuchando...** Habla ahora.': { es: '🎤 **Escuchando...** Habla ahora.', en: '🎤 **Listening...** Speak now.' },
+        '🎤 **Escuchando...** **Habla ahora** - Di por ejemplo: • "crear task" • "mostrar dashboard" • "estadísticas"': { es: '🎤 **Escuchando...** **Habla ahora** - Di por ejemplo: • "crear task" • "mostrar dashboard" • "estadísticas"', en: '🎤 **Listening...** **Speak now** - Say for example: • "create task" • "show dashboard" • "statistics"' },
+        '❌ Error de reconocimiento de voz': { es: '❌ Error de reconocimiento de voz', en: '❌ Voice recognition error' },
+        '❌ Micrófono no permitido. Por favor permite el acceso al micrófono.': { es: '❌ Micrófono no permitido. Por favor permite el acceso al micrófono.', en: '❌ Microphone not allowed. Please allow microphone access.' },
+        '❌ No detecté voz. Intenta de nuevo.': { es: '❌ No detecté voz. Intenta de nuevo.', en: '❌ No speech detected. Try again.' },
+        '❌ No detecté voz. Asegúrate de hablar claramente y di "ayuda" para ver comandos.': { es: '❌ No detecté voz. Asegúrate de hablar claramente y di "ayuda" para ver comandos.', en: '❌ No speech detected. Make sure you speak clearly and say "help" to see commands.' },
+        '🎤 **Dijiste:** "{transcript}"': { es: '🎤 **Dijiste:** "{transcript}"', en: '🎤 **You said:** "{transcript}"' },
+
+        // --- Nombres de vistas (para traducir dentro de los mensajes) ---
+        'tablero': { es: 'tablero', en: 'board' },
+        'kanban': { es: 'kanban', en: 'board' },
+        'lista': { es: 'lista', en: 'list' },
+        'calendario': { es: 'calendario', en: 'calendar' },
+        'gantt': { es: 'gantt', en: 'gantt' },
+        'reporte': { es: 'reporte', en: 'reports' },
+        'dashboard': { es: 'dashboard', en: 'dashboard' },
+        'dashboard 4d': { es: 'dashboard 4d', en: 'dashboard 4d' },
+        'rentabilidad': { es: 'rentabilidad', en: 'profitability' },
+        'asignación de horas': { es: 'asignación de horas', en: 'time allocation' },
+        'asignacion de horas': { es: 'asignacion de horas', en: 'time allocation' }
+    };
+
+    // ============================================================
+    // FUNCIÓN DE TRADUCCIÓN
+    // ============================================================
+    function getLang() {
+        return localStorage.getItem('preferredLanguage') || 'es';
+    }
+
+    function translate(text, lang) {
+        lang = lang || getLang();
+        if (lang === 'es') return text;
+
+        // Reemplazar frases completas (con placeholders)
+        for (const [key, value] of Object.entries(TRANSLATIONS)) {
+            if (typeof value === 'object' && value[lang]) {
+                if (text.includes(key)) {
+                    let translated = value[lang];
+                    // Reemplazar placeholders como {view}, {views}, {retry}, {max}
+                    const placeholders = text.match(/\{([^}]+)\}/g);
+                    if (placeholders) {
+                        placeholders.forEach(ph => {
+                            const name = ph.slice(1, -1);
+                            // Extraer el valor original del texto
+                            const regex = new RegExp(ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                            const match = text.match(regex);
+                            if (match) {
+                                if (name === 'views') {
+                                    const viewsMatch = text.match(/vistas: (.*?)\./);
+                                    if (viewsMatch) {
+                                        const viewsList = viewsMatch[1];
+                                        const translatedViews = viewsList.split(',').map(v => translate(v.trim(), lang)).join(', ');
+                                        translated = translated.replace(ph, translatedViews);
+                                    }
+                                } else if (name === 'view') {
+                                    const viewMatch = text.match(/vista de (.*?)\./);
+                                    if (viewMatch) {
+                                        const viewName = viewMatch[1];
+                                        const translatedView = translate(viewName, lang);
+                                        translated = translated.replace(ph, translatedView);
+                                    }
+                                } else {
+                                    // {retry}, {max}, {total}, etc. pasar el valor original
+                                    translated = translated.replace(ph, match[0]);
+                                }
+                            }
+                        });
+                    }
+                    return translated;
+                }
+            }
+        }
+
+        // Si no se encontró la frase completa, traducir palabras sueltas (como "En progreso")
+        for (const [key, value] of Object.entries(TRANSLATIONS)) {
+            if (typeof value === 'object' && value[lang]) {
+                if (text.includes(key)) {
+                    text = text.replace(new RegExp(key, 'g'), value[lang]);
+                }
+            }
+        }
+        return text;
+    }
+
+    // ============================================================
+    // PARCHEAR SystemAssistant (solo interceptar addMessage y métodos de respuesta)
+    // ============================================================
+    function patchSystemAssistant() {
+        const asst = window.SystemAssistant;
+        if (!asst) return false;
+
+        // 1. Interceptar addMessage para traducir mensajes del asistente
+        const originalAddMessage = asst.addMessage;
+        asst.addMessage = function(sender, message) {
+            if (sender === 'assistant' && typeof message === 'string') {
+                message = translate(message);
+            }
+            return originalAddMessage.call(this, sender, message);
+        };
+
+        // 2. Parchear métodos que generan respuestas (para que devuelvan texto traducido)
+        const methods = [
+            'handleCreateProject', 'handleViewChange', 'handleShowStats',
+            'handleGenerateReport', 'showHelp', 'howAreYou',
+            'generateIntelligentResponse', 'showWelcomeMessage'
+        ];
+        methods.forEach(method => {
+            if (typeof asst[method] === 'function') {
+                const original = asst[method];
+                asst[method] = function(...args) {
+                    let result = original.apply(this, args);
+                    if (typeof result === 'string') {
+                        result = translate(result);
+                    }
+                    return result;
+                };
+            }
+        });
+
+        console.log('✅ SystemAssistant parcheado (traducción de respuestas).');
+        return true;
+    }
+
+    // ============================================================
+    // PARCHEAR minimalVoiceSystem (mensajes de voz)
+    // ============================================================
+    function patchMinimalVoiceSystem() {
+        if (!window.minimalVoiceSystem) return false;
+        const voice = window.minimalVoiceSystem;
+
+        const originalStart = voice.start;
+        voice.start = function() {
+            console.log('🎤 Iniciando reconocimiento de voz (minimal con traducciones)...');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert(translate('❌ Error de reconocimiento de voz'));
+                return;
+            }
+            const voiceBtn = document.getElementById('voiceAssistantButton');
+            this.recognition = new SpeechRecognition();
+            this.recognition.lang = 'es-ES';
+            this.recognition.interimResults = false;
+            this.recognition.continuous = false;
+
+            const self = this;
+
+            this.recognition.onstart = function() {
+                self.isListening = true;
+                if (voiceBtn) {
+                    voiceBtn.style.background = '#e74c3c';
+                    voiceBtn.innerHTML = '🎤 Escuchando...';
+                }
+                if (window.SystemAssistant) {
+                    const msg = translate('🎤 **Escuchando...** Habla ahora.');
+                    window.SystemAssistant.addMessage('assistant', msg);
+                }
+            };
+
+            this.recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                if (voiceBtn) {
+                    voiceBtn.style.background = '#9b59b6';
+                    voiceBtn.innerHTML = '🎤 Comando de Voz';
+                }
+                self.isListening = false;
+                if (window.SystemAssistant) {
+                    const input = document.getElementById('assistantInput');
+                    if (input) {
+                        input.value = transcript;
+                        window.SystemAssistant.addMessage('user', transcript);
+                        setTimeout(() => {
+                            if (typeof window.SystemAssistant.sendMessage === 'function') {
+                                window.SystemAssistant.sendMessage();
+                            }
+                        }, 1000);
+                    }
+                }
+            };
+
+            this.recognition.onerror = function(event) {
+                console.log('❌ Error de voz (minimal):', event.error);
+                self.isListening = false;
+                if (voiceBtn) {
+                    voiceBtn.style.background = '#9b59b6';
+                    voiceBtn.innerHTML = '🎤 Comando de Voz';
+                }
+                let errorMsg = translate('❌ Error de reconocimiento de voz');
+                if (event.error === 'not-allowed') {
+                    errorMsg = translate('❌ Micrófono no permitido. Por favor permite el acceso al micrófono.');
+                } else if (event.error === 'no-speech') {
+                    errorMsg = translate('❌ No detecté voz. Intenta de nuevo.');
+                }
+                if (window.SystemAssistant) {
+                    window.SystemAssistant.addMessage('assistant', errorMsg);
+                }
+            };
+
+            this.recognition.onend = function() {
+                console.log('🛑 Reconocimiento finalizado (minimal)');
+                self.isListening = false;
+                if (voiceBtn) {
+                    voiceBtn.style.background = '#9b59b6';
+                    voiceBtn.innerHTML = '🎤 Comando de Voz';
+                }
+            };
+
+            try {
+                this.recognition.start();
+            } catch (error) {
+                console.log('❌ Error al iniciar reconocimiento (minimal):', error);
+                alert(translate('Error al acceder al micrófono.'));
+            }
+        };
+
+        console.log('✅ minimalVoiceSystem parcheado con traducciones.');
+        return true;
+    }
+
+    // ============================================================
+    // SOBRESCRIBIR LA FUNCIÓN GLOBAL processAssistantCommand (si existe)
+    // ============================================================
+    function patchGlobalProcessCommand() {
+        if (typeof window.processAssistantCommand !== 'function') {
+            // Si no existe, la creamos para que maneje comandos básicos
+            window.processAssistantCommand = function(message) {
+                const asst = window.SystemAssistant;
+                if (!asst) return null;
+                const clean = message.toLowerCase().trim();
+                let response = null;
+                // Delegar en los métodos del asistente
+                if (clean.includes('cambiar vista') || clean.includes('ir a')) {
+                    response = asst.handleViewChange(message);
+                } else if (clean.includes('estadísticas') || clean.includes('estadistica') || clean.includes('progreso') || clean.includes('avance')) {
+                    response = asst.handleShowStats();
+                } else if (clean.includes('crear proyecto') || clean.includes('nuevo proyecto')) {
+                    response = asst.handleCreateProject();
+                } else if (clean.includes('crear tarea') || clean.includes('nueva tarea')) {
+                    response = '📝 Abriendo formulario para nueva tarea...';
+                    const modal = document.getElementById('createTaskModal');
+                    if (modal) setTimeout(() => modal.style.display = 'block', 500);
+                } else if (clean.includes('reporte') || clean.includes('informe') || clean.includes('pdf')) {
+                    response = asst.handleGenerateReport();
+                } else if (clean.includes('ayuda') || clean.includes('comandos') || clean.includes('help')) {
+                    response = asst.showHelp();
+                } else if (clean.includes('hola') || clean.includes('hi') || clean.includes('hey')) {
+                    response = asst.howAreYou();
+                } else if (clean.includes('gracias') || clean.includes('thanks')) {
+                    response = translate('¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?');
+                } else {
+                    response = asst.generateIntelligentResponse(message);
+                }
+                // Traducir la respuesta
+                if (typeof response === 'string') {
+                    return { message: translate(response), action: null };
+                }
+                return null;
+            };
+            console.log('✅ processAssistantCommand creada con traducciones.');
+            return true;
+        }
+
+        // Si ya existe, la reemplazamos
+        const original = window.processAssistantCommand;
+        window.processAssistantCommand = function(message) {
+            // Primero intentamos delegar en el asistente
+            const asst = window.SystemAssistant;
+            if (!asst) return original(message);
+
+            const clean = message.toLowerCase().trim();
+            let response = null;
+
+            if (clean.includes('cambiar vista') || clean.includes('ir a')) {
+                response = asst.handleViewChange(message);
+            } else if (clean.includes('estadísticas') || clean.includes('estadistica') || clean.includes('progreso') || clean.includes('avance')) {
+                response = asst.handleShowStats();
+            } else if (clean.includes('crear proyecto') || clean.includes('nuevo proyecto')) {
+                response = asst.handleCreateProject();
+            } else if (clean.includes('crear tarea') || clean.includes('nueva tarea')) {
+                response = '📝 Abriendo formulario para nueva tarea...';
+                const modal = document.getElementById('createTaskModal');
+                if (modal) setTimeout(() => modal.style.display = 'block', 500);
+            } else if (clean.includes('reporte') || clean.includes('informe') || clean.includes('pdf')) {
+                response = asst.handleGenerateReport();
+            } else if (clean.includes('ayuda') || clean.includes('comandos') || clean.includes('help')) {
+                response = asst.showHelp();
+            } else if (clean.includes('hola') || clean.includes('hi') || clean.includes('hey')) {
+                response = asst.howAreYou();
+            } else if (clean.includes('gracias') || clean.includes('thanks')) {
+                response = translate('¡De nada! 😊 ¿Hay algo más en lo que pueda ayudarte?');
+            } else {
+                response = asst.generateIntelligentResponse(message);
+            }
+
+            if (typeof response === 'string') {
+                return { message: translate(response), action: null };
+            }
+            // Si no se reconoció, usar la función original
+            return original(message);
+        };
+        console.log('✅ processAssistantCommand reemplazada con traducciones.');
+        return true;
+    }
+
+    // ============================================================
+    // APLICAR PARCHES CON REINTENTOS
+    // ============================================================
+    function applyAll() {
+        let allDone = true;
+        if (!patchSystemAssistant()) allDone = false;
+        if (!patchMinimalVoiceSystem()) allDone = false;
+        patchGlobalProcessCommand();
+        return allDone;
+    }
+
+    // Ejecutar ahora y repetir
+    let attempts = 0;
+    const maxAttempts = 15;
+    const interval = setInterval(() => {
+        attempts++;
+        const done = applyAll();
+        if (done || attempts >= maxAttempts) {
+            clearInterval(interval);
+            if (done) console.log('✅ Todos los sistemas traducidos correctamente.');
+            else console.warn('⚠️ No se pudieron parchear todos los sistemas a tiempo.');
+        }
+    }, 1500);
+
+    console.log('🌐 Script de traducción (versión estable) cargado.');
+})();
+</script>
+<script>
+(function() {
+    'use strict';
+
+    // ================================================================
+    // 1. ESPERAR A QUE EL DOM ESTÉ LISTO Y REEMPLAZAR BOTONES
+    // ================================================================
+    function reemplazarBotones() {
+        const quickActions = document.getElementById('quickActions');
+        if (!quickActions) {
+            setTimeout(reemplazarBotones, 500);
+            return;
+        }
+
+        // Limpiar los botones existentes
+        quickActions.innerHTML = '';
+
+        // Definir las acciones con sus textos y funciones
+        const acciones = [
+            {
+                id: 'btnChangeView',
+                texto: '🔄 Cambiar Vista',
+                textoEn: '🔄 Change View',
+                accion: function() {
+                    // Mostrar un mensaje con las vistas disponibles
+                    const vistas = ['tablero (board)', 'lista (list)', 'calendario (calendar)', 'gantt', 'reportes (reports)', 'dashboard', 'dashboard 4d', 'rentabilidad (profitability)'];
+                    const mensaje = 'Vistas disponibles: ' + vistas.join(', ') + '. ¿A cuál quieres ir? (ej: "gantt")';
+                    mostrarEnChat('assistant', mensaje);
+                    // También podemos enfocar el input para que el usuario escriba
+                    const input = document.getElementById('assistantInput');
+                    if (input) {
+                        input.placeholder = 'Escribe el nombre de la vista...';
+                        input.focus();
+                    }
+                }
+            },
+            {
+                id: 'btnStatistics',
+                texto: '📊 Estadísticas',
+                textoEn: '📊 Statistics',
+                accion: function() {
+                    // Obtener estadísticas directamente
+                    if (typeof getStats === 'function' && window.projects && window.projects[window.currentProjectIndex]) {
+                        try {
+                            const stats = getStats();
+                            const project = window.projects[window.currentProjectIndex];
+                            const total = stats.total || 0;
+                            const pending = stats.pending || 0;
+                            const inProgress = stats.inProgress || 0;
+                            const completed = stats.completed || 0;
+                            const overdue = stats.overdue || 0;
+                            const mensaje = `📊 **Estadísticas del Proyecto "${project.name || 'Actual'}":**\n• Total: ${total} tareas\n• Pendientes: ${pending}\n• En progreso: ${inProgress}\n• Completadas: ${completed}\n• Rezagadas: ${overdue}`;
+                            mostrarEnChat('assistant', mensaje);
+                        } catch(e) {
+                            mostrarEnChat('assistant', '❌ Error al obtener estadísticas.');
+                        }
+                    } else {
+                        mostrarEnChat('assistant', '❌ No hay proyecto seleccionado o la función getStats no está disponible.');
+                    }
+                }
+            },
+            {
+                id: 'btnNewProject',
+                texto: '➕ Nuevo Proyecto',
+                textoEn: '➕ New Project',
+                accion: function() {
+                    if (typeof createNewProject === 'function') {
+                        createNewProject();
+                        mostrarEnChat('assistant', '🚀 Creando nuevo proyecto...');
+                    } else {
+                        mostrarEnChat('assistant', '❌ La función de crear proyectos no está disponible.');
+                    }
+                }
+            },
+            {
+                id: 'btnHelp',
+                texto: '❓ Ayuda',
+                textoEn: '❓ Help',
+                accion: function() {
+                    const mensaje = `🛠️ **Comandos disponibles:**\n\n• **"Cambiar vista [nombre]"** - Navegar entre vistas\n• **"Crear proyecto"** - Nuevo proyecto\n• **"Estadísticas"** - Ver métricas\n• **"Generar reporte"** - Crear PDF\n• **"Ayuda"** - Esta lista\n\nTambién puedes usar los botones rápidos. ¿Qué necesitas?`;
+                    mostrarEnChat('assistant', mensaje);
+                }
+            }
+        ];
+
+        // Crear botones y agregarlos
+        acciones.forEach(item => {
+            const btn = document.createElement('button');
+            btn.id = item.id;
+            // Detectar idioma para el texto
+            const lang = localStorage.getItem('preferredLanguage') || 'es';
+            btn.textContent = lang === 'en' ? (item.textoEn || item.texto) : item.texto;
+            btn.style.cssText = `
+                padding: 8px 12px;
+                border: 1px solid #3b82f6;
+                background: #1e293b;
+                color: #e2e8f0;
+                border-radius: 15px;
+                font-size: 11px;
+                cursor: pointer;
+            `;
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                item.accion();
+            });
+            quickActions.appendChild(btn);
+        });
+
+        // Agregar un botón de cambio de idioma en las acciones rápidas (opcional)
+        const langBtn = document.createElement('button');
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        langBtn.textContent = lang === 'es' ? '🌐 English' : '🌐 Español';
+        langBtn.style.cssText = `
+            padding: 8px 12px;
+            border: 1px solid #3b82f6;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 15px;
+            font-size: 11px;
+            cursor: pointer;
+        `;
+        langBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const current = localStorage.getItem('preferredLanguage') || 'es';
+            const next = current === 'es' ? 'en' : 'es';
+            localStorage.setItem('preferredLanguage', next);
+            // Recargar botones con nuevo idioma
+            reemplazarBotones();
+            // Mostrar mensaje de cambio
+            const msg = next === 'es' ? '🌐 Idioma cambiado a Español' : '🌐 Language changed to English';
+            mostrarEnChat('assistant', msg);
+        });
+        quickActions.appendChild(langBtn);
+
+        console.log('✅ Botones de acciones rápidas reemplazados correctamente.');
+    }
+
+    // ================================================================
+    // 2. FUNCIÓN PARA MOSTRAR MENSAJES EN EL CHAT
+    // ================================================================
+    function mostrarEnChat(sender, message) {
+        // Si SystemAssistant existe, usar su addMessage
+        if (window.SystemAssistant && typeof window.SystemAssistant.addMessage === 'function') {
+            window.SystemAssistant.addMessage(sender, message);
+            return;
+        }
+
+        // Fallback: buscar el contenedor de chat y agregar manualmente
+        const chatContainer = document.getElementById('chatMessages') || document.querySelector('#assistantChat');
+        if (chatContainer) {
+            const div = document.createElement('div');
+            div.style.marginBottom = '15px';
+            div.style.display = 'flex';
+            div.style.gap = '10px';
+            if (sender === 'assistant') {
+                div.innerHTML = `<div style="background:#1e293b; padding:12px 15px; border-radius:18px; max-width:80%; word-wrap:break-word; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border:1px solid #e0e0e0;">${message}</div>`;
+            } else {
+                div.style.flexDirection = 'row-reverse';
+                div.innerHTML = `<div style="background:#667eea; color:white; padding:12px 15px; border-radius:18px; max-width:80%; word-wrap:break-word; font-size:14px;">${message}</div>`;
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        } else {
+            // Si no hay chat, mostrar alert
+            alert('Asistente: ' + message);
+        }
+    }
+
+    // ================================================================
+    // 3. EJECUTAR DESPUÉS DE QUE EL DOM ESTÉ LISTO
+    // ================================================================
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(reemplazarBotones, 1000);
+        });
+    } else {
+        setTimeout(reemplazarBotones, 1000);
+    }
+
+    // También ejecutar cada 3 segundos por si el DOM cambia
+    setInterval(() => {
+        const quickActions = document.getElementById('quickActions');
+        // Si los botones fueron reemplazados, no hacer nada
+        if (quickActions && quickActions.children.length === 0) {
+            reemplazarBotones();
+        }
+    }, 3000);
+
+})();
+</script>
+<script>
+  (function() {
+    "use strict";
+
+    // ------------------------------------------------------------
+    // 1. Diccionarios
+    // ------------------------------------------------------------
+    const DICT = {
+      es: {
+        labels: {
+          year: "Año:",
+          month: "Mes:",
+          project: "Proyecto:",
+          assignee: "Asignado a",
+          applyFilters: "Aplicar Filtros"
+        },
+        all: "Todos",
+        unknown: "Desconocido",
+        months: [
+          "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+          "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ]
+      },
+      en: {
+        labels: {
+          year: "Year:",
+          month: "Month:",
+          project: "Project:",
+          assignee: "Assigned to",
+          applyFilters: "Apply Filters"
+        },
+        all: "All",
+        unknown: "Unknown",
+        months: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ]
+      }
+    };
+
+    // ------------------------------------------------------------
+    // 2. Estado y selectores
+    // ------------------------------------------------------------
+    let currentLang = 'es';
+
+    const SELECT_IDS = {
+      year: 'filterTimeAllocationYear',
+      month: 'filterTimeAllocationMonth',
+      project: 'filterTimeAllocationProject',
+      assignee: 'filterTimeAllocationAssignee'
+    };
+
+    // ------------------------------------------------------------
+    // 3. Función principal de traducción
+    // ------------------------------------------------------------
+    function translateUI(lang) {
+      const dict = DICT[lang];
+      if (!dict) return;
+
+      console.log(`🔄 Traduciendo a ${lang.toUpperCase()}...`);
+
+      // 3.1 Traducir etiquetas <label>
+      Object.keys(SELECT_IDS).forEach(key => {
+        const selectId = SELECT_IDS[key];
+        const label = document.querySelector(`label[for="${selectId}"]`);
+        if (label) {
+          const select = label.querySelector('select');
+          if (select) {
+            label.innerHTML = dict.labels[key] + ' ' + select.outerHTML;
+          } else {
+            label.textContent = dict.labels[key];
+          }
+        }
+      });
+
+      // 3.2 Traducir botón "Aplicar Filtros"
+      const applyBtn = document.getElementById('applyTimeAllocationFiltersBtn');
+      if (applyBtn) {
+        applyBtn.textContent = dict.labels.applyFilters;
+      }
+
+      // 3.3 Traducir opciones de selects
+      Object.values(SELECT_IDS).forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        for (let opt of select.options) {
+          const val = opt.value;
+
+          if (val === 'all') {
+            opt.textContent = dict.all;
+            continue;
+          }
+
+          if (selectId === SELECT_IDS.month) {
+            const num = parseInt(val, 10);
+            if (!isNaN(num) && num >= 1 && num <= 12) {
+              opt.textContent = dict.months[num - 1];
+            } else {
+              opt.textContent = dict.unknown;
+            }
+          }
+        }
+      });
+
+      // 3.4 Actualizar texto del botón toggle
+      const toggleBtn = document.getElementById('langToggleBtn');
+      if (toggleBtn) {
+        toggleBtn.textContent = lang === 'es' ? '🌐 ES/EN' : '🌐 EN/ES';
+      }
+
+      console.log(`✅ Traducción aplicada: ${lang.toUpperCase()}`);
+    }
+
+    // ------------------------------------------------------------
+    // 4. Parche para repoblar filtros
+    // ------------------------------------------------------------
+    function patchPopulate() {
+      if (typeof window.populateTimeAllocationFilters !== 'function') {
+        setTimeout(patchPopulate, 200);
+        return;
+      }
+      const original = window.populateTimeAllocationFilters;
+      window.populateTimeAllocationFilters = function() {
+        original.apply(this, arguments);
+        translateUI(currentLang);
+      };
+      console.log('✅ Parche aplicado a populateTimeAllocationFilters');
+    }
+
+    // ------------------------------------------------------------
+    // 5. Configurar botón de alternancia
+    // ------------------------------------------------------------
+    function setupToggleButton() {
+      const toggleBtn = document.getElementById('langToggleBtn');
+      if (!toggleBtn) {
+        console.warn('⚠️ Botón #langToggleBtn no encontrado.');
+        return;
+      }
+
+      toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        currentLang = (currentLang === 'es') ? 'en' : 'es';
+        translateUI(currentLang);
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 6. Inicialización
+    // ------------------------------------------------------------
+    function init() {
+      patchPopulate();
+      setupToggleButton();
+
+      // Forzar traducción inicial (esperar a que los filtros estén listos)
+      setTimeout(function() {
+        translateUI('es');
+      }, 500); // Ajusta si es necesario (500ms suele ser suficiente)
+    }
+
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
+
+<script>
+(function() {
+    // Diccionarios (exactamente los que probaste en consola)
+    const dictEN = {
+        labels: {
+            year: "Year:",
+            month: "Month:",
+            project: "Project:",
+            assignee: "Assigned to",
+            applyFilters: "Apply Filters"
+        },
+        all: "All",
+        unknown: "Unknown",
+        months: [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+    };
+    const dictES = {
+        labels: {
+            year: "Año:",
+            month: "Mes:",
+            project: "Proyecto:",
+            assignee: "Asignado a",
+            applyFilters: "Aplicar Filtros"
+        },
+        all: "Todos",
+        unknown: "Desconocido",
+        months: [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ]
+    };
+    const SELECT_IDS = {
+        year: 'filterTimeAllocationYear',
+        month: 'filterTimeAllocationMonth',
+        project: 'filterTimeAllocationProject',
+        assignee: 'filterTimeAllocationAssignee'
+    };
+
+    // Función de traducción (idéntica a la que funciona en consola)
+    function translateUI(dict) {
+        // Traducir etiquetas
+        Object.keys(SELECT_IDS).forEach(key => {
+            const selectId = SELECT_IDS[key];
+            const label = document.querySelector(`label[for="${selectId}"]`);
+            if (label) {
+                const select = label.querySelector('select');
+                if (select) {
+                    label.innerHTML = dict.labels[key] + ' ' + select.outerHTML;
+                } else {
+                    label.textContent = dict.labels[key];
+                }
+            }
+        });
+        // Botón aplicar filtros
+        const btn = document.getElementById('applyTimeAllocationFiltersBtn');
+        if (btn) btn.textContent = dict.labels.applyFilters;
+        // Opciones
+        Object.values(SELECT_IDS).forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            for (let opt of select.options) {
+                const val = opt.value;
+                if (val === 'all') {
+                    opt.textContent = dict.all;
+                } else if (selectId === SELECT_IDS.month) {
+                    const num = parseInt(val, 10);
+                    if (!isNaN(num) && num >= 1 && num <= 12) {
+                        opt.textContent = dict.months[num - 1];
+                    } else {
+                        opt.textContent = dict.unknown;
+                    }
+                }
+            }
+        });
+    }
+
+    // Estado: false = español, true = inglés
+    let isEnglish = false;
+
+    function setLanguage(eng) {
+        if (eng) {
+            translateUI(dictEN);
+            isEnglish = true;
+        } else {
+            translateUI(dictES);
+            isEnglish = false;
+        }
+        // Actualizar el texto del botón (mostrar el idioma destino)
+        const toggleBtn = document.getElementById('langToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.textContent = eng ? '🌐 EN/ES' : '🌐 ES/EN';
+        }
+    }
+
+    // Alternar
+    function toggleLanguage() {
+        setLanguage(!isEnglish);
+    }
+
+    // Al cargar, detectar el estado actual del botón y aplicar el idioma correcto
+    function init() {
+        const toggleBtn = document.getElementById('langToggleBtn');
+        if (!toggleBtn) {
+            console.warn('Botón #langToggleBtn no encontrado.');
+            return;
+        }
+        // Leer el texto actual del botón para saber en qué idioma estamos
+        const txt = toggleBtn.textContent.trim();
+        if (txt.includes('EN/ES')) {
+            // El botón muestra EN/ES, significa que actualmente está en inglés?
+            // Pero según el comportamiento invertido, si muestra EN/ES al hacer clic va a español.
+            // Por lo tanto, el idioma actual debe ser inglés si el botón dice EN/ES (porque al hacer clic cambia a ES).
+            // Pero si el botón dice EN/ES y ya estamos en inglés, debemos aplicar inglés.
+            // Pero para resolver la inversión, vamos a determinar según el texto del botón:
+            // Si dice "ES/EN" -> al hacer clic va a EN, así que actualmente está en ES.
+            // Si dice "EN/ES" -> al hacer clic va a ES, así que actualmente está en EN.
+            // Por lo tanto, el estado actual isEnglish = (txt.includes('EN/ES'));
+            isEnglish = txt.includes('EN/ES');
+        } else {
+            isEnglish = false; // por defecto español
+        }
+        // Aplicar el idioma detectado
+        setLanguage(isEnglish);
+
+        // Asignar evento de clic
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleLanguage();
+        });
+
+        // Parchear populateTimeAllocationFilters para re-traducir después de repoblar
+        if (typeof window.populateTimeAllocationFilters === 'function') {
+            const original = window.populateTimeAllocationFilters;
+            window.populateTimeAllocationFilters = function() {
+                original.apply(this, arguments);
+                // Reaplicar idioma actual
+                if (isEnglish) {
+                    translateUI(dictEN);
+                } else {
+                    translateUI(dictES);
+                }
+            };
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
 </script>
  </body>
