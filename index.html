@@ -29272,32 +29272,6 @@ console.log('📌 MutationObserver como respaldo');
             quickActions.appendChild(btn);
         });
 
-        // Agregar un botón de cambio de idioma en las acciones rápidas (opcional)
-        const langBtn = document.createElement('button');
-        const lang = localStorage.getItem('preferredLanguage') || 'es';
-        langBtn.textContent = lang === 'es' ? '🌐 English' : '🌐 Español';
-        langBtn.style.cssText = `
-            padding: 8px 12px;
-            border: 1px solid #3b82f6;
-            background: #1e293b;
-            color: #e2e8f0;
-            border-radius: 15px;
-            font-size: 11px;
-            cursor: pointer;
-        `;
-        langBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const current = localStorage.getItem('preferredLanguage') || 'es';
-            const next = current === 'es' ? 'en' : 'es';
-            localStorage.setItem('preferredLanguage', next);
-            // Recargar botones con nuevo idioma
-            reemplazarBotones();
-            // Mostrar mensaje de cambio
-            const msg = next === 'es' ? '🌐 Idioma cambiado a Español' : '🌐 Language changed to English';
-            mostrarEnChat('assistant', msg);
-        });
-        quickActions.appendChild(langBtn);
-
         console.log('✅ Botones de acciones rápidas reemplazados correctamente.');
     }
 
@@ -29353,8 +29327,7 @@ console.log('📌 MutationObserver como respaldo');
     }, 3000);
 
 })();
-</script>
-<script>
+</script><script>
   (function() {
     "use strict";
 
