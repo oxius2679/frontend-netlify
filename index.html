@@ -11848,7 +11848,7 @@ function traducirPremiumView(container) {
     const traducciones = [
         // Título y encabezado
         ['Vista Premium EVM', 'Premium View EVM'],
-        ['Método PMI Estándar • Dashboard Ejecutivo', 'Standard PMI Method • Executive Dashboard'],
+        ['Método PMI Estándar • Dashboard Ejecutivo PMI', 'Standard PMI Method • Executive Dashboard'],
         ['Exportar Reporte', 'Export Report'],
         ['Cerrar', 'Close'],
         
@@ -12716,7 +12716,7 @@ canvas { max-width: 100%; max-height: 280px; }
     <div class="header">
         <div class="vip-badge">${es ? 'REPORTE EJECUTIVO VIP' : 'VIP EXECUTIVE REPORT'}</div>
         <h1>${project.name}</h1>
-        <div class="project-name">${es ? 'Dashboard Ejecutivo ' : 'PMI Executive Dashboard'}</div>
+        <div class="project-name">${es ? 'Dashboard EjecutivoPMI' : 'PMI Executive Dashboard'}</div>
         <div class="header-meta">
             <span>📅 ${fecha}</span>
             <span>🕒 ${hora}</span>
@@ -14667,7 +14667,7 @@ function getLang() {
 const TRAD_PREMIUM = {
     // Header
     'Vista Premium EVM': 'Premium View EVM',
-    'Método PMI Estándar • Dashboard Ejecutivo': 'Standard PMI Method • Executive Dashboard',
+    'Método PMI Estándar • Dashboard Ejecutivo PMI': 'Standard PMI Method • Executive Dashboard',
     'Exportar Reporte': 'Export Report',
     'Cerrar': 'Close',
     
@@ -25394,7 +25394,7 @@ canvas { max-width: 100%; max-height: 280px; }
 <div class="header">
 <div class="vip-badge">${es ? 'REPORTE VIP DASHBOARD' : 'VIP DASHBOARD REPORT'}</div>
 <h1>${project.name}</h1>
-<div class="project-name">${es ? 'Dashboard Ejecutivo' : 'Executive Dashboard'}</div>
+<div class="project-name">${es ? 'Dashboard Ejecutivo PMI' : 'Executive Dashboard'}</div>
 <div class="header-meta">
 <span>📅 ${fecha}</span>
 <span>🕒 ${hora}</span>
@@ -30469,6 +30469,208 @@ console.log('📌 MutationObserver como respaldo');
 })();
 </script>
 
+<!-- ============================================================ -->
+<!-- 🚀 FIX DEFINITIVO: Botón Executive Report → Reporte VIP       -->
+<!-- ============================================================ -->
+<script>
+(function() {
+    'use strict';
+
+    function parchearBoton() {
+        // Buscar el botón con data-reporte-fijo="true"
+        let btn = document.querySelector('[data-reporte-fijo="true"]');
+        if (!btn) {
+            // Si no, buscar por el texto (fallback)
+            const todos = document.querySelectorAll('button');
+            for (let b of todos) {
+                const txt = b.textContent.trim();
+                if (txt.includes('Executive Report') || txt.includes('Reporte Ejecutivo')) {
+                    btn = b;
+                    break;
+                }
+            }
+        }
+        if (!btn) {
+            // console.log('⏳ Botón aún no encontrado');
+            return false;
+        }
+
+        // Si ya está parcheado, no hacer nada
+        if (btn.dataset.parcheado === 'true') return true;
+
+        console.log('🔧 Parcheando botón de reporte...');
+
+        // Clonar y reemplazar para eliminar todos los event listeners viejos
+        const nuevoBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(nuevoBtn, btn);
+        btn = nuevoBtn;
+
+        // Asignar el nuevo evento
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📊 Click en botón → ejecutando generarReporteVIPPremium');
+            if (typeof window.generarReporteVIPPremium === 'function') {
+                window.generarReporteVIPPremium();
+            } else {
+                alert('❌ La función de reporte VIP no está disponible.');
+            }
+        });
+
+        // Eliminar cualquier onclick residual
+        btn.onclick = null;
+
+        // Marcar como parcheado
+        btn.dataset.parcheado = 'true';
+        console.log('✅ Botón parcheado correctamente');
+        return true;
+    }
+
+    // Ejecutar al cargar la página
+    if (document.readyState === 'complete') {
+        setTimeout(parchearBoton, 100);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(parchearBoton, 100);
+        });
+    }
+
+    // Observar cambios en el DOM para parchear el botón si se recrea
+    const observer = new MutationObserver(function() {
+        parchearBoton();
+    });
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // También, por si acaso, ejecutar cada 2 segundos durante 10 segundos
+    let intentos = 0;
+    const intervalo = setInterval(function() {
+        intentos++;
+        if (parchearBoton()) {
+            clearInterval(intervalo);
+        } else if (intentos > 10) {
+            clearInterval(intervalo);
+            console.log('⏹️ Dejando de buscar el botón después de 10 intentos');
+        }
+    }, 2000);
+
+    console.log('🚀 Fix de botón de reporte instalado');
+})();
+</script>
+<!-- ============================================================ -->
+<!-- 🔧 FIX: Quitar "PMI" del título (versión definitiva)          -->
+<!-- ============================================================ -->
+<script>
+(function() {
+    'use strict';
+
+    // Función que limpia el texto de "PMI" en cualquier variante
+    function limpiarPMI(texto) {
+        if (!texto) return texto;
+        return texto
+            .replace(/Dashboard EjecutivoPMI/g, 'Dashboard Ejecutivo')
+            .replace(/Executive DashboardPMI/g, 'Executive Dashboard')
+            .replace(/Dashboard Ejecutivo PMI/g, 'Dashboard Ejecutivo')
+            .replace(/Executive Dashboard PMI/g, 'Executive Dashboard')
+            .replace(/PMI Executive Dashboard/g, 'Executive Dashboard')
+            .replace(/PMI Dashboard Ejecutivo/g, 'Dashboard Ejecutivo')
+            .replace(/PMI/g, ''); // como último recurso, quitar cualquier "PMI" suelto
+    }
+
+    // Función que aplica la limpieza a toda la ventana
+    function aplicarLimpieza(win) {
+        try {
+            if (!win || !win.document) return false;
+
+            // 1. Modificar el <h1> (título principal)
+            const h1 = win.document.querySelector('h1');
+            if (h1) {
+                const nuevo = limpiarPMI(h1.textContent);
+                if (nuevo !== h1.textContent) {
+                    h1.textContent = nuevo;
+                    console.log('✅ h1 modificado:', nuevo);
+                }
+            }
+
+            // 2. Modificar el subtítulo (.project-name)
+            const subtitulo = win.document.querySelector('.project-name');
+            if (subtitulo) {
+                const nuevo = limpiarPMI(subtitulo.textContent);
+                if (nuevo !== subtitulo.textContent) {
+                    subtitulo.textContent = nuevo;
+                    console.log('✅ subtítulo modificado:', nuevo);
+                }
+            }
+
+            // 3. Recorrer todos los nodos de texto y limpiar cualquier "PMI"
+            const walker = win.document.createTreeWalker(
+                win.document.body,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            let node;
+            let cambios = 0;
+            while (node = walker.nextNode()) {
+                const original = node.textContent;
+                const nuevo = limpiarPMI(original);
+                if (nuevo !== original) {
+                    node.textContent = nuevo;
+                    cambios++;
+                }
+            }
+            if (cambios > 0) console.log(`✅ ${cambios} textos adicionales limpiados`);
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // === Interceptar window.open ===
+    const originalOpen = window.open;
+
+    window.open = function(url, name, features) {
+        const win = originalOpen.apply(this, arguments);
+
+        if (!win) return win;
+
+        // Esperar a que la ventana tenga contenido
+        let intentos = 0;
+        const maxIntentos = 30; // 6 segundos
+        const interval = setInterval(function() {
+            intentos++;
+            if (aplicarLimpieza(win)) {
+                clearInterval(interval);
+                console.log('✅ "PMI" eliminado del reporte.');
+            } else if (intentos >= maxIntentos) {
+                clearInterval(interval);
+                console.warn('⚠️ No se pudo limpiar "PMI" a tiempo.');
+            }
+        }, 200);
+
+        // Además, observar cambios en el DOM de la ventana
+        try {
+            const observer = new win.MutationObserver(function() {
+                aplicarLimpieza(win);
+            });
+            observer.observe(win.document.body, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        } catch (e) {
+            // Ignorar si no se puede crear el observer
+        }
+
+        return win;
+    };
+
+    console.log('🚀 Interceptor de ventanas activado (quita "PMI" de forma robusta)');
+})();
+</script>
  </body>
 </html>
  
