@@ -48116,7 +48116,6 @@ function loadTimeAllocationData() {
     const filters = getCurrentTimeAllocationFilters();
     console.log("🔍 Filtros aplicados:", filters);
 
-    // 1. Recopilar y procesar datos de todas las tareas de todos los proyectos
     let allTimeEntries = [];
     if (!projects || !Array.isArray(projects)) {
         console.warn("⚠️ Datos de proyectos no disponibles.");
@@ -48134,17 +48133,26 @@ function loadTimeAllocationData() {
                 if (task.timeLoggedEntries && Array.isArray(task.timeLoggedEntries)) {
                     task.timeLoggedEntries.forEach(entry => {
                         if (entry.hours > 0) {
+                            // ✅ Validar fecha
+                            let date = entry.date ? new Date(entry.date) : null;
+                            if (!date || isNaN(date.getTime())) {
+                                date = new Date();
+                                console.warn('⚠️ Fecha inválida, usando fecha actual:', date);
+                            }
                             allTimeEntries.push({
                                 projectName: projectName,
                                 assignee: assignee,
-                                date: entry.date ? new Date(entry.date) : new Date(),
+                                date: date,
                                 hours: parseFloat(entry.hours) || 0
                             });
                         }
                     });
                 } else if (task.timeLogged > 0) {
-                    const fallbackDateStr = task.startDate || task.deadline || new Date().toISOString();
-                    const fallbackDate = new Date(fallbackDateStr);
+                    let fallbackDate = new Date(task.startDate || task.deadline || Date.now());
+                    if (isNaN(fallbackDate.getTime())) {
+                        fallbackDate = new Date();
+                        console.warn('⚠️ Fecha inválida en fallback, usando fecha actual:', fallbackDate);
+                    }
                     allTimeEntries.push({
                         projectName: projectName,
                         assignee: assignee,
@@ -48158,29 +48166,21 @@ function loadTimeAllocationData() {
 
     console.log("📥 Entradas de tiempo recopiladas:", allTimeEntries);
 
-    // 2. Filtrar datos
+    // Filtrar datos
     const filteredData = allTimeEntries.filter(entry => {
-        if (filters.year !== 'all' && entry.date.getFullYear() != filters.year) {
-            return false;
-        }
-        if (filters.month !== 'all' && String(entry.date.getMonth() + 1).padStart(2, '0') !== filters.month) {
-            return false;
-        }
-        if (filters.project !== 'all' && entry.projectName !== filters.project) {
-            return false;
-        }
-        if (filters.assignee !== 'all' && entry.assignee !== filters.assignee) {
-            return false;
-        }
+        if (filters.year !== 'all' && entry.date.getFullYear() != filters.year) return false;
+        if (filters.month !== 'all' && String(entry.date.getMonth() + 1).padStart(2, '0') !== filters.month) return false;
+        if (filters.project !== 'all' && entry.projectName !== filters.project) return false;
+        if (filters.assignee !== 'all' && entry.assignee !== filters.assignee) return false;
         return true;
     });
 
     console.log("📊 Datos filtrados:", filteredData);
 
-    // 3. Agrupar y sumar por Asignado, Proyecto y Mes
+    // Agrupar datos (SIN monthName)
     const groupedData = {};
     filteredData.forEach(entry => {
-        const monthKey = `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+        const monthKey = `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`;
         const key = `${entry.assignee}|${entry.projectName}|${monthKey}`;
 
         if (!groupedData[key]) {
@@ -48188,7 +48188,7 @@ function loadTimeAllocationData() {
                 assignee: entry.assignee,
                 projectName: entry.projectName,
                 month: monthKey, // YYYY-MM
-                monthName: entry.date.toLocaleString('es-ES', { month: 'long', year: 'numeric' }), // Ej: "enero 2024"
+                // ✅ ELIMINADO: monthName
                 totalHours: 0
             };
         }
@@ -48198,21 +48198,20 @@ function loadTimeAllocationData() {
     const finalData = Object.values(groupedData);
     console.log("🧮 Datos agrupados y sumados:", finalData);
 
-// ⛔ Si no hay datos, aún así renderizamos para mostrar mensajes vacíos
-renderTimeAllocationTable(finalData);
-renderTimeAllocationChart(finalData);
+    window.__lastTimeAllocationData = groupedData;
+    console.log('🧪 groupedData:', groupedData);
 
-
-window.__lastTimeAllocationData = groupedData;
-console.log('🧪 groupedData:', groupedData);
-
-
-
-
-
-    // 4. Renderizar tabla y gráfico
+    // Renderizar
     renderTimeAllocationTable(finalData);
     renderTimeAllocationChart(finalData);
+
+
+
+
+
+    // Guardar para debug
+    window.__lastTimeAllocationData = groupedData;
+    console.log('🧪 groupedData:', groupedData);
 }
 
 function renderTimeAllocationTable(data) {
@@ -48233,18 +48232,39 @@ function renderTimeAllocationTable(data) {
     return;
   }
 
-  tbody.innerHTML = data.map(item => `
-    <tr>
-      <td>${item.assignee ?? '-'}</td>
-      <td>${item.projectName ?? item.project ?? '-'}</td>
-      <td>${item.monthName ?? item.month ?? '-'}</td>
-      <td>${(item.totalHours ?? item.hours ?? 0).toFixed(2)}</td>
-    </tr>
-  `).join('');
+  // ✅ Obtener idioma actual
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const isEn = lang === 'en';
 
-  console.log("✅ Tabla de Asignación de Horas actualizada.");
+  tbody.innerHTML = data.map(item => {
+    // 🔥 Calcular mes con el idioma actual
+    let monthDisplay = '-';
+    if (item.month) {
+      const parts = item.month.split('-');
+      if (parts.length === 2) {
+        const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+        if (!isNaN(dateObj)) {
+          const options = { month: 'long', year: 'numeric' };
+          monthDisplay = dateObj.toLocaleString(isEn ? 'en-US' : 'es-ES', options);
+        }
+      }
+    }
+    if (monthDisplay === '-') {
+      monthDisplay = item.month || '-';
+    }
+
+    return `
+      <tr>
+        <td>${item.assignee ?? '-'}</td>
+        <td>${item.projectName ?? item.project ?? '-'}</td>
+        <td>${monthDisplay}</td>
+        <td>${(item.totalHours ?? item.hours ?? 0).toFixed(2)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  console.log("✅ Tabla de Asignación de Horas actualizada con idioma", lang);
 }
-
 function renderTimeAllocationChart(data) {
     const canvas = document.getElementById('timeAllocationChart');
 
@@ -48321,7 +48341,6 @@ function renderTimeAllocationChart(data) {
 
     console.log("📊 Gráfica de Asignación de Horas actualizada.");
 }
-
 function calculateProjectDatesFromTasks(project) {
     let earliestDate = null;
     let latestDate = null;
