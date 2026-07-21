@@ -30303,6 +30303,198 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ Fix de carga automática del Dashboard aplicado');
 })();
 </script>
+<!-- ============================================================ -->
+<!-- 🔧 FIX: Estilos mejorados para el modal de dependencias       -->
+<!-- ============================================================ -->
+<script>
+(function fixDependencyModal() {
+    console.log('🔄 Preparando mejora del modal de dependencias...');
+
+    // Guardar referencia a la función original que abre el modal
+    const originalOpen = window.openDependencyCreator || window.abrirDependencias;
+
+    if (!originalOpen) {
+        console.warn('⚠️ No se encontró openDependencyCreator. El fix se aplicará por observer.');
+    } else {
+        // Sobrescribir la función para inyectar estilos después de abrir
+        window.openDependencyCreator = function() {
+            console.log('📦 Abriendo modal de dependencias con estilos mejorados...');
+            // Llamar a la función original
+            originalOpen();
+
+            // Esperar a que el modal se renderice
+            setTimeout(applyStyles, 300);
+        };
+        console.log('✅ openDependencyCreator parcheada');
+    }
+
+    // También observar el DOM por si el modal se crea de otra forma
+    const observer = new MutationObserver(function(mutations) {
+        for (let mut of mutations) {
+            for (let node of mut.addedNodes) {
+                if (node.nodeType === 1 && node.classList && node.classList.contains('dependency-modal')) {
+                    console.log('👁️ Modal de dependencias detectado, aplicando estilos...');
+                    setTimeout(applyStyles, 100);
+                    return;
+                }
+            }
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Función que aplica los estilos
+    function applyStyles() {
+        const modal = document.querySelector('.dependency-modal');
+        if (!modal) {
+            console.warn('⚠️ Modal no encontrado para aplicar estilos');
+            return;
+        }
+
+        // ✅ Estilos principales del modal
+        Object.assign(modal.style, {
+            width: '750px',
+            maxWidth: '92vw',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            padding: '35px',
+            background: 'linear-gradient(145deg, #0f172a, #1e293b)',
+            border: '2px solid #8b5cf6',
+            boxShadow: '0 30px 60px -12px rgba(0,0,0,0.8)',
+            borderRadius: '24px',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: '1000002'
+        });
+
+        // ✅ Contenedor de selects (más flexible)
+        const selectRow = modal.querySelector('div[style*="display: flex; gap: 15px"]');
+        if (selectRow) {
+            Object.assign(selectRow.style, {
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginBottom: '25px',
+                alignItems: 'center'
+            });
+        }
+
+        // ✅ Selectores más grandes
+        modal.querySelectorAll('select').forEach(sel => {
+            Object.assign(sel.style, {
+                flex: '1 1 200px',
+                minWidth: '180px',
+                padding: '14px 18px',
+                fontSize: '15px',
+                borderRadius: '12px',
+                background: '#0f172a',
+                border: '2px solid #3b82f6',
+                color: 'white',
+                cursor: 'pointer',
+                outline: 'none'
+            });
+        });
+
+        // ✅ Botón "Agregar" más visible
+        const addBtn = modal.querySelector('button[onclick*="addNewDependency"]');
+        if (addBtn) {
+            Object.assign(addBtn.style, {
+                padding: '14px 32px',
+                fontSize: '16px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                border: 'none',
+                color: 'white',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                flex: '0 0 auto',
+                boxShadow: '0 4px 15px rgba(139,92,246,0.4)'
+            });
+            // Efecto hover
+            addBtn.onmouseenter = () => {
+                addBtn.style.transform = 'scale(1.02)';
+                addBtn.style.boxShadow = '0 8px 25px rgba(139,92,246,0.6)';
+            };
+            addBtn.onmouseleave = () => {
+                addBtn.style.transform = 'scale(1)';
+                addBtn.style.boxShadow = '0 4px 15px rgba(139,92,246,0.4)';
+            };
+        }
+
+        // ✅ Lista de dependencias existentes
+        const depsList = modal.querySelector('#dependenciesList');
+        if (depsList) {
+            Object.assign(depsList.style, {
+                maxHeight: '280px',
+                overflowY: 'auto',
+                padding: '10px',
+                marginBottom: '20px',
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '12px'
+            });
+        }
+
+        // ✅ Botones de guardar/cancelar
+        modal.querySelectorAll('button[style*="padding: 10px 20px"]').forEach(btn => {
+            const isCancel = btn.textContent.includes('Cancelar');
+            Object.assign(btn.style, {
+                padding: '14px 30px',
+                fontSize: '15px',
+                borderRadius: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                border: 'none'
+            });
+            if (isCancel) {
+                btn.style.background = 'rgba(239,68,68,0.2)';
+                btn.style.color = '#ef4444';
+                btn.style.border = '1px solid #ef4444';
+            } else {
+                btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                btn.style.color = 'white';
+                btn.style.boxShadow = '0 4px 15px rgba(16,185,129,0.4)';
+            }
+        });
+
+        // ✅ Título más elegante
+        const title = modal.querySelector('h3');
+        if (title) {
+            Object.assign(title.style, {
+                fontSize: '24px',
+                color: '#8b5cf6',
+                marginTop: '0',
+                marginBottom: '20px',
+                textAlign: 'center'
+            });
+        }
+
+        // ✅ Ajustar overlay
+        const overlay = document.querySelector('.dependency-overlay');
+        if (overlay) {
+            Object.assign(overlay.style, {
+                padding: '20px',
+                background: 'rgba(0,0,0,0.85)',
+                backdropFilter: 'blur(5px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            });
+        }
+
+        console.log('✅ Estilos del modal de dependencias aplicados correctamente');
+    }
+
+    // Si el modal ya está abierto al cargar el script, aplicar estilos
+    setTimeout(function() {
+        const modal = document.querySelector('.dependency-modal');
+        if (modal) {
+            applyStyles();
+        }
+    }, 500);
+
+    console.log('✅ Fix del modal de dependencias cargado');
+})();
+</script>
  </body>
 </html>
  
