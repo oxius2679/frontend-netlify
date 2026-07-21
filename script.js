@@ -1,4 +1,96 @@
+// ============================================================
+// 🔧 AJUSTE PERMANENTE DEL ANCHO DE COLUMNA EN EL GANTT
+// ============================================================
+(function aplicarAjusteGanttPermanente() {
+  // Esperar a que el Gantt se cargue (puede tardar unos segundos)
+  const intervalo = setInterval(() => {
+    const gantt = document.getElementById('premiumExecutiveGantt');
+    if (!gantt) return;
 
+    clearInterval(intervalo); // Dejar de intentar una vez encontrado
+
+    // ===== CONFIGURACIÓN: CAMBIA ESTE VALOR SI QUIERES OTRO ANCHO =====
+    const ANCHO_COLUMNA = 650; // ← Ajusta aquí el ancho que prefieras
+    // =================================================================
+
+    console.log(`🔧 Aplicando ajuste permanente al Gantt (ancho: ${ANCHO_COLUMNA}px)...`);
+
+    // ===== AQUÍ VA TODO EL CÓDIGO DE AJUSTE QUE TE GUSTÓ =====
+    const columnasFijas = gantt.querySelectorAll('div[style*="width: 320px; padding: 0 20px; position: absolute"]');
+    columnasFijas.forEach((col) => {
+      col.style.width = ANCHO_COLUMNA + 'px';
+      col.style.padding = '0 12px';
+      col.style.background = 'rgba(18, 18, 48, 0.98)';
+      col.style.borderRight = '2px solid rgba(139, 92, 246, 0.2)';
+      col.style.boxShadow = '4px 0 15px rgba(0,0,0,0.3)';
+    });
+
+    const filas = gantt.querySelectorAll('.premium-task');
+    filas.forEach((row) => {
+      row.style.paddingLeft = ANCHO_COLUMNA + 'px';
+      row.style.minHeight = '72px';
+      row.style.marginBottom = '14px';
+      row.style.paddingTop = '14px';
+      row.style.paddingBottom = '14px';
+      row.style.alignItems = 'center';
+    });
+
+    const timelineHeader = gantt.querySelector('div[style*="display: flex; background: rgba(255, 255, 255, 0.05)"]');
+    if (timelineHeader) {
+      timelineHeader.style.paddingLeft = ANCHO_COLUMNA + 'px';
+    }
+
+    const nombres = gantt.querySelectorAll('.premium-task div[style*="color: white; font-weight: bold; font-size: 15px"]');
+    nombres.forEach((el) => {
+      el.style.fontSize = '14px';
+      el.style.whiteSpace = 'normal';
+      el.style.wordBreak = 'break-word';
+      el.style.lineHeight = '1.4';
+      el.style.maxWidth = (ANCHO_COLUMNA - 100) + 'px';
+    });
+
+    const badges = gantt.querySelectorAll('.premium-task span[style*="background: rgba(231, 76, 60, 0.2)"]');
+    badges.forEach((badge) => {
+      badge.style.fontSize = '10px';
+      badge.style.padding = '3px 8px';
+      badge.style.marginLeft = '8px';
+      badge.style.borderRadius = '12px';
+    });
+
+    const barras = gantt.querySelectorAll('.premium-task div[style*="flex: 1; height: 40px; position: relative"]');
+    barras.forEach((bar) => {
+      bar.style.height = '38px';
+      bar.style.minHeight = '38px';
+    });
+
+    const tasksContainer = document.getElementById('premiumTasksContainer');
+    if (tasksContainer) {
+      tasksContainer.style.overflowX = 'auto';
+      tasksContainer.style.overflowY = 'auto';
+    }
+
+    const detalles = gantt.querySelectorAll('.premium-task div[style*="color: #95a5a6; font-size: 12px; display: flex; gap: 15px"]');
+    detalles.forEach((el) => {
+      el.style.fontSize = '11px';
+      el.style.gap = '12px';
+      el.style.flexWrap = 'wrap';
+    });
+
+    const numeros = gantt.querySelectorAll('.premium-task div[style*="width: 36px; height: 36px; background:"]');
+    numeros.forEach((el) => {
+      el.style.width = '32px';
+      el.style.height = '32px';
+      el.style.fontSize = '13px';
+    });
+
+    const depContainer = gantt.querySelector('#dependencyLayer');
+    if (depContainer) {
+      depContainer.style.left = ANCHO_COLUMNA + 'px';
+    }
+
+    console.log(`✅ Ajuste permanente aplicado (ancho: ${ANCHO_COLUMNA}px)`);
+  }, 500); // Reintenta cada 500ms hasta que el Gantt exista
+})();
 
 
 // ============================================
