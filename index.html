@@ -29816,6 +29816,493 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ Fix de i18n para filtros de Asignación de Horas cargado');
 })();
 </script>
+<script>
+(function fixTimeAllocationTableSafe() {
+    // ============================================================
+    // 1. TRADUCCIONES
+    // ============================================================
+    const translations = {
+        es: {
+            assignedTo: 'Asignado a',
+            project: 'Proyecto:',
+            month: 'Mes:',
+            hours: 'Horas Registradas',
+            invalidDate: 'Fecha inválida'
+        },
+        en: {
+            assignedTo: 'Assigned to',
+            project: 'Project:',
+            month: 'Month:',
+            hours: 'Hours Logged',
+            invalidDate: 'Invalid Date'
+        }
+    };
+
+    function getLang() {
+        return localStorage.getItem('preferredLanguage') || 'es';
+    }
+
+    // ============================================================
+    // 2. FUNCIÓN PRINCIPAL (segura, solo actúa si los elementos existen)
+    // ============================================================
+    function applyTableFixes() {
+        // Solo ejecutar si la vista de asignación de horas está activa
+        const view = document.getElementById('timeAllocationView');
+        if (!view || !view.classList.contains('active')) return;
+
+        const lang = getLang();
+        const t = translations[lang] || translations.es;
+
+        // --- Traducir encabezados ---
+        const table = view.querySelector('table');
+        if (table) {
+            const headers = table.querySelectorAll('thead th');
+            const headerTexts = [t.assignedTo, t.project, t.month, t.hours];
+            headers.forEach((th, i) => {
+                if (i < headerTexts.length) {
+                    // Solo cambiar si el texto no coincide ya con la traducción (para evitar sobrescrituras innecesarias)
+                    const current = th.textContent.trim();
+                    const target = headerTexts[i];
+                    if (current !== target && target) {
+                        th.textContent = target;
+                    }
+                }
+            });
+        }
+
+        // --- Corregir fechas inválidas ---
+        const rows = view.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 3) {
+                const dateCell = cells[2];
+                const raw = dateCell.textContent.trim();
+                // Si contiene "Invalid" o "inválida" (en cualquier idioma) la reemplazamos
+                if (/invalid|inválida/i.test(raw)) {
+                    dateCell.textContent = t.invalidDate;
+                }
+            }
+        });
+    }
+
+    // ============================================================
+    // 3. EJECUCIÓN CONTROLADA (sin bloquear)
+    // ============================================================
+    let pending = false;
+
+    function safeApply() {
+        if (pending) return;
+        pending = true;
+        // Usamos requestAnimationFrame para no bloquear el hilo principal
+        requestAnimationFrame(() => {
+            try {
+                applyTableFixes();
+            } catch (e) {
+                // Silenciar errores para no romper la aplicación
+                console.warn('Error en fixTimeAllocationTable (no crítico):', e.message);
+            }
+            pending = false;
+        });
+    }
+
+    // --- Ejecutar al cargar la página (con pequeño retraso para que el DOM esté listo) ---
+    setTimeout(safeApply, 300);
+
+    // --- Escuchar el evento de cambio de idioma ---
+    document.addEventListener('languageChanged', function() {
+        // Esperar a que la vista se haya actualizado
+        setTimeout(safeApply, 200);
+    });
+
+    // --- Escuchar clics en el botón "Aplicar Filtros" ---
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#applyTimeAllocationFiltersBtn');
+        if (btn) {
+            // Dar tiempo a que la tabla se actualice después del filtro
+            setTimeout(safeApply, 300);
+        }
+    });
+
+    // --- Observer ligero solo para la vista, no para todo el body ---
+    const view = document.getElementById('timeAllocationView');
+    if (view) {
+        const observer = new MutationObserver(function(mutations) {
+            // Solo reaccionar si la vista está activa y hay cambios relevantes
+            if (view.classList.contains('active')) {
+                for (let mut of mutations) {
+                    if (mut.addedNodes.length > 0 || mut.type === 'childList') {
+                        safeApply();
+                        break;
+                    }
+                }
+            }
+        });
+        observer.observe(view, { childList: true, subtree: true });
+        // Guardar referencia para no acumular observers
+        window._timeAllocationObserver = observer;
+    }
+
+    // ============================================================
+    // 4. LIMPIEZA (opcional, para cuando se desmonta la vista)
+    // ============================================================
+    // No es necesario limpiar porque el observer está atado a la vista,
+    // pero si la vista se elimina del DOM, el observer se recolectará.
+
+    console.log('✅ Fix seguro de tabla de asignación de horas cargado (sin bloqueos)');
+})();
+</script>
+<!-- ============================================================ -->
+<!-- 🛠️ FIX: Carga automática de riesgos/acciones en el Dashboard -->
+<!-- ============================================================ -->
+<script>
+(function fixDashboardDataOnLoad() {
+    'use strict';
+
+    console.log('🔄 Iniciando fix de carga de datos del Dashboard...');
+
+    // ============================================================
+    // 1. FUNCIÓN QUE CARGA LOS DATOS DEL PROYECTO ACTUAL
+    // ============================================================
+    function loadProjectData() {
+        // Verificar que exista el proyecto
+        if (typeof projects === 'undefined' || !projects.length || currentProjectIndex === undefined) {
+            console.warn('⚠️ No hay proyecto seleccionado para cargar datos');
+            return;
+        }
+
+        const project = projects[currentProjectIndex];
+        if (!project) {
+            console.warn('⚠️ Proyecto no encontrado en índice:', currentProjectIndex);
+            return;
+        }
+
+        // Determinar la clave de almacenamiento (usar ID si existe, sino índice)
+        const projectId = project.id;
+        const useId = projectId && projectId !== 'undefined' && projectId !== null;
+        const keyPrefix = useId ? `project_${projectId}` : `project_${currentProjectIndex}`;
+
+        console.log(`📂 Cargando datos para proyecto: ${project.name} (clave: ${keyPrefix})`);
+
+        // ------------------------------------------------------------
+        // CARGAR RIESGOS
+        // ------------------------------------------------------------
+        const risksContainer = document.getElementById('risksContainer');
+        if (risksContainer) {
+            let riesgos = [];
+            try {
+                const stored = localStorage.getItem(`${keyPrefix}_risks`);
+                riesgos = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                riesgos = [];
+            }
+
+            if (!riesgos || riesgos.length === 0) {
+                risksContainer.innerHTML = `
+                    <div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">
+                        No hay riesgos registrados
+                    </div>
+                `;
+            } else {
+                risksContainer.innerHTML = '';
+                riesgos.forEach((item, index) => {
+                    const texto = item.texto || item.nombre || 'Sin descripción';
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #e74c3c;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${texto}</span>
+                        <button class="delete-risk-item" data-project="${useId ? projectId : currentProjectIndex}" 
+                                data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    risksContainer.appendChild(div);
+                });
+
+                // Eventos de eliminación (delegación)
+                risksContainer.querySelectorAll('.delete-risk-item').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const pId = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        if (typeof window.eliminarRiesgo === 'function') {
+                            window.eliminarRiesgo(pId, idx);
+                        } else {
+                            // Fallback: recargar la página
+                            location.reload();
+                        }
+                    });
+                });
+            }
+        }
+
+        // ------------------------------------------------------------
+        // CARGAR ACCIONES
+        // ------------------------------------------------------------
+        const actionsContainer = document.getElementById('requiredActions');
+        if (actionsContainer) {
+            let acciones = [];
+            try {
+                const stored = localStorage.getItem(`${keyPrefix}_actions`);
+                acciones = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                acciones = [];
+            }
+
+            if (!acciones || acciones.length === 0) {
+                actionsContainer.innerHTML = `
+                    <div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">
+                        No hay acciones requeridas
+                    </div>
+                `;
+            } else {
+                actionsContainer.innerHTML = '';
+                acciones.forEach((item, index) => {
+                    const texto = item.texto || item.nombre || 'Sin descripción';
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #3498db;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${texto}</span>
+                        <button class="delete-action-item" data-project="${useId ? projectId : currentProjectIndex}" 
+                                data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    actionsContainer.appendChild(div);
+                });
+
+                actionsContainer.querySelectorAll('.delete-action-item').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const pId = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        if (typeof window.eliminarAccion === 'function') {
+                            window.eliminarAccion(pId, idx);
+                        } else {
+                            location.reload();
+                        }
+                    });
+                });
+            }
+        }
+
+        // ------------------------------------------------------------
+        // CARGAR HITOS (si existe el contenedor)
+        // ------------------------------------------------------------
+        const milestonesContainer = document.getElementById('milestonesList');
+        if (milestonesContainer) {
+            let hitos = [];
+            try {
+                const stored = localStorage.getItem(`${keyPrefix}_milestones`);
+                hitos = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                hitos = [];
+            }
+
+            if (!hitos || hitos.length === 0) {
+                milestonesContainer.innerHTML = `
+                    <div style="color:#95a5a6;font-style:italic;text-align:center;padding:20px;">
+                        No hay hitos definidos
+                    </div>
+                `;
+            } else {
+                milestonesContainer.innerHTML = '';
+                hitos.forEach((item, index) => {
+                    const texto = item.texto || item.nombre || 'Sin descripción';
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-left: 4px solid #f39c12;
+                        border-radius: 6px;
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+                    div.innerHTML = `
+                        <span style="flex:1;cursor:pointer;">${texto}</span>
+                        <button class="delete-milestone-item" data-project="${useId ? projectId : currentProjectIndex}" 
+                                data-index="${index}" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:5px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
+                    milestonesContainer.appendChild(div);
+                });
+
+                milestonesContainer.querySelectorAll('.delete-milestone-item').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const pId = this.dataset.project;
+                        const idx = parseInt(this.dataset.index);
+                        if (typeof window.eliminarHito === 'function') {
+                            window.eliminarHito(pId, idx);
+                        } else {
+                            location.reload();
+                        }
+                    });
+                });
+            }
+        }
+
+        console.log(`✅ Datos del Dashboard cargados para "${project.name}"`);
+    }
+
+    // ============================================================
+    // 2. CONECTAR BOTONES "AGREGAR" CON LAS CLAVES CORRECTAS
+    // ============================================================
+    function fixAddButtons() {
+        // Botón de agregar riesgo
+        const addRiskBtn = document.getElementById('addRiskBtn');
+        if (addRiskBtn) {
+            // Clonar y reemplazar para eliminar listeners anteriores
+            const newBtn = addRiskBtn.cloneNode(true);
+            addRiskBtn.parentNode.replaceChild(newBtn, addRiskBtn);
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const texto = prompt('Nuevo riesgo:');
+                if (!texto || texto.trim() === '') return;
+                const project = projects[currentProjectIndex];
+                if (!project) { alert('No hay proyecto seleccionado'); return; }
+                const projectId = project.id;
+                const useId = projectId && projectId !== 'undefined' && projectId !== null;
+                const key = useId ? `project_${projectId}_risks` : `project_${currentProjectIndex}_risks`;
+                let items = JSON.parse(localStorage.getItem(key) || '[]');
+                items.push({ texto: texto.trim() });
+                localStorage.setItem(key, JSON.stringify(items));
+                loadProjectData(); // Recargar vista
+            });
+        }
+
+        // Botón de agregar acción
+        const addActionBtn = document.getElementById('addActionBtn');
+        if (addActionBtn) {
+            const newBtn = addActionBtn.cloneNode(true);
+            addActionBtn.parentNode.replaceChild(newBtn, addActionBtn);
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const texto = prompt('Nueva acción:');
+                if (!texto || texto.trim() === '') return;
+                const project = projects[currentProjectIndex];
+                if (!project) { alert('No hay proyecto seleccionado'); return; }
+                const projectId = project.id;
+                const useId = projectId && projectId !== 'undefined' && projectId !== null;
+                const key = useId ? `project_${projectId}_actions` : `project_${currentProjectIndex}_actions`;
+                let items = JSON.parse(localStorage.getItem(key) || '[]');
+                items.push({ texto: texto.trim() });
+                localStorage.setItem(key, JSON.stringify(items));
+                loadProjectData();
+            });
+        }
+
+        // Botón de agregar hito
+        const addMilestoneBtn = document.getElementById('addMilestoneBtn');
+        if (addMilestoneBtn) {
+            const newBtn = addMilestoneBtn.cloneNode(true);
+            addMilestoneBtn.parentNode.replaceChild(newBtn, addMilestoneBtn);
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const texto = prompt('Nuevo hito:');
+                if (!texto || texto.trim() === '') return;
+                const project = projects[currentProjectIndex];
+                if (!project) { alert('No hay proyecto seleccionado'); return; }
+                const projectId = project.id;
+                const useId = projectId && projectId !== 'undefined' && projectId !== null;
+                const key = useId ? `project_${projectId}_milestones` : `project_${currentProjectIndex}_milestones`;
+                let items = JSON.parse(localStorage.getItem(key) || '[]');
+                items.push({ texto: texto.trim() });
+                localStorage.setItem(key, JSON.stringify(items));
+                loadProjectData();
+            });
+        }
+    }
+
+    // ============================================================
+    // 3. OBSERVADOR: DETECTAR CUANDO EL DASHBOARD SE ACTIVA
+    // ============================================================
+    function observeDashboardActivation() {
+        const dashboardView = document.getElementById('dashboardView');
+        if (!dashboardView) {
+            console.warn('⚠️ No se encontró el elemento dashboardView');
+            return;
+        }
+
+        // Si ya está activo, cargar inmediatamente
+        if (dashboardView.classList.contains('active')) {
+            loadProjectData();
+            fixAddButtons();
+            return;
+        }
+
+        // Observar cambios en la clase 'active'
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    if (dashboardView.classList.contains('active')) {
+                        console.log('📊 Dashboard activado, cargando datos...');
+                        loadProjectData();
+                        fixAddButtons();
+                    }
+                }
+            });
+        });
+
+        observer.observe(dashboardView, { attributes: true });
+        console.log('👁️ Observer configurado para el Dashboard');
+    }
+
+    // ============================================================
+    // 4. INICIALIZACIÓN
+    // ============================================================
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', observeDashboardActivation);
+    } else {
+        observeDashboardActivation();
+    }
+
+    // También forzar carga al cambiar de proyecto (por si acaso)
+    const originalSelectProject = window.selectProject;
+    if (originalSelectProject) {
+        window.selectProject = function(index) {
+            originalSelectProject(index);
+            setTimeout(function() {
+                const dashboardView = document.getElementById('dashboardView');
+                if (dashboardView && dashboardView.classList.contains('active')) {
+                    loadProjectData();
+                    fixAddButtons();
+                }
+            }, 200);
+        };
+        console.log('✅ selectProject parcheado para recargar datos');
+    }
+
+    // Exponer función para pruebas en consola
+    window.loadDashboardData = loadProjectData;
+    console.log('💡 Para recargar manualmente: loadDashboardData()');
+
+    console.log('✅ Fix de carga automática del Dashboard aplicado');
+})();
+</script>
  </body>
 </html>
  
