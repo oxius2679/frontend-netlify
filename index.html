@@ -29677,6 +29677,145 @@ console.log('📌 MutationObserver como respaldo');
     }
 })();
 </script>
+<script>
+(function fixTimeAllocationI18n() {
+    // Diccionario de traducciones para la vista de asignación de horas
+    const translations = {
+        es: {
+            year: 'Año:',
+            month: 'Mes:',
+            project: 'Proyecto:',
+            assignedTo: 'Asignado a',
+            all: 'Todos',
+            applyFilters: 'Aplicar Filtros',
+            // Para los meses si se usan textos fijos (opcional)
+            january: 'Enero',
+            february: 'Febrero',
+            march: 'Marzo',
+            april: 'Abril',
+            may: 'Mayo',
+            june: 'Junio',
+            july: 'Julio',
+            august: 'Agosto',
+            september: 'Septiembre',
+            october: 'Octubre',
+            november: 'Noviembre',
+            december: 'Diciembre',
+            unknown: 'Desconocido'
+        },
+        en: {
+            year: 'Year:',
+            month: 'Month:',
+            project: 'Project:',
+            assignedTo: 'Assigned to',
+            all: 'All',
+            applyFilters: 'Apply Filters',
+            january: 'January',
+            february: 'February',
+            march: 'March',
+            april: 'April',
+            may: 'May',
+            june: 'June',
+            july: 'July',
+            august: 'August',
+            september: 'September',
+            october: 'October',
+            november: 'November',
+            december: 'December',
+            unknown: 'Unknown'
+        }
+    };
+
+    function getCurrentLang() {
+        return localStorage.getItem('preferredLanguage') || 'es';
+    }
+
+    function translateTimeAllocationView() {
+        const lang = getCurrentLang();
+        const t = translations[lang] || translations.es;
+
+        // 1. Traducir todas las etiquetas con data-i18n
+        document.querySelectorAll('#timeAllocationView [data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key] !== undefined) {
+                // Si el elemento tiene nodos de texto mixtos (ej: label con select dentro), 
+                // reemplazar solo el texto del nodo que contiene la etiqueta
+                const childNodes = el.childNodes;
+                for (let node of childNodes) {
+                    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') {
+                        // Si el texto contiene ":" lo conservamos, pero reemplazamos la parte de la etiqueta
+                        // Mejor reemplazar todo el texto del nodo por la traducción + ":" si es una etiqueta
+                        const isLabel = key === 'year' || key === 'month' || key === 'project' || key === 'assignedTo';
+                        if (isLabel) {
+                            node.textContent = t[key] + ' ';
+                        } else {
+                            node.textContent = t[key];
+                        }
+                    }
+                }
+                // Si no hay nodos de texto (ej: un input sin texto), no hacemos nada
+            }
+        });
+
+        // 2. Traducir los <option value="all"> en los selects de la vista
+        document.querySelectorAll('#timeAllocationView select option[value="all"]').forEach(opt => {
+            opt.textContent = t.all;
+        });
+
+        // 3. Traducir el botón "Aplicar Filtros" (tiene data-i18n="applyFilters")
+        const applyBtn = document.querySelector('#timeAllocationView button[data-i18n="applyFilters"]');
+        if (applyBtn) {
+            applyBtn.textContent = t.applyFilters;
+        }
+
+        // 4. (Opcional) Traducir el mes "Desconocido" si aparece
+        document.querySelectorAll('#timeAllocationView select option').forEach(opt => {
+            if (opt.textContent === 'Desconocido' || opt.textContent === 'Unknown') {
+                opt.textContent = t.unknown;
+            }
+        });
+
+        console.log(`🌐 Traducción de filtros de horas aplicada: ${lang.toUpperCase()}`);
+    }
+
+    // Ejecutar al cargar
+    translateTimeAllocationView();
+
+    // Escuchar el evento de cambio de idioma
+    document.addEventListener('languageChanged', function() {
+        // Dar un pequeño retraso para que otros cambios se apliquen
+        setTimeout(translateTimeAllocationView, 100);
+    });
+
+    // También observar mutaciones por si los selects se recargan dinámicamente
+    const observer = new MutationObserver(function(mutations) {
+        for (let mut of mutations) {
+            if (mut.addedNodes.length > 0) {
+                // Si se agregan nuevos selects o opciones, retraducir
+                setTimeout(translateTimeAllocationView, 50);
+                break;
+            }
+        }
+    });
+    const timeView = document.getElementById('timeAllocationView');
+    if (timeView) {
+        observer.observe(timeView, { childList: true, subtree: true });
+    }
+
+    // Forzar traducción cuando la vista se activa (por si se cambia de pestaña)
+    const originalShowView = window.showView;
+    if (originalShowView) {
+        window.showView = function(view) {
+            originalShowView(view);
+            if (view === 'timeAllocation') {
+                setTimeout(translateTimeAllocationView, 200);
+            }
+        };
+    }
+
+    console.log('✅ Fix de i18n para filtros de Asignación de Horas cargado');
+})();
+</script>
  </body>
 </html>
  
