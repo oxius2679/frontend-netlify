@@ -65152,8 +65152,8 @@ window.showDashboard4DView = function () {
 
     // 📊 Inicializar gráficos después de que el DOM esté listo
     setTimeout(() => {
-        initDashboard4DCharts();
-    }, 500);
+    initDashboard4DCharts();
+}, 0);
 };
 
 function generateDashboard4DHTML() {
