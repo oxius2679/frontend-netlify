@@ -16067,3 +16067,26 @@ button[onclick*="toggleMobileViewPremium"] {
   line-height: 1.2 !important;
 }
 
+
+
+
+
+
+
+
+/* Justificar valores de progreso a la derecha */
+#reportsView span[style*="color: #94a3b8"] {
+    display: inline-block !important;
+    margin-left: auto !important;
+    text-align: right !important;
+    min-width: 60px;
+}
+
+/* Alternativa más específica si la anterior no funciona */
+#reportsView .progress-info span[style*="#94a3b8"],
+#reportsView .task-progress span[style*="#94a3b8"],
+#reportsView .hours-progress span[style*="#94a3b8"] {
+    float: right !important;
+    margin-left: 10px !important;
+}
+
