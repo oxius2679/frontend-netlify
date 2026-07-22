@@ -1,138 +1,8 @@
-// ============================================================
-// 💀 BLOQUEO ABSOLUTO - PROYECTOS INMORTALES
-// ============================================================
-(function() {
-    console.log('💀 ACTIVANDO BLOQUEO ABSOLUTO DE PROYECTOS...');
-    
-    // 1. Guardar copia de seguridad de los proyectos
-    let copiaSegura = [];
-    try {
-        const stored = localStorage.getItem('projects');
-        if (stored) {
-            copiaSegura = JSON.parse(stored);
-            console.log(`📦 ${copiaSegura.length} proyectos en copia de seguridad`);
-        }
-    } catch(e) {}
-    
-    // Si no hay copia, crear un proyecto de ejemplo
-    if (copiaSegura.length === 0) {
-        copiaSegura = [{
-            id: Date.now(),
-            name: 'Mi Proyecto',
-            clienteId: localStorage.getItem('clienteId') || 'sin_cliente',
-            tasks: [],
-            totalProjectTime: 0
-        }];
-        localStorage.setItem('projects', JSON.stringify(copiaSegura));
-        console.log('📝 Proyecto de ejemplo creado');
-    }
-    
-    // 2. Hacer window.projects INMUTABLE (solo se puede cambiar desde funciones autorizadas)
-    let proyectosActuales = copiaSegura;
-    let bloqueado = true;
-    
-    Object.defineProperty(window, 'projects', {
-        get: function() {
-            return proyectosActuales;
-        },
-        set: function(value) {
-            const stack = new Error().stack;
-            const permitido = stack.includes('safeLoad') || 
-                              stack.includes('createNewProject') || 
-                              stack.includes('deleteProject') ||
-                              stack.includes('selectProject') ||
-                              stack.includes('renderProjects');
-            
-            if (permitido) {
-                console.log('✅ Cambio permitido:', stack.split('\n')[1].trim());
-                proyectosActuales = value;
-                localStorage.setItem('projects', JSON.stringify(value));
-            } else {
-                console.warn('⛔ BLOQUEADO: Intento de asignar window.projects desde:', stack.split('\n')[1].trim());
-                // Restaurar desde copia de seguridad
-                proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]');
-                if (proyectosActuales.length === 0) {
-                    proyectosActuales = copiaSegura;
-                    localStorage.setItem('projects', JSON.stringify(proyectosActuales));
-                }
-                console.log('🔄 Proyectos restaurados desde backup');
-            }
-        },
-        configurable: false
-    });
-    
-    // 3. DESACTIVAR forceRefreshFromBackend
-    window.forceRefreshFromBackend = function() {
-        console.warn('⛔ forceRefreshFromBackend DESACTIVADA (no hará nada)');
-        return Promise.resolve();
-    };
-    
-    // 4. DESACTIVAR safeLoad para que solo use localStorage (sin backend)
-    const originalSafeLoad = window.safeLoad;
-    window.safeLoad = function() {
-        console.log('🔄 safeLoad: cargando desde localStorage (única fuente)');
-        const stored = localStorage.getItem('projects');
-        if (stored) {
-            try {
-                proyectosActuales = JSON.parse(stored);
-                console.log(`✅ ${proyectosActuales.length} proyectos cargados desde localStorage`);
-                return Promise.resolve(true);
-            } catch(e) {
-                console.warn('Error parsing:', e);
-            }
-        }
-        proyectosActuales = copiaSegura;
-        localStorage.setItem('projects', JSON.stringify(proyectosActuales));
-        console.log('📝 Proyectos restaurados desde copia de seguridad');
-        return Promise.resolve(true);
-    };
-    
-    // 5. ELIMINAR TODOS los intervalos y timeouts
-    let maxId = setTimeout(() => {}, 10000);
-    for (let i = 0; i < maxId; i++) {
-        clearTimeout(i);
-        clearInterval(i);
-    }
-    console.log('🧹 Todos los intervalos y timeouts eliminados');
-    
-    // 6. DESCONECTAR WebSocket de eventos de proyectos
-    if (window.tiempoRealSocket) {
-        window.tiempoRealSocket.off('project-updated');
-        window.tiempoRealSocket.off('task-created');
-        window.tiempoRealSocket.off('task-updated');
-        window.tiempoRealSocket.off('task-deleted');
-        window.tiempoRealSocket.off('task-moved');
-        console.log('🔌 WebSocket desconectado de eventos de proyectos');
-    }
-    
-    // 7. BLOQUEAR localStorage.removeItem para projects
-    const originalRemoveItem = localStorage.removeItem;
-    localStorage.removeItem = function(key) {
-        if (key === 'projects') {
-            console.warn('⛔ BLOQUEADO: Intento de eliminar projects de localStorage');
-            return;
-        }
-        originalRemoveItem.call(this, key);
-    };
-    
-    // 8. CARGAR LOS PROYECTOS AHORA MISMO
-    window.projects = proyectosActuales;
-    
-    // 9. FORZAR RENDERIZADO
-    setTimeout(() => {
-        if (typeof renderProjects === 'function') renderProjects();
-        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-        console.log(`✅ Renderizado forzado con ${proyectosActuales.length} proyectos`);
-    }, 500);
-    
-    console.log('💀 BLOQUEO ABSOLUTO ACTIVADO');
-    console.log('📌 Los proyectos son INMORTALES (no se pueden borrar)');
-    console.log('📌 forceRefreshFromBackend DESACTIVADA');
-    console.log('📌 safeLoad solo usa localStorage');
-    console.log('📌 Todos los intervalos ELIMINADOS');
-    console.log('📌 WebSocket desconectado de proyectos');
-    console.log('📌 localStorage.removeItem BLOQUEADO para projects');
-})();
+
+
+
+
+
 
 
 
@@ -76045,6 +75915,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     console.log('✅ Parche de persistencia aplicado correctamente');
 })();
+
+
+
+
 
 
 
