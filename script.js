@@ -25827,7 +25827,7 @@ async function safeSave(clienteId) {
   return true;
 }
 
-// ==================== SAFE LOAD MEJORADO ====================
+// ==================== SAFE LOAD MEJORADO - SIN CREACIÓN AUTOMÁTICA ====================
 async function safeLoad() {
     console.group('📥 Cargando datos...');
     console.log('⏰ Inicio de safeLoad:', new Date().toISOString());
@@ -25879,21 +25879,20 @@ async function safeLoad() {
         }
     }
 
-    // 4. Crear proyecto de ejemplo si no hay nada
-    projects = [{
-        id: Date.now(),
-        name: 'Mi Primer Proyecto',
-        clienteId: clienteId || 'sin_cliente',
-        tasks: [],
-        totalProjectTime: 0
-    }];
+    // 🔥 4. NO CREAR PROYECTO DE EJEMPLO - Dejar array vacío si no hay datos
+    // ❌ ELIMINADO: proyectos = [{ id: Date.now(), name: 'Mi Primer Proyecto', ... }];
+    projects = [];
     localStorage.setItem('projects', JSON.stringify(projects));
-    console.log('📝 Proyecto de ejemplo creado');
+    console.log('📝 No hay proyectos. Array vacío.');
     console.groupEnd();
+    
+    // Opcional: mostrar un mensaje al usuario para que cree un proyecto
+    // if (typeof showNotification === 'function') {
+    //     showNotification('No hay proyectos. Crea uno nuevo.', 'info');
+    // }
+    
     return true;
 }
-
-
 // ============================================
 // 🔥 FILTRAR PROYECTOS SEGÚN PERMISOS DEL USUARIO
 // ============================================
@@ -75961,6 +75960,87 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 
+
+// ============================================================
+// 🚀 SISTEMA DE PERSISTENCIA SIMPLE Y FUNCIONAL
+// ============================================================
+(function() {
+    console.log('🚀 Iniciando sistema de persistencia SIMPLE...');
+
+    // 1. safeLoad: SOLO carga desde localStorage, NUNCA desde backend
+    window.safeLoad = function() {
+        console.log('📥 Cargando proyectos desde localStorage...');
+        const stored = localStorage.getItem('projects');
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                if (data && data.length > 0) {
+                    window.projects = data;
+                    window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+                    console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
+                    return Promise.resolve(true);
+                }
+            } catch(e) {
+                console.warn('Error al parsear localStorage:', e);
+            }
+        }
+        // Si no hay datos, crear proyecto de ejemplo
+        window.projects = [{
+            id: Date.now(),
+            name: 'Mi Primer Proyecto',
+            clienteId: localStorage.getItem('clienteId') || 'sin_cliente',
+            tasks: [],
+            totalProjectTime: 0
+        }];
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        console.log('📝 Proyecto de ejemplo creado');
+        return Promise.resolve(true);
+    };
+
+    // 2. safeSave: SOLO guarda en localStorage, NUNCA en backend
+    window.safeSave = function() {
+        console.log('💾 Guardando proyectos en localStorage...');
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        localStorage.setItem('currentProjectIndex', String(window.currentProjectIndex || 0));
+        console.log('✅ Proyectos guardados en localStorage');
+        return Promise.resolve(true);
+    };
+
+    // 3. Desactivar forceRefreshFromBackend (para que no haga nada)
+    window.forceRefreshFromBackend = function() {
+        console.warn('⛔ forceRefreshFromBackend DESACTIVADA');
+        return Promise.resolve();
+    };
+
+    // 4. Desconectar WebSocket de eventos de proyectos (opcional pero seguro)
+    if (window.tiempoRealSocket) {
+        window.tiempoRealSocket.off('project-updated');
+        window.tiempoRealSocket.off('task-created');
+        window.tiempoRealSocket.off('task-updated');
+        window.tiempoRealSocket.off('task-deleted');
+        window.tiempoRealSocket.off('task-moved');
+        console.log('🔌 WebSocket desconectado de eventos de proyectos');
+    }
+
+    // 5. Eliminar cualquier intervalo que pueda sobrescribir
+    let maxId = setInterval(() => {}, 10000);
+    for (let i = 0; i < maxId; i++) {
+        clearInterval(i);
+    }
+    console.log('🧹 Intervalos eliminados');
+
+    // 6. Cargar proyectos AHORA
+    window.safeLoad().then(() => {
+        if (typeof renderProjects === 'function') renderProjects();
+        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        console.log(`✅ Renderizado completado con ${window.projects.length} proyectos`);
+    });
+
+    console.log('🚀 Sistema de persistencia SIMPLE activado');
+    console.log('📌 Los proyectos se guardan SOLO en localStorage');
+    console.log('📌 No se usa backend para guardar/cargar');
+    console.log('📌 WebSocket desconectado de proyectos');
+})();
 
 
 
