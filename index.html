@@ -25164,48 +25164,139 @@ console.log('📌 Solo traduce cuando se abre el modal');
 console.log('📌 Incluye Deep Analysis completo');
 })();
 </script>
-<!-- 📊 REPORTE VIP DASHBOARD - Formato Premium con datos reales -->
 <script>
+// ============================================================
+// 📊 REPORTE VIP DASHBOARD - CON PANEL EVM (sin Riesgos/Acciones)
+// ============================================================
 window.exportDashboardVIPReport = function() {
-    console.log('🏆 Generando Reporte VIP Dashboard...');
-    
+    console.log('🏆 Generando Reporte VIP Dashboard con EVM...');
+
     const lang = localStorage.getItem('preferredLanguage') || 'es';
     const es = lang === 'es';
-    
-    // === DATOS REALES DEL DASHBOARD ===
+
+    // ---- Obtener proyecto y tareas ----
     const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
     const project = typeof projects !== 'undefined' ? projects[projectIndex] : null;
-    
+
     if (!project) {
         alert(es ? '❌ No hay proyecto seleccionado' : '❌ No project selected');
         return;
     }
-    
+
     const tasks = project.tasks || [];
     if (tasks.length === 0) {
         alert(es ? '⚠️ No hay tareas en el proyecto' : '⚠️ No tasks in project');
         return;
     }
-    
-    // Calcular métricas reales del Dashboard
+
+    // ---- Cálculo EVM (idéntico al panel) ----
+    function calculateEVM(tasks) {
+        const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
+        const PV = BAC;
+        const AC = tasks.reduce((s, t) => s + (t.timeLogged || 0), 0);
+        let EV = 0;
+
+        tasks.forEach(t => {
+            const est = t.estimatedTime || 0;
+            const logged = t.timeLogged || 0;
+            const status = t.status || 'pending';
+
+            if (status === 'completed') {
+                EV += est;
+            } else if (status === 'inProgress' || status === 'overdue') {
+                // Si usas 'progress' (0-100), descomenta la línea de abajo
+                // const progress = t.progress || 0;
+                // EV += (est * progress) / 100;
+                EV += Math.min(logged, est);
+            }
+        });
+
+        const SPI = PV > 0 ? EV / PV : 1;
+        const CPI = AC > 0 ? EV / AC : 1;
+        const CV = EV - AC;
+        const SV = EV - PV;
+        const EAC = CPI > 0 ? BAC / CPI : BAC;
+        const ETC = EAC - AC;
+        const VAC = BAC - EAC;
+
+        return { BAC, PV, AC, EV, SPI, CPI, CV, SV, EAC, ETC, VAC };
+    }
+
+    const evm = calculateEVM(tasks);
+
+    // ---- Métricas adicionales ----
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'completed').length;
     const inProgress = tasks.filter(t => t.status === 'inProgress').length;
     const pending = tasks.filter(t => t.status === 'pending').length;
-    const overdue = tasks.filter(t => 
-        t.status === 'overdue' || 
+    const overdue = tasks.filter(t =>
+        t.status === 'overdue' ||
         (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')
     ).length;
-    
-    // 🔧 CORRECCIÓN 1: TOTAL usa project.totalProjectTime (tiempo máximo del proyecto)
+
     const totalEstimated = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
     const totalLogged = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
     const projectTotalTime = Number(project.totalProjectTime || project.totalHours || project.maxHours || project.duration || totalEstimated);
     const remaining = Math.max(0, projectTotalTime - totalLogged);
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
     const timeBudget = projectTotalTime > 0 ? Math.round((totalLogged / projectTotalTime) * 100) : 0;
-    
-    // Horas por asignado (para gráfica de barras)
+
+    // ---- Radar (mismas métricas que el panel) ----
+    let daysElapsed = 0;
+    let velocity = 0;
+    if (tasks.length > 0) {
+        const today = new Date();
+        const dates = tasks.flatMap(t => {
+            const d = [];
+            if (t.startDate) d.push(new Date(t.startDate));
+            if (t.deadline) d.push(new Date(t.deadline));
+            return d;
+        }).filter(d => !isNaN(d));
+        if (dates.length > 0) {
+            const firstDate = new Date(Math.min(...dates));
+            daysElapsed = Math.max(1, Math.ceil((today - firstDate) / (1000 * 60 * 60 * 24)));
+            velocity = (evm.EV > 0 ? evm.EV / daysElapsed : 0) * 7;
+        } else {
+            velocity = 0.1;
+        }
+    }
+    const radarValues = [
+        Math.min(100, evm.BAC > 0 ? (evm.AC / evm.BAC) * 100 : 0),
+        Math.min(100, evm.SPI * 100),
+        Math.min(100, evm.CPI * 100),
+        Math.min(100, total > 0 ? (completed / total) * 100 : 0),
+        Math.min(100, total > 0 ? 100 - (overdue / total) * 100 : 0),
+        Math.min(100, (velocity / 5) * 100)
+    ];
+
+    // ---- Estado del proyecto ----
+    let statusIcon, statusText, statusColor, statusDesc;
+    if (overdue > total * 0.3) {
+        statusIcon = '🔴';
+        statusText = es ? 'CRÍTICO' : 'CRITICAL';
+        statusColor = '#dc2626';
+        statusDesc = es ? 'Requiere intervención inmediata' : 'Requires immediate intervention';
+    } else if (overdue > 0 || timeBudget > 90) {
+        statusIcon = '🟡';
+        statusText = es ? 'EN RIESGO' : 'AT RISK';
+        statusColor = '#f59e0b';
+        statusDesc = es ? 'Requiere monitoreo intensivo' : 'Requires intensive monitoring';
+    } else {
+        statusIcon = '✅';
+        statusText = es ? 'SALUDABLE' : 'HEALTHY';
+        statusColor = '#10b981';
+        statusDesc = es ? 'Proyecto bajo control' : 'Project under control';
+    }
+
+    // ---- Recomendaciones ----
+    const recs = [];
+    if (overdue > 0) recs.push(es ? `🔥 Atender ${overdue} tarea(s) atrasada(s) urgentemente` : `🔥 Address ${overdue} overdue task(s) urgently`);
+    if (timeBudget > 90) recs.push(es ? '⏰ Presupuesto de tiempo casi agotado' : '⏰ Time budget nearly exhausted');
+    if (inProgress > total * 0.4) recs.push(es ? '🔄 Reducir trabajo en progreso (WIP)' : '🔄 Reduce work in progress (WIP)');
+    if (progress < 50 && overdue > 0) recs.push(es ? '📊 Revisar cronograma y prioridades' : '📊 Review schedule and priorities');
+    if (recs.length === 0) recs.push(es ? '✅ Mantener el ritmo actual - excelente gestión' : '✅ Maintain current pace - excellent management');
+
+    // ---- Horas por asignado ----
     const hoursByAssignee = {};
     tasks.forEach(t => {
         const assignee = t.assignee || (es ? 'Sin asignar' : 'Unassigned');
@@ -25213,59 +25304,28 @@ window.exportDashboardVIPReport = function() {
     });
     const assigneeLabels = Object.keys(hoursByAssignee);
     const assigneeData = Object.values(hoursByAssignee);
-    
-    // Estado del proyecto
-    let statusIcon, statusText, statusColor, statusDesc;
-    if (overdue > total * 0.3) {
-        statusIcon = '🔴'; statusText = es ? 'CRÍTICO' : 'CRITICAL'; 
-        statusColor = '#dc2626';
-        statusDesc = es ? 'Requiere intervención inmediata' : 'Requires immediate intervention';
-    } else if (overdue > 0 || timeBudget > 90) {
-        statusIcon = '🟡'; statusText = es ? 'EN RIESGO' : 'AT RISK'; 
-        statusColor = '#f59e0b';
-        statusDesc = es ? 'Requiere monitoreo intensivo' : 'Requires intensive monitoring';
-    } else {
-        statusIcon = '✅'; statusText = es ? 'SALUDABLE' : 'HEALTHY'; 
-        statusColor = '#10b981';
-        statusDesc = es ? 'Proyecto bajo control' : 'Project under control';
-    }
-    
-    // Recomendaciones basadas en datos reales
-    const recs = [];
-    if (overdue > 0) recs.push(es ? `🔥 Atender ${overdue} tarea(s) atrasada(s) urgentemente` : `🔥 Address ${overdue} overdue task(s) urgently`);
-    if (timeBudget > 90) recs.push(es ? '⏰ Presupuesto de tiempo casi agotado' : '⏰ Time budget nearly exhausted');
-    if (inProgress > total * 0.4) recs.push(es ? '🔄 Reducir trabajo en progreso (WIP)' : '🔄 Reduce work in progress (WIP)');
-    if (progress < 50 && overdue > 0) recs.push(es ? '📊 Revisar cronograma y prioridades' : '📊 Review schedule and priorities');
-    if (recs.length === 0) recs.push(es ? '✅ Mantener el ritmo actual - excelente gestión' : '✅ Maintain current pace - excellent management');
-    
-    // 🔧 NUEVO: Generar Riesgos y Acciones Requeridas
-    const risks = [];
-    const actions = [];
-    
-    if (overdue > 0) {
-        risks.push(es ? `⚠️ ${overdue} tarea(s) atrasada(s) detectada(s)` : `⚠️ ${overdue} overdue task(s) detected`);
-        actions.push(es ? `🔥 Atender ${overdue} tarea(s) atrasada(s) urgentemente` : `🔥 Address ${overdue} overdue task(s) urgently`);
-    }
-    if (timeBudget > 90) {
-        risks.push(es ? `⏰ Presupuesto de tiempo al ${timeBudget}% - Casi agotado` : `⏰ Time budget at ${timeBudget}% - Nearly exhausted`);
-        actions.push(es ? `⏱️ Replanificar cronograma del proyecto` : `⏱️ Replan project schedule`);
-    }
-    if (inProgress > total * 0.4) {
-        risks.push(es ? `🔄 Alto WIP: ${inProgress} tareas en progreso simultáneamente` : `🔄 High WIP: ${inProgress} tasks in progress simultaneously`);
-        actions.push(es ? `🔄 Reducir trabajo en progreso para mejorar enfoque` : `🔄 Reduce work in progress to improve focus`);
-    }
-    if (progress < 50 && overdue > 0) {
-        risks.push(es ? `📊 Progreso bajo (${progress}%) con tareas atrasadas` : `📊 Low progress (${progress}%) with overdue tasks`);
-        actions.push(es ? `📊 Revisar cronograma y prioridades` : `📊 Review schedule and priorities`);
-    }
-    if (risks.length === 0) {
-        risks.push(es ? `✅ Sin riesgos críticos identificados` : `✅ No critical risks identified`);
-    }
-    if (actions.length === 0) {
-        actions.push(es ? `✅ Mantener el ritmo actual del proyecto` : `✅ Maintain current project pace`);
-    }
-    
-    // Etiquetas traducidas
+
+    // ---- Datos para gráficas ----
+    const distLabels = [
+        es ? 'Completadas' : 'Completed',
+        es ? 'En Progreso' : 'In Progress',
+        es ? 'Pendientes' : 'Pending',
+        es ? 'Rezagadas' : 'Overdue'
+    ];
+    const distData = [completed, inProgress, pending, overdue];
+    const distColors = ['#10b981', '#0891b2', '#f59e0b', '#dc2626'];
+
+    const weeks = [es ? 'Inicio' : 'Start', 'Sem 1', 'Sem 2', 'Sem 3', es ? 'Actual' : 'Current'];
+    const burndownIdeal = [totalEstimated, totalEstimated * 0.75, totalEstimated * 0.5, totalEstimated * 0.25, 0];
+    const burndownReal = [
+        totalEstimated,
+        Math.max(0, totalEstimated - (totalLogged * 0.25)),
+        Math.max(0, totalEstimated - (totalLogged * 0.5)),
+        Math.max(0, totalEstimated - (totalLogged * 0.75)),
+        remaining
+    ];
+
+    // ---- Etiquetas traducidas ----
     const L = {
         completadas: es ? 'Completadas' : 'Completed',
         enProgreso: es ? 'En Progreso' : 'In Progress',
@@ -25293,32 +25353,32 @@ window.exportDashboardVIPReport = function() {
         recomendaciones: es ? 'Recomendaciones Estratégicas' : 'Strategic Recommendations',
         asignado: es ? 'Asignado' : 'Assignee',
         horasRegistradas: es ? 'Horas Registradas' : 'Logged Hours',
-        // 🔧 NUEVAS etiquetas
-        riesgos: es ? 'Riesgos y Problemas' : 'Risks and Issues',
-        acciones: es ? 'Acciones Requeridas' : 'Required Actions'
+        // EVM
+        panelEVM: es ? 'Panel Ejecutivo EVM' : 'EVM Executive Panel',
+        pv: es ? 'Valor Planificado' : 'Planned Value',
+        ev: es ? 'Valor Ganado' : 'Earned Value',
+        ac: es ? 'Costo Real' : 'Actual Cost',
+        bac: 'BAC',
+        spi: 'SPI',
+        cpi: 'CPI',
+        cv: 'CV',
+        sv: 'SV',
+        eac: 'EAC',
+        etc: 'ETC',
+        vac: 'VAC',
+        radar: es ? 'Rendimiento Multidimensional' : 'Multidimensional Performance',
+        eficiencia: es ? 'Eficiencia' : 'Efficiency',
+        calidad: es ? 'Calidad' : 'Quality',
+        velocidad: es ? 'Velocidad' : 'Velocity'
     };
-    
-    // Datos para gráficas
-    const distLabels = [L.completadas, L.enProgreso, L.pendientes, L.atrasadas];
-    const distData = [completed, inProgress, pending, overdue];
-    const distColors = ['#10b981', '#0891b2', '#f59e0b', '#dc2626'];
-    
-    // Burndown: 5 puntos (Inicio, Sem 1, Sem 2, Sem 3, Actual)
-    const weeks = [L.inicio, `${L.semana} 1`, `${L.semana} 2`, `${L.semana} 3`, 'Actual'];
-    const burndownIdeal = [totalEstimated, totalEstimated * 0.75, totalEstimated * 0.5, totalEstimated * 0.25, 0];
-    const burndownReal = [
-        totalEstimated,
-        Math.max(0, totalEstimated - (totalLogged * 0.25)),
-        Math.max(0, totalEstimated - (totalLogged * 0.5)),
-        Math.max(0, totalEstimated - (totalLogged * 0.75)),
-        remaining
-    ];
-    
+
     const locale = es ? 'es-ES' : 'en-US';
     const fecha = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const hora = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-    
-    // HTML VIP con formato Premium
+
+    // ============================================================
+    // HTML DEL REPORTE
+    // ============================================================
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -25327,7 +25387,7 @@ window.exportDashboardVIPReport = function() {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
-:root { --gold: #d4af37; --gold-light: #f4e4a6; --gold-dark: #b8941f; --dark: #0a0e1a; --dark-2: #131827; --dark-3: #1c2333; --success: #10b981; --danger: #dc2626; --warning: #f59e0b; --accent: #3b82f6; }
+:root { --gold: #d4af37; --gold-light: #f4e4a6; --gold-dark: #b8941f; --dark: #0a0e1a; --dark-2: #131827; --dark-3: #1c2333; --success: #10b981; --danger: #dc2626; --warning: #f59e0b; --accent: #3b82f6; --purple: #8b5cf6; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #050814 0%, #0a0e1a 50%, #131827 100%); padding: 30px 20px; min-height: 100vh; color: #e2e8f0; }
 .container { max-width: 1400px; margin: 0 auto; background: linear-gradient(145deg, #131827 0%, #0a0e1a 100%); border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(212, 175, 55, 0.3); overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); }
@@ -25363,20 +25423,29 @@ body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #05
 .chart-card h3 { font-size: 15px; font-weight: 600; color: var(--gold); margin-bottom: 20px; text-align: center; letter-spacing: 0.5px; }
 .chart-container { display: flex; justify-content: center; align-items: center; min-height: 280px; }
 canvas { max-width: 100%; max-height: 280px; }
+/* Estilos EVM */
+.evm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+.evm-card { background: #1a1a3a; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(139,92,246,0.3); }
+.evm-card .label { font-size: 10px; color: #94a3b8; }
+.evm-card .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+.evm-card .value.blue { color: #3b82f6; }
+.evm-card .value.green { color: #10b981; }
+.evm-card .value.red { color: #ef4444; }
+.evm-card .value.purple { color: #8b5cf6; }
+.evm-indicators { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 25px; }
+.evm-indicator { background: #1a1a3a; border-radius: 10px; padding: 12px 8px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
+.evm-indicator .label { font-size: 9px; color: #94a3b8; }
+.evm-indicator .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+.evm-indicator .value.positive { color: #10b981; }
+.evm-indicator .value.negative { color: #ef4444; }
+.evm-indicator .value.neutral { color: #f59e0b; }
+.evm-indicator .value.purple { color: #8b5cf6; }
+.evm-radar-container { display: flex; justify-content: center; align-items: center; margin-top: 10px; }
+.evm-radar-container canvas { max-height: 300px; max-width: 300px; }
 .recommendations-card { background: linear-gradient(145deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 30px; }
 .recommendations-card h3 { color: var(--gold); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
 .recommendations-card ul { list-style: none; }
 .recommendations-card li { padding: 12px 15px; margin: 8px 0; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid var(--gold); color: #e2e8f0; font-size: 14px; }
-/* 🔧 NUEVO: Estilos para Riesgos y Acciones */
-.risks-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
-.risks-card { background: linear-gradient(145deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(239, 68, 68, 0.3); }
-.risks-card h3 { color: #ef4444; margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
-.risks-card ul { list-style: none; padding: 0; }
-.risks-card li { padding: 12px 15px; margin: 8px 0; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid #ef4444; color: #e2e8f0; font-size: 14px; }
-.actions-card { background: linear-gradient(145deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(59, 130, 246, 0.3); }
-.actions-card h3 { color: #3b82f6; margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
-.actions-card ul { list-style: none; padding: 0; }
-.actions-card li { padding: 12px 15px; margin: 8px 0; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid #3b82f6; color: #e2e8f0; font-size: 14px; }
 .footer { background: linear-gradient(135deg, #0a0e1a 0%, #131827 100%); padding: 30px 60px; text-align: center; color: #64748b; font-size: 12px; border-top: 2px solid var(--gold); }
 .footer .vip-signature { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 3px; }
 .action-buttons { text-align: center; margin-top: 30px; padding: 0 60px 40px; }
@@ -25386,7 +25455,8 @@ canvas { max-width: 100%; max-height: 280px; }
 .btn-close { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
 .btn-close:hover { background: rgba(255,255,255,0.15); }
 @media print { body { padding: 0; background: white; } .action-buttons { display: none; } .container { box-shadow: none; border: none; } }
-@media (max-width: 900px) { .kpi-grid, .charts-row, .risks-actions-grid { grid-template-columns: 1fr; } .header, .content, .status-banner { padding-left: 25px; padding-right: 25px; } }
+@media (max-width: 900px) { .kpi-grid, .charts-row, .evm-grid, .evm-indicators { grid-template-columns: 1fr 1fr; } .header, .content, .status-banner { padding-left: 25px; padding-right: 25px; } }
+@media (max-width: 600px) { .evm-grid, .evm-indicators { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -25414,12 +25484,15 @@ canvas { max-width: 100%; max-height: 280px; }
 </div>
 </div>
 <div class="content">
+<!-- KPI Básicos -->
 <div class="kpi-grid">
 <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${total}</div><div class="kpi-label">${L.totalTareas}</div></div>
 <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value">${completed}</div><div class="kpi-label">${L.completadas}</div></div>
 <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${progress}%</div><div class="kpi-label">${L.progreso}</div></div>
 <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-value">${overdue}</div><div class="kpi-label">${L.atrasadas}</div></div>
 </div>
+
+<!-- Resumen de horas -->
 <div class="section">
 <h2 class="section-title">⏱️ ${L.total} / ${L.estimado} / ${L.registrado} / ${L.restante}</h2>
 <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
@@ -25429,6 +25502,38 @@ canvas { max-width: 100%; max-height: 280px; }
 <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-value">${remaining}h</div><div class="kpi-label">${L.restante}</div></div>
 </div>
 </div>
+
+<!-- ===== SECCIÓN EVM (reemplaza a Riesgos/Acciones) ===== -->
+<div class="section">
+<h2 class="section-title">📊 ${L.panelEVM}</h2>
+
+<!-- PV, EV, AC, BAC -->
+<div class="evm-grid">
+<div class="evm-card"><div class="label">${L.pv}</div><div class="value blue">${evm.PV.toFixed(2)}h</div></div>
+<div class="evm-card"><div class="label">${L.ev}</div><div class="value green">${evm.EV.toFixed(2)}h</div></div>
+<div class="evm-card"><div class="label">${L.ac}</div><div class="value red">${evm.AC.toFixed(2)}h</div></div>
+<div class="evm-card"><div class="label">${L.bac}</div><div class="value purple">${evm.BAC.toFixed(2)}h</div></div>
+</div>
+
+<!-- SPI, CPI, CV, SV, EAC, ETC, VAC -->
+<div class="evm-indicators">
+<div class="evm-indicator"><div class="label">${L.spi}</div><div class="value ${evm.SPI >= 1 ? 'positive' : 'negative'}">${evm.SPI.toFixed(2)}</div></div>
+<div class="evm-indicator"><div class="label">${L.cpi}</div><div class="value ${evm.CPI >= 1 ? 'positive' : 'negative'}">${evm.CPI.toFixed(2)}</div></div>
+<div class="evm-indicator"><div class="label">${L.cv}</div><div class="value ${evm.CV >= 0 ? 'positive' : 'negative'}">${evm.CV >= 0 ? '+' : ''}${evm.CV.toFixed(2)}h</div></div>
+<div class="evm-indicator"><div class="label">${L.sv}</div><div class="value ${evm.SV >= 0 ? 'positive' : 'negative'}">${evm.SV >= 0 ? '+' : ''}${evm.SV.toFixed(2)}h</div></div>
+<div class="evm-indicator"><div class="label">${L.eac}</div><div class="value purple">${evm.EAC.toFixed(2)}h</div></div>
+<div class="evm-indicator"><div class="label">${L.etc}</div><div class="value purple">${evm.ETC.toFixed(2)}h</div></div>
+<div class="evm-indicator"><div class="label">${L.vac}</div><div class="value ${evm.VAC >= 0 ? 'positive' : 'negative'}">${evm.VAC >= 0 ? '+' : ''}${evm.VAC.toFixed(2)}h</div></div>
+</div>
+
+<!-- Radar -->
+<div class="chart-card">
+<h3>${L.radar}</h3>
+<div class="evm-radar-container"><canvas id="radarChart"></canvas></div>
+</div>
+</div>
+
+<!-- Gráficas de rendimiento -->
 <div class="section">
 <h2 class="section-title">📊 ${es ? 'Gráficas de Rendimiento' : 'Performance Charts'}</h2>
 <div class="charts-row">
@@ -25440,30 +25545,15 @@ canvas { max-width: 100%; max-height: 280px; }
 <div class="chart-container"><canvas id="hoursChart"></canvas></div>
 </div>
 </div>
-<!-- 🔧 NUEVA SECCIÓN: Riesgos y Acciones Requeridas -->
-<div class="section">
-<h2 class="section-title">⚠️ ${L.riesgos} / ${L.acciones}</h2>
-<div class="risks-actions-grid">
-<div class="risks-card">
-<h3>🚨 ${L.riesgos}</h3>
-<ul>
-${risks.map(r => `<li>${r}</li>`).join('')}
-</ul>
-</div>
-<div class="actions-card">
-<h3>📋 ${L.acciones}</h3>
-<ul>
-${actions.map(a => `<li>${a}</li>`).join('')}
-</ul>
-</div>
-</div>
-</div>
+
+<!-- Recomendaciones -->
 <div class="section">
 <h2 class="section-title">💡 ${L.recomendaciones}</h2>
 <div class="recommendations-card">
 <ul>${recs.map(r => `<li>${r}</li>`).join('')}</ul>
 </div>
 </div>
+
 </div>
 <div class="footer">
 <div class="vip-signature">★ DASHBOARD 4D EXECUTIVE ★</div>
@@ -25474,57 +25564,103 @@ ${actions.map(a => `<li>${a}</li>`).join('')}
 <button onclick="window.print()" class="btn btn-print">📥 ${L.imprimir}</button>
 <button onclick="window.close()" class="btn btn-close">✕ ${L.cerrar}</button>
 </div>
+
 <script>
+// ---- Configurar Chart.js ----
 Chart.defaults.color = '#e2e8f0';
 Chart.defaults.font.family = "'Inter', sans-serif";
+
+// ---- Gráfica de distribución ----
 new Chart(document.getElementById('distChart'), {
-type: 'doughnut',
-data: {
-labels: ${JSON.stringify(distLabels)},
-datasets: [{ data: ${JSON.stringify(distData)}, backgroundColor: ${JSON.stringify(distColors)}, borderWidth: 0, cutout: '65%' }]
-},
-options: {
-responsive: true, maintainAspectRatio: true,
-plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11, weight: '600' }, padding: 15 } } }
-}
+    type: 'doughnut',
+    data: {
+        labels: ${JSON.stringify(distLabels)},
+        datasets: [{ data: ${JSON.stringify(distData)}, backgroundColor: ${JSON.stringify(distColors)}, borderWidth: 0, cutout: '65%' }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11, weight: '600' }, padding: 15 } } }
+    }
 });
+
+// ---- Burndown ----
 new Chart(document.getElementById('burndownChart'), {
-type: 'line',
-data: {
-labels: ${JSON.stringify(weeks)},
-datasets: [
-{ label: '${L.lineaIdeal}', data: ${JSON.stringify(burndownIdeal)}, borderColor: '#3b82f6', borderWidth: 2, borderDash: [8, 4], fill: false, pointRadius: 0 },
-{ label: '${L.progresoReal}', data: ${JSON.stringify(burndownReal)}, borderColor: '#d4af37', borderWidth: 3, fill: false, pointRadius: 5, pointBackgroundColor: '#d4af37' }
-]
-},
-options: {
-responsive: true, maintainAspectRatio: true,
-plugins: { legend: { labels: { color: '#e2e8f0', font: { weight: '600' } } } },
-scales: {
-y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-x: { ticks: { color: '#e2e8f0' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-}
-}
+    type: 'line',
+    data: {
+        labels: ${JSON.stringify(weeks)},
+        datasets: [
+            { label: '${L.lineaIdeal}', data: ${JSON.stringify(burndownIdeal)}, borderColor: '#3b82f6', borderWidth: 2, borderDash: [8, 4], fill: false, pointRadius: 0 },
+            { label: '${L.progresoReal}', data: ${JSON.stringify(burndownReal)}, borderColor: '#d4af37', borderWidth: 3, fill: false, pointRadius: 5, pointBackgroundColor: '#d4af37' }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { labels: { color: '#e2e8f0', font: { weight: '600' } } } },
+        scales: {
+            y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#e2e8f0' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+        }
+    }
 });
+
+// ---- Horas por asignado ----
 new Chart(document.getElementById('hoursChart'), {
-type: 'bar',
-data: {
-labels: ${JSON.stringify(assigneeLabels)},
-datasets: [{ label: '${L.horasRegistradas}', data: ${JSON.stringify(assigneeData)}, backgroundColor: 'rgba(212, 175, 55, 0.7)', borderColor: '#d4af37', borderWidth: 1, borderRadius: 8 }]
-},
-options: {
-responsive: true, maintainAspectRatio: true,
-plugins: { legend: { labels: { color: '#e2e8f0' } } },
-scales: {
-y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-x: { ticks: { color: '#e2e8f0' }, grid: { display: false } }
-}
-}
+    type: 'bar',
+    data: {
+        labels: ${JSON.stringify(assigneeLabels)},
+        datasets: [{ label: '${L.horasRegistradas}', data: ${JSON.stringify(assigneeData)}, backgroundColor: 'rgba(212, 175, 55, 0.7)', borderColor: '#d4af37', borderWidth: 1, borderRadius: 8 }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { labels: { color: '#e2e8f0' } } },
+        scales: {
+            y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#e2e8f0' }, grid: { display: false } }
+        }
+    }
+});
+
+// ---- Radar EVM ----
+const radarLabels = ['${L.eficiencia}', '${L.spi}', '${L.cpi}', '${L.progreso}', '${L.calidad}', '${L.velocidad}'];
+const radarData = ${JSON.stringify(radarValues)};
+
+new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+        labels: radarLabels,
+        datasets: [{
+            label: '${L.radar}',
+            data: radarData,
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+            borderColor: '#8b5cf6',
+            borderWidth: 2,
+            pointBackgroundColor: '#8b5cf6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            r: {
+                min: 0,
+                max: 100,
+                ticks: { stepSize: 20, color: '#94a3b8', backdropColor: 'transparent', font: { size: 9 } },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                angleLines: { color: 'rgba(255,255,255,0.08)' },
+                pointLabels: { color: '#e2e8f0', font: { size: 10, weight: '600' } }
+            }
+        }
+    }
 });
 <\/script>
 </body>
 </html>`;
-    
+
+    // ---- Abrir ventana de impresión ----
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
         alert(es ? '⚠️ Permite ventanas emergentes' : '⚠️ Allow popups');
@@ -25532,43 +25668,41 @@ x: { ticks: { color: '#e2e8f0' }, grid: { display: false } }
     }
     printWindow.document.write(html);
     printWindow.document.close();
-    console.log('✅ Reporte VIP Dashboard Generado');
+    console.log('✅ Reporte VIP Dashboard con EVM generado correctamente');
 };
 
 // ============================================================
-// FORZAR QUE EL BOTÓN DEL DASHBOARD USE ESTE REPORTE
+// CONECTAR EL BOTÓN DEL DASHBOARD AL REPORTE VIP
 // ============================================================
 (function() {
     'use strict';
-    console.log('🔗 Conectando botón Export PDF del Dashboard al Reporte VIP...');
-    
+    console.log('🔗 Conectando botón Export PDF al Reporte VIP con EVM...');
+
     function conectarBoton() {
         const btn = document.getElementById('exportDashboardPdfBtn');
         if (!btn) return false;
-        
         if (btn.__vipConectado) return true;
-        
-        // Clonar para eliminar eventos anteriores
+
         const nuevoBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(nuevoBtn, btn);
-        
+
         nuevoBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🏆 Click en Export PDF → Reporte VIP Dashboard');
+            console.log('🏆 Click en Export PDF → Reporte VIP con EVM');
             if (typeof window.exportDashboardVIPReport === 'function') {
                 window.exportDashboardVIPReport();
             }
         });
-        
+
         nuevoBtn.__vipConectado = true;
         console.log('✅ Botón Export PDF conectado al Reporte VIP');
         return true;
     }
-    
+
     // Intentar conectar inmediatamente
     if (conectarBoton()) return;
-    
+
     // Intentar periódicamente
     let intentos = 0;
     const intervalo = setInterval(() => {
@@ -25578,20 +25712,19 @@ x: { ticks: { color: '#e2e8f0' }, grid: { display: false } }
         }
         if (intentos >= 30) clearInterval(intervalo);
     }, 500);
-    
-    // MutationObserver para detectar cuando aparece el botón
+
+    // MutationObserver
     const observer = new MutationObserver(() => {
         conectarBoton();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    
+
     // Cambio de idioma
     document.addEventListener('languageChanged', () => {
         setTimeout(conectarBoton, 200);
     });
 })();
 </script>
-
 <!-- 🎯 TRADUCCIÓN MODAL 3D PREMIUM -->
 <script>
 (function() {

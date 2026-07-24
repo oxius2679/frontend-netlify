@@ -1,6 +1,621 @@
+// ============================================================
+// 🚀 PANEL EJECUTIVO - EVM CON RADAR INTERACTIVO Y TOOLTIPS
+// ============================================================
+(function installExecutivePanel() {
+    'use strict';
 
+    // ---- Función de cálculo EVM (corregida para overdue) ----
+    function calculateEVM(tasks) {
+        const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
+        const PV = BAC;
+        const AC = tasks.reduce((s, t) => s + (t.timeLogged || 0), 0);
+        let EV = 0;
 
+        tasks.forEach(t => {
+            const est = t.estimatedTime || 0;
+            const logged = t.timeLogged || 0;
+            const status = t.status || 'pending';
 
+            if (status === 'completed') {
+                EV += est;
+            } else if (status === 'inProgress' || status === 'overdue') {
+                // Si usas 'progress' (0-100), descomenta la línea de abajo
+                // const progress = t.progress || 0;
+                // EV += (est * progress) / 100;
+                EV += Math.min(logged, est);
+            }
+        });
+
+        const SPI = PV > 0 ? EV / PV : 1;
+        const CPI = AC > 0 ? EV / AC : 1;
+        const CV = EV - AC;
+        const SV = EV - PV;
+        const EAC = CPI > 0 ? BAC / CPI : BAC;
+        const ETC = EAC - AC;
+        const VAC = BAC - EAC;
+
+        return { BAC, PV, AC, EV, SPI, CPI, CV, SV, EAC, ETC, VAC };
+    }
+
+    // ---- Obtener datos del proyecto ----
+    function getProjectData() {
+        const project = projects[currentProjectIndex];
+        if (!project) return null;
+        const tasks = project.tasks || [];
+        const evm = calculateEVM(tasks);
+
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === 'completed').length;
+        const overdue = tasks.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const criticalTasks = tasks
+            .filter(t => t.status !== 'completed' && t.priority === 'alta' && t.deadline)
+            .map(t => ({ ...t, deadlineDate: new Date(t.deadline) }))
+            .filter(t => t.deadlineDate >= today)
+            .sort((a, b) => a.deadlineDate - b.deadlineDate)
+            .slice(0, 5);
+
+        let daysElapsed = 0;
+        let velocity = 0;
+        if (tasks.length > 0) {
+            const dates = tasks.flatMap(t => {
+                const d = [];
+                if (t.startDate) d.push(new Date(t.startDate));
+                if (t.deadline) d.push(new Date(t.deadline));
+                return d;
+            }).filter(d => !isNaN(d));
+            if (dates.length > 0) {
+                const firstDate = new Date(Math.min(...dates));
+                daysElapsed = Math.max(1, Math.ceil((today - firstDate) / (1000 * 60 * 60 * 24)));
+                velocity = (evm.EV > 0 ? evm.EV / daysElapsed : 0) * 7;
+            } else {
+                velocity = 0.1;
+            }
+        }
+        const remainingValue = evm.BAC - evm.EV;
+        const weeksRemaining = velocity > 0 ? (remainingValue / velocity) : 0;
+        const daysRemaining = Math.ceil(weeksRemaining * 7);
+        const finishDate = new Date();
+        finishDate.setDate(finishDate.getDate() + daysRemaining);
+
+        // Métricas para el radar (valores en %)
+        const radarMetrics = ['Eficiencia', 'SPI', 'CPI', 'Progreso', 'Calidad', 'Velocidad'];
+        const radarValues = [
+            Math.min(100, evm.BAC > 0 ? (evm.AC / evm.BAC) * 100 : 0),
+            Math.min(100, evm.SPI * 100),
+            Math.min(100, evm.CPI * 100),
+            Math.min(100, total > 0 ? (completed / total) * 100 : 0),
+            Math.min(100, total > 0 ? 100 - (overdue / total) * 100 : 0),
+            Math.min(100, (velocity / 5) * 100)
+        ];
+
+        const healthScore = Math.min(100, Math.round(((evm.SPI + evm.CPI) / 2) * 100));
+
+        return {
+            ...evm,
+            total,
+            completed,
+            overdue,
+            healthScore,
+            criticalTasks,
+            finishDate,
+            daysRemaining,
+            radarMetrics,
+            radarValues,
+            projectName: project.name
+        };
+    }
+
+    // ---- Dibujar radar con tooltips ----
+    function drawRadar(canvasId, data) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const size = Math.min(rect.width, rect.height) * 0.85;
+        canvas.width = size;
+        canvas.height = size;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = canvas.width / 2 - 25;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const n = data.radarMetrics.length;
+        const angles = data.radarValues.map((_, i) => (i / n) * 2 * Math.PI - Math.PI / 2);
+
+        // Círculos concéntricos
+        for (let level = 1; level <= 5; level++) {
+            const r = (level / 5) * radius;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // Líneas radiales
+        for (let i = 0; i < n; i++) {
+            const angle = angles[i];
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // Etiquetas (traducidas)
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const metricNames = {
+            'Eficiencia': lang === 'es' ? 'Eficiencia' : 'Efficiency',
+            'SPI': 'SPI',
+            'CPI': 'CPI',
+            'Progreso': lang === 'es' ? 'Progreso' : 'Progress',
+            'Calidad': lang === 'es' ? 'Calidad' : 'Quality',
+            'Velocidad': lang === 'es' ? 'Velocidad' : 'Velocity'
+        };
+        const labels = data.radarMetrics.map(m => metricNames[m] || m);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < n; i++) {
+            const angle = angles[i];
+            const labelR = radius + 14;
+            let lx = cx + labelR * Math.cos(angle);
+            let ly = cy + labelR * Math.sin(angle);
+            if (lx < 10) lx = 10;
+            if (lx > canvas.width - 10) lx = canvas.width - 10;
+            if (ly < 10) ly = 10;
+            if (ly > canvas.height - 10) ly = canvas.height - 10;
+            ctx.fillText(labels[i], lx, ly);
+        }
+
+        // Polígono
+        const points = [];
+        for (let i = 0; i < n; i++) {
+            const val = Math.min(100, data.radarValues[i]) / 100;
+            const r = val * radius;
+            const angle = angles[i];
+            points.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+        }
+
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.2)';
+        ctx.fill();
+
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Puntos
+        points.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#8b5cf6';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+
+        // Promedio central
+        const avg = data.radarValues.reduce((a, b) => a + b, 0) / data.radarValues.length;
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(Math.round(avg) + '%', cx, cy);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.fillText(lang === 'es' ? 'PROMEDIO' : 'AVG', cx, cy + 18);
+
+        // ---- TOOLTIP INTERACTIVO ----
+        // Eliminar tooltip anterior si existe
+        const oldTooltip = document.getElementById('radarTooltip');
+        if (oldTooltip) oldTooltip.remove();
+
+        // Crear tooltip
+        const tooltip = document.createElement('div');
+        tooltip.id = 'radarTooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #e2e8f0;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: Inter, sans-serif;
+            pointer-events: none;
+            display: none;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            transition: opacity 0.15s;
+        `;
+        document.body.appendChild(tooltip);
+
+        // Guardar datos en el canvas para el mousemove
+        canvas._tooltipData = {
+            points: points.map((p, i) => ({
+                x: p.x,
+                y: p.y,
+                label: labels[i],
+                value: data.radarValues[i]
+            })),
+            tooltip: tooltip
+        };
+
+        // Función para actualizar tooltip
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const data = canvas._tooltipData;
+            if (!data) return;
+
+            let found = false;
+            let minDist = 20; // radio de detección
+            let closest = null;
+
+            for (const pt of data.points) {
+                const dx = mouseX - pt.x;
+                const dy = mouseY - pt.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = pt;
+                    found = true;
+                }
+            }
+
+            if (found && closest) {
+                tooltip.style.display = 'block';
+                tooltip.textContent = `${closest.label}: ${closest.value.toFixed(1)}%`;
+                // Posicionar tooltip cerca del cursor
+                let left = e.clientX + 12;
+                let top = e.clientY - 10;
+                // Ajustar si se sale de la pantalla
+                const tw = tooltip.offsetWidth || 120;
+                const th = tooltip.offsetHeight || 40;
+                if (left + tw > window.innerWidth) left = e.clientX - tw - 12;
+                if (top + th > window.innerHeight) top = window.innerHeight - th - 10;
+                if (top < 10) top = 10;
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+            } else {
+                tooltip.style.display = 'none';
+            }
+        }
+
+        function handleMouseLeave() {
+            const data = canvas._tooltipData;
+            if (data && data.tooltip) {
+                data.tooltip.style.display = 'none';
+            }
+        }
+
+        // Eliminar listeners anteriores (si los hay)
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseleave', handleMouseLeave);
+
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseleave', handleMouseLeave);
+
+        // Guardar referencia para limpieza
+        canvas._tooltipCleanup = () => {
+            canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('mouseleave', handleMouseLeave);
+            const t = document.getElementById('radarTooltip');
+            if (t) t.remove();
+        };
+    }
+
+    // ---- Instalar el panel en el dashboard ----
+    function installPanel() {
+        const dashboard = document.getElementById('dashboardView');
+        if (!dashboard || !dashboard.classList.contains('active')) {
+            console.log('⏳ Dashboard no activo, esperando...');
+            return false;
+        }
+
+        let target = dashboard.querySelector('div[style*="grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;"]');
+        if (!target) {
+            const grids = dashboard.querySelectorAll('div[style*="display: grid; grid-template-columns: 1fr 1fr;"]');
+            if (grids.length) target = grids[0];
+        }
+        if (!target) {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;';
+            dashboard.prepend(wrapper);
+            target = wrapper;
+        }
+
+        const data = getProjectData();
+        if (!data) {
+            console.warn('⚠️ No hay datos del proyecto.');
+            return false;
+        }
+
+        console.log('📊 Panel EVM - valores calculados:', {
+            BAC: data.BAC, PV: data.PV, AC: data.AC, EV: data.EV,
+            SPI: data.SPI, CPI: data.CPI, CV: data.CV, SV: data.SV,
+            EAC: data.EAC, ETC: data.ETC, VAC: data.VAC
+        });
+
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const es = lang === 'es';
+        const T = {
+            panel: es ? 'Panel de Control EVM' : 'EVM Control Panel',
+            health: es ? 'Salud' : 'Health',
+            spi: 'SPI',
+            cpi: 'CPI',
+            pv: es ? 'Valor Planificado' : 'Planned Value',
+            ev: es ? 'Valor Ganado' : 'Earned Value',
+            ac: es ? 'Costo Real' : 'Actual Cost',
+            bac: 'BAC',
+            cv: 'CV',
+            sv: 'SV',
+            eac: 'EAC',
+            etc: 'ETC',
+            vac: 'VAC',
+            critical: es ? 'Tareas Críticas' : 'Critical Tasks',
+            noCritical: es ? '✅ No hay tareas críticas' : '✅ No critical tasks',
+            prediction: es ? 'Predicción de Finalización' : 'Completion Forecast',
+            finishDate: es ? 'Fecha estimada' : 'Estimated date',
+            confidence: es ? 'Confianza' : 'Confidence',
+            days: es ? 'días' : 'days',
+            radar: es ? 'Rendimiento Multidimensional' : 'Multidimensional Performance',
+            update: es ? 'Actualizar' : 'Update',
+            total: es ? 'Total tareas' : 'Total tasks',
+            completedLabel: es ? 'Completadas' : 'Completed',
+            overdueLabel: es ? 'Rezagadas' : 'Overdue',
+        };
+
+        const healthColor = data.healthScore >= 80 ? '#10b981' : data.healthScore >= 60 ? '#3b82f6' : data.healthScore >= 40 ? '#f59e0b' : '#ef4444';
+
+        const html = `
+            <div style="grid-column: span 2; background: linear-gradient(145deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; border: 1px solid rgba(139,92,246,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+                
+                <!-- TÍTULO + BOTÓN ACTUALIZAR -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <span style="background: linear-gradient(135deg, #8b5cf6, #ec4899); width: 8px; height: 30px; border-radius: 4px; display: inline-block;"></span>
+                        ${T.panel}
+                        <span style="font-size: 13px; color: #94a3b8; font-weight: 400; margin-left: 10px;">${data.projectName}</span>
+                    </h3>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <button id="execPanelUpdateBtn" style="background: rgba(139,92,246,0.2); border: 1px solid #8b5cf6; color: #a78bfa; padding: 6px 16px; border-radius: 40px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;"
+                                onmouseover="this.style.background='rgba(139,92,246,0.3)'" onmouseout="this.style.background='rgba(139,92,246,0.2)'">
+                            🔄 ${T.update}
+                        </button>
+                        <span style="background: ${healthColor}20; color: ${healthColor}; padding: 4px 16px; border-radius: 40px; font-size: 12px; font-weight: 600; border: 1px solid ${healthColor};">
+                            ${T.health}: ${data.healthScore}%
+                        </span>
+                        <span style="color: #94a3b8; font-size: 11px;">🔄 ${new Date().toLocaleTimeString(es ? 'es-ES' : 'en-US')}</span>
+                    </div>
+                </div>
+
+                <!-- FILA DE MÉTRICAS EVM (PV, EV, AC, BAC) -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(59,130,246,0.3);">
+                        <div style="color: #94a3b8; font-size: 10px;">${T.pv}</div>
+                        <div style="font-size: 22px; font-weight: 700; color: #3b82f6;">${data.PV.toFixed(2)}h</div>
+                    </div>
+                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(16,185,129,0.3);">
+                        <div style="color: #94a3b8; font-size: 10px;">${T.ev}</div>
+                        <div style="font-size: 22px; font-weight: 700; color: #10b981;">${data.EV.toFixed(2)}h</div>
+                    </div>
+                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(239,68,68,0.3);">
+                        <div style="color: #94a3b8; font-size: 10px;">${T.ac}</div>
+                        <div style="font-size: 22px; font-weight: 700; color: #ef4444;">${data.AC.toFixed(2)}h</div>
+                    </div>
+                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(139,92,246,0.3);">
+                        <div style="color: #94a3b8; font-size: 10px;">${T.bac}</div>
+                        <div style="font-size: 22px; font-weight: 700; color: #8b5cf6;">${data.BAC.toFixed(2)}h</div>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO PRINCIPAL: Radar + SPI/CPI + Críticas + Predicción -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    
+                    <!-- COLUMNA IZQUIERDA: Radar + SPI/CPI + CV/SV -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Radar -->
+                        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border: 1px solid rgba(139,92,246,0.2);">
+                            <h4 style="color: #94a3b8; margin: 0 0 10px 0; font-size: 13px; text-align: center;">${T.radar}</h4>
+                            <div style="position: relative; width: 100%; max-width: 340px; margin: 0 auto; aspect-ratio: 1/1;">
+                                <canvas id="execRadarCanvas" style="width: 100%; height: 100%; display: block; cursor: default;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- SPI, CPI, CV, SV -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                            <div style="background: ${data.SPI >= 1 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.spi}</div>
+                                <div style="font-size: 20px; font-weight: 700; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI.toFixed(2)}</div>
+                                <div style="font-size: 9px; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI >= 1 ? '✅' : '⚠️'}</div>
+                            </div>
+                            <div style="background: ${data.CPI >= 1 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.cpi}</div>
+                                <div style="font-size: 20px; font-weight: 700; color: ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">${data.CPI.toFixed(2)}</div>
+                                <div style="font-size: 9px; color: ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">${data.CPI >= 1 ? '✅' : '⚠️'}</div>
+                            </div>
+                            <div style="background: rgba(59,130,246,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #3b82f6;">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.cv}</div>
+                                <div style="font-size: 20px; font-weight: 700; color: ${data.CV >= 0 ? '#10b981' : '#ef4444'};">${data.CV >= 0 ? '+' : ''}${data.CV.toFixed(2)}h</div>
+                                <div style="font-size: 9px; color: ${data.CV >= 0 ? '#10b981' : '#ef4444'};">${data.CV >= 0 ? '✅' : '⚠️'}</div>
+                            </div>
+                            <div style="background: rgba(245,158,11,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #f59e0b;">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.sv}</div>
+                                <div style="font-size: 20px; font-weight: 700; color: ${data.SV >= 0 ? '#10b981' : '#ef4444'};">${data.SV >= 0 ? '+' : ''}${data.SV.toFixed(2)}h</div>
+                                <div style="font-size: 9px; color: ${data.SV >= 0 ? '#10b981' : '#ef4444'};">${data.SV >= 0 ? '✅' : '⚠️'}</div>
+                            </div>
+                        </div>
+
+                        <!-- EAC, ETC, VAC -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                            <div style="background: rgba(139,92,246,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #8b5cf6;">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.eac}</div>
+                                <div style="font-size: 18px; font-weight: 700; color: #8b5cf6;">${data.EAC.toFixed(2)}h</div>
+                            </div>
+                            <div style="background: rgba(16,185,129,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #10b981;">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.etc}</div>
+                                <div style="font-size: 18px; font-weight: 700; color: #10b981;">${data.ETC.toFixed(2)}h</div>
+                            </div>
+                            <div style="background: ${data.VAC >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.VAC >= 0 ? '#10b981' : '#ef4444'};">
+                                <div style="color: #94a3b8; font-size: 9px;">${T.vac}</div>
+                                <div style="font-size: 18px; font-weight: 700; color: ${data.VAC >= 0 ? '#10b981' : '#ef4444'};">${data.VAC >= 0 ? '+' : ''}${data.VAC.toFixed(2)}h</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: Críticas + Predicción -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Tareas Críticas -->
+                        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border: 1px solid rgba(239,68,68,0.3); flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h4 style="color: #94a3b8; margin: 0; font-size: 13px;">${T.critical}</h4>
+                                <span style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 2px 12px; border-radius: 20px; font-size: 12px;">${data.criticalTasks.length}</span>
+                            </div>
+                            ${data.criticalTasks.length ? `
+                                <div style="max-height: 160px; overflow-y: auto;">
+                                    ${data.criticalTasks.map(t => {
+                                        const days = Math.ceil((t.deadlineDate - new Date()) / (1000 * 60 * 60 * 24));
+                                        return `
+                                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                <div>
+                                                    <div style="color: #e2e8f0; font-size: 12px; font-weight: 500;">${t.name}</div>
+                                                    <div style="color: #94a3b8; font-size: 10px;">${t.assignee || 'Sin asignar'}</div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="color: ${days <= 3 ? '#ef4444' : days <= 7 ? '#f59e0b' : '#10b981'}; font-size: 13px; font-weight: 700;">${days}d</div>
+                                                    <div style="color: #94a3b8; font-size: 9px;">${t.deadlineDate.toLocaleDateString(es ? 'es-ES' : 'en-US')}</div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            ` : `
+                                <div style="text-align: center; padding: 20px 0; color: #10b981; font-size: 14px;">${T.noCritical}</div>
+                            `}
+                        </div>
+
+                        <!-- Predicción -->
+                        <div style="background: linear-gradient(135deg, #1a1a3a, #0f172a); border-radius: 16px; padding: 20px; text-align: center; border: 1px solid rgba(16,185,129,0.3); position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: radial-gradient(circle, rgba(16,185,129,0.1), transparent); border-radius: 50%;"></div>
+                            <h4 style="color: #94a3b8; margin: 0 0 8px 0; font-size: 13px; position: relative; z-index: 1;">${T.prediction}</h4>
+                            <div style="font-size: 28px; font-weight: 700; color: #10b981; position: relative; z-index: 1;">
+                                ${data.finishDate.toLocaleDateString(es ? 'es-ES' : 'en-US')}
+                            </div>
+                            <div style="color: #94a3b8; font-size: 13px; position: relative; z-index: 1;">
+                                ${data.daysRemaining} ${T.days} ${es ? 'restantes' : 'remaining'}
+                            </div>
+                            <div style="margin-top: 10px; background: rgba(16,185,129,0.15); border-radius: 40px; padding: 4px 16px; display: inline-block; font-size: 12px; color: #34d399; border: 1px solid rgba(16,185,129,0.3); position: relative; z-index: 1;">
+                                ${T.confidence}: ${Math.min(90, data.healthScore)}%
+                            </div>
+                            <div style="margin-top: 8px; font-size: 11px; color: #64748b; position: relative; z-index: 1;">
+                                📊 ${T.total}: ${data.total} | ${T.completedLabel}: ${data.completed} | ${T.overdueLabel}: ${data.overdue}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        target.innerHTML = html;
+
+        // Dibujar radar (con tooltips)
+        setTimeout(() => {
+            drawRadar('execRadarCanvas', data);
+        }, 200);
+
+        // Conectar botón de actualizar
+        const updateBtn = document.getElementById('execPanelUpdateBtn');
+        if (updateBtn) {
+            updateBtn.onclick = () => {
+                console.log('🔄 Actualizando panel ejecutivo...');
+                // Limpiar tooltip anterior
+                const oldTooltip = document.getElementById('radarTooltip');
+                if (oldTooltip) oldTooltip.remove();
+                installPanel();
+            };
+        }
+
+        console.log('✅ Panel ejecutivo instalado correctamente.');
+        return true;
+    }
+
+    // ---- Instalación inicial ----
+    let installed = installPanel();
+
+    // ---- Observer para reinstalar si el contenido cambia ----
+    if (!installed) {
+        let retries = 0;
+        const retryInterval = setInterval(() => {
+            if (document.getElementById('dashboardView')?.classList.contains('active')) {
+                if (installPanel()) {
+                    clearInterval(retryInterval);
+                }
+            }
+            retries++;
+            if (retries > 20) clearInterval(retryInterval);
+        }, 500);
+    }
+
+    // ---- Observer de mutación del dashboard ----
+    const dashboard = document.getElementById('dashboardView');
+    if (dashboard) {
+        const observer = new MutationObserver(() => {
+            if (!dashboard.querySelector('#execRadarCanvas')) {
+                console.log('🔄 Panel detectado como eliminado, reinstalando...');
+                // Limpiar tooltip residual
+                const oldTooltip = document.getElementById('radarTooltip');
+                if (oldTooltip) oldTooltip.remove();
+                installPanel();
+            }
+        });
+        observer.observe(dashboard, { childList: true, subtree: true });
+        window._execPanelObserver = observer;
+    }
+
+    // ---- Evento de cambio de idioma ----
+    document.addEventListener('languageChanged', () => {
+        console.log('🌐 Idioma cambiado, reinstalando panel...');
+        const oldTooltip = document.getElementById('radarTooltip');
+        if (oldTooltip) oldTooltip.remove();
+        setTimeout(installPanel, 300);
+    });
+
+    // ---- Evento de cambio de proyecto ----
+    document.addEventListener('projectChanged', () => {
+        console.log('📁 Proyecto cambiado, reinstalando panel...');
+        const oldTooltip = document.getElementById('radarTooltip');
+        if (oldTooltip) oldTooltip.remove();
+        setTimeout(installPanel, 300);
+    });
+
+    console.log('✅ Panel Ejecutivo EVM con radar interactivo cargado.');
+})();
 
 
 
@@ -22400,24 +23015,7 @@ function renderDashboard(container) {
         </div>
       </div>
 
-      <!-- RIESGOS Y ACCIONES -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf;">
-          <h3>⚠️ Riesgos y Problemas</h3>
-          <div id="risksContainer" style="max-height: 250px; overflow-y: auto;"></div>
-          <button id="addRiskBtn" style="margin-top: 10px; background: #ef4444; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer;">+ Agregar Riesgo</button>
-        </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf;">
-          <h3>📋 Acciones Requeridas</h3>
-          <ul id="requiredActions" style="list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto;"></ul>
-          <button id="addActionBtn" style="margin-top: 10px; background: #3b82f6; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer;">+ Agregar Acción</button>
-        </div>
-      </div>
-
-      <div id="modeHelpMessage" style="margin-top: 20px; padding: 15px; background: rgba(139,92,246,0.1); border-left: 4px solid #8b5cf6; border-radius: 8px;">
-        En modo ${modeText}, se muestra una visión completa del proyecto: avance, riesgos y control de tiempo.
-      </div>
-    </div>
+     
   `;
 
   container.innerHTML = html;
