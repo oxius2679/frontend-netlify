@@ -25166,7 +25166,7 @@ console.log('📌 Incluye Deep Analysis completo');
 </script>
 <script>
 // ============================================================
-// 📊 REPORTE VIP DASHBOARD - CON PANEL EVM (sin Riesgos/Acciones)
+// 📊 REPORTE VIP DASHBOARD - CON PANEL EVM (cálculo corregido)
 // ============================================================
 window.exportDashboardVIPReport = function() {
     console.log('🏆 Generando Reporte VIP Dashboard con EVM...');
@@ -25189,7 +25189,7 @@ window.exportDashboardVIPReport = function() {
         return;
     }
 
-    // ---- Cálculo EVM (idéntico al panel) ----
+    // ---- Cálculo EVM (CORREGIDO: usa 'progress' si existe) ----
     function calculateEVM(tasks) {
         const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
         const PV = BAC;
@@ -25204,11 +25204,18 @@ window.exportDashboardVIPReport = function() {
             if (status === 'completed') {
                 EV += est;
             } else if (status === 'inProgress' || status === 'overdue') {
-                // Si usas 'progress' (0-100), descomenta la línea de abajo
-                // const progress = t.progress || 0;
-                // EV += (est * progress) / 100;
-                EV += Math.min(logged, est);
+                // 🔥 NUEVA LÓGICA: usa 'progress' si existe (nombre común)
+                // Si tu sistema usa otro campo, ajústalo aquí (ej. 'completion', 'percentComplete')
+                const progress = t.progress || t.completion || t.percentComplete || 0;
+                if (progress > 0) {
+                    // EV basado en porcentaje de avance
+                    EV += (est * progress) / 100;
+                } else {
+                    // Fallback: si no hay progreso, usa horas registradas (pero no supera el estimado)
+                    EV += Math.min(logged, est);
+                }
             }
+            // pending y otros estados: EV = 0 (no aportan)
         });
 
         const SPI = PV > 0 ? EV / PV : 1;
@@ -25377,7 +25384,7 @@ window.exportDashboardVIPReport = function() {
     const hora = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
     // ============================================================
-    // HTML DEL REPORTE
+    // HTML DEL REPORTE (con sección EVM)
     // ============================================================
     const html = `<!DOCTYPE html>
 <html>
@@ -25668,7 +25675,7 @@ new Chart(document.getElementById('radarChart'), {
     }
     printWindow.document.write(html);
     printWindow.document.close();
-    console.log('✅ Reporte VIP Dashboard con EVM generado correctamente');
+    console.log('✅ Reporte VIP Dashboard con EVM corregido generado');
 };
 
 // ============================================================
@@ -25700,10 +25707,8 @@ new Chart(document.getElementById('radarChart'), {
         return true;
     }
 
-    // Intentar conectar inmediatamente
     if (conectarBoton()) return;
 
-    // Intentar periódicamente
     let intentos = 0;
     const intervalo = setInterval(() => {
         intentos++;
@@ -25713,13 +25718,11 @@ new Chart(document.getElementById('radarChart'), {
         if (intentos >= 30) clearInterval(intervalo);
     }, 500);
 
-    // MutationObserver
     const observer = new MutationObserver(() => {
         conectarBoton();
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Cambio de idioma
     document.addEventListener('languageChanged', () => {
         setTimeout(conectarBoton, 200);
     });
