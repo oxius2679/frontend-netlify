@@ -23289,9 +23289,9 @@ function renderScrum(container) {
 
 
 
-// ========== SECCIÓN DASHBOARD (CORREGIDA - FONDO OSCURO EJECUTIVO) ==========
+// ========== SECCIÓN DASHBOARD (CON ESTILOS Y TRADUCCIONES) ==========
 function renderDashboard(container) {
-  // ========== FUNCIONES AUXILIARES INTERNAS (no interfieren con el exterior) ==========
+  // ========== FUNCIONES AUXILIARES INTERNAS ==========
   function formatDate(date) {
     if (!(date instanceof Date) || isNaN(date)) return '--/--/----';
     const day = String(date.getDate()).padStart(2, '0');
@@ -23339,7 +23339,7 @@ function renderDashboard(container) {
     if (!tasks || !tasks.length) return [];
     const grouped = {};
     tasks.forEach(task => {
-      const assignee = task.assignee || 'Sin asignar';
+      const assignee = task.assignee || (window.t ? window.t('Sin asignar') : 'Sin asignar');
       const hours = task.timeLogged || 0;
       if (!grouped[assignee]) {
         grouped[assignee] = {
@@ -23369,56 +23369,7 @@ function renderDashboard(container) {
       window.loadDashboardProjectDataExternal();
       return;
     }
-    const risksDiv = document.getElementById('risksContainer');
-    const actionsUl = document.getElementById('requiredActions');
-    if (risksDiv && risksDiv.children.length === 0) {
-      risksDiv.innerHTML = `
-        <div style="background: rgba(10,22,40,0.6); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;">
-          <span>⚠️ Riesgo de ejemplo: Revisar hitos</span>
-          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
-        </div>
-      `;
-    }
-    if (actionsUl && actionsUl.children.length === 0) {
-      actionsUl.innerHTML = `
-        <li style="background: rgba(10,22,40,0.6); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;">
-          <span>📌 Reunión semanal</span>
-          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
-        </li>
-      `;
-    }
-  }
-
-  function agregarRiesgo() {
-    const riesgo = prompt('Describe el riesgo o problema:');
-    if (riesgo) {
-      const container = document.getElementById('risksContainer');
-      if (container) {
-        const div = document.createElement('div');
-        div.style.cssText = 'background: rgba(10,22,40,0.6); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;';
-        div.innerHTML = `
-          <span>⚠️ ${escapeHtml(riesgo)}</span>
-          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
-        `;
-        container.appendChild(div);
-      }
-    }
-  }
-
-  function agregarAccion() {
-    const accion = prompt('Describe la acción requerida:');
-    if (accion) {
-      const container = document.getElementById('requiredActions');
-      if (container) {
-        const li = document.createElement('li');
-        li.style.cssText = 'background: rgba(10,22,40,0.6); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;';
-        li.innerHTML = `
-          <span>📌 ${escapeHtml(accion)}</span>
-          <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
-        `;
-        container.appendChild(li);
-      }
-    }
+    // Si no hay datos, no hacemos nada (los botones de agregar ya están)
   }
 
   function escapeHtml(str) {
@@ -23431,16 +23382,54 @@ function renderDashboard(container) {
     });
   }
 
-  // ========== INICIO DEL RENDER (código original) ==========
-  if (typeof Chart === 'undefined') {
-    console.log('Cargando Chart.js...');
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-    script.onload = () => renderDashboard(container);
-    document.head.appendChild(script);
-    return;
-  }
+  // ========== OBTENER IDIOMA ==========
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const es = lang === 'es';
 
+  // ========== TRADUCCIONES ==========
+  const t = {
+    project: es ? 'Proyecto' : 'Project',
+    fullView: es ? 'Vista Completa del Proyecto · Control Ejecutivo' : 'Complete Project View · Executive Control',
+    onTime: es ? 'En tiempo' : 'On time',
+    behindSchedule: es ? 'A destiempo' : 'Behind schedule',
+    mode: es ? 'Modo' : 'Mode',
+    exportPDF: es ? '📄 Exportar PDF' : '📄 Export PDF',
+    startDate: es ? 'Fecha Inicio' : 'Start Date',
+    endDate: es ? 'Fecha Fin' : 'End Date',
+    days: es ? 'días' : 'days',
+    progress: es ? 'Avance' : 'Progress',
+    total: es ? 'Total' : 'Total',
+    completed: es ? 'Completadas' : 'Completed',
+    inProgress: es ? 'En Progreso' : 'In Progress',
+    pending: es ? 'Pendientes' : 'Pending',
+    overdue: es ? 'Rezagadas' : 'Overdue',
+    budgetTime: es ? 'Presupuesto en tiempo' : 'Time Budget',
+    estimated: es ? 'Estimado' : 'Estimated',
+    logged: es ? 'Registrado' : 'Logged',
+    remaining: es ? 'Restante' : 'Remaining',
+    taskDistribution: es ? '📊 Distribución de Tareas' : '📊 Task Distribution',
+    burndown: es ? '📉 Burndown en Horas' : '📉 Burndown in Hours',
+    hoursTracking: es ? '⏱️ Seguimiento de Horas' : '⏱️ Hours Tracking',
+    assignee: es ? 'Asignado' : 'Assignee',
+    projectLabel: es ? 'Proyecto' : 'Project',
+    hours: es ? 'Horas' : 'Hours',
+    avgPerDay: es ? 'Promedio/día' : 'Avg/day',
+    lastRecord: es ? 'Último registro' : 'Last record',
+    noData: es ? 'No hay datos' : 'No data',
+    idealLine: es ? 'Línea Ideal' : 'Ideal Line',
+    actualProgress: es ? 'Progreso Real' : 'Actual Progress',
+    hybrid: es ? 'Híbrido' : 'Hybrid',
+    agile: es ? 'Ágil' : 'Agile',
+    traditional: es ? 'Tradicional' : 'Traditional',
+    start: es ? 'Inicio' : 'Start',
+    week1: es ? 'Sem 1' : 'Wk 1',
+    week2: es ? 'Sem 2' : 'Wk 2',
+    week3: es ? 'Sem 3' : 'Wk 3',
+    week4: es ? 'Sem 4' : 'Wk 4',
+    hoursWorked: es ? 'Horas trabajadas' : 'Hours worked',
+  };
+
+  // ========== OBTENER DATOS DEL PROYECTO ==========
   if (!container) {
     container = document.getElementById('dashboardView');
     if (!container) {
@@ -23456,16 +23445,12 @@ function renderDashboard(container) {
   }
 
   const tasks = project.tasks || [];
-  const totalTasks = tasks.length;
-  let completed = 0;
-  let inProgress = 0;
-  let pending = 0;
-  let overdue = 0;
-  
+  let totalTasks = tasks.length;
+  let completed = 0, inProgress = 0, pending = 0, overdue = 0;
+
   tasks.forEach(t => {
     const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
                        (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'));
-    
     if (t.status === 'completed') {
       completed++;
     } else if (esRezagada) {
@@ -23493,12 +23478,12 @@ function renderDashboard(container) {
     : 0;
 
   const isOnTime = projectTotalTime >= totalLogged;
-  const statusText = isOnTime ? 'En tiempo' : 'A destiempo';
+  const statusText = isOnTime ? t.onTime : t.behindSchedule;
   const statusColor = isOnTime ? '#10b981' : '#ef4444';
 
   const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
-  const modeNames = { agile: 'Ágil', traditional: 'Tradicional', hybrid: 'Híbrido' };
-  const modeText = modeNames[currentMode] || 'Híbrido';
+  const modeNames = { agile: t.agile, traditional: t.traditional, hybrid: t.hybrid };
+  const modeText = modeNames[currentMode] || t.hybrid;
 
   const timeTrackingData = calculateTimeTrackingData(tasks, project.name);
 
@@ -23510,128 +23495,136 @@ function renderDashboard(container) {
   const barLabels = Object.keys(assigneeHours);
   const barData = Object.values(assigneeHours);
 
-  // ========== GENERAR HTML CON FONDO OSCURO EJECUTIVO ==========
+  // ========== HTML CON ESTILOS INTEGRADOS (TODO BONITO) ==========
   const html = `
-    <div id="dashboardContentForExport" style="padding: 30px; background: linear-gradient(145deg, #0a1628, #0f2847); min-height: 100vh; color: #f0f4ff; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
-
+    <div id="dashboardContentForExport" style="padding: 30px; background: linear-gradient(145deg, #0a1628, #0f2847); min-height: 100vh; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+      
       <!-- HEADER -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 24px; border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
         <div>
-          <h2 style="margin: 0; font-size: 28px; font-weight: 700; color: #f0f4ff;">
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
             📊 ${escapeHtml(project.name)}
           </h2>
-          <p style="margin: 5px 0 0 0; color: #93c5fd;">Vista Completa del Proyecto · Control Ejecutivo</p>
+          <p style="margin: 5px 0 0 0; color: #94a3b8;">${t.fullView}</p>
         </div>
         <div style="display: flex; gap: 15px;">
           <div id="projectHealthStatus" style="background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px;">
             <span class="status-badge" style="color: ${statusColor}; font-weight: 600;">${statusText}</span>
           </div>
-          <div id="modeIndicator" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; color: #f0f4ff;">
-            <i class="fas fa-sync-alt"></i> Modo: <span id="currentModeText">${modeText}</span>
+          <div id="modeIndicator" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600;">
+            <i class="fas fa-sync-alt"></i> ${t.mode}: <span id="currentModeText">${modeText}</span>
           </div>
           <button id="exportDashboardPdfBtn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; color: white; padding: 8px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.3);">
-            📄 Exportar PDF
+            ${t.exportPDF}
           </button>
         </div>
       </div>
 
       <!-- FECHAS -->
-      <div style="display: flex; gap: 20px; margin-bottom: 30px; color: #e8edf5;">
-        <div><span style="color: #94a3b8;">Fecha Inicio:</span> <strong id="projectStartDate">${startDate}</strong></div>
-        <div><span style="color: #94a3b8;">Fecha Fin:</span> <strong id="projectEndDate">${endDate}</strong></div>
-        <div><span style="color: #94a3b8;">(</span><strong>${totalDays}</strong><span style="color: #94a3b8;"> días)</span></div>
+      <div style="display: flex; gap: 20px; margin-bottom: 30px; background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 16px 24px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <div><span style="color: #94a3b8;">${t.startDate}:</span> <strong id="projectStartDate">${startDate}</strong></div>
+        <div><span style="color: #94a3b8;">${t.endDate}:</span> <strong id="projectEndDate">${endDate}</strong></div>
+        <div><span style="color: #94a3b8;">(</span><strong>${totalDays}</strong><span style="color: #94a3b8;"> ${t.days})</span></div>
       </div>
 
       <!-- PROGRESO GENERAL -->
-      <div style="margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f0f4ff;">
-          <span>Avance</span>
-          <span id="completionPercentage">${progressPercent}%</span>
+      <div style="margin-bottom: 30px; background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 24px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #e2e8f0;">${t.progress}</span>
+          <span id="completionPercentage" style="color: #34d399; font-weight: 700;">${progressPercent}%</span>
         </div>
-        <div style="height: 14px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05);">
-          <div id="projectProgressFillDash" style="width: ${progressPercent}%; height: 100%; background: ${progressPercent < 30 ? 'linear-gradient(90deg,#ef4444,#f87171)' : progressPercent < 70 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#10b981,#34d399)'}; border-radius: 20px; box-shadow: 0 0 20px ${progressPercent < 30 ? 'rgba(239,68,68,0.4)' : progressPercent < 70 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.4)'};"></div>
+        <div style="height: 12px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);">
+          <div id="projectProgressFillDash" style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 20px; box-shadow: 0 0 25px rgba(16,185,129,0.6);"></div>
         </div>
       </div>
 
       <!-- KPIs -->
       <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px;">
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #3b82f6; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #3b82f6; border: 1px solid rgba(59,130,246,0.2);">
           <div id="totalTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${totalTasks}</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Total</div>
+          <div style="color: #94a3b8;">${t.total}</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #86efac; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #86efac; border: 1px solid rgba(16,185,129,0.2);">
           <div id="completedTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${completed}</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Completadas</div>
+          <div style="color: #94a3b8;">${t.completed}</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #2dd4bf; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #2dd4bf; border: 1px solid rgba(45,212,191,0.2);">
           <div id="inProgressTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${inProgress}</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">En Progreso</div>
+          <div style="color: #94a3b8;">${t.inProgress}</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #fde047; border: 1px solid rgba(245,158,11,0.2);">
           <div id="pendingTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${pending}</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Pendientes</div>
+          <div style="color: #94a3b8;">${t.pending}</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #ef4444; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #ef4444; border: 1px solid rgba(239,68,68,0.2);">
           <div id="overdueTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${overdue}</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Rezagadas</div>
+          <div style="color: #94a3b8;">${t.overdue}</div>
         </div>
-        <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #93c5fd; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <div id="budgetConsumption" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${budgetUsage}%</div>
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Presupuesto en tiempo</div>
+        <div style="background: #8b5cf6; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #c4b5fd; border: 1px solid rgba(139,92,246,0.3);">
+          <div id="budgetConsumption" style="font-size: 32px; font-weight: bold; color: white;">${budgetUsage}%</div>
+          <div style="color: white;">${t.budgetTime}</div>
         </div>
       </div>
 
       <!-- CONTROL DE TIEMPO -->
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Total</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2);">
+          <div style="color: #94a3b8;">${t.total}</div>
           <div id="totalProjectTimeDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${projectTotalTime}h</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Estimado</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2);">
+          <div style="color: #94a3b8;">${t.estimated}</div>
           <div id="totalEstimatedDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${totalEstimated.toFixed(1)}h</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Registrado</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2);">
+          <div style="color: #94a3b8;">${t.logged}</div>
           <div id="totalLoggedDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${totalLogged.toFixed(1)}h</div>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; grid-column: span 3; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <div style="display: flex; justify-content: space-between; color: #f0f4ff;">
-            <span style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Restante</span>
-            <span id="remainingTimeDash" style="font-weight: bold; font-size: 24px; color: ${remaining < 0 ? '#f87171' : '#34d399'};">${remaining.toFixed(1)}h</span>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; grid-column: span 3; border: 1px solid rgba(59,130,246,0.2);">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #94a3b8;">${t.remaining}</span>
+            <span id="remainingTimeDash" style="font-weight: bold; color: ${remaining < 0 ? '#f87171' : '#34d399'};">${remaining.toFixed(1)}h</span>
           </div>
-          <div style="height: 8px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; margin-top: 10px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);">
-            <div style="width: ${Math.min(100, (totalLogged / (projectTotalTime||1)) * 100)}%; height: 100%; background: linear-gradient(90deg,#f1c40f,#f39c12); border-radius: 20px; box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);"></div>
+          <div style="height: 8px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; margin-top: 10px; overflow: hidden;">
+            <div style="width: ${Math.min(100, (totalLogged / (projectTotalTime||1)) * 100)}%; height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 20px; box-shadow: 0 0 15px rgba(245,158,11,0.5);"></div>
           </div>
         </div>
       </div>
 
       <!-- GRÁFICOS -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">📊 Distribución de Tareas</h3>
-          <canvas id="tasksDistributionChart" width="400" height="300" style="width: 100%; height: auto;"></canvas>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 24px; border: 1px solid rgba(59,130,246,0.2); border-top: 6px solid #fde047;">
+          <h3 style="color: #d4af37; border-bottom: 2px solid rgba(212,175,55,0.3); padding-bottom: 12px; margin-bottom: 16px;">${t.taskDistribution}</h3>
+          <canvas id="tasksDistributionChart" width="400" height="300" style="width: 100%; height: auto; background: transparent; border-radius: 12px;"></canvas>
         </div>
-        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-          <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">📉 Burndown en Horas</h3>
-          <canvas id="burndownChartDashboard" width="600" height="300" style="width: 100%; height: auto;"></canvas>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 24px; border: 1px solid rgba(59,130,246,0.2); border-top: 6px solid #fde047;">
+          <h3 style="color: #d4af37; border-bottom: 2px solid rgba(212,175,55,0.3); padding-bottom: 12px; margin-bottom: 16px;">${t.burndown}</h3>
+          <canvas id="burndownChartDashboard" width="600" height="300" style="width: 100%; height: auto; background: transparent; border-radius: 12px;"></canvas>
         </div>
       </div>
 
       <!-- SALTO DE PÁGINA -->
       <div class="page-break" style="page-break-before: always; margin-top: 20px;"></div>
 
-      <!-- SEGUIMIENTO DE HORAS -->
-      <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-        <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">⏱️ Seguimiento de Horas</h3>
+      <!-- SEGUIMIENTO DE HORAS (CON ESTILOS BONITOS) -->
+      <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 24px; margin-bottom: 30px; border: 1px solid rgba(59,130,246,0.2); border-top: 6px solid #60a5fa;">
+        <h3 style="color: #d4af37; border-bottom: 2px solid rgba(212,175,55,0.3); padding-bottom: 12px; margin-bottom: 20px;">${t.hoursTracking}</h3>
         <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead><tr style="border-bottom: 1px solid rgba(59,130,246,0.2);"><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Asignado</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Proyecto</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Horas</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Promedio/día</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Último registro</th></tr></thead>
+          <table style="width: 100%; border-collapse: collapse; color: #e8edf5;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(59,130,246,0.15);">
+                <th style="color: #f0f4ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; padding: 12px 16px; text-align: left;">${t.assignee}</th>
+                <th style="color: #f0f4ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; padding: 12px 16px; text-align: left;">${t.projectLabel}</th>
+                <th style="color: #f0f4ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; padding: 12px 16px; text-align: left;">${t.hours}</th>
+                <th style="color: #f0f4ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; padding: 12px 16px; text-align: left;">${t.avgPerDay}</th>
+                <th style="color: #f0f4ff; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; font-size: 11px; padding: 12px 16px; text-align: left;">${t.lastRecord}</th>
+              </tr>
+            </thead>
             <tbody id="timeTrackingTableBody"></tbody>
           </table>
         </div>
         <div style="margin-top: 30px;">
-          <canvas id="timeTrackingChart" width="600" height="300" style="width: 100%; height: auto; max-height: 300px;"></canvas>
+          <canvas id="timeTrackingChart" width="600" height="300" style="width: 100%; height: auto; max-height: 300px; background: transparent; border-radius: 12px;"></canvas>
         </div>
       </div>
 
@@ -23642,23 +23635,6 @@ function renderDashboard(container) {
 
   // ========== CARGAR RIESGOS Y ACCIONES ==========
   loadDashboardProjectData();
-  const risksDiv = document.getElementById('risksContainer');
-  const actionsUl = document.getElementById('requiredActions');
-  const applyDark = (el) => {
-    if (!el) return;
-    el.style.setProperty('background', 'transparent', 'important');
-    Array.from(el.children).forEach(child => {
-      child.style.setProperty('background', 'rgba(10,22,40,0.6)', 'important');
-    });
-  };
-  applyDark(risksDiv);
-  applyDark(actionsUl);
-  const observer = new MutationObserver(() => {
-    applyDark(risksDiv);
-    applyDark(actionsUl);
-  });
-  if (risksDiv) observer.observe(risksDiv, { childList: true, subtree: true });
-  if (actionsUl) observer.observe(actionsUl, { childList: true, subtree: true });
 
   // ========== TABLA Y GRÁFICA DE HORAS ==========
   const updateTimeTracking = () => {
@@ -23667,15 +23643,15 @@ function renderDashboard(container) {
       if (timeTrackingData.length) {
         tbody.innerHTML = timeTrackingData.map(item => `
           <tr>
-            <td style="padding: 10px; color: #e8edf5;">${escapeHtml(item.assignee || 'Sin asignar')}</td>
-            <td style="padding: 10px; color: #e8edf5;">${escapeHtml(item.projectName)}</td>
-            <td style="padding: 10px; text-align: right; color: #60a5fa; font-weight: 700;">${item.hours.toFixed(2)}</td>
-            <td style="padding: 10px; text-align: right; color: #94a3b8;">${(item.hours / 20).toFixed(2)}</td>
-            <td style="padding: 10px; color: #94a3b8;">${item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A'}</td>
+            <td style="padding: 10px; color: #e8edf5; border-bottom: 1px solid rgba(255,255,255,0.05);">${escapeHtml(item.assignee || 'Sin asignar')}</td>
+            <td style="padding: 10px; color: #e8edf5; border-bottom: 1px solid rgba(255,255,255,0.05);">${escapeHtml(item.projectName)}</td>
+            <td style="padding: 10px; text-align: right; color: #60a5fa; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05);">${item.hours.toFixed(2)}</td>
+            <td style="padding: 10px; text-align: right; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">${(item.hours / 20).toFixed(2)}</td>
+            <td style="padding: 10px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">${item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A'}</td>
           </tr>
         `).join('');
       } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No hay datos</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">${t.noData}</td></tr>`;
       }
     }
     const canvas = document.getElementById('timeTrackingChart');
@@ -23684,12 +23660,12 @@ function renderDashboard(container) {
       if (window.timeTrackingChartInstance) window.timeTrackingChartInstance.destroy();
       window.timeTrackingChartInstance = new Chart(ctx, {
         type: 'bar',
-        data: { labels: barLabels, datasets: [{ label: 'Horas trabajadas', data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
+        data: { labels: barLabels, datasets: [{ label: t.hoursWorked, data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { labels: { color: '#e2e8f0' } } },
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Horas', color: '#94a3b8' }, ticks: { color: '#cbd5e1' } },
+            y: { beginAtZero: true, title: { display: true, text: t.hours, color: '#94a3b8' }, ticks: { color: '#cbd5e1' } },
             x: { ticks: { color: '#cbd5e1', maxRotation: 45, minRotation: 45 } }
           }
         }
@@ -23699,12 +23675,12 @@ function renderDashboard(container) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#94a3b8';
       ctx.font = '14px sans-serif';
-      ctx.fillText('No hay datos para mostrar', 20, 50);
+      ctx.fillText(t.noData, 20, 50);
     }
   };
   updateTimeTracking();
 
-  // ========== GRÁFICOS DE DISTRIBUCIÓN Y BURNDOWN CON REINTENTOS ==========
+  // ========== GRÁFICOS DE DISTRIBUCIÓN Y BURNDOWN ==========
   let chartAttempt = 0;
   const maxChartAttempts = 15;
   function createCharts() {
@@ -23718,14 +23694,6 @@ function renderDashboard(container) {
       }
       return;
     }
-    const rectDist = distCanvas.getBoundingClientRect();
-    const rectBurn = burnCanvas.getBoundingClientRect();
-    if (rectDist.width === 0 || rectDist.height === 0 || rectBurn.width === 0 || rectBurn.height === 0) {
-      if (++chartAttempt < maxChartAttempts) {
-        setTimeout(createCharts, 200);
-        return;
-      }
-    }
     try {
       const burndownData = calculateBurndownInHours(tasks);
       const ctxDist = distCanvas.getContext('2d');
@@ -23734,7 +23702,7 @@ function renderDashboard(container) {
         window.tasksChart = new Chart(ctxDist, {
           type: 'doughnut',
           data: {
-            labels: ['Pendientes', 'En Progreso', 'Completadas', 'Rezagadas'],
+            labels: [t.pending, t.inProgress, t.completed, t.overdue],
             datasets: [{ data: [pending, inProgress, completed, overdue], backgroundColor: ['#f1c40f', '#008090', '#2ecc71', '#e74c3c'], borderWidth: 0 }]
           },
           options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
@@ -23746,10 +23714,10 @@ function renderDashboard(container) {
         window.burndownDashboardChartInstance = new Chart(ctxBurndown, {
           type: 'line',
           data: {
-            labels: ['Inicio', 'Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+            labels: [t.start, t.week1, t.week2, t.week3, t.week4],
             datasets: [
-              { label: 'Línea Ideal', data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 },
-              { label: 'Progreso Real', data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }
+              { label: t.idealLine, data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 },
+              { label: t.actualProgress, data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }
             ]
           },
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -23780,36 +23748,34 @@ function renderDashboard(container) {
           <meta charset="UTF-8">
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { background: linear-gradient(145deg, #0a1628, #0f2847); font-family: 'Inter', system-ui, sans-serif; color: #f0f4ff; padding: 30px; }
+            body { background: #0a0a1a; font-family: 'Inter', system-ui, sans-serif; color: #e2e8f0; padding: 30px; }
             .dashboard-container { max-width: 1200px; margin: 0 auto; }
             .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }
-            .header h2 { font-size: 28px; font-weight: 700; color: #f0f4ff; }
+            .header h2 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
             .status-badge { background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px; color: ${statusColor}; font-weight: 600; }
-            .mode-badge { background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; color: #f0f4ff; }
-            .fechas { display: flex; gap: 20px; margin-bottom: 30px; color: #e8edf5; }
+            .mode-badge { background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; }
+            .fechas { display: flex; gap: 20px; margin-bottom: 30px; }
             .progress-section { margin-bottom: 30px; }
-            .progress-bar-container { height: 14px; background: rgba(0,0,0,0.6); border-radius: 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); }
-            .progress-fill { height: 100%; border-radius: 20px; }
+            .progress-bar-container { height: 12px; background: #2d2d5f; border-radius: 6px; overflow: hidden; }
+            .progress-fill { height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 6px; }
             .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px; }
-            .kpi-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-            .kpi-card h3 { font-size: 32px; font-weight: bold; color: #f0f4ff; }
-            .kpi-card p { color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+            .kpi-card { background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid; }
+            .kpi-card h3 { font-size: 32px; font-weight: bold; }
+            .kpi-card p { color: #94a3b8; }
             .tiempo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-            .tiempo-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-            .restante-card { grid-column: span 3; background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .tiempo-card { background: #1a1a3a; border-radius: 16px; padding: 20px; }
+            .restante-card { grid-column: span 3; background: #1a1a3a; border-radius: 16px; padding: 20px; }
             .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-            .chart-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-            .chart-card h3 { color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px; }
+            .chart-card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; }
             canvas { width: 100%; height: auto; max-height: 300px; }
-            .horas-section { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-            .horas-section h3 { color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px; }
+            .horas-section { background: #1a1a3a; border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(59,130,246,0.2); }
-            th { color: #f0f4ff; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; }
+            th { color: #94a3b8; }
             .riesgos-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-            .card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf; }
             .card ul { list-style: none; padding: 0; margin: 15px 0; }
-            .card li { background: rgba(10,22,40,0.6); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; color: #f0f4ff; }
+            .card li { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(45, 212, 191, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
             .page-break { page-break-before: always; margin-top: 20px; }
             @media print {
               body { padding: 0; margin: 0; }
@@ -23825,13 +23791,15 @@ function renderDashboard(container) {
               const timeData = ${JSON.stringify(timeTrackingData)};
               const tbody = document.getElementById('timeTrackingTableBody');
               if (tbody && timeData.length) {
-                tbody.innerHTML = timeData.map(item => '<tr><td style="padding:10px;color:#e8edf5;">' + (item.assignee || 'Sin asignar') + '<\/td><td style="padding:10px;color:#e8edf5;">' + item.projectName + '<\/td><td style="text-align:right;padding:10px;color:#60a5fa;font-weight:700;">' + item.hours.toFixed(2) + '<\/td><td style="text-align:right;padding:10px;color:#94a3b8;">' + (item.hours/20).toFixed(2) + '<\/td><td style="padding:10px;color:#94a3b8;">' + (item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A') + '<\/td><\/tr>').join('');
+                tbody.innerHTML = timeData.map(item => '<tr><td style="padding:10px">' + (item.assignee || 'Sin asignar') + '<\/td><td style="padding:10px">' + item.projectName + '<\/td><td style="text-align:right;padding:10px">' + item.hours.toFixed(2) + '<\/td><td style="text-align:right;padding:10px">' + (item.hours/20).toFixed(2) + '<\/td><td style="padding:10px">' + (item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A') + '<\/td><\/tr>').join('');
               }
+              const distLabels = ['${t.pending}','${t.inProgress}','${t.completed}','${t.overdue}'];
+              const distData = [${pending},${inProgress},${completed},${overdue}];
               const ctxDist = document.getElementById('tasksDistributionChart')?.getContext('2d');
               if (ctxDist) {
                 new Chart(ctxDist, {
                   type: 'doughnut',
-                  data: { labels: ['Pendientes','En Progreso','Completadas','Rezagadas'], datasets: [{ data: [${pending},${inProgress},${completed},${overdue}], backgroundColor: ['#f1c40f','#008090','#2ecc71','#e74c3c'], borderWidth: 0 }] },
+                  data: { labels: distLabels, datasets: [{ data: distData, backgroundColor: ['#f1c40f','#008090','#2ecc71','#e74c3c'], borderWidth: 0 }] },
                   options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
                 });
               }
@@ -23840,7 +23808,7 @@ function renderDashboard(container) {
               if (ctxBurndown) {
                 new Chart(ctxBurndown, {
                   type: 'line',
-                  data: { labels: ['Inicio','Sem 1','Sem 2','Sem 3','Sem 4'], datasets: [{ label: 'Línea Ideal', data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 }, { label: 'Progreso Real', data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }] },
+                  data: { labels: ['${t.start}','${t.week1}','${t.week2}','${t.week3}','${t.week4}'], datasets: [{ label: '${t.idealLine}', data: burndownData.trabajoIdeal, borderColor: '#2ecc71', borderWidth: 3, fill: false, pointRadius: 0 }, { label: '${t.actualProgress}', data: burndownData.trabajoReal, borderColor: '#f39c12', borderWidth: 3, fill: false, pointRadius: 4 }] },
                   options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
               }
@@ -23851,8 +23819,8 @@ function renderDashboard(container) {
                 barCanvas.width = 600; barCanvas.height = 300;
                 new Chart(barCanvas.getContext('2d'), {
                   type: 'bar',
-                  data: { labels: barLabels, datasets: [{ label: 'Horas trabajadas', data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
-                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Horas', color: '#94a3b8' }, ticks: { color: '#cbd5e1' } }, x: { ticks: { color: '#cbd5e1', maxRotation: 45, minRotation: 45 } } } }
+                  data: { labels: barLabels, datasets: [{ label: '${t.hoursWorked}', data: barData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 8 }] },
+                  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { y: { beginAtZero: true, title: { display: true, text: '${t.hours}', color: '#94a3b8' }, ticks: { color: '#cbd5e1' } }, x: { ticks: { color: '#cbd5e1', maxRotation: 45, minRotation: 45 } } } }
                 });
               }
               setTimeout(() => { window.print(); window.onafterprint = () => window.close(); }, 800);
@@ -23867,14 +23835,44 @@ function renderDashboard(container) {
 
   // ========== BOTONES DE AGREGAR RIESGOS/ACCIONES ==========
   const addRiskBtn = document.getElementById('addRiskBtn');
-  if (addRiskBtn) addRiskBtn.onclick = agregarRiesgo;
+  if (addRiskBtn) {
+    addRiskBtn.onclick = function() {
+      const riesgo = prompt(es ? 'Describe el riesgo o problema:' : 'Describe the risk or issue:');
+      if (riesgo) {
+        const container = document.getElementById('risksContainer');
+        if (container) {
+          const div = document.createElement('div');
+          div.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+          div.innerHTML = `
+            <span style="color: #e8edf5;">⚠️ ${escapeHtml(riesgo)}</span>
+            <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">${es ? 'Eliminar' : 'Delete'}</button>
+          `;
+          container.appendChild(div);
+        }
+      }
+    };
+  }
   const addActionBtn = document.getElementById('addActionBtn');
-  if (addActionBtn) addActionBtn.onclick = agregarAccion;
+  if (addActionBtn) {
+    addActionBtn.onclick = function() {
+      const accion = prompt(es ? 'Describe la acción requerida:' : 'Describe the required action:');
+      if (accion) {
+        const container = document.getElementById('requiredActions');
+        if (container) {
+          const li = document.createElement('li');
+          li.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+          li.innerHTML = `
+            <span style="color: #e8edf5;">📌 ${escapeHtml(accion)}</span>
+            <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">${es ? 'Eliminar' : 'Delete'}</button>
+          `;
+          container.appendChild(li);
+        }
+      }
+    };
+  }
 
-  console.log('✅ Dashboard renderizado correctamente con fondo ejecutivo');
+  console.log('✅ Dashboard renderizado correctamente');
 }
-
-
 
 
 
