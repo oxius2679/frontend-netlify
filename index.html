@@ -32028,7 +32028,505 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ Traducciones Status - Reemplazo de frases mixtas');
 })();
 </script>
+<!-- ================================================================ -->
+<!-- 📊 REPORTE GANTT VIP – SOLO PARA EL BOTÓN "REPORTE EJECUTIVO"    -->
+<!-- ================================================================ -->
+<!--
+  AUTOR: Equipo de Desarrollo
+  VERSIÓN: 2.2
+  DESCRIPCIÓN:
+    Este script reemplaza ÚNICAMENTE el comportamiento del botón
+    con data-reporte-fijo="true" (el "Reporte Ejecutivo" del Board).
+    NO afecta a la vista premium ni a otras funciones globales.
+    Genera un reporte Gantt de alto nivel con tooltips, dependencias,
+    ruta crítica, equipo y recomendaciones estratégicas.
+-->
+<script>
+(function() {
+    'use strict';
 
+    // ----------------------------------------------------------------
+    // FUNCIÓN: OBTENER PRESUPUESTO DEL PROYECTO (horas máximas)
+    // ----------------------------------------------------------------
+    function getProjectBudget(project) {
+        if (!project) return 0;
+        const posibles = [
+            'totalProjectTime', 'budgetHours', 'hoursBudget', 'totalHours',
+            'maxHours', 'budget', 'projectBudget', 'duration', 'estimatedDuration',
+            'plannedHours', 'availableHours', 'hoursAllowed', 'hourBudget',
+            'total_budget_hours', 'budget_hours', 'total_hours', 'max_hours',
+            'totalTime', 'timeBudget', 'hours', 'estimatedHours'
+        ];
+        for (let key of posibles) {
+            if (project[key] !== undefined && project[key] !== null && project[key] !== '') {
+                const val = parseFloat(project[key]);
+                if (!isNaN(val) && val > 0) return val;
+            }
+        }
+        for (let key of Object.keys(project)) {
+            const lower = key.toLowerCase();
+            if ((lower.includes('hour') || lower.includes('budget')) && typeof project[key] === 'number') {
+                if (project[key] > 0) return project[key];
+            }
+        }
+        if (project.tasks && project.tasks.length) {
+            return project.tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+        }
+        return 0;
+    }
+
+    // ----------------------------------------------------------------
+    // FUNCIÓN: GENERAR RECOMENDACIONES ESTRATÉGICAS
+    // ----------------------------------------------------------------
+    function generarRecomendaciones(metrics, es) {
+        const recs = [];
+        if (metrics.progreso < 30) {
+            recs.push(es ? '⚠️ El avance es inferior al 30%. Prioriza las tareas de la ruta crítica y revisa la asignación de recursos.' :
+                           '⚠️ Progress is below 30%. Prioritize critical path tasks and review resource allocation.');
+        } else if (metrics.progreso < 60) {
+            recs.push(es ? '📈 El avance es moderado. Mantén el ritmo y enfócate en completar las tareas con mayor impacto.' :
+                           '📈 Progress is moderate. Keep the pace and focus on completing high-impact tasks.');
+        } else {
+            recs.push(es ? '✅ Excelente avance. Continúa con el plan actual y monitorea las desviaciones menores.' :
+                           '✅ Excellent progress. Continue with the current plan and monitor minor deviations.');
+        }
+        if (metrics.rezagadas > 0) {
+            recs.push(es ? `🔥 Hay ${metrics.rezagadas} tarea(s) rezagada(s). Reasigna recursos y acelera su finalización.` :
+                           `🔥 There are ${metrics.rezagadas} overdue task(s). Reassign resources and accelerate completion.`);
+        }
+        if (metrics.presupuesto > 0) {
+            const consumo = Math.round((metrics.totalLog / metrics.presupuesto) * 100);
+            if (consumo > 80) {
+                recs.push(es ? `⏰ El presupuesto de horas está al ${consumo}% de consumo. Controla las horas adicionales.` :
+                               `⏰ The hour budget is at ${consumo}% consumption. Control additional hours.`);
+            } else if (consumo > 50) {
+                recs.push(es ? `⏱️ Has consumido el ${consumo}% del presupuesto de horas. Mantén el control.` :
+                               `⏱️ You have consumed ${consumo}% of the hour budget. Keep control.`);
+            } else {
+                recs.push(es ? `✅ Presupuesto de horas bajo control (${consumo}% consumido). Sigue así.` :
+                               `✅ Hour budget under control (${consumo}% consumed). Keep it up.`);
+            }
+        }
+        if (metrics.criticas > 0) {
+            recs.push(es ? `⚠️ Hay ${metrics.criticas} tarea(s) crítica(s). Asegura su seguimiento diario.` :
+                           `⚠️ There are ${metrics.criticas} critical task(s). Ensure daily follow-up.`);
+        }
+        if (metrics.dependencias > 0) {
+            recs.push(es ? `🔗 El proyecto tiene ${metrics.dependencias} dependencia(s). Verifica que no generen cuellos de botella.` :
+                           `🔗 The project has ${metrics.dependencias} dependency(ies). Verify they don't create bottlenecks.`);
+        }
+        if (recs.length === 0) {
+            recs.push(es ? '✅ El proyecto está en buen estado. Continúa con el monitoreo habitual.' :
+                           '✅ The project is in good condition. Continue with regular monitoring.');
+        }
+        return recs;
+    }
+
+    // ----------------------------------------------------------------
+    // FUNCIÓN PRINCIPAL: GENERAR REPORTE GANTT VIP
+    // ----------------------------------------------------------------
+    function generarReporteGanttVIP() {
+        const es = (localStorage.getItem('preferredLanguage') || 'es') === 'es';
+        const lang = es ? 'es' : 'en';
+
+        const proyectos = JSON.parse(localStorage.getItem('projects') || '[]');
+        if (!proyectos.length) {
+            alert(es ? '❌ No hay proyectos' : '❌ No projects');
+            return;
+        }
+        const idx = parseInt(localStorage.getItem('currentProjectIndex') || '0');
+        const proyecto = proyectos[idx] || proyectos[0];
+        const tasks = proyecto.tasks || [];
+        if (!tasks.length) {
+            alert(es ? '❌ El proyecto no tiene tareas' : '❌ Project has no tasks');
+            return;
+        }
+
+        const presupuesto = getProjectBudget(proyecto);
+        const total = tasks.length;
+        const completadas = tasks.filter(t => t.status === 'completed').length;
+        const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+        const pendientes = tasks.filter(t => t.status === 'pending').length;
+        const rezagadas = tasks.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+        const criticas = tasks.filter(t => t.priority === 'alta' || t.priority === 'high' || t.critical === true).length;
+        const progreso = total ? Math.round((completadas / total) * 100) : 0;
+        const totalEst = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+        const totalLog = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+
+        // Dependencias
+        const dependenciasList = [];
+        tasks.forEach(t => {
+            if (t.dependencies && t.dependencies.length) {
+                t.dependencies.forEach(depId => {
+                    const dep = tasks.find(d => String(d.id) === String(depId));
+                    if (dep) {
+                        dependenciasList.push({
+                            origen: dep.name || dep.title || 'Sin nombre',
+                            destino: t.name || t.title || 'Sin nombre'
+                        });
+                    }
+                });
+            }
+        });
+        const totalDependencias = dependenciasList.length;
+
+        // Ruta crítica
+        const rutaCritica = tasks.filter(t => 
+            t.critical === true || 
+            (t.dependencies && t.dependencies.length) ||
+            t.priority === 'alta' || t.priority === 'high'
+        );
+
+        // Equipo
+        const equipo = {};
+        tasks.forEach(t => {
+            const asignado = t.assignee || t.asignado || 'Sin asignar';
+            equipo[asignado] = (equipo[asignado] || 0) + 1;
+        });
+        const miembros = Object.keys(equipo);
+
+        // Fechas Gantt
+        let fechaMin = new Date(), fechaMax = new Date();
+        const tareasConFecha = tasks.filter(t => t.startDate && t.deadline);
+        if (tareasConFecha.length) {
+            const fechasInicio = tareasConFecha.map(t => new Date(t.startDate));
+            const fechasFin = tareasConFecha.map(t => new Date(t.deadline));
+            fechaMin = new Date(Math.min(...fechasInicio));
+            fechaMax = new Date(Math.max(...fechasFin));
+        } else {
+            fechaMin = new Date();
+            fechaMax = new Date();
+            tasks.forEach((t, i) => {
+                const est = Number(t.estimatedTime) || 5;
+                const fin = new Date(fechaMin.getTime() + (i + 1) * est * 24 * 60 * 60 * 1000);
+                if (fin > fechaMax) fechaMax = fin;
+            });
+        }
+        fechaMin.setDate(fechaMin.getDate() - 1);
+        fechaMax.setDate(fechaMax.getDate() + 1);
+        const rangoDias = Math.ceil((fechaMax - fechaMin) / (1000 * 60 * 60 * 24)) || 1;
+
+        const ganttData = tasks.map(t => {
+            let inicio, fin;
+            if (t.startDate && t.deadline) {
+                inicio = new Date(t.startDate);
+                fin = new Date(t.deadline);
+            } else {
+                const dias = Number(t.estimatedTime) || 5;
+                const offset = tasks.indexOf(t) * 2;
+                inicio = new Date(fechaMin.getTime() + offset * 24 * 60 * 60 * 1000);
+                fin = new Date(inicio.getTime() + dias * 24 * 60 * 60 * 1000);
+            }
+            if (fin < inicio) fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
+            return { ...t, inicio, fin, duracionDias: Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)) || 1 };
+        });
+        ganttData.sort((a, b) => a.inicio - b.inicio);
+
+        // Traducción
+        const T = (key) => {
+            const dict = {
+                es: {
+                    'Total Tareas': 'Total Tareas', 'Completadas': 'Completadas',
+                    'En Progreso': 'En Progreso', 'Rezagadas': 'Rezagadas',
+                    'Críticas': 'Críticas', 'Presupuesto': 'Presupuesto',
+                    'Dependencias': 'Dependencias', 'Ruta Crítica': 'Ruta Crítica',
+                    'Equipo': 'Equipo', 'Tarea': 'Tarea', 'Asignado': 'Asignado',
+                    'Horas Est.': 'Horas Est.', 'Horas Reg.': 'Horas Reg.',
+                    'Estado': 'Estado', 'Prioridad': 'Prioridad', 'Avance': 'Avance',
+                    'Inicio': 'Inicio', 'Fin': 'Fin', 'Días': 'Días',
+                    'Reporte Gantt Ejecutivo': 'Reporte Gantt Ejecutivo',
+                    'Vista Ejecutiva del Gantt': 'Vista Ejecutiva del Gantt',
+                    'No hay dependencias definidas': 'No hay dependencias definidas',
+                    'No hay tareas en la ruta crítica': 'No hay tareas en la ruta crítica',
+                    'tareas asignadas': 'tareas asignadas', 'miembros': 'miembros',
+                    'tareas': 'tareas', 'Imprimir / PDF': 'Imprimir / PDF',
+                    'Cerrar': 'Cerrar', 'Reporte generado por': 'Reporte generado por',
+                    'Todos los derechos reservados': 'Todos los derechos reservados',
+                    'Pendiente': 'Pendiente', 'Sin asignar': 'Sin asignar',
+                    'Recomendaciones Estratégicas': 'Recomendaciones Estratégicas',
+                    'Estado del Proyecto': 'Estado del Proyecto',
+                    'Alerta de Presupuesto': 'Alerta de Presupuesto'
+                },
+                en: {
+                    'Total Tareas': 'Total Tasks', 'Completadas': 'Completed',
+                    'En Progreso': 'In Progress', 'Rezagadas': 'Overdue',
+                    'Críticas': 'Critical', 'Presupuesto': 'Budget',
+                    'Dependencias': 'Dependencies', 'Ruta Crítica': 'Critical Path',
+                    'Equipo': 'Team', 'Tarea': 'Task', 'Asignado': 'Assignee',
+                    'Horas Est.': 'Est. Hours', 'Horas Reg.': 'Logged Hours',
+                    'Estado': 'Status', 'Prioridad': 'Priority', 'Avance': 'Progress',
+                    'Inicio': 'Start', 'Fin': 'End', 'Días': 'Days',
+                    'Reporte Gantt Ejecutivo': 'Executive Gantt Report',
+                    'Vista Ejecutiva del Gantt': 'Executive Gantt View',
+                    'No hay dependencias definidas': 'No dependencies defined',
+                    'No hay tareas en la ruta crítica': 'No tasks in critical path',
+                    'tareas asignadas': 'tasks assigned', 'miembros': 'members',
+                    'tareas': 'tasks', 'Imprimir / PDF': 'Print / PDF',
+                    'Cerrar': 'Close', 'Reporte generado por': 'Report generated by',
+                    'Todos los derechos reservados': 'All rights reserved',
+                    'Pendiente': 'Pending', 'Sin asignar': 'Unassigned',
+                    'Recomendaciones Estratégicas': 'Strategic Recommendations',
+                    'Estado del Proyecto': 'Project Status',
+                    'Alerta de Presupuesto': 'Budget Alert'
+                }
+            };
+            const l = localStorage.getItem('preferredLanguage') || 'es';
+            return dict[l]?.[key] || dict.es?.[key] || key;
+        };
+
+        // Recomendaciones
+        const metrics = { progreso, rezagadas, presupuesto, totalLog, criticas, dependencias: totalDependencias };
+        const recomendaciones = generarRecomendaciones(metrics, es);
+
+        const locale = es ? 'es-ES' : 'en-US';
+        const fechaActual = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const horaActual = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+
+        // HTML (mismo que antes, pero más compacto)
+        const html = `<!DOCTYPE html>
+<html lang="${es ? 'es' : 'en'}">
+<head>
+    <meta charset="UTF-8">
+    <title>★ ${T('Reporte Gantt Ejecutivo')} ★ - ${proyecto.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #d4af37; --gold-light: #f4e4a6; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #050814 0%, #0a0e1a 50%, #131827 100%); padding: 30px 20px; min-height: 100vh; color: #e2e8f0; }
+        .container { max-width: 1400px; margin: 0 auto; background: linear-gradient(145deg, #131827 0%, #0a0e1a 100%); border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.3); overflow: hidden; border: 1px solid rgba(212,175,55,0.3); }
+        .header { background: linear-gradient(135deg, #0a0e1a 0%, #1c2333 50%, #0a0e1a 100%); padding: 40px 60px; text-align: center; border-bottom: 3px solid var(--gold); }
+        .vip-badge { display: inline-block; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; padding: 8px 24px; border-radius: 30px; font-size: 11px; font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 6px 20px rgba(212,175,55,0.5); }
+        .vip-badge::before, .vip-badge::after { content: '★'; margin: 0 8px; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 50%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
+        .header .project-name { font-size: 22px; color: var(--gold); font-weight: 600; margin-top: 5px; }
+        .header-meta { display: flex; justify-content: center; gap: 30px; margin-top: 15px; font-size: 13px; color: #94a3b8; flex-wrap: wrap; }
+        .header-meta span { display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.05); border-radius: 20px; border: 1px solid rgba(212,175,55,0.2); }
+        .content { padding: 40px 60px; }
+        .section { margin-bottom: 45px; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: white; margin-bottom: 25px; padding-left: 20px; border-left: 4px solid var(--gold); display: flex; align-items: center; gap: 12px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; text-align: center; border: 1px solid rgba(212,175,55,0.25); position: relative; overflow: hidden; transition: transform 0.3s; }
+        .kpi-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 40px rgba(212,175,55,0.2); }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        .kpi-icon { font-size: 28px; margin-bottom: 10px; }
+        .kpi-value { font-size: 42px; font-weight: 900; background: linear-gradient(135deg, #fff 0%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+        .kpi-label { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+        .kpi-alert { font-size: 12px; margin-top: 8px; padding: 4px 12px; border-radius: 12px; display: inline-block; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .kpi-alert.success { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
+        .kpi-alert.warning { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .gantt-container { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; border: 1px solid rgba(212,175,55,0.2); overflow-x: auto; }
+        .gantt-chart { position: relative; width: 100%; min-width: 800px; }
+        .gantt-row { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0; }
+        .gantt-row-header { font-weight: 700; color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 8px; margin-bottom: 5px; }
+        .gantt-label { width: 200px; flex-shrink: 0; font-size: 12px; padding-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gantt-bar-container { flex: 1; height: 28px; position: relative; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+        .gantt-bar { height: 100%; border-radius: 4px; position: absolute; top: 0; left: 0; transition: width 0.3s; cursor: help; }
+        .gantt-bar.completed { background: linear-gradient(90deg, #10b981, #34d399); }
+        .gantt-bar.inprogress { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .gantt-bar.pending { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .gantt-bar.overdue { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .gantt-bar.critical { background: linear-gradient(90deg, #8b5cf6, #a78bfa); border: 1px solid #c4b5fd; }
+        .gantt-bar:hover { opacity: 0.9; transform: scaleY(1.15); transform-origin: center; z-index: 10; }
+        [title]:hover::after { content: attr(title); position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(10,14,26,0.95); color: #e2e8f0; padding: 12px 16px; border-radius: 8px; font-size: 12px; font-weight: 400; line-height: 1.5; white-space: pre-line; border: 1px solid #d4af37; box-shadow: 0 8px 25px rgba(0,0,0,0.7); z-index: 100; min-width: 200px; max-width: 300px; pointer-events: none; text-align: left; font-family: 'Inter', sans-serif; }
+        [title]:hover::before { content: ''; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #d4af37; z-index: 100; pointer-events: none; }
+        .gantt-legend { display: flex; gap: 20px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8; }
+        .legend-color { width: 20px; height: 12px; border-radius: 3px; }
+        .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(212,175,55,0.25); }
+        .data-table { width: 100%; border-collapse: collapse; background: linear-gradient(145deg, #1c2333 0%, #131827 100%); }
+        .data-table th { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); color: #0a0e1a; padding: 12px 15px; text-align: left; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; }
+        .data-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; font-size: 13px; }
+        .data-table tr:hover td { background: rgba(212,175,55,0.05); }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-completed { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid #10b981; }
+        .status-progress { background: rgba(59,130,246,0.2); color: #3b82f6; border: 1px solid #3b82f6; }
+        .status-pending { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .status-overdue { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .team-card { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(212,175,55,0.15); }
+        .team-card .member { font-weight: 700; font-size: 16px; color: white; }
+        .team-card .count { font-size: 28px; font-weight: 900; color: var(--gold); }
+        .team-card .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .recommendations-card { background: linear-gradient(145deg, rgba(212,175,55,0.1) 0%, rgba(212,175,55,0.05) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(212,175,55,0.3); margin-bottom: 30px; }
+        .recommendations-card h3 { color: var(--gold); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
+        .recommendations-card ul { list-style: none; padding: 0; }
+        .recommendations-card li { padding: 12px 15px; margin: 8px 0; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid var(--gold); color: #e2e8f0; font-size: 14px; line-height: 1.5; }
+        .footer { background: linear-gradient(135deg, #0a0e1a 0%, #131827 100%); padding: 30px 60px; text-align: center; color: #64748b; font-size: 12px; border-top: 2px solid var(--gold); }
+        .footer .vip-signature { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 3px; }
+        .action-buttons { text-align: center; margin-top: 30px; padding: 0 60px 40px; }
+        .btn { padding: 14px 40px; border: none; border-radius: 30px; cursor: pointer; font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 8px; transition: all 0.3s; }
+        .btn-print { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; box-shadow: 0 8px 25px rgba(212,175,55,0.4); }
+        .btn-print:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(212,175,55,0.6); }
+        .btn-close { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        @media print { body { padding: 0; background: white; } .action-buttons { display: none; } .container { box-shadow: none; border: none; } }
+        @media (max-width: 900px) { .kpi-grid { grid-template-columns: 1fr 1fr; } .header, .content { padding-left: 25px; padding-right: 25px; } .gantt-label { width: 120px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="vip-badge">★ ${T('Reporte Gantt Ejecutivo')} ★</div>
+        <h1>${proyecto.name}</h1>
+        <div class="project-name">${T('Vista Ejecutiva del Gantt')}</div>
+        <div class="header-meta">
+            <span>📅 ${fechaActual}</span>
+            <span>🕒 ${horaActual}</span>
+            <span>📋 ${total} ${T('tareas')}</span>
+            <span>👥 ${miembros.length} ${T('miembros')}</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${total}</div><div class="kpi-label">${T('Total Tareas')}</div></div>
+            <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value">${completadas}</div><div class="kpi-label">${T('Completadas')}</div>${completadas === 0 ? `<div class="kpi-alert warning">${es ? '⚠️ Sin completar' : '⚠️ None completed'}</div>` : ''}</div>
+            <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${progreso}%</div><div class="kpi-label">${es ? 'Avance' : 'Progress'}</div>${progreso < 30 ? `<div class="kpi-alert">${es ? '⚠️ Bajo' : '⚠️ Low'}</div>` : progreso < 70 ? `<div class="kpi-alert warning">${es ? '📊 Medio' : '📊 Medium'}</div>` : `<div class="kpi-alert success">${es ? '✅ Bueno' : '✅ Good'}</div>`}</div>
+            <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-value">${rezagadas}</div><div class="kpi-label">${T('Rezagadas')}</div>${rezagadas > 0 ? `<div class="kpi-alert">${es ? '🔥 Atención' : '🔥 Attention'}</div>` : ''}</div>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="kpi-card"><div class="kpi-icon">🔥</div><div class="kpi-value">${criticas}</div><div class="kpi-label">${T('Críticas')}</div>${criticas > 0 ? `<div class="kpi-alert">${es ? '⚠️ Prioridad' : '⚠️ Priority'}</div>` : ''}</div>
+            <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value">${presupuesto}h</div><div class="kpi-label">${T('Presupuesto')}</div>${presupuesto > 0 && totalLog > 0 ? (() => { const c = Math.round((totalLog/presupuesto)*100); if (c > 80) return `<div class="kpi-alert">${es ? '⏰ Alto consumo' : '⏰ High consumption'}</div>`; if (c > 50) return `<div class="kpi-alert warning">${es ? '📊 Consumo medio' : '📊 Medium consumption'}</div>`; return `<div class="kpi-alert success">${es ? '✅ Bajo consumo' : '✅ Low consumption'}</div>`; })() : ''}</div>
+            <div class="kpi-card"><div class="kpi-icon">⏱️</div><div class="kpi-value">${totalEst}h</div><div class="kpi-label">${T('Horas Est.')}</div></div>
+            <div class="kpi-card"><div class="kpi-icon">⌛</div><div class="kpi-value">${totalLog}h</div><div class="kpi-label">${T('Horas Reg.')}</div>${totalLog > totalEst ? `<div class="kpi-alert">${es ? '⚠️ Sobrecosto' : '⚠️ Overcost'}</div>` : ''}</div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📊 ${es ? 'Cronograma de Tareas (Gantt)' : 'Task Schedule (Gantt)'}</h2>
+            <div class="gantt-container">
+                <div class="gantt-chart">
+                    <div class="gantt-row gantt-row-header">
+                        <div class="gantt-label">${T('Tarea')}</div>
+                        <div class="gantt-bar-container" style="background:transparent; height:auto; display:flex; justify-content:space-between; padding:0 10px;">
+                            <span style="font-size:10px; color:#94a3b8;">${fechaMin.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</span>
+                            <span style="font-size:10px; color:#94a3b8;">${fechaMax.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</span>
+                        </div>
+                    </div>
+                    ${ganttData.map(t => {
+                        const duracion = Math.max(1, Math.ceil((t.fin - t.inicio) / (1000*60*60*24)));
+                        const offset = Math.max(0, Math.ceil((t.inicio - fechaMin) / (1000*60*60*24)));
+                        const ancho = Math.min(100, (duracion / rangoDias) * 100);
+                        const offsetPct = (offset / rangoDias) * 100;
+                        const estadoClase = t.status === 'completed' ? 'completed' : t.status === 'inProgress' ? 'inprogress' : t.status === 'overdue' ? 'overdue' : 'pending';
+                        const esCritica = t.critical || t.priority === 'alta' || t.priority === 'high';
+                        const barClass = esCritica ? 'gantt-bar critical' : 'gantt-bar ' + estadoClase;
+                        let estadoTexto = '';
+                        if (t.status === 'completed') estadoTexto = T('Completadas');
+                        else if (t.status === 'inProgress') estadoTexto = T('En Progreso');
+                        else if (t.status === 'overdue') estadoTexto = T('Rezagadas');
+                        else estadoTexto = T('Pendiente');
+                        const tooltip = `${t.name || t.title || 'Sin título'}\n${es ? 'Inicio' : 'Start'}: ${t.inicio.toLocaleDateString(locale)}\n${es ? 'Fin' : 'End'}: ${t.fin.toLocaleDateString(locale)}\n${es ? 'Estado' : 'Status'}: ${estadoTexto}\n${es ? 'Duración' : 'Duration'}: ${duracion} ${es ? 'días' : 'days'}${esCritica ? '\n⚠️ ' + T('Ruta Crítica') : ''}`;
+                        return `<div class="gantt-row">
+                            <div class="gantt-label" title="${t.name || t.title || 'Sin título'}">${t.name || t.title || 'Sin título'}</div>
+                            <div class="gantt-bar-container">
+                                <div class="${barClass}" style="left:${offsetPct}%; width:${ancho}%;" title="${tooltip}"></div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="gantt-legend">
+                    <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span> ${T('Completadas')}</div>
+                    <div class="legend-item"><span class="legend-color" style="background:#3b82f6;"></span> ${T('En Progreso')}</div>
+                    <div class="legend-item"><span class="legend-color" style="background:#f59e0b;"></span> ${T('Pendientes')}</div>
+                    <div class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> ${T('Rezagadas')}</div>
+                    <div class="legend-item"><span class="legend-color" style="background:#8b5cf6; border:1px solid #c4b5fd;"></span> ${T('Ruta Crítica')}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🔗 ${T('Dependencias')}</h2>
+            ${dependenciasList.length ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>${T('Origen')}</th><th>${T('Destino')}</th></tr></thead><tbody>${dependenciasList.map((d,i) => `<tr><td>${i+1}</td><td>${d.origen}</td><td>${d.destino}</td></tr>`).join('')}</tbody></table></div>` : `<p style="color:#94a3b8;">${T('No hay dependencias definidas')}</p>`}
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🚀 ${T('Ruta Crítica')}</h2>
+            ${rutaCritica.length ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>${T('Tarea')}</th><th>${T('Asignado')}</th><th>${T('Estado')}</th><th>${T('Prioridad')}</th></tr></thead><tbody>${rutaCritica.map((t,i) => `<tr><td>${i+1}</td><td><strong>${t.name || t.title || '-'}</strong></td><td>${t.assignee || t.asignado || T('Sin asignar')}</td><td>${t.status === 'completed' ? T('Completadas') : t.status === 'inProgress' ? T('En Progreso') : t.status === 'overdue' ? T('Rezagadas') : T('Pendiente')}</td><td>${t.priority || '-'}</td></tr>`).join('')}</tbody></table></div>` : `<p style="color:#94a3b8;">${T('No hay tareas en la ruta crítica')}</p>`}
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">👥 ${T('Equipo')}</h2>
+            <div class="team-grid">${miembros.map(m => `<div class="team-card"><div class="member">👤 ${m}</div><div class="count">${equipo[m]}</div><div class="label">${T('tareas asignadas')}</div></div>`).join('')}</div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">💡 ${T('Recomendaciones Estratégicas')}</h2>
+            <div class="recommendations-card"><h3>📋 ${es ? 'Plan de Acción' : 'Action Plan'}</h3><ul>${recomendaciones.map(r => `<li>${r}</li>`).join('')}</ul></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="vip-signature">★ ZACKY GANTT EXECUTIVE PRO ★</div>
+        <p>${T('Reporte generado por')} Zacky Gantt Executive Pro</p>
+        <p>© ${new Date().getFullYear()} - ${T('Todos los derechos reservados')}</p>
+    </div>
+</div>
+<div class="action-buttons">
+    <button onclick="window.print()" class="btn btn-print">🖨️ ${T('Imprimir / PDF')}</button>
+    <button onclick="window.close()" class="btn btn-close">✕ ${T('Cerrar')}</button>
+</div>
+</body>
+</html>`;
+
+        const win = window.open('', '_blank');
+        if (!win) {
+            alert(es ? '⚠️ Permite ventanas emergentes' : '⚠️ Allow popups');
+            return;
+        }
+        win.document.write(html);
+        win.document.close();
+    }
+
+    // ----------------------------------------------------------------
+    // REASIGNAR SOLO EL BOTÓN CON DATA-REPORTE-FIJO="TRUE"
+    // (NO sobrescribir funciones globales)
+    // ----------------------------------------------------------------
+    function reasignarBoton() {
+        const btn = document.querySelector('button[data-reporte-fijo="true"]');
+        if (!btn) {
+            const fallback = document.querySelector('button.premium-btn.active-btn');
+            if (fallback && fallback.textContent.includes('Reporte Ejecutivo')) {
+                modificarBoton(fallback);
+            }
+            return;
+        }
+        modificarBoton(btn);
+    }
+
+    function modificarBoton(btn) {
+        if (btn.dataset.ganttReemplazado === 'true') return;
+        btn.setAttribute('data-parcheado', 'true');
+        btn.setAttribute('data-ganttReemplazado', 'true');
+        btn.removeAttribute('onclick');
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('🔵 Click en botón Reporte Ejecutivo → Gantt VIP');
+            generarReporteGanttVIP();
+            return false;
+        });
+        console.log('✅ Botón Reporte Ejecutivo reasignado (Gantt VIP).');
+    }
+
+    // Ejecutar ahora y observar futuros cambios
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', reasignarBoton);
+    } else {
+        reasignarBoton();
+    }
+
+    const observer = new MutationObserver(() => {
+        const btn = document.querySelector('button[data-reporte-fijo="true"]');
+        if (btn && btn.dataset.ganttReemplazado !== 'true') {
+            modificarBoton(btn);
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log('✅ Reporte Gantt VIP instalado SOLO para el botón "Reporte Ejecutivo".');
+    console.log('✅ La vista premium y otras funciones NO se ven afectadas.');
+})();
+</script>
  </body>
 </html>
  
