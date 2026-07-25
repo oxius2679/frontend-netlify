@@ -1,4 +1,640 @@
 // ============================================================
+// 👑 PANEL DE LEADS - COMPLETO (ADMIN + BADGE + KPIs + CSV + DELETE)
+// ============================================================
+
+const LEADS_LAST_SEEN_KEY = 'leadsLastSeenTotal';
+
+// 🔥 FUNCIÓN: EXPORTAR LEADS A CSV
+window.exportLeadsToCSV = function() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    
+    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/leads', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.leads || data.leads.length === 0) {
+            alert('⚠️ No hay leads para exportar.');
+            return;
+        }
+        
+        const headers = ['Fecha', 'Nombre', 'Email', 'Empresa', 'IP'];
+        const rows = data.leads.map(lead => {
+            const fecha = new Date(lead.date).toLocaleString('es-ES', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const escape = (str) => {
+                if (!str) return '';
+                str = String(str);
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return '"' + str.replace(/"/g, '""') + '"';
+                }
+                return str;
+            };
+            return [
+                escape(fecha),
+                escape(lead.name),
+                escape(lead.email),
+                escape(lead.company || 'No especificada'),
+                escape(lead.ip || '-')
+            ].join(',');
+        });
+        
+        const BOM = '\uFEFF';
+        const csvContent = BOM + headers.join(',') + '\n' + rows.join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const fechaHoy = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `leads_zacky_${fechaHoy}.csv`);
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    })
+    .catch(err => {
+        console.error('❌ Error exportando:', err);
+        alert('❌ Error al exportar los leads.');
+    });
+};
+
+// 🔥 NUEVA FUNCIÓN: ELIMINAR UN LEAD CON CONFIRMACIÓN
+window.deleteLead = async function(leadId, leadName) {
+    // Modal de confirmación
+    const confirmOverlay = document.createElement('div');
+    confirmOverlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(8px);
+        z-index: 9999999999 !important; display: flex; align-items: center; justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+    `;
+    
+    confirmOverlay.innerHTML = `
+        <div style="background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); 
+            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 20px; 
+            padding: 30px; max-width: 450px; width: 90%; text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(239, 68, 68, 0.1);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <div style="width: 70px; height: 70px; background: rgba(239, 68, 68, 0.15); 
+                border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                margin: 0 auto 20px; border: 2px solid rgba(239, 68, 68, 0.3);">
+                <i class="fas fa-trash-alt" style="font-size: 2rem; color: #ef4444;"></i>
+            </div>
+            
+            <h3 style="color: #f8fafc; font-size: 1.3rem; margin: 0 0 10px 0; font-weight: 700;">
+                ¿Eliminar este lead?
+            </h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; margin: 0 0 20px 0; line-height: 1.5;">
+                Estás a punto de eliminar a <strong style="color: #f87171;">${leadName}</strong>.<br>
+                Esta acción no se puede deshacer.
+            </p>
+            
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="cancelDeleteBtn" style="background: rgba(255,255,255,0.05); 
+                    border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; 
+                    padding: 12px 24px; border-radius: 10px; cursor: pointer; 
+                    font-size: 0.95rem; font-weight: 600; transition: all 0.2s; flex: 1;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="confirmDeleteBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); 
+                    border: none; color: white; padding: 12px 24px; border-radius: 10px; 
+                    cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; flex: 1;
+                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 18px rgba(239, 68, 68, 0.6)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.4)'">
+                    <i class="fas fa-trash"></i> Sí, eliminar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(confirmOverlay);
+    
+    // Cancelar
+    document.getElementById('cancelDeleteBtn').onclick = () => confirmOverlay.remove();
+    confirmOverlay.onclick = (e) => { if (e.target === confirmOverlay) confirmOverlay.remove(); };
+    
+    // Confirmar eliminación
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/leads/${leadId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error('Error al eliminar');
+            
+            confirmOverlay.remove();
+            
+            // Mostrar notificación de éxito
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 99999999999 !important;
+                background: linear-gradient(135deg, #10b981, #059669); color: white;
+                padding: 16px 24px; border-radius: 12px; font-weight: 600;
+                box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+                animation: slideUp 0.3s ease-out;
+                display: flex; align-items: center; gap: 10px;
+            `;
+            notif.innerHTML = '<i class="fas fa-check-circle"></i> Lead eliminado correctamente';
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+            
+            // Recargar el panel para actualizar la lista
+            if (window.showLeadsPanelPro) {
+                const panel = document.getElementById('leadsPanelProOverlay');
+                if (panel) panel.remove();
+                window.showLeadsPanelPro();
+            }
+            
+        } catch (error) {
+            console.error('❌ Error eliminando:', error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash"></i> Sí, eliminar';
+            alert('❌ Error al eliminar el lead. Intenta de nuevo.');
+        }
+    };
+};
+
+// 1. FUNCIÓN DEL MODAL CON KPIs + COLUMNA DE ACCIONES
+window.showLeadsPanelPro = async function() {
+    const userEmail = localStorage.getItem('userEmail');
+    const token = localStorage.getItem('authToken');
+    let isAdmin = false;
+
+    if (userEmail === 'ajackson2672@gmail.com') isAdmin = true;
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.email === 'ajackson2672@gmail.com') isAdmin = true;
+        } catch(e) {}
+    }
+
+    if (!isAdmin) {
+        console.warn('🛑 Acceso denegado');
+        return;
+    }
+
+    if (document.getElementById('leadsPanelProOverlay')) {
+        document.getElementById('leadsPanelProOverlay').remove();
+        return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'leadsPanelProOverlay';
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px); 
+        z-index: 999999999 !important; display: flex; align-items: center; justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%); 
+        border: 1px solid rgba(99, 102, 241, 0.3); 
+        border-radius: 24px; 
+        width: 90%; max-width: 1100px; max-height: 88vh; 
+        display: flex; flex-direction: column; 
+        box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(99, 102, 241, 0.1);
+        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+    `;
+
+    modal.innerHTML = `
+        <div style="padding: 24px 30px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+            <div>
+                <h2 style="margin: 0; color: #f8fafc; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 12px;">
+                    <span style="background: linear-gradient(135deg, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        👥 Leads Registrados
+                    </span>
+                </h2>
+                <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 0.9rem;">Personas que solicitaron probar Zacky desde la Landing Page</p>
+            </div>
+            <button id="closeLeadsBtn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; font-size: 1.2rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                ✕
+            </button>
+        </div>
+        
+        <div id="leadsContentPro" style="padding: 30px; overflow-y: auto; flex: 1; text-align: center; color: #94a3b8;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px;">
+                <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: #6366f1; margin-bottom: 20px;"></i>
+                <p style="font-size: 1rem; color: #cbd5e1;">Sincronizando con el servidor...</p>
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    if (!document.getElementById('leadsPanelAnimations')) {
+        const style = document.createElement('style');
+        style.id = 'leadsPanelAnimations';
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes pulseBadge { 
+                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                50% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            }
+            @keyframes pulseKpi {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+                50% { box-shadow: 0 0 20px 5px rgba(16, 185, 129, 0.1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.getElementById('closeLeadsBtn').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/leads', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('No autorizado.');
+        const data = await response.json();
+        const contentDiv = document.getElementById('leadsContentPro');
+
+        localStorage.setItem(LEADS_LAST_SEEN_KEY, data.total.toString());
+        if (window.updateLeadsBadge) {
+            window.updateLeadsBadge(data.total);
+        }
+
+        if (data.total === 0) {
+            contentDiv.innerHTML = `
+                <div style="padding: 60px 20px;">
+                    <div style="width: 80px; height: 80px; background: rgba(99,102,241,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <i class="fas fa-inbox" style="font-size: 2.5rem; color: #6366f1;"></i>
+                    </div>
+                    <p style="color: #f1f5f9; font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Aún no hay leads registrados</p>
+                    <p style="color: #94a3b8; font-size: 0.95rem;">¡Comparte tu landing page para empezar a recibir registros!</p>
+                </div>
+            `;
+            return;
+        }
+
+        // CALCULAR KPIs EJECUTIVOS
+        const ahora = new Date();
+        const hace7Dias = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        const leadsUltimos7Dias = data.leads.filter(lead => new Date(lead.date) >= hace7Dias).length;
+        
+        const empresasUnicas = new Set(
+            data.leads
+                .map(l => (l.company || '').trim().toLowerCase())
+                .filter(c => c && c !== 'no especificada')
+        ).size;
+        
+        const leadMasReciente = data.leads[0];
+        let tiempoTranscurrido = '';
+        if (leadMasReciente) {
+            const diffMs = ahora - new Date(leadMasReciente.date);
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffHoras = Math.floor(diffMin / 60);
+            const diffDias = Math.floor(diffHoras / 24);
+            
+            if (diffMin < 60) tiempoTranscurrido = `hace ${diffMin} min`;
+            else if (diffHoras < 24) tiempoTranscurrido = `hace ${diffHoras}h`;
+            else tiempoTranscurrido = `hace ${diffDias}d`;
+        }
+
+        // SECCIÓN DE KPIs EJECUTIVOS
+        const kpisHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px;">
+                
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 20px; text-align: left; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 25px rgba(59, 130, 246, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div style="width: 42px; height: 42px; background: rgba(59, 130, 246, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-users" style="color: #3b82f6; font-size: 1.2rem;"></i>
+                        </div>
+                        <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Total</span>
+                    </div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 4px;">${data.total}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8;">Leads totales</div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 20px; text-align: left; transition: all 0.3s; ${leadsUltimos7Dias > 0 ? 'animation: pulseKpi 3s infinite;' : ''}" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 25px rgba(16, 185, 129, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div style="width: 42px; height: 42px; background: rgba(16, 185, 129, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-chart-line" style="color: #10b981; font-size: 1.2rem;"></i>
+                        </div>
+                        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">7 días</span>
+                    </div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 4px;">${leadsUltimos7Dias}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8;">Nuevos esta semana</div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 16px; padding: 20px; text-align: left; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 25px rgba(139, 92, 246, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div style="width: 42px; height: 42px; background: rgba(139, 92, 246, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-building" style="color: #8b5cf6; font-size: 1.2rem;"></i>
+                        </div>
+                        <span style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Empresas</span>
+                    </div>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: #f8fafc; line-height: 1; margin-bottom: 4px;">${empresasUnicas}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8;">Empresas distintas</div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 20px; text-align: left; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 25px rgba(245, 158, 11, 0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div style="width: 42px; height: 42px; background: rgba(245, 158, 11, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-star" style="color: #f59e0b; font-size: 1.2rem;"></i>
+                        </div>
+                        <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Reciente</span>
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${leadMasReciente?.name || '-'}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8;">${tiempoTranscurrido}</div>
+                </div>
+
+            </div>
+        `;
+
+        // 🔥 TABLA DE LEADS CON COLUMNA DE ACCIONES
+        let tableHTML = `
+            <div style="overflow-x: auto; border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                    <thead>
+                        <tr style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid rgba(99, 102, 241, 0.2);">
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Fecha</th>
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Nombre</th>
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Email</th>
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Empresa</th>
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">IP</th>
+                            <th style="padding: 16px 20px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        data.leads.forEach((lead) => {
+            const date = new Date(lead.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const bgHover = 'rgba(255,255,255,0.03)';
+            const leadId = lead._id || lead.id;
+            
+            // Escapar comillas en el nombre para usarlo en el onclick
+            const safeName = lead.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
+            tableHTML += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s ease;" 
+                    onmouseover="this.style.background='${bgHover}'" 
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px 20px; color: #94a3b8; font-family: monospace; font-size: 0.85rem;">${date}</td>
+                    <td style="padding: 16px 20px; color: #f8fafc; font-weight: 600;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem;">
+                                ${lead.name.charAt(0).toUpperCase()}
+                            </div>
+                            ${lead.name}
+                        </div>
+                    </td>
+                    <td style="padding: 16px 20px; color: #60a5fa; font-weight: 500;">${lead.email}</td>
+                    <td style="padding: 16px 20px; color: #cbd5e1;">
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05);">
+                            ${lead.company || 'No especificada'}
+                        </span>
+                    </td>
+                    <td style="padding: 16px 20px; color: #64748b; font-family: monospace; font-size: 0.8rem;">${lead.ip || '-'}</td>
+                    <td style="padding: 16px 20px; text-align: center;">
+                        <button onclick="window.deleteLead('${leadId}', '${safeName}')" 
+                            style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); 
+                            color: #f87171; padding: 6px 12px; border-radius: 8px; cursor: pointer; 
+                            font-size: 0.85rem; font-weight: 600; transition: all 0.2s; display: inline-flex; 
+                            align-items: center; gap: 6px;"
+                            onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.transform='scale(1.05)'"
+                            onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='scale(1)'"
+                            title="Eliminar este lead">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.9rem;">
+                    <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span>
+                    Total: <strong style="color: #f8fafc; font-size: 1.1rem;">${data.total}</strong> registros
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="window.exportLeadsToCSV()" style="background: linear-gradient(135deg, #10b981, #059669); border: 1px solid rgba(16, 185, 129, 0.4); color: white; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);" 
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 18px rgba(16, 185, 129, 0.5)'" 
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </button>
+                    <button onclick="window.showLeadsPanelPro()" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" 
+                        onmouseover="this.style.background='rgba(99, 102, 241, 0.3)'; this.style.transform='translateY(-1px)'" 
+                        onmouseout="this.style.background='rgba(99, 102, 241, 0.15)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        contentDiv.innerHTML = kpisHTML + tableHTML;
+
+    } catch (error) {
+        document.getElementById('leadsContentPro').innerHTML = `
+            <div style="padding: 60px 20px;">
+                <div style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ef4444;"></i>
+                </div>
+                <p style="color: #f87171; font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Error de conexión</p>
+                <p style="color: #94a3b8; font-size: 0.95rem; max-width: 400px; margin: 0 auto;">${error.message}</p>
+            </div>
+        `;
+    }
+};
+
+// 2. FUNCIÓN INTELIGENTE DEL BADGE
+window.updateLeadsBadge = function(totalActual) {
+    const badge = document.getElementById('leadsBadge');
+    if (!badge) return;
+    
+    const lastSeen = parseInt(localStorage.getItem(LEADS_LAST_SEEN_KEY) || '0', 10);
+    const nuevos = totalActual - lastSeen;
+    
+    if (nuevos > 0) {
+        badge.textContent = nuevos > 99 ? '99+' : nuevos;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+};
+
+// 3. VERIFICAR LEADS EN SEGUNDO PLANO
+window.checkLeadsInBackground = async function() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/leads', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (window.updateLeadsBadge) {
+            window.updateLeadsBadge(data.total);
+        }
+    } catch (error) {}
+};
+
+// 4. INYECTAR EL BOTÓN CON BADGE
+(function() {
+    function injectButton() {
+        const userEmail = localStorage.getItem('userEmail');
+        const token = localStorage.getItem('authToken');
+        let isAdmin = false;
+
+        if (userEmail === 'ajackson2672@gmail.com') isAdmin = true;
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.email === 'ajackson2672@gmail.com') isAdmin = true;
+            } catch(e) {}
+        }
+
+        if (!isAdmin) return;
+        if (document.getElementById('adminLeadsBtn')) return;
+
+        const container = document.createElement('div');
+        container.id = 'adminLeadsBtn';
+        container.style.cssText = `
+            position: fixed; bottom: 120px; right: 30px; 
+            z-index: 999999999 !important; pointer-events: auto !important;
+        `;
+
+        const btn = document.createElement('button');
+        btn.innerHTML = '<i class="fas fa-user-shield"></i> Leads';
+        btn.style.cssText = `
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white; border: none; padding: 14px 24px;
+            border-radius: 50px; font-weight: 600; font-size: 15px;
+            cursor: pointer; box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; gap: 8px; position: relative;
+        `;
+        
+        btn.onmouseenter = () => {
+            btn.style.transform = 'translateY(-3px) scale(1.05)';
+            btn.style.boxShadow = '0 12px 35px rgba(99, 102, 241, 0.8)';
+        };
+        btn.onmouseleave = () => {
+            btn.style.transform = 'translateY(0) scale(1)';
+            btn.style.boxShadow = '0 8px 25px rgba(99, 102, 241, 0.6)';
+        };
+        
+        btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof window.showLeadsPanelPro === 'function') {
+                window.showLeadsPanelPro();
+            }
+        };
+
+        const badge = document.createElement('span');
+        badge.id = 'leadsBadge';
+        badge.style.cssText = `
+            position: absolute; top: -8px; right: -8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; border: 2px solid #0f172a;
+            min-width: 24px; height: 24px; border-radius: 50%;
+            font-size: 11px; font-weight: 800; display: none;
+            align-items: center; justify-content: center; padding: 0 6px;
+            animation: pulseBadge 2s infinite;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+        `;
+        badge.textContent = '0';
+
+        btn.appendChild(badge);
+        container.appendChild(btn);
+        document.body.appendChild(container);
+        
+        setTimeout(() => {
+            if (window.checkLeadsInBackground) window.checkLeadsInBackground();
+        }, 2000);
+
+        setInterval(() => {
+            if (window.checkLeadsInBackground) window.checkLeadsInBackground();
+        }, 300000);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectButton);
+    } else {
+        setTimeout(injectButton, 1000);
+    }
+})();
+
+
+
+// ============================================================
+// 📊 GOOGLE ANALYTICS 4 - SEGUIMIENTO DE USUARIOS REALES
+// ============================================================
+const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XXXXXXX)
+
+(function() {
+  // 1. Cargar el script de Google Analytics
+  const script = document.createElement('script');
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+  script.async = true;
+  document.head.appendChild(script);
+  
+  // 2. Inicializar gtag
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  window.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', GA_MEASUREMENT_ID);
+  
+  console.log('✅ Google Analytics 4 inicializado con ID:', GA_MEASUREMENT_ID);
+
+  // 3. (Opcional) Rastrear cuando un usuario inicia sesión en TU sistema
+  window.addEventListener('userLoggedIn', (e) => {
+    // e.detail debe contener { userId: '...' }
+    if (e.detail && e.detail.userId) {
+      gtag('event', 'login', { user_id: e.detail.userId });
+      console.log('📊 Evento de login enviado a GA4');
+    }
+  });
+  
+  // 4. (Opcional) Rastrear cuando cambia de vista en TU sistema
+  window.addEventListener('viewChanged', (e) => {
+    if (e.detail && e.detail.view) {
+      gtag('event', 'page_view', { 
+        page_title: e.detail.view,
+        page_location: window.location.href + '#' + e.detail.view
+      });
+      console.log('📊 Cambio de vista enviado a GA4:', e.detail.view);
+    }
+  });
+})();
+
+
+
+
+// ============================================================
 // 🚀 PANEL EJECUTIVO - EVM CON RADAR INTERACTIVO Y TOOLTIPS
 // ============================================================
 (function installExecutivePanel() {
