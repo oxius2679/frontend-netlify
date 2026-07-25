@@ -1,3 +1,7 @@
+
+
+
+
 // ============================================================
 // 👑 PANEL DE LEADS - COMPLETO (ADMIN + BADGE + KPIs + CSV + DELETE)
 // ============================================================
@@ -636,12 +640,12 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
 // ============================================================
 // 🚀 PANEL EJECUTIVO - EVM CON RADAR INTERACTIVO Y TOOLTIPS
-//    (VERSIÓN CON FONDO DEGRADADO BONITO)
+//    (VERSIÓN CON TRADUCCIONES COMPLETAS)
 // ============================================================
 (function installExecutivePanel() {
     'use strict';
 
-    // ---- Función de cálculo EVM (corregida para overdue) ----
+    // ---- Función de cálculo EVM (sin cambios) ----
     function calculateEVM(tasks) {
         const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
         const PV = BAC;
@@ -741,7 +745,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         };
     }
 
-    // ---- Dibujar radar con tooltips (sin cambios) ----
+    // ---- Dibujar radar (con tooltips) ----
     function drawRadar(canvasId, data) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -755,7 +759,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         const radius = canvas.width / 2 - 25;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Fondo del canvas (transparente para que se vea el degradado)
         ctx.fillStyle = 'rgba(10, 22, 40, 0.5)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -785,13 +788,14 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
         // Etiquetas (traducidas)
         const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const es = lang === 'es';
         const metricNames = {
-            'Eficiencia': lang === 'es' ? 'Eficiencia' : 'Efficiency',
+            'Eficiencia': es ? 'Eficiencia' : 'Efficiency',
             'SPI': 'SPI',
             'CPI': 'CPI',
-            'Progreso': lang === 'es' ? 'Progreso' : 'Progress',
-            'Calidad': lang === 'es' ? 'Calidad' : 'Quality',
-            'Velocidad': lang === 'es' ? 'Velocidad' : 'Velocity'
+            'Progreso': es ? 'Progreso' : 'Progress',
+            'Calidad': es ? 'Calidad' : 'Quality',
+            'Velocidad': es ? 'Velocidad' : 'Velocity'
         };
         const labels = data.radarMetrics.map(m => metricNames[m] || m);
 
@@ -859,9 +863,9 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         ctx.fillText(Math.round(avg) + '%', cx, cy);
         ctx.fillStyle = '#94a3b8';
         ctx.font = '9px Inter, sans-serif';
-        ctx.fillText(lang === 'es' ? 'PROMEDIO' : 'AVG', cx, cy + 18);
+        ctx.fillText(es ? 'PROMEDIO' : 'AVG', cx, cy + 18);
 
-        // ---- TOOLTIP INTERACTIVO (sin cambios) ----
+        // ---- TOOLTIP INTERACTIVO ----
         const oldTooltip = document.getElementById('radarTooltip');
         if (oldTooltip) oldTooltip.remove();
 
@@ -955,7 +959,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         };
     }
 
-    // ---- Instalar el panel en el dashboard (VERSIÓN CON FONDO BONITO) ----
+    // ---- Instalar el panel en el dashboard ----
     function installPanel() {
         const dashboard = document.getElementById('dashboardView');
         if (!dashboard || !dashboard.classList.contains('active')) {
@@ -981,12 +985,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             return false;
         }
 
-        console.log('📊 Panel EVM - valores calculados:', {
-            BAC: data.BAC, PV: data.PV, AC: data.AC, EV: data.EV,
-            SPI: data.SPI, CPI: data.CPI, CV: data.CV, SV: data.SV,
-            EAC: data.EAC, ETC: data.ETC, VAC: data.VAC
-        });
-
         const lang = localStorage.getItem('preferredLanguage') || 'es';
         const es = lang === 'es';
         const T = {
@@ -1011,16 +1009,16 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             days: es ? 'días' : 'days',
             radar: es ? 'Rendimiento Multidimensional' : 'Multidimensional Performance',
             update: es ? 'Actualizar' : 'Update',
-            total: es ? 'Total tareas' : 'Total tasks',
+            totalLabel: es ? 'Total tareas' : 'Total tasks',
             completedLabel: es ? 'Completadas' : 'Completed',
             overdueLabel: es ? 'Rezagadas' : 'Overdue',
+            remainingDays: es ? 'restantes' : 'remaining',
         };
 
         const healthColor = data.healthScore >= 80 ? '#10b981' : data.healthScore >= 60 ? '#3b82f6' : data.healthScore >= 40 ? '#f59e0b' : '#ef4444';
 
-        // ========== HTML CON FONDO DEGRADADO BONITO ==========
         const html = `
-            <div style="grid-column: span 2; background: linear-gradient(145deg, #0a1628, #0f2847) !important; border-radius: 24px; padding: 30px; border: 1px solid rgba(139,92,246,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+           <div style="grid-column: span 2; background: transparent !important; border: none; padding: 0; box-shadow: none; border-radius: 0;">
                 
                 <!-- TÍTULO + BOTÓN ACTUALIZAR -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -1154,13 +1152,13 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
                                 ${data.finishDate.toLocaleDateString(es ? 'es-ES' : 'en-US')}
                             </div>
                             <div style="color: #94a3b8; font-size: 13px; position: relative; z-index: 1;">
-                                ${data.daysRemaining} ${T.days} ${es ? 'restantes' : 'remaining'}
+                                ${data.daysRemaining} ${T.days} ${T.remainingDays}
                             </div>
                             <div style="margin-top: 10px; background: rgba(16,185,129,0.15); border-radius: 40px; padding: 4px 16px; display: inline-block; font-size: 12px; color: #34d399; border: 1px solid rgba(16,185,129,0.3); position: relative; z-index: 1;">
                                 ${T.confidence}: ${Math.min(90, data.healthScore)}%
                             </div>
                             <div style="margin-top: 8px; font-size: 11px; color: #64748b; position: relative; z-index: 1;">
-                                📊 ${T.total}: ${data.total} | ${T.completedLabel}: ${data.completed} | ${T.overdueLabel}: ${data.overdue}
+                                📊 ${T.totalLabel}: ${data.total} | ${T.completedLabel}: ${data.completed} | ${T.overdueLabel}: ${data.overdue}
                             </div>
                         </div>
                     </div>
@@ -1240,8 +1238,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
     console.log('✅ Panel Ejecutivo EVM con radar interactivo cargado.');
 })();
-
-
 
 
 // ============================================================
