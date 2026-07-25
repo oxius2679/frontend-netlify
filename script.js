@@ -636,6 +636,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
 // ============================================================
 // 🚀 PANEL EJECUTIVO - EVM CON RADAR INTERACTIVO Y TOOLTIPS
+//    (VERSIÓN CON FONDO DEGRADADO BONITO)
 // ============================================================
 (function installExecutivePanel() {
     'use strict';
@@ -655,9 +656,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             if (status === 'completed') {
                 EV += est;
             } else if (status === 'inProgress' || status === 'overdue') {
-                // Si usas 'progress' (0-100), descomenta la línea de abajo
-                // const progress = t.progress || 0;
-                // EV += (est * progress) / 100;
                 EV += Math.min(logged, est);
             }
         });
@@ -716,7 +714,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         const finishDate = new Date();
         finishDate.setDate(finishDate.getDate() + daysRemaining);
 
-        // Métricas para el radar (valores en %)
         const radarMetrics = ['Eficiencia', 'SPI', 'CPI', 'Progreso', 'Calidad', 'Velocidad'];
         const radarValues = [
             Math.min(100, evm.BAC > 0 ? (evm.AC / evm.BAC) * 100 : 0),
@@ -744,7 +741,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         };
     }
 
-    // ---- Dibujar radar con tooltips ----
+    // ---- Dibujar radar con tooltips (sin cambios) ----
     function drawRadar(canvasId, data) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
@@ -758,7 +755,8 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         const radius = canvas.width / 2 - 25;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#0f172a';
+        // Fondo del canvas (transparente para que se vea el degradado)
+        ctx.fillStyle = 'rgba(10, 22, 40, 0.5)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const n = data.radarMetrics.length;
@@ -863,17 +861,15 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         ctx.font = '9px Inter, sans-serif';
         ctx.fillText(lang === 'es' ? 'PROMEDIO' : 'AVG', cx, cy + 18);
 
-        // ---- TOOLTIP INTERACTIVO ----
-        // Eliminar tooltip anterior si existe
+        // ---- TOOLTIP INTERACTIVO (sin cambios) ----
         const oldTooltip = document.getElementById('radarTooltip');
         if (oldTooltip) oldTooltip.remove();
 
-        // Crear tooltip
         const tooltip = document.createElement('div');
         tooltip.id = 'radarTooltip';
         tooltip.style.cssText = `
             position: fixed;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(10, 22, 40, 0.95);
             border: 1px solid rgba(139, 92, 246, 0.5);
             border-radius: 8px;
             padding: 8px 14px;
@@ -890,7 +886,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         `;
         document.body.appendChild(tooltip);
 
-        // Guardar datos en el canvas para el mousemove
         canvas._tooltipData = {
             points: points.map((p, i) => ({
                 x: p.x,
@@ -901,7 +896,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             tooltip: tooltip
         };
 
-        // Función para actualizar tooltip
         function handleMouseMove(e) {
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
@@ -910,7 +904,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             if (!data) return;
 
             let found = false;
-            let minDist = 20; // radio de detección
+            let minDist = 20;
             let closest = null;
 
             for (const pt of data.points) {
@@ -927,10 +921,8 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             if (found && closest) {
                 tooltip.style.display = 'block';
                 tooltip.textContent = `${closest.label}: ${closest.value.toFixed(1)}%`;
-                // Posicionar tooltip cerca del cursor
                 let left = e.clientX + 12;
                 let top = e.clientY - 10;
-                // Ajustar si se sale de la pantalla
                 const tw = tooltip.offsetWidth || 120;
                 const th = tooltip.offsetHeight || 40;
                 if (left + tw > window.innerWidth) left = e.clientX - tw - 12;
@@ -950,14 +942,11 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
             }
         }
 
-        // Eliminar listeners anteriores (si los hay)
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('mouseleave', handleMouseLeave);
-
         canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('mouseleave', handleMouseLeave);
 
-        // Guardar referencia para limpieza
         canvas._tooltipCleanup = () => {
             canvas.removeEventListener('mousemove', handleMouseMove);
             canvas.removeEventListener('mouseleave', handleMouseLeave);
@@ -966,7 +955,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         };
     }
 
-    // ---- Instalar el panel en el dashboard ----
+    // ---- Instalar el panel en el dashboard (VERSIÓN CON FONDO BONITO) ----
     function installPanel() {
         const dashboard = document.getElementById('dashboardView');
         if (!dashboard || !dashboard.classList.contains('active')) {
@@ -1029,8 +1018,9 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
         const healthColor = data.healthScore >= 80 ? '#10b981' : data.healthScore >= 60 ? '#3b82f6' : data.healthScore >= 40 ? '#f59e0b' : '#ef4444';
 
+        // ========== HTML CON FONDO DEGRADADO BONITO ==========
         const html = `
-            <div style="grid-column: span 2; background: linear-gradient(145deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; border: 1px solid rgba(139,92,246,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+            <div style="grid-column: span 2; background: linear-gradient(145deg, #0a1628, #0f2847) !important; border-radius: 24px; padding: 30px; border: 1px solid rgba(139,92,246,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
                 
                 <!-- TÍTULO + BOTÓN ACTUALIZAR -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -1053,19 +1043,19 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
                 <!-- FILA DE MÉTRICAS EVM (PV, EV, AC, BAC) -->
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(59,130,246,0.3);">
+                    <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(59,130,246,0.3);">
                         <div style="color: #94a3b8; font-size: 10px;">${T.pv}</div>
                         <div style="font-size: 22px; font-weight: 700; color: #3b82f6;">${data.PV.toFixed(2)}h</div>
                     </div>
-                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(16,185,129,0.3);">
+                    <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(16,185,129,0.3);">
                         <div style="color: #94a3b8; font-size: 10px;">${T.ev}</div>
                         <div style="font-size: 22px; font-weight: 700; color: #10b981;">${data.EV.toFixed(2)}h</div>
                     </div>
-                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(239,68,68,0.3);">
+                    <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(239,68,68,0.3);">
                         <div style="color: #94a3b8; font-size: 10px;">${T.ac}</div>
                         <div style="font-size: 22px; font-weight: 700; color: #ef4444;">${data.AC.toFixed(2)}h</div>
                     </div>
-                    <div style="background: #1a1a3a; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(139,92,246,0.3);">
+                    <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid rgba(139,92,246,0.3);">
                         <div style="color: #94a3b8; font-size: 10px;">${T.bac}</div>
                         <div style="font-size: 22px; font-weight: 700; color: #8b5cf6;">${data.BAC.toFixed(2)}h</div>
                     </div>
@@ -1077,7 +1067,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
                     <!-- COLUMNA IZQUIERDA: Radar + SPI/CPI + CV/SV -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <!-- Radar -->
-                        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border: 1px solid rgba(139,92,246,0.2);">
+                        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(139,92,246,0.2);">
                             <h4 style="color: #94a3b8; margin: 0 0 10px 0; font-size: 13px; text-align: center;">${T.radar}</h4>
                             <div style="position: relative; width: 100%; max-width: 340px; margin: 0 auto; aspect-ratio: 1/1;">
                                 <canvas id="execRadarCanvas" style="width: 100%; height: 100%; display: block; cursor: default;"></canvas>
@@ -1086,22 +1076,22 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
                         <!-- SPI, CPI, CV, SV -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
-                            <div style="background: ${data.SPI >= 1 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.spi}</div>
                                 <div style="font-size: 20px; font-weight: 700; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI.toFixed(2)}</div>
                                 <div style="font-size: 9px; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI >= 1 ? '✅' : '⚠️'}</div>
                             </div>
-                            <div style="background: ${data.CPI >= 1 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.cpi}</div>
                                 <div style="font-size: 20px; font-weight: 700; color: ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">${data.CPI.toFixed(2)}</div>
                                 <div style="font-size: 9px; color: ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">${data.CPI >= 1 ? '✅' : '⚠️'}</div>
                             </div>
-                            <div style="background: rgba(59,130,246,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #3b82f6;">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #3b82f6;">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.cv}</div>
                                 <div style="font-size: 20px; font-weight: 700; color: ${data.CV >= 0 ? '#10b981' : '#ef4444'};">${data.CV >= 0 ? '+' : ''}${data.CV.toFixed(2)}h</div>
                                 <div style="font-size: 9px; color: ${data.CV >= 0 ? '#10b981' : '#ef4444'};">${data.CV >= 0 ? '✅' : '⚠️'}</div>
                             </div>
-                            <div style="background: rgba(245,158,11,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #f59e0b;">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #f59e0b;">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.sv}</div>
                                 <div style="font-size: 20px; font-weight: 700; color: ${data.SV >= 0 ? '#10b981' : '#ef4444'};">${data.SV >= 0 ? '+' : ''}${data.SV.toFixed(2)}h</div>
                                 <div style="font-size: 9px; color: ${data.SV >= 0 ? '#10b981' : '#ef4444'};">${data.SV >= 0 ? '✅' : '⚠️'}</div>
@@ -1110,15 +1100,15 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
                         <!-- EAC, ETC, VAC -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                            <div style="background: rgba(139,92,246,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #8b5cf6;">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #8b5cf6;">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.eac}</div>
                                 <div style="font-size: 18px; font-weight: 700; color: #8b5cf6;">${data.EAC.toFixed(2)}h</div>
                             </div>
-                            <div style="background: rgba(16,185,129,0.15); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #10b981;">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #10b981;">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.etc}</div>
                                 <div style="font-size: 18px; font-weight: 700; color: #10b981;">${data.ETC.toFixed(2)}h</div>
                             </div>
-                            <div style="background: ${data.VAC >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.VAC >= 0 ? '#10b981' : '#ef4444'};">
+                            <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.VAC >= 0 ? '#10b981' : '#ef4444'};">
                                 <div style="color: #94a3b8; font-size: 9px;">${T.vac}</div>
                                 <div style="font-size: 18px; font-weight: 700; color: ${data.VAC >= 0 ? '#10b981' : '#ef4444'};">${data.VAC >= 0 ? '+' : ''}${data.VAC.toFixed(2)}h</div>
                             </div>
@@ -1128,7 +1118,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
                     <!-- COLUMNA DERECHA: Críticas + Predicción -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <!-- Tareas Críticas -->
-                        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border: 1px solid rgba(239,68,68,0.3); flex: 1;">
+                        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(239,68,68,0.3); flex: 1;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                 <h4 style="color: #94a3b8; margin: 0; font-size: 13px;">${T.critical}</h4>
                                 <span style="background: rgba(239,68,68,0.2); color: #ef4444; padding: 2px 12px; border-radius: 20px; font-size: 12px;">${data.criticalTasks.length}</span>
@@ -1157,7 +1147,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
                         </div>
 
                         <!-- Predicción -->
-                        <div style="background: linear-gradient(135deg, #1a1a3a, #0f172a); border-radius: 16px; padding: 20px; text-align: center; border: 1px solid rgba(16,185,129,0.3); position: relative; overflow: hidden;">
+                        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border: 1px solid rgba(16,185,129,0.3); position: relative; overflow: hidden;">
                             <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: radial-gradient(circle, rgba(16,185,129,0.1), transparent); border-radius: 50%;"></div>
                             <h4 style="color: #94a3b8; margin: 0 0 8px 0; font-size: 13px; position: relative; z-index: 1;">${T.prediction}</h4>
                             <div style="font-size: 28px; font-weight: 700; color: #10b981; position: relative; z-index: 1;">
@@ -1190,7 +1180,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         if (updateBtn) {
             updateBtn.onclick = () => {
                 console.log('🔄 Actualizando panel ejecutivo...');
-                // Limpiar tooltip anterior
                 const oldTooltip = document.getElementById('radarTooltip');
                 if (oldTooltip) oldTooltip.remove();
                 installPanel();
@@ -1224,7 +1213,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         const observer = new MutationObserver(() => {
             if (!dashboard.querySelector('#execRadarCanvas')) {
                 console.log('🔄 Panel detectado como eliminado, reinstalando...');
-                // Limpiar tooltip residual
                 const oldTooltip = document.getElementById('radarTooltip');
                 if (oldTooltip) oldTooltip.remove();
                 installPanel();
@@ -1252,7 +1240,6 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 
     console.log('✅ Panel Ejecutivo EVM con radar interactivo cargado.');
 })();
-
 
 
 
@@ -23302,8 +23289,7 @@ function renderScrum(container) {
 
 
 
-// ========== SECCIÓN DASHBOARD ==========
-// ========== SECCIÓN DASHBOARD (CORREGIDA - Gráfica de dona sin desborde) ==========
+// ========== SECCIÓN DASHBOARD (CORREGIDA - FONDO OSCURO EJECUTIVO) ==========
 function renderDashboard(container) {
   // ========== FUNCIONES AUXILIARES INTERNAS (no interfieren con el exterior) ==========
   function formatDate(date) {
@@ -23379,7 +23365,6 @@ function renderDashboard(container) {
   }
 
   function loadDashboardProjectData() {
-    // Si ya existe una función externa con el mismo nombre, la usamos; si no, creamos datos de ejemplo
     if (typeof window.loadDashboardProjectDataExternal === 'function') {
       window.loadDashboardProjectDataExternal();
       return;
@@ -23388,7 +23373,7 @@ function renderDashboard(container) {
     const actionsUl = document.getElementById('requiredActions');
     if (risksDiv && risksDiv.children.length === 0) {
       risksDiv.innerHTML = `
-        <div style="background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="background: rgba(10,22,40,0.6); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;">
           <span>⚠️ Riesgo de ejemplo: Revisar hitos</span>
           <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
         </div>
@@ -23396,7 +23381,7 @@ function renderDashboard(container) {
     }
     if (actionsUl && actionsUl.children.length === 0) {
       actionsUl.innerHTML = `
-        <li style="background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <li style="background: rgba(10,22,40,0.6); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;">
           <span>📌 Reunión semanal</span>
           <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
         </li>
@@ -23410,7 +23395,7 @@ function renderDashboard(container) {
       const container = document.getElementById('risksContainer');
       if (container) {
         const div = document.createElement('div');
-        div.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+        div.style.cssText = 'background: rgba(10,22,40,0.6); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;';
         div.innerHTML = `
           <span>⚠️ ${escapeHtml(riesgo)}</span>
           <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
@@ -23426,7 +23411,7 @@ function renderDashboard(container) {
       const container = document.getElementById('requiredActions');
       if (container) {
         const li = document.createElement('li');
-        li.style.cssText = 'background: rgba(30,41,59,0.8); border:1px solid rgba(45,212,191,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;';
+        li.style.cssText = 'background: rgba(10,22,40,0.6); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:#f0f4ff;';
         li.innerHTML = `
           <span>📌 ${escapeHtml(accion)}</span>
           <button style="background:#ef4444; border:none; color:white; border-radius:20px; padding:4px 12px; cursor:pointer;" onclick="this.parentElement.remove()">Eliminar</button>
@@ -23447,7 +23432,6 @@ function renderDashboard(container) {
   }
 
   // ========== INICIO DEL RENDER (código original) ==========
-  // Asegurar que Chart.js esté cargado
   if (typeof Chart === 'undefined') {
     console.log('Cargando Chart.js...');
     const script = document.createElement('script');
@@ -23473,25 +23457,25 @@ function renderDashboard(container) {
 
   const tasks = project.tasks || [];
   const totalTasks = tasks.length;
-      let completed = 0;
-    let inProgress = 0;
-    let pending = 0;
-    let overdue = 0;
+  let completed = 0;
+  let inProgress = 0;
+  let pending = 0;
+  let overdue = 0;
+  
+  tasks.forEach(t => {
+    const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
+                       (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'));
     
-    tasks.forEach(t => {
-        const esRezagada = (t.status === 'overdue' || t.status === 'rezagado' || t.status === 'retrasado' ||
-                           (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'));
-        
-        if (t.status === 'completed') {
-            completed++;
-        } else if (esRezagada) {
-            overdue++;
-        } else if (t.status === 'inProgress') {
-            inProgress++;
-        } else {
-            pending++;
-        }
-    });
+    if (t.status === 'completed') {
+      completed++;
+    } else if (esRezagada) {
+      overdue++;
+    } else if (t.status === 'inProgress') {
+      inProgress++;
+    } else {
+      pending++;
+    }
+  });
 
   const totalEstimated = tasks.reduce((sum, t) => sum + (t.estimatedTime || 0), 0);
   const totalLogged = tasks.reduce((sum, t) => sum + (t.timeLogged || 0), 0);
@@ -23516,7 +23500,6 @@ function renderDashboard(container) {
   const modeNames = { agile: 'Ágil', traditional: 'Tradicional', hybrid: 'Híbrido' };
   const modeText = modeNames[currentMode] || 'Híbrido';
 
-  // Datos para seguimiento de horas (usamos nuestra función interna)
   const timeTrackingData = calculateTimeTrackingData(tasks, project.name);
 
   const assigneeHours = {};
@@ -23527,32 +23510,33 @@ function renderDashboard(container) {
   const barLabels = Object.keys(assigneeHours);
   const barData = Object.values(assigneeHours);
 
-  // ========== GENERAR HTML (exactamente igual que el original) ==========
+  // ========== GENERAR HTML CON FONDO OSCURO EJECUTIVO ==========
   const html = `
-    <div id="dashboardContentForExport" style="padding: 30px; background: #0a0a1a; min-height: 100vh; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+    <div id="dashboardContentForExport" style="padding: 30px; background: linear-gradient(145deg, #0a1628, #0f2847); min-height: 100vh; color: #f0f4ff; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+
       <!-- HEADER -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
         <div>
-          <h2 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          <h2 style="margin: 0; font-size: 28px; font-weight: 700; color: #f0f4ff;">
             📊 ${escapeHtml(project.name)}
           </h2>
-          <p style="margin: 5px 0 0 0; color: #94a3b8;">Vista Completa del Proyecto · Control Ejecutivo</p>
+          <p style="margin: 5px 0 0 0; color: #93c5fd;">Vista Completa del Proyecto · Control Ejecutivo</p>
         </div>
         <div style="display: flex; gap: 15px;">
           <div id="projectHealthStatus" style="background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px;">
             <span class="status-badge" style="color: ${statusColor}; font-weight: 600;">${statusText}</span>
           </div>
-          <div id="modeIndicator" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600;">
+          <div id="modeIndicator" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; color: #f0f4ff;">
             <i class="fas fa-sync-alt"></i> Modo: <span id="currentModeText">${modeText}</span>
           </div>
-          <button id="exportDashboardPdfBtn" style="background: #2d2d5f; border: 2px solid #8b5cf6; color: white; padding: 8px 20px; border-radius: 30px; font-weight: 600; cursor: pointer;">
+          <button id="exportDashboardPdfBtn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; color: white; padding: 8px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.3);">
             📄 Exportar PDF
           </button>
         </div>
       </div>
 
       <!-- FECHAS -->
-      <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+      <div style="display: flex; gap: 20px; margin-bottom: 30px; color: #e8edf5;">
         <div><span style="color: #94a3b8;">Fecha Inicio:</span> <strong id="projectStartDate">${startDate}</strong></div>
         <div><span style="color: #94a3b8;">Fecha Fin:</span> <strong id="projectEndDate">${endDate}</strong></div>
         <div><span style="color: #94a3b8;">(</span><strong>${totalDays}</strong><span style="color: #94a3b8;"> días)</span></div>
@@ -23560,76 +23544,76 @@ function renderDashboard(container) {
 
       <!-- PROGRESO GENERAL -->
       <div style="margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f0f4ff;">
           <span>Avance</span>
           <span id="completionPercentage">${progressPercent}%</span>
         </div>
-        <div style="height: 12px; background: #2d2d5f; border-radius: 6px; overflow: hidden;">
-          <div id="projectProgressFillDash" style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 6px;"></div>
+        <div style="height: 14px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05);">
+          <div id="projectProgressFillDash" style="width: ${progressPercent}%; height: 100%; background: ${progressPercent < 30 ? 'linear-gradient(90deg,#ef4444,#f87171)' : progressPercent < 70 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#10b981,#34d399)'}; border-radius: 20px; box-shadow: 0 0 20px ${progressPercent < 30 ? 'rgba(239,68,68,0.4)' : progressPercent < 70 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.4)'};"></div>
         </div>
       </div>
 
       <!-- KPIs -->
       <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px;">
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #3b82f6;">
-          <div id="totalTasksMetric" style="font-size: 32px; font-weight: bold;">${totalTasks}</div>
-          <div style="color: #94a3b8;">Total</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #3b82f6; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="totalTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${totalTasks}</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Total</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #86efac;">
-          <div id="completedTasksMetric">${completed}</div>
-          <div style="color: #94a3b8;">Completadas</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #86efac; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="completedTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${completed}</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Completadas</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #2dd4bf;">
-          <div id="inProgressTasksMetric">${inProgress}</div>
-          <div style="color: #94a3b8;">En Progreso</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #2dd4bf; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="inProgressTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${inProgress}</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">En Progreso</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #fde047;">
-          <div id="pendingTasksMetric">${pending}</div>
-          <div style="color: #94a3b8;">Pendientes</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="pendingTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${pending}</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Pendientes</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #ef4444;">
-          <div id="overdueTasksMetric">${overdue}</div>
-          <div style="color: #94a3b8;">Rezagadas</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #ef4444; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="overdueTasksMetric" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${overdue}</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Rezagadas</div>
         </div>
-        <div style="background: #8b5cf6; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #c4b5fd;">
-          <div id="budgetConsumption" style="font-size: 32px; font-weight: bold;">${budgetUsage}%</div>
-          <div style="color: white;">Presupuesto en tiempo</div>
+        <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid #93c5fd; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div id="budgetConsumption" style="font-size: 32px; font-weight: bold; color: #f0f4ff;">${budgetUsage}%</div>
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Presupuesto en tiempo</div>
         </div>
       </div>
 
       <!-- CONTROL DE TIEMPO -->
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
-          <div style="color: #94a3b8;">Total</div>
-          <div id="totalProjectTimeDash" style="font-size: 28px; font-weight: bold;">${projectTotalTime}h</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Total</div>
+          <div id="totalProjectTimeDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${projectTotalTime}h</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
-          <div style="color: #94a3b8;">Estimado</div>
-          <div id="totalEstimatedDash" style="font-size: 28px; font-weight: bold;">${totalEstimated.toFixed(1)}h</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Estimado</div>
+          <div id="totalEstimatedDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${totalEstimated.toFixed(1)}h</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px;">
-          <div style="color: #94a3b8;">Registrado</div>
-          <div id="totalLoggedDash" style="font-size: 28px; font-weight: bold;">${totalLogged.toFixed(1)}h</div>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Registrado</div>
+          <div id="totalLoggedDash" style="font-size: 28px; font-weight: bold; color: #f0f4ff;">${totalLogged.toFixed(1)}h</div>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; grid-column: span 3;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>Restante</span>
-            <span id="remainingTimeDash" style="font-weight: bold;">${remaining.toFixed(1)}h</span>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; grid-column: span 3; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div style="display: flex; justify-content: space-between; color: #f0f4ff;">
+            <span style="color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Restante</span>
+            <span id="remainingTimeDash" style="font-weight: bold; font-size: 24px; color: ${remaining < 0 ? '#f87171' : '#34d399'};">${remaining.toFixed(1)}h</span>
           </div>
-          <div style="height: 8px; background: #2d2d5f; border-radius: 4px; margin-top: 10px;">
-            <div style="width: ${Math.min(100, (totalLogged / (projectTotalTime||1)) * 100)}%; height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 4px;"></div>
+          <div style="height: 8px; background: rgba(0, 0, 0, 0.6); border-radius: 20px; margin-top: 10px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);">
+            <div style="width: ${Math.min(100, (totalLogged / (projectTotalTime||1)) * 100)}%; height: 100%; background: linear-gradient(90deg,#f1c40f,#f39c12); border-radius: 20px; box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);"></div>
           </div>
         </div>
       </div>
 
       <!-- GRÁFICOS -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047;">
-          <h3>📊 Distribución de Tareas</h3>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">📊 Distribución de Tareas</h3>
           <canvas id="tasksDistributionChart" width="400" height="300" style="width: 100%; height: auto;"></canvas>
         </div>
-        <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047;">
-          <h3>📉 Burndown en Horas</h3>
+        <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">📉 Burndown en Horas</h3>
           <canvas id="burndownChartDashboard" width="600" height="300" style="width: 100%; height: auto;"></canvas>
         </div>
       </div>
@@ -23638,11 +23622,11 @@ function renderDashboard(container) {
       <div class="page-break" style="page-break-before: always; margin-top: 20px;"></div>
 
       <!-- SEGUIMIENTO DE HORAS -->
-      <div style="background: #1a1a3a; border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa;">
-        <h3>⏱️ Seguimiento de Horas</h3>
+      <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        <h3 style="color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px;">⏱️ Seguimiento de Horas</h3>
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse;">
-            <thead><tr style="border-bottom: 1px solid #334155;"><th>Asignado</th><th>Proyecto</th><th>Horas</th><th>Promedio/día</th><th>Último registro</th>   </tr></thead>
+            <thead><tr style="border-bottom: 1px solid rgba(59,130,246,0.2);"><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Asignado</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Proyecto</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Horas</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Promedio/día</th><th style="color: #f0f4ff; padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px;">Último registro</th></tr></thead>
             <tbody id="timeTrackingTableBody"></tbody>
           </table>
         </div>
@@ -23662,9 +23646,9 @@ function renderDashboard(container) {
   const actionsUl = document.getElementById('requiredActions');
   const applyDark = (el) => {
     if (!el) return;
-    el.style.setProperty('background', 'rgba(20,20,40,0.9)', 'important');
+    el.style.setProperty('background', 'transparent', 'important');
     Array.from(el.children).forEach(child => {
-      child.style.setProperty('background', 'transparent', 'important');
+      child.style.setProperty('background', 'rgba(10,22,40,0.6)', 'important');
     });
   };
   applyDark(risksDiv);
@@ -23683,15 +23667,15 @@ function renderDashboard(container) {
       if (timeTrackingData.length) {
         tbody.innerHTML = timeTrackingData.map(item => `
           <tr>
-            <td style="padding: 10px;">${escapeHtml(item.assignee || 'Sin asignar')}</td>
-            <td style="padding: 10px;">${escapeHtml(item.projectName)}</td>
-            <td style="padding: 10px; text-align: right;">${item.hours.toFixed(2)}</td>
-            <td style="padding: 10px; text-align: right;">${(item.hours / 20).toFixed(2)}</td>
-            <td style="padding: 10px;">${item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A'}</td>
+            <td style="padding: 10px; color: #e8edf5;">${escapeHtml(item.assignee || 'Sin asignar')}</td>
+            <td style="padding: 10px; color: #e8edf5;">${escapeHtml(item.projectName)}</td>
+            <td style="padding: 10px; text-align: right; color: #60a5fa; font-weight: 700;">${item.hours.toFixed(2)}</td>
+            <td style="padding: 10px; text-align: right; color: #94a3b8;">${(item.hours / 20).toFixed(2)}</td>
+            <td style="padding: 10px; color: #94a3b8;">${item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A'}</td>
           </tr>
         `).join('');
       } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No hay datos</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No hay datos</td></tr>';
       }
     }
     const canvas = document.getElementById('timeTrackingChart');
@@ -23734,7 +23718,6 @@ function renderDashboard(container) {
       }
       return;
     }
-    // Asegurar que los canvas tengan dimensiones
     const rectDist = distCanvas.getBoundingClientRect();
     const rectBurn = burnCanvas.getBoundingClientRect();
     if (rectDist.width === 0 || rectDist.height === 0 || rectBurn.width === 0 || rectBurn.height === 0) {
@@ -23797,34 +23780,36 @@ function renderDashboard(container) {
           <meta charset="UTF-8">
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { background: #0a0a1a; font-family: 'Inter', system-ui, sans-serif; color: #e2e8f0; padding: 30px; }
+            body { background: linear-gradient(145deg, #0a1628, #0f2847); font-family: 'Inter', system-ui, sans-serif; color: #f0f4ff; padding: 30px; }
             .dashboard-container { max-width: 1200px; margin: 0 auto; }
             .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }
-            .header h2 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+            .header h2 { font-size: 28px; font-weight: 700; color: #f0f4ff; }
             .status-badge { background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: 30px; padding: 8px 20px; color: ${statusColor}; font-weight: 600; }
-            .mode-badge { background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; }
-            .fechas { display: flex; gap: 20px; margin-bottom: 30px; }
+            .mode-badge { background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 30px; padding: 8px 20px; font-weight: 600; color: #f0f4ff; }
+            .fechas { display: flex; gap: 20px; margin-bottom: 30px; color: #e8edf5; }
             .progress-section { margin-bottom: 30px; }
-            .progress-bar-container { height: 12px; background: #2d2d5f; border-radius: 6px; overflow: hidden; }
-            .progress-fill { height: 100%; background: linear-gradient(90deg,#10b981,#2ecc71); border-radius: 6px; }
+            .progress-bar-container { height: 14px; background: rgba(0,0,0,0.6); border-radius: 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); }
+            .progress-fill { height: 100%; border-radius: 20px; }
             .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px; }
-            .kpi-card { background: #1a1a3a; border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid; }
-            .kpi-card h3 { font-size: 32px; font-weight: bold; }
-            .kpi-card p { color: #94a3b8; }
+            .kpi-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; text-align: center; border-top: 6px solid; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .kpi-card h3 { font-size: 32px; font-weight: bold; color: #f0f4ff; }
+            .kpi-card p { color: #b0c4de; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
             .tiempo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-            .tiempo-card { background: #1a1a3a; border-radius: 16px; padding: 20px; }
-            .restante-card { grid-column: span 3; background: #1a1a3a; border-radius: 16px; padding: 20px; }
+            .tiempo-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .restante-card { grid-column: span 3; background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
             .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-            .chart-card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; }
+            .chart-card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #fde047; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .chart-card h3 { color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px; }
             canvas { width: 100%; height: auto; max-height: 300px; }
-            .horas-section { background: #1a1a3a; border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; }
+            .horas-section { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; margin-bottom: 30px; border-top: 6px solid #60a5fa; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+            .horas-section h3 { color: #f0f4ff; font-weight: 700; border-bottom: 2px solid rgba(59,130,246,0.2); padding-bottom: 12px; margin-bottom: 16px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #334155; }
-            th { color: #94a3b8; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(59,130,246,0.2); }
+            th { color: #f0f4ff; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
             .riesgos-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-            .card { background: #1a1a3a; border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf; }
+            .card { background: rgba(10,22,40,0.75); backdrop-filter: blur(8px); border-radius: 16px; padding: 20px; border-top: 6px solid #2dd4bf; border: 1px solid rgba(59,130,246,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
             .card ul { list-style: none; padding: 0; margin: 15px 0; }
-            .card li { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(45, 212, 191, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+            .card li { background: rgba(10,22,40,0.6); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px; margin-bottom: 8px; color: #f0f4ff; }
             .page-break { page-break-before: always; margin-top: 20px; }
             @media print {
               body { padding: 0; margin: 0; }
@@ -23840,7 +23825,7 @@ function renderDashboard(container) {
               const timeData = ${JSON.stringify(timeTrackingData)};
               const tbody = document.getElementById('timeTrackingTableBody');
               if (tbody && timeData.length) {
-                tbody.innerHTML = timeData.map(item => '<tr><td style="padding:10px">' + (item.assignee || 'Sin asignar') + '<\/td><td style="padding:10px">' + item.projectName + '<\/td><td style="text-align:right;padding:10px">' + item.hours.toFixed(2) + '<\/td><td style="text-align:right;padding:10px">' + (item.hours/20).toFixed(2) + '<\/td><td style="padding:10px">' + (item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A') + '<\/td><\/tr>').join('');
+                tbody.innerHTML = timeData.map(item => '<tr><td style="padding:10px;color:#e8edf5;">' + (item.assignee || 'Sin asignar') + '<\/td><td style="padding:10px;color:#e8edf5;">' + item.projectName + '<\/td><td style="text-align:right;padding:10px;color:#60a5fa;font-weight:700;">' + item.hours.toFixed(2) + '<\/td><td style="text-align:right;padding:10px;color:#94a3b8;">' + (item.hours/20).toFixed(2) + '<\/td><td style="padding:10px;color:#94a3b8;">' + (item.lastRegister ? new Date(item.lastRegister).toLocaleDateString() : 'N/A') + '<\/td><\/tr>').join('');
               }
               const ctxDist = document.getElementById('tasksDistributionChart')?.getContext('2d');
               if (ctxDist) {
@@ -23886,13 +23871,8 @@ function renderDashboard(container) {
   const addActionBtn = document.getElementById('addActionBtn');
   if (addActionBtn) addActionBtn.onclick = agregarAccion;
 
-  console.log('✅ Dashboard renderizado correctamente');
+  console.log('✅ Dashboard renderizado correctamente con fondo ejecutivo');
 }
-
-
-
-
-
 
 
 
