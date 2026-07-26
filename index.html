@@ -32243,52 +32243,90 @@ console.log('📌 MutationObserver como respaldo');
         });
         ganttData.sort((a, b) => a.inicio - b.inicio);
 
-        // Traducción
+        // ================================================================
+        // DICCIONARIO DE TRADUCCIONES (CORREGIDO)
+        // ================================================================
         const T = (key) => {
             const dict = {
                 es: {
-                    'Total Tareas': 'Total Tareas', 'Completadas': 'Completadas',
-                    'En Progreso': 'En Progreso', 'Rezagadas': 'Rezagadas',
-                    'Críticas': 'Críticas', 'Presupuesto': 'Presupuesto',
-                    'Dependencias': 'Dependencias', 'Ruta Crítica': 'Ruta Crítica',
-                    'Equipo': 'Equipo', 'Tarea': 'Tarea', 'Asignado': 'Asignado',
-                    'Horas Est.': 'Horas Est.', 'Horas Reg.': 'Horas Reg.',
-                    'Estado': 'Estado', 'Prioridad': 'Prioridad', 'Avance': 'Avance',
-                    'Inicio': 'Inicio', 'Fin': 'Fin', 'Días': 'Días',
+                    'Total Tareas': 'Total Tareas',
+                    'Completadas': 'Completadas',
+                    'En Progreso': 'En Progreso',
+                    'Rezagadas': 'Rezagadas',
+                    'Críticas': 'Críticas',
+                    'Presupuesto': 'Presupuesto',
+                    'Dependencias': 'Dependencias',
+                    'Ruta Crítica': 'Ruta Crítica',
+                    'Equipo': 'Equipo',
+                    'Tarea': 'Tarea',
+                    'Asignado': 'Asignado',
+                    'Horas Est.': 'Horas Est.',
+                    'Horas Reg.': 'Horas Reg.',
+                    'Estado': 'Estado',
+                    'Prioridad': 'Prioridad',
+                    'Avance': 'Avance',
+                    'Inicio': 'Inicio',
+                    'Fin': 'Fin',
+                    'Días': 'Días',
                     'Reporte Gantt Ejecutivo': 'Reporte Gantt Ejecutivo',
                     'Vista Ejecutiva del Gantt': 'Vista Ejecutiva del Gantt',
                     'No hay dependencias definidas': 'No hay dependencias definidas',
                     'No hay tareas en la ruta crítica': 'No hay tareas en la ruta crítica',
-                    'tareas asignadas': 'tareas asignadas', 'miembros': 'miembros',
-                    'tareas': 'tareas', 'Imprimir / PDF': 'Imprimir / PDF',
-                    'Cerrar': 'Cerrar', 'Reporte generado por': 'Reporte generado por',
+                    'tareas asignadas': 'tareas asignadas',
+                    'miembros': 'miembros',
+                    'tareas': 'tareas',
+                    'Imprimir / PDF': 'Imprimir / PDF',
+                    'Cerrar': 'Cerrar',
+                    'Reporte generado por': 'Reporte generado por',
                     'Todos los derechos reservados': 'Todos los derechos reservados',
-                    'Pendiente': 'Pendiente', 'Sin asignar': 'Sin asignar',
+                    'Pendiente': 'Pendiente',
+                    'Sin asignar': 'Sin asignar',
                     'Recomendaciones Estratégicas': 'Recomendaciones Estratégicas',
                     'Estado del Proyecto': 'Estado del Proyecto',
-                    'Alerta de Presupuesto': 'Alerta de Presupuesto'
+                    'Alerta de Presupuesto': 'Alerta de Presupuesto',
+                    // NUEVAS CLAVES PARA LA TABLA DE DEPENDENCIAS
+                    'Origen': 'Origen',
+                    'Destino': 'Destino'
                 },
                 en: {
-                    'Total Tareas': 'Total Tasks', 'Completadas': 'Completed',
-                    'En Progreso': 'In Progress', 'Rezagadas': 'Overdue',
-                    'Críticas': 'Critical', 'Presupuesto': 'Budget',
-                    'Dependencias': 'Dependencies', 'Ruta Crítica': 'Critical Path',
-                    'Equipo': 'Team', 'Tarea': 'Task', 'Asignado': 'Assignee',
-                    'Horas Est.': 'Est. Hours', 'Horas Reg.': 'Logged Hours',
-                    'Estado': 'Status', 'Prioridad': 'Priority', 'Avance': 'Progress',
-                    'Inicio': 'Start', 'Fin': 'End', 'Días': 'Days',
+                    'Total Tareas': 'Total Tasks',
+                    'Completadas': 'Completed',
+                    'En Progreso': 'In Progress',
+                    'Rezagadas': 'Overdue',
+                    'Críticas': 'Critical',
+                    'Presupuesto': 'Budget',
+                    'Dependencias': 'Dependencies',
+                    'Ruta Crítica': 'Critical Path',
+                    'Equipo': 'Team',
+                    'Tarea': 'Task',
+                    'Asignado': 'Assignee',
+                    'Horas Est.': 'Est. Hours',
+                    'Horas Reg.': 'Logged Hours',
+                    'Estado': 'Status',
+                    'Prioridad': 'Priority',
+                    'Avance': 'Progress',
+                    'Inicio': 'Start',
+                    'Fin': 'End',
+                    'Días': 'Days',
                     'Reporte Gantt Ejecutivo': 'Executive Gantt Report',
                     'Vista Ejecutiva del Gantt': 'Executive Gantt View',
                     'No hay dependencias definidas': 'No dependencies defined',
                     'No hay tareas en la ruta crítica': 'No tasks in critical path',
-                    'tareas asignadas': 'tasks assigned', 'miembros': 'members',
-                    'tareas': 'tasks', 'Imprimir / PDF': 'Print / PDF',
-                    'Cerrar': 'Close', 'Reporte generado por': 'Report generated by',
+                    'tareas asignadas': 'tasks assigned',
+                    'miembros': 'members',
+                    'tareas': 'tasks',
+                    'Imprimir / PDF': 'Print / PDF',
+                    'Cerrar': 'Close',
+                    'Reporte generado por': 'Report generated by',
                     'Todos los derechos reservados': 'All rights reserved',
-                    'Pendiente': 'Pending', 'Sin asignar': 'Unassigned',
+                    'Pendiente': 'Pending',
+                    'Sin asignar': 'Unassigned',
                     'Recomendaciones Estratégicas': 'Strategic Recommendations',
                     'Estado del Proyecto': 'Project Status',
-                    'Alerta de Presupuesto': 'Budget Alert'
+                    'Alerta de Presupuesto': 'Budget Alert',
+                    // NUEVAS CLAVES PARA LA TABLA DE DEPENDENCIAS
+                    'Origen': 'Source',
+                    'Destino': 'Destination'
                 }
             };
             const l = localStorage.getItem('preferredLanguage') || 'es';
@@ -32303,7 +32341,7 @@ console.log('📌 MutationObserver como respaldo');
         const fechaActual = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const horaActual = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
-        // HTML (mismo que antes, pero más compacto)
+        // HTML (el resto permanece igual, pero ahora los encabezados usan T('Origen') y T('Destino'))
         const html = `<!DOCTYPE html>
 <html lang="${es ? 'es' : 'en'}">
 <head>
@@ -32548,7 +32586,6 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ La vista premium y otras funciones NO se ven afectadas.');
 })();
 </script>
-
 
  </body>
 </html>
