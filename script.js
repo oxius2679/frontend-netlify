@@ -47976,7 +47976,7 @@ if (evmCtx) {
 
 
 
-  // Botón PDF
+    // Botón PDF
   document.getElementById('exportarPdfBtn')?.addEventListener('click', () => {
     if (typeof generateProjectReport === 'function') generateProjectReport();
     else window.print();
@@ -47984,9 +47984,6 @@ if (evmCtx) {
 
   console.log('✅ Vista de reportes profesional generada');
 }
-
-
-
 
 
 

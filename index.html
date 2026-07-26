@@ -26955,24 +26955,26 @@ console.log('📌 Horas: estimatedTime + timeLogged ✅');
 console.log('📌 Skills: Extraídas del Dashboard RH ✅');
 })();
 </script>
-<!-- 🏆 INTERCEPTAR BOTÓN exportarPdfBtn → Reporte VIP -->
+<!-- 🏆 INTERCEPTAR BOTÓN exportarPdfBtn → REPORTE STATUS REAL (CORREGIDO) -->
 <script>
 (function() {
 'use strict';
-console.log('🏆 Interceptando botón exportarPdfBtn...');
+console.log('🏆 Interceptando botón exportarPdfBtn para Reporte Status REAL...');
 
-if (window.__interceptorExportPdfBtn) return;
-window.__interceptorExportPdfBtn = true;
+if (window.__interceptorExportPdfBtnReal) return;
+window.__interceptorExportPdfBtnReal = true;
 
 function getLang() {
     return localStorage.getItem('preferredLanguage') || 'es';
 }
 
 // ============================================================
-// FUNCIÓN: Generar Reporte VIP Status
+// FUNCIÓN: Generar Reporte Status REAL (La que funciona)
 // ============================================================
-function generarReporteStatusVIP() {
-    const es = getLang() === 'es';
+window.generarReporteStatusReal = function() {
+    console.log('🚀 EJECUTANDO REPORTE STATUS REAL');
+    const lang = getLang();
+    const es = lang === 'es';
     
     const projectIndex = typeof currentProjectIndex !== 'undefined' ? currentProjectIndex : 0;
     const project = typeof projects !== 'undefined' ? projects[projectIndex] : null;
@@ -26984,391 +26986,251 @@ function generarReporteStatusVIP() {
     
     const tasks = project.tasks;
     const total = tasks.length;
-    const completed = tasks.filter(t => t.status === 'completed').length;
-    const inProgress = tasks.filter(t => t.status === 'inProgress').length;
-    const pending = tasks.filter(t => t.status === 'pending').length;
-    const overdue = tasks.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
-    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
-    // EVM
-    let BAC = 0, EV = 0, AC = 0;
+    const completadas = tasks.filter(t => t.status === 'completed').length;
+    const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
+    const pendientes = tasks.filter(t => t.status === 'pending').length;
+    const rezagadas = tasks.filter(t => t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')).length;
+    const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
+    const totalEst = tasks.reduce((s, t) => s + (Number(t.estimatedTime) || 0), 0);
+    const totalLog = tasks.reduce((s, t) => s + (Number(t.timeLogged) || 0), 0);
+    const eficiencia = totalEst > 0 ? Math.round((totalLog / totalEst) * 100) : 0;
+
+    let BAC = totalEst, PV = totalEst, AC = totalLog, EV = 0;
     tasks.forEach(t => {
-        const est = t.estimatedTime || 0;
-        BAC += est;
-        AC += t.timeLogged || 0;
-        let avance = 0;
-        if (t.status === 'completed') avance = 1;
-        else if (t.status === 'inProgress') avance = 0.5;
-        else if (t.progress > 0) avance = t.progress / 100;
-        EV += est * avance;
+        const est = Number(t.estimatedTime) || 0;
+        let progress = (t.status === 'completed') ? 100 : (t.status === 'inProgress' ? (t.progress || 0) : 0);
+        EV += est * (progress / 100);
     });
-    
-    const PV = BAC;
     const CPI = AC > 0 ? EV / AC : 1;
-    const SPI = BAC > 0 ? EV / BAC : 1;
-    const EAC = CPI > 0 ? BAC / CPI : BAC;
-    const ETC = EAC - AC;
-    const VAC = BAC - EAC;
-    const CV = EV - AC;
-    const SV = EV - PV;
-    
-    let statusIcon, statusText, statusColor, statusDesc;
-    if (SPI < 0.7 || CPI < 0.7) {
-        statusIcon = '🔴'; statusText = es ? 'CRÍTICO' : 'CRITICAL'; 
-        statusColor = '#dc2626';
-        statusDesc = es ? 'Requiere intervención inmediata' : 'Requires immediate intervention';
-    } else if (SPI < 0.85 || CPI < 0.85) {
-        statusIcon = '🟠'; statusText = es ? 'EN RIESGO' : 'AT RISK'; 
-        statusColor = '#ea580c';
-        statusDesc = es ? 'Desviaciones moderadas' : 'Moderate deviations';
-    } else if (SPI < 0.95 || CPI < 0.95) {
-        statusIcon = '🟡'; statusText = es ? 'MONITOREO' : 'MONITORING'; 
-        statusColor = '#ca8a04';
-        statusDesc = es ? 'Desviaciones leves' : 'Minor deviations';
-    } else if (SPI >= 1.05 && CPI >= 1.05) {
-        statusIcon = ''; statusText = es ? 'EXCELENTE' : 'EXCELLENT'; 
-        statusColor = '#7c3aed';
-        statusDesc = es ? 'Superando expectativas' : 'Exceeding expectations';
-    } else {
-        statusIcon = '✅'; statusText = es ? 'SALUDABLE' : 'HEALTHY'; 
-        statusColor = '#059669';
-        statusDesc = es ? 'Dentro de parámetros' : 'Within parameters';
-    }
-    
-    const recs = [];
-    if (SPI < 0.9) recs.push(es ? '⏰ Acelerar cronograma' : '⏰ Accelerate schedule');
-    if (CPI < 0.9) recs.push(es ? '💰 Controlar costos' : '💰 Control costs');
-    if (overdue > 0) recs.push(es ? `🔥 Atender ${overdue} tarea(s) atrasada(s)` : `🔥 Address ${overdue} overdue task(s)`);
-    if (recs.length === 0) recs.push(es ? '✅ Mantener ritmo actual' : '✅ Maintain current pace');
-    
-    const problems = [];
-    if (overdue > 0) problems.push({ icon: '⚠️', title: es ? 'Tareas Atrasadas' : 'Overdue Tasks', desc: `${overdue} ${es ? 'tarea(s) fuera de plazo' : 'task(s) past deadline'}`, severity: 'high' });
-    if (SPI < 0.9) problems.push({ icon: '⏰', title: es ? 'Retraso Cronograma' : 'Schedule Delay', desc: `SPI ${SPI.toFixed(2)}`, severity: 'high' });
-    if (CPI < 0.9) problems.push({ icon: '💰', title: es ? 'Sobrecosto' : 'Over Budget', desc: `CPI ${CPI.toFixed(2)}`, severity: 'high' });
-    if (problems.length === 0) problems.push({ icon: '✅', title: es ? 'Sin Problemáticas' : 'No Issues', desc: es ? 'Proyecto operando normalmente' : 'Project operating normally', severity: 'low' });
-    
-    const locale = es ? 'es-ES' : 'en-US';
-    const fecha = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    const hora = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-    
-    const L = {
-        titulo: es ? 'REPORTE VIP ESTATUS DEL PROYECTO' : 'VIP PROJECT STATUS REPORT',
-        subtitulo: es ? 'Dashboard Ejecutivo PMI' : 'PMI Executive Dashboard',
-        totalTareas: es ? 'Total Tareas' : 'Total Tasks',
-        completadas: es ? 'Completadas' : 'Completed',
-        enProgreso: es ? 'En Progreso' : 'In Progress',
-        pendientes: es ? 'Pendientes' : 'Pending',
-        atrasadas: es ? 'Atrasadas' : 'Overdue',
-        progreso: es ? 'Progreso' : 'Progress',
-        tablaEVM: es ? 'Tabla de Valor Ganado (EVM)' : 'Earned Value Table (EVM)',
-        pronosticos: es ? 'Pronósticos del Proyecto' : 'Project Forecasts',
-        graficasRendimiento: es ? 'Gráficas de Rendimiento' : 'Performance Charts',
-        distribucion: es ? 'Distribución de Tareas' : 'Task Distribution',
-        burndown: es ? 'Burndown en Horas' : 'Burndown in Hours',
-        problematicas: es ? 'Problemáticas Detectadas' : 'Detected Issues',
-        recomendaciones: es ? 'Recomendaciones Estratégicas' : 'Strategic Recommendations',
-        detalleTareas: es ? 'Detalle de Tareas' : 'Task Details',
-        analisis: es ? 'Análisis Ejecutivo' : 'Executive Analysis',
-        indicador: es ? 'Indicador' : 'Indicator',
-        valor: es ? 'Valor' : 'Value',
-        interpretacion: es ? 'Interpretación' : 'Interpretation',
-        severidad: es ? 'Severidad' : 'Severity',
-        alta: es ? 'Alta' : 'High',
-        media: es ? 'Media' : 'Medium',
-        baja: es ? 'Baja' : 'Low',
-        tarea: es ? 'Tarea' : 'Task',
-        estado: es ? 'Estado' : 'Status',
-        prioridad: es ? 'Prioridad' : 'Priority',
-        asignado: es ? 'Asignado' : 'Assignee',
-        estimado: es ? 'Estimado (h)' : 'Estimated (h)',
-        registrado: es ? 'Registrado (h)' : 'Logged (h)',
-        avance: es ? 'Avance' : 'Progress',
-        completada: es ? 'Completada' : 'Completed',
-        atrasada: es ? 'Atrasada' : 'Overdue',
-        pendiente: es ? 'Pendiente' : 'Pending',
-        enProgresoEst: es ? 'En Progreso' : 'In Progress',
-        sinTitulo: es ? 'Sin título' : 'No title',
-        imprimir: es ? 'EXPORTAR PDF' : 'EXPORT PDF',
-        cerrar: es ? 'CERRAR' : 'CLOSE',
-        generado: es ? 'Reporte Generado' : 'Report Generated',
-        derechos: es ? 'Todos los derechos reservados' : 'All rights reserved',
-        lineaIdeal: es ? 'Línea Ideal' : 'Ideal Line',
-        progresoReal: es ? 'Progreso Real' : 'Real Progress',
-        horas: es ? 'Horas' : 'Hours',
-        inicio: es ? 'Inicio' : 'Start',
-        semana: es ? 'Semana' : 'Week'
-    };
-    
-    const distLabels = [L.completadas, L.enProgreso, L.pendientes, L.atrasadas];
-    const distData = [completed, inProgress, pending, overdue];
+    const SPI = PV > 0 ? EV / PV : 1;
+    const CV = EV - AC, SV = EV - PV;
+
+    const miembros = {};
+    tasks.forEach(t => {
+        const asignado = t.assignee || t.asignado || (es ? 'Sin asignar' : 'Unassigned');
+        if (!miembros[asignado]) miembros[asignado] = { completadas: 0, enProgreso: 0, pendientes: 0, rezagadas: 0, total: 0 };
+        miembros[asignado].total++;
+        if (t.status === 'completed') miembros[asignado].completadas++;
+        else if (t.status === 'inProgress') miembros[asignado].enProgreso++;
+        else if (t.status === 'overdue') miembros[asignado].rezagadas++;
+        else miembros[asignado].pendientes++;
+    });
+    const miembrosArray = Object.entries(miembros).map(([nombre, data]) => ({
+        nombre, ...data, pct: Math.round((data.completadas / Math.max(1, data.total)) * 100)
+    }));
+
+    const distLabels = [es ? 'Completadas' : 'Completed', es ? 'En Progreso' : 'In Progress', es ? 'Pendientes' : 'Pending', es ? 'Rezagadas' : 'Overdue'];
+    const distData = [completadas, enProgreso, pendientes, rezagadas];
     const distColors = ['#10b981', '#0891b2', '#f59e0b', '#dc2626'];
-    
-    const semanas = [L.inicio, `${L.semana} 1`, `${L.semana} 2`, `${L.semana} 3`, `${L.semana} 4`];
-    const burndownIdeal = [BAC, BAC * 0.75, BAC * 0.5, BAC * 0.25, 0];
-    const burndownReal = [BAC, BAC - (EV * 0.25), BAC - (EV * 0.5), BAC - (EV * 0.75), Math.max(0, BAC - EV)];
-    
-    const html = `<!DOCTYPE html>
-<html lang="${es ? 'es' : 'en'}">
-<head>
-<meta charset="UTF-8">
-<title>★ ${L.titulo} ★ - ${project.name}</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-<style>
-:root { --gold: #d4af37; --gold-light: #f4e4a6; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #050814 0%, #0a0e1a 50%, #131827 100%); padding: 30px 20px; min-height: 100vh; color: #e2e8f0; }
-.container { max-width: 1400px; margin: 0 auto; background: linear-gradient(145deg, #131827 0%, #0a0e1a 100%); border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(212, 175, 55, 0.3); overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.3); }
-.header { background: linear-gradient(135deg, #0a0e1a 0%, #1c2333 50%, #0a0e1a 100%); padding: 50px 60px; text-align: center; border-bottom: 3px solid var(--gold); position: relative; overflow: hidden; }
-.header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.2) 0%, transparent 70%); pointer-events: none; }
-.vip-badge { display: inline-block; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; padding: 8px 24px; border-radius: 30px; font-size: 11px; font-weight: 900; letter-spacing: 3px; margin-bottom: 20px; text-transform: uppercase; box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5); }
-.vip-badge::before, .vip-badge::after { content: '★'; margin: 0 8px; }
-.header h1 { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; margin-bottom: 10px; background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 50%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
-.header .project-name { font-size: 22px; color: var(--gold); font-weight: 600; margin-bottom: 15px; letter-spacing: 1px; }
-.header-meta { display: flex; justify-content: center; gap: 30px; margin-top: 20px; font-size: 13px; color: #94a3b8; flex-wrap: wrap; }
-.header-meta span { display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.05); border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.2); }
-.status-banner { padding: 30px 60px; background: linear-gradient(135deg, ${statusColor}25 0%, ${statusColor}10 100%); border-bottom: 1px solid ${statusColor}40; display: flex; align-items: center; gap: 25px; flex-wrap: wrap; }
-.status-icon { font-size: 56px; filter: drop-shadow(0 0 25px ${statusColor}); }
-.status-content { flex: 1; min-width: 250px; }
-.status-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: ${statusColor}; letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase; }
-.status-description { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
-.status-metrics { display: flex; gap: 15px; flex-wrap: wrap; }
-.status-metric { text-align: center; padding: 15px 20px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); min-width: 100px; }
-.status-metric-value { font-size: 22px; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; }
-.status-metric-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
-.content { padding: 40px 60px; }
-.section { margin-bottom: 50px; }
-.section-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: white; margin-bottom: 25px; padding-left: 20px; border-left: 4px solid var(--gold); display: flex; align-items: center; gap: 12px; }
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-.kpi-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.25); position: relative; overflow: hidden; }
-.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-.kpi-icon { font-size: 28px; margin-bottom: 10px; }
-.kpi-value { font-size: 42px; font-weight: 900; background: linear-gradient(135deg, #fff 0%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
-.kpi-label { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
-.chart-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; border: 1px solid rgba(212, 175, 55, 0.2); }
-.chart-card h3 { font-size: 15px; font-weight: 600; color: var(--gold); margin-bottom: 20px; text-align: center; }
-.chart-container { display: flex; justify-content: center; align-items: center; min-height: 280px; max-height: 400px; }
-canvas { max-width: 400px !important; max-height: 350px !important; height: auto !important; }
-.evm-table, .data-table, .problems-table { width: 100%; border-collapse: collapse; background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 12px; overflow: hidden; border: 1px solid rgba(212, 175, 55, 0.25); }
-.evm-table th, .data-table th, .problems-table th { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); color: #0a0e1a; padding: 15px; text-align: left; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; }
-.evm-table td, .data-table td, .problems-table td { padding: 14px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; font-size: 14px; }
-.evm-table tr.alt td, .data-table tr.alt td { background: rgba(255,255,255,0.02); }
-.evm-table td.num, .data-table td.num { text-align: right; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-.data-table tr:hover td { background: rgba(212, 175, 55, 0.05); }
-.forecast-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
-.forecast-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid rgba(212, 175, 55, 0.2); }
-.forecast-value { font-size: 30px; font-weight: 800; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
-.forecast-label { color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; line-height: 1.4; }
-.status-badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-.status-completed { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
-.status-progress { background: rgba(8, 145, 178, 0.2); color: #0891b2; border: 1px solid #0891b2; }
-.status-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
-.status-overdue { background: rgba(220, 38, 38, 0.2); color: #dc2626; border: 1px solid #dc2626; }
-.progress-bar-cell { width: 100px; background: rgba(255,255,255,0.1); border-radius: 10px; height: 6px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 10px; }
-.analysis-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 30px; border-left: 4px solid var(--gold); margin-bottom: 30px; }
-.analysis-card h3 { color: var(--gold); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
-.analysis-card p { margin: 12px 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; }
-.analysis-card strong { color: white; }
-.recommendations-card { background: linear-gradient(145deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(212, 175, 55, 0.3); margin-bottom: 30px; }
-.recommendations-card h3 { color: var(--gold); margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
-.recommendations-card ul { list-style: none; }
-.recommendations-card li { padding: 12px 15px; margin: 8px 0; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid var(--gold); color: #e2e8f0; font-size: 14px; }
-.problems-section { background: linear-gradient(145deg, rgba(220, 38, 38, 0.05) 0%, rgba(220, 38, 38, 0.02) 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(220, 38, 38, 0.2); margin-bottom: 30px; }
-.problems-section h3 { color: #ef4444; margin-bottom: 20px; font-family: 'Playfair Display', serif; font-size: 20px; }
-.footer { background: linear-gradient(135deg, #0a0e1a 0%, #131827 100%); padding: 30px 60px; text-align: center; color: #64748b; font-size: 12px; border-top: 2px solid var(--gold); }
-.footer .vip-signature { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 3px; }
-.action-buttons { text-align: center; margin-top: 30px; padding: 0 60px 40px; }
-.btn { padding: 14px 40px; border: none; border-radius: 30px; cursor: pointer; font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 8px; transition: all 0.3s; }
-.btn-print { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4); }
-.btn-print:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6); }
-.btn-close { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
-@media print { body { padding: 0; background: white; } .action-buttons { display: none; } .container { box-shadow: none; border: none; } }
-@media (max-width: 900px) { .kpi-grid, .charts-row, .forecast-grid { grid-template-columns: 1fr; } .header, .content, .status-banner { padding-left: 25px; padding-right: 25px; } }
-</style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="vip-badge">${L.titulo}</div>
-        <h1>${project.name}</h1>
-        <div class="project-name">${L.subtitulo}</div>
-        <div class="header-meta">
-            <span>📅 ${fecha}</span>
-            <span>🕒 ${hora}</span>
-            <span>📊 ${es ? 'Método PMI Estándar' : 'Standard PMI Method'}</span>
-        </div>
-    </div>
-    
-    <div class="status-banner">
-        <div class="status-icon">${statusIcon}</div>
-        <div class="status-content">
-            <div class="status-title">${statusText}</div>
-            <div class="status-description">${statusDesc}</div>
-        </div>
-        <div class="status-metrics">
-            <div class="status-metric"><div class="status-metric-value">${CPI.toFixed(2)}</div><div class="status-metric-label">CPI</div></div>
-            <div class="status-metric"><div class="status-metric-value">${SPI.toFixed(2)}</div><div class="status-metric-label">SPI</div></div>
-            <div class="status-metric"><div class="status-metric-value">${progress}%</div><div class="status-metric-label">${L.progreso}</div></div>
-        </div>
-    </div>
-    
-    <div class="content">
-        <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${total}</div><div class="kpi-label">${L.totalTareas}</div></div>
-            <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value">${completed}</div><div class="kpi-label">${L.completadas}</div></div>
-            <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${progress}%</div><div class="kpi-label">${L.progreso}</div></div>
-            <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-value">${overdue}</div><div class="kpi-label">${L.atrasadas}</div></div>
-        </div>
-        
-        <div class="section">
-            <h2 class="section-title">💰 ${L.tablaEVM}</h2>
-            <table class="evm-table">
-                <thead><tr><th>${L.indicador}</th><th style="text-align:right;">${L.valor}</th><th>${L.interpretacion}</th></tr></thead>
-                <tbody>
-                    <tr><td><strong>PV (${es ? 'Valor Planificado' : 'Planned Value'})</strong></td><td class="num">${PV.toFixed(2)}h</td><td>${es ? 'Trabajo programado' : 'Scheduled work'}</td></tr>
-                    <tr class="alt"><td><strong>EV (${es ? 'Valor Ganado' : 'Earned Value'})</strong></td><td class="num">${EV.toFixed(2)}h</td><td>${es ? 'Trabajo completado' : 'Completed work'}</td></tr>
-                    <tr><td><strong>AC (${es ? 'Costo Real' : 'Actual Cost'})</strong></td><td class="num">${AC.toFixed(2)}h</td><td>${es ? 'Horas registradas' : 'Logged hours'}</td></tr>
-                    <tr class="alt"><td><strong>CPI (${es ? 'Índice Costo' : 'Cost Index'})</strong></td><td class="num" style="color:${CPI >= 1 ? '#10b981' : '#dc2626'}">${CPI.toFixed(2)}</td><td>${CPI >= 1 ? (es ? '✅ Eficiente' : '✅ Efficient') : (es ? '️ Sobrecosto' : '⚠️ Over budget')}</td></tr>
-                    <tr><td><strong>SPI (${es ? 'Índice Tiempo' : 'Schedule Index'})</strong></td><td class="num" style="color:${SPI >= 1 ? '#10b981' : '#dc2626'}">${SPI.toFixed(2)}</td><td>${SPI >= 1 ? (es ? '✅ Adelantado' : '✅ Ahead') : (es ? '⚠️ Retrasado' : '⚠️ Delayed')}</td></tr>
-                    <tr class="alt"><td><strong>BAC (${es ? 'Presupuesto Total' : 'Total Budget'})</strong></td><td class="num">${BAC.toFixed(2)}h</td><td>${es ? 'Presupuesto base' : 'Baseline budget'}</td></tr>
-                    <tr><td><strong>CV (${es ? 'Variación Costo' : 'Cost Variance'})</strong></td><td class="num" style="color:${CV >= 0 ? '#10b981' : '#dc2626'}">${CV >= 0 ? '+' : ''}${CV.toFixed(2)}h</td><td>${es ? 'Variación de costo' : 'Cost variance'}</td></tr>
-                    <tr class="alt"><td><strong>SV (${es ? 'Variación Cronograma' : 'Schedule Variance'})</strong></td><td class="num" style="color:${SV >= 0 ? '#10b981' : '#dc2626'}">${SV >= 0 ? '+' : ''}${SV.toFixed(2)}h</td><td>${es ? 'Variación de cronograma' : 'Schedule variance'}</td></tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="section">
-            <h2 class="section-title"> ${L.pronosticos}</h2>
-            <div class="forecast-grid">
-                <div class="forecast-card"><div class="forecast-value" style="color: #3b82f6;">${BAC.toFixed(0)}h</div><div class="forecast-label">${es ? 'Presupuesto Total' : 'Total Budget'} (BAC)</div></div>
-                <div class="forecast-card"><div class="forecast-value" style="color: #8b5cf6;">${EAC.toFixed(0)}h</div><div class="forecast-label">${es ? 'Estimado al Finalizar' : 'Estimate at Completion'} (EAC)</div></div>
-                <div class="forecast-card"><div class="forecast-value" style="color: #f59e0b;">${ETC.toFixed(0)}h</div><div class="forecast-label">${es ? 'Estimado para Completar' : 'Estimate to Complete'} (ETC)</div></div>
-                <div class="forecast-card"><div class="forecast-value" style="color: ${VAC >= 0 ? '#10b981' : '#dc2626'};">${VAC >= 0 ? '+' : ''}${VAC.toFixed(0)}h</div><div class="forecast-label">${es ? 'Variación al Finalizar' : 'Variance at Completion'} (VAC)</div></div>
+    const semanas = [es ? 'Inicio' : 'Start', 'Sem 1', 'Sem 2', 'Sem 3', es ? 'Actual' : 'Current'];
+    const burndownIdeal = [totalEst, totalEst * 0.75, totalEst * 0.5, totalEst * 0.25, 0];
+    const burndownReal = [totalEst, Math.max(0, totalEst - (totalLog * 0.25)), Math.max(0, totalEst - (totalLog * 0.5)), Math.max(0, totalEst - (totalLog * 0.75)), Math.max(0, totalEst - totalLog)];
+
+    const locale = es ? 'es-ES' : 'en-US';
+    const fechaActual = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const horaActual = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+
+    const T = {
+        titulo: es ? 'REPORTE DE STATUS DEL PROYECTO' : 'PROJECT STATUS REPORT',
+        subtitulo: es ? 'Vista Ejecutiva de Reports' : 'Executive Reports View',
+        totalTareas: es ? 'Total Tareas' : 'Total Tasks', completadas: es ? 'Completadas' : 'Completed',
+        progreso: es ? 'Progreso' : 'Progress', pendientes: es ? 'Pendientes' : 'Pending',
+        rezagadas: es ? 'Rezagadas' : 'Overdue', eficiencia: es ? 'Eficiencia' : 'Efficiency',
+        distribucion: es ? 'Distribución de Tareas' : 'Task Distribution',
+        burndown: es ? 'Gráfico de Burndown' : 'Burndown Chart',
+        total: es ? 'Total' : 'Total', consumido: es ? 'Consumido' : 'Consumed', restante: es ? 'Restante' : 'Remaining',
+        saturacion: es ? 'Saturación del Equipo' : 'Team Saturation',
+        imprimir: es ? 'EXPORTAR PDF' : 'EXPORT PDF', cerrar: es ? 'CERRAR' : 'CLOSE',
+        generado: es ? 'Reporte generado por Zacky Gantt Executive Pro' : 'Report generated by Zacky Gantt Executive Pro',
+        derechos: es ? 'Todos los derechos reservados' : 'All rights reserved',
+        enTiempo: es ? 'EN TIEMPO' : 'ON TIME',
+        evmTitulo: es ? '📈 EVM - Valor Ganado' : '📈 EVM - Earned Value',
+        evmGrafico: es ? 'Comparativa EVM (PV vs EV vs AC)' : 'EVM Comparison (PV vs EV vs AC)',
+        indicador: es ? 'Indicador' : 'Indicator', valor: es ? 'Valor' : 'Value', interpretacion: es ? 'Interpretación' : 'Interpretation',
+        pv: es ? 'PV (Valor Planificado)' : 'PV (Planned Value)', ev: es ? 'EV (Valor Ganado)' : 'EV (Earned Value)',
+        ac: es ? 'AC (Costo Real)' : 'AC (Actual Cost)', cpi: es ? 'CPI (Índice Costo)' : 'CPI (Cost Index)',
+        spi: es ? 'SPI (Índice Tiempo)' : 'SPI (Schedule Index)', bac: es ? 'BAC (Presupuesto Total)' : 'BAC (Total Budget)',
+        cv: es ? 'CV (Variación Costo)' : 'CV (Cost Variance)', sv: es ? 'SV (Variación Cronograma)' : 'SV (Schedule Variance)',
+        trabajoProgramado: es ? 'Trabajo programado' : 'Scheduled work', trabajoCompletado: es ? 'Trabajo completado' : 'Completed work',
+        horasRegistradas: es ? 'Horas registradas' : 'Logged hours',
+        eficiente: es ? '✅ Eficiente' : '✅ Efficient', sobrecosto: es ? '⚠️ Sobrecosto' : '⚠️ Over budget',
+        adelantado: es ? '✅ Adelantado' : '✅ Ahead', retrasado: es ? '⚠️ Retrasado' : '⚠️ Delayed',
+        presupuestoBase: es ? 'Presupuesto base' : 'Baseline budget', variacionCosto: es ? 'Variación de costo' : 'Cost variance',
+        variacionCrono: es ? 'Variación de cronograma' : 'Schedule variance', horas: es ? 'h' : 'h',
+        completadasCorta: '✅', enProgresoCorta: '🔄', pendientesCorta: '⏳', rezagadasCorta: '⚠️'
+    };
+
+    const html = `<!DOCTYPE html><html lang="${es ? 'es' : 'en'}"><head><meta charset="UTF-8">
+    <title>★ ${T.titulo} ★ - ${project.name}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #d4af37; --gold-light: #f4e4a6; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #050814 0%, #0a0e1a 50%, #131827 100%); padding: 30px 20px; min-height: 100vh; color: #e2e8f0; }
+        .container { max-width: 1400px; margin: 0 auto; background: linear-gradient(145deg, #131827 0%, #0a0e1a 100%); border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.3); overflow: hidden; border: 1px solid rgba(212,175,55,0.3); }
+        .header { background: linear-gradient(135deg, #0a0e1a 0%, #1c2333 50%, #0a0e1a 100%); padding: 40px 60px; text-align: center; border-bottom: 3px solid var(--gold); }
+        .vip-badge { display: inline-block; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; padding: 8px 24px; border-radius: 30px; font-size: 11px; font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; text-transform: uppercase; box-shadow: 0 6px 20px rgba(212,175,55,0.5); }
+        .vip-badge::before, .vip-badge::after { content: '★'; margin: 0 8px; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 50%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
+        .header .project-name { font-size: 22px; color: var(--gold); font-weight: 600; margin-top: 5px; }
+        .header-meta { display: flex; justify-content: center; gap: 30px; margin-top: 15px; font-size: 13px; color: #94a3b8; flex-wrap: wrap; }
+        .header-meta span { display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.05); border-radius: 20px; border: 1px solid rgba(212,175,55,0.2); }
+        .status-banner { padding: 30px 60px; background: linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.05) 100%); border-bottom: 1px solid rgba(16,185,129,0.4); display: flex; align-items: center; gap: 25px; flex-wrap: wrap; }
+        .status-icon { font-size: 56px; filter: drop-shadow(0 0 25px #10b981); }
+        .status-content { flex: 1; min-width: 250px; }
+        .status-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #10b981; letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase; }
+        .status-description { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
+        .status-metrics { display: flex; gap: 15px; flex-wrap: wrap; }
+        .status-metric { text-align: center; padding: 15px 20px; background: rgba(0,0,0,0.4); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); min-width: 100px; }
+        .status-metric-value { font-size: 22px; font-weight: 800; color: white; font-family: 'JetBrains Mono', monospace; }
+        .status-metric-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+        .content { padding: 40px 60px; }
+        .section { margin-bottom: 45px; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: white; margin-bottom: 25px; padding-left: 20px; border-left: 4px solid var(--gold); display: flex; align-items: center; gap: 12px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; text-align: center; border: 1px solid rgba(212,175,55,0.25); position: relative; overflow: hidden; transition: transform 0.3s; }
+        .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(212,175,55,0.15); }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        .kpi-icon { font-size: 28px; margin-bottom: 10px; }
+        .kpi-value { font-size: 38px; font-weight: 900; background: linear-gradient(135deg, #fff 0%, var(--gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+        .kpi-label { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+        .avance-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .avance-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; text-align: center; border: 1px solid rgba(212,175,55,0.25); }
+        .avance-card .titulo { font-size: 14px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .avance-card .valor { font-size: 36px; font-weight: 900; color: var(--gold); margin: 5px 0; }
+        .avance-card .detalle { font-size: 13px; color: #94a3b8; }
+        .chart-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 25px; border: 1px solid rgba(212,175,55,0.2); }
+        .chart-card h3 { font-size: 15px; font-weight: 600; color: var(--gold); margin-bottom: 20px; text-align: center; }
+        .chart-container { display: flex; justify-content: center; align-items: center; min-height: 280px; max-height: 350px; }
+        canvas { max-width: 100%; max-height: 280px; }
+        .evm-table { width: 100%; border-collapse: collapse; background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 12px; overflow: hidden; border: 1px solid rgba(212,175,55,0.25); margin-top: 15px; }
+        .evm-table th { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%); color: #0a0e1a; padding: 14px 15px; text-align: left; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; }
+        .evm-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; font-size: 14px; }
+        .evm-table tr.alt td { background: rgba(255,255,255,0.02); }
+        .evm-table td.num { text-align: right; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 15px; }
+        .team-card { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 16px; padding: 20px; border: 1px solid rgba(212,175,55,0.25); text-align: center; }
+        .team-name { font-size: 18px; font-weight: 700; color: white; margin-bottom: 8px; }
+        .team-pct { font-size: 32px; font-weight: 900; color: var(--gold); }
+        .team-stats { display: flex; justify-content: center; gap: 15px; margin-top: 10px; font-size: 13px; color: #94a3b8; }
+        .team-stats span { display: flex; align-items: center; gap: 4px; }
+        .team-stats .completed { color: #10b981; } .team-stats .inprogress { color: #0891b2; }
+        .team-stats .pending { color: #f59e0b; } .team-stats .overdue { color: #dc2626; }
+        .resumen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+        .resumen-item { background: linear-gradient(145deg, #1c2333 0%, #131827 100%); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(212,175,55,0.2); }
+        .resumen-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .resumen-item .value { font-size: 24px; font-weight: 800; color: var(--gold); margin-top: 5px; }
+        .footer { background: linear-gradient(135deg, #0a0e1a 0%, #131827 100%); padding: 30px 60px; text-align: center; color: #64748b; font-size: 12px; border-top: 2px solid var(--gold); }
+        .footer .vip-signature { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: 3px; }
+        .action-buttons { text-align: center; margin-top: 30px; padding: 0 60px 40px; }
+        .btn { padding: 14px 40px; border: none; border-radius: 30px; cursor: pointer; font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 8px; transition: all 0.3s; }
+        .btn-print { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%); color: #0a0e1a; box-shadow: 0 8px 25px rgba(212,175,55,0.4); }
+        .btn-print:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(212,175,55,0.6); }
+        .btn-close { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        @media print { body { padding: 0; background: white; } .action-buttons { display: none; } .container { box-shadow: none; border: none; } }
+        @media (max-width: 900px) { .kpi-grid, .avance-container, .resumen-grid { grid-template-columns: 1fr; } .header, .content { padding-left: 25px; padding-right: 25px; } }
+    </style></head><body>
+    <div class="container">
+        <div class="header">
+            <div class="vip-badge">★ ${T.titulo} ★</div>
+            <h1>${project.name}</h1>
+            <div class="project-name">${T.subtitulo}</div>
+            <div class="header-meta">
+                <span>📅 ${fechaActual}</span><span>🕒 ${horaActual}</span><span>📋 ${total} ${es ? 'tareas' : 'tasks'}</span>
             </div>
         </div>
-        
-        <div class="section">
-            <h2 class="section-title">📊 ${L.graficasRendimiento}</h2>
-            <div class="charts-row">
-                <div class="chart-card"><h3>🍩 ${L.distribucion}</h3><div class="chart-container"><canvas id="distChart"></canvas></div></div>
-                <div class="chart-card"><h3>📉 ${L.burndown}</h3><div class="chart-container"><canvas id="burndownChart"></canvas></div></div>
+        <div class="status-banner">
+            <div class="status-icon">✅</div>
+            <div class="status-content">
+                <div class="status-title">${T.enTiempo}</div>
+                <div class="status-description">${es ? 'El proyecto está en tiempo' : 'The project is on time'}</div>
+            </div>
+            <div class="status-metrics">
+                <div class="status-metric"><div class="status-metric-value">${progreso}%</div><div class="status-metric-label">${T.progreso}</div></div>
+                <div class="status-metric"><div class="status-metric-value">${totalLog}h</div><div class="status-metric-label">${T.consumido}</div></div>
+                <div class="status-metric"><div class="status-metric-value">${Math.max(0, totalEst - totalLog)}h</div><div class="status-metric-label">${T.restante}</div></div>
             </div>
         </div>
-        
-        <div class="section">
-            <h2 class="section-title">⚠️ ${L.problematicas}</h2>
-            <div class="problems-section">
-                <table class="problems-table">
-                    <thead><tr><th style="width:60px;">Icon</th><th>${es ? 'Problemática' : 'Issue'}</th><th style="width:120px;">${L.severidad}</th></tr></thead>
+        <div class="content">
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${total}</div><div class="kpi-label">${T.totalTareas}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value">${completadas}</div><div class="kpi-label">${T.completadas}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${progreso}%</div><div class="kpi-label">${T.progreso}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-value">${pendientes}</div><div class="kpi-label">${T.pendientes}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-value">${rezagadas}</div><div class="kpi-label">${T.rezagadas}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">⚡</div><div class="kpi-value">${eficiencia}%</div><div class="kpi-label">${T.eficiencia}</div></div>
+            </div>
+            <div class="avance-container">
+                <div class="avance-card"><div class="titulo">${es ? 'Avance por Tareas' : 'Progress by Tasks'}</div><div class="valor">${progreso}%</div><div class="detalle">${completadas}/${total}</div></div>
+                <div class="avance-card"><div class="titulo">${es ? 'Avance por Horas' : 'Progress by Hours'}</div><div class="valor">${eficiencia}%</div><div class="detalle">${totalLog}h/${totalEst}h</div></div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">🍩 ${T.distribucion}</h2>
+                <div class="chart-card" style="max-width: 500px; margin: 0 auto;"><div class="chart-container"><canvas id="distChart"></canvas></div></div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">📉 ${T.burndown}</h2>
+                <div class="chart-card">
+                    <div class="chart-container"><canvas id="burndownChart"></canvas></div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 15px; color: #94a3b8; font-size: 14px;">
+                        <span>${T.total}: ${totalEst}h</span><span>${T.consumido}: ${totalLog}h</span><span>${T.restante}: ${Math.max(0, totalEst - totalLog)}h</span>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">${T.evmTitulo}</h2>
+                <div class="chart-card"><h3>${T.evmGrafico}</h3><div class="chart-container"><canvas id="evmChart"></canvas></div></div>
+                <table class="evm-table">
+                    <thead><tr><th>${T.indicador}</th><th style="text-align:right;">${T.valor}</th><th>${T.interpretacion}</th></tr></thead>
                     <tbody>
-                        ${problems.map(p => {
-                            const sevColor = p.severity === 'high' ? '#dc2626' : p.severity === 'medium' ? '#f59e0b' : '#10b981';
-                            const sevText = p.severity === 'high' ? L.alta : p.severity === 'medium' ? L.media : L.baja;
-                            return `<tr>
-                                <td style="font-size:20px;">${p.icon}</td>
-                                <td><strong style="color:white;">${p.title}</strong><br><span style="color:#94a3b8;font-size:12px;">${p.desc}</span></td>
-                                <td><span style="background:${sevColor}20;color:${sevColor};padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid ${sevColor};">${sevText}</span></td>
-                            </tr>`;
-                        }).join('')}
+                        <tr><td><strong>${T.pv}</strong></td><td class="num">${PV.toFixed(2)}h</td><td>${T.trabajoProgramado}</td></tr>
+                        <tr class="alt"><td><strong>${T.ev}</strong></td><td class="num">${EV.toFixed(2)}h</td><td>${T.trabajoCompletado}</td></tr>
+                        <tr><td><strong>${T.ac}</strong></td><td class="num">${AC.toFixed(2)}h</td><td>${T.horasRegistradas}</td></tr>
+                        <tr class="alt"><td><strong>${T.cpi}</strong></td><td class="num" style="color:${CPI >= 1 ? '#10b981' : '#dc2626'}">${CPI.toFixed(2)}</td><td>${CPI >= 1 ? T.eficiente : T.sobrecosto}</td></tr>
+                        <tr><td><strong>${T.spi}</strong></td><td class="num" style="color:${SPI >= 1 ? '#10b981' : '#dc2626'}">${SPI.toFixed(2)}</td><td>${SPI >= 1 ? T.adelantado : T.retrasado}</td></tr>
+                        <tr class="alt"><td><strong>${T.bac}</strong></td><td class="num">${BAC.toFixed(2)}h</td><td>${T.presupuestoBase}</td></tr>
+                        <tr><td><strong>${T.cv}</strong></td><td class="num" style="color:${CV >= 0 ? '#10b981' : '#dc2626'}">${CV >= 0 ? '+' : ''}${CV.toFixed(2)}h</td><td>${T.variacionCosto}</td></tr>
+                        <tr class="alt"><td><strong>${T.sv}</strong></td><td class="num" style="color:${SV >= 0 ? '#10b981' : '#dc2626'}">${SV >= 0 ? '+' : ''}${SV.toFixed(2)}h</td><td>${T.variacionCrono}</td></tr>
                     </tbody>
                 </table>
             </div>
-        </div>
-        
-        <div class="section">
-            <h2 class="section-title">💡 ${L.recomendaciones}</h2>
-            <div class="recommendations-card">
-                <ul>${recs.map(r => `<li>${r}</li>`).join('')}</ul>
+            <div class="section">
+                <h2 class="section-title">👥 ${T.saturacion}</h2>
+                <div class="team-grid">
+                    ${miembrosArray.map(m => `<div class="team-card"><div class="team-name">👤 ${m.nombre}</div><div class="team-pct">${m.pct}%</div><div class="team-stats"><span class="completed">${T.completadasCorta} ${m.completadas}</span><span class="inprogress">${T.enProgresoCorta} ${m.enProgreso}</span><span class="pending">${T.pendientesCorta} ${m.pendientes}</span><span class="overdue">${T.rezagadasCorta} ${m.rezagadas}</span></div></div>`).join('')}
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">📊 ${es ? 'Resumen de Métricas' : 'Metrics Summary'}</h2>
+                <div class="resumen-grid">
+                    <div class="resumen-item"><div class="label">${es ? 'Eficiencia General' : 'General Efficiency'}</div><div class="value">${eficiencia}%</div></div>
+                    <div class="resumen-item"><div class="label">${es ? 'Promedio/Tarea' : 'Average/Task'}</div><div class="value">${(totalEst / Math.max(1, total)).toFixed(1)}h</div></div>
+                    <div class="resumen-item"><div class="label">${es ? 'Restantes' : 'Remaining'}</div><div class="value">${Math.max(0, totalEst - totalLog)}h</div></div>
+                    <div class="resumen-item"><div class="label">${es ? 'Sobre tiempo' : 'Overtime'}</div><div class="value">${Math.max(0, totalLog - totalEst)}h</div></div>
+                </div>
             </div>
         </div>
-        
-        <div class="section">
-            <h2 class="section-title">📋 ${L.detalleTareas} (${total})</h2>
-            <div style="overflow-x: auto;">
-                <table class="data-table">
-                    <thead><tr><th>#</th><th>${L.tarea}</th><th>${L.estado}</th><th>${L.prioridad}</th><th>${L.asignado}</th><th>${L.estimado}</th><th>${L.registrado}</th><th>${L.avance}</th></tr></thead>
-                    <tbody>
-                        ${tasks.map((t, i) => {
-                            let statusClass = '', statusText = '';
-                            if (t.status === 'completed') { statusClass = 'completed'; statusText = L.completada; }
-                            else if (t.status === 'inProgress') { statusClass = 'progress'; statusText = L.enProgresoEst; }
-                            else if (t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed')) { statusClass = 'overdue'; statusText = L.atrasada; }
-                            else { statusClass = 'pending'; statusText = L.pendiente; }
-                            
-                            return `<tr>
-                                <td><strong>${i + 1}</strong></td>
-                                <td><strong>${t.name || t.title || L.sinTitulo}</strong></td>
-                                <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
-                                <td>${t.priority || 'Low'}</td>
-                                <td>👤 ${t.assignee || (es ? 'Sin asignar' : 'Unassigned')}</td>
-                                <td>${(t.estimatedTime || 0)}h</td>
-                                <td>${(t.timeLogged || 0)}h</td>
-                                <td><div style="display:flex; align-items:center; gap:10px;"><div class="progress-bar-cell"><div class="progress-fill" style="width: ${t.progress || 0}%"></div></div><span style="font-weight:700;">${t.progress || 0}%</span></div></td>
-                            </tr>`;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="section">
-            <div class="analysis-card">
-                <h3>📌 ${L.analisis}</h3>
-                <p>📊 <strong>CPI:</strong> ${CPI.toFixed(2)} - ${CPI >= 0.95 ? (es ? 'Costos ajustados ✅' : 'Costs on track ✅') : CPI >= 0.9 ? (es ? 'Ligero sobrecosto ⚠️' : 'Slight over budget ️') : (es ? 'Sobrecosto significativo 🔴' : 'Significant over budget ')}</p>
-                <p>⏰ <strong>SPI:</strong> ${SPI.toFixed(2)} - ${SPI >= 0.95 ? (es ? 'Cronograma en tiempo ✅' : 'Schedule on time ✅') : SPI >= 0.85 ? (es ? 'Retraso moderado ⚠️' : 'Moderate delay ️') : (es ? 'Retraso significativo 🔴' : 'Significant delay 🔴')}</p>
-                <p>📋 <strong>${es ? 'Distribución' : 'Distribution'}:</strong> ${completed} ${es ? 'completadas' : 'completed'}, ${inProgress} ${es ? 'en progreso' : 'in progress'}, ${pending} ${es ? 'pendientes' : 'pending'}, ${overdue} ${es ? 'atrasadas' : 'overdue'}</p>
-                <p>💰 <strong>VAC:</strong> ${VAC >= 0 ? (es ? 'Ahorro de' : 'Savings of') : (es ? 'Sobrecosto de' : 'Over budget of')} ${Math.abs(VAC).toFixed(0)}h</p>
-            </div>
+        <div class="footer">
+            <div class="vip-signature">★ ZACKY GANTT EXECUTIVE PRO ★</div>
+            <p>${T.generado}</p><p>© ${new Date().getFullYear()} - ${T.derechos}</p>
         </div>
     </div>
-    
-    <div class="footer">
-        <div class="vip-signature">★ ZACKY GANTT EXECUTIVE PRO ★</div>
-        <p>${L.generado} • ${new Date().getFullYear()} • ${L.derechos}</p>
+    <div class="action-buttons">
+        <button onclick="window.print()" class="btn btn-print">🖨️ ${T.imprimir}</button>
+        <button onclick="window.close()" class="btn btn-close">✖ ${T.cerrar}</button>
     </div>
-</div>
+    <script>
+        new Chart(document.getElementById('distChart'), { type: 'doughnut', data: { labels: ${JSON.stringify(distLabels)}, datasets: [{ data: ${JSON.stringify(distData)}, backgroundColor: ${JSON.stringify(distColors)}, borderWidth: 0, cutout: '65%' }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11, weight: '600' }, padding: 15 } } } } });
+        new Chart(document.getElementById('burndownChart'), { type: 'line', data: { labels: ${JSON.stringify(semanas)}, datasets: [{ label: '${es ? 'Línea Ideal' : 'Ideal Line'}', data: ${JSON.stringify(burndownIdeal)}, borderColor: '#3b82f6', borderWidth: 2, borderDash: [8,4], fill: false, pointRadius: 0 }, { label: '${es ? 'Progreso Real' : 'Real Progress'}', data: ${JSON.stringify(burndownReal)}, borderColor: '#d4af37', borderWidth: 3, fill: false, pointRadius: 5, pointBackgroundColor: '#d4af37' }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#e2e8f0', font: { weight: '600' } } } }, scales: { y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#e2e8f0' }, grid: { color: 'rgba(255,255,255,0.1)' } } } } });
+        new Chart(document.getElementById('evmChart'), { type: 'bar', data: { labels: ['PV', 'EV', 'AC'], datasets: [{ label: '${T.horas}', data: [${PV.toFixed(2)}, ${EV.toFixed(2)}, ${AC.toFixed(2)}], backgroundColor: ['#3b82f6', '#10b981', '#ef4444'], borderRadius: 8, barPercentage: 0.6 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#e2e8f0', font: { weight: '700' } }, grid: { display: false } } } } });
+    <\/script></body></html>`;
 
-<div class="action-buttons">
-    <button onclick="window.print()" class="btn btn-print">🖨️ ${L.imprimir}</button>
-    <button onclick="window.close()" class="btn btn-close">✖ ${L.cerrar}</button>
-</div>
-
-<script>
-Chart.defaults.color = '#e2e8f0';
-Chart.defaults.font.family = "'Inter', sans-serif";
-
-new Chart(document.getElementById('distChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ${JSON.stringify(distLabels)},
-        datasets: [{ data: ${JSON.stringify(distData)}, backgroundColor: ${JSON.stringify(distColors)}, borderWidth: 0, cutout: '65%' }]
-    },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11, weight: '600' }, padding: 15 } } } }
-});
-
-new Chart(document.getElementById('burndownChart'), {
-    type: 'line',
-    data: {
-        labels: ${JSON.stringify(semanas)},
-        datasets: [
-            { label: '${L.lineaIdeal}', data: ${JSON.stringify(burndownIdeal)}, borderColor: '#3b82f6', borderWidth: 2, borderDash: [8, 4], fill: false, pointRadius: 0 },
-            { label: '${L.progresoReal}', data: ${JSON.stringify(burndownReal)}, borderColor: '#d4af37', borderWidth: 3, fill: false, pointRadius: 5, pointBackgroundColor: '#d4af37' }
-        ]
-    },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#e2e8f0', font: { weight: '600' } } } }, scales: { y: { beginAtZero: true, ticks: { color: '#e2e8f0', callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#e2e8f0' }, grid: { color: 'rgba(255,255,255,0.1)' } } } }
-});
-<\/script>
-</body>
-</html>`;
-    
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(html);
-        win.document.close();
-    }
-}
+    if (!win) { alert(es ? '⚠️ Permite ventanas emergentes' : '⚠️ Allow popups'); return; }
+    win.document.write(html);
+    win.document.close();
+};
 
 // ============================================================
 // INTERCEPTAR EL BOTÓN exportarPdfBtn
@@ -27377,9 +27239,9 @@ function interceptarBotonExportPdf() {
     const btn = document.getElementById('exportarPdfBtn');
     if (!btn) return false;
     
-    if (btn.__vipFijado) return true;
+    if (btn.__vipFijadoReal) return true;
     
-    console.log('✅ Botón exportarPdfBtn encontrado, interceptando...');
+    console.log('✅ Botón exportarPdfBtn encontrado, interceptando para Reporte REAL...');
     
     // Clonar para eliminar eventos anteriores
     const nuevoBtn = btn.cloneNode(true);
@@ -27389,12 +27251,13 @@ function interceptarBotonExportPdf() {
     nuevoBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🏆 Click en EXPORT PDF → Reporte VIP Status');
-        generarReporteStatusVIP();
+        e.stopImmediatePropagation();
+        console.log('🚀 Click en EXPORT PDF → Reporte Status REAL');
+        window.generarReporteStatusReal();
     });
     
-    nuevoBtn.__vipFijado = true;
-    console.log('✅ Botón exportarPdfBtn interceptado correctamente');
+    nuevoBtn.__vipFijadoReal = true;
+    console.log('✅ Botón exportarPdfBtn interceptado correctamente para Reporte REAL');
     return true;
 }
 
@@ -27421,10 +27284,9 @@ const observer = new MutationObserver(() => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-console.log('✅ Interceptor de exportarPdfBtn instalado');
+console.log('✅ Interceptor de exportarPdfBtn instalado para Reporte REAL');
 })();
-</script>
-<!-- 🏆 FORMATO VIP PARA 4D AI COMMAND CENTER + AVANCE + RESUMEN -->
+</script><!-- 🏆 FORMATO VIP PARA 4D AI COMMAND CENTER + AVANCE + RESUMEN -->
 <script>
 (function() {
 'use strict';
@@ -32944,6 +32806,1173 @@ console.log('📌 MutationObserver como respaldo');
     console.log('🛠️ Sistema de corrección y traducción del Gantt instalado (con fix para "members asignados").');
 })();
 </script>
+<!-- ============================================================ -->
+<!-- 🔒 SECUESTRO DEFINITIVO DEL BOTÓN "EXECUTIVE REPORT"        -->
+<!-- ============================================================ -->
+<script>
+(function() {
+    'use strict';
+
+    // ----------------------------------------------------------------
+    // 1. DEFINIR LA FUNCIÓN DEL REPORTE GANTT VIP (si no existe)
+    // ----------------------------------------------------------------
+    if (typeof window.generarReporteGanttVIP !== 'function') {
+        // Si no está definida, la definimos (aquí debería estar el código de tu reporte)
+        // Pero asumimos que ya está definida en el script anterior.
+        // Si no, puedes copiar la función completa aquí.
+        console.warn('⚠️ generarReporteGanttVIP no está definida. Asegúrate de que el script del reporte esté cargado antes.');
+        window.generarReporteGanttVIP = function() {
+            alert('❌ generarReporteGanttVIP no está definida. Revisa la carga de scripts.');
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // 2. SOBRESCRIBIR LA FUNCIÓN ORIGINAL exportGanttData
+    // ----------------------------------------------------------------
+    if (typeof window.exportGanttData === 'function') {
+        const original = window.exportGanttData;
+        window.exportGanttData = function() {
+            console.log('🔄 exportGanttData interceptada → redirigiendo a generarReporteGanttVIP');
+            if (typeof window.generarReporteGanttVIP === 'function') {
+                window.generarReporteGanttVIP();
+            } else {
+                original(); // fallback
+            }
+        };
+        console.log('✅ exportGanttData sobrescrita correctamente.');
+    } else {
+        // Si no existe, la creamos para que llame a nuestro reporte
+        window.exportGanttData = function() {
+            console.log('📊 exportGanttData llamada → generarReporteGanttVIP');
+            if (typeof window.generarReporteGanttVIP === 'function') {
+                window.generarReporteGanttVIP();
+            }
+        };
+        console.log('✅ exportGanttData creada como alias de generarReporteGanttVIP.');
+    }
+
+    // ----------------------------------------------------------------
+    // 3. FUNCIÓN PARA SECUESTRAR EL BOTÓN
+    // ----------------------------------------------------------------
+    function secuestrarBoton() {
+        // Buscar el botón por su onclick (más específico)
+        let btn = document.querySelector('button[onclick*="exportGanttData"]');
+        // Si no, buscar por clase y texto
+        if (!btn) {
+            btn = document.querySelector('button.premium-btn.active-btn');
+            if (btn && !btn.textContent.includes('Executive Report')) {
+                btn = null;
+            }
+        }
+        // Si aún no, buscar por texto (más genérico)
+        if (!btn) {
+            const botones = document.querySelectorAll('button');
+            for (let b of botones) {
+                if (b.textContent.includes('Executive Report') || b.textContent.includes('Reporte Ejecutivo')) {
+                    btn = b;
+                    break;
+                }
+            }
+        }
+
+        if (!btn) {
+            console.log('⏳ Botón "Executive Report" no encontrado aún.');
+            return false;
+        }
+
+        // Si el botón ya está secuestrado, no hacer nada
+        if (btn.dataset.secuestrado === 'true') {
+            return true;
+        }
+
+        console.log('🔒 Secuestrando botón "Executive Report"...');
+
+        // Crear un nuevo botón idéntico pero sin onclick
+        const nuevoBtn = document.createElement('button');
+        nuevoBtn.id = btn.id || '';
+        nuevoBtn.className = btn.className || '';
+        nuevoBtn.textContent = btn.textContent;
+        // Copiar todos los atributos excepto onclick
+        for (const attr of btn.attributes) {
+            if (attr.name !== 'onclick' && attr.name !== 'id' && attr.name !== 'class') {
+                nuevoBtn.setAttribute(attr.name, attr.value);
+            }
+        }
+        // Asegurar estilo inline (si lo tiene)
+        if (btn.style.cssText) {
+            nuevoBtn.style.cssText = btn.style.cssText;
+        }
+
+        // Añadir marcador de secuestro
+        nuevoBtn.dataset.secuestrado = 'true';
+
+        // Reemplazar el botón viejo por el nuevo
+        btn.parentNode.replaceChild(nuevoBtn, btn);
+
+        // Asignar nuestro evento en fase de captura
+        nuevoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('📊 Click en Executive Report → generando Reporte Gantt VIP');
+            if (typeof window.generarReporteGanttVIP === 'function') {
+                window.generarReporteGanttVIP();
+            } else {
+                alert('❌ Error: generarReporteGanttVIP no está definida.');
+            }
+        }, true); // true = fase de captura
+
+        // También asignar onclick por si acaso (pero el evento de fase de captura ya es suficiente)
+        nuevoBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📊 Click (onclick) en Executive Report → generando Reporte Gantt VIP');
+            if (typeof window.generarReporteGanttVIP === 'function') {
+                window.generarReporteGanttVIP();
+            }
+        };
+
+        console.log('✅ Botón "Executive Report" secuestrado correctamente.');
+        return true;
+    }
+
+    // ----------------------------------------------------------------
+    // 4. EJECUTAR AHORA Y REINTENTAR CADA 500ms DURANTE 10 SEGUNDOS
+    // ----------------------------------------------------------------
+    secuestrarBoton();
+
+    let contador = 0;
+    const maxIntentos = 20;
+    const intervalo = setInterval(function() {
+        contador++;
+        const btn = document.querySelector('button[onclick*="exportGanttData"], button.premium-btn.active-btn');
+        if (btn && btn.dataset.secuestrado !== 'true') {
+            secuestrarBoton();
+        }
+        if (contador >= maxIntentos) {
+            clearInterval(intervalo);
+            console.log('⏹️ Intervalo de secuestro finalizado.');
+        }
+    }, 500);
+
+    // ----------------------------------------------------------------
+    // 5. MUTATION OBSERVER PARA DETECTAR CAMBIOS EN EL DOM
+    // ----------------------------------------------------------------
+    const observer = new MutationObserver(function() {
+        const btn = document.querySelector('button[onclick*="exportGanttData"], button.premium-btn.active-btn');
+        if (btn && btn.dataset.secuestrado !== 'true') {
+            secuestrarBoton();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // ----------------------------------------------------------------
+    // 6. INTERCEPTAR CLICS EN EL DOCUMENTO (FASE DE CAPTURA)
+    // ----------------------------------------------------------------
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        const btn = target.closest ? target.closest('button[onclick*="exportGanttData"], button.premium-btn.active-btn') : null;
+        if (btn) {
+            // Si el botón no está secuestrado, secuestrarlo ahora
+            if (btn.dataset.secuestrado !== 'true') {
+                secuestrarBoton();
+            }
+            // El evento del botón ya se ejecutará (lo hemos asignado)
+        }
+    }, true);
+
+    // ----------------------------------------------------------------
+    // 7. EXPONER FUNCIÓN MANUAL PARA DEBUG
+    // ----------------------------------------------------------------
+    window.secuestrarBotonExecutive = secuestrarBoton;
+
+    console.log('🔒 SISTEMA DE SECUESTRO DEL BOTÓN "EXECUTIVE REPORT" ACTIVADO.');
+    console.log('💡 Si el botón aún falla, ejecuta en consola: secuestrarBotonExecutive()');
+
+})();
+</script>
+<!-- ============================================================ -->
+<!-- ================================================================ -->
+<!-- 📊 REPORTE VIP DASHBOARD 4D - FORMATO DORADO EJECUTIVO         -->
+<!-- ================================================================ -->
+<script>
+(function() {
+    'use strict';
+
+    // ================================================================
+    // 1. ASEGURAR QUE LAS FUNCIONES AUXILIARES EXISTEN
+    // ================================================================
+    if (typeof window.projects === 'undefined') {
+        window.projects = JSON.parse(localStorage.getItem('projects') || '[]');
+    }
+
+    if (typeof window.getAllTasks !== 'function') {
+        window.getAllTasks = function() {
+            const allTasks = [];
+            (window.projects || []).forEach(project => {
+                (project.tasks || []).forEach(task => {
+                    allTasks.push({
+                        ...task,
+                        projectName: project.name || 'Proyecto'
+                    });
+                });
+            });
+            return allTasks;
+        };
+    }
+
+    if (typeof window.getTotalTasks !== 'function') {
+        window.getTotalTasks = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => count += (p.tasks || []).length);
+            return count;
+        };
+    }
+
+    if (typeof window.getCompletedTasks !== 'function') {
+        window.getCompletedTasks = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    if (t.status === 'completed') count++;
+                });
+            });
+            return count;
+        };
+    }
+
+    if (typeof window.getOverdueTasks !== 'function') {
+        window.getOverdueTasks = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    if (t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date()) {
+                        count++;
+                    }
+                });
+            });
+            return count;
+        };
+    }
+
+    if (typeof window.getCriticalTasksCount !== 'function') {
+        window.getCriticalTasksCount = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    if (t.critical || t.priority === 'alta') count++;
+                });
+            });
+            return count;
+        };
+    }
+
+    if (typeof window.getOverallProgress !== 'function') {
+        window.getOverallProgress = function() {
+            let total = 0, completed = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    total++;
+                    if (t.status === 'completed') completed++;
+                });
+            });
+            return total > 0 ? Math.round((completed / total) * 100) : 0;
+        };
+    }
+
+    if (typeof window.getInProgressTasks !== 'function') {
+        window.getInProgressTasks = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    if (t.status === 'inProgress') count++;
+                });
+            });
+            return count;
+        };
+    }
+
+    if (typeof window.getPendingTasks !== 'function') {
+        window.getPendingTasks = function() {
+            let count = 0;
+            (window.projects || []).forEach(p => {
+                (p.tasks || []).forEach(t => {
+                    if (t.status === 'pending') count++;
+                });
+            });
+            return count;
+        };
+    }
+
+    // ================================================================
+    // 2. SOBRESCRIBIR LA FUNCIÓN exportDashboard4DReport (CON FORMATO VIP)
+    // ================================================================
+    window.exportDashboard4DReport = function() {
+        console.log('🏆 Generando Reporte VIP Dashboard 4D (formato dorado)...');
+
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const isEn = lang === 'en';
+        const locale = isEn ? 'en-US' : 'es-ES';
+
+        // ---- Diccionario de traducciones (igual que antes) ----
+        const T = {
+            title: isEn ? 'VIP EXECUTIVE REPORT' : 'REPORTE EJECUTIVO VIP',
+            subtitle: isEn ? 'Dashboard 4D - Strategic Project Analysis' : 'Dashboard 4D - Análisis Estratégico de Proyectos',
+            date: isEn ? 'Generated' : 'Generado',
+            system: isEn ? 'Project Management System' : 'Sistema de Gestión de Proyectos',
+            executiveSummary: isEn ? 'EXECUTIVE SUMMARY' : 'RESUMEN EJECUTIVO',
+            globalKPIs: isEn ? 'GLOBAL KEY PERFORMANCE INDICATORS' : 'INDICADORES CLAVE DE DESEMPEÑO GLOBAL',
+            activeProjects: isEn ? 'Active Projects' : 'Proyectos Activos',
+            totalTasks: isEn ? 'Total Tasks' : 'Total de Tareas',
+            completedTasks: isEn ? 'Completed Tasks' : 'Tareas Completadas',
+            inProgressTasks: isEn ? 'In Progress' : 'En Progreso',
+            pendingTasks: isEn ? 'Pending Tasks' : 'Tareas Pendientes',
+            overdueTasks: isEn ? 'Overdue Tasks' : 'Tareas Atrasadas',
+            criticalTasks: isEn ? 'Critical Tasks' : 'Tareas Críticas',
+            overallProgress: isEn ? 'Overall Progress' : 'Progreso Global',
+            systemHealth: isEn ? 'System Health Score' : 'Puntuación de Salud del Sistema',
+            progressTrend: isEn ? 'PROGRESS TREND ANALYSIS' : 'ANÁLISIS DE TENDENCIA DE PROGRESO',
+            progressTrendDesc: isEn ? 'Last 7 days performance evolution' : 'Evolución del rendimiento de los últimos 7 días',
+            taskStatus: isEn ? 'TASK STATUS DISTRIBUTION' : 'DISTRIBUCIÓN DEL ESTADO DE TAREAS',
+            taskStatusDesc: isEn ? 'Current allocation by status' : 'Asignación actual por estado',
+            burndownChart: isEn ? 'BURNDOWN ANALYSIS' : 'ANÁLISIS BURNDOWN',
+            burndownDesc: isEn ? 'Critical tasks completion vs ideal plan' : 'Finalización de tareas críticas vs plan ideal',
+            efficiencyChart: isEn ? 'EFFICIENCY BY PROJECT' : 'EFICIENCIA POR PROYECTO',
+            efficiencyDesc: isEn ? 'Completion rate per project' : 'Tasa de finalización por proyecto',
+            projectDetails: isEn ? 'DETAILED PROJECT ANALYSIS' : 'ANÁLISIS DETALLADO DE PROYECTOS',
+            projectCol: isEn ? 'Project' : 'Proyecto',
+            tasksCol: isEn ? 'Tasks' : 'Tareas',
+            completedCol: isEn ? 'Completed' : 'Completadas',
+            progressCol: isEn ? 'Progress' : 'Progreso',
+            overdueCol: isEn ? 'Overdue' : 'Atrasadas',
+            riskCol: isEn ? 'Risk Level' : 'Nivel de Riesgo',
+            riskAnalysis: isEn ? 'RISK ANALYSIS & ALERTS' : 'ANÁLISIS DE RIESGOS Y ALERTAS',
+            strategicRecommendations: isEn ? 'STRATEGIC RECOMMENDATIONS' : 'RECOMENDACIONES ESTRATÉGICAS',
+            criticalIssues: isEn ? 'Critical Issues' : 'Problemas Críticos',
+            highPriority: isEn ? 'High Priority' : 'Alta Prioridad',
+            mediumPriority: isEn ? 'Medium Priority' : 'Prioridad Media',
+            lowPriority: isEn ? 'Low Priority' : 'Prioridad Baja',
+            immediateActions: isEn ? 'Immediate Actions Required' : 'Acciones Inmediatas Requeridas',
+            shortTerm: isEn ? 'Short-term Recommendations' : 'Recomendaciones a Corto Plazo',
+            longTerm: isEn ? 'Long-term Strategy' : 'Estrategia a Largo Plazo',
+            excellent: isEn ? 'EXCELLENT' : 'EXCELENTE',
+            good: isEn ? 'GOOD' : 'BUENO',
+            acceptable: isEn ? 'ACCEPTABLE' : 'ACEPTABLE',
+            critical: isEn ? 'CRITICAL' : 'CRÍTICO',
+            healthy: isEn ? 'HEALTHY' : 'SALUDABLE',
+            atRisk: isEn ? 'AT RISK' : 'EN RIESGO',
+            footer: isEn ? 'Confidential Document - For Executive Use Only' : 'Documento Confidencial - Solo para Uso Ejecutivo',
+            generatedBy: isEn ? 'Generated by Dashboard 4D Executive System' : 'Generado por Sistema Dashboard 4D Ejecutivo',
+            printBtn: isEn ? '🖨️ Print Report' : '🖨️ Imprimir Reporte',
+            closeBtn: isEn ? '✕ Close' : '✕ Cerrar'
+        };
+
+        // ---- Obtener métricas ----
+        const projects = window.projects || [];
+        const allTasks = window.getAllTasks();
+        const totalTasks = allTasks.length;
+        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+        const inProgressTasks = allTasks.filter(t => t.status === 'inProgress').length;
+        const pendingTasks = allTasks.filter(t => t.status === 'pending').length;
+        const overdueTasksCount = window.getOverdueTasks();
+        const criticalTasksCount = window.getCriticalTasksCount();
+        const overallProgress = window.getOverallProgress();
+
+        const healthScore = Math.max(0, Math.min(100,
+            overallProgress - (overdueTasksCount * 5) - (criticalTasksCount * 3)
+        ));
+        const healthStatus = healthScore >= 80 ? T.excellent :
+                             healthScore >= 60 ? T.good :
+                             healthScore >= 40 ? T.acceptable : T.critical;
+        const healthColor = healthScore >= 80 ? '#10b981' :
+                            healthScore >= 60 ? '#3b82f6' :
+                            healthScore >= 40 ? '#f59e0b' : '#ef4444';
+
+        // ---- Datos para gráficas ----
+        const last7Days = [];
+        const dayNames = isEn ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            last7Days.push(dayNames[date.getDay()]);
+        }
+
+        const historicalProgress = last7Days.map((_, i) => {
+            const dayRatio = (7 - i) / 7;
+            return Math.round(overallProgress * dayRatio);
+        });
+
+        const projectData = projects.map(p => {
+            const tasks = p.tasks || [];
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const overdue = tasks.filter(t =>
+                t.status !== 'completed' && t.deadline && new Date(t.deadline) < new Date()
+            ).length;
+            const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+            const risk = overdue > tasks.length * 0.2 ? T.critical :
+                         overdue > tasks.length * 0.1 ? T.highPriority :
+                         overdue > 0 ? T.mediumPriority : T.lowPriority;
+            return {
+                name: p.name,
+                total: tasks.length,
+                completed,
+                progress,
+                overdue,
+                risk
+            };
+        });
+
+        // ---- HTML con FORMATO VIP (dorado, como los otros reportes) ----
+        const printContent = `
+<!DOCTYPE html>
+<html lang="${isEn ? 'en' : 'es'}">
+<head>
+    <meta charset="UTF-8">
+    <title>★ ${T.title} ★ - Dashboard 4D</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #d4af37; --gold-light: #f4e4a6; --gold-dark: #b8941f; --dark: #0a0e1a; --dark-2: #131827; --dark-3: #1c2333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #050814 0%, #0a0e1a 50%, #131827 100%);
+            padding: 30px 20px;
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: linear-gradient(145deg, #131827 0%, #0a0e1a 100%);
+            border-radius: 24px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.3);
+            overflow: hidden;
+            border: 1px solid rgba(212,175,55,0.3);
+        }
+        .header {
+            background: linear-gradient(135deg, #0a0e1a 0%, #1c2333 50%, #0a0e1a 100%);
+            padding: 50px 60px;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .vip-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+            color: #0a0e1a;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 6px 20px rgba(212,175,55,0.5);
+        }
+        .vip-badge::before, .vip-badge::after { content: '★'; margin: 0 8px; }
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 44px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+        .header .project-name {
+            font-size: 22px;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+            flex-wrap: wrap;
+        }
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .content { padding: 40px 60px; }
+
+        .health-score {
+            background: linear-gradient(135deg, ${healthColor}25 0%, ${healthColor}10 100%);
+            border: 1px solid ${healthColor}40;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .health-score h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: ${healthColor};
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .health-score .score {
+            font-size: 72px;
+            font-weight: 900;
+            color: ${healthColor};
+            line-height: 1;
+            margin-bottom: 5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .health-score .status {
+            font-size: 24px;
+            color: ${healthColor};
+            font-weight: 700;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 25px;
+            padding-left: 20px;
+            border-left: 4px solid var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section .description {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 25px;
+            padding-left: 24px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .kpi-card {
+            background: linear-gradient(145deg, #1c2333 0%, #131827 100%);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(212,175,55,0.25);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(212,175,55,0.15);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .kpi-icon { font-size: 28px; margin-bottom: 10px; }
+        .kpi-value {
+            font-size: 38px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .kpi-label {
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: linear-gradient(145deg, #1c2333 0%, #131827 100%);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(212,175,55,0.2);
+        }
+        .chart-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            max-height: 350px;
+        }
+        canvas { max-width: 100%; max-height: 280px; }
+
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(212,175,55,0.25);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: linear-gradient(145deg, #1c2333 0%, #131827 100%);
+        }
+        .data-table th {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: #0a0e1a;
+            padding: 14px 15px;
+            text-align: left;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+        .data-table tr:hover td { background: rgba(212,175,55,0.05); }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .risk-critical { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .risk-high { background: rgba(249,115,22,0.2); color: #f97316; border: 1px solid #f97316; }
+        .risk-medium { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .risk-low { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid #22c55e; }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .recommendation-card {
+            background: linear-gradient(145deg, #1c2333 0%, #131827 100%);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(212,175,55,0.25);
+            border-left: 4px solid var(--gold);
+        }
+        .recommendation-card h4 {
+            color: var(--gold);
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Playfair Display', serif;
+        }
+        .recommendation-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .recommendation-card li {
+            color: #e2e8f0;
+            font-size: 14px;
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .recommendation-card li:last-child { border-bottom: none; }
+        .recommendation-card li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+        }
+
+        .issue-card {
+            background: linear-gradient(145deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.05) 100%);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .issue-card h4 {
+            color: #ef4444;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Playfair Display', serif;
+        }
+        .issue-card p {
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #0a0e1a 0%, #131827 100%);
+            padding: 30px 60px;
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            border-top: 2px solid var(--gold);
+        }
+        .footer .vip-signature {
+            color: var(--gold);
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+        .footer .confidential {
+            color: #ef4444;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .action-buttons {
+            text-align: center;
+            margin-top: 30px;
+            padding: 0 60px 40px;
+        }
+        .btn {
+            padding: 14px 40px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin: 0 8px;
+            transition: all 0.3s;
+        }
+        .btn-print {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+            color: #0a0e1a;
+            box-shadow: 0 8px 25px rgba(212,175,55,0.4);
+        }
+        .btn-print:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(212,175,55,0.6);
+        }
+        .btn-close {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-close:hover { background: rgba(255,255,255,0.15); }
+
+        @media print {
+            body { padding: 0; background: white; }
+            .action-buttons { display: none; }
+            .container { box-shadow: none; border: none; }
+        }
+        @media (max-width: 900px) {
+            .kpi-grid, .charts-grid, .recommendations-grid { grid-template-columns: 1fr; }
+            .header, .content { padding-left: 25px; padding-right: 25px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="vip-badge">★ ${T.title} ★</div>
+        <h1>${T.subtitle}</h1>
+        <div class="project-name">${T.system}</div>
+        <div class="header-meta">
+            <span>📅 ${T.date}: ${new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span>🕐 ${new Date().toLocaleTimeString(locale)}</span>
+            <span>📊 ${totalTasks} ${isEn ? 'tasks' : 'tareas'}</span>
+            <span>📂 ${projects.length} ${isEn ? 'projects' : 'proyectos'}</span>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <div class="health-score">
+            <h3>${T.systemHealth}</h3>
+            <div class="score">${healthScore}</div>
+            <div class="status">${healthStatus}</div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="section">
+            <h2 class="section-title">📊 ${T.globalKPIs}</h2>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-icon">📂</div><div class="kpi-value">${projects.length}</div><div class="kpi-label">${T.activeProjects}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${totalTasks}</div><div class="kpi-label">${T.totalTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value">${completedTasks}</div><div class="kpi-label">${T.completedTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">🔄</div><div class="kpi-value">${inProgressTasks}</div><div class="kpi-label">${T.inProgressTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">⏳</div><div class="kpi-value">${pendingTasks}</div><div class="kpi-label">${T.pendingTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">⚠️</div><div class="kpi-value">${overdueTasksCount}</div><div class="kpi-label">${T.overdueTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">🔥</div><div class="kpi-value">${criticalTasksCount}</div><div class="kpi-label">${T.criticalTasks}</div></div>
+                <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${overallProgress}%</div><div class="kpi-label">${T.overallProgress}</div></div>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="section">
+            <h2 class="section-title">📊 ${T.progressTrend}</h2>
+            <p class="description">${T.progressTrendDesc}</p>
+            <div class="charts-grid">
+                <div class="chart-card"><h3>${T.progressTrend}</h3><div class="chart-container"><canvas id="progressChart"></canvas></div></div>
+                <div class="chart-card"><h3>${T.taskStatus}</h3><div class="chart-container"><canvas id="statusChart"></canvas></div></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📉 ${T.burndownChart}</h2>
+            <p class="description">${T.burndownDesc}</p>
+            <div class="charts-grid">
+                <div class="chart-card"><h3>${T.burndownChart}</h3><div class="chart-container"><canvas id="burndownChart"></canvas></div></div>
+                <div class="chart-card"><h3>${T.efficiencyChart}</h3><div class="chart-container"><canvas id="efficiencyChart"></canvas></div></div>
+            </div>
+        </div>
+
+        <!-- Tabla de proyectos -->
+        <div class="section">
+            <h2 class="section-title">📋 ${T.projectDetails}</h2>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>${T.projectCol}</th>
+                            <th>${T.tasksCol}</th>
+                            <th>${T.completedCol}</th>
+                            <th>${T.progressCol}</th>
+                            <th>${T.overdueCol}</th>
+                            <th>${T.riskCol}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${projectData.map(p => {
+                            const progressColor = p.progress >= 75 ? '#10b981' : p.progress >= 50 ? '#f59e0b' : '#ef4444';
+                            const riskClass = p.risk === T.critical ? 'risk-critical' :
+                                            p.risk === T.highPriority ? 'risk-high' :
+                                            p.risk === T.mediumPriority ? 'risk-medium' : 'risk-low';
+                            return `
+                                <tr>
+                                    <td><strong>${p.name}</strong></td>
+                                    <td>${p.total}</td>
+                                    <td>${p.completed}</td>
+                                    <td>
+                                        <div style="display:flex;align-items:center;gap:10px;">
+                                            <span>${p.progress}%</span>
+                                            <div class="progress-bar" style="flex:1;">
+                                                <div class="progress-fill" style="width:${p.progress}%;background:${progressColor};"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>${p.overdue}</td>
+                                    <td><span class="risk-badge ${riskClass}">${p.risk}</span></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Riesgos -->
+        ${overdueTasksCount > 0 || criticalTasksCount > 0 ? `
+        <div class="section">
+            <h2 class="section-title">⚠️ ${T.riskAnalysis}</h2>
+            ${overdueTasksCount > 0 ? `
+                <div class="issue-card">
+                    <h4>🚨 ${T.criticalIssues}</h4>
+                    <p>${isEn ? `There are ${overdueTasksCount} overdue tasks that require immediate attention. These tasks have exceeded their deadlines and may impact project delivery.` :
+                               `Hay ${overdueTasksCount} tareas atrasadas que requieren atención inmediata. Estas tareas han superado sus plazos y pueden afectar la entrega del proyecto.`}</p>
+                </div>
+            ` : ''}
+            ${criticalTasksCount > 0 ? `
+                <div class="issue-card">
+                    <h4>🔥 ${T.criticalTasks}</h4>
+                    <p>${isEn ? `${criticalTasksCount} tasks are marked as critical. These tasks require priority handling and dedicated resources.` :
+                               `${criticalTasksCount} tareas están marcadas como críticas. Estas tareas requieren manejo prioritario y recursos dedicados.`}</p>
+                </div>
+            ` : ''}
+        </div>
+        ` : ''}
+
+        <!-- Recomendaciones -->
+        <div class="section">
+            <h2 class="section-title">💡 ${T.strategicRecommendations}</h2>
+            <div class="recommendations-grid">
+                <div class="recommendation-card">
+                    <h4>⚡ ${T.immediateActions}</h4>
+                    <ul>
+                        ${overdueTasksCount > 0 ? `<li>${isEn ? 'Address all overdue tasks immediately' : 'Abordar todas las tareas atrasadas inmediatamente'}</li>` : ''}
+                        ${criticalTasksCount > 0 ? `<li>${isEn ? 'Assign dedicated resources to critical tasks' : 'Asignar recursos dedicados a tareas críticas'}</li>` : ''}
+                        <li>${isEn ? 'Review and update project timelines' : 'Revisar y actualizar los cronogramas del proyecto'}</li>
+                        <li>${isEn ? 'Conduct daily stand-up meetings' : 'Realizar reuniones diarias de seguimiento'}</li>
+                    </ul>
+                </div>
+                <div class="recommendation-card">
+                    <h4>📅 ${T.shortTerm}</h4>
+                    <ul>
+                        <li>${isEn ? 'Implement weekly progress reviews' : 'Implementar revisiones semanales de progreso'}</li>
+                        <li>${isEn ? 'Optimize resource allocation' : 'Optimizar la asignación de recursos'}</li>
+                        <li>${isEn ? 'Improve task estimation accuracy' : 'Mejorar la precisión de estimación de tareas'}</li>
+                        <li>${isEn ? 'Establish clear priority guidelines' : 'Establecer pautas claras de prioridad'}</li>
+                    </ul>
+                </div>
+                <div class="recommendation-card">
+                    <h4>🎯 ${T.longTerm}</h4>
+                    <ul>
+                        <li>${isEn ? 'Develop predictive analytics capabilities' : 'Desarrollar capacidades de análisis predictivo'}</li>
+                        <li>${isEn ? 'Implement automated risk monitoring' : 'Implementar monitoreo automático de riesgos'}</li>
+                        <li>${isEn ? 'Create knowledge base for best practices' : 'Crear base de conocimiento de mejores prácticas'}</li>
+                        <li>${isEn ? 'Establish continuous improvement processes' : 'Establecer procesos de mejora continua'}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <div class="vip-signature">★ ZACKY GANTT EXECUTIVE PRO ★</div>
+        <div class="confidential">🔒 ${T.footer}</div>
+        <p>${T.generatedBy}</p>
+        <p>© ${new Date().getFullYear()} - ${isEn ? 'All rights reserved' : 'Todos los derechos reservados'}</p>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn btn-print" onclick="window.print()">🖨️ ${T.printBtn}</button>
+        <button class="btn btn-close" onclick="window.close()">✕ ${T.closeBtn}</button>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('load', function() {
+        // 1. Progress Trend
+        new Chart(document.getElementById('progressChart'), {
+            type: 'line',
+            data: {
+                labels: ${JSON.stringify(last7Days)},
+                datasets: [{
+                    label: '${isEn ? 'Progress' : 'Progreso'} (%)',
+                    data: ${JSON.stringify(historicalProgress)},
+                    borderColor: '#d4af37',
+                    backgroundColor: 'rgba(212,175,55,0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#d4af37',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+
+        // 2. Status Distribution
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['${T.completedTasks}', '${T.inProgressTasks}', '${T.pendingTasks}', '${T.overdueTasks}'],
+                datasets: [{
+                    data: [${completedTasks}, ${inProgressTasks}, ${pendingTasks}, ${overdueTasksCount}],
+                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#e2e8f0', font: { size: 11, weight: '600' }, padding: 15 } }
+                }
+            }
+        });
+
+        // 3. Burndown
+        const idealBurndown = Array.from({length: 7}, (_, i) => Math.round(100 - (100 / 6) * i));
+        const actualBurndown = [...${JSON.stringify(historicalProgress)}].reverse();
+        new Chart(document.getElementById('burndownChart'), {
+            type: 'line',
+            data: {
+                labels: ${JSON.stringify(last7Days)},
+                datasets: [
+                    {
+                        label: '${isEn ? 'Ideal Plan' : 'Plan Ideal'}',
+                        data: idealBurndown,
+                        borderColor: '#3b82f6',
+                        borderDash: [6,4],
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0,
+                        pointRadius: 0
+                    },
+                    {
+                        label: '${isEn ? 'Actual Progress' : 'Progreso Real'}',
+                        data: actualBurndown,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212,175,55,0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#d4af37',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#e2e8f0', font: { weight: '600' } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { color: 'rgba(255,255,255,0.1)' } }
+                }
+            }
+        });
+
+        // 4. Efficiency by Project
+        const projectNames = ${JSON.stringify(projectData.map(p => p.name.substring(0,20)))};
+        const projectProgress = ${JSON.stringify(projectData.map(p => p.progress))};
+        new Chart(document.getElementById('efficiencyChart'), {
+            type: 'bar',
+            data: {
+                labels: projectNames,
+                datasets: [{
+                    label: '${isEn ? 'Efficiency' : 'Eficiencia'} (%)',
+                    data: projectProgress,
+                    backgroundColor: projectProgress.map(p => p >= 75 ? '#10b981' : p >= 50 ? '#f59e0b' : '#ef4444'),
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+
+    // Auto-print after 1.5 seconds
+    setTimeout(() => { window.print(); }, 1500);
+<\/script>
+</body>
+</html>`;
+
+        // Abrir ventana
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert(isEn ? '⚠️ Please allow popups for this site' : '⚠️ Permite ventanas emergentes para este sitio');
+            return;
+        }
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+    };
+
+    // ================================================================
+    // 3. REASIGNAR BOTONES CON onclick="exportDashboard4DReport"
+    // ================================================================
+    function reasignarBotones() {
+        document.querySelectorAll('[onclick*="exportDashboard4DReport"]').forEach(btn => {
+            btn.onclick = function(e) {
+                e.preventDefault();
+                window.exportDashboard4DReport();
+            };
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', reasignarBotones);
+    } else {
+        reasignarBotones();
+    }
+
+    const observer = new MutationObserver(() => reasignarBotones());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log('✅ Reporte Dashboard 4D VIP (formato dorado) activado.');
+})();
+</script>
+<!-- ================================================================ -->
+
  </body>
 </html>
  
