@@ -33272,7 +33272,7 @@ console.log('📌 MutationObserver como respaldo');
             closeBtn: isEn ? '✕ Close' : '✕ Cerrar'
         };
 
-        // ---- Obtener métricas ----
+                // ---- Obtener métricas ----
         const projects = window.projects || [];
         const allTasks = window.getAllTasks();
         const totalTasks = allTasks.length;
@@ -33283,15 +33283,32 @@ console.log('📌 MutationObserver como respaldo');
         const criticalTasksCount = window.getCriticalTasksCount();
         const overallProgress = window.getOverallProgress();
 
-        const healthScore = Math.max(0, Math.min(100,
-            overallProgress - (overdueTasksCount * 5) - (criticalTasksCount * 3)
-        ));
+        // ================================================================
+        // 🔄 NUEVA FÓRMULA DE SALUD DEL SISTEMA (Proporcional y Lógica)
+        // ================================================================
+        const total = totalTasks || 1; // Evita división por cero si no hay tareas
+
+        // 1. Puntaje por Progreso (Máximo 40 puntos)
+        const progressScore = (completedTasks / total) * 40;
+
+        // 2. Puntaje por Puntualidad (Máximo 30 puntos) - Penaliza proporcionalmente las atrasadas
+        const punctualityScore = ((total - overdueTasksCount) / total) * 30;
+
+        // 3. Puntaje por Estabilidad (Máximo 30 puntos) - Penaliza proporcionalmente las críticas
+        const stabilityScore = ((total - criticalTasksCount) / total) * 30;
+
+        // Sumamos los componentes y limitamos entre 0 y 100
+        const healthScore = Math.max(0, Math.min(100, Math.round(progressScore + punctualityScore + stabilityScore)));
+
+        // Determinamos el estado y color basado en el nuevo score
         const healthStatus = healthScore >= 80 ? T.excellent :
                              healthScore >= 60 ? T.good :
                              healthScore >= 40 ? T.acceptable : T.critical;
-        const healthColor = healthScore >= 80 ? '#10b981' :
-                            healthScore >= 60 ? '#3b82f6' :
-                            healthScore >= 40 ? '#f59e0b' : '#ef4444';
+
+        const healthColor = healthScore >= 80 ? '#10b981' : // Verde (Excelente)
+                            healthScore >= 60 ? '#3b82f6' : // Azul (Bueno)
+                            healthScore >= 40 ? '#f59e0b' : // Naranja (Aceptable/Alerta)
+                            '#ef4444';                      // Rojo (Crítico)
 
         // ---- Datos para gráficas ----
         const last7Days = [];
