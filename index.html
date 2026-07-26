@@ -32586,7 +32586,364 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ La vista premium y otras funciones NO se ven afectadas.');
 })();
 </script>
+<!-- ============================================================ -->
+<!-- 🛠️ CORRECCIÓN Y TRADUCCIÓN PERMANENTE DEL GANTT EJECUTIVO    -->
+<!-- ============================================================ -->
+<script>
+(function() {
+    'use strict';
 
+    // ----------------------------------------------------------------
+    // 1. DICCIONARIOS (CORRECCIONES + TRADUCCIONES)
+    // ----------------------------------------------------------------
+    const correccionesExactas = {
+        // Errores conocidos
+        'GJanral': 'General',
+        'GJanral Progress': 'General Progress',
+        'Sependencies': 'Dependencies',
+        'Sependency': 'Dependency',
+        'Tanagement': 'Management',
+        'of proyecto': 'of project',
+        'of equipos': 'of teams',
+        'of equipo': 'of team',
+        'Configuración of': 'Configuration of',
+        'Instalación of': 'Installation of',
+        'Kick-off of': 'Kick-off of',
+        'Tosé': 'José',
+        'Taria': 'Maria',
+        'Tembers': 'Members',
+        'OFERSUE': 'OVERDUE',
+        'PreSector': 'Predictor',
+        'PreSection': 'Prediction',
+        'PreSective': 'Predictive',
+        'Sistribution': 'Distribution',
+        'Sashboard': 'Dashboard',
+        'Fiew': 'View',
+        // NUEVAS CORRECCIONES PARA "asignados"
+        'members asignados': 'members assigned',
+        'member asignado': 'member assigned',
+        'asignados': 'assigned'
+    };
+
+    const traducciones = {
+        // Frases completas (clave -> valor en inglés)
+        'GANTT EXECUTIVE': 'EXECUTIVE GANTT',
+        'críticas': 'critical',
+        'dependencias': 'dependencies',
+        'progreso': 'progress',
+        'HOY': 'TODAY',
+        '📱 Mobile': '📱 Mobile',
+        '📉 Burndown': '📉 Burndown',
+        '📈 Valor Ganado': '📈 Earned Value',
+        '💰 Costos': '💰 Costs',
+        '🤖 IA Predictor': '🤖 AI Predictor',
+        '🔄 Cambiar Proyecto': '🔄 Change Project',
+        '📊 Reporte Ejecutivo': '📊 Executive Report',
+        '← Volver al Tablero': '← Back to Dashboard',
+        '🚀 Vista Premium': '🚀 Premium View',
+        'Dashboard Ejecutivo': 'Executive Dashboard',
+        'Progreso General': 'General Progress',
+        'Dependencias': 'Dependencies',
+        'Ruta Crítica': 'Critical Path',
+        'IA Predictor': 'AI Predictor',
+        'Predicción basada en': 'Prediction based on',
+        'Fecha estimada finalización': 'Estimated completion date',
+        '🔄 Ejecutar Análisis Predictivo': '🔄 Run Predictive Analysis',
+        'Distribución de Equipo': 'Team Distribution',
+        'Filtros Ejecutivos': 'Executive Filters',
+        '🔴 Críticas': '🔴 Critical',
+        '⚡ Atrasadas': '⚡ Overdue',
+        '👥 Por Equipo': '👥 By Team',
+        '💰 Presupuesto': '💰 Budget',
+        '📋 Mostrar Todas': '📋 Show All',
+        'Gestión de Dependencias': 'Dependency Management',
+        '🔗 Crear Dependencias': '🔗 Create Dependencies',
+        '🔥 Marcar Ruta Crítica': '🔥 Mark Critical Path',
+        '🗑️ Limpiar Todas': '🗑️ Clear All',
+        'CRÍTICA': 'CRITICAL',
+        '🔥 CRÍTICA': '🔥 CRITICAL',
+        '⚠️ ATRASADA': '⚠️ DELAYED',
+        'Sin asignar': 'Unassigned',
+        'Actualizar progreso': 'Update progress',
+        'Progreso': 'Progress',
+        'Tareas': 'Tasks',
+        'Timeline': 'Timeline',
+        '🔄 Actualizado': '🔄 Updated',
+        'Miembros': 'Members',
+        'Asignaciones': 'Assignments',
+        '📊 Ver estadísticas completas': '📊 View complete statistics',
+        'Burndown Chart': 'Burndown Chart',
+        'TAREAS TOTALES': 'TOTAL TASKS',
+        'En el backlog': 'In the backlog',
+        'TAREAS COMPLETADAS': 'COMPLETED TASKS',
+        '% completado': '% completed',
+        'VELOCIDAD': 'VELOCITY',
+        'tareas/semana': 'tasks/week',
+        '📈 GRÁFICO DE BURNDOWN': '📈 BURNDOWN CHART',
+        '📊 ANÁLISIS DEL PROYECTO': '📊 PROJECT ANALYSIS',
+        'Cargando análisis...': 'Loading analysis...',
+        '🕒 AUDITORÍA DEL PROYECTO': '🕒 PROJECT AUDIT',
+        '📊 Sistema Burndown Chart • Métricas en tiempo real': '📊 Burndown Chart System • Real-time metrics',
+        '📥 Exportar Gráfico': '📥 Export Chart',
+        '📄 Reporte Completo': '📄 Full Report',
+        'Línea Ideal': 'Ideal Line',
+        'Progreso Real': 'Real Progress',
+        'Semanas': 'Weeks',
+        'Story Points Restantes': 'Remaining Story Points',
+        // Días
+        'L': 'M',
+        'M': 'T',
+        'X': 'W',
+        'J': 'T',
+        'V': 'F',
+        'S': 'S',
+        'D': 'S',
+        // Meses
+        'ene': 'Jan',
+        'feb': 'Feb',
+        'mar': 'Mar',
+        'abr': 'Apr',
+        'may': 'May',
+        'jun': 'Jun',
+        'jul': 'Jul',
+        'ago': 'Aug',
+        'sept': 'Sep',
+        'oct': 'Oct',
+        'nov': 'Nov',
+        'dic': 'Dec',
+        // Mixtas
+        'tasks con dependencies': 'tasks with dependencies',
+        'tareas con dependencies': 'tasks with dependencies',
+        'con dependencies': 'with dependencies',
+        'asignadas': 'assigned',
+        'asignada': 'assigned',
+        'asignados': 'assigned', // <-- NUEVO
+        'miembro más': 'more member',
+        'miembros más': 'more members',
+        'Ver todos los': 'View all',
+        'tareas por miembro': 'tasks per member',
+        'tarea por miembro': 'task per member',
+        'Filtrando tareas críticas': 'Filtering critical tasks',
+        'Filtrando tareas atrasadas': 'Filtering overdue tasks',
+        'Filtrando por equipo': 'Filtering by team',
+        'Filtrando por presupuesto': 'Filtering by budget',
+        'Mostrando todas las tareas': 'Showing all tasks',
+        'tareas críticas encontradas': 'critical tasks found',
+        'tareas atrasadas encontradas': 'overdue tasks found',
+        'tareas del equipo': 'team tasks',
+        'tareas con presupuesto': 'tasks with budget',
+        'Filtro activo:': 'Active filter:',
+        'Mostrando': 'Showing',
+        'de': 'of',
+        'Seleccionar Proyecto': 'Select Project',
+        'Elige un proyecto para visualizar en el Gantt': 'Choose a project to view in the Gantt',
+        'Continuar al Gantt': 'Continue to Gantt',
+        'Cancelar': 'Cancel',
+        'Distribución Completa del Equipo': 'Complete Team Distribution',
+        'Promedio:': 'Average:',
+        'TASK ATRASADAS': 'OVERDUE TASKS',
+        'TASKS ATRASADAS': 'OVERDUE TASKS',
+        'ATRASADAS': 'OVERDUE',
+        'ATRASADA': 'OVERDUE',
+        'Sem': 'Wk',
+        'Inicio': 'Start',
+        'Semana': 'Week',
+        'Actual': 'Current',
+        'tarea': 'task',
+        'tareas': 'tasks',
+        'día': 'day',
+        'días': 'days'
+    };
+
+    // ----------------------------------------------------------------
+    // 2. FUNCIÓN PRINCIPAL: APLICAR CORRECCIONES Y TRADUCCIONES
+    // ----------------------------------------------------------------
+    function aplicarCorreccionesYTraducciones() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        if (lang === 'es') return; // No hacer nada en español
+
+        // Buscar el contenedor del Gantt
+        let contenedor = document.getElementById('premiumExecutiveGantt') || document.getElementById('ganttContainer');
+        if (!contenedor) {
+            const todos = document.querySelectorAll('div, section, main');
+            for (let el of todos) {
+                if (el.textContent.includes('GANTT EXECUTIVE') || el.textContent.includes('Executive Gantt')) {
+                    contenedor = el;
+                    break;
+                }
+            }
+        }
+        if (!contenedor) {
+            contenedor = document.body;
+        }
+
+        // Recorrer todos los nodos de texto
+        const walker = document.createTreeWalker(
+            contenedor,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: function(node) {
+                    if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+                    const tag = node.parentElement.tagName.toLowerCase();
+                    if (tag === 'script' || tag === 'style' || tag === 'input' || tag === 'textarea') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.textContent.trim().length === 0) return NodeFilter.FILTER_REJECT;
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let cambios = 0;
+        let nodo;
+        while (nodo = walker.nextNode()) {
+            let texto = nodo.textContent;
+            let original = texto;
+
+            // 1) Correcciones exactas
+            for (let [err, corr] of Object.entries(correccionesExactas)) {
+                texto = texto.split(err).join(corr);
+            }
+
+            // 2) Traducciones (con límites de palabra)
+            const claves = Object.keys(traducciones).sort((a, b) => b.length - a.length);
+            for (let clave of claves) {
+                const regex = new RegExp('(^|\\s|[.,;:!?])' + clave.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s|$|[.,;:!?])', 'g');
+                texto = texto.replace(regex, (match, prefix) => prefix + traducciones[clave]);
+            }
+
+            // 3) Correcciones adicionales
+            texto = texto.replace(/\bSem\s+(\d+)\b/g, 'Wk $1');
+            texto = texto.replace(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sept|oct|nov|dic)\b/gi, function(match, dia, mes) {
+                const meses = { 'ene':'Jan','feb':'Feb','mar':'Mar','abr':'Apr','may':'May','jun':'Jun','jul':'Jul','ago':'Aug','sept':'Sep','oct':'Oct','nov':'Nov','dic':'Dec' };
+                return meses[mes.toLowerCase()] + ' ' + dia;
+            });
+
+            // 4) Reemplazos forzados (por si fallaron los anteriores)
+            texto = texto.replace(/Create Sependencies/g, 'Create Dependencies');
+            texto = texto.replace(/Dependency Tanagement/g, 'Dependency Management');
+            texto = texto.replace(/GJanral/g, 'General');
+            texto = texto.replace(/GJanral Progress/g, 'General Progress');
+            texto = texto.replace(/members asignados/g, 'members assigned');
+            texto = texto.replace(/member asignado/g, 'member assigned');
+
+            if (texto !== original) {
+                nodo.textContent = texto;
+                cambios++;
+            }
+        }
+
+        if (cambios > 0) {
+            console.log(`🔧 Gantt traducido/corregido: ${cambios} textos modificados.`);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 3. EJECUTAR AUTOMÁTICAMENTE CON MÚLTIPLES ESTRATEGIAS
+    // ----------------------------------------------------------------
+
+    function ejecutarConRetraso(ms) {
+        setTimeout(aplicarCorreccionesYTraducciones, ms || 300);
+    }
+
+    if (document.readyState === 'complete') {
+        ejecutarConRetraso(200);
+        ejecutarConRetraso(800);
+        ejecutarConRetraso(1500);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            ejecutarConRetraso(200);
+            ejecutarConRetraso(800);
+            ejecutarConRetraso(1500);
+        });
+    }
+
+    let intentos = 0;
+    const maxIntentos = 5;
+    const intervalo = setInterval(function() {
+        intentos++;
+        aplicarCorreccionesYTraducciones();
+        if (intentos >= maxIntentos) {
+            clearInterval(intervalo);
+            console.log('⏹️ Intervalo de vigilancia del Gantt finalizado.');
+        }
+    }, 2000);
+
+    const observer = new MutationObserver(function(mutations) {
+        let debeAplicar = false;
+        for (let mut of mutations) {
+            if (mut.addedNodes.length > 0) {
+                for (let node of mut.addedNodes) {
+                    if (node.nodeType === 1) {
+                        if (node.id === 'premiumExecutiveGantt' || node.id === 'ganttContainer') {
+                            debeAplicar = true;
+                            break;
+                        }
+                        if (node.textContent && (node.textContent.includes('GANTT EXECUTIVE') || node.textContent.includes('Executive Gantt'))) {
+                            debeAplicar = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (debeAplicar) break;
+        }
+        if (debeAplicar) {
+            ejecutarConRetraso(300);
+            ejecutarConRetraso(800);
+        }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const funcionesGantt = [
+        'createCompleteGanttForCurrentProject',
+        'renderGanttView',
+        'showGanttView',
+        'loadGantt'
+    ];
+
+    funcionesGantt.forEach(nombre => {
+        if (typeof window[nombre] === 'function' && !window['__' + nombre + '_parcheado']) {
+            const original = window[nombre];
+            window[nombre] = function() {
+                const result = original.apply(this, arguments);
+                ejecutarConRetraso(400);
+                ejecutarConRetraso(900);
+                return result;
+            };
+            window['__' + nombre + '_parcheado'] = true;
+            console.log('✅ ' + nombre + ' parcheada para traducción automática.');
+        }
+    });
+
+    if (typeof window.showView === 'function' && !window.__showView_parcheado) {
+        const originalShowView = window.showView;
+        window.showView = function(viewName) {
+            originalShowView(viewName);
+            if (viewName === 'gantt' || viewName === 'Gantt') {
+                ejecutarConRetraso(500);
+                ejecutarConRetraso(1000);
+            }
+        };
+        window.__showView_parcheado = true;
+        console.log('✅ showView parcheada para traducción del Gantt.');
+    }
+
+    document.addEventListener('languageChanged', function() {
+        const ganttView = document.getElementById('ganttView');
+        if (ganttView && ganttView.classList.contains('active')) {
+            ejecutarConRetraso(200);
+            ejecutarConRetraso(600);
+        }
+    });
+
+    window.aplicarCorreccionesGantt = aplicarCorreccionesYTraducciones;
+
+    console.log('🛠️ Sistema de corrección y traducción del Gantt instalado (con fix para "members asignados").');
+})();
+</script>
  </body>
 </html>
  
