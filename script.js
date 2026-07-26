@@ -6797,219 +6797,243 @@ if (burndownCtx) {
     // ============================================
     // IMPRESIÓN CORREGIDA - CON ESTILOS BLANCO PARA IMPRIMIR
     // ============================================
-    async function imprimirReporteRH() {
-        const dashboardContent = document.getElementById('nexusRealDashboard');
-        if (!dashboardContent) {
-            alert('No se encontró el dashboard');
+   // ============================================
+// IMPRESIÓN CORREGIDA - CON SCROLL FUNCIONAL
+// ============================================
+async function imprimirReporteRH() {
+    const dashboardContent = document.getElementById('nexusRealDashboard');
+    if (!dashboardContent) {
+        alert('No se encontró el dashboard');
+        return;
+    }
+    
+    const printBtn = document.getElementById('printRealDashboard');
+    const originalText = printBtn?.innerHTML;
+    if (printBtn) {
+        printBtn.innerHTML = '⏳ Generando reporte...';
+        printBtn.disabled = true;
+    }
+    
+    try {
+        // Capturar gráficos
+        const chartImages = await captureAllChartsAsImages();
+        
+        // Obtener datos actuales
+        const allTasks = getAllTasks();
+        const employees = calculateEmployeeMetrics(allTasks);
+        const totalLoggedHours = allTasks.reduce((sum, t) => sum + (t.loggedHours || 0), 0);
+        const totalEstimatedHours = allTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
+        const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+        const pendingTasks = allTasks.filter(t => t.status === 'pending').length;
+        const totalTasks = allTasks.length;
+        const overdueTasks = allTasks.filter(t => t.isOverdue && t.status !== 'completed').length;
+        
+        const avgEfficiency = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.efficiency, 0) / employees.length) : 0;
+        const avgAvailability = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.availability, 0) / employees.length) : 0;
+        const avgProductivity = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.productivity, 0) / employees.length) : 0;
+        
+        // Generar KPIs HTML
+        const kpisHTML = `
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:30px;">
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
+                    <div style="font-size:12px;color:#64748b;text-transform:uppercase;">TAREAS TOTALES</div>
+                    <div style="font-size:42px;font-weight:800;color:#3b82f6;">${totalTasks}</div>
+                    <div style="margin-top:8px;font-size:12px;"><span style="color:#10b981;">✓ ${completedTasks} completadas</span> | <span style="color:#f59e0b;">⏳ ${pendingTasks} pendientes</span></div>
+                    <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${(completedTasks/totalTasks)*100}%;height:100%;background:#10b981;border-radius:4px;"></div></div>
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
+                    <div style="font-size:12px;color:#64748b;text-transform:uppercase;">EFICIENCIA PROMEDIO</div>
+                    <div style="font-size:42px;font-weight:800;color:#3b82f6;">${avgEfficiency}%</div>
+                    <div style="margin-top:8px;font-size:12px;"><span style="color:#3b82f6;">⚡ ${avgEfficiency}% tareas completadas</span></div>
+                    <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgEfficiency}%;height:100%;background:#3b82f6;border-radius:4px;"></div></div>
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
+                    <div style="font-size:12px;color:#64748b;text-transform:uppercase;">DISPONIBILIDAD</div>
+                    <div style="font-size:42px;font-weight:800;color:#8b5cf6;">${avgAvailability}%</div>
+                    <div style="margin-top:8px;font-size:12px;"><span style="color:#8b5cf6;">📊 ${avgAvailability}% capacidad operativa</span></div>
+                    <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgAvailability}%;height:100%;background:#8b5cf6;border-radius:4px;"></div></div>
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
+                    <div style="font-size:12px;color:#64748b;text-transform:uppercase;">PRODUCTIVIDAD</div>
+                    <div style="font-size:42px;font-weight:800;color:#10b981;">${avgProductivity}%</div>
+                    <div style="margin-top:8px;font-size:12px;"><span style="color:#10b981;">🎯 ${avgProductivity}% valor generado</span></div>
+                    <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgProductivity}%;height:100%;background:#10b981;border-radius:4px;"></div></div>
+                </div>
+            </div>
+        `;
+        
+        // Generar gráficos HTML
+        const chartsHTML = `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px;">
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
+                    <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#3b82f6;">📊 EFICIENCIA POR EMPLEADO</h3>
+                    <img src="${chartImages.nexusEfficiencyChart || ''}" style="width:100%;height:auto;">
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
+                    <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#10b981;">📈 DISPONIBILIDAD</h3>
+                    <img src="${chartImages.nexusAvailabilityChart || ''}" style="width:100%;height:auto;">
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
+                    <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#8b5cf6;">🎯 PRODUCTIVIDAD</h3>
+                    <img src="${chartImages.nexusProductivityChart || ''}" style="width:100%;height:auto;">
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-bottom:30px;">
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
+                    <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#f59e0b;">🍩 DISTRIBUCIÓN DE TAREAS</h3>
+                    <img src="${chartImages.nexusDistributionChart || ''}" style="width:100%;height:auto;">
+                </div>
+                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
+                    <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#10b981;">📉 BURNDOWN CHART</h3>
+                    <img src="${chartImages.nexusBurndownChart || ''}" style="width:100%;height:auto;">
+                </div>
+            </div>
+            <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-bottom:30px;">
+                <h3 style="margin:0 0 15px 0;font-size:16px;text-align:center;color:#f59e0b;">📊 WORKLOAD DISTRIBUTION</h3>
+                <img src="${chartImages.workloadChart || ''}" style="width:100%;height:auto;">
+            </div>
+        `;
+        
+        // Generar tabla del equipo
+        const teamRows = employees.map(emp => `
+            <tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:10px;font-weight:600;">${emp.name}</td>
+                <td style="padding:10px;text-align:center;">${emp.totalTasks}</td>
+                <td style="padding:10px;text-align:center;color:#10b981;">${emp.completedTasks}</td>
+                <td style="padding:10px;text-align:center;">${emp.activeTasks}</td>
+                <td style="padding:10px;text-align:center;color:#ef4444;">${emp.overdueTasks}</td>
+                <td style="padding:10px;text-align:center;">${emp.totalLoggedHours}h</td>
+                <td style="padding:10px;text-align:center;font-weight:600;">${emp.efficiency}%</td>
+                <td style="padding:10px;text-align:center;font-weight:600;">${emp.availability}%</td>
+                <td style="padding:10px;text-align:center;font-weight:600;">${emp.productivity}%</td>
+            </tr>
+        `).join('');
+        
+        const teamTableHTML = `
+            <div style="background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:30px;overflow-x:auto;">
+                <div style="padding:15px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;">
+                    <h3 style="margin:0;text-align:center;">👥 DETALLE DEL EQUIPO</h3>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th style="padding:12px;text-align:left;">EMPLEADO</th>
+                            <th style="padding:12px;">TAREAS</th>
+                            <th style="padding:12px;">✅ COMP</th>
+                            <th style="padding:12px;">🔄 ACT</th>
+                            <th style="padding:12px;">🔴 RET</th>
+                            <th style="padding:12px;">⏱️ HORAS</th>
+                            <th style="padding:12px;">📊 EFIC</th>
+                            <th style="padding:12px;">📈 DISP</th>
+                            <th style="padding:12px;">🎯 PROD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teamRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        // Generar matriz de habilidades
+        let skillsHTML = '<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;"><h3 style="margin:0 0 15px 0;text-align:center;">📋 TEAM SKILLS MATRIX</h3>';
+        
+        if (globalSkillsArray && globalSkillsArray.length > 0 && globalEmployeesData) {
+            const levelNames = { 4: '⭐ Experto', 3: '🚀 Avanzado', 2: '📚 Intermedio', 1: '🌱 Básico' };
+            const levelColors = { 4: '#10b981', 3: '#3b82f6', 2: '#f59e0b', 1: '#64748b' };
+            
+            skillsHTML += `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:10px;">HABILIDAD</th>
+                        ${globalEmployeesData.map(m => `<th style="padding:10px;">${m.name}</th>`).join('')}
+                        <th style="padding:10px;">🎯 PROMEDIO</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            for (const skill of globalSkillsArray) {
+                skillsHTML += `<tr>
+                    <td style="padding:8px;font-weight:600;background:#f8fafc;">${skill}</td>`;
+                for (const emp of globalEmployeesData) {
+                    const value = globalSkillsData.matrix[skill][emp.name];
+                    const levelName = levelNames[value];
+                    skillsHTML += `<td style="padding:8px;text-align:center;"><span style="background:${levelColors[value]}20;border:1px solid ${levelColors[value]};border-radius:20px;padding:4px 8px;display:inline-block;font-size:10px;">${levelName}</span></td>`;
+                }
+                skillsHTML += `<td style="padding:8px;text-align:center;color:#8b5cf6;font-weight:bold;">${globalSkillsData[`${skill}_avg`]}</td>
+                </tr>`;
+            }
+            
+            skillsHTML += `</tbody></table></div></div>`;
+        } else {
+            skillsHTML += '<p style="text-align:center;color:#64748b;">No hay datos de habilidades disponibles</p></div>';
+        }
+        
+        // ============================================
+        // CREAR VENTANA DE IMPRESIÓN CON SCROLL
+        // ============================================
+        const ventana = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes,resizable=yes');
+        if (!ventana) {
+            alert('⚠️ Permite ventanas emergentes para este sitio');
             return;
         }
         
-        const printBtn = document.getElementById('printRealDashboard');
-        const originalText = printBtn?.innerHTML;
-        if (printBtn) {
-            printBtn.innerHTML = '⏳ Generando reporte...';
-            printBtn.disabled = true;
-        }
-        
-        try {
-            // Capturar gráficos
-            const chartImages = await captureAllChartsAsImages();
-            
-            // Obtener datos actuales
-            const allTasks = getAllTasks();
-            const employees = calculateEmployeeMetrics(allTasks);
-            const totalLoggedHours = allTasks.reduce((sum, t) => sum + (t.loggedHours || 0), 0);
-            const totalEstimatedHours = allTasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
-            const completedTasks = allTasks.filter(t => t.status === 'completed').length;
-            const pendingTasks = allTasks.filter(t => t.status === 'pending').length;
-            const totalTasks = allTasks.length;
-            const overdueTasks = allTasks.filter(t => t.isOverdue && t.status !== 'completed').length;
-            
-            const avgEfficiency = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.efficiency, 0) / employees.length) : 0;
-            const avgAvailability = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.availability, 0) / employees.length) : 0;
-            const avgProductivity = employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.productivity, 0) / employees.length) : 0;
-            
-            // Generar KPIs HTML
-            const kpisHTML = `
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:30px;">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
-                        <div style="font-size:12px;color:#64748b;text-transform:uppercase;">TAREAS TOTALES</div>
-                        <div style="font-size:42px;font-weight:800;color:#3b82f6;">${totalTasks}</div>
-                        <div style="margin-top:8px;font-size:12px;"><span style="color:#10b981;">✓ ${completedTasks} completadas</span> | <span style="color:#f59e0b;">⏳ ${pendingTasks} pendientes</span></div>
-                        <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${(completedTasks/totalTasks)*100}%;height:100%;background:#10b981;border-radius:4px;"></div></div>
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
-                        <div style="font-size:12px;color:#64748b;text-transform:uppercase;">EFICIENCIA PROMEDIO</div>
-                        <div style="font-size:42px;font-weight:800;color:#3b82f6;">${avgEfficiency}%</div>
-                        <div style="margin-top:8px;font-size:12px;"><span style="color:#3b82f6;">⚡ ${avgEfficiency}% tareas completadas</span></div>
-                        <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgEfficiency}%;height:100%;background:#3b82f6;border-radius:4px;"></div></div>
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
-                        <div style="font-size:12px;color:#64748b;text-transform:uppercase;">DISPONIBILIDAD</div>
-                        <div style="font-size:42px;font-weight:800;color:#8b5cf6;">${avgAvailability}%</div>
-                        <div style="margin-top:8px;font-size:12px;"><span style="color:#8b5cf6;">📊 ${avgAvailability}% capacidad operativa</span></div>
-                        <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgAvailability}%;height:100%;background:#8b5cf6;border-radius:4px;"></div></div>
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;text-align:center;border:1px solid #e2e8f0;">
-                        <div style="font-size:12px;color:#64748b;text-transform:uppercase;">PRODUCTIVIDAD</div>
-                        <div style="font-size:42px;font-weight:800;color:#10b981;">${avgProductivity}%</div>
-                        <div style="margin-top:8px;font-size:12px;"><span style="color:#10b981;">🎯 ${avgProductivity}% valor generado</span></div>
-                        <div style="margin-top:12px;height:4px;background:#e2e8f0;border-radius:4px;"><div style="width:${avgProductivity}%;height:100%;background:#10b981;border-radius:4px;"></div></div>
-                    </div>
-                </div>
-            `;
-            
-            // Generar gráficos HTML
-            const chartsHTML = `
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px;">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
-                        <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#3b82f6;">📊 EFICIENCIA POR EMPLEADO</h3>
-                        <img src="${chartImages.nexusEfficiencyChart || ''}" style="width:100%;height:auto;">
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
-                        <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#10b981;">📈 DISPONIBILIDAD</h3>
-                        <img src="${chartImages.nexusAvailabilityChart || ''}" style="width:100%;height:auto;">
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
-                        <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#8b5cf6;">🎯 PRODUCTIVIDAD</h3>
-                        <img src="${chartImages.nexusProductivityChart || ''}" style="width:100%;height:auto;">
-                    </div>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-bottom:30px;">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
-                        <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#f59e0b;">🍩 DISTRIBUCIÓN DE TAREAS</h3>
-                        <img src="${chartImages.nexusDistributionChart || ''}" style="width:100%;height:auto;">
-                    </div>
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;">
-                        <h3 style="margin:0 0 15px 0;font-size:14px;text-align:center;color:#10b981;">📉 BURNDOWN CHART</h3>
-                        <img src="${chartImages.nexusBurndownChart || ''}" style="width:100%;height:auto;">
-                    </div>
-                </div>
-                <div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-bottom:30px;">
-                    <h3 style="margin:0 0 15px 0;font-size:16px;text-align:center;color:#f59e0b;">📊 WORKLOAD DISTRIBUTION</h3>
-                    <img src="${chartImages.workloadChart || ''}" style="width:100%;height:auto;">
-                </div>
-            `;
-            
-            // Generar tabla del equipo
-            const teamRows = employees.map(emp => `
-                <tr style="border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:10px;font-weight:600;">${emp.name}</td>
-                    <td style="padding:10px;text-align:center;">${emp.totalTasks}</td>
-                    <td style="padding:10px;text-align:center;color:#10b981;">${emp.completedTasks}</td>
-                    <td style="padding:10px;text-align:center;">${emp.activeTasks}</td>
-                    <td style="padding:10px;text-align:center;color:#ef4444;">${emp.overdueTasks}</td>
-                    <td style="padding:10px;text-align:center;">${emp.totalLoggedHours}h</td>
-                    <td style="padding:10px;text-align:center;font-weight:600;">${emp.efficiency}%</td>
-                    <td style="padding:10px;text-align:center;font-weight:600;">${emp.availability}%</td>
-                    <td style="padding:10px;text-align:center;font-weight:600;">${emp.productivity}%</td>
-                </tr>
-            `).join('');
-            
-            const teamTableHTML = `
-                <div style="background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0;margin-bottom:30px;overflow-x:auto;">
-                    <div style="padding:15px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;">
-                        <h3 style="margin:0;text-align:center;">👥 DETALLE DEL EQUIPO</h3>
-                    </div>
-                    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                        <thead>
-                            <tr style="background:#f1f5f9;">
-                                <th style="padding:12px;text-align:left;">EMPLEADO</th>
-                                <th style="padding:12px;">TAREAS</th>
-                                <th style="padding:12px;">✅ COMP</th>
-                                <th style="padding:12px;">🔄 ACT</th>
-                                <th style="padding:12px;">🔴 RET</th>
-                                <th style="padding:12px;">⏱️ HORAS</th>
-                                <th style="padding:12px;">📊 EFIC</th>
-                                <th style="padding:12px;">📈 DISP</th>
-                                <th style="padding:12px;">🎯 PROD</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${teamRows}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Generar matriz de habilidades
-            let skillsHTML = '<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;"><h3 style="margin:0 0 15px 0;text-align:center;">📋 TEAM SKILLS MATRIX</h3>';
-            
-            if (globalSkillsArray && globalSkillsArray.length > 0 && globalEmployeesData) {
-                const levelNames = { 4: '⭐ Experto', 3: '🚀 Avanzado', 2: '📚 Intermedio', 1: '🌱 Básico' };
-                const levelColors = { 4: '#10b981', 3: '#3b82f6', 2: '#f59e0b', 1: '#64748b' };
-                
-                skillsHTML += `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
-                    <thead>
-                        <tr style="background:#f1f5f9;">
-                            <th style="padding:10px;">HABILIDAD</th>
-                            ${globalEmployeesData.map(m => `<th style="padding:10px;">${m.name}</th>`).join('')}
-                            <th style="padding:10px;">🎯 PROMEDIO</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-                
-                for (const skill of globalSkillsArray) {
-                    skillsHTML += `<tr>
-                        <td style="padding:8px;font-weight:600;background:#f8fafc;">${skill}</td>`;
-                    for (const emp of globalEmployeesData) {
-                        const value = globalSkillsData.matrix[skill][emp.name];
-                        const levelName = levelNames[value];
-                        skillsHTML += `<td style="padding:8px;text-align:center;"><span style="background:${levelColors[value]}20;border:1px solid ${levelColors[value]};border-radius:20px;padding:4px 8px;display:inline-block;font-size:10px;">${levelName}</span></td>`;
+        // Escribir el HTML asegurando scroll
+        ventana.document.write(`
+            <!DOCTYPE html>
+            <html style="height:100%;overflow-y:auto;">
+            <head>
+                <title>Reporte CONTROL DE RECURSOS HUMANOS - ${new Date().toLocaleDateString()}</title>
+                <meta charset="UTF-8">
+                <style>
+                    /* Asegurar que el body ocupe toda la altura y permita scroll */
+                    html, body {
+                        height: 100%;
+                        margin: 0;
+                        padding: 0;
                     }
-                    skillsHTML += `<td style="padding:8px;text-align:center;color:#8b5cf6;font-weight:bold;">${globalSkillsData[`${skill}_avg`]}</td>
-                    </tr>`;
-                }
-                
-                skillsHTML += `</tbody></table></div></div>`;
-            } else {
-                skillsHTML += '<p style="text-align:center;color:#64748b;">No hay datos de habilidades disponibles</p></div>';
-            }
-            
-            // Abrir ventana de impresión
-            const ventana = window.open('', '_blank');
-            ventana.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Reporte CONTROL DE RECURSOS HUMANOS - ${new Date().toLocaleDateString()}</title>
-                    <meta charset="UTF-8">
-                    <style>
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: 'Segoe UI', Arial, sans-serif; 
-                            background: white; 
-                            padding: 30px; 
-                            color: #1e293b;
-                        }
-                        @media print {
-                            body { padding: 0; margin: 0; }
-                            button { display: none; }
-                            .page-break { page-break-before: always; }
-                        }
-                        @page {
-                            size: A4 landscape;
-                            margin: 1.5cm;
-                        }
-                        .report-header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            padding-bottom: 20px;
-                            border-bottom: 3px solid #3b82f6;
-                        }
-                        .report-header h1 { font-size: 28px; color: #1e3a8a; }
-                        .report-header p { color: #64748b; }
-                        .footer {
-                            margin-top: 40px;
-                            text-align: center;
-                            font-size: 11px;
-                            color: #94a3b8;
-                            border-top: 1px solid #e2e8f0;
-                            padding-top: 20px;
-                        }
-                    </style>
-                </head>
-                <body>
+                    body {
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                        background: white;
+                        padding: 30px;
+                        color: #1e293b;
+                        overflow-y: auto !important;
+                        box-sizing: border-box;
+                    }
+                    @media print {
+                        body { padding: 0; margin: 0; overflow: visible !important; }
+                        button { display: none; }
+                        .page-break { page-break-before: always; }
+                    }
+                    @page {
+                        size: A4 landscape;
+                        margin: 1.5cm;
+                    }
+                    .report-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        padding-bottom: 20px;
+                        border-bottom: 3px solid #3b82f6;
+                    }
+                    .report-header h1 { font-size: 28px; color: #1e3a8a; }
+                    .report-header p { color: #64748b; }
+                    .footer {
+                        margin-top: 40px;
+                        text-align: center;
+                        font-size: 11px;
+                        color: #94a3b8;
+                        border-top: 1px solid #e2e8f0;
+                        padding-top: 20px;
+                    }
+                    /* Forzar scroll en contenedores */
+                    .scroll-container {
+                        overflow-y: auto;
+                        max-height: 90vh;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="scroll-container">
                     <div class="report-header">
                         <h1>📊 CONTROL DE RECURSOS HUMANOS - Reporte Ejecutivo</h1>
                         <p>Generado: ${new Date().toLocaleString()}</p>
@@ -7025,28 +7049,50 @@ if (burndownCtx) {
                         <p>Reporte generado automáticamente por CONTROL DE RECURSOS HUMANOS Intelligence Dashboard</p>
                         <p>© ${new Date().getFullYear()} - Todos los derechos reservados</p>
                     </div>
+                </div>
+                
+                <script>
+                    // Forzar que el body tenga scroll si es necesario
+                    document.body.style.overflowY = 'auto';
                     
-                    <script>
-                        setTimeout(function() {
-                            window.print();
-                            setTimeout(function() { window.close(); }, 1000);
-                        }, 500);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            ventana.document.close();
-            
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al generar el reporte: ' + error.message);
-        } finally {
-            if (printBtn) {
-                printBtn.innerHTML = originalText;
-                printBtn.disabled = false;
-            }
+                    // Botón para imprimir si el usuario no quiere usar Ctrl+P
+                    const printBtn = document.createElement('button');
+                    printBtn.textContent = '🖨️ Imprimir';
+                    printBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 30px;background:#3b82f6;color:white;border:none;border-radius:40px;font-weight:bold;cursor:pointer;z-index:9999;box-shadow:0 4px 15px rgba(59,130,246,0.4);';
+                    printBtn.onclick = function() {
+                        window.print();
+                    };
+                    document.body.appendChild(printBtn);
+                    
+                    // Botón para cerrar
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = '✕ Cerrar';
+                    closeBtn.style.cssText = 'position:fixed;bottom:20px;right:140px;padding:12px 25px;background:#ef4444;color:white;border:none;border-radius:40px;font-weight:bold;cursor:pointer;z-index:9999;box-shadow:0 4px 15px rgba(239,68,68,0.4);';
+                    closeBtn.onclick = function() {
+                        window.close();
+                    };
+                    document.body.appendChild(closeBtn);
+                    
+                    // También permitir imprimir con Ctrl+P
+                    window.addEventListener('load', function() {
+                        // No hacer nada, solo esperar
+                    });
+                <\/script>
+            </body>
+            </html>
+        `);
+        ventana.document.close();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar el reporte: ' + error.message);
+    } finally {
+        if (printBtn) {
+            printBtn.innerHTML = originalText;
+            printBtn.disabled = false;
         }
     }
+}
     
     // ============================================
     // MATRIZ DE HABILIDADES
