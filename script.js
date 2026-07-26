@@ -645,23 +645,27 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
 (function installExecutivePanel() {
     'use strict';
 
-    // ---- Función de cálculo EVM (sin cambios) ----
+        // ---- Función de cálculo EVM (CORREGIDA con método PMI PURO) ----
     function calculateEVM(tasks) {
         const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
-        const PV = BAC;
+        const PV = BAC; // Valor Planificado (asumiendo que todo está planificado para la fecha de corte)
         const AC = tasks.reduce((s, t) => s + (t.timeLogged || 0), 0);
         let EV = 0;
 
         tasks.forEach(t => {
             const est = t.estimatedTime || 0;
-            const logged = t.timeLogged || 0;
-            const status = t.status || 'pending';
-
-            if (status === 'completed') {
-                EV += est;
-            } else if (status === 'inProgress' || status === 'overdue') {
-                EV += Math.min(logged, est);
+            
+            // Obtener el porcentaje de avance físico de la tarea (0 a 100)
+            // Se prioriza el campo 'progress' o 'percentComplete' que ya maneja tu sistema
+            let progress = 0;
+            if (t.status === 'completed') {
+                progress = 100;
+            } else {
+                progress = t.progress !== undefined ? t.progress : (t.percentComplete !== undefined ? t.percentComplete : 0);
             }
+
+            // 🎯 FÓRMULA PMI PURO: EV = Tiempo Estimado * (% de Avance / 100)
+            EV += est * (progress / 100);
         });
 
         const SPI = PV > 0 ? EV / PV : 1;
@@ -729,6 +733,8 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         ];
 
         const healthScore = Math.min(100, Math.round(((evm.SPI + evm.CPI) / 2) * 100));
+
+
 
         return {
             ...evm,
