@@ -2082,7 +2082,7 @@
    <script src="s-curve.js" defer></script>
    <script src="help-system-advanced.js"></script>
     <script src="executive-views.js"></script>
-
+   
 
     <script src="evm.js"></script>
     <script src="automations.js"></script>
@@ -32805,298 +32805,110 @@ console.log('📌 MutationObserver como respaldo');
 
     console.log('🛠️ Sistema de corrección y traducción del Gantt instalado (con fix para "members asignados").');
 })();
+
+
 <!-- ============================================================ -->
-<!-- 🔒 SECUESTRO DEFINITIVO DEL BOTÓN "EXECUTIVE REPORT"        -->
-<!--     CON CARGA DINÁMICA DEL SCRIPT DEL REPORTE               -->
+<!-- 🔒 BOTÓN "EXECUTIVE REPORT" - VERSIÓN LIGERA Y EFICIENTE    -->
 <!-- ============================================================ -->
 <script>
 (function() {
     'use strict';
 
     // ----------------------------------------------------------------
-    // 1. CONFIGURACIÓN
+    // 1. NOMBRE DEL SCRIPT DEL REPORTE
     // ----------------------------------------------------------------
-    // Nombre del archivo que contiene la función generarReporteGanttVIP
-    // Puedes cambiarlo si el archivo tiene otro nombre.
-    const SCRIPT_REPORTE = 'reportes-ejecutivos.js'; // <-- AJUSTA ESTE NOMBRE SI ES DIFERENTE
+    const SCRIPT_REPORTE = 'reportes-ejecutivos.js';
 
     // ----------------------------------------------------------------
-    // 2. VARIABLE PARA GUARDAR LA FUNCIÓN ORIGINAL (si existe)
+    // 2. FUNCIÓN PARA CARGAR EL SCRIPT (SOLO SI ES NECESARIO)
     // ----------------------------------------------------------------
-    let originalExportGanttData = null;
-    if (typeof window.exportGanttData === 'function') {
-        originalExportGanttData = window.exportGanttData;
-    }
+    function cargarScriptReporte(callback) {
+        // Si ya está definida, ejecutar callback directamente
+        if (typeof window.generarReporteGanttVIP === 'function') {
+            if (callback) callback();
+            return;
+        }
 
-    // ----------------------------------------------------------------
-    // 3. FUNCIÓN PARA CARGAR EL SCRIPT DEL REPORTE DINÁMICAMENTE
-    // ----------------------------------------------------------------
-    function cargarScriptReporte() {
-        return new Promise((resolve, reject) => {
-            // Si ya está definida, resolver inmediatamente
-            if (typeof window.generarReporteGanttVIP === 'function') {
-                resolve();
+        // Verificar si el script ya está en el DOM
+        const scripts = document.querySelectorAll('script');
+        for (let s of scripts) {
+            if (s.src && s.src.includes(SCRIPT_REPORTE)) {
+                // Si está, esperar un poco y luego ejecutar callback
+                setTimeout(callback, 500);
                 return;
             }
-
-            // Verificar si el script ya está en el DOM (por si se cargó pero no se ejecutó)
-            const scripts = document.querySelectorAll('script');
-            for (let s of scripts) {
-                if (s.src && s.src.includes(SCRIPT_REPORTE)) {
-                    console.log('ℹ️ El script del reporte ya está en el DOM, pero la función no está definida. Esperando...');
-                    // Si está, esperamos a que se ejecute (puede estar cargando)
-                    setTimeout(resolve, 1000);
-                    return;
-                }
-            }
-
-            // Si no está, lo cargamos dinámicamente
-            console.log(`📥 Cargando script del reporte: ${SCRIPT_REPORTE}`);
-            const script = document.createElement('script');
-            script.src = SCRIPT_REPORTE;
-            script.async = false; // Cargar en orden
-            script.onload = function() {
-                console.log('✅ Script cargado correctamente.');
-                // Dar un pequeño margen para que se ejecute
-                setTimeout(resolve, 300);
-            };
-            script.onerror = function() {
-                console.error(`❌ Error al cargar ${SCRIPT_REPORTE}. Verifica la ruta.`);
-                reject(new Error(`No se pudo cargar ${SCRIPT_REPORTE}`));
-            };
-            document.head.appendChild(script);
-        });
-    }
-
-    // ----------------------------------------------------------------
-    // 4. FUNCIÓN QUE GENERA EL REPORTE (CON CARGA DINÁMICA)
-    // ----------------------------------------------------------------
-    async function ejecutarReporteGanttVIP() {
-        try {
-            // Si la función ya está definida, ejecutarla directamente
-            if (typeof window.generarReporteGanttVIP === 'function') {
-                console.log('📊 Ejecutando generarReporteGanttVIP (disponible)');
-                window.generarReporteGanttVIP();
-                return;
-            }
-
-            // Si no está definida, mostrar mensaje y cargar el script
-            console.log('⏳ generarReporteGanttVIP no disponible. Intentando cargar el script...');
-            mostrarNotificacion('⏳ Cargando reporte...');
-
-            // Intentar cargar el script (con timeout de 8 segundos)
-            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
-            await Promise.race([cargarScriptReporte(), timeout]);
-
-            // Una vez cargado, verificar si la función ya está definida
-            if (typeof window.generarReporteGanttVIP === 'function') {
-                console.log('✅ generarReporteGanttVIP disponible después de cargar script.');
-                window.generarReporteGanttVIP();
-                return;
-            }
-
-            // Si después de cargar el script sigue sin definirse, reintentar con espera
-            console.warn('⚠️ El script se cargó pero la función no está definida. Reintentando...');
-            let intentos = 0;
-            const maxIntentos = 10;
-            const esperar = () => new Promise(resolve => setTimeout(resolve, 500));
-
-            while (intentos < maxIntentos) {
-                intentos++;
-                await esperar();
-                if (typeof window.generarReporteGanttVIP === 'function') {
-                    console.log(`✅ Función disponible después de ${intentos} reintentos.`);
-                    window.generarReporteGanttVIP();
-                    return;
-                }
-            }
-
-            // Si después de todo falla, usar fallback o mostrar error
-            console.error('❌ No se pudo cargar generarReporteGanttVIP.');
-            mostrarNotificacion('❌ Error: No se pudo cargar el reporte. Revisa la consola.');
-            if (typeof originalExportGanttData === 'function') {
-                console.log('🔄 Ejecutando fallback: exportGanttData original');
-                originalExportGanttData();
-            } else {
-                alert('❌ Error: No se pudo generar el reporte. Asegúrate de que el archivo "' + SCRIPT_REPORTE + '" exista y sea accesible.');
-            }
-
-        } catch (error) {
-            console.error('❌ Error en ejecutarReporteGanttVIP:', error);
-            mostrarNotificacion('❌ Error al cargar el reporte: ' + error.message);
-            if (typeof originalExportGanttData === 'function') {
-                originalExportGanttData();
-            }
-        }
-    }
-
-    // ----------------------------------------------------------------
-    // 5. SOBRESCRIBIR LA FUNCIÓN ORIGINAL exportGanttData
-    // ----------------------------------------------------------------
-    window.exportGanttData = function() {
-        console.log('🔄 exportGanttData llamada → ejecutarReporteGanttVIP');
-        ejecutarReporteGanttVIP();
-    };
-
-    console.log('✅ exportGanttData sobrescrita con carga dinámica.');
-
-    // ----------------------------------------------------------------
-    // 6. FUNCIÓN PARA SECUESTRAR EL BOTÓN (igual que antes)
-    // ----------------------------------------------------------------
-    function secuestrarBoton() {
-        let btn = document.querySelector('button[onclick*="exportGanttData"]');
-        if (!btn) {
-            btn = document.querySelector('button.premium-btn.active-btn');
-            if (btn && !btn.textContent.includes('Executive Report')) {
-                btn = null;
-            }
-        }
-        if (!btn) {
-            const botones = document.querySelectorAll('button');
-            for (let b of botones) {
-                if (b.textContent.includes('Executive Report') || b.textContent.includes('Reporte Ejecutivo')) {
-                    btn = b;
-                    break;
-                }
-            }
         }
 
-        if (!btn) {
-            console.log('⏳ Botón "Executive Report" no encontrado aún.');
-            return false;
-        }
-
-        if (btn.dataset.secuestrado === 'true') {
-            return true;
-        }
-
-        console.log('🔒 Secuestrando botón "Executive Report"...');
-
-        const nuevoBtn = document.createElement('button');
-        nuevoBtn.id = btn.id || '';
-        nuevoBtn.className = btn.className || '';
-        nuevoBtn.textContent = btn.textContent;
-        for (const attr of btn.attributes) {
-            if (attr.name !== 'onclick' && attr.name !== 'id' && attr.name !== 'class') {
-                nuevoBtn.setAttribute(attr.name, attr.value);
-            }
-        }
-        if (btn.style.cssText) {
-            nuevoBtn.style.cssText = btn.style.cssText;
-        }
-        nuevoBtn.dataset.secuestrado = 'true';
-
-        btn.parentNode.replaceChild(nuevoBtn, btn);
-
-        nuevoBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            console.log('📊 Click en Executive Report → ejecutarReporteGanttVIP');
-            ejecutarReporteGanttVIP();
-        }, true);
-
-        nuevoBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('📊 Click (onclick) en Executive Report → ejecutarReporteGanttVIP');
-            ejecutarReporteGanttVIP();
+        // Si no está, cargarlo dinámicamente
+        const script = document.createElement('script');
+        script.src = SCRIPT_REPORTE;
+        script.async = true; // No bloquea
+        script.onload = function() {
+            // Esperar un momento para que se ejecute
+            setTimeout(callback, 300);
         };
-
-        console.log('✅ Botón "Executive Report" secuestrado correctamente.');
-        return true;
+        script.onerror = function() {
+            alert('❌ Error al cargar el reporte. Verifica que el archivo "' + SCRIPT_REPORTE + '" exista.');
+        };
+        document.head.appendChild(script);
     }
 
     // ----------------------------------------------------------------
-    // 7. NOTIFICACIÓN TEMPORAL (toast)
+    // 3. FUNCIÓN QUE GENERA EL REPORTE (SOLO AL HACER CLIC)
     // ----------------------------------------------------------------
-    function mostrarNotificacion(mensaje) {
-        const existing = document.querySelector('.toast-notification');
-        if (existing) existing.remove();
+    function ejecutarReporte() {
+        console.log('📊 Ejecutando Reporte Ejecutivo (versión ligera)');
 
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.textContent = mensaje;
-        Object.assign(toast.style, {
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            background: '#1e293b',
-            color: '#e2e8f0',
-            padding: '16px 24px',
-            borderRadius: '12px',
-            zIndex: '9999999',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.5)',
-            borderLeft: '4px solid #d4af37',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '14px',
-            fontWeight: '500',
-            maxWidth: '350px',
-            transition: 'opacity 0.3s',
-            opacity: '1'
+        // Si la función ya existe, ejecutarla directamente
+        if (typeof window.generarReporteGanttVIP === 'function') {
+            window.generarReporteGanttVIP();
+            return;
+        }
+
+        // Si no, cargar el script y luego ejecutar
+        cargarScriptReporte(function() {
+            if (typeof window.generarReporteGanttVIP === 'function') {
+                window.generarReporteGanttVIP();
+            } else {
+                alert('❌ No se pudo cargar el reporte. Intenta recargar la página.');
+            }
         });
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
     }
 
     // ----------------------------------------------------------------
-    // 8. EJECUTAR AHORA Y REINTENTAR CADA 500ms DURANTE 10 SEGUNDOS
+    // 4. ASIGNAR LA FUNCIÓN AL BOTÓN (SIN OBSERVERS NI INTERVALOS)
     // ----------------------------------------------------------------
-    secuestrarBoton();
+    // Usamos un único event listener delegado en el documento
+    // para capturar clics en el botón "Executive Report".
+    // Esto es mucho más ligero que un observer.
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
 
-    let contador = 0;
-    const maxIntentos = 20;
-    const intervalo = setInterval(function() {
-        contador++;
-        const btn = document.querySelector('button[onclick*="exportGanttData"], button.premium-btn.active-btn');
-        if (btn && btn.dataset.secuestrado !== 'true') {
-            secuestrarBoton();
-        }
-        if (contador >= maxIntentos) {
-            clearInterval(intervalo);
-            console.log('⏹️ Intervalo de secuestro finalizado.');
-        }
-    }, 500);
-
-    // ----------------------------------------------------------------
-    // 9. MUTATION OBSERVER
-    // ----------------------------------------------------------------
-    const observer = new MutationObserver(function() {
-        const btn = document.querySelector('button[onclick*="exportGanttData"], button.premium-btn.active-btn');
-        if (btn && btn.dataset.secuestrado !== 'true') {
-            secuestrarBoton();
+        // Verificar si el botón es el que queremos
+        const texto = target.textContent.trim();
+        if (texto.includes('Executive Report') || texto.includes('Reporte Ejecutivo')) {
+            // Si el botón tiene un onclick o data atributo que lo identifique
+            // También verificamos si es el botón que tiene la clase o id adecuada
+            e.preventDefault();
+            e.stopPropagation();
+            ejecutarReporte();
         }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
 
-    // ----------------------------------------------------------------
-    // 10. INTERCEPTAR CLICS EN EL DOCUMENTO
-    // ----------------------------------------------------------------
-    document.addEventListener('click', function(e) {
-        const target = e.target;
-        const btn = target.closest ? target.closest('button[onclick*="exportGanttData"], button.premium-btn.active-btn') : null;
-        if (btn) {
-            if (btn.dataset.secuestrado !== 'true') {
-                secuestrarBoton();
-            }
-        }
-    }, true);
+    // También sobrescribimos la función global por si alguien la llama directamente
+    window.exportGanttData = ejecutarReporte;
 
-    // ----------------------------------------------------------------
-    // 11. EXPONER FUNCIÓN MANUAL
-    // ----------------------------------------------------------------
-    window.secuestrarBotonExecutive = secuestrarBoton;
-
-    console.log('🔒 SISTEMA DE SECUESTRO CON CARGA DINÁMICA ACTIVADO.');
-    console.log(`📌 Intentará cargar el script: ${SCRIPT_REPORTE} si no está disponible.`);
-    console.log('💡 Si el botón aún falla, ejecuta en consola: secuestrarBotonExecutive()');
+    console.log('✅ Botón "Executive Report" configurado en modo ligero (sin observers ni intervalos).');
+    console.log('💡 El reporte se generará al hacer clic en el botón, sin ralentizar el drag & drop.');
 
 })();
 </script>
-<!-- ============================================================ --><!-- ============================================================ -->
+<!-- ============================================================ -->
+
+
+
+============================================================ -->
 <!-- ================================================================ -->
 <!-- 📊 REPORTE VIP DASHBOARD 4D - FORMATO DORADO EJECUTIVO         -->
 <!-- ================================================================ -->
