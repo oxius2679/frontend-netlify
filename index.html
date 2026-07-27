@@ -33901,7 +33901,145 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ Reporte Dashboard 4D VIP (formato dorado) activado.');
 })();
 </script>
+<!-- ============================================
+     BOTÓN CURVA S PERMANENTE (con monitor)
+     ============================================ -->
+<script>
+(function installSCurveButtonPermanent() {
+    'use strict';
 
+    // --- Evitar ejecución duplicada ---
+    if (window._sCurveMonitorInstalled) return;
+    window._sCurveMonitorInstalled = true;
+
+    console.log('🛡️ Instalando monitor permanente del botón Curva S...');
+
+    // --- Traducción ---
+    function getMenuButtonText() {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        return lang === 'en' ? '📈 S-Curve' : '📈 Curva S';
+    }
+
+    // --- Aplicar estilos completos (con !important) ---
+    function applyFullStyles(btn) {
+        const styles = {
+            width: 'calc(100% - 24px)',
+            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+            border: 'none',
+            color: 'white',
+            padding: '14px 20px',
+            height: '48px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: '15px',
+            margin: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 12px rgba(251, 191, 36, 0.4)',
+            letterSpacing: '0.5px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            transform: 'translateY(0)'
+        };
+        for (const [prop, value] of Object.entries(styles)) {
+            btn.style.setProperty(prop, value, 'important');
+        }
+
+        // Eventos hover (solo una vez)
+        if (!btn._hoverSet) {
+            btn.addEventListener('mouseenter', function() {
+                this.style.setProperty('transform', 'translateY(-2px)', 'important');
+                this.style.setProperty('box-shadow', '0 8px 20px rgba(251, 191, 36, 0.6)', 'important');
+                this.style.setProperty('background', 'linear-gradient(135deg, #fcd34d, #f59e0b)', 'important');
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.setProperty('transform', 'translateY(0)', 'important');
+                this.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.4)', 'important');
+                this.style.setProperty('background', 'linear-gradient(135deg, #fbbf24, #f59e0b)', 'important');
+            });
+            btn._hoverSet = true;
+        }
+    }
+
+    // --- Asegurar la existencia del botón ---
+    function ensureButton() {
+        let btn = document.getElementById('sCurveSidebarBtn');
+        const expectedText = getMenuButtonText();
+
+        if (btn) {
+            if (btn.innerHTML !== expectedText) {
+                btn.innerHTML = expectedText;
+            }
+            applyFullStyles(btn);
+            return true;
+        }
+
+        // Crear el botón desde cero
+        const sidebar = document.querySelector('aside, #sidebar, .sidebar, .side-menu, .menu-lateral');
+        if (!sidebar) return false;
+
+        // Buscar Dashboard 4D para insertar después
+        let dashboard4D = document.getElementById('showDashboard4DView');
+        if (!dashboard4D) {
+            const items = sidebar.querySelectorAll('li, .menu-item, .nav-item');
+            for (const item of items) {
+                if (item.textContent.includes('Dashboard 4D') || item.textContent.includes('Dashboard4D')) {
+                    dashboard4D = item;
+                    break;
+                }
+            }
+        }
+
+        const newBtn = document.createElement('button');
+        newBtn.id = 'sCurveSidebarBtn';
+        newBtn.innerHTML = expectedText;
+        applyFullStyles(newBtn);
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.SCurve && typeof window.SCurve.launch === 'function') {
+                window.SCurve.launch();
+            } else {
+                console.warn('⚠️ SCurve.launch() no está disponible.');
+            }
+        });
+
+        if (dashboard4D) {
+            const targetLi = dashboard4D.closest('li') || dashboard4D.parentNode;
+            targetLi.parentNode.insertBefore(newBtn, targetLi.nextSibling);
+        } else {
+            sidebar.appendChild(newBtn);
+        }
+        console.log('✅ Botón Curva S creado permanentemente.');
+        return true;
+    }
+
+    // --- Ejecutar inmediatamente ---
+    ensureButton();
+
+    // --- Monitor permanente para mantener botón y estilos ---
+    const observer = new MutationObserver(() => {
+        ensureButton();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // --- Escuchar cambios de idioma ---
+    document.addEventListener('languageChanged', () => {
+        const btn = document.getElementById('sCurveSidebarBtn');
+        if (btn) {
+            btn.innerHTML = getMenuButtonText();
+            applyFullStyles(btn);
+        } else {
+            ensureButton();
+        }
+    });
+
+    console.log('✅ Monitor permanente instalado. Botón siempre amarillo y traducido.');
+})();
+</script>
 
  </body>
 </html>
