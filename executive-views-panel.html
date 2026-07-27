@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Executive Views 4D – Panel de Control</title>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* ========== ESTILOS DEL PANEL EJECUTIVO 4D ========== */
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --border-glow: rgba(139, 92, 246, 0.3);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #8b5cf6, #ec4899);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* Botón en el sidebar (se inyecta) */
+        .executive-views-trigger {
+            background: linear-gradient(135deg, #1e293b, #0f172a) !important;
+            border: 1px solid rgba(139, 92, 246, 0.4) !important;
+            color: #e2e8f0 !important;
+            padding: 14px 18px !important;
+            border-radius: 16px !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important;
+            margin: 12px 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.1) !important;
+            backdrop-filter: blur(4px) !important;
+            width: calc(100% - 24px) !important;
+        }
+        .executive-views-trigger:hover {
+            transform: translateY(-3px) scale(1.02) !important;
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 16px 40px rgba(139,92,246,0.3) !important;
+        }
+        .executive-views-trigger i {
+            font-size: 22px;
+            color: #8b5cf6;
+        }
+        .executive-views-trigger .badge-3d {
+            background: var(--accent-gradient);
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            margin-left: auto;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 20px rgba(139,92,246,0.3);
+        }
+
+        /* ===== OVERLAY DEL PANEL ===== */
+        .executive-views-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 10000000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .executive-views-overlay.active {
+            display: flex;
+        }
+
+        .executive-views-panel {
+            background: linear-gradient(145deg, #0f172a, #1e293b);
+            border: 1px solid var(--border-glow);
+            border-radius: 40px;
+            width: 100%;
+            max-width: 1400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px 45px;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.7), 0 0 0 2px rgba(139,92,246,0.15);
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: #8b5cf6 #1e293b;
+        }
+        .executive-views-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .executive-views-panel::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        .executive-views-panel::-webkit-scrollbar-thumb {
+            background: #8b5cf6;
+            border-radius: 10px;
+        }
+
+        /* Header */
+        .ev-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(139,92,246,0.2);
+            padding-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .ev-header-left h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .ev-header-left p {
+            color: var(--text-secondary);
+            margin: 6px 0 0 0;
+            font-size: 14px;
+        }
+        .ev-header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .ev-lang-toggle {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #334155;
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .ev-lang-toggle:hover {
+            border-color: var(--accent);
+            background: rgba(139,92,246,0.15);
+        }
+        .ev-close-btn {
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #f87171;
+            width: 48px;
+            height: 48px;
+            border-radius: 30px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ev-close-btn:hover {
+            background: rgba(239,68,68,0.3);
+            transform: rotate(90deg);
+        }
+
+        /* Grid de vistas */
+        .ev-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 18px;
+        }
+        .ev-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px;
+            padding: 22px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            backdrop-filter: blur(4px);
+            position: relative;
+            overflow: hidden;
+        }
+        .ev-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .ev-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            border-color: rgba(139,92,246,0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(139,92,246,0.1);
+            background: rgba(139,92,246,0.08);
+        }
+        .ev-card:hover::before {
+            opacity: 1;
+        }
+        .ev-card .ev-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            display: block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+        .ev-card .ev-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.3px;
+        }
+        .ev-card .ev-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        .ev-card .ev-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 8px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Categorías */
+        .ev-category {
+            margin-top: 30px;
+            margin-bottom: 12px;
+        }
+        .ev-category h3 {
+            font-size: 16px;
+            color: #a78bfa;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-left: 4px solid var(--accent);
+            padding-left: 16px;
+            margin: 0 0 16px 0;
+        }
+
+        /* ===== CONTENEDOR DE VISTA RENDERIZADA ===== */
+        .ev-view-container {
+            margin-top: 30px;
+            border-top: 1px solid rgba(139,92,246,0.15);
+            padding-top: 25px;
+            display: none;
+        }
+        .ev-view-container.active {
+            display: block;
+        }
+        .ev-view-container .ev-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .ev-view-container .ev-view-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .ev-view-container .ev-view-header button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #334155;
+            color: var(--text-secondary);
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        .ev-view-container .ev-view-header button:hover {
+            background: rgba(139,92,246,0.15);
+            border-color: var(--accent);
+            color: white;
+        }
+        .ev-view-content {
+            background: rgba(0,0,0,0.3);
+            border-radius: 24px;
+            padding: 30px;
+            min-height: 300px;
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        .ev-view-content iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 16px;
+            background: white;
+        }
+        .ev-view-content canvas {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+            background: #0f172a;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .executive-views-panel {
+                padding: 20px 16px;
+                max-height: 95vh;
+            }
+            .ev-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 12px;
+            }
+            .ev-card {
+                padding: 16px 10px;
+            }
+            .ev-card .ev-icon {
+                font-size: 28px;
+            }
+            .ev-header-left h2 {
+                font-size: 22px;
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Estilos internos para vistas */
+        .whiteboard-tools {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .wb-color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .wb-color-btn:hover {
+            transform: scale(1.15);
+        }
+        .wb-action-btn {
+            background: var(--bg-secondary);
+            border: 1px solid #334155;
+            color: var(--text-primary);
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .wb-action-btn:hover {
+            background: rgba(139,92,246,0.2);
+            border-color: var(--accent);
+        }
+        .activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            border-left: 3px solid var(--accent);
+        }
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .team-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        .mindmap-input-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .mindmap-input-row input {
+            flex: 1;
+            padding: 10px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: white;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== PANEL EJECUTIVO ========== -->
+    <div class="executive-views-overlay" id="executiveViewsOverlay">
+        <div class="executive-views-panel">
+            <div class="ev-header">
+                <div class="ev-header-left">
+                    <h2 id="evTitle">🧠 Executive Views 4D</h2>
+                    <p id="evSubtitle">Panel de control avanzado · Selecciona una vista para desplegarla</p>
+                </div>
+                <div class="ev-header-right">
+                    <button class="ev-lang-toggle" id="evLangToggle">🌐 ES / EN</button>
+                    <button class="ev-close-btn" id="evClosePanel">✕</button>
+                </div>
+            </div>
+
+            <!-- Categorías dinámicas -->
+            <div id="evCategoriesContainer"></div>
+
+            <!-- Contenedor de vista renderizada -->
+            <div class="ev-view-container" id="evViewContainer">
+                <div class="ev-view-header">
+                    <h3 id="evViewTitle">Vista seleccionada</h3>
+                    <button id="evCloseView">✕ Cerrar vista</button>
+                </div>
+                <div class="ev-view-content" id="evViewContent">
+                    <p style="color:#94a3b8; text-align:center; padding:40px;">Selecciona una vista del panel superior.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCRIPT PRINCIPAL ========== -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            // 1. IDIOMA – TEXTOS BILINGÜES
+            // ============================================================
+            const LANG = {
+                es: {
+                    title: '🧠 Executive Views 4D',
+                    subtitle: 'Panel de control avanzado · Selecciona una vista para desplegarla',
+                    closeView: '✕ Cerrar vista',
+                    selectView: 'Selecciona una vista del panel superior.',
+                    categories: {
+                        'Gestión': 'Gestión',
+                        'Planificación': 'Planificación',
+                        'Análisis': 'Análisis',
+                        'Recursos': 'Recursos',
+                        'Colaboración': 'Colaboración',
+                        'Geolocalización': 'Geolocalización',
+                        'Inserciones': 'Inserciones'
+                    },
+                    views: {
+                        board: { name: 'Tablero Kanban', desc: 'Gestión ágil de tareas por columnas' },
+                        list: { name: 'Lista', desc: 'Vista detallada en tabla' },
+                        calendar: { name: 'Calendario', desc: 'Planifica y programa tareas' },
+                        gantt: { name: 'Gantt', desc: 'Dependencias y cronograma' },
+                        reports: { name: 'Reportes', desc: 'Métricas y análisis ejecutivo' },
+                        dashboard: { name: 'Dashboard', desc: 'Panorama general del proyecto' },
+                        profitability: { name: 'Rentabilidad', desc: 'Análisis financiero' },
+                        timeAllocation: { name: 'Carga de Trabajo', desc: 'Capacidad y distribución del equipo' },
+                        dashboard4d: { name: 'Dashboard 4D', desc: 'Visión global de todos los proyectos' },
+                        whiteboard: { name: 'Whiteboard', desc: 'Lluvia de ideas y colaboración visual' },
+                        mindmap: { name: 'Mapa Mental', desc: 'Organiza ideas jerárquicamente' },
+                        activity: { name: 'Actividad', desc: 'Canal de eventos en tiempo real' },
+                        team: { name: 'Equipo', desc: 'Supervisión del trabajo del equipo' },
+                        workload: { name: 'Carga de Trabajo', desc: 'Capacidad y distribución del equipo' },
+                        map: { name: 'Mapa', desc: 'Visualización geográfica de tareas' },
+                        website: { name: 'Sitio Web', desc: 'Inserta cualquier página web' },
+                        googleSheets: { name: 'Google Sheets', desc: 'Sincroniza hojas de cálculo' },
+                        googleDocs: { name: 'Google Docs', desc: 'Sincroniza documentos' },
+                        googleCalendar: { name: 'Google Calendar', desc: 'Sincroniza eventos de calendario' },
+                        googleMaps: { name: 'Google Maps', desc: 'Encuentra el camino' },
+                        youtube: { name: 'YouTube', desc: 'Comparte tus vídeos favoritos' },
+                        figma: { name: 'Figma', desc: 'Contempla tus diseños' },
+                        form: { name: 'Formulario', desc: 'Recopila datos y genera informes' }
+                    }
+                },
+                en: {
+                    title: '🧠 Executive Views 4D',
+                    subtitle: 'Advanced control panel · Select a view to display it',
+                    closeView: '✕ Close view',
+                    selectView: 'Select a view from the panel above.',
+                    categories: {
+                        'Gestión': 'Management',
+                        'Planificación': 'Planning',
+                        'Análisis': 'Analysis',
+                        'Recursos': 'Resources',
+                        'Colaboración': 'Collaboration',
+                        'Geolocalización': 'Geolocation',
+                        'Inserciones': 'Embed'
+                    },
+                    views: {
+                        board: { name: 'Kanban Board', desc: 'Agile task management by columns' },
+                        list: { name: 'List', desc: 'Detailed table view' },
+                        calendar: { name: 'Calendar', desc: 'Plan and schedule tasks' },
+                        gantt: { name: 'Gantt', desc: 'Dependencies and timeline' },
+                        reports: { name: 'Reports', desc: 'Metrics and executive analysis' },
+                        dashboard: { name: 'Dashboard', desc: 'Project overview' },
+                        profitability: { name: 'Profitability', desc: 'Financial analysis' },
+                        timeAllocation: { name: 'Workload', desc: 'Team capacity and distribution' },
+                        dashboard4d: { name: 'Dashboard 4D', desc: 'Global view of all projects' },
+                        whiteboard: { name: 'Whiteboard', desc: 'Brainstorming and visual collaboration' },
+                        mindmap: { name: 'Mind Map', desc: 'Organize ideas hierarchically' },
+                        activity: { name: 'Activity', desc: 'Real-time event feed' },
+                        team: { name: 'Team', desc: 'Monitor team work' },
+                        workload: { name: 'Workload', desc: 'Team capacity and distribution' },
+                        map: { name: 'Map', desc: 'Geographic visualization of tasks' },
+                        website: { name: 'Website', desc: 'Embed any web page' },
+                        googleSheets: { name: 'Google Sheets', desc: 'Sync spreadsheets' },
+                        googleDocs: { name: 'Google Docs', desc: 'Sync documents' },
+                        googleCalendar: { name: 'Google Calendar', desc: 'Sync calendar events' },
+                        googleMaps: { name: 'Google Maps', desc: 'Find the way' },
+                        youtube: { name: 'YouTube', desc: 'Share your favorite videos' },
+                        figma: { name: 'Figma', desc: 'View your amazing designs' },
+                        form: { name: 'Form', desc: 'Collect data and generate reports' }
+                    }
+                }
+            };
+
+            // ============================================================
+            // 2. CONFIGURACIÓN DE VISTAS (CATÁLOGO COMPLETO)
+            // ============================================================
+            const VIEWS = {
+                board: {
+                    id: 'board',
+                    icon: '📋',
+                    category: 'Gestión',
+                    action: 'showView'
+                },
+                list: {
+                    id: 'list',
+                    icon: '📄',
+                    category: 'Gestión',
+                    action: 'showView'
+                },
+                calendar: {
+                    id: 'calendar',
+                    icon: '📅',
+                    category: 'Planificación',
+                    action: 'showView'
+                },
+                gantt: {
+                    id: 'gantt',
+                    icon: '📊',
+                    category: 'Planificación',
+                    action: 'showView'
+                },
+                reports: {
+                    id: 'reports',
+                    icon: '📈',
+                    category: 'Análisis',
+                    action: 'showView'
+                },
+                dashboard: {
+                    id: 'dashboard',
+                    icon: '🎯',
+                    category: 'Análisis',
+                    action: 'showView'
+                },
+                profitability: {
+                    id: 'profitability',
+                    icon: '💰',
+                    category: 'Análisis',
+                    action: 'showView'
+                },
+                timeAllocation: {
+                    id: 'timeAllocation',
+                    icon: '⏱️',
+                    category: 'Recursos',
+                    action: 'showView'
+                },
+                dashboard4d: {
+                    id: 'dashboard4d',
+                    icon: '🌐',
+                    category: 'Análisis',
+                    action: 'showView'
+                },
+                whiteboard: {
+                    id: 'whiteboard',
+                    icon: '✏️',
+                    category: 'Colaboración',
+                    action: 'renderWhiteboard'
+                },
+                mindmap: {
+                    id: 'mindmap',
+                    icon: '🧠',
+                    category: 'Colaboración',
+                    action: 'renderMindmap'
+                },
+                activity: {
+                    id: 'activity',
+                    icon: '📡',
+                    category: 'Colaboración',
+                    action: 'renderActivity'
+                },
+                team: {
+                    id: 'team',
+                    icon: '👥',
+                    category: 'Recursos',
+                    action: 'renderTeam'
+                },
+                workload: {
+                    id: 'workload',
+                    icon: '⚖️',
+                    category: 'Recursos',
+                    action: 'renderWorkload'
+                },
+                map: {
+                    id: 'map',
+                    icon: '🗺️',
+                    category: 'Geolocalización',
+                    action: 'renderMap'
+                },
+                website: {
+                    id: 'website',
+                    icon: '🌍',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://example.com'
+                },
+                googleSheets: {
+                    id: 'googleSheets',
+                    icon: '📊',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ.../pubhtml?widget=true&amp;headers=false'
+                },
+                googleDocs: {
+                    id: 'googleDocs',
+                    icon: '📝',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://docs.google.com/document/d/e/2PACX-1vQ.../pub?embedded=true'
+                },
+                googleCalendar: {
+                    id: 'googleCalendar',
+                    icon: '📅',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://calendar.google.com/calendar/embed?src=...'
+                },
+                googleMaps: {
+                    id: 'googleMaps',
+                    icon: '📍',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d...'
+                },
+                youtube: {
+                    id: 'youtube',
+                    icon: '🎬',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+                },
+                figma: {
+                    id: 'figma',
+                    icon: '🎨',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://www.figma.com/embed?embed_host=share&url=...'
+                },
+                form: {
+                    id: 'form',
+                    icon: '📝',
+                    category: 'Inserciones',
+                    action: 'embed',
+                    embedUrl: 'https://docs.google.com/forms/d/e/1FAIpQLS.../viewform?embedded=true'
+                }
+            };
+
+            // ============================================================
+            // 3. RENDERIZADORES DE VISTAS (nuevas)
+            // ============================================================
+
+            // 3.1 Whiteboard
+            function renderWhiteboard(container) {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div class="whiteboard-tools">
+                            <button class="wb-action-btn" id="wbClear">🗑️ Limpiar</button>
+                            <button class="wb-color-btn" data-color="#f87171" style="background:#f87171;"></button>
+                            <button class="wb-color-btn" data-color="#60a5fa" style="background:#60a5fa;"></button>
+                            <button class="wb-color-btn" data-color="#34d399" style="background:#34d399;"></button>
+                            <button class="wb-color-btn" data-color="#fbbf24" style="background:#fbbf24;"></button>
+                            <button class="wb-color-btn" data-color="#a78bfa" style="background:#a78bfa;"></button>
+                            <span style="color:#94a3b8; font-size:13px; margin-left:12px;">🖱️ Dibuja libremente</span>
+                        </div>
+                        <canvas id="whiteboardCanvas" style="width:100%; height:400px; background:#0f172a; border-radius:16px; cursor:crosshair; touch-action:none;"></canvas>
+                    </div>
+                `;
+                const canvas = document.getElementById('whiteboardCanvas');
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+                let color = '#ffffff';
+                let lastX, lastY;
+
+                function resizeCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+                }
+
+                function startDraw(e) {
+                    e.preventDefault();
+                    drawing = true;
+                    const pos = getPos(e);
+                    lastX = pos.x;
+                    lastY = pos.y;
+                }
+                function draw(e) {
+                    e.preventDefault();
+                    if (!drawing) return;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    lastX = pos.x;
+                    lastY = pos.y;
+                }
+                function stopDraw(e) { drawing = false; }
+
+                canvas.addEventListener('mousedown', startDraw);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDraw);
+                canvas.addEventListener('mouseleave', stopDraw);
+                canvas.addEventListener('touchstart', startDraw);
+                canvas.addEventListener('touchmove', draw);
+                canvas.addEventListener('touchend', stopDraw);
+
+                container.querySelectorAll('.wb-color-btn').forEach(btn => {
+                    btn.addEventListener('click', () => { color = btn.dataset.color; });
+                });
+                document.getElementById('wbClear').addEventListener('click', () => {
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                });
+            }
+
+            // 3.2 Mapa Mental
+            function renderMindmap(container) {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div class="mindmap-input-row">
+                            <input type="text" id="mindmapInput" placeholder="Nueva idea..." />
+                            <button class="wb-action-btn" id="mindmapAdd">➕ Agregar</button>
+                            <button class="wb-action-btn" id="mindmapReset" style="color:#f87171;">🗑️ Reiniciar</button>
+                        </div>
+                        <canvas id="mindmapCanvas" style="width:100%; height:400px; background:#0f172a; border-radius:16px;"></canvas>
+                    </div>
+                `;
+                const canvas = document.getElementById('mindmapCanvas');
+                const ctx = canvas.getContext('2d');
+                let nodes = [{ text: 'Proyecto', x: 0.5, y: 0.2, children: [] }];
+
+                function resizeCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    drawMindmap();
+                }
+                window.addEventListener('resize', resizeCanvas);
+
+                function drawMindmap() {
+                    const w = canvas.width, h = canvas.height;
+                    ctx.clearRect(0, 0, w, h);
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, w, h);
+
+                    function drawNode(node, x, y, depth) {
+                        const radius = 30 + Math.max(0, 10 - depth * 2);
+                        const color = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'][depth % 5];
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.fillStyle = color;
+                        ctx.shadowColor = color;
+                        ctx.shadowBlur = 20;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = 'white';
+                        ctx.font = '14px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        let text = node.text;
+                        const maxWidth = radius * 1.6;
+                        if (ctx.measureText(text).width > maxWidth) {
+                            while (ctx.measureText(text + '…').width > maxWidth && text.length > 2) {
+                                text = text.slice(0, -1);
+                            }
+                            text += '…';
+                        }
+                        ctx.fillText(text, x, y);
+
+                        if (node.children) {
+                            const angleStep = (Math.PI * 1.8) / Math.max(1, node.children.length);
+                            let startAngle = -Math.PI / 2 + (node.children.length - 1) * angleStep / 2;
+                            const childRadius = 120;
+                            node.children.forEach((child, i) => {
+                                const angle = startAngle + i * angleStep;
+                                const cx = x + childRadius * Math.cos(angle);
+                                const cy = y + childRadius * Math.sin(angle);
+                                ctx.beginPath();
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(cx, cy);
+                                ctx.strokeStyle = '#334155';
+                                ctx.lineWidth = 2;
+                                ctx.stroke();
+                                drawNode(child, cx, cy, depth + 1);
+                            });
+                        }
+                    }
+
+                    if (nodes.length) {
+                        drawNode(nodes[0], w * nodes[0].x, h * nodes[0].y, 0);
+                    }
+                }
+
+                function addChild(parentText, childText) {
+                    function findNode(node) {
+                        if (node.text === parentText) return node;
+                        for (let child of node.children) {
+                            const found = findNode(child);
+                            if (found) return found;
+                        }
+                        return null;
+                    }
+                    const parent = findNode(nodes[0]);
+                    if (parent) {
+                        parent.children.push({ text: childText, children: [] });
+                        drawMindmap();
+                    } else {
+                        alert('Nodo padre no encontrado');
+                    }
+                }
+
+                document.getElementById('mindmapAdd').addEventListener('click', () => {
+                    const input = document.getElementById('mindmapInput');
+                    const text = input.value.trim();
+                    if (!text) return;
+                    const parentText = prompt('Nodo padre (deja vacío para raíz):') || nodes[0].text;
+                    addChild(parentText, text);
+                    input.value = '';
+                });
+                document.getElementById('mindmapReset').addEventListener('click', () => {
+                    nodes = [{ text: 'Proyecto', x: 0.5, y: 0.2, children: [] }];
+                    drawMindmap();
+                });
+
+                // Click en canvas para seleccionar nodo (simplificado)
+                canvas.addEventListener('click', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = (e.clientX - rect.left) / rect.width;
+                    const my = (e.clientY - rect.top) / rect.height;
+                    // Selección básica: si hace clic cerca de un nodo, lo muestra en consola
+                    alert('Nodo seleccionado (simulación): ' + nodes[0].text);
+                });
+
+                resizeCanvas();
+            }
+
+            // 3.3 Actividad
+            function renderActivity(container) {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <button class="wb-action-btn" id="activityAdd">➕ Simular evento</button>
+                            <button class="wb-action-btn" id="activityClear" style="color:#f87171;">🗑️ Limpiar</button>
+                        </div>
+                        <div class="activity-feed" id="activityFeed">
+                            <div style="color:#94a3b8; text-align:center; padding:20px;">No hay actividad reciente</div>
+                        </div>
+                    </div>
+                `;
+                const feed = document.getElementById('activityFeed');
+                const events = [
+                    { icon: '📌', text: 'Tarea "Diseño UI" completada por Ana', time: 'hace 2 min' },
+                    { icon: '🔄', text: 'Juan movió "Backend API" a En Progreso', time: 'hace 15 min' },
+                    { icon: '➕', text: 'Nueva tarea "Testing" creada por Carlos', time: 'hace 1 h' },
+                ];
+
+                function addEvent(icon, text) {
+                    const div = document.createElement('div');
+                    div.className = 'activity-item';
+                    div.innerHTML = `
+                        <span style="font-size:20px;">${icon}</span>
+                        <span style="flex:1; color:#e2e8f0;">${text}</span>
+                        <span style="color:#94a3b8; font-size:11px;">${new Date().toLocaleTimeString()}</span>
+                    `;
+                    feed.prepend(div);
+                    if (feed.children.length > 20) feed.removeChild(feed.lastChild);
+                }
+
+                events.forEach(e => addEvent(e.icon, e.text));
+
+                document.getElementById('activityAdd').addEventListener('click', () => {
+                    const icons = ['📌', '🔄', '➕', '✅', '⚠️', '💬', '📋', '🔥'];
+                    const texts = [
+                        'Tarea actualizada por usuario',
+                        'Nuevo comentario en "Revisión"',
+                        'Hito alcanzado: Sprint 2',
+                        'Riesgo identificado en dependencias',
+                        'Documentación actualizada',
+                        'Reunión programada para mañana',
+                        'Versión 1.2 desplegada',
+                        'Feedback recibido del cliente'
+                    ];
+                    const icon = icons[Math.floor(Math.random() * icons.length)];
+                    const text = texts[Math.floor(Math.random() * texts.length)];
+                    addEvent(icon, text);
+                });
+                document.getElementById('activityClear').addEventListener('click', () => {
+                    feed.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">Actividad limpiada</div>';
+                });
+            }
+
+            // 3.4 Equipo
+            function renderTeam(container) {
+                // Obtener miembros desde las tareas del proyecto actual
+                let members = {};
+                if (window.projects && window.currentProjectIndex !== undefined) {
+                    const project = window.projects[window.currentProjectIndex];
+                    if (project && project.tasks) {
+                        project.tasks.forEach(t => {
+                            if (t.assignee) {
+                                if (!members[t.assignee]) members[t.assignee] = { tasks: 0, completed: 0 };
+                                members[t.assignee].tasks++;
+                                if (t.status === 'completed') members[t.assignee].completed++;
+                            }
+                        });
+                    }
+                }
+                const entries = Object.entries(members);
+                if (entries.length === 0) {
+                    container.innerHTML = `<div style="color:#94a3b8; text-align:center; padding:40px;">No hay miembros asignados en este proyecto.</div>`;
+                    return;
+                }
+                let html = `<div class="team-grid">`;
+                entries.forEach(([name, data]) => {
+                    const pct = data.tasks > 0 ? Math.round((data.completed / data.tasks) * 100) : 0;
+                    html += `
+                        <div class="team-card">
+                            <div style="font-size:48px; margin-bottom:8px;">👤</div>
+                            <div style="font-weight:600; color:white; font-size:16px;">${name}</div>
+                            <div style="color:#94a3b8; font-size:13px;">${data.completed}/${data.tasks} tareas</div>
+                            <div style="margin-top:10px; background:#1e293b; height:6px; border-radius:10px; overflow:hidden;">
+                                <div style="width:${pct}%; height:100%; background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:10px;"></div>
+                            </div>
+                            <div style="color:#a78bfa; font-size:12px; margin-top:6px;">${pct}% eficiencia</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+
+            // 3.5 Workload (gráfico de barras)
+            function renderWorkload(container) {
+                // Intentar usar timeAllocation si existe
+                if (window.renderTimeAllocationView) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.id = 'tempWorkload';
+                    container.appendChild(tempDiv);
+                    window.renderTimeAllocationView(tempDiv);
+                    return;
+                }
+                // Fallback: gráfico de barras simulado
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:20px;">
+                        <div style="color:#94a3b8; font-size:14px;">Distribución de carga de trabajo simulada</div>
+                        <canvas id="workloadCanvas" style="width:100%; height:300px; background:#0f172a; border-radius:16px;"></canvas>
+                    </div>
+                `;
+                const canvas = document.getElementById('workloadCanvas');
+                const ctx = canvas.getContext('2d');
+                function resize() {
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    draw();
+                }
+                function draw() {
+                    const w = canvas.width, h = canvas.height;
+                    ctx.clearRect(0, 0, w, h);
+                    const labels = ['Ana', 'Juan', 'Carlos', 'María', 'Luis'];
+                    const data = [8, 12, 5, 9, 7];
+                    const max = Math.max(...data, 1);
+                    const barWidth = (w - 60) / labels.length * 0.7;
+                    const gap = (w - 60) / labels.length * 0.3;
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, w, h);
+                    labels.forEach((label, i) => {
+                        const x = 30 + i * (barWidth + gap);
+                        const height = (data[i] / max) * (h - 60);
+                        const y = h - 30 - height;
+                        const grad = ctx.createLinearGradient(x, y, x, h - 30);
+                        grad.addColorStop(0, '#8b5cf6');
+                        grad.addColorStop(1, '#ec4899');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.roundRect(x, y, barWidth, height, [6, 6, 0, 0]);
+                        ctx.fill();
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.textAlign = 'center';
+                        ctx.font = '12px sans-serif';
+                        ctx.fillText(label, x + barWidth/2, h - 8);
+                        ctx.fillStyle = '#94a3b8';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText(data[i]+'h', x + barWidth/2, y - 6);
+                    });
+                }
+                window.addEventListener('resize', resize);
+                setTimeout(resize, 100);
+            }
+
+            // 3.6 Mapa (OpenStreetMap)
+            function renderMap(container) {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="mapSearch" placeholder="Buscar ubicación..." style="flex:1; padding:10px; background:#1e293b; border:1px solid #334155; border-radius:10px; color:white;">
+                            <button class="wb-action-btn" id="mapGo">Ir</button>
+                        </div>
+                        <iframe id="mapFrame" style="width:100%; height:500px; border:none; border-radius:16px;" src="https://www.openstreetmap.org/export/embed.html?bbox=-0.1277%2C51.5072%2C-0.1277%2C51.5072&layer=mapnik"></iframe>
+                    </div>
+                `;
+                document.getElementById('mapGo').addEventListener('click', () => {
+                    const query = document.getElementById('mapSearch').value.trim();
+                    if (!query) return;
+                    const url = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(query)}&layer=mapnik`;
+                    document.getElementById('mapFrame').src = url;
+                });
+            }
+
+            // 3.7 Embed (para inserciones)
+            function renderEmbed(container, view) {
+                const url = view.embedUrl || 'about:blank';
+                container.innerHTML = `
+                    <iframe src="${url}" style="width:100%; height:550px; border:none; border-radius:16px; background:white;"></iframe>
+                `;
+            }
+
+            // ============================================================
+            // 4. PANEL EJECUTIVO – LÓGICA PRINCIPAL
+            // ============================================================
+
+            let currentLang = localStorage.getItem('evLang') || 'es';
+            const overlay = document.getElementById('executiveViewsOverlay');
+            const categoriesContainer = document.getElementById('evCategoriesContainer');
+            const viewContainer = document.getElementById('evViewContainer');
+            const viewTitle = document.getElementById('evViewTitle');
+            const viewContent = document.getElementById('evViewContent');
+
+            // Actualizar textos según idioma
+            function updateLanguage() {
+                const langData = LANG[currentLang] || LANG.es;
+                document.getElementById('evTitle').textContent = langData.title;
+                document.getElementById('evSubtitle').textContent = langData.subtitle;
+                document.getElementById('evCloseView').textContent = langData.closeView;
+                // Recargar categorías y tarjetas
+                renderCategories();
+            }
+
+            // Agrupar vistas por categoría con traducciones
+            function groupViews() {
+                const groups = {};
+                const langData = LANG[currentLang] || LANG.es;
+                const viewNames = langData.views || {};
+                const catNames = langData.categories || {};
+                Object.values(VIEWS).forEach(v => {
+                    const catKey = v.category;
+                    const catDisplay = catNames[catKey] || catKey;
+                    if (!groups[catDisplay]) groups[catDisplay] = [];
+                    const viewInfo = viewNames[v.id] || { name: v.id, desc: '' };
+                    groups[catDisplay].push({
+                        ...v,
+                        displayName: viewInfo.name,
+                        displayDesc: viewInfo.desc
+                    });
+                });
+                return groups;
+            }
+
+            function renderCategories() {
+                const groups = groupViews();
+                categoriesContainer.innerHTML = '';
+                Object.keys(groups).forEach(cat => {
+                    const section = document.createElement('div');
+                    section.className = 'ev-category';
+                    section.innerHTML = `<h3>${cat}</h3><div class="ev-grid" data-category="${cat}"></div>`;
+                    categoriesContainer.appendChild(section);
+                    const grid = section.querySelector('.ev-grid');
+                    groups[cat].forEach(view => {
+                        const card = document.createElement('div');
+                        card.className = 'ev-card';
+                        card.dataset.viewId = view.id;
+                        card.innerHTML = `
+                            <span class="ev-icon">${view.icon}</span>
+                            <div class="ev-name">${view.displayName}</div>
+                            <div class="ev-desc">${view.displayDesc}</div>
+                            ${view.action === 'showView' ? '<span class="ev-badge">✓</span>' : ''}
+                        `;
+                        card.addEventListener('click', () => openView(view.id));
+                        grid.appendChild(card);
+                    });
+                });
+            }
+
+            // Abrir una vista
+            function openView(viewId) {
+                const view = VIEWS[viewId];
+                if (!view) return;
+
+                // Si es una vista existente que usa showView, cerrar panel y redirigir
+                if (view.action === 'showView') {
+                    closePanel();
+                    if (typeof window.showView === 'function') {
+                        window.showView(viewId);
+                    } else {
+                        alert('Función showView no disponible');
+                    }
+                    return;
+                }
+
+                // Mostrar el contenedor de vista
+                viewContainer.classList.add('active');
+                const langData = LANG[currentLang] || LANG.es;
+                const viewNames = langData.views || {};
+                const vInfo = viewNames[viewId] || { name: viewId, desc: '' };
+                viewTitle.textContent = `${view.icon} ${vInfo.name}`;
+
+                // Ejecutar el renderizador correspondiente
+                const renderFn = getRenderer(view);
+                viewContent.innerHTML = '';
+                if (renderFn) {
+                    renderFn(viewContent, view);
+                } else {
+                    viewContent.innerHTML = `<p style="color:#94a3b8;">Vista no implementada aún.</p>`;
+                }
+            }
+
+            function getRenderer(view) {
+                switch (view.action) {
+                    case 'renderWhiteboard': return renderWhiteboard;
+                    case 'renderMindmap': return renderMindmap;
+                    case 'renderActivity': return renderActivity;
+                    case 'renderTeam': return renderTeam;
+                    case 'renderWorkload': return renderWorkload;
+                    case 'renderMap': return renderMap;
+                    case 'embed': return renderEmbed;
+                    default: return null;
+                }
+            }
+
+            // Cerrar panel
+            function closePanel() {
+                overlay.classList.remove('active');
+                viewContainer.classList.remove('active');
+                const langData = LANG[currentLang] || LANG.es;
+                viewContent.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:40px;">${langData.selectView}</p>`;
+            }
+
+            // Abrir panel
+            function openPanel() {
+                overlay.classList.add('active');
+                updateLanguage();
+            }
+
+            // ============================================================
+            // 5. CREAR BOTÓN EN EL SIDEBAR
+            // ============================================================
+            function injectSidebarButton() {
+                const sidebar = document.querySelector('aside, #sidebar, .sidebar');
+                if (!sidebar) {
+                    setTimeout(injectSidebarButton, 500);
+                    return;
+                }
+                if (document.getElementById('executiveViewsBtn')) return;
+
+                const btn = document.createElement('button');
+                btn.id = 'executiveViewsBtn';
+                btn.className = 'executive-views-trigger';
+                btn.innerHTML = `
+                    <i class="fas fa-cubes"></i>
+                    <span style="flex:1; font-weight:600;">Executive Views</span>
+                    <span class="badge-3d">4D</span>
+                `;
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openPanel();
+                });
+                const firstItem = sidebar.querySelector('li, .menu-item, .project-item, button');
+                if (firstItem) {
+                    sidebar.insertBefore(btn, firstItem);
+                } else {
+                    sidebar.appendChild(btn);
+                }
+                console.log('✅ Botón Executive Views añadido al sidebar.');
+            }
+
+            // ============================================================
+            // 6. EVENTOS DEL PANEL
+            // ============================================================
+            document.getElementById('evClosePanel').addEventListener('click', closePanel);
+            document.getElementById('evCloseView').addEventListener('click', () => {
+                viewContainer.classList.remove('active');
+                const langData = LANG[currentLang] || LANG.es;
+                viewContent.innerHTML = `<p style="color:#94a3b8; text-align:center; padding:40px;">${langData.selectView}</p>`;
+            });
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closePanel();
+            });
+
+            // Cambio de idioma
+            document.getElementById('evLangToggle').addEventListener('click', () => {
+                currentLang = currentLang === 'es' ? 'en' : 'es';
+                localStorage.setItem('evLang', currentLang);
+                updateLanguage();
+                // Re-renderizar la vista actual si está abierta
+                if (viewContainer.classList.contains('active')) {
+                    const viewId = document.querySelector('.ev-card')?.dataset.viewId;
+                    if (viewId) openView(viewId);
+                }
+            });
+
+            // ============================================================
+            // 7. INICIALIZACIÓN
+            // ============================================================
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', injectSidebarButton);
+            } else {
+                injectSidebarButton();
+            }
+
+            // Hacer accesible globalmente
+            window.executiveViews = {
+                openPanel,
+                closePanel,
+                openView,
+                VIEWS,
+                setLanguage: (lang) => {
+                    if (LANG[lang]) { currentLang = lang; localStorage.setItem('evLang', lang); updateLanguage(); }
+                }
+            };
+
+            console.log('🧠 Executive Views 4D cargado. Usa executiveViews.openPanel() para abrir manualmente.');
+            console.log('🌐 Idiomas: español (es) e inglés (en). Cambia con executiveViews.setLanguage("en")');
+        })();
+    </script>
+</body>
+</html>

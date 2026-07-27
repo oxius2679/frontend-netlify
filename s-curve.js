@@ -19,6 +19,7 @@
 
     const translations = {
         es: {
+            
             title: '📈 Curva S del Proyecto',
             subtitle: 'Análisis de Avance Planificado vs Real',
             planned: 'Planificado',
@@ -35,9 +36,11 @@
             onTrack: 'En línea',
             noData: 'No hay datos suficientes para generar la curva S.',
             noTasks: 'El proyecto no tiene tareas con fechas y horas estimadas.',
-            selectProject: 'Seleccionar proyecto:'
+            selectProject: 'Seleccionar proyecto:',
+            menuButton: '📈 Curva S'
         },
         en: {
+ 
             title: '📈 Project S-Curve',
             subtitle: 'Planned vs Actual Progress Analysis',
             planned: 'Planned',
@@ -54,7 +57,8 @@
             onTrack: 'On Track',
             noData: 'Not enough data to generate S-Curve.',
             noTasks: 'Project has no tasks with dates and estimated hours.',
-            selectProject: 'Select project:'
+            selectProject: 'Select project:',
+            menuButton: '📈 S-Curve'
         }
     };
 
