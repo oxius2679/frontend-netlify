@@ -34040,7 +34040,191 @@ console.log('📌 MutationObserver como respaldo');
     console.log('✅ Monitor permanente instalado. Botón siempre amarillo y traducido.');
 })();
 </script>
-
+<!-- ============================================================ -->
+<!-- 🎯 FIX: RESET INMEDIATO PARA MÚLTIPLES DRAG & DROP           -->
+<!-- ============================================================ -->
+<!-- Este script asegura que el flag se resetee INMEDIATAMENTE    -->
+<!-- después de CADA drop, permitiendo movimientos seguidos.      -->
+<!-- ============================================================ -->
+<script>
+(function installMultipleDragFix() {
+    'use strict';
+    
+    if (window.__multipleDragFixInstalled) return;
+    window.__multipleDragFixInstalled = true;
+    
+    console.log('🎯 [MULTI-DRAG FIX] Instalando fix para múltiples movimientos seguidos...');
+    
+    // ============================================================
+    // 1. FUNCIÓN CENTRAL: FORZAR RESET DEL FLAG
+    // ============================================================
+    function forceResetAllFlags() {
+        // Resetear TODOS los flags posibles que puedan estar bloqueando
+        const flags = [
+            '__dragInProgress',
+            '__dragActive',
+            '__DRAG_ACTIVE__',
+            '__dragDropLocked',
+            '__isDragging',
+            '__isDraggingTask__',
+            '__DRAG_SAFE_MODE__',
+            '__dragInProgressV2'
+        ];
+        
+        flags.forEach(flag => {
+            if (window[flag] !== undefined) {
+                window[flag] = false;
+            }
+        });
+        
+        console.log('🎯 [MULTI-DRAG] ✅ Todos los flags reseteados');
+    }
+    
+    // ============================================================
+    // 2. INTERCEPTAR SortableJS onEnd (RESET INMEDIATO)
+    // ============================================================
+    function hookSortableOnEnd() {
+        if (typeof Sortable === 'undefined') {
+            setTimeout(hookSortableOnEnd, 500);
+            return;
+        }
+        
+        const columns = ['pendingList', 'inProgressList', 'completedList', 'overdueList'];
+        
+        columns.forEach(colId => {
+            const col = document.getElementById(colId);
+            if (!col) return;
+            
+            const instance = Sortable.get(col);
+            if (!instance || instance.__multiDragHooked) return;
+            
+            // Guardar onEnd original
+            const originalOnEnd = instance.options.onEnd;
+            
+            // Interceptar onEnd para resetear INMEDIATAMENTE
+            instance.options.onEnd = function(evt) {
+                // 1. Ejecutar callback original PRIMERO
+                if (originalOnEnd) {
+                    originalOnEnd.call(this, evt);
+                }
+                
+                // 2. Resetear flags INMEDIATAMENTE (sin setTimeout)
+                forceResetAllFlags();
+                
+                // 3. Usar requestAnimationFrame para asegurar reset en el siguiente frame
+                requestAnimationFrame(() => {
+                    forceResetAllFlags();
+                    
+                    // 4. Doble verificación después de 10ms (por si algún script reactiva)
+                    setTimeout(forceResetAllFlags, 10);
+                });
+                
+                console.log('🎯 [MULTI-DRAG] Drop completado en', colId, '- Flags reseteados');
+            };
+            
+            instance.__multiDragHooked = true;
+        });
+        
+        console.log('✅ [MULTI-DRAG] SortableJS onEnd interceptado');
+    }
+    
+    hookSortableOnEnd();
+    
+    // ============================================================
+    // 3. LISTENERS GLOBALES COMO RESPALDO
+    // ============================================================
+    
+    // dragend nativo (HTML5 drag)
+    document.addEventListener('dragend', function(e) {
+        // Reset inmediato
+        forceResetAllFlags();
+        
+        // Reset en el siguiente frame
+        requestAnimationFrame(forceResetAllFlags);
+    }, true);
+    
+    // pointerup (para touch y mouse)
+    document.addEventListener('pointerup', function(e) {
+        // Solo resetear si el target está en el board
+        const board = document.getElementById('boardView');
+        if (board && board.contains(e.target)) {
+            // Reset inmediato
+            forceResetAllFlags();
+            
+            // Reset en el siguiente frame
+            requestAnimationFrame(forceResetAllFlags);
+            
+            // Reset después de un breve delay (por si SortableJS está procesando)
+            setTimeout(forceResetAllFlags, 50);
+        }
+    }, true);
+    
+    // mouseup como respaldo
+    document.addEventListener('mouseup', function(e) {
+        const board = document.getElementById('boardView');
+        if (board && board.contains(e.target)) {
+            setTimeout(forceResetAllFlags, 100);
+        }
+    }, true);
+    
+    // touchend para móviles
+    document.addEventListener('touchend', function(e) {
+        forceResetAllFlags();
+        requestAnimationFrame(forceResetAllFlags);
+    }, true);
+    
+    // ============================================================
+    // 4. SAFETY TIMEOUT: Reset periódico cada 5 segundos
+    // ============================================================
+    // Esto asegura que si algún flag se queda "atascado", se resetee
+    setInterval(() => {
+        // Solo resetear si NO hay un drag activo actualmente
+        const isDragging = document.querySelector('.sortable-drag, .sortable-ghost, .sortable-chosen');
+        if (!isDragging) {
+            // Verificar si algún flag está en true (anormal)
+            const flags = [
+                '__dragInProgress',
+                '__dragActive',
+                '__DRAG_ACTIVE__',
+                '__dragDropLocked',
+                '__isDragging',
+                '__isDraggingTask__',
+                '__DRAG_SAFE_MODE__'
+            ];
+            
+            let needsReset = false;
+            flags.forEach(flag => {
+                if (window[flag] === true) {
+                    needsReset = true;
+                }
+            });
+            
+            if (needsReset) {
+                console.warn('⚠️ [MULTI-DRAG] Flag atascado detectado, reseteando...');
+                forceResetAllFlags();
+            }
+        }
+    }, 5000);
+    
+    // ============================================================
+    // 5. API PÚBLICA PARA PRUEBAS
+    // ============================================================
+    window.forceResetDragFlags = forceResetAllFlags;
+    
+    // ============================================================
+    // 6. LOG
+    // ============================================================
+    console.log('✅ [MULTI-DRAG FIX] Instalado correctamente');
+    console.log('📌 Este fix:');
+    console.log('   ✅ Resetea TODOS los flags después de cada drop');
+    console.log('   ✅ Usa requestAnimationFrame para timing correcto');
+    console.log('   ✅ Tiene listeners globales como respaldo');
+    console.log('   ✅ Safety timeout cada 5 segundos');
+    console.log('   ✅ Permite múltiples movimientos seguidos');
+    console.log('💡 Prueba: window.forceResetDragFlags()');
+    
+})();
+</script>
  </body>
 </html>
  
