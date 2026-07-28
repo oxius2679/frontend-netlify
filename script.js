@@ -68728,13 +68728,6 @@ window.pmForecast = function() {
     `;
 };
 
-// ============================================
-// 9. AGENTE 2: TRANSCRIPTOR IA EJECUTIVO
-// ============================================
-
-// ============================================
-// 9. AGENTE 2: TRANSCRIPTOR IA EJECUTIVO
-// ============================================
 
 // ============================================
 // AGENTE 2: TRANSCRIPTOR IA (VERSIÓN COMPLETA - ESTILO READ AI)
@@ -69362,18 +69355,116 @@ const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.co
         }
     };
     
-    document.getElementById('exportMeetingBtn').onclick = () => {
-        if (!window.currentProcessedMeeting) return alert('No hay reunión para exportar');
-        
-        const dataStr = JSON.stringify(window.currentProcessedMeeting, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const exportName = `reunion_${Date.now()}.json`;
-        
-        const link = document.createElement('a');
-        link.setAttribute('href', dataUri);
-        link.setAttribute('download', exportName);
-        link.click();
-    };
+    // ============================================
+    // 🔥 EXPORTAR A WORD (FORMATO EJECUTIVO CON PORTADA)
+    // ============================================
+    const exportBtn = document.getElementById('exportMeetingBtn');
+    if (exportBtn) {
+        exportBtn.onclick = () => {
+            if (!window.currentProcessedMeeting) {
+                alert('No hay reunión procesada para exportar');
+                return;
+            }
+            
+            const m = window.currentProcessedMeeting;
+            const safeTitle = (m.titulo || 'Reunion').replace(/[^a-z0-9áéíóúñ]/gi, '_').substring(0, 40);
+            
+            const htmlContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                  xmlns:w="urn:schemas-microsoft-com:office:word" 
+                  xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <title>Reporte Ejecutivo: ${m.titulo}</title>
+                <style>
+                    @page { size: letter; margin: 2.5cm; }
+                    body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.6; font-size: 11pt; }
+                    .cover { text-align: center; padding-top: 120px; page-break-after: always; border-bottom: 4px solid #10b981; padding-bottom: 60px; }
+                    .cover-icon { font-size: 64px; margin-bottom: 20px; }
+                    .cover-title { font-size: 28pt; color: #059669; font-weight: bold; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px; }
+                    .cover-subtitle { font-size: 14pt; color: #64748b; font-weight: 300; margin-bottom: 50px; }
+                    .cover-meta { font-size: 11pt; color: #334155; background: #f0fdf4; display: inline-block; padding: 20px 40px; border-radius: 8px; border: 1px solid #bbf7d0; text-align: left; }
+                    .cover-meta p { margin: 10px 0; }
+                    .section { margin-top: 35px; page-break-inside: avoid; }
+                    .section-title { font-size: 14pt; color: #059669; font-weight: bold; border-bottom: 2px solid #10b981; padding-bottom: 6px; margin-bottom: 15px; }
+                    .box { background-color: #f8fafc; border-left: 5px solid #10b981; padding: 20px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+                    .box-warning { background-color: #fffbeb; border-left-color: #f59e0b; }
+                    ul { margin: 0; padding-left: 20px; }
+                    li { margin-bottom: 8px; color: #334155; }
+                    .two-col-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    .two-col-table td { width: 50%; padding: 15px; vertical-align: top; }
+                    .transcript-box { background-color: #f1f5f9; padding: 25px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 10pt; color: #475569; white-space: pre-wrap; border: 1px solid #e2e8f0; line-height: 1.8; }
+                    .footer { text-align: center; font-size: 9pt; color: #94a3b8; margin-top: 60px; border-top: 1px solid #e2e8f0; padding-top: 15px; page-break-before: always; }
+                </style>
+            </head>
+            <body>
+                <div class="cover">
+                    <div class="cover-icon">🎙️</div>
+                    <div class="cover-title">${m.titulo || 'REPORTE DE REUNIÓN'}</div>
+                    <div class="cover-subtitle">Análisis y Transcripción Inteligente con IA</div>
+                    <div class="cover-meta">
+                        <p><strong>📅 Fecha:</strong> ${m.fecha || new Date().toLocaleString()}</p>
+                        <p><strong>⏱️ Duración:</strong> ${m.duracion || 'No especificada'}</p>
+                        <p><strong>🤖 Generado por:</strong> Transcriptor IA</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📋 Resumen Ejecutivo</div>
+                    <div class="box">${m.resumen || 'No se generó un resumen ejecutivo.'}</div>
+                </div>
+
+                <div class="section">
+                    <table class="two-col-table">
+                        <tr>
+                            <td>
+                                <div class="section-title" style="color: #7c3aed; border-bottom-color: #8b5cf6;">📌 Puntos Clave</div>
+                                <ul>${Array.isArray(m.keyPoints) && m.keyPoints.length > 0 ? m.keyPoints.map(p => `<li>${p}</li>`).join('') : '<li>No se detectaron puntos clave.</li>'}</ul>
+                            </td>
+                            <td>
+                                <div class="section-title" style="color: #db2777; border-bottom-color: #ec4899;">⚖️ Decisiones</div>
+                                <ul>${Array.isArray(m.decisions) && m.decisions.length > 0 ? m.decisions.map(d => `<li>${d}</li>`).join('') : '<li>No se registraron decisiones formales.</li>'}</ul>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <div class="section-title" style="color: #d97706; border-bottom-color: #f59e0b;">✅ Plan de Acción</div>
+                    <div class="box box-warning">
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            ${Array.isArray(m.acciones) && m.acciones.length > 0 ? m.acciones.map(a => `<li style="margin-bottom: 12px;"><strong>☐</strong> ${a}</li>`).join('') : '<li>No se detectaron acciones pendientes.</li>'}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title" style="color: #2563eb; border-bottom-color: #3b82f6;">📝 Transcripción Completa</div>
+                    <div class="transcript-box">${m.transcripcion || 'No hay transcripción disponible.'}</div>
+                </div>
+
+                <div class="footer">
+                    Documento confidencial generado automáticamente.<br>© ${new Date().getFullYear()}
+                </div>
+            </body>
+            </html>`;
+
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Reporte_Ejecutivo_${safeTitle}.doc`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('📄 Reporte Word exportado', '#10b981');
+            }
+        };
+    }
 };
 
 // ============================================
@@ -69535,7 +69626,6 @@ window.actualizarListaReuniones = async function() {
         }
     }
 };
-
 
 
 
