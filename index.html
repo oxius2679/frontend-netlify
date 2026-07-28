@@ -12025,614 +12025,224 @@ console.log('📌 Solo observa y traduce');
 })();
 </script>
 
-<!-- 🏆 PREMIUM VIEW: TRADUCCIÓN + REPORTE VIP + EXPORT REPORT -->
+<!-- 🏆 REPORTE VIP PREMIUM - BLOQUEO TOTAL DE REPORTES BÁSICOS -->
 <script>
 (function() {
 'use strict';
-console.log('🏆 Instalando Premium View completo (Traducción + Reporte VIP + Export Report)...');
+console.log('🏆 [VIP] Bloqueando reportes básicos y forzando Reporte VIP con EVM...');
 
-if (window.__premiumViewCompleto) return;
-window.__premiumViewCompleto = true;
+if (window.__vipUltimateInstalled) return;
+window.__vipUltimateInstalled = true;
 
-function getLang() {
-    return localStorage.getItem('preferredLanguage') || 'es';
-}
+function getLang() { return localStorage.getItem('preferredLanguage') || 'es'; }
 
 // ============================================
-// DICCIONARIO DE TRADUCCIONES
+// 🚫 BLOQUEO AGRESIVO DE CUALQUIER REPORTE BÁSICO
 // ============================================
-const TRAD_GRAF = {
-    'Ideal': 'Ideal', 'Real': 'Real',
-    'Horas Restantes': 'Remaining Hours',
-    'Inicio': 'Start', 'Semana 1': 'Week 1', 'Semana 2': 'Week 2',
-    'Semana 3': 'Week 3', 'Semana 4': 'Week 4',
-    'Total:': 'Total:', 'Completadas:': 'Completed:', 'Restantes:': 'Remaining:',
-    'PV - Planificado': 'PV - Planned', 'EV - Ganado': 'EV - Earned',
-    'AC - Costo Actual': 'AC - Actual Cost', 'Horas': 'Hours',
-    'Completadas': 'Completed', 'En Progreso': 'In Progress',
-    'Pendientes': 'Pending', 'Atrasadas': 'Overdue',
-    'tareas': 'tasks', 'Sin datos': 'No data',
-    'Financiera': 'Financial', 'Cronograma': 'Schedule',
-    'Costos': 'Costs', 'Progreso': 'Progress', 'Cumplimiento': 'Compliance',
-    '✅ Excelente': '✅ Excellent', '🟢 Bueno': '🟢 Good',
-    '🟡 Regular': '🟡 Fair', 'Crítico': 'Critical',
-    'Completada': 'Completed', 'Atrasada': 'Overdue',
-    'En progreso': 'In Progress', 'Pendiente': 'Pending', 'Tarea': 'Task',
-    'gráficas': 'charts',
-    'Bajo presupuesto en': 'Under budget by',
-    'Mantener eficiencia actual del equipo.': 'Maintain current team efficiency.',
-    'Retraso del': 'Delay of',
-    'Priorizar tareas críticas y revisar dependencias.': 'Prioritize critical tasks and review dependencies.',
-    'Distribución:': 'Distribution:',
-    'completadas,': 'completed,', 'en progreso,': 'in progress,',
-    'pendientes,': 'pending,', 'atrasadas': 'overdue',
-    'Atención:': 'Attention:',
-    'tareas atrasadas requieren acción inmediata': 'overdue tasks require immediate action',
-    'Proyección de': 'Projection of', 'bajo presupuesto': 'under budget',
-    'Sobrecosto de': 'Over budget by', 'sobrecosto': 'over budget'
-};
-
-function t(texto) {
-    if (getLang() === 'es') return texto;
-    return TRAD_GRAF[texto] || texto;
-}
-
-function traducirTextoLargo(texto) {
-    if (getLang() === 'es') return texto;
-    var resultado = texto;
-    var claves = Object.keys(TRAD_GRAF).sort(function(a, b) { return b.length - a.length; });
-    for (var i = 0; i < claves.length; i++) {
-        var clave = claves[i];
-        if (resultado.indexOf(clave) !== -1) {
-            resultado = resultado.split(clave).join(TRAD_GRAF[clave]);
-        }
-    }
-    return resultado;
-}
-
-// ============================================
-// FUNCIÓN T (dibujar texto en canvas)
-// ============================================
-function T(ctx, text, x, y, sz, color, align) {
-    ctx.font = (sz || 10) + 'px "Segoe UI",sans-serif';
-    ctx.fillStyle = color || '#e2e8f0';
-    ctx.textAlign = align || 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, y);
-}
-
-// ============================================
-// setupTooltips
-// ============================================
-if (typeof setupTooltips !== 'function') {
-    window.setupTooltips = function(canvas, popup, callback) {
-        var tooltip = popup.document.createElement('div');
-        tooltip.style.cssText = 'position:fixed;padding:6px 10px;background:rgba(0,0,0,0.9);color:white;border-radius:6px;font-size:11px;pointer-events:none;z-index:999999;display:none;white-space:nowrap;';
-        popup.document.body.appendChild(tooltip);
-        canvas.addEventListener('mousemove', function(e) {
-            var rect = canvas.getBoundingClientRect();
-            var mx = e.clientX - rect.left;
-            var my = e.clientY - rect.top;
-            var result = callback(mx, my);
-            if (result) {
-                tooltip.textContent = result.text;
-                tooltip.style.display = 'block';
-                tooltip.style.left = (e.clientX + 10) + 'px';
-                tooltip.style.top = (e.clientY - 30) + 'px';
-            } else {
-                tooltip.style.display = 'none';
-            }
-        });
-        canvas.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
-    };
-}
-
-// ============================================
-// 🎨 DIBUJAR TODO (TRADUCIDO)
-// ============================================
-function drawAllTraducido(popup, bd, evm, evmOp, dist, tasks, recs) {
-    var status = popup.document.getElementById('status');
-    var ok = 0;
-    var panel = popup.document.getElementById('tpanel');
-    var tHTML = '';
-    tasks.forEach(function(task, i) {
-        var s = (task.status || 'pending').toLowerCase(), p = task.progress || 0;
-        var col = '#f59e0b', txt = t('Pendiente'), emo = '⏳';
-        if (s === 'completed' || s.indexOf('completada') !== -1 || p === 100) { col = '#10b981'; txt = t('Completada'); emo = '✅'; }
-        else if (s === 'overdue' || s.indexOf('atrasada') !== -1) { col = '#ef4444'; txt = t('Atrasada'); emo = '⚠️'; }
-        else if (s === 'inprogress' || s.indexOf('progreso') !== -1 || (p > 0 && p < 100)) { col = '#3b82f6'; txt = t('En progreso'); emo = '🔄'; }
-        tHTML += '<div class="ti" style="border-left-color:' + col + '"><strong>' + (i + 1) + '. ' + (task.name || t('Tarea')) + '</strong><br>' + emo + ' ' + txt + ' | Est:' + ((task.estimatedTime || 0)) + 'h | Real:' + ((task.timeLogged || 0)) + 'h | <span style="color:' + col + '">' + p + '%</span></div>';
-    });
-    panel.innerHTML = tHTML;
-    popup.document.getElementById('abox').innerHTML = traducirTextoLargo(recs);
-
-    var c1 = popup.document.getElementById('c1'); if (c1) { drawBurndownTraducido(c1, bd, popup); ok++; }
-    var c2 = popup.document.getElementById('c2'); if (c2) { drawEVMTraducido(c2, evm, popup); ok++; }
-    var c3 = popup.document.getElementById('c3'); if (c3) { drawDistTraducido(c3, dist, popup); ok++; }
-    var c4 = popup.document.getElementById('c4'); if (c4) { drawSaludTraducido(c4, evm, dist, tasks, popup); ok++; }
-
-    if (status) { status.innerHTML = '✅ ' + ok + '/4 ' + t('gráficas') + ' | Tooltips activos en todas'; status.style.color = '#10b981'; }
-}
-
-// ============================================
-// 📉 BURNDOWN (TRADUCIDO)
-// ============================================
-function drawBurndownTraducido(canvas, bd, popup) {
-    var ctx = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
-    var pad = { t: 45, r: 25, b: 55, l: 60 };
-    var cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
-    var all = bd.trabajoIdeal.concat(bd.trabajoReal);
-    var maxV = Math.max.apply(null, all) || 1;
-    maxV = Math.ceil(maxV * 1.1);
-
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1a3a'); grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-    var legendY = 18;
-    var item1Width = 160, item2Width = 130;
-    var totalLegendWidth = item1Width + 40 + item2Width;
-    var legendStartX = (W - totalLegendWidth) / 2;
-    var x1 = legendStartX;
-    ctx.setLineDash([5, 3]); ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(x1, legendY); ctx.lineTo(x1 + 25, legendY); ctx.stroke();
-    ctx.setLineDash([]);
-    T(ctx, t('Ideal'), x1 + 42, legendY + 1, 10, '#10b981', 'left');
-    var sepX = x1 + item1Width + 20;
-    T(ctx, '|', sepX, legendY + 1, 10, '#475569', 'center');
-    var x2 = sepX + 15;
-    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(x2, legendY); ctx.lineTo(x2 + 25, legendY); ctx.stroke();
-    T(ctx, t('Real'), x2 + 42, legendY + 1, 10, '#f59e0b', 'left');
-
-    ctx.save(); ctx.translate(14, pad.t + ch / 2); ctx.rotate(-Math.PI / 2);
-    T(ctx, t('Horas Restantes'), 0, 0, 10, '#94a3b8'); ctx.restore();
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-    for (var i = 0; i <= 5; i++) { var y = pad.t + ch - (ch * (i / 5)); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); T(ctx, Math.round(maxV * (i / 5)) + 'h', pad.l - 8, y, 9, '#64748b', 'right'); }
-
-    var labels = [t('Inicio'), t('Semana 1'), t('Semana 2'), t('Semana 3'), t('Semana 4')];
-    for (var i = 0; i < 5; i++) { var x = pad.l + (cw / 4) * i; ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ch); ctx.stroke(); T(ctx, labels[i], x, H - pad.b + 18, 9, '#64748b'); }
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ch); ctx.lineTo(W - pad.r, pad.t + ch); ctx.stroke();
-
-    function drawLine(data, color, dash, fill) {
-        ctx.beginPath(); if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]); ctx.strokeStyle = color; ctx.lineWidth = 3;
-        for (var i = 0; i < data.length; i++) { var x = pad.l + (cw / 4) * i; var y = pad.t + ch - (ch * (data[i] / maxV)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-        ctx.stroke(); ctx.setLineDash([]);
-        for (var i = 0; i < data.length; i++) { var x = pad.l + (cw / 4) * i; var y = pad.t + ch - (ch * (data[i] / maxV)); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill(); }
-        if (fill) { ctx.beginPath(); for (var i = 0; i < data.length; i++) { var x = pad.l + (cw / 4) * i; var y = pad.t + ch - (ch * (data[i] / maxV)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.lineTo(pad.l + cw, pad.t + ch); ctx.lineTo(pad.l, pad.t + ch); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
-    }
-    drawLine(bd.trabajoIdeal, '#10b981', [6, 4], null);
-    drawLine(bd.trabajoReal, '#f59e0b', null, 'rgba(245,158,11,0.05)');
-
-    var dataY = H - 14;
-    var infoText = t('Total:') + ' ' + bd.totalHoras.toFixed(0) + ' h  |  ' + t('Completadas:') + ' ' + bd.horasCompletadas.toFixed(0) + ' h  |  ' + t('Restantes:') + ' ' + bd.horasRestantes.toFixed(0) + ' h';
-    T(ctx, infoText, W / 2, dataY, 11, '#94a3b8', 'center');
-
-    setupTooltips(canvas, popup, function(mx, my) {
-        var datasets = [{ data: bd.trabajoIdeal, color: '#10b981', label: t('Ideal') }, { data: bd.trabajoReal, color: '#f59e0b', label: t('Real') }];
-        for (var d = 0; d < datasets.length; d++) {
-            for (var i = 0; i < datasets[d].data.length; i++) {
-                var px = pad.l + (cw / 4) * i, py = pad.t + ch - (ch * (datasets[d].data[i] / maxV));
-                if (Math.abs(mx - px) < 15 && Math.abs(my - py) < 15) return { text: datasets[d].label + ': ' + datasets[d].data[i].toFixed(1) + 'h | ' + labels[i], x: px, y: py - 30, color: datasets[d].color };
-            }
-        } return null;
-    });
-}
-
-// ============================================
-// 📈 EVM (TRADUCIDO)
-// ============================================
-function drawEVMTraducido(canvas, evm, popup) {
-    var ctx = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
-    var pad = { t: 45, r: 25, b: 50, l: 60 };
-    var cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
-    var vals = [evm.pv, evm.ev, evm.ac];
-    var maxV = Math.max.apply(null, vals) || 1;
-    maxV = Math.ceil(maxV * 1.25);
-
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1a3a'); grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-    var legendY = 18;
-    var colors = ['#3b82f6', '#10b981', evm.ac > evm.ev ? '#ef4444' : '#f59e0b'];
-    var colorLabels = [t('PV - Planificado'), t('EV - Ganado'), t('AC - Costo Actual')];
-    var itemWidth = 145;
-    var totalLegendWidth = itemWidth * 3;
-    var legendStartX = (W - totalLegendWidth) / 2;
-    for (var i = 0; i < 3; i++) {
-        var itemX = legendStartX + i * itemWidth;
-        ctx.fillStyle = colors[i];
-        ctx.fillRect(itemX, legendY - 6, 12, 12);
-        T(ctx, colorLabels[i], itemX + 18, legendY + 1, 10, colors[i], 'left');
-    }
-
-    ctx.save(); ctx.translate(14, pad.t + ch / 2); ctx.rotate(-Math.PI / 2);
-    T(ctx, t('Horas'), 0, 0, 10, '#94a3b8'); ctx.restore();
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-    for (var i = 0; i <= 5; i++) { var y = pad.t + ch - (ch * (i / 5)); ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke(); T(ctx, Math.round(maxV * (i / 5)) + 'h', pad.l - 8, y, 9, '#64748b', 'right'); }
-
-    var barLabels = ['PV', 'EV', 'AC'];
-    var gap = cw / 3, barW = gap * 0.55;
-    for (var i = 0; i < 3; i++) {
-        var x = pad.l + gap * i + (gap - barW) / 2, bh = (vals[i] / maxV) * ch, y = pad.t + ch - bh;
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x + 3, y + 3, barW, bh);
-        var barGrad = ctx.createLinearGradient(x, y, x, y + bh); barGrad.addColorStop(0, colors[i]); barGrad.addColorStop(1, colors[i] + '88');
-        ctx.fillStyle = barGrad; ctx.beginPath(); ctx.moveTo(x, pad.t + ch); ctx.lineTo(x, y + 6); ctx.quadraticCurveTo(x, y, x + 6, y); ctx.lineTo(x + barW - 6, y); ctx.quadraticCurveTo(x + barW, y, x + barW, y + 6); ctx.lineTo(x + barW, pad.t + ch); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(x + 2, y + 2, barW / 3, bh - 4);
-        T(ctx, vals[i].toFixed(1) + 'h', x + barW / 2, y - 15, 12, '#e2e8f0');
-        T(ctx, barLabels[i], x + barW / 2, H - pad.b + 18, 13, '#e2e8f0');
-    }
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ch); ctx.lineTo(W - pad.r, pad.t + ch); ctx.stroke();
-
-    setupTooltips(canvas, popup, function(mx, my) {
-        for (var i = 0; i < 3; i++) {
-            var x = pad.l + (cw / 3) * i + ((cw / 3) - barW) / 2, bh = (vals[i] / maxV) * ch, y = pad.t + ch - bh;
-            if (mx >= x && mx <= x + barW && my >= y && my <= pad.t + ch) return { text: colorLabels[i] + ': ' + vals[i].toFixed(2) + 'h', x: x + barW / 2, y: y - 25, color: colors[i] };
-        } return null;
-    });
-}
-
-// ============================================
-// 🍩 DISTRIBUCIÓN (TRADUCIDO)
-// ============================================
-function drawDistTraducido(canvas, dist, popup) {
-    var ctx = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
-    var total = dist.completadas + dist.enProgreso + dist.pendientes + dist.atrasadas;
-
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1a3a'); grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-    var cx = W / 2, cy = H / 2 - 10;
-    var oR = Math.min(cx, cy) - 35, iR = oR * 0.6;
-
-    if (total === 0) {
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 18; ctx.beginPath(); ctx.arc(cx, cy, oR, 0, Math.PI * 2); ctx.stroke();
-        T(ctx, t('Sin datos'), cx, cy, 12, '#64748b'); return;
-    }
-
-    var cats = [
-        { v: dist.completadas, c: '#10b981', l: t('Completadas') },
-        { v: dist.enProgreso, c: '#3b82f6', l: t('En Progreso') },
-        { v: dist.pendientes, c: '#f59e0b', l: t('Pendientes') },
-        { v: dist.atrasadas, c: '#ef4444', l: t('Atrasadas') }
+function bloquearReportesBasicos() {
+    // Bloquear cualquier función que genere reportes sin EVM
+    const nombresFuncionesBloqueadas = [
+        'generarReporteBasico', 'generarReporteSimple', 'generarReporteEjecutivoSimple',
+        'exportarReporte', 'generarReportePDF', 'mostrarReporte', 'abrirReporte',
+        'generateBasicReport', 'generateSimpleReport', 'showReport'
     ];
-
-    var angle = -Math.PI / 2, slices = [];
-    for (var i = 0; i < cats.length; i++) {
-        if (cats[i].v === 0) continue;
-        var slice = (cats[i].v / total) * Math.PI * 2;
-        slices.push({ start: angle, end: angle + slice, color: cats[i].c, label: cats[i].l, value: cats[i].v });
-        ctx.fillStyle = cats[i].c; ctx.beginPath(); ctx.arc(cx, cy, oR, angle, angle + slice); ctx.arc(cx, cy, iR, angle + slice, angle, true); ctx.closePath(); ctx.fill();
-        angle += slice;
-    }
-
-    ctx.fillStyle = '#1a1a3a'; ctx.beginPath(); ctx.arc(cx, cy, iR - 2, 0, Math.PI * 2); ctx.fill();
-    T(ctx, total, cx, cy - 10, 22, '#e2e8f0'); T(ctx, t('tareas'), cx, cy + 12, 10, '#94a3b8');
-
-    var ly = H - 18;
-    var padding = 30;
-    var drawWidth = W - padding * 2;
-    var step = drawWidth / cats.length;
-    for (var i = 0; i < cats.length; i++) {
-        var lx = padding + step * i + step / 2;
-        ctx.fillStyle = cats[i].c; ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI * 2); ctx.fill();
-        T(ctx, cats[i].l, lx + 14, ly + 1, 11, '#cbd5e1', 'left');
-    }
-
-    setupTooltips(canvas, popup, function(mx, my) {
-        var dx = mx - cx, dy = my - cy;
-        var distFromCenter = Math.sqrt(dx * dx + dy * dy);
-        if (distFromCenter < iR || distFromCenter > oR) return null;
-        var angle = Math.atan2(dy, dx);
-        if (angle < -Math.PI / 2) angle += Math.PI * 2;
-        for (var i = 0; i < slices.length; i++) {
-            var s = slices[i], sa = s.start, ea = s.end;
-            if (angle >= sa && angle < ea) return { text: s.label + ': ' + s.value + ' ' + t('tareas') + ' (' + ((s.value / total) * 100).toFixed(0) + '%)', x: mx, y: my - 30, color: s.color };
+    
+    nombresFuncionesBloqueadas.forEach(nombre => {
+        if (typeof window[nombre] === 'function' && !window['__bloqueado_' + nombre]) {
+            window['__original_' + nombre] = window[nombre];
+            window[nombre] = function() {
+                console.log('🚫 [VIP] Bloqueado:', nombre, '→ Redirigiendo a Reporte VIP');
+                if (typeof window.generarReporteVIPPremium === 'function') {
+                    return window.generarReporteVIPPremium();
+                }
+            };
+            window['__bloqueado_' + nombre] = true;
         }
-        return null;
     });
-}
-
-// ============================================
-// 🕸️ SALUD (TRADUCIDO)
-// ============================================
-function drawSaludTraducido(canvas, evm, dist, tasks, popup) {
-    var ctx = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
-
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1a3a'); grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-    var cx = W / 2, cy = H / 2;
-    var R = Math.min(cx, cy) - 30;
-
-    var labels = [t('Financiera') + '\n(CPI)', t('Cronograma') + '\n(SPI)', t('Costos') + '\n(VAC)', t('Progreso') + '\n(EV/BAC)', t('Cumplimiento')];
-    var fh = Math.min(100, Math.max(0, (evm.cpi || 1) * 100));
-    var sh = Math.min(100, Math.max(0, (evm.spi || 1) * 100));
-    var chv = evm.bac > 0 ? Math.max(0, 100 - Math.abs(evm.vac) / evm.bac * 100) : 100;
-    var ph = evm.bac > 0 ? (evm.ev / evm.bac) * 100 : 0;
-    var cph = tasks.length > 0 ? (dist.completadas / tasks.length) * 100 : 0;
-    var values = [fh, sh, chv, ph, cph];
-    var N = 5;
-
-    for (var lv = 1; lv <= 5; lv++) {
-        var r = R * (lv / 5); ctx.strokeStyle = 'rgba(255,255,255,' + (lv === 5 ? 0.12 : 0.05) + ')'; ctx.lineWidth = 1; ctx.beginPath();
-        for (var a = 0; a < N; a++) { var ang = (Math.PI * 2 / N) * a - Math.PI / 2; var x = cx + r * Math.cos(ang), y = cy + r * Math.sin(ang); if (a === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-        ctx.closePath(); ctx.stroke();
-    }
-
-    var radarPoints = [];
-    for (var a = 0; a < N; a++) {
-        var ang = (Math.PI * 2 / N) * a - Math.PI / 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(ang), cy + R * Math.sin(ang)); ctx.stroke();
-        var lx = cx + (R + 22) * Math.cos(ang), ly = cy + (R + 22) * Math.sin(ang);
-        var parts = labels[a].split('\n'); T(ctx, parts[0], lx, ly, 9, '#cbd5e1'); if (parts[1]) T(ctx, parts[1], lx, ly + 12, 7, '#64748b');
-        var val = values[a] / 100;
-        radarPoints.push({ x: cx + R * val * Math.cos(ang), y: cy + R * val * Math.sin(ang), label: labels[a].split('\n')[0], value: values[a] });
-    }
-
-    ctx.fillStyle = 'rgba(59,130,246,0.12)'; ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2.5; ctx.beginPath();
-    for (var a = 0; a < N; a++) { if (a === 0) ctx.moveTo(radarPoints[a].x, radarPoints[a].y); else ctx.lineTo(radarPoints[a].x, radarPoints[a].y); }
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-
-    for (var a = 0; a < N; a++) {
-        ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(radarPoints[a].x, radarPoints[a].y, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(radarPoints[a].x, radarPoints[a].y, 2, 0, Math.PI * 2); ctx.fill();
-        T(ctx, Math.round(values[a]) + '%', radarPoints[a].x, radarPoints[a].y - 14, 9, '#e2e8f0');
-    }
-
-    setupTooltips(canvas, popup, function(mx, my) {
-        for (var i = 0; i < radarPoints.length; i++) {
-            var p = radarPoints[i];
-            if (Math.abs(mx - p.x) < 12 && Math.abs(my - p.y) < 12) {
-                var status = p.value >= 80 ? t('✅ Excelente') : p.value >= 60 ? t('🟢 Bueno') : p.value >= 40 ? t('🟡 Regular') : t('Crítico');
-                var vColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#f97316'];
-                return { text: p.label + ': ' + Math.round(p.value) + '% - ' + status, x: p.x, y: p.y - 30, color: vColors[i] };
-            }
-        } return null;
-    });
-}
-
-// ============================================
-// INTERCEPTAR FUNCIONES DE DIBUJO
-// ============================================
-function interceptarFunciones() {
-    if (typeof window.drawAll === 'function' && !window.__drawAllInterceptado) {
-        window.drawAll = drawAllTraducido;
-        window.__drawAllInterceptado = true;
-        console.log('✅ drawAll interceptada');
-    }
-    if (typeof window.drawBurndown === 'function' && !window.__drawBurndownInterceptado) {
-        window.drawBurndown = drawBurndownTraducido;
-        window.__drawBurndownInterceptado = true;
-        console.log('✅ drawBurndown interceptada');
-    }
-    if (typeof window.drawEVM === 'function' && !window.__drawEVMInterceptado) {
-        window.drawEVM = drawEVMTraducido;
-        window.__drawEVMInterceptado = true;
-        console.log('✅ drawEVM interceptada');
-    }
-    if (typeof window.drawDist === 'function' && !window.__drawDistInterceptado) {
-        window.drawDist = drawDistTraducido;
-        window.__drawDistInterceptado = true;
-        console.log('✅ drawDist interceptada');
-    }
-    if (typeof window.drawSalud === 'function' && !window.__drawSaludInterceptado) {
-        window.drawSalud = drawSaludTraducido;
-        window.__drawSaludInterceptado = true;
-        console.log('✅ drawSalud interceptada');
+    
+    // Forzar que generarReporteEjecutivo SIEMPRE llame al VIP
+    if (typeof window.generarReporteEjecutivo !== 'function' || !window.__vipForzado) {
+        window.generarReporteEjecutivo = function() {
+            console.log('🏆 [VIP] generarReporteEjecutivo → Reporte VIP Premium');
+            return window.generarReporteVIPPremium();
+        };
+        window.__vipForzado = true;
     }
 }
 
-var intentos = 0;
-var intervalo = setInterval(function() {
-    intentos++;
-    interceptarFunciones();
-    if (intentos >= 60) clearInterval(intervalo);
-}, 1000);
-interceptarFunciones();
+// Ejecutar bloqueo cada 500ms por 30 segundos
+let intentosBloqueo = 0;
+const intervaloBloqueo = setInterval(() => {
+    intentosBloqueo++;
+    bloquearReportesBasicos();
+    if (intentosBloqueo >= 60) clearInterval(intervaloBloqueo);
+}, 500);
+bloquearReportesBasicos();
 
 // ============================================
-// 🏆 REPORTE VIP PREMIUM - MÉTODO EJECUTIVO
+// 🏆 REPORTE VIP PREMIUM - CÁLCULOS EVM EXACTOS
 // ============================================
 window.generarReporteVIPPremium = function() {
-    console.log('🏆 Generando Reporte VIP Premium con Método Ejecutivo...');
+    console.log('🏆 [VIP] Generando Reporte VIP Premium con EVM...');
     
     const gantt = document.getElementById('premiumExecutiveGantt');
     if (!gantt) { alert('❌ Abre el Gantt Ejecutivo primero'); return; }
     
-    const projectIndex = parseInt(gantt.dataset.projectIndex) || window.currentProjectIndex || 0;
-    const project = window.projects?.[projectIndex];
-    if (!project) { alert('❌ No hay proyecto seleccionado'); return; }
+    // 🎯 FUENTE UNIFICADA: Misma fuente que el Dashboard
+    const projectName = gantt.dataset.projectName || 'Proyecto';
+    const tasks = JSON.parse(gantt.dataset.tasks || '[]');
+    const projectStartDate = gantt.dataset.projectStartDate || new Date().toISOString().split('T')[0];
     
-    const tasks = project.tasks || [];
-    if (tasks.length === 0) { alert('⚠️ No hay tareas'); return; }
+    if (!tasks || tasks.length === 0) { alert('⚠️ No hay tareas'); return; }
     
     const lang = getLang();
     const es = lang === 'es';
-    
+
     // ==========================================
-    // CÁLCULOS EVM - MÉTODO EJECUTIVO (CORREGIDO)
+    // FUNCIONES DE DÍAS HÁBILES (IDÉNTICAS AL DASHBOARD)
     // ==========================================
-    const total = tasks.length;
-    const completadas = tasks.filter(t => t.status === 'completed').length;
-    const enProgreso = tasks.filter(t => t.status === 'inProgress').length;
-    const pendientes = tasks.filter(t => t.status === 'pending').length;
-    const atrasadas = tasks.filter(t => t.status === 'overdue' || t.status === 'rezagado').length;
-    
+    function contarDiasHabiles(inicio, fin) {
+        let count = 0;
+        var current = new Date(inicio); current.setHours(0,0,0,0);
+        var end = new Date(fin); end.setHours(0,0,0,0);
+        while (current <= end) { if (current.getDay() !== 0 && current.getDay() !== 6) count++; current.setDate(current.getDate() + 1); }
+        return count;
+    }
+
+    function agregarDiasHabiles(fecha, diasHabiles) {
+        var r = new Date(fecha); var a = 1;
+        while (a < diasHabiles) { r.setDate(r.getDate() + 1); if (r.getDay() !== 0 && r.getDay() !== 6) a++; }
+        return r;
+    }
+
+    function calcularPVTareaConDiasHabiles(task, today, projectStartDate) {
+        var estimado = Number(task.estimatedTime) || 0;
+        if (estimado <= 0) return 0;
+        var startDay = Number(task.startDay); 
+        var duracion = Number(task.duration);
+        if (isNaN(startDay) || isNaN(duracion) || duracion <= 0) return 0;
+        
+        var base = new Date(projectStartDate); base.setHours(0,0,0,0);
+        var fi = new Date(base); fi.setDate(base.getDate() + startDay);
+        var ff = agregarDiasHabiles(fi, duracion);
+        var hoyDate = new Date(today); hoyDate.setHours(0,0,0,0);
+        
+        if (hoyDate < fi) return 0; 
+        if (hoyDate > ff) return estimado;
+        
+        var th = contarDiasHabiles(fi, ff); if (th === 0) return 0;
+        var ht = contarDiasHabiles(fi, hoyDate);
+        return Math.round((estimado * Math.min(1, ht / th)) * 100) / 100;
+    }
+
+    function calcularDistribucionTareas(tasksList) {
+        var d = {completadas:0, enProgreso:0, pendientes:0, atrasadas:0};
+        tasksList.forEach(function(t){
+            var s = (t.status || 'pending').toLowerCase();
+            var p = Number(String(t.progress || 0).replace('%','').trim()) || 0;
+            if (s === 'completed' || s.indexOf('completada') !== -1 || p === 100) d.completadas++;
+            else if (s === 'overdue' || s.indexOf('atrasada') !== -1 || s.indexOf('rezagada') !== -1 || s.indexOf('rezagado') !== -1) d.atrasadas++;
+            else if (s === 'inprogress' || s.indexOf('progreso') !== -1 || (p > 0 && p < 100)) d.enProgreso++;
+            else d.pendientes++;
+        });
+        return d;
+    }
+
+    // ==========================================
+    // CÁLCULOS EVM EXACTOS
+    // ==========================================
+    const hoyCalc = new Date(); hoyCalc.setHours(0, 0, 0, 0);
     let BAC = 0, EV = 0, AC = 0, PV = 0;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
     
     tasks.forEach(t => {
         const est = Number(t.estimatedTime) || 0;
-        const logged = Number(t.timeLogged) || 0;
+        const reg = Number(t.timeLogged) || 0;
+        const progRaw = String(t.progress || 0).replace('%', '').trim();
+        const prog = Number(progRaw) || 0;
+        const status = (t.status || '').toLowerCase();
+
         BAC += est;
-        AC += logged;
-        
-        // 🎯 PV EJECUTIVO: Basado en fechas (tareas que ya deberían haber empezado)
-        if (t.startDate) {
-            const startDate = new Date(t.startDate);
-            startDate.setHours(0, 0, 0, 0);
-            if (startDate <= hoy) {
-                PV += est;
-            }
-        }
-        
-        // 🎯 EV EJECUTIVO: Basado en progreso real (no en horas trabajadas)
-        let progress = 0;
-        if (t.status === 'completed') {
-            progress = 100;
-        } else {
-            let raw = t.progress !== undefined ? t.progress : (t.percentComplete !== undefined ? t.percentComplete : 0);
-            if (typeof raw === 'string') raw = raw.replace('%', '').trim();
-            progress = Number(raw) || 0;
-        }
-        EV += est * (progress / 100);
+        AC += reg;
+
+        const pr = (status === 'completed' || prog >= 100) ? 1 : Math.min(1, Math.max(0, prog / 100));
+        EV += est * pr;
+        PV += calcularPVTareaConDiasHabiles(t, hoyCalc, projectStartDate);
     });
-    
-    // 🛡️ RESPALDO: Si PV da 0 o BAC, usar el valor correcto validado
-    if (PV === 0 || PV === BAC) {
-        PV = 9.85;
-    }
-    
-    const CPI = AC > 0 ? EV / AC : 1;
-    const SPI = PV > 0 ? EV / PV : 1;
-    const EAC = CPI > 0 ? BAC / CPI : BAC;
-    const ETC = EAC - AC;
-    const VAC = BAC - EAC;
-    const CV = EV - AC;
-    const SV = EV - PV;
+
+    PV = Math.round(PV * 100) / 100;
+    EV = Math.round(EV * 100) / 100;
+    AC = Math.round(AC * 100) / 100;
+    BAC = Math.round(BAC * 100) / 100;
+
+    const CPI = AC > 0 ? Math.round((EV / AC) * 1000) / 1000 : 1;
+    const SPI = PV > 0 ? Math.round((EV / PV) * 1000) / 1000 : 1;
+    const EAC = CPI > 0 ? Math.round((BAC / CPI) * 100) / 100 : BAC;
+    const ETC = Math.round((EAC - AC) * 100) / 100;
+    const VAC = Math.round((BAC - EAC) * 100) / 100;
+    const CV = Math.round((EV - AC) * 100) / 100;
+    const SV = Math.round((EV - PV) * 100) / 100;
+
+    const dist = calcularDistribucionTareas(tasks);
+    const completadas = dist.completadas, enProgreso = dist.enProgreso, pendientes = dist.pendientes, atrasadas = dist.atrasadas;
+    const total = tasks.length;
     const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
-    const horasEst = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
-    const horasReg = tasks.reduce((s, t) => s + (t.timeLogged || 0), 0);
-    
-    // Estado del proyecto
+
+    // ==========================================
+    // ESTADO Y RECOMENDACIONES
+    // ==========================================
     let estadoIcono, estadoTexto, estadoColor, estadoDesc;
-    if (SPI < 0.7 || CPI < 0.7) {
-        estadoIcono = '🔴'; estadoTexto = es ? 'CRÍTICA' : 'CRITICAL'; estadoColor = '#dc2626';
-        estadoDesc = es ? 'Desviaciones graves. Intervención ejecutiva urgente requerida.' : 'Severe deviations. Urgent executive intervention required.';
-    } else if (SPI < 0.85 || CPI < 0.85) {
-        estadoIcono = '🟠'; estadoTexto = es ? 'EN RIESGO' : 'AT RISK'; estadoColor = '#ea580c';
-        estadoDesc = es ? 'Desviaciones moderadas. Monitoreo intensivo recomendado.' : 'Moderate deviations. Intensive monitoring recommended.';
-    } else if (SPI < 0.95 || CPI < 0.95) {
-        estadoIcono = '🟡'; estadoTexto = es ? 'MONITOREO' : 'MONITORING'; estadoColor = '#ca8a04';
-        estadoDesc = es ? 'Desviaciones leves. Ajustar plan de trabajo.' : 'Minor deviations. Adjust work plan.';
-    } else if (SPI >= 1.05 && CPI >= 1.05) {
-        estadoIcono = '🏆'; estadoTexto = es ? 'EXCELENTE' : 'EXCELLENT'; estadoColor = '#7c3aed';
-        estadoDesc = es ? 'Superando expectativas. Mantener el ritmo.' : 'Exceeding expectations. Maintain the pace.';
-    } else {
-        estadoIcono = '✅'; estadoTexto = es ? 'SALUDABLE' : 'HEALTHY'; estadoColor = '#059669';
-        estadoDesc = es ? 'Dentro de parámetros esperados.' : 'Within expected parameters.';
-    }
+    if (SPI < 0.7 || CPI < 0.7) { estadoIcono = '🔴'; estadoTexto = es ? 'CRÍTICA' : 'CRITICAL'; estadoColor = '#dc2626'; estadoDesc = es ? 'Desviaciones graves. Intervención ejecutiva urgente requerida.' : 'Severe deviations. Urgent executive intervention required.'; }
+    else if (SPI < 0.85 || CPI < 0.85) { estadoIcono = '🟠'; estadoTexto = es ? 'EN RIESGO' : 'AT RISK'; estadoColor = '#ea580c'; estadoDesc = es ? 'Desviaciones moderadas. Monitoreo intensivo recomendado.' : 'Moderate deviations. Intensive monitoring recommended.'; }
+    else if (SPI < 0.95 || CPI < 0.95) { estadoIcono = '🟡'; estadoTexto = es ? 'MONITOREO' : 'MONITORING'; estadoColor = '#ca8a04'; estadoDesc = es ? 'Desviaciones leves. Ajustar plan de trabajo.' : 'Minor deviations. Adjust work plan.'; }
+    else if (SPI >= 1.05 && CPI >= 1.05) { estadoIcono = '🏆'; estadoTexto = es ? 'EXCELENTE' : 'EXCELLENT'; estadoColor = '#7c3aed'; estadoDesc = es ? 'Superando expectativas. Mantener el ritmo.' : 'Exceeding expectations. Maintain the pace.'; }
+    else { estadoIcono = '✅'; estadoTexto = es ? 'SALUDABLE' : 'HEALTHY'; estadoColor = '#059669'; estadoDesc = es ? 'Dentro de parámetros esperados.' : 'Within expected parameters.'; }
     
-    // Recomendaciones
     const recs = [];
     if (SPI < 0.9) recs.push(es ? '⏰ Acelerar cronograma: SPI indica retraso significativo' : '⏰ Accelerate schedule: SPI indicates significant delay');
     if (CPI < 0.9) recs.push(es ? '💰 Controlar costos: CPI por debajo de lo esperado' : '💰 Control costs: CPI below expected');
     if (atrasadas > 0) recs.push(es ? `🔥 Atender ${atrasadas} tarea(s) atrasada(s) urgentemente` : `🔥 Address ${atrasadas} overdue task(s) urgently`);
     if (SV < 0) recs.push(es ? '📅 Revisar ruta crítica y dependencias' : '📅 Review critical path and dependencies');
     if (CV < 0) recs.push(es ? '💸 Analizar causas del sobrecosto' : '💸 Analyze overcost causes');
-    if (SPI >= 0.95 && CPI >= 0.95 && atrasadas === 0) {
-        recs.push(es ? '✅ Mantener ritmo actual - proyecto saludable' : '✅ Maintain current pace - healthy project');
-    }
-    if (recs.length === 0) {
-        recs.push(es ? '📊 Mantener plan de trabajo actual' : '📊 Maintain current work plan');
-    }
+    if (SPI >= 0.95 && CPI >= 0.95 && atrasadas === 0) recs.push(es ? '✅ Mantener ritmo actual - proyecto saludable' : '✅ Maintain current pace - healthy project');
+    if (recs.length === 0) recs.push(es ? '📊 Mantener plan de trabajo actual' : '📊 Maintain current work plan');
     
-    // Problemáticas
     const problems = [];
     if (atrasadas > 0) problems.push({ icon: '⚠️', title: es ? 'Tareas Atrasadas' : 'Overdue Tasks', desc: es ? `${atrasadas} tarea(s) fuera de plazo` : `${atrasadas} task(s) past deadline`, severity: 'high' });
     if (SPI < 0.9) problems.push({ icon: '⏰', title: es ? 'Retraso Cronograma' : 'Schedule Delay', desc: es ? `SPI ${SPI.toFixed(2)} - Retraso del ${((1-SPI)*100).toFixed(1)}%` : `SPI ${SPI.toFixed(2)} - ${((1-SPI)*100).toFixed(1)}% delay`, severity: 'high' });
-    if (CPI < 0.9) problems.push({ icon: '💰', title: es ? 'Sobrecosto' : 'Over Budget', desc: es ? `CPI ${CPI.toFixed(2)} - Sobrecosto del ${((CPI-1)*100).toFixed(1)}%` : `CPI ${CPI.toFixed(2)} - ${((1/CPI-1)*100).toFixed(1)}% over budget`, severity: 'high' });
+    if (CPI < 0.9) problems.push({ icon: '💰', title: es ? 'Sobrecosto' : 'Over Budget', desc: es ? `CPI ${CPI.toFixed(2)} - Sobrecosto del ${((1/CPI-1)*100).toFixed(1)}%` : `CPI ${CPI.toFixed(2)} - ${((1/CPI-1)*100).toFixed(1)}% over budget`, severity: 'high' });
     if (enProgreso > total * 0.3) problems.push({ icon: '🔄', title: es ? 'Alto WIP' : 'High WIP', desc: es ? `${enProgreso} tareas en progreso simultáneamente` : `${enProgreso} tasks in progress simultaneously`, severity: 'medium' });
     if (problems.length === 0) problems.push({ icon: '✅', title: es ? 'Sin Problemáticas Críticas' : 'No Critical Issues', desc: es ? 'Proyecto operando normalmente' : 'Project operating normally', severity: 'low' });
     
-    // Labels traducidas
     const L = {
-        completadas: es ? 'Completadas' : 'Completed',
-        enProgreso: es ? 'En Progreso' : 'In Progress',
-        pendientes: es ? 'Pendientes' : 'Pending',
-        atrasadas: es ? 'Atrasadas' : 'Overdue',
-        totalTareas: es ? 'Total Tareas' : 'Total Tasks',
-        progresoGeneral: es ? 'Progreso' : 'Progress',
-        horasEst: es ? 'Horas Estimadas' : 'Estimated Hours',
-        horasReg: es ? 'Horas Registradas' : 'Logged Hours',
-        distribucion: es ? 'Distribución de Tareas' : 'Task Distribution',
-        salud: es ? 'Salud del Proyecto' : 'Project Health',
-        tablaEVM: es ? 'Tabla de Valor Ganado (EVM)' : 'Earned Value Table (EVM)',
-        pronosticos: es ? 'Pronósticos del Proyecto' : 'Project Forecasts',
-        detalleTareas: es ? 'Detalle de Tareas' : 'Task Details',
-        analisis: es ? 'Análisis Ejecutivo' : 'Executive Analysis',
-        recomendaciones: es ? 'Recomendaciones Estratégicas' : 'Strategic Recommendations',
-        problematicas: es ? 'Problemáticas Detectadas' : 'Detected Issues',
-        imprimir: es ? 'EXPORTAR PDF' : 'EXPORT PDF',
-        cerrar: es ? 'CERRAR' : 'CLOSE',
-        generado: es ? 'Reporte Ejecutivo Generado' : 'Executive Report Generated',
-        derechos: es ? 'Todos los derechos reservados' : 'All rights reserved',
-        eficienciaCostos: es ? 'Eficiencia Costos' : 'Cost Efficiency',
-        cronograma: es ? 'Cronograma' : 'Schedule',
-        progresoRadar: es ? 'Progreso' : 'Progress',
-        controlAtrasos: es ? 'Control Atrasos' : 'Delay Control',
-        productividad: es ? 'Productividad' : 'Productivity',
-        inicio: es ? 'Inicio' : 'Start',
-        semana: es ? 'Semana' : 'Week',
-        horas: es ? 'Horas' : 'Hours',
-        lineaIdeal: es ? 'Línea Ideal' : 'Ideal Line',
-        progresoReal: es ? 'Progreso Real' : 'Real Progress',
-        puntuacion: es ? 'Puntuación' : 'Score',
-        tarea: es ? 'Tarea' : 'Task',
-        estado: es ? 'Estado' : 'Status',
-        estimado: es ? 'Estimado (h)' : 'Estimated (h)',
-        registrado: es ? 'Registrado (h)' : 'Logged (h)',
-        avance: es ? 'Avance' : 'Progress',
-        completada: es ? 'Completada' : 'Completed',
-        atrasada: es ? 'Atrasada' : 'Overdue',
-        pendiente: es ? 'Pendiente' : 'Pending',
-        enProgresoEst: es ? 'En Progreso' : 'In Progress',
-        sinTitulo: es ? 'Sin título' : 'No title',
-        indicador: es ? 'Indicador' : 'Indicator',
-        valor: es ? 'Valor' : 'Value',
-        interpretacion: es ? 'Interpretación' : 'Interpretation',
-        severidad: es ? 'Severidad' : 'Severity',
-        alta: es ? 'Alta' : 'High',
-        media: es ? 'Media' : 'Medium',
-        baja: es ? 'Baja' : 'Low'
+        completadas: es ? 'Completadas' : 'Completed', enProgreso: es ? 'En Progreso' : 'In Progress', pendientes: es ? 'Pendientes' : 'Pending', atrasadas: es ? 'Atrasadas' : 'Overdue',
+        totalTareas: es ? 'Total Tareas' : 'Total Tasks', progresoGeneral: es ? 'Progreso' : 'Progress', distribucion: es ? 'Distribución de Tareas' : 'Task Distribution',
+        salud: es ? 'Salud del Proyecto' : 'Project Health', tablaEVM: es ? 'Tabla de Valor Ganado (EVM)' : 'Earned Value Table (EVM)',
+        pronosticos: es ? 'Pronósticos del Proyecto' : 'Project Forecasts', detalleTareas: es ? 'Detalle de Tareas' : 'Task Details',
+        analisis: es ? 'Análisis Ejecutivo' : 'Executive Analysis', recomendaciones: es ? 'Recomendaciones Estratégicas' : 'Strategic Recommendations',
+        problematicas: es ? 'Problemáticas Detectadas' : 'Detected Issues', imprimir: es ? 'EXPORTAR PDF' : 'EXPORT PDF', cerrar: es ? 'CERRAR' : 'CLOSE',
+        generado: es ? 'Reporte Ejecutivo Generado' : 'Executive Report Generated', derechos: es ? 'Todos los derechos reservados' : 'All rights reserved',
+        eficienciaCostos: es ? 'Eficiencia Costos' : 'Cost Efficiency', cronograma: es ? 'Cronograma' : 'Schedule', progresoRadar: es ? 'Progreso' : 'Progress',
+        controlAtrasos: es ? 'Control Atrasos' : 'Delay Control', productividad: es ? 'Productividad' : 'Productivity', inicio: es ? 'Inicio' : 'Start', semana: es ? 'Semana' : 'Week',
+        horas: es ? 'Horas' : 'Hours', lineaIdeal: es ? 'Línea Ideal' : 'Ideal Line', progresoReal: es ? 'Progreso Real' : 'Real Progress', puntuacion: es ? 'Puntuación' : 'Score',
+        tarea: es ? 'Tarea' : 'Task', estado: es ? 'Estado' : 'Status', estimado: es ? 'Estimado (h)' : 'Estimated (h)', registrado: es ? 'Registrado (h)' : 'Logged (h)',
+        avance: es ? 'Avance' : 'Progress', completada: es ? 'Completada' : 'Completed', atrasada: es ? 'Atrasada' : 'Overdue', pendiente: es ? 'Pendiente' : 'Pending',
+        enProgresoEst: es ? 'En Progreso' : 'In Progress', sinTitulo: es ? 'Sin título' : 'No title', indicador: es ? 'Indicador' : 'Indicator', valor: es ? 'Valor' : 'Value',
+        interpretacion: es ? 'Interpretación' : 'Interpretation', severidad: es ? 'Severidad' : 'Severity', alta: es ? 'Alta' : 'High', media: es ? 'Media' : 'Medium', baja: es ? 'Baja' : 'Low'
     };
     
-    // Datos gráficas
     const distLabels = [L.completadas, L.enProgreso, L.pendientes, L.atrasadas];
     const distData = [completadas, enProgreso, pendientes, atrasadas];
     const distColors = ['#10b981', '#0891b2', '#f59e0b', '#dc2626'];
-    
     const semanas = [L.inicio, `${L.semana} 1`, `${L.semana} 2`, `${L.semana} 3`, `${L.semana} 4`];
     const burndownIdeal = [BAC, BAC * 0.75, BAC * 0.5, BAC * 0.25, 0];
     const burndownReal = [BAC, BAC - (EV * 0.25), BAC - (EV * 0.5), BAC - (EV * 0.75), Math.max(0, BAC - EV)];
-    
     const saludLabels = [L.eficienciaCostos, L.cronograma, L.progresoRadar, L.controlAtrasos, L.productividad];
-    const saludValores = [
-        Math.min(100, CPI * 100),
-        Math.min(100, SPI * 100),
-        progreso,
-        100 - Math.min(30, atrasadas * 5),
-        Math.min(100, (completadas / Math.max(1, total)) * 100)
-    ];
+    const saludValores = [Math.min(100, CPI * 100), Math.min(100, SPI * 100), progreso, 100 - Math.min(30, atrasadas * 5), Math.min(100, (completadas / Math.max(1, total)) * 100)];
     
     const locale = es ? 'es-ES' : 'en-US';
     const fecha = new Date().toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const hora = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     
-    // Tabla EVM
     const evmRows = `
         <tr><td><strong>PV (${es ? 'Valor Planificado' : 'Planned Value'})</strong></td><td class="num">${PV.toFixed(2)}h</td><td>${es ? 'Trabajo programado' : 'Scheduled work'}</td></tr>
         <tr class="alt"><td><strong>EV (${es ? 'Valor Ganado' : 'Earned Value'})</strong></td><td class="num">${EV.toFixed(2)}h</td><td>${es ? 'Trabajo completado' : 'Completed work'}</td></tr>
@@ -12644,23 +12254,17 @@ window.generarReporteVIPPremium = function() {
         <tr class="alt"><td><strong>SV (${es ? 'Variación Cronograma' : 'Schedule Variance'})</strong></td><td class="num" style="color:${SV >= 0 ? '#10b981' : '#dc2626'}">${SV >= 0 ? '+' : ''}${SV.toFixed(2)}h</td><td>${es ? 'Variación de cronograma' : 'Schedule variance'}</td></tr>
     `;
     
-    // Tabla de problemáticas
     const problemsTable = problems.map(p => {
         const sevColor = p.severity === 'high' ? '#dc2626' : p.severity === 'medium' ? '#f59e0b' : '#10b981';
         const sevText = p.severity === 'high' ? L.alta : p.severity === 'medium' ? L.media : L.baja;
-        return `<tr>
-            <td style="font-size:20px;">${p.icon}</td>
-            <td><strong style="color:white;">${p.title}</strong><br><span style="color:#94a3b8;font-size:12px;">${p.desc}</span></td>
-            <td><span style="background:${sevColor}20;color:${sevColor};padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid ${sevColor};">${sevText}</span></td>
-        </tr>`;
+        return `<tr><td style="font-size:20px;">${p.icon}</td><td><strong style="color:white;">${p.title}</strong><br><span style="color:#94a3b8;font-size:12px;">${p.desc}</span></td><td><span style="background:${sevColor}20;color:${sevColor};padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid ${sevColor};">${sevText}</span></td></tr>`;
     }).join('');
     
-    // HTML VIP
     const html = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>★ ${es ? 'REPORTE VIP' : 'VIP REPORT'} ★ - ${project.name}</title>
+<title>★ ${es ? 'REPORTE VIP' : 'VIP REPORT'} ★ - ${projectName}</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
@@ -12744,8 +12348,8 @@ canvas { max-width: 100%; max-height: 280px; }
 <div class="container">
     <div class="header">
         <div class="vip-badge">${es ? 'REPORTE EJECUTIVO VIP' : 'VIP EXECUTIVE REPORT'}</div>
-        <h1>${project.name}</h1>
-        <div class="project-name">${es ? 'Dashboard EjecutivoPMI' : 'PMI Executive Dashboard'}</div>
+        <h1>${projectName}</h1>
+        <div class="project-name">${es ? 'Dashboard Ejecutivo PMI' : 'PMI Executive Dashboard'}</div>
         <div class="header-meta">
             <span>📅 ${fecha}</span>
             <span>🕒 ${hora}</span>
@@ -12831,9 +12435,11 @@ canvas { max-width: 100%; max-height: 280px; }
                     <tbody>
                         ${tasks.map((task, i) => {
                             let statusClass = '', statusText = '';
-                            if (task.status === 'completed') { statusClass = 'completed'; statusText = L.completada; }
-                            else if (task.status === 'inProgress') { statusClass = 'progress'; statusText = L.enProgresoEst; }
-                            else if (task.status === 'overdue' || task.status === 'rezagado') { statusClass = 'overdue'; statusText = L.atrasada; }
+                            const pVal = Number(String(task.progress || 0).replace('%','').trim()) || 0;
+                            const sVal = (task.status || 'pending').toLowerCase();
+                            if (sVal === 'completed' || sVal.indexOf('completada') !== -1 || pVal === 100) { statusClass = 'completed'; statusText = L.completada; }
+                            else if (sVal === 'overdue' || sVal.indexOf('atrasada') !== -1 || sVal.indexOf('rezagada') !== -1) { statusClass = 'overdue'; statusText = L.atrasada; }
+                            else if (sVal === 'inprogress' || sVal.indexOf('progreso') !== -1 || (pVal > 0 && pVal < 100)) { statusClass = 'progress'; statusText = L.enProgresoEst; }
                             else { statusClass = 'pending'; statusText = L.pendiente; }
                             return `<tr>
                                 <td><strong>${i+1}</strong></td>
@@ -12841,7 +12447,7 @@ canvas { max-width: 100%; max-height: 280px; }
                                 <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
                                 <td>${(task.estimatedTime || 0).toFixed(1)}h</td>
                                 <td>${(task.timeLogged || 0).toFixed(1)}h</td>
-                                <td><div style="display:flex; align-items:center; gap:10px;"><div class="progress-bar-cell"><div class="progress-fill" style="width: ${task.progress || 0}%"></div></div><span style="font-weight:700;">${task.progress || 0}%</span></div></td>
+                                <td><div style="display:flex; align-items:center; gap:10px;"><div class="progress-bar-cell"><div class="progress-fill" style="width: ${pVal}%"></div></div><span style="font-weight:700;">${pVal}%</span></div></td>
                             </tr>`;
                         }).join('')}
                     </tbody>
@@ -12945,49 +12551,16 @@ new Chart(document.getElementById('radarChart'), {
     if (!ventana) { alert('❌ ' + (es ? 'Permite ventanas emergentes' : 'Allow popups')); return; }
     ventana.document.write(html);
     ventana.document.close();
-    console.log('✅ Reporte VIP Premium Generado con Método Ejecutivo');
+    console.log('✅ [VIP] Reporte VIP Premium Generado con EVM Completo');
 };
 
-// ============================================
-// 🔗 FORZAR BOTÓN EXPORT REPORT → REPORTE VIP
-// ============================================
-function forzarExportReport() {
-    // Reemplazar generarReporteEjecutivo globalmente
-    if (typeof window.generarReporteEjecutivo !== 'undefined' && !window.__exportReportForzado) {
-        window.__exportReportOriginal = window.generarReporteEjecutivo;
-        window.generarReporteEjecutivo = function() {
-            console.log('🏆 generarReporteEjecutivo interceptado → generando Reporte VIP Premium');
-            if (typeof window.generarReporteVIPPremium === 'function') {
-                return window.generarReporteVIPPremium();
-            }
-        };
-        window.__exportReportForzado = true;
-        console.log('✅ generarReporteEjecutivo forzado a Reporte VIP');
-    }
-}
+// Forzar bloqueo inicial
+bloquearReportesBasicos();
 
-// Intentar forzar cada segundo
-var intentosExport = 0;
-var intervaloExport = setInterval(function() {
-    intentosExport++;
-    forzarExportReport();
-    if (intentosExport >= 60 || window.__exportReportForzado) clearInterval(intervaloExport);
-}, 1000);
-forzarExportReport();
-
-// ============================================
-// ESCUCHAR CAMBIO DE IDIOMA
-// ============================================
-document.addEventListener('languageChanged', function() {
-    console.log('🔄 Idioma cambiado, las gráficas se actualizarán al reabrir');
-});
-
-console.log('✅ Premium View completo instalado');
-console.log('📌 Traducción de gráficas: ACTIVA');
-console.log('📌 Reporte VIP Premium: DISPONIBLE');
-console.log('📌 Botón Export Report: FORZADO → Reporte VIP');
+console.log('✅ [VIP] Sistema de bloqueo instalado');
+console.log('✅ [VIP] Solo se generará el Reporte VIP con EVM');
 })();
-</script><!-- 📋 TRADUCCIÓN MODAL SELECCIONAR PROYECTO -->
+</script></script><!-- 📋 TRADUCCIÓN MODAL SELECCIONAR PROYECTO -->
 <script>
 (function() {
 'use strict';
