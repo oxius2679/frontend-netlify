@@ -2,6 +2,14 @@
 
 
 
+
+
+
+
+
+
+
+
 // ============================================================
 // 👑 PANEL DE LEADS - COMPLETO (ADMIN + BADGE + KPIs + CSV + DELETE)
 // ============================================================
@@ -76415,9 +76423,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
-
-
 // ============================================================
 // 🚀 SISTEMA DE PERSISTENCIA SIMPLE Y FUNCIONAL
 // ============================================================
@@ -76498,6 +76503,21 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log('📌 No se usa backend para guardar/cargar');
     console.log('📌 WebSocket desconectado de proyectos');
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

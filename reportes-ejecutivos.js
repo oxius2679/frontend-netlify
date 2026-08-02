@@ -1515,6 +1515,19 @@ function getTaskStatusText(t) {
 // 🌐 BOTÓN EN EL SIDEBAR (VERSIÓN ROBUSTA)
 // ============================================
 function agregarBotonReportesSidebar() {
+
+// ✅ AGREGAR ESTAS VALIDACIONES AL INICIO
+  if (!localStorage.getItem('authToken')) {
+    console.log('⏸️ Sin autenticación - no agregar botón Reports Center');
+    return false;
+  }
+  
+  if (document.body.classList.contains('show-login')) {
+    console.log('⏸️ Login visible - no agregar botón Reports Center');
+    return false;
+  }
+
+
   function insertarBoton(sidebar) {
     if (!sidebar) return false;
     if (document.getElementById('btnReportesSidebarContainer')) return true;

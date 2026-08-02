@@ -783,6 +783,7 @@
     // 7. CREAR BOTÓN DE AYUDA EN EL HEADER + MOVER ENGRANE
     // ============================================================
     function createHelpButtonInHeader() {
+
         if (document.getElementById('helpHeaderButton')) return;
 
         let header = document.querySelector('header, .header, #header, .main-header, .navbar, .top-bar');
@@ -1234,6 +1235,7 @@
     // 12. INICIALIZACIÓN
     // ============================================================
     function initHelpSystem() {
+
         console.log('🆘 Inicializando sistema de ayuda ULTIMATE v3.4 (todas las secciones)...');
         createHelpButtonInHeader();
 
@@ -1269,4 +1271,111 @@
         initHelpSystem();
     }
 
+})();
+
+// ============================================================
+// 🚫 BLOQUEO PERMANENTE DE AYUDA EN PANTALLA DE LOGIN
+// ============================================================
+(function() {
+    'use strict';
+    
+    console.log('🛡️ Inicializando bloqueo permanente de ayuda en login...');
+    
+    // 1. Función para detectar si estamos en la pantalla de login
+    function esPantallaLogin() {
+        const loginForm = document.getElementById('loginForm') || 
+                         document.getElementById('authFormContainer') ||
+                         document.querySelector('.login-container') ||
+                         document.querySelector('.login-box');
+        const authToken = localStorage.getItem('authToken');
+        
+        // Si existe el formulario de login y NO hay token, es la pantalla de login
+        return (loginForm && !authToken);
+    }
+    
+    // 2. Función para limpiar cualquier rastro de ayuda en el login
+    function limpiarAyudaEnLogin() {
+        if (!esPantallaLogin()) return;
+        
+        // Eliminar botón de ayuda
+        const helpBtn = document.getElementById('helpHeaderButton');
+        if (helpBtn) {
+            helpBtn.remove();
+            console.log('✅ Botón de ayuda eliminado del login');
+        }
+        
+        // Eliminar modal de ayuda si existe
+        const helpModal = document.getElementById('helpModal');
+        if (helpModal) helpModal.remove();
+        
+        // Eliminar placeholders o contenedores vacíos de ayuda
+        const helpPlaceholders = document.querySelectorAll('.help-header-placeholder');
+        helpPlaceholders.forEach(el => {
+            if (!el.closest('#authFormContainer') && !el.closest('.login-container')) {
+                el.remove();
+            }
+        });
+    }
+    
+    // 3. Interceptamos la creación del botón para que NUNCA se ejecute en login
+    if (typeof window.createHelpButtonInHeader === 'function') {
+        const originalCreateHelpButton = window.createHelpButtonInHeader;
+        window.createHelpButtonInHeader = function() {
+            if (esPantallaLogin()) {
+                console.log('🚫 Creación de botón de ayuda bloqueada (estamos en login)');
+                return;
+            }
+            return originalCreateHelpButton.apply(this, arguments);
+        };
+        console.log('✅ Función createHelpButtonInHeader interceptada exitosamente');
+    }
+    
+    // 4. Observer para detectar cambios en el DOM (cuando se muestra/oculta el login dinámicamente)
+    const observer = new MutationObserver(() => {
+        limpiarAyudaEnLogin();
+        
+        // Si acabamos de salir del login, restauramos el botón
+        if (!esPantallaLogin()) {
+            const helpBtn = document.getElementById('helpHeaderButton');
+            if (!helpBtn && typeof window.createHelpButtonInHeader === 'function') {
+                setTimeout(() => {
+                    if (!document.getElementById('helpHeaderButton')) {
+                        window.createHelpButtonInHeader();
+                    }
+                }, 300);
+            }
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+    });
+    
+    // 5. Ejecución inmediata al cargar
+    limpiarAyudaEnLogin();
+    
+    // 6. CSS de respaldo para forzar ocultamiento (doble seguridad)
+    if (!document.getElementById('login-help-block-styles')) {
+        const style = document.createElement('style');
+        style.id = 'login-help-block-styles';
+        style.textContent = `
+            /* Forzar ocultamiento de elementos de ayuda en contextos de login */
+            body:has(#loginForm) #helpHeaderButton,
+            body:has(.login-container) #helpHeaderButton,
+            body:has(.login-box) #helpHeaderButton,
+            body.show-login #helpHeaderButton,
+            body:has(#loginForm) .help-header-placeholder,
+            body:has(.login-container) .help-header-placeholder {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    console.log('✅ Sistema de bloqueo de ayuda en login activado permanentemente.');
 })();
