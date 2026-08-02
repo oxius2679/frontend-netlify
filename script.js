@@ -71553,6 +71553,15 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 // ==================== CARGAR TRANSCRIPCIONES ====================
 async function cargarTranscripciones() {
+
+// 🔥 EVITAR EJECUCIÓN EN LOGIN
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        console.log('🔒 Usuario no autenticado, no se cargan transcripciones');
+        mostrarVistaPrincipal();
+        return;
+    }
+
     try {
         const clienteId = localStorage.getItem('clienteId');
         if (!clienteId) {
