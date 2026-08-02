@@ -747,7 +747,7 @@
     };
 
     // ============================================================
-    // 6. NOTIFICACIONES CONTEXTUALES (tips emergentes)
+    // 6. (NOTIFICACIONES CONTEXTUALES) (tips emergentes)
     // ============================================================
     function showHelpTip() {
         const lang = getCurrentLanguage();
