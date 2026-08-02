@@ -747,7 +747,7 @@
     };
 
     // ============================================================
-    // 6. (NOTIFICACIONES CONTEXTUALES) (tips emergentes)
+    // 6. NOTIFICACIONES CONTEXTUALES (tips emergentes)
     // ============================================================
     function showHelpTip() {
         const lang = getCurrentLanguage();
@@ -779,99 +779,196 @@
         }, 10000);
     }
 
-    // ============================================================
-    // 7. CREAR BOTÓN DE AYUDA EN EL HEADER + MOVER ENGRANE
+        // ============================================================
+    // 7. CREAR BOTÓN DE AYUDA EN EL MENÚ LATERAL (SIEMPRE EL ÚLTIMO)
     // ============================================================
     function createHelpButtonInHeader() {
+        if (document.getElementById('helpSidebarButton')) return;
 
-        if (document.getElementById('helpHeaderButton')) return;
-
-        let header = document.querySelector('header, .header, #header, .main-header, .navbar, .top-bar');
-        if (!header) {
-            header = document.createElement('div');
-            header.className = 'help-header-placeholder';
-            header.style.cssText = 'display: flex; justify-content: flex-end; padding: 10px 20px; background: rgba(0,0,0,0.2); flex-wrap: nowrap; gap: 8px;';
-            document.body.insertBefore(header, document.body.firstChild);
+        function esLoginReal() {
+            const form = document.getElementById('loginForm');
+            if (form && form.offsetParent !== null) return true;
+            const container = document.querySelector('.login-container, .login-box, #authFormContainer');
+            if (container && container.offsetParent !== null) return true;
+            return false;
+        }
+        if (esLoginReal()) {
+            console.log('⛔ Login detectado, no se crea el botón.');
+            return;
         }
 
-        let actionsContainer = header.querySelector('.header-actions, .actions-container, .header-buttons');
-        if (!actionsContainer) {
-            actionsContainer = document.createElement('div');
-            actionsContainer.className = 'header-actions';
-            actionsContainer.style.cssText = `
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                flex-wrap: nowrap !important;
-                margin-left: auto;
-            `;
-            header.appendChild(actionsContainer);
+        // --- Buscar menú lateral ---
+        let sidebar = document.querySelector(
+            'nav, aside, .sidebar, #sidebar, .menu-lateral, .side-menu, .navigation, .nav-sidebar, [role="navigation"]'
+        );
+        if (!sidebar) {
+            // Fallback: botón flotante
+            const fallbackBtn = document.createElement('button');
+            fallbackBtn.id = 'helpSidebarButton';
+            fallbackBtn.innerHTML = '🆘 Centro de Ayuda';
+            fallbackBtn.title = 'Abrir centro de ayuda (F1)';
+            Object.assign(fallbackBtn.style, {
+                position: 'fixed',
+                bottom: '30px',
+                left: '30px',
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, #dc3545, #b91c1c)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                zIndex: '99999999',
+                boxShadow: '0 4px 20px rgba(220,53,69,0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+            });
+            fallbackBtn.addEventListener('click', () => {
+                if (typeof openHelpModal === 'function') openHelpModal();
+                else alert('Ayuda no disponible.');
+            });
+            document.body.appendChild(fallbackBtn);
+            console.log('✅ Botón de ayuda flotante creado como fallback.');
+            return;
         }
 
-        // Buscar y mover el botón de engrane
-        const gearSelectors = [
-            'button[id*="settings" i]', 'button[id*="gear" i]', 'button[id*="config" i]',
-            'button[class*="settings" i]', 'button[class*="gear" i]', 'button[class*="config" i]',
-            'button[title*="Configuración" i]', 'button[title*="Settings" i]', 'button[title*="Gear" i]',
-            'a[id*="settings" i]', 'a[class*="settings" i]',
-            'button:has(> .fa-gear)', 'button:has(> .fa-cog)', 'button:has(> svg[viewBox*="gear"])'
-        ];
-        let gearButton = null;
-        for (const sel of gearSelectors) {
-            const found = header.querySelector(sel);
-            if (found && !actionsContainer.contains(found)) {
-                gearButton = found;
-                break;
-            }
-        }
-        if (!gearButton) {
-            const allButtons = header.querySelectorAll('button, a');
+        // --- Buscar botón de referencia (#autoBlueSidebar o similar) ---
+        let refButton = document.getElementById('autoBlueSidebar');
+        if (!refButton) {
+            const allButtons = sidebar.querySelectorAll('button, .btn, a.btn, [role="button"]');
             for (const btn of allButtons) {
                 const text = btn.textContent.trim().toLowerCase();
-                if ((text.includes('engrane') || text.includes('configuración') || text.includes('settings') || text.includes('⚙️') || text.includes('gear')) && !actionsContainer.contains(btn)) {
-                    gearButton = btn;
+                if (text.includes('descargar') || text.includes('exportar') || text.includes('backup') || 
+                    text.includes('respaldo') || text.includes('ayuda') || text.includes('centro')) {
+                    continue;
+                }
+                const rect = btn.getBoundingClientRect();
+                if (rect.width > 50 && rect.height > 20) {
+                    refButton = btn;
                     break;
                 }
             }
         }
-        if (gearButton) {
-            gearButton.classList.add('help-gear-btn');
-            gearButton.style.marginLeft = '0';
-            gearButton.style.marginRight = '0';
-            actionsContainer.appendChild(gearButton);
-            console.log('⚙️ Botón de engrane movido al contenedor de acciones');
-        } else {
-            console.warn('⚠️ No se encontró el botón de engrane para moverlo.');
+        if (!refButton) {
+            console.warn('⚠️ No se encontró botón de referencia. Usando estilos por defecto.');
         }
 
-        // Crear botón de ayuda
-        const button = document.createElement('button');
-        button.id = 'helpHeaderButton';
-        button.innerHTML = '❓';
-        button.title = 'Ayuda / Help (F1)';
-        button.style.cssText = `
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        `;
-        button.addEventListener('click', openHelpModal);
+        // --- Crear el botón de ayuda ---
+        const btn = document.createElement('button');
+        btn.id = 'helpSidebarButton';
+        btn.innerHTML = '🆘 Centro de Ayuda';
+        btn.title = 'Abrir centro de ayuda (F1)';
 
-        actionsContainer.appendChild(button);
+        // --- Copiar estilos del botón de referencia ---
+        if (refButton) {
+            if (refButton.style.cssText) {
+                btn.style.cssText = refButton.style.cssText;
+            }
+            const refStyles = getComputedStyle(refButton);
+            btn.style.width = refStyles.width;
+            btn.style.margin = refStyles.margin;
+            btn.style.padding = refStyles.padding;
+            btn.style.borderRadius = refStyles.borderRadius;
+            btn.style.fontSize = refStyles.fontSize;
+            btn.style.display = refStyles.display || 'flex';
+            btn.style.alignItems = refStyles.alignItems || 'center';
+            btn.style.justifyContent = refStyles.justifyContent || 'center';
+            btn.style.gap = refStyles.gap || '8px';
+            btn.style.boxShadow = refStyles.boxShadow;
+            btn.style.transition = refStyles.transition || '0.3s';
+            btn.style.cursor = 'pointer';
+            btn.style.boxSizing = refStyles.boxSizing || 'border-box';
+            btn.style.lineHeight = refStyles.lineHeight || '1.5';
+        } else {
+            btn.style.width = 'calc(100% - 24px)';
+            btn.style.margin = '10px 12px';
+            btn.style.padding = '12px 16px';
+            btn.style.borderRadius = '12px';
+            btn.style.fontSize = '14px';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.gap = '8px';
+            btn.style.cursor = 'pointer';
+            btn.style.transition = '0.3s';
+            btn.style.boxSizing = 'border-box';
+            btn.style.lineHeight = '1.5';
+        }
 
-        applyResponsiveStyles(header, actionsContainer);
+        // --- FORZAR fondo rojo y texto blanco ---
+        btn.style.setProperty('background', 'linear-gradient(135deg, #dc3545, #b91c1c)', 'important');
+        btn.style.setProperty('background-color', '#dc3545', 'important');
+        btn.style.setProperty('color', '#ffffff', 'important');
+        btn.style.setProperty('border', 'none', 'important');
+        btn.style.setProperty('border-color', 'rgba(255,255,255,0.3)', 'important');
+        btn.style.setProperty('box-shadow', '0 4px 20px rgba(220,53,69,0.6)', 'important');
+        btn.style.setProperty('font-weight', 'bold', 'important');
+        btn.style.setProperty('text-shadow', '0 2px 4px rgba(0,0,0,0.3)', 'important');
+        btn.style.setProperty('width', 'calc(100% - 24px)', 'important');
 
-        console.log('✅ Botón de ayuda "?" añadido al header (responsivo)');
+        // --- Efectos hover ---
+        btn.addEventListener('mouseenter', () => {
+            btn.style.setProperty('background', 'linear-gradient(135deg, #ef4444, #dc2626)', 'important');
+            btn.style.setProperty('box-shadow', '0 8px 30px rgba(220,53,69,0.8)', 'important');
+            btn.style.setProperty('border-color', '#ffffff', 'important');
+            btn.style.transform = 'translateY(-2px) scale(1.02)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.setProperty('background', 'linear-gradient(135deg, #dc3545, #b91c1c)', 'important');
+            btn.style.setProperty('box-shadow', '0 4px 20px rgba(220,53,69,0.6)', 'important');
+            btn.style.setProperty('border-color', 'rgba(255,255,255,0.3)', 'important');
+            btn.style.transform = 'translateY(0) scale(1)';
+        });
+
+        // --- Evento click ---
+        btn.addEventListener('click', () => {
+            if (typeof openHelpModal === 'function') openHelpModal();
+            else alert('La ayuda no está disponible. Presiona F1.');
+        });
+
+        // --- Insertar el botón en el sidebar ---
+        sidebar.appendChild(btn);
+
+        // --- Función para mover el botón al final ---
+        function moverAlFinal() {
+            const sidebar = document.querySelector('nav, aside, .sidebar, #sidebar, .menu-lateral, .side-menu, .navigation, .nav-sidebar, [role="navigation"]');
+            const btn = document.getElementById('helpSidebarButton');
+            if (sidebar && btn && sidebar.lastElementChild !== btn) {
+                sidebar.appendChild(btn);
+                console.log('🔄 Botón de ayuda movido al final del sidebar.');
+            }
+        }
+
+        // --- Ejecutar moverAlFinal en varios momentos para cubrir carga dinámica ---
+        setTimeout(moverAlFinal, 0);
+        setTimeout(moverAlFinal, 100);
+        setTimeout(moverAlFinal, 300);
+        setTimeout(moverAlFinal, 500);
+
+        // --- Observer para mantenerlo al final si se añaden nuevos elementos ---
+        if (window.__helpSidebarObserver) {
+            window.__helpSidebarObserver.disconnect();
+        }
+        const observer = new MutationObserver(() => {
+            moverAlFinal();
+        });
+        observer.observe(sidebar, { childList: true, subtree: false });
+        window.__helpSidebarObserver = observer;
+
+        // --- Limpiar rayas residuales ---
+        document.querySelectorAll('div, hr, .separator, .divider, .help-separator').forEach(el => {
+            const style = getComputedStyle(el);
+            const height = parseFloat(el.style.height) || parseFloat(style.height) || 0;
+            const bg = style.background || style.backgroundColor || '';
+            if ((height < 10 && (bg.includes('red') || bg.includes('220,53,69') || bg.includes('dc35') || bg.includes('#dc'))) ||
+                el.tagName === 'HR') {
+                el.remove();
+            }
+        });
+
+        console.log('✅ Botón "🆘 Centro de Ayuda" creado y se mantendrá al final del menú lateral.');
     }
 
     // ============================================================
