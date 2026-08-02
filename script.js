@@ -71547,6 +71547,7 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 //  - Tarjeta con glassmorphism y bordes dorados sutiles
 //  - Tipografía elegante, espaciado refinado
 //  - No tapa el menú lateral
+//  - 🔥 MODIFICADO: Ahora tampoco tapa el header
 //  - Al cerrar, muestra la vista principal sin redirigir
 // ============================================================
 
@@ -71588,19 +71589,29 @@ function mostrarModalFull(transcripciones) {
         sidebarWidth = 0;
     }
 
+    // 🔥 NUEVO: Detectar el header para no cubrirlo
+    const header = document.querySelector('header, #header, .header, .navbar, .top-bar');
+    let headerHeight = 0;
+    if (header) {
+        headerHeight = header.offsetHeight || 60;
+    } else {
+        headerHeight = 0;
+    }
+
     // Eliminar modal previo si existe
     const prev = document.getElementById('modal-transcripciones-full');
     if (prev) prev.remove();
 
     // Overlay con fondo azul marino profundo y efecto de vidrio
+    // 🔥 MODIFICADO: top y height ajustados para respetar el header
     const overlay = document.createElement('div');
     overlay.id = 'modal-transcripciones-full';
     overlay.style.cssText = `
         position: fixed;
-        top: 0;
+        top: ${headerHeight}px;
         left: ${sidebarWidth}px;
         width: calc(100% - ${sidebarWidth}px);
-        height: 100%;
+        height: calc(100% - ${headerHeight}px);
         background: rgba(8, 20, 40, 0.88);
         backdrop-filter: blur(12px) saturate(180%);
         -webkit-backdrop-filter: blur(12px) saturate(180%);
