@@ -71541,143 +71541,190 @@ console.log(`📊 Proyectos: ${projects?.length || 0}`);
 
 
 
-// ==================== CARGAR TRANSCRIPCIONES DESDE MONGODB ====================
+// ============================================================
+//  MODAL VIP - ESTILO EJECUTIVO MODERNO (AZUL MARINO + ORO/PLATA)
+//  - Fondo del overlay: azul marino profundo con efecto de vidrio
+//  - Tarjeta con glassmorphism y bordes dorados sutiles
+//  - Tipografía elegante, espaciado refinado
+//  - No tapa el menú lateral
+//  - Al cerrar, muestra la vista principal sin redirigir
+// ============================================================
+
+// ==================== CARGAR TRANSCRIPCIONES ====================
 async function cargarTranscripciones() {
-// 🔥 NUEVA LÍNEA - EVITAR EJECUCIÓN EN LOGIN
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
     try {
-        // 🔥 OBTENER EL CLIENTEID DEL LOCALSTORAGE
         const clienteId = localStorage.getItem('clienteId');
-        
         if (!clienteId) {
             console.warn('⚠️ No hay clienteId en localStorage');
-            mostrarMensajeSinTranscripciones();
+            mostrarVistaPrincipal();
             return;
         }
-        
-        console.log('🔍 Cargando transcripciones para cliente:', clienteId);
-        
-        // 🔥 ENVIAR EL CLIENTEID EN LA URL
-        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`);
+
+        const response = await fetch(
+            `https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`
+        );
         const data = await response.json();
-        
-        console.log('📥 Respuesta del backend:', data);
-        
+
         if (data.success && data.transcripciones && data.transcripciones.length > 0) {
-            console.log(`✅ Mostrando ${data.transcripciones.length} transcripciones`);
-            mostrarTranscripciones(data.transcripciones);
+            mostrarModalFull(data.transcripciones);
         } else {
-            console.log('📭 No hay transcripciones para este cliente');
-            mostrarMensajeSinTranscripciones();
+            console.log('📭 No hay transcripciones');
+            mostrarVistaPrincipal();
         }
     } catch (error) {
-        console.error('❌ Error cargando transcripciones:', error);
-        mostrarMensajeSinTranscripciones();
+        console.error(error);
+        mostrarVistaPrincipal();
     }
 }
 
-// ==================== MOSTRAR TRANSCRIPCIONES EN UI ====================
-// ===== MOSTRAR TRANSCRIPCIONES CON DISEÑO PROFESIONAL =====
-function mostrarTranscripciones(transcripciones) {
-    console.log('🎨 Mostrando transcripciones en UI:', transcripciones.length);
-    
-    // Buscar contenedor
-    const posiblesContenedores = [
-        '#inicioView', '#dashboardView', '#transcripciones-historial'
-    ];
-    
-    let contenedor = null;
-    for (const selector of posiblesContenedores) {
-        const elemento = document.querySelector(selector);
-        if (elemento) {
-            contenedor = elemento;
-            break;
-        }
+// ==================== MOSTRAR MODAL VIP ====================
+function mostrarModalFull(transcripciones) {
+    // Detectar el menú lateral
+    const sidebar = document.querySelector('#sidebar, .sidebar, aside, .menu-lateral, .nav-sidebar');
+    let sidebarWidth = 0;
+    if (sidebar) {
+        sidebarWidth = sidebar.offsetWidth || 250;
+    } else {
+        sidebarWidth = 0;
     }
-    
-    if (!contenedor) {
-        contenedor = document.getElementById('inicioView') || document.body;
-    }
-    
-    // Crear o buscar el área de historial
-    let historial = document.getElementById('transcripciones-historial');
-    if (!historial) {
-        historial = document.createElement('div');
-        historial.id = 'transcripciones-historial';
-        historial.style.cssText = `
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(145deg, #1a1a2e, #16213e);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(139, 92, 246, 0.2);
-            position: relative;
-            overflow: hidden;
-        `;
-        
-        // Efecto de brillo en el borde
-        const glowEffect = document.createElement('div');
-        glowEffect.style.cssText = `
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #8b5cf6, #ec4899, #8b5cf6);
-            border-radius: 22px;
-            z-index: -1;
-            opacity: 0.5;
-            filter: blur(8px);
-            animation: borderGlow 3s ease infinite;
-        `;
-        historial.appendChild(glowEffect);
-        contenedor.appendChild(historial);
-    }
-    
-    // Header con gradiente y efectos
-    historial.innerHTML = `
-        <div style="
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 25px;
-            padding: 0 10px;
-            position: relative;
-        ">
-            <div style="display: flex; align-items: center; gap: 15px;">
+
+    // Eliminar modal previo si existe
+    const prev = document.getElementById('modal-transcripciones-full');
+    if (prev) prev.remove();
+
+    // Overlay con fondo azul marino profundo y efecto de vidrio
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-transcripciones-full';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: ${sidebarWidth}px;
+        width: calc(100% - ${sidebarWidth}px);
+        height: 100%;
+        background: rgba(8, 20, 40, 0.88);
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        z-index: 9000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 40px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        animation: fadeIn 0.5s ease;
+    `;
+
+    // Tarjeta central con glassmorphism y bordes brillantes
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: rgba(18, 34, 60, 0.65);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 32px;
+        width: 100%;
+        max-width: 1100px;
+        max-height: 85vh;
+        padding: 35px 40px;
+        box-shadow: 
+            0 40px 80px rgba(0,0,0,0.5),
+            0 0 0 1px rgba(255, 215, 0, 0.15),
+            inset 0 1px 0 rgba(255,255,255,0.05);
+        overflow-y: auto;
+        position: relative;
+        animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        border: 1px solid rgba(255, 215, 0, 0.08);
+        transition: all 0.3s ease;
+    `;
+
+    // Contenido del modal
+    modal.innerHTML = `
+        <style>
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+            @keyframes pulseGold { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
+            .trans-item-vip {
+                transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                background: rgba(255,255,255,0.02);
+                border: 1px solid rgba(255, 215, 0, 0.06);
+                border-radius: 20px;
+                backdrop-filter: blur(4px);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+            .trans-item-vip:hover {
+                transform: translateY(-6px) scale(1.005);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255, 215, 0, 0.2);
+                background: rgba(255,255,255,0.04);
+                border-color: rgba(255, 215, 0, 0.25);
+            }
+            .trans-item-vip::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: linear-gradient(135deg, rgba(255,215,0,0.03), rgba(255,215,0,0.01));
+                border-radius: 20px;
+                pointer-events: none;
+            }
+            .trans-item-vip::after {
+                content: '';
+                position: absolute;
+                top: -1px; left: -1px; right: -1px; bottom: -1px;
+                background: linear-gradient(45deg, rgba(255,215,0,0.05), transparent, rgba(255,215,0,0.05));
+                border-radius: 21px;
+                z-index: -1;
+                opacity: 0;
+                transition: opacity 0.4s;
+            }
+            .trans-item-vip:hover::after { opacity: 1; }
+            #modal-transcripciones-full::-webkit-scrollbar { width: 5px; }
+            #modal-transcripciones-full::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+            #modal-transcripciones-full::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.3); border-radius: 10px; }
+            .gold-text { color: #d4af37; }
+            .gold-border { border-color: rgba(255, 215, 0, 0.15); }
+            .gold-glow { box-shadow: 0 0 30px rgba(255, 215, 0, 0.05); }
+        </style>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:30px; flex-wrap:wrap; gap:15px;">
+            <div style="display:flex; align-items:center; gap:18px;">
                 <div style="
-                    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 15px;
+                    background: linear-gradient(135deg, #d4af37, #f5d76e);
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 24px;
-                    box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
-                    transform: rotate(5deg);
-                    transition: transform 0.3s ease;
-                " onmouseover="this.style.transform='rotate(0deg) scale(1.1)'" 
-                   onmouseout="this.style.transform='rotate(5deg)'">
-                    📋
+                    font-size: 28px;
+                    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+                    transform: rotate(0deg);
+                    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+                " onmouseover="this.style.transform='rotate(10deg) scale(1.05)'" onmouseout="this.style.transform='rotate(0deg) scale(1)'">
+                    <span style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">📋</span>
                 </div>
                 <div>
-                    <h3 style="
-                        color: white; 
-                        margin: 0; 
-                        font-size: 24px;
-                        font-weight: 600;
-                        text-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+                    <h2 style="
+                        color: #fff;
+                        margin: 0;
+                        font-size: 28px;
+                        font-weight: 300;
+                        letter-spacing: 1px;
+                        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
                     ">
-                        Transcripciones Teams
-                    </h3>
+                        <span style="font-weight: 600; color: #f5d76e;">Transcripciones</span> Teams
+                    </h2>
                     <p style="
-                        color: #94a3b8; 
-                        margin: 5px 0 0 0; 
-                        font-size: 13px;
+                        color: rgba(255,255,255,0.5);
+                        margin: 6px 0 0 0;
+                        font-size: 14px;
+                        letter-spacing: 0.3px;
                         display: flex;
                         align-items: center;
-                        gap: 5px;
+                        gap: 10px;
+                        font-weight: 300;
                     ">
                         <span style="
                             display: inline-block;
@@ -71685,323 +71732,233 @@ function mostrarTranscripciones(transcripciones) {
                             height: 8px;
                             background: #10b981;
                             border-radius: 50%;
-                            animation: pulse 2s infinite;
+                            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
                         "></span>
-                        ${transcripciones.length} transcripción(es) disponible(s)
+                        <span>${transcripciones.length} transcripción(es) disponible(s)</span>
+                        <span style="width:1px; height:16px; background:rgba(255,255,255,0.1);"></span>
+                        <span style="color: rgba(255,255,255,0.3); font-size: 12px;">●</span>
                     </p>
                 </div>
             </div>
-            
-            ${transcripciones.length > 0 ? `
+            <div style="display:flex; gap:12px; align-items:center;">
                 <button onclick="eliminarTodasTranscripciones()" style="
-                    background: linear-gradient(135deg, #ef4444, #dc2626);
-                    color: white;
-                    border: none;
-                    padding: 12px 20px;
-                    border-radius: 12px;
+                    background: rgba(255, 215, 0, 0.08);
+                    color: #f5d76e;
+                    border: 1px solid rgba(255, 215, 0, 0.15);
+                    padding: 10px 22px;
+                    border-radius: 30px;
                     cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 600;
+                    font-size: 13px;
+                    font-weight: 500;
+                    letter-spacing: 0.5px;
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+                    backdrop-filter: blur(10px);
                     transition: all 0.3s ease;
-                    transform: translateY(0);
-                " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 15px 30px rgba(239,68,68,0.4)'" 
-                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 20px rgba(239,68,68,0.3)'">
-                    🗑️ Eliminar todas
+                    font-family: 'Inter', system-ui, sans-serif;
+                " onmouseover="this.style.background='rgba(255,215,0,0.15)'; this.style.boxShadow='0 0 30px rgba(255,215,0,0.1)'" onmouseout="this.style.background='rgba(255,215,0,0.08)'; this.style.boxShadow='none'">
+                    <span>🗑️</span> Eliminar todas
                 </button>
-            ` : ''}
-        </div>
-    `;
-    
-    if (transcripciones.length === 0) {
-        historial.innerHTML += `
-            <div style="
-                text-align: center; 
-                padding: 60px 20px; 
-                color: #94a3b8;
-                background: rgba(255,255,255,0.02);
-                border-radius: 15px;
-                border: 1px dashed rgba(139, 92, 246, 0.3);
-            ">
-                <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.5;">📭</div>
-                <h4 style="color: white; margin-bottom: 10px; font-size: 20px;">No hay transcripciones</h4>
-                <p style="color: #64748b; max-width: 400px; margin: 0 auto;">
-                    Las transcripciones de Teams aparecerán aquí automáticamente cuando se generen
-                </p>
+                <button onclick="cerrarModalFull()" style="
+                    background: rgba(255,255,255,0.03);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    color: rgba(255,255,255,0.6);
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 50%;
+                    font-size: 22px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 300;
+                " onmouseover="this.style.background='rgba(239,68,68,0.15)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.color='#ef4444'" onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.06)'; this.style.color='rgba(255,255,255,0.6)'">
+                    ✕
+                </button>
             </div>
-        `;
-        return;
-    }
-    
-    // Ordenar por fecha
+        </div>
+
+        <div id="transcripciones-lista-full" style="margin-top:5px;"></div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Rellenar lista
+    const lista = document.getElementById('transcripciones-lista-full');
+    if (!lista) return;
+
     transcripciones.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    
+
     transcripciones.forEach((t, index) => {
         const id = t._id || t.id;
         if (!id) return;
-        
-        const fecha = new Date(t.fecha).toLocaleString();
+        const fecha = new Date(t.fecha).toLocaleString('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         const item = document.createElement('div');
-        item.className = 'transcripcion-item';
+        item.className = 'trans-item-vip';
         item.style.cssText = `
-            background: linear-gradient(145deg, rgba(30, 30, 46, 0.8), rgba(22, 22, 38, 0.9));
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative;
-            overflow: hidden;
-            animation: slideIn 0.5s ease-out ${index * 0.1}s both;
-            cursor: pointer;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            animation: slideUp 0.5s ease-out ${index * 0.06}s both;
         `;
-        
-        // Efecto de hover 3D
-        item.onmouseenter = function() {
-            this.style.transform = 'translateY(-5px) scale(1.02)';
-            this.style.boxShadow = '0 20px 40px rgba(139, 92, 246, 0.3)';
-            this.style.borderColor = '#8b5cf6';
-        };
-        
-        item.onmouseleave = function() {
-            this.style.transform = 'translateY(0) scale(1)';
-            this.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-            this.style.borderColor = 'rgba(139, 92, 246, 0.2)';
-        };
-        
-        item.onclick = (e) => {
-            if (!e.target.closest('button')) {
-                verDetalleTranscripcion(t);
-            }
-        };
-        
-        // Resumen truncado
-        let resumenHTML = t.resumen || 'Sin resumen';
-        if (resumenHTML.length > 120) {
-            resumenHTML = resumenHTML.substring(0, 120) + '...';
-        }
-        
+        let resumen = t.resumen || 'Sin resumen';
+        if (resumen.length > 160) resumen = resumen.substring(0, 160) + '...';
         item.innerHTML = `
-            <div style="display: flex; justify-content: space-between; gap: 20px;">
-                <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; gap:20px; align-items:center;">
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:10px;">
                         <div style="
-                            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                            background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(245,215,110,0.05));
                             width: 40px;
                             height: 40px;
-                            border-radius: 10px;
+                            border-radius: 12px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            font-size: 20px;
-                            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
-                        ">
-                            📄
-                        </div>
-                        <div>
+                            font-size: 18px;
+                            flex-shrink: 0;
+                            border: 1px solid rgba(255,215,0,0.06);
+                        ">📄</div>
+                        <div style="overflow:hidden;">
                             <h4 style="
-                                color: white; 
-                                margin: 0 0 4px 0; 
-                                font-size: 16px;
-                                font-weight: 600;
+                                color: #fff;
+                                margin: 0 0 4px 0;
+                                font-size: 17px;
+                                font-weight: 500;
+                                letter-spacing: 0.2px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                font-family: 'Inter', system-ui, sans-serif;
                             ">
                                 ${t.titulo || 'Transcripción'}
                             </h4>
                             <div style="
-                                color: #94a3b8; 
-                                font-size: 11px;
+                                color: rgba(255,255,255,0.35);
+                                font-size: 12px;
                                 display: flex;
                                 align-items: center;
-                                gap: 10px;
+                                gap: 14px;
+                                flex-wrap: wrap;
+                                font-weight: 300;
+                                letter-spacing: 0.2px;
                             ">
                                 <span>📅 ${fecha}</span>
                                 <span style="
-                                    background: #2d3748;
-                                    padding: 2px 6px;
-                                    border-radius: 4px;
-                                    color: #8b5cf6;
-                                ">ID: ${id.substring(0, 6)}...</span>
+                                    background: rgba(255,215,0,0.06);
+                                    padding: 2px 12px;
+                                    border-radius: 20px;
+                                    color: #d4af37;
+                                    font-size: 11px;
+                                    font-weight: 400;
+                                    border: 1px solid rgba(255,215,0,0.06);
+                                ">
+                                    ID: ${id.substring(0,6)}...
+                                </span>
                             </div>
                         </div>
                     </div>
-                    
                     <p style="
-                        color: #cbd5e1; 
-                        font-size: 13px; 
-                        line-height: 1.5; 
-                        margin: 0 0 15px 0;
-                        padding-left: 52px;
+                        color: rgba(255,255,255,0.6);
+                        font-size: 14px;
+                        line-height: 1.6;
+                        margin: 0 0 14px 0;
+                        padding-left: 54px;
+                        font-weight: 300;
+                        letter-spacing: 0.1px;
                     ">
-                        ${resumenHTML}
+                        ${resumen}
                     </p>
-                    
                     ${t.keyPoints && t.keyPoints.length > 0 ? `
-                        <div style="display: flex; flex-wrap: wrap; gap: 6px; padding-left: 52px;">
-                            ${t.keyPoints.slice(0, 3).map(kp => `
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; padding-left:54px;">
+                            ${t.keyPoints.slice(0,4).map(kp => `
                                 <span style="
-                                    background: linear-gradient(135deg, #2d3748, #1e2937);
-                                    border: 1px solid #4a5568;
-                                    color: #a0aec0;
-                                    padding: 4px 12px;
-                                    border-radius: 20px;
+                                    background: rgba(255,215,0,0.04);
+                                    border: 1px solid rgba(255,215,0,0.06);
+                                    color: rgba(255,215,0,0.7);
+                                    padding: 2px 14px;
+                                    border-radius: 30px;
                                     font-size: 11px;
-                                    font-weight: 500;
-                                    transition: all 0.2s;
-                                " onmouseover="this.style.background='#4a5568'; this.style.color='white'" 
-                                   onmouseout="this.style.background='linear-gradient(135deg, #2d3748, #1e2937)'; this.style.color='#a0aec0'">
-                                    ${kp.substring(0, 20)}${kp.length > 20 ? '...' : ''}
+                                    font-weight: 400;
+                                    letter-spacing: 0.2px;
+                                    transition: all 0.3s;
+                                " onmouseover="this.style.background='rgba(255,215,0,0.08)'; this.style.color='#f5d76e'" onmouseout="this.style.background='rgba(255,215,0,0.04)'; this.style.color='rgba(255,215,0,0.7)'">
+                                    ${kp.substring(0,22)}${kp.length>22?'...':''}
                                 </span>
                             `).join('')}
-                            ${t.keyPoints.length > 3 ? 
-                                `<span style="
-                                    color: #8b5cf6; 
+                            ${t.keyPoints.length > 4 ? `
+                                <span style="
+                                    color: rgba(255,215,0,0.5);
                                     font-size: 11px;
-                                    background: rgba(139, 92, 246, 0.1);
-                                    padding: 4px 10px;
-                                    border-radius: 20px;
-                                ">+${t.keyPoints.length-3}</span>` 
-                                : ''}
+                                    background: rgba(255,215,0,0.03);
+                                    padding: 2px 14px;
+                                    border-radius: 30px;
+                                    border: 1px solid rgba(255,215,0,0.04);
+                                ">+${t.keyPoints.length-4}</span>
+                            ` : ''}
                         </div>
                     ` : ''}
                 </div>
-                
                 <button onclick="event.stopPropagation(); eliminarTranscripcion('${id}')" style="
-                    background: linear-gradient(135deg, rgba(239,68,68,0.9), rgba(220,38,38,0.9));
-                    border: none;
-                    color: white;
-                    padding: 10px 16px;
-                    border-radius: 10px;
+                    background: rgba(239,68,68,0.06);
+                    border: 1px solid rgba(239,68,68,0.08);
+                    color: rgba(255,255,255,0.5);
+                    padding: 8px 16px;
+                    border-radius: 30px;
                     cursor: pointer;
-                    font-size: 13px;
-                    font-weight: 600;
+                    font-size: 12px;
+                    font-weight: 400;
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                    height: fit-content;
-                    box-shadow: 0 5px 15px rgba(239,68,68,0.3);
-                    backdrop-filter: blur(5px);
                     transition: all 0.3s ease;
-                    transform: translateY(0);
-                " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 25px rgba(239,68,68,0.5)'" 
-                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 5px 15px rgba(239,68,68,0.3)'">
-                    🗑️ Eliminar
+                    flex-shrink: 0;
+                    backdrop-filter: blur(4px);
+                    letter-spacing: 0.3px;
+                " onmouseover="this.style.background='rgba(239,68,68,0.15)'; this.style.borderColor='rgba(239,68,68,0.3)'; this.style.color='#ef4444'; this.style.boxShadow='0 0 20px rgba(239,68,68,0.05)'" onmouseout="this.style.background='rgba(239,68,68,0.06)'; this.style.borderColor='rgba(239,68,68,0.08)'; this.style.color='rgba(255,255,255,0.5)'; this.style.boxShadow='none'">
+                    <span>🗑️</span> Eliminar
                 </button>
             </div>
         `;
-        
-        historial.appendChild(item);
+        item.addEventListener('click', (e) => {
+            if (!e.target.closest('button')) verDetalleTranscripcion(t);
+        });
+        lista.appendChild(item);
     });
-    
-    // Agregar estilos CSS para animaciones
-    if (!document.getElementById('transcripciones-styles')) {
-        const style = document.createElement('style');
-        style.id = 'transcripciones-styles';
-        style.textContent = `
-            @keyframes borderGlow {
-                0% { opacity: 0.5; filter: blur(8px); }
-                50% { opacity: 0.8; filter: blur(10px); }
-                100% { opacity: 0.5; filter: blur(8px); }
-            }
-            
-            @keyframes pulse {
-                0% { opacity: 1; transform: scale(1); }
-                50% { opacity: 0.5; transform: scale(1.2); }
-                100% { opacity: 1; transform: scale(1); }
-            }
-            
-            @keyframes slideIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(30px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            
-            .transcripcion-item::before {
-                content: '';
-                position: absolute;
-                top: -2px;
-                left: -2px;
-                right: -2px;
-                bottom: -2px;
-                background: linear-gradient(45deg, #8b5cf6, #ec4899, #8b5cf6);
-                border-radius: 18px;
-                z-index: -1;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-            
-            .transcripcion-item:hover::before {
-                opacity: 0.3;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
-    console.log('✅ Transcripciones mostradas con diseño 3D');
 }
 
-// ==================== CREAR CONTENEDOR SI NO EXISTE ====================
-function crearContenedorTranscripciones(transcripciones) {
-    let contenedor = document.getElementById('transcripciones-container');
-    if (!contenedor) {
-        contenedor = document.createElement('div');
-        contenedor.id = 'transcripciones-container';
-        contenedor.className = 'transcripciones-container';
-        contenedor.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            background: #0a0a1a;
-            border: 1px solid #4CAF50;
-            border-radius: 10px;
-            padding: 20px;
-            z-index: 10000;
-            color: white;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
-        `;
-        document.body.appendChild(contenedor);
+// ==================== CERRAR MODAL Y MOSTRAR VISTA ====================
+function cerrarModalFull() {
+    const overlay = document.getElementById('modal-transcripciones-full');
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.4s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.remove();
+            mostrarVistaPrincipal();
+        }, 400);
+    } else {
+        mostrarVistaPrincipal();
     }
-    
-    let html = '<h3 style="color: #4CAF50; margin-bottom: 20px;">📋 Historial de Transcripciones</h3>';
-    
-    transcripciones.forEach(t => {
-        const fecha = new Date(t.fecha).toLocaleString();
-        html += `
-            <div onclick='verDetalleTranscripcion(${JSON.stringify(t).replace(/'/g, "\\'")})' style="border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 15px; background: #1e1e2f; border-radius: 8px; cursor: pointer;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <strong style="color: #4CAF50;">${t.titulo || 'Sin título'}</strong>
-                    <span style="color: #888; font-size: 12px;">${fecha}</span>
-                </div>
-                <div style="color: #ddd; margin-bottom: 10px; font-size: 14px;">
-                    ${t.resumen || 'Sin resumen'}
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    ${t.keyPoints ? t.keyPoints.slice(0, 3).map(kp => 
-                        `<span style="background: #2c3e50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${kp.substring(0, 30)}...</span>`
-                    ).join('') : ''}
-                </div>
-            </div>
-        `;
-    });
-    
-    contenedor.innerHTML = html;
 }
 
-// ==================== VER DETALLE COMPLETO ====================
+// ==================== MOSTRAR VISTA PRINCIPAL ====================
+function mostrarVistaPrincipal() {
+    const principal = document.querySelector('#app, .main-container, #inicioView, #dashboardView, .contenido-principal');
+    if (principal) principal.style.display = '';
+}
+
+// ==================== VER DETALLE (MODAL SECUNDARIO) ====================
 function verDetalleTranscripcion(transcripcion) {
-    // Crear modal
     const modal = document.createElement('div');
     modal.style.cssText = `
         position: fixed;
@@ -72009,91 +71966,117 @@ function verDetalleTranscripcion(transcripcion) {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.9);
+        background: rgba(8, 20, 40, 0.85);
+        backdrop-filter: blur(12px);
         z-index: 10001;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
+        animation: fadeIn 0.3s ease;
     `;
-    
-    const fecha = new Date(transcripcion.fecha).toLocaleString();
-    
+    const fecha = new Date(transcripcion.fecha).toLocaleString('es-ES', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
     modal.innerHTML = `
-        <div style="background: #1a1a2e; border: 2px solid #4CAF50; border-radius: 15px; padding: 30px; max-width: 800px; max-height: 90vh; overflow-y: auto; color: white;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                <h2 style="color: #4CAF50; margin: 0;">📝 Detalle de Transcripción</h2>
-                <button onclick="this.closest('div[style*=\\'fixed\\']').remove()" style="background: #e74c3c; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">✕</button>
+        <div style="
+            background: rgba(18, 34, 60, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 35px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #fff;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.05);
+            position: relative;
+        ">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h2 style="color: #f5d76e; margin:0; font-size:24px; font-weight:300; letter-spacing:0.5px;">
+                    <span style="font-weight:600;">Detalle</span> de transcripción
+                </h2>
+                <button onclick="this.closest('div[style*=\\'fixed\\']').remove()" style="
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    color: rgba(255,255,255,0.4);
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 50%;
+                    font-size: 20px;
+                    cursor: pointer;
+                    transition: 0.3s;
+                " onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.borderColor='rgba(239,68,68,0.2)'; this.style.color='#ef4444'" onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.05)'; this.style.color='rgba(255,255,255,0.4)'">✕</button>
             </div>
-            
-            <p><strong>Título:</strong> ${transcripcion.titulo || 'Sin título'}</p>
-            <p><strong>Fecha:</strong> ${fecha}</p>
-            
-            <h3 style="color: #4CAF50; margin: 20px 0 10px;">📄 Transcripción</h3>
-            <div style="background: #0f0f1f; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
-                ${transcripcion.transcripcion.replace(/\n/g, '<br>')}
+            <div style="margin-bottom:15px;">
+                <p style="margin:4px 0;"><span style="color:rgba(255,255,255,0.4); font-weight:300;">Título</span> <br><strong style="font-weight:400; font-size:18px;">${transcripcion.titulo || 'Sin título'}</strong></p>
+                <p style="margin:4px 0; color:rgba(255,255,255,0.3); font-size:13px;">📅 ${fecha}</p>
             </div>
-            
-            <h3 style="color: #4CAF50; margin: 20px 0 10px;">📋 Resumen</h3>
-            <p>${transcripcion.resumen || 'No disponible'}</p>
-            
+            <h3 style="color:#f5d76e; margin:20px 0 10px; font-weight:300; letter-spacing:0.3px; font-size:16px; border-bottom:1px solid rgba(255,215,0,0.05); padding-bottom:8px;">📄 Transcripción</h3>
+            <div style="
+                background: rgba(0,0,0,0.2);
+                padding: 16px;
+                border-radius: 16px;
+                max-height: 180px;
+                overflow-y: auto;
+                font-size: 14px;
+                line-height: 1.7;
+                color: rgba(255,255,255,0.7);
+                font-weight: 300;
+                border: 1px solid rgba(255,255,255,0.02);
+            ">
+                ${transcripcion.transcripcion ? transcripcion.transcripcion.replace(/\n/g,'<br>') : 'No disponible'}
+            </div>
+            <h3 style="color:#f5d76e; margin:20px 0 10px; font-weight:300; letter-spacing:0.3px; font-size:16px; border-bottom:1px solid rgba(255,215,0,0.05); padding-bottom:8px;">📋 Resumen</h3>
+            <p style="background:rgba(0,0,0,0.15); padding:14px; border-radius:12px; color:rgba(255,255,255,0.7); font-weight:300; border:1px solid rgba(255,255,255,0.02);">${transcripcion.resumen || 'No disponible'}</p>
             ${transcripcion.keyPoints && transcripcion.keyPoints.length > 0 ? `
-                <h3 style="color: #4CAF50; margin: 20px 0 10px;">📌 Puntos Clave</h3>
-                <ul>
-                    ${transcripcion.keyPoints.map(kp => `<li style="margin-bottom: 8px;">${kp}</li>`).join('')}
-                </ul>
-            ` : ''}
-            
-            ${transcripcion.acciones && transcripcion.acciones.length > 0 ? `
-                <h3 style="color: #4CAF50; margin: 20px 0 10px;">✅ Acciones</h3>
-                <ul>
-                    ${transcripcion.acciones.map(a => `<li style="margin-bottom: 8px;">${a}</li>`).join('')}
-                </ul>
-            ` : ''}
-            
-            ${transcripcion.decisions && transcripcion.decisions.length > 0 ? `
-                <h3 style="color: #4CAF50; margin: 20px 0 10px;">⚖️ Decisiones</h3>
-                <ul>
-                    ${transcripcion.decisions.map(d => `<li style="margin-bottom: 8px;">${d}</li>`).join('')}
-                </ul>
+                <h3 style="color:#f5d76e; margin:20px 0 10px; font-weight:300; letter-spacing:0.3px; font-size:16px; border-bottom:1px solid rgba(255,215,0,0.05); padding-bottom:8px;">📌 Puntos Clave</h3>
+                <ul style="padding-left:20px; color:rgba(255,255,255,0.7); font-weight:300; line-height:1.6;">${transcripcion.keyPoints.map(kp => `<li style="margin-bottom:6px;">${kp}</li>`).join('')}</ul>
             ` : ''}
         </div>
     `;
-    
     document.body.appendChild(modal);
 }
 
-// ==================== MOSTRAR MENSAJE SIN TRANSCRIPCIONES ====================
-function mostrarMensajeSinTranscripciones() {
-    const contenedor = document.querySelector('.transcriptor-container, #transcriptor, .ia-section');
-    if (contenedor) {
-        let msg = document.getElementById('transcripciones-mensaje');
-        if (!msg) {
-            msg = document.createElement('div');
-            msg.id = 'transcripciones-mensaje';
-            msg.style.cssText = `
-                padding: 20px;
-                text-align: center;
-                color: #888;
-                font-style: italic;
-            `;
-            contenedor.appendChild(msg);
-        }
-        msg.innerHTML = '📭 No hay transcripciones guardadas';
-    }
+// ==================== ELIMINAR UNA TRANSCRIPCIÓN ====================
+async function eliminarTranscripcion(id) {
+    if (!confirm('¿Eliminar esta transcripción?')) return;
+    try {
+        const clienteId = localStorage.getItem('clienteId');
+        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones/${id}?clienteId=${clienteId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+            alert('✅ Eliminada');
+            cerrarModalFull();
+            setTimeout(cargarTranscripciones, 300);
+        } else alert('❌ Error: ' + data.message);
+    } catch (error) { console.error(error); alert('❌ Error'); }
+}
+
+// ==================== ELIMINAR TODAS ====================
+async function eliminarTodasTranscripciones() {
+    if (!confirm('⚠️ ¿Eliminar TODAS las transcripciones?')) return;
+    try {
+        const clienteId = localStorage.getItem('clienteId');
+        const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/transcripciones?clienteId=${clienteId}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+            alert('✅ Todas eliminadas');
+            cerrarModalFull();
+            setTimeout(cargarTranscripciones, 300);
+        } else alert('❌ Error: ' + data.message);
+    } catch (error) { console.error(error); alert('❌ Error'); }
 }
 
 // ==================== INICIALIZAR ====================
-// Ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(cargarTranscripciones, 2000);
-    });
-} else {
-    setTimeout(cargarTranscripciones, 2000);
-}
-
-
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(cargarTranscripciones, 1500);
+});
 
 
 // ==================== OBTENER USUARIO COMPLETO CON CLIENTEID ====================
