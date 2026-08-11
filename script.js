@@ -1,6 +1,140 @@
+// ============================================================
+// 🔥 OBTENER ESTADO DE PRUEBA DESDE EL BACKEND
+// ============================================================
+window.fetchTrialStatus = async function() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/trial-status', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
+        if (response.ok) {
+            window.trialStatus = await response.json();
+            console.log('📊 Estado de prueba:', window.trialStatus);
+        } else {
+            console.error('❌ Error obteniendo estado:', response.status);
+        }
+    } catch (error) {
+        console.error('❌ Error en fetchTrialStatus:', error);
+    }
+};
 
+// BLOQUEO DE PRUEBA EXPIRADA - DEFINITIVO
+function verificarBloqueoPrueba() {
+  if (window.trialStatus && !window.trialStatus.trialActive) {
+    // --- 1. Deshabilitar botones de creación y edición ---
+    const selectores = [
+      '#createProjectBtn', '.new-project-btn', '[data-action="create-project"]',
+      '.task-edit-btn', '.task-delete-btn', '.task-move-up-btn', '.task-move-down-btn',
+      '.edit-task-btn', '.delete-task-btn', '.move-task-btn',
+      '.project-edit-btn', '.project-delete-btn', '.project-settings-btn',
+      '.task-status-select', '.task-assignee-select', '.task-due-date-input',
+      '.task-description-edit', '.task-title-edit',
+      'button[onclick*="editTask"]', 'button[onclick*="deleteTask"]',
+      'button[onclick*="moveTask"]', 'button[onclick*="saveTask"]',
+      '.drag-handle', '.sortable-handle'
+    ];
+    document.querySelectorAll(selectores.join(',')).forEach(el => {
+      el.disabled = true;
+      el.style.opacity = '0.4';
+      el.style.cursor = 'not-allowed';
+      el.title = 'Prueba expirada - solo lectura';
+      // Para botones que no soportan disabled, evitar clics
+      el.style.pointerEvents = 'none';
+    });
+
+    // --- 2. Bloquear drag & drop ---
+    document.querySelectorAll('.kanban-column, .task-item, .gantt-task, .draggable').forEach(el => {
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.7';
+    });
+
+    // --- 3. Interceptar localStorage ---
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      if (key === 'projects' || key === 'projectsData' || key === 'projectData' || key === 'tasks') {
+        console.warn('🚫 Intento de guardar proyecto bloqueado');
+        return;
+      }
+      originalSetItem.call(this, key, value);
+    };
+
+    // --- 4. Interceptar fetch para bloquear TODAS las operaciones de modificación ---
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      // Si es una llamada a la API y el método no es GET (y no es trial-status ni auth)
+      if (typeof url === 'string' && url.includes('/api/')) {
+        const method = options?.method || 'GET';
+        const isGet = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+        const isSafe = url.includes('/api/trial-status') || url.includes('/api/auth');
+        if (!isGet && !isSafe) {
+          window.mostrarModalPruebaExpirada();
+          return Promise.reject(new Error('Prueba expirada - operación bloqueada'));
+        }
+      }
+      return originalFetch.call(this, url, options);
+    };
+
+    // --- 5. Interceptar funciones globales de modificación ---
+    const funcionesAInterceptar = [
+      'createNewProject', 'createProject', 'addProject', 'saveProject',
+      'saveTaskChanges', 'createNewTask', 'addTask', 'saveTask',
+      'deleteTask', 'removeTask', 'moveTaskUp', 'moveTaskDown',
+      'editTask', 'updateTask', 'updateProject', 'editProject',
+      'saveProjectChanges', 'updateTaskStatus', 'moveTask',
+      'changeTaskStatus', 'assignTask', 'setTaskDueDate',
+      'addComment', 'updateComment', 'deleteComment'
+    ];
+    funcionesAInterceptar.forEach(funcName => {
+      if (typeof window[funcName] === 'function') {
+        const original = window[funcName];
+        window[funcName] = function() {
+          if (!window.pruebaActiva()) {
+            window.mostrarModalPruebaExpirada();
+            return;
+          }
+          return original.apply(this, arguments);
+        };
+        console.log(`✅ Función ${funcName} interceptada`);
+      }
+    });
+
+    // --- 6. Mostrar mensaje de solo lectura encima del contenido ---
+    if (!document.getElementById('bloqueoPruebaMsg')) {
+      const msg = document.createElement('div');
+      msg.id = 'bloqueoPruebaMsg';
+      msg.style.cssText = `
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc3545;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 10px;
+        z-index: 999999;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(220,53,69,0.5);
+        text-align: center;
+        font-size: 14px;
+        cursor: pointer;
+      `;
+      msg.textContent = '⛔ MODO SOLO LECTURA - Prueba terminada. Haz clic para ver planes.';
+      msg.onclick = () => window.mostrarModalPruebaExpirada();
+      document.body.prepend(msg);
+    }
+
+    // --- 7. Ocultar botón de "Nuevo Proyecto" y otros ---
+    document.querySelectorAll('#createProjectBtn, .new-project-btn').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    return true;
+  }
+  return false;
+}
 
 
 
@@ -3601,328 +3735,427 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// ============================================
-// 🎯 SISTEMA DE PRUEBA DE 7 DÍAS + BLOQUEO PARCIAL
-// ============================================
+// ============================================================
+// 🔒 SISTEMA DE PRUEBA DE 7 DÍAS - VERSIÓN DEFINITIVA
+// ============================================================
 
 (function sistemaPruebaCompleto() {
     console.log('🎯 Iniciando sistema de prueba de 7 días...');
-    
-    const DIAS_PRUEBA = 7;
-    const PLAN_FREE = 'free';
-    const PLAN_PROFESSIONAL = 'professional';
-    
+
     // ============================================
-    // FUNCIONES AUXILIARES
+    // 1. OBTENER ESTADO DEL BACKEND
     // ============================================
-    function haySesionActiva() {
-        const token = localStorage.getItem('authToken');
-        const user = localStorage.getItem('user');
-        return !!(token && user);
-    }
-    
-    function obtenerFechaInicioPrueba() {
-        let fechaInicio = localStorage.getItem('fechaInicioPrueba');
-        if (!fechaInicio) {
-            fechaInicio = new Date().toISOString();
-            localStorage.setItem('fechaInicioPrueba', fechaInicio);
-            console.log('📅 PRUEBA INICIADA:', new Date(fechaInicio).toLocaleDateString());
+    window.fetchTrialStatus = async function() {
+        try {
+            const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+            if (!token) return null;
+
+            const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/trial-status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Error al obtener estado');
+
+            const data = await response.json();
+            window.trialStatus = data;
+            console.log('📊 Estado de prueba:', data);
+            return data;
+        } catch (error) {
+            console.error('❌ Error en fetchTrialStatus:', error);
+            return null;
         }
-        return new Date(fechaInicio);
-    }
-    
-    function calcularDiasRestantes() {
-        const fechaInicio = obtenerFechaInicioPrueba();
-        const hoy = new Date();
-        const diffDias = Math.floor((hoy - fechaInicio) / (1000 * 60 * 60 * 24));
-        const diasRestantes = DIAS_PRUEBA - diffDias;
-        return {
-            fechaInicio,
-            diasTranscurridos: diffDias,
-            diasRestantes: Math.max(0, diasRestantes),
-            expirada: diffDias >= DIAS_PRUEBA
-        };
-    }
-    
-    // ============================================
-    // VERIFICAR SI LA PRUEBA ESTÁ ACTIVA
-    // ============================================
-    function pruebaActiva() {
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    if (userPlan === 'professional' || userPlan === 'premium') return true;
-    const estado = calcularDiasRestantes();
-    return !estado.expirada;
-}
-    // ============================================
-    // MOSTRAR MODAL DE EXPIRACIÓN
-    // ============================================
-    window.mostrarModalPruebaExpirada = function() {
-        const modalExistente = document.getElementById('modalPruebaExpirada');
-        if (modalExistente) modalExistente.remove();
-        
-        const modal = document.createElement('div');
-        modal.id = 'modalPruebaExpirada';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(10px);
-            z-index: 9999999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-        
-        modal.innerHTML = `
-            <div style="
-                background: linear-gradient(135deg, #0f172a, #1e293b);
-                border-radius: 24px;
-                padding: 40px;
-                max-width: 500px;
-                width: 90%;
-                border: 2px solid #ef4444;
-                text-align: center;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            ">
-                <div style="font-size: 64px; margin-bottom: 20px;">⏰</div>
-                <h2 style="color: white; margin: 0 0 15px 0; font-size: 28px;">¡Tu prueba gratuita ha terminado!</h2>
-                <p style="color: #94a3b8; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-                    Tu período de prueba de <strong style="color: #8b5cf6;">7 días</strong> ha finalizado.
-                    <br><br>
-                    <strong style="color: #f59e0b;">Puedes seguir viendo</strong> tus proyectos y tareas, pero <strong style="color: #ef4444;">no podrás crear ni modificar</strong> nada hasta que actualices.
-                    <br><br>
-                    Actualiza a <strong style="color: #f59e0b;">Professional</strong> o <strong style="color: #ec4899;">Premium</strong> para continuar.
-                </p>
-                
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="window.showLicensesView(); document.getElementById('modalPruebaExpirada').remove();" style="
-                        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-                        border: none;
-                        color: white;
-                        padding: 14px 30px;
-                        border-radius: 40px;
-                        font-weight: 700;
-                        font-size: 16px;
-                        cursor: pointer;
-                        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
-                    ">
-                        📈 Actualizar Ahora
-                    </button>
-                    <button onclick="document.getElementById('modalPruebaExpirada').remove()" style="
-                        background: transparent;
-                        border: 2px solid #475569;
-                        color: #94a3b8;
-                        padding: 14px 30px;
-                        border-radius: 40px;
-                        font-weight: 600;
-                        font-size: 16px;
-                        cursor: pointer;
-                    ">
-                        Cerrar (modo solo lectura)
-                    </button>
-                </div>
-                
-                <p style="color: #64748b; font-size: 12px; margin-top: 20px;">
-                    🔒 Tus datos están seguros. Puedes actualizar cuando quieras.
-                </p>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
     };
-    
+
     // ============================================
-    // MOSTRAR BADGE
+    // 2. MODAL BONITO DE PRUEBA EXPIRADA
+    // ============================================
+ window.mostrarModalPruebaExpirada = function() {
+    if (document.getElementById('modalPruebaExpirada')) return;
+
+    // Variable para controlar la vista actual
+    let vistaActual = 'expirado'; // 'expirado' o 'planes'
+
+    // Overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'modalPruebaExpirada';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(12px);
+        z-index: 9999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+        padding: 1.5rem;
+    `;
+
+    // Contenedor del modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: linear-gradient(145deg, #1a1a2e, #16213e);
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2.5rem 2rem;
+        border-radius: 30px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139, 92, 246, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        position: relative;
+        animation: slideUp 0.4s ease;
+        scrollbar-width: thin;
+        scrollbar-color: #8b5cf6 transparent;
+    `;
+    modal.innerHTML = `
+        <button onclick="window.cerrarModalPruebaExpirada()" style="
+            position: sticky;
+            top: 0;
+            float: right;
+            background: rgba(239,68,68,0.8);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 10;
+            margin-bottom: 1rem;
+        " onmouseover="this.style.background='#ef4444'" onmouseout="this.style.background='rgba(239,68,68,0.8)'">✕</button>
+        <div id="modalPruebaContent">
+            <!-- Contenido dinámico -->
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Función para renderizar la vista
+    function renderVista(vista) {
+        const content = document.getElementById('modalPruebaContent');
+        if (!content) return;
+
+        if (vista === 'expirado') {
+            content.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 70px; margin-bottom: 10px;">⛔</div>
+                    <h2 style="color: #fff; font-size: 28px; font-weight: 700; margin-bottom: 12px;">
+                        Período de Prueba Terminado
+                    </h2>
+                    <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #8b5cf6, #a78bfa); margin: 0 auto 20px;"></div>
+                    <p style="color: #cbd5e1; font-size: 16px; line-height: 1.7; margin-bottom: 30px;">
+                        Tu período de prueba de 7 días ha expirado.<br>
+                        <strong style="color: #a78bfa;">Para seguir usando el sistema, elige un plan de pago.</strong>
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="window.cambiarVistaPlanes()" style="
+                            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                            color: white;
+                            padding: 14px 40px;
+                            border-radius: 60px;
+                            font-weight: 700;
+                            font-size: 17px;
+                            border: none;
+                            cursor: pointer;
+                            box-shadow: 0 8px 25px rgba(139,92,246,0.4);
+                            transition: transform 0.2s, box-shadow 0.2s;
+                        " onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 12px 35px rgba(139,92,246,0.6)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 8px 25px rgba(139,92,246,0.4)'">
+                            ✨ Ver Planes Premium
+                        </button>
+                        <button onclick="window.cerrarModalPruebaExpirada()" style="
+                            background: transparent;
+                            color: #94a3b8;
+                            border: 1px solid #334155;
+                            padding: 14px 30px;
+                            border-radius: 60px;
+                            font-weight: 600;
+                            font-size: 15px;
+                            cursor: pointer;
+                            transition: background 0.2s, color 0.2s;
+                        " onmouseover="this.style.background='#1e293b';this.style.color='#f1f5f9'" onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                            Cerrar
+                        </button>
+                    </div>
+                    <p style="color: #64748b; font-size: 13px; margin-top: 20px;">
+                        💳 Si ya pagaste, contacta a <a href="#" style="color: #a78bfa; text-decoration: none;" onclick="window.mostrarContactoVentas(); return false;">soporte</a>
+                    </p>
+                </div>
+            `;
+        } else if (vista === 'planes') {
+            // Aquí mostramos los planes de precios (similares a los de la landing page)
+            content.innerHTML = `
+                <h2 style="color: #fff; text-align: center; font-size: 24px; margin-bottom: 1.5rem;">🌟 Elige tu plan</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <!-- Plan Professional -->
+                    <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(99,102,241,0.3);">
+                        <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Professional</h3>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€30</div>
+                        <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
+                        <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
+                            <li style="padding: 0.3rem 0;">✅ Proyectos ilimitados</li>
+                            <li style="padding: 0.3rem 0;">✅ Gantt Ejecutivo</li>
+                            <li style="padding: 0.3rem 0;">✅ EVM / Rentabilidad</li>
+                            <li style="padding: 0.3rem 0;">✅ Dashboard 4D</li>
+                            <li style="padding: 0.3rem 0;">✅ 4 Agentes IA</li>
+                        </ul>
+                        <a href="https://buy.stripe.com/cNibJ2fxq4mlaJccBCcfK01?prefilled_promo_code=ZACKY20" target="_blank" style="display: block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-align: center; padding: 0.8rem; border-radius: 50px; text-decoration: none; font-weight: 600;">Contratar</a>
+                    </div>
+                    <!-- Plan Premium -->
+                    <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(245,158,11,0.3); position: relative;">
+                        <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f59e0b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: #0a0a1a;">MÁS POPULAR</div>
+                        <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Premium</h3>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€35</div>
+                        <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
+                        <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
+                            <li style="padding: 0.3rem 0;">🔥 Todo Professional</li>
+                            <li style="padding: 0.3rem 0;">✅ Colaboración en tiempo real</li>
+                            <li style="padding: 0.3rem 0;">✅ PM Virtual IA</li>
+                            <li style="padding: 0.3rem 0;">✅ Soporte VIP 24/7</li>
+                            <li style="padding: 0.3rem 0;">✅ APP móvil</li>
+                        </ul>
+                        <button onclick="window.mostrarContactoVentas()" style="display: block; width: 100%; background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; border: none; padding: 0.8rem; border-radius: 50px; font-weight: 600; cursor: pointer;">Contactar Ventas</button>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button onclick="window.cambiarVistaExpirado()" style="background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 0.6rem 1.5rem; border-radius: 30px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#1e293b';this.style.color='#f1f5f9'" onmouseout="this.style.background='transparent';this.style.color='#94a3b8'">
+                        ← Volver
+                    </button>
+                    <button onclick="window.cerrarModalPruebaExpirada()" style="background: transparent; color: #94a3b8; border: none; padding: 0.6rem 1.5rem; cursor: pointer;">Cerrar</button>
+                </div>
+            `;
+        }
+    }
+
+    // Funciones globales para cambiar vistas
+    window.cambiarVistaPlanes = function() {
+        vistaActual = 'planes';
+        renderVista('planes');
+    };
+
+    window.cambiarVistaExpirado = function() {
+        vistaActual = 'expirado';
+        renderVista('expirado');
+    };
+
+    window.mostrarContactoVentas = function() {
+        alert(
+            '📞 CONTACTO DE VENTAS\n\n' +
+            '👤 Angel Jackson\n' +
+            '📧 angel.jackson@thejacksonssolutions.com\n' +
+            '📱 +34 634 122 273\n' +
+            '💬 WhatsApp: +34 634 122 273\n\n' +
+            'Estamos disponibles para atenderte.'
+        );
+    };
+
+    // Renderizar vista inicial
+    renderVista('expirado');
+
+    // Inyectar estilos de animación si no existen
+    if (!document.getElementById('modalPruebaStyles')) {
+        const style = document.createElement('style');
+        style.id = 'modalPruebaStyles';
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        `;
+        document.head.appendChild(style);
+    }
+};
+
+// Función para cerrar el modal
+window.cerrarModalPruebaExpirada = function() {
+    const modal = document.getElementById('modalPruebaExpirada');
+    if (modal) modal.remove();
+    // Limpiar variables globales
+    delete window.cambiarVistaPlanes;
+    delete window.cambiarVistaExpirado;
+    delete window.mostrarContactoVentas;
+};
+
+    // ============================================
+    // 3. MOSTRAR BADGE
     // ============================================
     window.mostrarBadgePrueba = function() {
-        const userPlan = localStorage.getItem('userPlan') || PLAN_FREE;
-        if (userPlan === PLAN_PROFESSIONAL) return;
-        
-        if (userPlan === PLAN_FREE) {
-            const estado = calcularDiasRestantes();
-            
-            if (estado.expirada) {
-                console.log('⛔ Prueba expirada - Modo solo lectura');
-                return;
-            }
-            
-            // Caso 1: Primer día - Badge de bienvenida
-            if (estado.diasTranscurridos === 0 && estado.diasRestantes === DIAS_PRUEBA) {
-                const badgeExistente = document.getElementById('pruebaBadge');
-                if (badgeExistente) badgeExistente.remove();
-                
-                const badge = document.createElement('div');
-                badge.id = 'pruebaBadge';
-                badge.style.cssText = `
-                    position: fixed;
-                    top: 10px;
-                    right: 10px;
-                    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 20px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    z-index: 999999;
-                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-                    cursor: pointer;
-                    animation: pulseBadge 2s infinite;
-                    border: 1px solid rgba(255,255,255,0.2);
-                `;
-                badge.textContent = `🚀 ¡Prueba gratuita activa! 7 días`;
-                badge.onclick = function() {
-                    alert(
-                        `🎉 BIENVENIDO A TU PRUEBA GRATUITA\n\n` +
-                        `📅 Inicio: ${estado.fechaInicio.toLocaleDateString()}\n` +
-                        `⏳ Días restantes: ${estado.diasRestantes}\n` +
-                        `📆 Total: ${DIAS_PRUEBA} días\n\n` +
-                        `💡 Explora todas las funciones premium durante 7 días.`
-                    );
-                };
-                document.body.appendChild(badge);
-                console.log('✅ Badge de bienvenida');
-                return;
-            }
-            
-            // Caso 2: Días restantes (1-6 días)
-            if (estado.diasRestantes > 0 && estado.diasRestantes < DIAS_PRUEBA) {
-                const badgeExistente = document.getElementById('pruebaBadge');
-                if (badgeExistente) badgeExistente.remove();
-                
-                let color, mensaje;
-                if (estado.diasRestantes <= 1) {
-                    color = '#ef4444';
-                    mensaje = '⚠️ ¡ÚLTIMO DÍA!';
-                } else if (estado.diasRestantes <= 2) {
-                    color = '#f97316';
-                    mensaje = '⏳ ¡ÚLTIMOS DÍAS!';
-                } else {
-                    color = '#f59e0b';
-                    mensaje = '⏳ Prueba activa';
-                }
-                
-                const badge = document.createElement('div');
-                badge.id = 'pruebaBadge';
-                badge.style.cssText = `
-                    position: fixed;
-                    top: 10px;
-                    right: 10px;
-                    background: ${color};
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    z-index: 999999;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    cursor: pointer;
-                    animation: pulseBadge 2s infinite;
-                `;
-                badge.textContent = `${mensaje} ${estado.diasRestantes} día${estado.diasRestantes > 1 ? 's' : ''}`;
-                badge.onclick = function() {
-                    alert(
-                        `📊 PRUEBA GRATUITA\n\n` +
-                        `📅 Inicio: ${estado.fechaInicio.toLocaleDateString()}\n` +
-                        `⏳ Días restantes: ${estado.diasRestantes}\n` +
-                        `📈 Días usados: ${estado.diasTranscurridos}\n\n` +
-                        `💡 Actualiza a Professional para continuar.`
-                    );
-                };
-                document.body.appendChild(badge);
-                console.log(`✅ Badge: ${estado.diasRestantes} días`);
-                return;
-            }
+        const badgeExistente = document.getElementById('pruebaBadge');
+        if (badgeExistente) badgeExistente.remove();
+
+        if (!window.trialStatus) return;
+
+        if (window.trialStatus.plan && window.trialStatus.plan !== 'free') {
+            return;
+        }
+
+        if (window.trialStatus.trialActive) {
+            const badge = document.createElement('div');
+            badge.id = 'pruebaBadge';
+            badge.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                z-index: 999999;
+                box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+                cursor: pointer;
+                border: 1px solid rgba(255,255,255,0.2);
+            `;
+
+            const dias = window.trialStatus.daysRemaining;
+            const texto = dias !== null ? `⏳ Prueba: ${dias} días` : '🚀 Prueba activa';
+            badge.textContent = texto;
+
+            badge.onclick = function() {
+                alert(
+                    `📊 ESTADO DE PRUEBA\n\n` +
+                    `📅 Inicio: ${window.trialStatus.trialStartDate ? new Date(window.trialStatus.trialStartDate).toLocaleDateString() : 'N/A'}\n` +
+                    `⏳ Días restantes: ${dias !== null ? dias : 'Ilimitado'}\n` +
+                    `📈 Plan: ${window.trialStatus.plan}`
+                );
+            };
+            document.body.appendChild(badge);
+            console.log('✅ Badge de prueba mostrado');
+        } else {
+            console.log('⛔ Prueba expirada - Sin badge');
         }
     };
-    
+
     // ============================================
-    // FUNCIÓN PRINCIPAL
+    // 4. VERIFICAR SI PRUEBA ESTÁ ACTIVA
     // ============================================
-    window.iniciarSistemaPrueba = function() {
-        if (!haySesionActiva()) {
+   function pruebaActiva() {
+  if (window.trialStatus && window.trialStatus.plan && window.trialStatus.plan !== 'free') {
+    return true;
+  }
+  if (!window.trialStatus || !window.trialStatus.trialActive) {
+    return false;
+  }
+  return true;
+}
+window.pruebaActiva = pruebaActiva;
+
+    // ============================================
+    // 5. BLOQUEO DEFINITIVO DE FUNCIONES
+    // ============================================
+    function bloquearFunciones() {
+        // Deshabilitar botones
+        document.querySelectorAll('#createProjectBtn, .new-project-btn, [data-action="create-project"], #newProjectBtn, .create-project-btn').forEach(b => {
+            b.disabled = true;
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+            b.title = 'Prueba expirada - actualiza a premium';
+        });
+
+        // Interceptar localStorage
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            if (key === 'projects' || key === 'projectsData' || key === 'projectData') {
+                console.warn('🚫 Intento de guardar proyecto bloqueado');
+                return;
+            }
+            originalSetItem.call(this, key, value);
+        };
+
+        // Interceptar fetch POST a /api/projects
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (typeof url === 'string' && url.includes('/api/projects') && options?.method === 'POST') {
+                window.mostrarModalPruebaExpirada();
+                return Promise.reject(new Error('Prueba expirada'));
+            }
+            return originalFetch.call(this, url, options);
+        };
+
+        // Interceptar funciones comunes de creación
+        const funcionesAInterceptar = [
+            'createNewProject', 'createProject', 'addProject', 'saveProject',
+            'saveTaskChanges', 'createNewTask', 'addTask', 'saveTask',
+            'deleteTask', 'removeTask', 'moveTaskUp', 'moveTaskDown',
+            'editTask', 'updateTask'
+        ];
+
+        funcionesAInterceptar.forEach(funcName => {
+            if (typeof window[funcName] === 'function') {
+                const original = window[funcName];
+                window[funcName] = function() {
+                    if (!pruebaActiva()) {
+                        window.mostrarModalPruebaExpirada();
+                        return;
+                    }
+                    return original.apply(this, arguments);
+                };
+                console.log(`✅ Función ${funcName} interceptada`);
+            }
+        });
+
+        // Mensaje persistente
+        if (!document.getElementById('bloqueoPruebaMsg')) {
+            const msg = document.createElement('div');
+            msg.id = 'bloqueoPruebaMsg';
+            msg.style.cssText = `
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #dc3545;
+                color: white;
+                padding: 15px 30px;
+                border-radius: 10px;
+                z-index: 999999;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(220,53,69,0.5);
+                text-align: center;
+                cursor: pointer;
+            `;
+            msg.textContent = '⛔ PRUEBA TERMINADA - Haz clic para ver planes';
+            msg.onclick = () => window.mostrarModalPruebaExpirada();
+            document.body.prepend(msg);
+        }
+    }
+
+    // ============================================
+    // 6. INICIAR SISTEMA DE PRUEBA
+    // ============================================
+    window.iniciarSistemaPrueba = async function() {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        if (!token) {
             console.log('⏳ Sin sesión activa');
             return;
         }
+
+        await window.fetchTrialStatus();
         window.mostrarBadgePrueba();
+
+        if (window.trialStatus && window.trialStatus.plan === 'free' && !window.trialStatus.trialActive) {
+            window.verificarBloqueoPrueba();  // <--- Asegúrate de que está aquí
+            setTimeout(window.mostrarModalPruebaExpirada, 1500);
+        }
     };
-    
-
-
-
-
-
-
-
 
     // ============================================
-    // 🚀 INTERCEPTAR FUNCIONES PARA BLOQUEO PARCIAL
-    // ============================================
-    
-    // 1. Interceptar createNewProject
-    const originalCreateProject = window.createNewProject;
-    window.createNewProject = function() {
-        if (!pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
-            return;
-        }
-        if (originalCreateProject) originalCreateProject();
-    };
-    
-    // 2. Interceptar saveTaskChanges
-    const originalSaveTask = window.saveTaskChanges;
-    window.saveTaskChanges = function(taskId) {
-        if (!pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
-            return;
-        }
-        if (originalSaveTask) originalSaveTask(taskId);
-    };
-    
-    // 3. Interceptar deleteTask
-    const originalDeleteTask = window.deleteTask;
-    window.deleteTask = function(taskStr) {
-        if (!pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
-            return;
-        }
-        if (originalDeleteTask) originalDeleteTask(taskStr);
-    };
-    
-    // 4. Interceptar moveTaskUp
-    const originalMoveUp = window.moveTaskUp;
-    window.moveTaskUp = function(taskId, status) {
-        if (!pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
-            return;
-        }
-        if (originalMoveUp) originalMoveUp(taskId, status);
-    };
-    
-    // 5. Interceptar moveTaskDown
-    const originalMoveDown = window.moveTaskDown;
-    window.moveTaskDown = function(taskId, status) {
-        if (!pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
-            return;
-        }
-        if (originalMoveDown) originalMoveDown(taskId, status);
-    };
-    
-    // ============================================
-    // 🚀 EJECUCIÓN AUTOMÁTICA
+    // 7. EJECUCIÓN AUTOMÁTICA
     // ============================================
     function ejecutarPrueba() {
-        setTimeout(window.iniciarSistemaPrueba, 1000);
+        setTimeout(window.iniciarSistemaPrueba, 800);
     }
-    
-    if (haySesionActiva()) {
+
+    if (localStorage.getItem('authToken') || localStorage.getItem('token')) {
         console.log('🔓 Sesión activa - Verificando prueba...');
         ejecutarPrueba();
     }
-    
+
+    // Interceptar login
     if (typeof window.login === 'function' && !window._loginInterceptado) {
         const loginOriginal = window.login;
         window.login = async function() {
@@ -3933,39 +4166,20 @@ document.addEventListener('DOMContentLoaded', function() {
         window._loginInterceptado = true;
         console.log('✅ Login interceptado');
     }
-    
-    let ultimoToken = localStorage.getItem('authToken');
+
+    // Monitorear cambios de token
+    let ultimoToken = localStorage.getItem('authToken') || localStorage.getItem('token');
     setInterval(() => {
-        const tokenActual = localStorage.getItem('authToken');
+        const tokenActual = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (tokenActual && tokenActual !== ultimoToken) {
             ultimoToken = tokenActual;
             ejecutarPrueba();
         }
     }, 3000);
-    
-    if (!document.getElementById('prueba-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'prueba-styles';
-        styles.textContent = `
-            @keyframes pulseBadge {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-                100% { transform: scale(1); }
-            }
-        `;
-        document.head.appendChild(styles);
-    }
-    
-    console.log('✅ Sistema de prueba 7 días ACTIVADO (con bloqueo parcial)');
-    console.log('📌 Usuario puede VER pero no CREAR/MODIFICAR si la prueba expiró');
-    
+
+    console.log('✅ Sistema de prueba 7 días ACTIVADO (con bloqueo total)');
+    console.log('📌 Usuario puede VER pero NO CREAR/MODIFICAR si la prueba expiró');
 })();
-
-
-
-
-
-
 
 
 
@@ -27421,6 +27635,40 @@ let projects = [];
 let currentProjectIndex = 0;
 
 
+// ============================================
+// 🔒 ESTADO DE PRUEBA DESDE EL BACKEND
+// ============================================
+let trialStatus = {
+    plan: 'free',
+    trialActive: true,
+    daysRemaining: null,
+    trialStartDate: null
+};
+
+async function fetchTrialStatus() {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.warn('⚠️ Sin token, no se puede obtener estado de prueba');
+            return false;
+        }
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/trial-status', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!response.ok) throw new Error('Error al obtener estado de prueba');
+        const data = await response.json();
+        trialStatus = data;
+        console.log('📊 Estado de prueba actualizado:', trialStatus);
+        return true;
+    } catch (error) {
+        console.error('❌ Error obteniendo estado de prueba:', error);
+        // En caso de error, asumir que la prueba está activa para no bloquear al usuario
+        trialStatus = { plan: 'free', trialActive: true, daysRemaining: 7 };
+        return false;
+    }
+}
+
+
 // ========== FUNCIONES AUXILIARES BÁSICAS ==========
 
 // 1. Progreso del proyecto
@@ -31154,50 +31402,6 @@ function addPremiumStyles() {
   document.head.appendChild(styles);
 }
 
-// 11. Crear proyectos de ejemplo (VERSIÓN SIMPLIFICADA)
-function createSampleProjects() {
-  if (typeof projects === 'undefined') {
-    window.projects = [];
-    window.currentProjectIndex = 0;
-  }
-  
-  if (projects.length === 0) {
-    projects.push({
-      name: "Proyecto Demo",
-      tasks: [
-        {
-          id: 1,
-          name: "Tarea de ejemplo 1",
-          startDate: new Date().toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "inProgress",
-          priority: "media",
-          estimatedTime: 8,
-          timeLogged: 4,
-          assignee: "Usuario 1",
-          dependencies: []
-        },
-        {
-          id: 2,
-          name: "Tarea de ejemplo 2",
-          startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "pending",
-          priority: "alta",
-          estimatedTime: 16,
-          timeLogged: 0,
-          assignee: "Usuario 2",
-          dependencies: []
-        }
-      ]
-    });
-    currentProjectIndex = 0;
-  }
-  
-  setTimeout(() => {
-    createPremiumGanttWithYourData();
-  }, 100);
-}
 
 // ========== FUNCIÓN PRINCIPAL DE GANTT ==========
 // [Aquí va el código completo que te envié anteriormente]
@@ -32175,84 +32379,6 @@ function addPremiumStyles() {
   document.head.appendChild(styles);
 }
 
-function createSampleProjects() {
-  if (typeof projects === 'undefined') {
-    window.projects = [];
-    window.currentProjectIndex = 0;
-  }
-  
-  const sampleProjects = [
-    {
-      name: "Proyecto Alpha",
-      description: "Desarrollo de sistema principal",
-      tasks: [
-        {
-          id: 1,
-          name: "Análisis de requisitos",
-          startDate: new Date().toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "completed",
-          priority: "alta",
-          estimatedTime: 40,
-          timeLogged: 40,
-          assignee: "Ana García",
-          dependencies: []
-        },
-        {
-          id: 2,
-          name: "Diseño de arquitectura",
-          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "inProgress",
-          priority: "alta",
-          estimatedTime: 60,
-          timeLogged: 30,
-          assignee: "Carlos López",
-          dependencies: [1]
-        }
-      ]
-    },
-    {
-      name: "Proyecto Beta",
-      description: "Sitio web corporativo",
-      tasks: [
-        {
-          id: 3,
-          name: "Diseño UI/UX",
-          startDate: new Date().toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "inProgress",
-          priority: "media",
-          estimatedTime: 30,
-          timeLogged: 15,
-          assignee: "María Rodríguez",
-          dependencies: []
-        },
-        {
-          id: 4,
-          name: "Desarrollo Frontend",
-          startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          deadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          status: "pending",
-          priority: "alta",
-          estimatedTime: 50,
-          timeLogged: 0,
-          assignee: "Pedro Martínez",
-          dependencies: [3]
-        }
-      ]
-    }
-  ];
-  
-  if (projects.length === 0) {
-    projects.push(...sampleProjects);
-    currentProjectIndex = 0;
-  }
-  
-  setTimeout(() => {
-    createPremiumGanttWithYourData();
-  }, 100);
-}
 
 
 function createCompleteGanttForCurrentProject() {
@@ -67936,10 +68062,14 @@ async function handleDrop(e) {
     
     // ========== 🚨 NOTIFICACIÓN A SLACK ==========
     // DESPUÉS (esto SÍ funciona)
-if (typeof sincronizarTarea === 'function') {
-    sincronizarTarea(task.name, project.name);
-    console.log('✅ Notificación enviada a Slack:', task.name, oldStatus, '→', newStatus);
+// ========== 🚨 NOTIFICACIÓN A SLACK ==========
+if (window.SlackNotifier && typeof SlackNotifier.taskMoved === 'function') {
+    SlackNotifier.taskMoved(task, oldStatus, newStatus, project.name);
+    console.log('✅ Notificación a Slack enviada:', task.name, oldStatus, '→', newStatus);
+} else {
+    console.warn('⚠️ SlackNotifier no disponible');
 }
+
     // =============================================
     
     // Aviso por WebSocket (task-moved) – por si el backend lo retransmite en el futuro
@@ -74561,20 +74691,142 @@ window.tiempoRealSocket.on('project-updated', (data) => {
     return result;
   };
   window.saveTaskChanges = function(taskId) {
+    // 🔥 GUARDAR LA TAREA ANTES DE MODIFICARLA
+    const project = projects[currentProjectIndex];
+    const taskBefore = project?.tasks?.find(t => t.id === taskId);
+    
+    // Ejecutar la función original
     const result = originalSave ? originalSave(taskId) : null;
-    setTimeout(() => window.forceFullRefresh(), 500);
+    
+    // 🔥 NOTIFICAR A SLACK DESPUÉS DE GUARDAR
+    setTimeout(() => {
+        const taskAfter = project?.tasks?.find(t => t.id === taskId);
+        if (taskAfter && window.SlackNotifier) {
+            // Si hay cambios, notificar
+            const changes = [];
+            if (taskBefore && taskBefore.name !== taskAfter.name) changes.push('nombre');
+            if (taskBefore && taskBefore.priority !== taskAfter.priority) changes.push('prioridad');
+            if (taskBefore && taskBefore.status !== taskAfter.status) changes.push('estado');
+            if (taskBefore && taskBefore.assignee !== taskAfter.assignee) changes.push('responsable');
+            
+            if (changes.length > 0) {
+                SlackNotifier.taskUpdated(taskAfter, project.name, changes.join(', '));
+                console.log('📢 Notificación a Slack: Tarea actualizada', taskAfter.name);
+            }
+        }
+        window.forceFullRefresh();
+    }, 500);
+    
     return result;
-  };
-  window.deleteTask = function(taskStr) {
-    const result = originalDelete ? originalDelete(taskStr) : null;
-    setTimeout(() => window.forceFullRefresh(), 500);
-    return result;
-  };
+};
+
+
+ window.deleteTask = function(taskStr) {
+    console.log('🗑️ deleteTask (con Slack) ejecutándose...');
+    
+    let task;
+    try {
+        task = JSON.parse(decodeURIComponent(taskStr));
+    } catch (e) {
+        try {
+            task = JSON.parse(taskStr);
+        } catch (e2) {
+            console.error('❌ Error decodificando tarea:', taskStr);
+            return;
+        }
+    }
+    
+    if (!task || !task.id) {
+        console.error('❌ Tarea inválida');
+        return;
+    }
+    
+    const project = projects[currentProjectIndex];
+    if (!project) {
+        console.error('❌ No hay proyecto');
+        return;
+    }
+    
+    if (!confirm('¿Eliminar la tarea "' + task.name + '"?')) {
+        return;
+    }
+    
+    // Eliminar localmente
+    project.tasks = project.tasks.filter(function(t) {
+        return t.id !== task.id;
+    });
+    
+    // Guardar en localStorage
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    // ✅ EMITIR EVENTO WEBSOCKET
+    if (window.tiempoRealSocket && window.tiempoRealSocket.connected) {
+        window.tiempoRealSocket.emit('task-deleted', {
+            projectId: currentProjectIndex,
+            taskId: task.id,
+            taskName: task.name,
+            userId: localStorage.getItem('userId') || 'anonimo',
+            timestamp: new Date().toISOString()
+        });
+        console.log('📤 Emitido task-deleted');
+    }
+    
+    // ✅ NOTIFICAR A SLACK
+    if (window.SlackNotifier && typeof SlackNotifier.taskDeleted === 'function') {
+        SlackNotifier.taskDeleted(task.name, project.name);
+        console.log('📢 Notificación a Slack enviada (eliminación)');
+    } else {
+        console.warn('⚠️ SlackNotifier no disponible');
+    }
+    
+    // Actualizar vistas
+    actualizarAsignados();
+    aplicarFiltros();
+    generatePieChart(getStats());
+    updateProjectProgress();
+    showNotification('Tarea "' + task.name + '" eliminada');
+    
+    // Disparar eventos
+    document.dispatchEvent(new Event('taskDeleted'));
+    document.dispatchEvent(new Event('tasksRendered'));
+    
+    setTimeout(function() {
+        if (typeof actualizarContadoresColumnas === 'function') actualizarContadoresColumnas();
+        if (typeof refreshBurndown === 'function') refreshBurndown();
+        if (typeof forceRefreshCalendar === 'function') forceRefreshCalendar();
+        
+        const activeView = getActiveView();
+        if (activeView === 'list' && typeof renderListTasks === 'function') renderListTasks();
+        if (activeView === 'board' && typeof renderKanbanTasks === 'function') renderKanbanTasks();
+        if (activeView === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+        if (activeView === 'reports' && typeof generateReports === 'function') generateReports();
+        if (activeView === 'timeAllocation' && typeof loadTimeAllocationData === 'function') loadTimeAllocationData();
+    }, 100);
+    
+    console.log('✅ Tarea eliminada:', task.name);
+};
   window.handleDrop = function(e) {
+    // 🔥 OBTENER LA TAREA Y EL ESTADO ANTES DE MOVERLA
+    const project = projects[currentProjectIndex];
+    const taskId = e.dataTransfer?.getData('text/plain');
+    const task = project?.tasks?.find(t => String(t.id) === String(taskId));
+    const oldStatus = task ? task.status : null;
+    
+    // Ejecutar la función original (que mueve la tarea)
     const result = originalDrop ? originalDrop(e) : null;
-    setTimeout(() => window.forceFullRefresh(), 500);
+    
+    // 🔥 NOTIFICAR DESPUÉS DE MOVER
+    setTimeout(() => {
+        const updatedTask = project?.tasks?.find(t => String(t.id) === String(taskId));
+        if (updatedTask && oldStatus && oldStatus !== updatedTask.status && window.SlackNotifier) {
+            SlackNotifier.taskMoved(updatedTask, oldStatus, updatedTask.status, project.name);
+            console.log('📢 Notificación a Slack: Tarea movida', updatedTask.name, oldStatus, '→', updatedTask.status);
+        }
+        window.forceFullRefresh();
+    }, 500);
+    
     return result;
-  };
+};
 
   console.log('✅ Sincronización activada (polling cada 5s + WebSocket)');
 })();

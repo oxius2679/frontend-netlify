@@ -9021,69 +9021,6 @@ window.setLanguage = function(lang) {
     
     console.log('✅ Sistema de auto-traducción ACTIVO - NUNCA más saldrá undefined');
 })();
-// ============================================================
-// 🛠️ PARCHE: FORZAR PROYECTO PARA EL DASHBOARD
-// ============================================================
-(function parcheProyecto() {
-    console.log('🔧 Aplicando parche de proyecto...');
-
-    // 1. Si no existe window.projects, crearlo con un proyecto de ejemplo
-    if (!window.projects || window.projects.length === 0) {
-        window.projects = [{
-            name: 'Proyecto Demo',
-            description: 'Proyecto automático para el Dashboard',
-            tasks: [
-                { name: 'Configurar entorno', status: 'completed', estimatedTime: 8, timeLogged: 6 },
-                { name: 'Desarrollar módulo principal', status: 'inProgress', estimatedTime: 40, timeLogged: 22 },
-                { name: 'Pruebas de integración', status: 'pending', estimatedTime: 20, timeLogged: 0 },
-                { name: 'Documentación', status: 'pending', estimatedTime: 15, timeLogged: 0 }
-            ],
-            totalProjectTime: 83
-        }];
-        console.log('✅ Proyecto de ejemplo creado.');
-    }
-
-    // 2. Asegurar que exista currentProjectIndex
-    if (window.currentProjectIndex === undefined) {
-        window.currentProjectIndex = 0;
-    }
-
-    // 3. Redefinir obtenerProyectoActual para que SIEMPRE devuelva algo
-    window.obtenerProyectoActual = function() {
-        // Intentar con el índice actual
-        if (window.currentProjectIndex !== undefined && window.projects[window.currentProjectIndex]) {
-            return window.projects[window.currentProjectIndex];
-        }
-        // Intentar con variable proyectoActual
-        if (window.proyectoActual) {
-            return window.proyectoActual;
-        }
-        // Si hay proyectos, tomar el primero
-        if (window.projects && window.projects.length > 0) {
-            window.currentProjectIndex = 0;
-            return window.projects[0];
-        }
-        // Último recurso: crear un proyecto en el momento
-        console.warn('⚠️ No hay proyectos, creando uno de emergencia...');
-        window.projects = [{
-            name: 'Proyecto Emergencia',
-            description: 'Creado sobre la marcha',
-            tasks: [],
-            totalProjectTime: 0
-        }];
-        window.currentProjectIndex = 0;
-        return window.projects[0];
-    };
-
-    // 4. Forzar la selección del primer proyecto ahora mismo
-    const proyecto = window.obtenerProyectoActual();
-    if (proyecto) {
-        console.log('✅ Proyecto activo:', proyecto.name);
-    } else {
-        console.error('❌ Error crítico: no se pudo establecer proyecto.');
-    }
-})();
-</script>
 
 
 
