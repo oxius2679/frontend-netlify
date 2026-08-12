@@ -374,6 +374,10 @@
     let ultimaEjecucionCompletada = 0;
 
     function detectarTareaCompletada() {
+    // ═══════════════════════════════════════════════════
+    // PROTECCIÓN GLOBAL: Try/Catch para no romper el drag & drop
+    // ═══════════════════════════════════════════════════
+    try {
         const ahora = Date.now();
         if (ahora - ultimaEjecucionCompletada < 2000) return;
         ultimaEjecucionCompletada = ahora;
@@ -387,7 +391,7 @@
         const idsActuales = new Set();
         tareas.forEach(t => {
             const id = t.getAttribute('data-task-id') || generarIdFallback(t);
-            idsActuales.add(id);
+            if (id) idsActuales.add(id);
         });
 
         let limpiadas = 0;
@@ -399,46 +403,101 @@
         }
         if (limpiadas > 0) {
             console.log(`🧹 Limpiadas ${limpiadas} tareas completadas que ya no están`);
-            guardarEstadoPersistente();
+            if (typeof guardarEstadoPersistente === 'function') guardarEstadoPersistente();
         }
 
-        const rule = automationRules.find(r => r.trigger === 'task_completed' && r.active);
+        // ═══════════════════════════════════════════════════
+        // PROTECCIÓN: Verificar que automationRules y rule existan
+        // ═══════════════════════════════════════════════════
+        if (!automationRules || !Array.isArray(automationRules)) return;
+        
+        const rule = automationRules.find(r => r && r.trigger === 'task_completed' && r.active);
         if (!rule) return;
+
+        // ═══════════════════════════════════════════════════
+        // PROTECCIÓN: Verificar que rule.message exista
+        // ═══════════════════════════════════════════════════
+        if (!rule.message || typeof rule.message !== 'string') {
+            console.warn('⚠️ rule.message no es válido, saltando notificación');
+            return;
+        }
 
         let notificadas = 0;
 
         tareas.forEach(tarea => {
-            const taskId = tarea.getAttribute('data-task-id') || generarIdFallback(tarea);
-            if (tareasNotificadas.has(taskId)) return;
+            try {
+                const taskId = tarea.getAttribute('data-task-id') || generarIdFallback(tarea);
+                if (!taskId || tareasNotificadas.has(taskId)) return;
 
-            let titulo = obtenerTituloDesdeId(taskId);
-            if (!titulo) titulo = obtenerTituloFromDOM(tarea);
+                let titulo = '';
+                
+                // Intentar obtener título con múltiples fallbacks
+                if (typeof obtenerTituloDesdeId === 'function') {
+                    titulo = obtenerTituloDesdeId(taskId) || '';
+                }
+                
+                if (!titulo && typeof obtenerTituloFromDOM === 'function') {
+                    titulo = obtenerTituloFromDOM(tarea) || '';
+                }
+                
+                // Último fallback: leer del DOM
+                if (!titulo) {
+                    const titleEl = tarea.querySelector('.task-title, h3, h4, .title');
+                    titulo = titleEl ? (titleEl.textContent || '').trim() : '';
+                }
+                
+                // Si aún no hay título, usar el ID
+                if (!titulo) titulo = `Tarea ${taskId}`;
 
-            console.log(`✅ Completada: "${titulo}" (ID: ${taskId})`);
+                console.log(`✅ Completada: "${titulo}" (ID: ${taskId})`);
 
-            ejecuciones.completada++;
-            guardarEstadoPersistente();
+                ejecuciones.completada++;
+                if (typeof guardarEstadoPersistente === 'function') guardarEstadoPersistente();
 
-            const mensaje = rule.message.replace('{{task}}', titulo.substring(0, 40));
-            mostrarNotificacion(rule.name, mensaje, rule.color, rule.icon);
-            rule.executions = (rule.executions || 0) + 1;
-            guardarDatos();
+                // ═══════════════════════════════════════════════════
+                // LÍNEA CORREGIDA: Proteger el .replace()
+                // ═══════════════════════════════════════════════════
+                const tituloSeguro = (titulo || 'Tarea').substring(0, 40);
+                const mensaje = String(rule.message).replace('{{task}}', tituloSeguro);
+                
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(
+                        rule.name || 'Automatización',
+                        mensaje,
+                        rule.color || '#10b981',
+                        rule.icon || '✅'
+                    );
+                }
+                
+                rule.executions = (rule.executions || 0) + 1;
+                if (typeof guardarDatos === 'function') guardarDatos();
 
-            tareasNotificadas.add(taskId);
-            guardarEstadoPersistente();
+                tareasNotificadas.add(taskId);
+                if (typeof guardarEstadoPersistente === 'function') guardarEstadoPersistente();
 
-            setTimeout(() => {
-                tareasNotificadas.delete(taskId);
-                guardarEstadoPersistente();
-            }, 3600000);
+                setTimeout(() => {
+                    tareasNotificadas.delete(taskId);
+                    if (typeof guardarEstadoPersistente === 'function') guardarEstadoPersistente();
+                }, 3600000);
 
-            notificadas++;
+                notificadas++;
+            } catch (error) {
+                // Silenciar errores individuales sin romper el loop
+                console.warn('⚠️ Error procesando tarea completada (ignorado):', error.message);
+            }
         });
 
         if (notificadas > 0) {
             console.log(`📊 Se notificaron ${notificadas} tarea(s) completadas`);
         }
+    } catch (error) {
+        // ═══════════════════════════════════════════════════
+        // CAPTURA CUALQUIER ERROR SIN ROMPER EL SISTEMA
+        // ═══════════════════════════════════════════════════
+        console.warn('⚠️ Error en detectarTareaCompletada (ignorado):', error.message);
+        return false;
     }
+}
 
     // ============================================================
     // 9. DETECTOR DE ALTA PRIORIDAD (CON ID Y SET SEPARADO)

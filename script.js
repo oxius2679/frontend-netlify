@@ -1,3 +1,88 @@
+// ═══════════════════════════════════════════════════
+// FIX: Pausar traducciones durante drag & drop
+// ═══════════════════════════════════════════════════
+(function() {
+    'use strict';
+    
+    // Bandera global de drag activo
+    window.__dragInProgress = false;
+    
+    // Escuchar inicio de drag
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.closest('.task-card, .kanban-task, [draggable="true"]')) {
+            window.__dragInProgress = true;
+            console.log('🏎️ Drag iniciado - Traducciones pausadas');
+        }
+    }, true);
+    
+    // Escuchar fin de drag
+    document.addEventListener('dragend', function(e) {
+        window.__dragInProgress = false;
+        console.log('🏎️ Drag terminado - Traducciones reactivadas');
+        
+        // Ejecutar traducción UNA sola vez después del drag
+        setTimeout(() => {
+            if (typeof translateTimeAllocationView === 'function') {
+                translateTimeAllocationView();
+            }
+        }, 500);
+    }, true);
+    
+    // Escuchar drop
+    document.addEventListener('drop', function(e) {
+        window.__dragInProgress = false;
+    }, true);
+    
+    // Interceptar translateTimeAllocationView
+    if (typeof window.translateTimeAllocationView === 'function') {
+        const original = window.translateTimeAllocationView;
+        let lastCall = 0;
+        
+        window.translateTimeAllocationView = function() {
+            // NO traducir durante drag
+            if (window.__dragInProgress) {
+                return;
+            }
+            
+            // Throttle: máximo 1 vez cada 3 segundos
+            const now = Date.now();
+            if (now - lastCall < 3000) {
+                return;
+            }
+            lastCall = now;
+            
+            return original.apply(this, arguments);
+        };
+    }
+    
+    // Interceptar traducirContenido
+    if (typeof window.traducirContenido === 'function') {
+        const original = window.traducirContenido;
+        let lastCall = 0;
+        
+        window.traducirContenido = function(container) {
+            // NO traducir durante drag
+            if (window.__dragInProgress) {
+                return 0;
+            }
+            
+            // Throttle: máximo 1 vez cada 2 segundos
+            const now = Date.now();
+            if (now - lastCall < 2000) {
+                return 0;
+            }
+            lastCall = now;
+            
+            return original.call(this, container);
+        };
+    }
+    
+    console.log('✅ Fix de traducciones durante drag & drop instalado');
+})();
+
+
+
+
 // ============================================================
 // 🔥 OBTENER ESTADO DE PRUEBA DESDE EL BACKEND
 // ============================================================
@@ -2585,6 +2670,17 @@ window.addEventListener('storage', function(e) {
 
 
 function renderKanbanTasks(tasks = null) {
+// ═══════════════════════════════════════════════════
+    // FIX: Throttle para evitar re-renders excesivos
+    // ═══════════════════════════════════════════════════
+    const now = Date.now();
+    if (window.__lastRenderTime && now - window.__lastRenderTime < 500) {
+        console.log('⏸️ Renderizado throttled (demasiado pronto)');
+        return;
+    }
+    window.__lastRenderTime = now;
+
+
     console.log('🔴 INICIANDO renderKanbanTasks - VERSIÓN CON TRADUCCIÓN');
 
     // ========== IDIOMA Y TRADUCCIONES ==========
@@ -74646,8 +74742,16 @@ function generarReporteBoard() {
     }
   };
 
-  // 1. Polling cada 5 segundos (garantiza sincronización)
-  setInterval(() => window.forceFullRefresh(), 5000);
+ // 1. Polling cada 30 segundos (optimizado para rendimiento)
+// ANTES: setInterval(() => window.forceFullRefresh(), 5000); // ← CADA 5 SEGUNDOS = LENTO
+setInterval(() => {
+    // Solo refrescar si NO hay drag activo
+    if (window.__dragInProgress || window.__dragMode) {
+        console.log('⏸️ Polling pausado durante drag & drop');
+        return;
+    }
+    window.forceFullRefresh();
+}, 30000); // ← CADA 30 SEGUNDOS = RÁPIDO
 
   // 2. Escuchar eventos WebSocket si están disponibles
   if (window.tiempoRealSocket) {
