@@ -578,14 +578,14 @@ function injectStyles() {
   /* ---- Acentos. Cinco y no más: el oro es la marca, el teal es la señal de
          dato, y verde/ámbar/rojo son exclusivamente estado. Si hiciera falta
          un sexto color, el problema estaría en la jerarquía. ---- */
-  --gold:      oklch(80% 0.115 88);
-  --gold-hi:   oklch(90% 0.085 92);
-  --gold-dim:  oklch(80% 0.115 88 / 0.14);
-  --teal:      oklch(84% 0.115 178);
-  --teal-dim:  oklch(84% 0.115 178 / 0.13);
-  --green:     oklch(80% 0.135 155);
-  --amber:     oklch(83% 0.135 78);
-  --red:       oklch(70% 0.165 20);
+  --gold: #FF6B6B;
+--gold-hi: #FF8E8E;
+--gold-dim: rgba(255,107,107,0.2);
+--teal: #4ECDC4;
+--teal-dim: rgba(78,205,196,0.2);
+--green: #2ECC71;
+--amber: #F39C12;
+--red: #E74C3C;
 
   /* ---- Rejilla base 8. Todo espaciado sale de aquí, sin excepciones. ---- */
   --s0:4px;  --s1:8px;  --s2:16px; --s3:24px;
