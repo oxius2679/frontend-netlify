@@ -2669,12 +2669,12 @@ function shellHTML() {
   <div class="slos-app">
     <aside class="slos-side">
       <div class="slos-brand">
-  <div class="slos-mark" style="width:52px; height:52px;">
-    <img src="imagen.png" alt="Logotipo" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">
-  </div>
- <div style="text-align: center;">
-  <strong style="font-size: 22px; display: block; line-height: 1.2;">${esc(t.brand)}</strong>
-  <small style="font-size: 13px; display: block; letter-spacing: 0.04em;">${esc(t.brandSub)}</small>
+<div class="slos-mark" style="width:auto;height:52px;overflow:hidden;background:transparent;padding:0">
+<img src="imagen.png" alt="Logotipo" style="display:block;height:52px;width:auto;object-fit:contain;border-radius:12px">
+</div>
+<div style="text-align: center;">
+<strong style="font-size: 22px; display: block; line-height: 1.2;">${esc(t.brand)}</strong>
+<small style="font-size: 13px; display: block; letter-spacing: 0.04em;">${esc(t.brandSub)}</small>
 </div>
 </div>
 <nav class="slos-nav" aria-label="${esc(t.brand)}">${nav}</nav>
