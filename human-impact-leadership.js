@@ -2269,58 +2269,71 @@ function svgDumbbell(ps, opts) {
 }
 
 /* ---------- Curva de Lorenz · desigualdad de carga -----------------------
- * Explica visualmente lo que un coeficiente de Gini dice en un número: cuánto
- * se separa el reparto real del reparto perfectamente igualitario.
- * ------------------------------------------------------------------------ */
+* Explica visualmente lo que un coeficiente de Gini dice en un número: cuánto
+* se separa el reparto real del reparto perfectamente igualitario.
+* Cada punto de la curva conserva a su persona y dispara un tooltip propio.
+* ------------------------------------------------------------------------ */
 function svgLorenz(values, names) {
-  const es = S.lang === 'es';
-  const v = (values || []).filter(x => x > 0).slice().sort((a, b) => a - b);
-  if (v.length < 2) {
-    return `<div class="slos-empty"><i class="fas fa-chart-area"></i><h4>${esc(T().empty)}</h4>
-      <p>${esc(es ? 'Hacen falta al menos dos personas con carga para dibujar el reparto.' : 'At least two people with load are needed to draw the distribution.')}</p></div>`;
-  }
-  const tot = sum(v), n = v.length;
-  const pts = [[0, 0]];
-  let acc = 0;
-  v.forEach((x, i) => { acc += x; pts.push([(i + 1) / n, acc / tot]); });
-
-  const P = 34, W = 340, H = 300;
-  const px = t => P + t * (W - P - 14);
-  const py = t => H - P - t * (H - P - 18);
-  const poly = pts.map(p => round(px(p[0]),1) + ',' + round(py(p[1]),1)).join(' ');
-  const area = `${round(px(0),1)},${round(py(0),1)} ${poly} ${round(px(1),1)},${round(py(0),1)}`;
-  const g = gini(v);
-
-  const grid = [0, .25, .5, .75, 1].map(t =>
-    `<line x1="${round(px(0),1)}" y1="${round(py(t),1)}" x2="${round(px(1),1)}" y2="${round(py(t),1)}" stroke="${GRID}"/>` +
-    txt(P - 6, py(t) + 3, Math.round(t * 100), { anchor: 'end', size: 8, mono: true })
-  ).join('');
-
-  const label = es
-    ? `Curva de Lorenz del reparto de carga. Coeficiente de Gini ${round(g,2)} sobre 1. Cuanto más se aleja la curva de la diagonal, más desigual es el reparto.`
-    : `Lorenz curve of load distribution. Gini coefficient ${round(g,2)} out of 1. The further the curve sits from the diagonal, the more unequal the split.`;
-
-  return `<div class="slos-chart">
-    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" role="img" aria-label="${esc(label)}">
-      <title>${esc(label)}</title>
-      ${grid}
-      <polygon points="${area}" fill="var(--gold-dim)"/>
-      <line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(1),1)}" y2="${round(py(1),1)}"
-        stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <polyline points="${poly}" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${pts.slice(1).map((p, i) => `<g><title>${esc((names && names[i] ? names[i] + ' · ' : '') + (es ? 'acumulado ' : 'cumulative ') + Math.round(p[1] * 100) + '%')}</title><circle cx="${round(px(p[0]),1)}" cy="${round(py(p[1]),1)}" r="2.6" fill="var(--teal)"/></g>`).join('')}
-      <line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(1),1)}" y2="${round(py(0),1)}" stroke="${AXIS}"/>
-      <line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(0),1)}" y2="${round(py(1),1)}" stroke="${AXIS}"/>
-      ${txt(px(.5), H - 8, es ? '% acumulado de personas' : '% of people, cumulative', { anchor: 'middle', size: 8.5 })}
-      ${txt(px(.52), py(.52) - 6, es ? 'Reparto igualitario' : 'Equal split', { size: 8, fill: 'var(--ink-3)' })}
-    </svg>
-    <div class="slos-legend">
-      <span class="slos-num">Gini ${round(g, 2)}</span>
-      <span class="slos-note">${esc(es ? 'El área sombreada es la desigualdad' : 'The shaded area is the inequality')}</span>
-    </div>
-  </div>`;
+const es = S.lang === 'es';
+// Empareja cada valor con su nombre ANTES de filtrar y ordenar: así cada
+// punto de la curva sabe a quién pertenece y el tooltip nunca se desalinea.
+const pairs = (values || [])
+.map((x, i) => ({ x: Number(x) || 0, name: names && names[i] != null ? String(names[i]) : '' }))
+.filter(p => p.x > 0)
+.sort((a, b) => a.x - b.x);
+if (pairs.length < 2) {
+return `<div class="slos-empty"><i class="fas fa-chart-area"></i><h4>${esc(T().empty)}</h4>
+<p>${esc(es ? 'Hacen falta al menos dos personas con carga para dibujar el reparto.' : 'At least two people with load are needed to draw the distribution.')}</p></div>`;
 }
-
+const tot = sum(pairs.map(p => p.x)), n = pairs.length;
+const pts = [[0, 0]];
+let acc = 0;
+pairs.forEach((p, i) => { acc += p.x; pts.push([(i + 1) / n, acc / tot]); });
+const P = 34, W = 340, H = 300;
+const px = t => P + t * (W - P - 14);
+const py = t => H - P - t * (H - P - 18);
+const poly = pts.map(p => round(px(p[0]),1) + ',' + round(py(p[1]),1)).join(' ');
+const area = `${round(px(0),1)},${round(py(0),1)} ${poly} ${round(px(1),1)},${round(py(0),1)}`;
+const g = gini(pairs.map(p => p.x));
+const grid = [0, .25, .5, .75, 1].map(t =>
+`<line x1="${round(px(0),1)}" y1="${round(py(t),1)}" x2="${round(px(1),1)}" y2="${round(py(t),1)}" stroke="${GRID}"/>` +
+txt(P - 6, py(t) + 3, Math.round(t * 100), { anchor: 'end', size: 8, mono: true })
+).join('');
+// Tooltip por punto: quién es, qué carga lleva y cuánto acumula el tramo bajo.
+const dots = pts.slice(1).map((p, i) => {
+const per = pairs[i];
+const share = tot ? Math.round(per.x / tot * 100) : 0;
+const cumP = Math.round(p[0] * 100), cumL = Math.round(p[1] * 100);
+const tip = es
+? `${per.name} · ${per.x} ${per.x === 1 ? 'tarea' : 'tareas'} (${share}% del total) · el ${cumP}% de las personas acumula el ${cumL}% de la carga`
+: `${per.name} · ${per.x} ${per.x === 1 ? 'task' : 'tasks'} (${share}% of total) · bottom ${cumP}% of people carry ${cumL}% of the load`;
+return `<g style="cursor:help"><title>${esc(tip)}</title>
+<circle cx="${round(px(p[0]),1)}" cy="${round(py(p[1]),1)}" r="8" fill="transparent"/>
+<circle cx="${round(px(p[0]),1)}" cy="${round(py(p[1]),1)}" r="2.6" fill="var(--teal)"/></g>`;
+}).join('');
+const label = es
+? `Curva de Lorenz del reparto de carga. Coeficiente de Gini ${round(g,2)} sobre 1. Cuanto más se aleja la curva de la diagonal, más desigual es el reparto.`
+: `Lorenz curve of load distribution. Gini coefficient ${round(g,2)} out of 1. The further the curve sits from the diagonal, the more unequal the split.`;
+return `<div class="slos-chart">
+<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" role="img" aria-label="${esc(label)}">
+<title>${esc(label)}</title>
+${grid}
+<polygon points="${area}" fill="var(--gold-dim)"/>
+<line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(1),1)}" y2="${round(py(1),1)}"
+stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<polyline points="${poly}" fill="none" stroke="var(--teal)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+${dots}
+<line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(1),1)}" y2="${round(py(0),1)}" stroke="${AXIS}"/>
+<line x1="${round(px(0),1)}" y1="${round(py(0),1)}" x2="${round(px(0),1)}" y2="${round(py(1),1)}" stroke="${AXIS}"/>
+${txt(px(.5), H - 8, es ? '% acumulado de personas' : '% of people, cumulative', { anchor: 'middle', size: 8.5 })}
+${txt(px(.52), py(.52) - 6, es ? 'Reparto igualitario' : 'Equal split', { size: 8, fill: 'var(--ink-3)' })}
+</svg>
+<div class="slos-legend">
+<span class="slos-num">Gini ${round(g, 2)}</span>
+<span class="slos-note">${esc(es ? 'El área sombreada es la desigualdad · pasa el cursor por los puntos' : 'The shaded area is the inequality · hover the points')}</span>
+</div>
+</div>`;
+}
 /* ---------- Waterfall · descomposición del índice ------------------------- */
 function svgWaterfall(parts, total, label) {
   const es = S.lang === 'es';
@@ -2945,7 +2958,7 @@ R.organization = () => {
                : 'The curve departs from the diagonal by exactly how unequal the split is'))}
   <div class="slos-g slos-g-side">
     <div class="slos-card" data-rv>
-      ${svgLorenz(P.map(x => x.tasks), P.slice().sort((a,b) => a.tasks - b.tasks).map(x => x.name))}
+      ${svgLorenz(P.map(x => x.tasks), P.map(x => x.name))}me))}
     </div>
     <div class="slos-card" data-rv data-d="2">
       <h3 style="margin-bottom:var(--s2)">${esc(es ? 'Cómo leerla' : 'How to read it')}</h3>
