@@ -325,7 +325,7 @@ const LIBRARY = [
  * ========================================================================== */
 const I18N = {
 es: {
-  brand:'SERVANT OS', brandSub:'Leadership Intelligence',
+  brand:'SERVANT LCC', brandSub:'Inteligencia de Liderazgo',
   navExec:'Ejecutivo', navLead:'Liderazgo', navPeople:'Personas y cultura', navAction:'Acción',
   vDash:'Centro de mando', vOrg:'Organización', vLeaders:'Líderes', vMirror:'Espejo 360°',
   vMaturity:'Madurez', vVoice:'Voz del equipo', vGrowth:'Crecimiento', vStories:'Historias de servicio',
@@ -416,7 +416,7 @@ es: {
   rpC7:'Trayectoria', rpC8:'Hallazgos prioritarios', rpC9:'Decisiones del próximo ciclo'
 },
 en: {
-  brand:'SERVANT OS', brandSub:'Leadership Intelligence',
+  brand:'SERVANT LCC', brandSub:'Leadership Intelligence',
   navExec:'Executive', navLead:'Leadership', navPeople:'People & culture', navAction:'Action',
   vDash:'Command Center', vOrg:'Organization', vLeaders:'Leaders', vMirror:'360° Mirror',
   vMaturity:'Maturity', vVoice:'Employee Voice', vGrowth:'People Growth', vStories:'Stories of Service',
@@ -1260,6 +1260,222 @@ select.slos-in{cursor:pointer}
   .slos-rp-ch h2,.slos-rp-ch h3,.slos-rp-thesis{break-after:avoid}
 }
 `;
+// Añadir estilos personalizados para el menú lateral
+st.textContent += `
+  /* === ESTILOS MEJORADOS PARA EL MENÚ LATERAL === */
+  #slos-root .slos-nav button {
+    background: transparent !important;
+    color: oklch(78% 0.02 250) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    margin: 2px 0 !important;
+    font-weight: 500 !important;
+    transition: all 0.25s cubic-bezier(.16,1,.3,1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+  #slos-root .slos-nav button::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(78,205,196,0.15)) !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+    border-radius: 10px !important;
+  }
+  #slos-root .slos-nav button:hover {
+    color: #fff !important;
+    transform: translateX(4px) !important;
+    background: transparent !important;
+  }
+  #slos-root .slos-nav button:hover::before {
+    opacity: 1 !important;
+  }
+  #slos-root .slos-nav button i {
+    color: oklch(60% 0.025 252) !important;
+    transition: color 0.3s ease, transform 0.3s ease !important;
+    font-size: 14px !important;
+  }
+  #slos-root .slos-nav button:hover i {
+    color: #FF6B6B !important;
+    transform: scale(1.15) !important;
+  }
+  #slos-root .slos-nav button.on {
+    background: linear-gradient(135deg, rgba(255,107,107,0.25), rgba(78,205,196,0.25)) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 15px rgba(255,107,107,0.2) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+  }
+  #slos-root .slos-nav button.on::before {
+    opacity: 1 !important;
+  }
+  #slos-root .slos-nav button.on i {
+    color: #FF6B6B !important;
+  }
+  #slos-root .slos-nav button.on::after {
+    content: '' !important;
+    position: absolute !important;
+    left: -2px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 4px !important;
+    height: 24px !important;
+    background: linear-gradient(180deg, #FF6B6B, #4ECDC4) !important;
+    border-radius: 0 4px 4px 0 !important;
+  }
+
+/* ===== BARRA SUPERIOR (TOPBAR) VIVA ===== */
+#slos-root .slos-top {
+  background: linear-gradient(135deg, rgba(255,107,107,0.08), rgba(78,205,196,0.08)) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255,107,107,0.2) !important;
+  box-shadow: 0 8px 32px rgba(255,107,107,0.08), 0 2px 8px rgba(0,0,0,0.2) !important;
+  border-radius: 16px !important;
+  padding: 12px 20px !important;
+}
+
+/* Breadcrumb: SERVANT LCC / Líderes */
+#slos-root .slos-crumb {
+  color: oklch(70% 0.03 250) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+}
+#slos-root .slos-crumb b {
+  color: #fff !important;
+  background: linear-gradient(135deg, #FF6B6B, #4ECDC4) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 700 !important;
+}
+
+/* Input de búsqueda */
+#slos-root .slos-search {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-size: 12.5px !important;
+  transition: all 0.3s ease !important;
+}
+#slos-root .slos-search:focus {
+  border-color: #FF6B6B !important;
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.15) !important;
+  background: rgba(255,255,255,0.10) !important;
+}
+#slos-root .slos-search::placeholder {
+  color: oklch(60% 0.02 250) !important;
+}
+
+/* Botones de la topbar (normales) */
+#slos-root .slos-top .slos-btn:not(.gold):not(.teal) {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: oklch(80% 0.02 250) !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  transition: all 0.25s ease !important;
+}
+#slos-root .slos-top .slos-btn:not(.gold):not(.teal):hover {
+  background: rgba(255,107,107,0.12) !important;
+  border-color: rgba(255,107,107,0.3) !important;
+  color: #fff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(255,107,107,0.15) !important;
+}
+#slos-root .slos-top .slos-btn:not(.gold):not(.teal) i {
+  color: #FF6B6B !important;
+}
+
+/* Botón "Informe ejecutivo" */
+#slos-root .slos-btn#slos-brief {
+  background: rgba(78,205,196,0.12) !important;
+  border: 1px solid rgba(78,205,196,0.3) !important;
+  color: #4ECDC4 !important;
+}
+#slos-root .slos-btn#slos-brief:hover {
+  background: rgba(78,205,196,0.25) !important;
+  border-color: #4ECDC4 !important;
+  color: #fff !important;
+  box-shadow: 0 6px 20px rgba(78,205,196,0.25) !important;
+}
+#slos-root .slos-btn#slos-brief i {
+  color: #4ECDC4 !important;
+}
+
+/* Botón "Nuevo experimento" (gold) */
+#slos-root .slos-btn.gold {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E8E) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 6px 20px rgba(255,107,107,0.35) !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease !important;
+}
+#slos-root .slos-btn.gold:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 30px rgba(255,107,107,0.5) !important;
+}
+#slos-root .slos-btn.gold i {
+  color: #fff !important;
+}
+
+/* Botón de idioma (EN/ES) */
+#slos-root .slos-btn#slos-lang {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: oklch(80% 0.02 250) !important;
+}
+#slos-root .slos-btn#slos-lang:hover {
+  background: rgba(255,107,107,0.12) !important;
+  border-color: rgba(255,107,107,0.3) !important;
+  color: #fff !important;
+}
+#slos-root .slos-btn#slos-lang i {
+  color: #4ECDC4 !important;
+}
+
+/* Botón ⌘K (comandos) */
+#slos-root .slos-btn#slos-cmd-btn .slos-kbd {
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: oklch(70% 0.02 250) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  font-size: 9px !important;
+}
+#slos-root .slos-btn#slos-cmd-btn:hover .slos-kbd {
+  background: rgba(255,107,107,0.15) !important;
+  border-color: #FF6B6B !important;
+  color: #fff !important;
+}
+
+/* Botón cerrar (X) */
+#slos-root .slos-btn.icon#slos-close {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: oklch(60% 0.02 250) !important;
+  border-radius: 10px !important;
+  padding: 8px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+#slos-root .slos-btn.icon#slos-close:hover {
+  background: rgba(255,107,107,0.15) !important;
+  border-color: #FF6B6B !important;
+  color: #FF6B6B !important;
+  transform: rotate(90deg) scale(1.1) !important;
+}
+
+
+`;
+
+
   document.head.appendChild(st);
 }
 
@@ -1883,58 +2099,85 @@ function svgRing(value, label, size) {
 
 /** Radar octogonal de las 8 dimensiones SLS. */
 function svgRadar(dims, size, who) {
-  const es = S.lang === 'es';
-  const s = size || 300, c = s / 2, R = c - 46;
-  const n = SLS8.length;
-  const pt = (i, v) => {
-    const a = (i / n) * 2 * Math.PI - Math.PI / 2;
-    return [c + Math.cos(a) * R * v, c + Math.sin(a) * R * v];
-  };
-  const grid = [.25, .5, .75, 1].map(g =>
-    `<polygon points="${Array.from({length:n},(_, i) => pt(i, g).join(',')).join(' ')}" fill="none" stroke="var(--line)" stroke-width="1"/>`
-  ).join('');
-  const spokes = Array.from({length:n},(_, i) => {
-    const p = pt(i, 1);
-    return `<line x1="${c}" y1="${c}" x2="${p[0]}" y2="${p[1]}" stroke="var(--band-1)"/>`;
-  }).join('');
-  const vals = SLS8.map((d, i) => pt(i, clamp((dims[d.key] ? dims[d.key].v : 0) / 100, .04, 1)));
-  const poly = vals.map(p => p.join(',')).join(' ');
-  const dots = vals.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${dims[SLS8[i].key] && dims[SLS8[i].key].real ? 'var(--gold)' : 'var(--teal)'}"/>`).join('');
-  const labels = SLS8.map((d, i) => {
-    const a = (i / n) * 2 * Math.PI - Math.PI / 2;
-    const x = c + Math.cos(a) * (R + 26), y = c + Math.sin(a) * (R + 26);
-    const anc = Math.abs(Math.cos(a)) < .32 ? 'middle' : (Math.cos(a) > 0 ? 'start' : 'end');
-    return `<text x="${x}" y="${y + 3}" text-anchor="${anc}" font-size="9" fill="var(--ink-3)" font-family="Inter Tight,sans-serif">${esc(L(d).slice(0, 15))}</text>`;
-  }).join('');
-  const anyReal = SLS8.some(d => dims[d.key] && dims[d.key].real);
-  const best = SLS8.map(d => ({ d, v: dims[d.key] ? dims[d.key].v : 0 })).sort((a, b) => b.v - a.v);
-  const al = (who ? who + ' · ' : '') + (es
-    ? `Perfil octogonal de las ocho dimensiones. Más alta: ${L(best[0].d)} con ${best[0].v}. Más baja: ${L(best[best.length-1].d)} con ${best[best.length-1].v}. ${anyReal ? 'Valores medidos con percepción 360°.' : 'Valores estimados por proxy conductual.'}`
-    : `Octagonal profile across the eight dimensions. Highest: ${L(best[0].d)} at ${best[0].v}. Lowest: ${L(best[best.length-1].d)} at ${best[best.length-1].v}. ${anyReal ? 'Values measured with 360° perception.' : 'Values estimated by behavioural proxy.'}`);
-
-  return `<svg viewBox="0 0 ${s} ${s}" width="100%" style="max-width:${s}px;display:block;margin:auto" role="img" aria-label="${esc(al)}">
-    <title>${esc(al)}</title>
-    ${grid}${spokes}
-    <polygon points="${poly}" fill="oklch(80% .115 88/.16)" stroke="var(--gold)" stroke-width="1.8" stroke-linejoin="round"/>
-    ${dots}${labels}
-  </svg>`;
+const es = S.lang === 'es';
+const base = size || 300;
+// viewBox con margen horizontal y vertical real: antes era cuadrado y justo,
+// y las etiquetas laterales (anchor start/end) se cortaban en el borde.
+const W = base + 170, H = base + 80;
+const c = W / 2, cy = H / 2;
+const R = base / 2 - 46;
+const n = SLS8.length;
+const pt = (i, v) => {
+const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+return [c + Math.cos(a) * R * v, cy + Math.sin(a) * R * v];
+};
+// Tooltip individual de cada vértice: nombre, valor, evidencia y definición.
+// Salta al pasar por el punto o por su etiqueta (misma info en ambos).
+const tipOf = d => {
+const x = dims[d.key] || { v: 0 };
+const ev = x.real
+? (es ? 'medido con percepción 360°' : 'measured with 360° perception')
+: (es ? 'estimado por proxy conductual (~)' : 'estimated by behavioural proxy (~)');
+return L(d) + ' · ' + x.v + '/100 · ' + ev + '\n' + (es ? d.defEs : d.defEn);
+};
+const grid = [.25, .5, .75, 1].map(g =>
+`<polygon points="${Array.from({length:n},(_, i) => pt(i, g).join(',')).join(' ')}" fill="none" stroke="var(--line)" stroke-width="1"/>`
+).join('');
+const spokes = Array.from({length:n},(_, i) => {
+const p = pt(i, 1);
+return `<line x1="${c}" y1="${cy}" x2="${p[0]}" y2="${p[1]}" stroke="var(--band-1)"/>`;
+}).join('');
+const vals = SLS8.map((d, i) => pt(i, clamp((dims[d.key] ? dims[d.key].v : 0) / 100, .04, 1)));
+const poly = vals.map(p => p.join(',')).join(' ');
+// Puntos: el círculo invisible (r=9) amplía la zona de hover del tooltip.
+const dots = vals.map((p, i) => {
+const d = SLS8[i];
+const real = !!(dims[d.key] && dims[d.key].real);
+return `<g style="cursor:help"><title>${esc(tipOf(d))}</title>
+<circle cx="${round(p[0],1)}" cy="${round(p[1],1)}" r="9" fill="transparent"/>
+<circle cx="${round(p[0],1)}" cy="${round(p[1],1)}" r="3" fill="${real ? 'var(--gold)' : 'var(--teal)'}"/>
+</g>`;
+}).join('');
+// Nombre COMPLETO (sin slice) y envuelto en máx. dos líneas equilibradas,
+// para que quepan "Administración responsable" o "Interpersonal acceptance".
+const wrap2 = text => {
+if (text.length <= 13) return [text];
+const w = text.split(/\s+/);
+if (w.length < 2) return [text];
+let best = null;
+for (let i = 1; i < w.length; i++) {
+const l1 = w.slice(0, i).join(' '), l2 = w.slice(i).join(' ');
+const df = Math.abs(l1.length - l2.length);
+if (!best || df < best.d) best = { l1: l1, l2: l2, d: df };
 }
-
-/** Sparkline de serie temporal. */
-function svgSpark(series, w, h) {
-  const W = w || 240, H = h || 46;
-  if (!series || series.length < 2) return `<div class="slos-note">${esc(T().empty)}</div>`;
-  const mn = Math.min.apply(null, series), mx = Math.max.apply(null, series), rg = (mx - mn) || 1;
-  const pts = series.map((v, i) => [i / (series.length - 1) * W, H - ((v - mn) / rg) * (H - 8) - 4]);
-  const d = pts.map((p, i) => (i ? 'L' : 'M') + round(p[0],1) + ' ' + round(p[1],1)).join(' ');
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" aria-hidden="true">
-    <path d="${d} L ${W} ${H} L 0 ${H} Z" fill="oklch(84% .115 178/.1)"/>
-    <path d="${d}" fill="none" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${round(pts[pts.length-1][0],1)}" cy="${round(pts[pts.length-1][1],1)}" r="3" fill="var(--gold)"/>
-  </svg>`;
-}
-
-/* ==========================================================================
+return [best.l1, best.l2];
+};
+// Las etiquetas llevan el mismo tooltip que su vértice.
+const labels = SLS8.map((d, i) => {
+const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+const cos = Math.cos(a), sin = Math.sin(a);
+const lx = round(c + cos * (R + 24), 1), ly = round(cy + sin * (R + 24), 1);
+const anc = Math.abs(cos) < .32 ? 'middle' : (cos > 0 ? 'start' : 'end');
+const lines = wrap2(L(d));
+const lh = 10;
+const y0 = sin > .32 ? ly + 10 : sin < -.32 ? ly - 4 - (lines.length - 1) * lh : ly + 3;
+const tsp = lines.map((ln, k) => `<tspan x="${lx}" y="${round(y0 + k * lh, 1)}">${esc(ln)}</tspan>`).join('');
+return `<g style="cursor:help"><title>${esc(tipOf(d))}</title>
+<text text-anchor="${anc}" font-size="9" fill="var(--ink-3)" font-family="Inter Tight,sans-serif">${tsp}</text>
+</g>`;
+}).join('');
+const anyReal = SLS8.some(d => dims[d.key] && dims[d.key].real);
+const best = SLS8.map(d => ({ d, v: dims[d.key] ? dims[d.key].v : 0 })).sort((a, b) => b.v - a.v);
+const al = (who ? who + ' · ' : '') + (es
+? `Perfil octogonal de las ocho dimensiones. Más alta: ${L(best[0].d)} con ${best[0].v}. Más baja: ${L(best[best.length-1].d)} con ${best[best.length-1].v}. ${anyReal ? 'Valores medidos con percepción 360°.' : 'Valores estimados por proxy conductual.'}`
+: `Octagonal profile across the eight dimensions. Highest: ${L(best[0].d)} at ${best[0].v}. Lowest: ${L(best[best.length-1].d)} at ${best[best.length-1].v}. ${anyReal ? 'Values measured with 360° perception.' : 'Values estimated by behavioural proxy.'}`);
+return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:auto" role="img" aria-label="${esc(al)}">
+<title>${esc(al)}</title>
+${grid}${spokes}
+<polygon points="${poly}" fill="oklch(80% .115 88/.16)" stroke="var(--gold)" stroke-width="1.8" stroke-linejoin="round"/>
+${dots}${labels}
+</svg>`;
+}/* ==========================================================================
  * 11.b · REPERTORIO GRÁFICO
  * --------------------------------------------------------------------------
  * SVG escrito a mano, sin librerías. Repertorio tomado del Visual Vocabulary
@@ -2413,15 +2656,20 @@ function shellHTML() {
   <div class="slos-app">
     <aside class="slos-side">
       <div class="slos-brand">
-        <div class="slos-mark">S</div>
-        <div><strong>${esc(t.brand)}</strong><small>${esc(t.brandSub)}</small></div>
-      </div>
-      <nav class="slos-nav" aria-label="${esc(t.brand)}">${nav}</nav>
-      <div class="slos-side-foot">
-        <div style="margin-bottom:7px"><span class="slos-pill ${S.demo ? 'a' : 'g'}"><i class="fas fa-circle" style="font-size:6px"></i> ${esc(S.demo ? t.demoMode : t.connected)}</span></div>
-        v${CFG.VERSION} · ${CFG.CODENAME}<br>
-        <span style="opacity:.75">SLS-8 · van Dierendonck &amp; Nuijten (2011)</span>
-      </div>
+  <div class="slos-mark" style="width:52px; height:52px;">
+    <img src="imagen.png" alt="Logotipo" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">
+  </div>
+ <div style="text-align: center;">
+  <strong style="font-size: 22px; display: block; line-height: 1.2;">${esc(t.brand)}</strong>
+  <small style="font-size: 13px; display: block; letter-spacing: 0.04em;">${esc(t.brandSub)}</small>
+</div>
+</div>
+<nav class="slos-nav" aria-label="${esc(t.brand)}">${nav}</nav>
+<div class="slos-side-foot">
+  <div style="margin-bottom:7px"><span class="slos-pill ${S.demo ? 'a' : 'g'}"><i class="fas fa-circle" style="font-size:6px"></i> ${esc(S.demo ? t.demoMode : t.connected)}</span></div>
+  v${CFG.VERSION} · ${CFG.CODENAME}<br>
+  <span style="opacity:.75">SLS-8 · van Dierendonck &amp; Nuijten (2011)</span>
+</div>
     </aside>
 
     <main class="slos-main" id="slos-main">
