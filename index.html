@@ -28,6 +28,10 @@
   <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.mi
+
+
+
 
   <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
@@ -2083,7 +2087,8 @@
    <script src="help-system-advanced.js"></script>
     <script src="executive-views.js"></script>
    <script src="cabildo-advanced-module.js"></script>
-<script src="task-prioritizer.js"></script>
+   <script src="human-impact-leadership.js"></script>
+
 
 
     <script src="evm.js"></script>
@@ -33737,7 +33742,322 @@ console.log('📌 MutationObserver como respaldo');
     
 })();
 </script>
+<!-- ============================================================ -->
+<!-- 🔥 DRAG MANUAL – 100% FUNCIONAL, SIN DEPENDENCIAS            -->
+<!-- ============================================================ -->
+<script>
+(function manualDrag() {
+    'use strict';
 
+    console.log('🔥 [ManualDrag] Instalando sistema de arrastre manual...');
+
+    // ──────────────────────────────────────────────────────────────
+    // 1. ELIMINAR SORTABLE Y EVENTOS NATIVOS
+    // ──────────────────────────────────────────────────────────────
+    function destroySortable() {
+        if (typeof Sortable !== 'undefined') {
+            ['pendingList', 'inProgressList', 'completedList', 'overdueList'].forEach(id => {
+                const col = document.getElementById(id);
+                if (col && Sortable.get(col)) {
+                    Sortable.get(col).destroy();
+                    console.log('🗑️ Sortable eliminado de', id);
+                }
+            });
+        }
+        // Eliminar cualquier atributo draggable residual
+        document.querySelectorAll('.task-item, .task-card').forEach(el => {
+            el.removeAttribute('draggable');
+            el.ondragstart = null;
+            el.ondragend = null;
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 2. VARIABLES DE ESTADO
+    // ──────────────────────────────────────────────────────────────
+    let dragData = null;        // { element, taskId, startX, startY, offsetX, offsetY, originalParent }
+    let isDragging = false;
+    let ghostElement = null;    // Elemento fantasma que sigue al cursor
+
+    // ──────────────────────────────────────────────────────────────
+    // 3. INICIAR ARRASTRE (mousedown / touchstart)
+    // ──────────────────────────────────────────────────────────────
+    function startDrag(e) {
+        const task = e.target.closest('.task-item, .task-card');
+        if (!task) return;
+        // Evitar que se active al hacer clic en botones internos
+        if (e.target.closest('button, .task-menu, .task-context-menu')) return;
+
+        e.preventDefault();
+
+        const rect = task.getBoundingClientRect();
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+        // Guardar datos iniciales
+        dragData = {
+            element: task,
+            taskId: task.dataset.taskId || task.id,
+            offsetX: clientX - rect.left,
+            offsetY: clientY - rect.top,
+            originalParent: task.parentElement,
+            originalIndex: Array.from(task.parentElement.children).indexOf(task),
+            startX: clientX,
+            startY: clientY
+        };
+
+        // Crear el elemento fantasma (copia visual)
+        ghostElement = task.cloneNode(true);
+        ghostElement.style.position = 'fixed';
+        ghostElement.style.width = rect.width + 'px';
+        ghostElement.style.pointerEvents = 'none';
+        ghostElement.style.zIndex = '99999';
+        ghostElement.style.opacity = '0.85';
+        ghostElement.style.transform = 'scale(1.02)';
+        ghostElement.style.boxShadow = '0 20px 60px rgba(0,0,0,0.5)';
+        ghostElement.style.border = '2px solid #8b5cf6';
+        ghostElement.style.borderRadius = '8px';
+        ghostElement.style.background = getComputedStyle(task).background || '#1e293b';
+        ghostElement.style.color = getComputedStyle(task).color || '#e2e8f0';
+        ghostElement.style.padding = getComputedStyle(task).padding || '12px 15px';
+        // Ocultar el original mientras se arrastra (para evitar duplicados)
+        task.style.opacity = '0.3';
+
+        document.body.appendChild(ghostElement);
+        moveGhost(clientX, clientY);
+
+        isDragging = true;
+        window.__DRAG_ACTIVE = true;
+
+        // Bloquear eventos de clic durante el drag
+        document.addEventListener('click', blockClicks, true);
+
+        // Agregar eventos globales
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('touchend', onDragEnd, { passive: false });
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 4. MOVER DURANTE EL ARRASTRE
+    // ──────────────────────────────────────────────────────────────
+    function onDragMove(e) {
+        e.preventDefault();
+        if (!isDragging || !ghostElement) return;
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        moveGhost(clientX, clientY);
+
+        // Detectar sobre qué columna estamos
+        const col = document.elementFromPoint(clientX, clientY)?.closest('.column');
+        if (col) {
+            // Resaltar columna destino
+            document.querySelectorAll('.column').forEach(c => c.style.border = '2px solid transparent');
+            col.style.border = '2px solid #8b5cf6';
+            col.style.borderRadius = '8px';
+        }
+    }
+
+    function moveGhost(x, y) {
+        if (!ghostElement) return;
+        ghostElement.style.left = (x - dragData.offsetX) + 'px';
+        ghostElement.style.top = (y - dragData.offsetY) + 'px';
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 5. FINALIZAR ARRASTRE (mouseup / touchend)
+    // ──────────────────────────────────────────────────────────────
+    function onDragEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        window.__DRAG_ACTIVE = false;
+
+        // Eliminar eventos globales
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('touchmove', onDragMove);
+        document.removeEventListener('touchend', onDragEnd);
+        document.removeEventListener('click', blockClicks, true);
+
+        // Obtener la posición final
+        const clientX = e.type === 'touchend' ? (e.changedTouches?.[0]?.clientX || dragData.startX) : e.clientX;
+        const clientY = e.type === 'touchend' ? (e.changedTouches?.[0]?.clientY || dragData.startY) : e.clientY;
+
+        // Determinar columna destino
+        const elementosBajoCursor = document.elementsFromPoint(clientX, clientY);
+        let columnaDestino = null;
+        let columnaId = null;
+
+        for (let el of elementosBajoCursor) {
+            const col = el.closest('.column');
+            if (col) {
+                columnaDestino = col;
+                columnaId = col.id; // 'pendingList', 'inProgressList', etc.
+                break;
+            }
+        }
+
+        // Si no se detectó columna, buscar por proximidad
+        if (!columnaDestino) {
+            const columns = document.querySelectorAll('.column');
+            let minDist = Infinity;
+            columns.forEach(col => {
+                const rect = col.getBoundingClientRect();
+                const cx = rect.left + rect.width/2;
+                const cy = rect.top + rect.height/2;
+                const dist = Math.hypot(clientX - cx, clientY - cy);
+                if (dist < minDist) {
+                    minDist = dist;
+                    columnaDestino = col;
+                    columnaId = col.id;
+                }
+            });
+        }
+
+        // Eliminar el fantasma
+        if (ghostElement) {
+            ghostElement.remove();
+            ghostElement = null;
+        }
+
+        // Restaurar visibilidad del original
+        if (dragData && dragData.element) {
+            dragData.element.style.opacity = '1';
+        }
+
+        // Quitar resaltado de columnas
+        document.querySelectorAll('.column').forEach(c => c.style.border = 'none');
+
+        // Si hay columna destino y es diferente de la original, mover la tarea
+        if (columnaDestino && dragData && dragData.element) {
+            const task = dragData.element;
+            const originalParent = dragData.originalParent;
+
+            // Si la columna destino es diferente a la original
+            if (columnaDestino !== originalParent) {
+                // Mover el elemento en el DOM
+                columnaDestino.appendChild(task);
+
+                // Actualizar el estado de la tarea en los datos
+                const taskId = dragData.taskId;
+                const newStatus = columnaId.replace('List', '').toLowerCase();
+                const statusMap = {
+                    'pending': 'pending',
+                    'inProgress': 'inProgress',
+                    'completed': 'completed',
+                    'overdue': 'overdue'
+                };
+                const status = statusMap[newStatus] || 'pending';
+
+                // Actualizar en localStorage
+                updateTaskStatus(taskId, status);
+
+                console.log(`✅ Tarea ${taskId} movida a ${status}`);
+            } else {
+                // Si se soltó en la misma columna, solo reordenar (si es necesario)
+                // Podemos ignorar o reordenar basado en la posición del mouse
+            }
+        }
+
+        // Limpiar
+        dragData = null;
+        isDragging = false;
+        window.__DRAG_ACTIVE = false;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 6. ACTUALIZAR ESTADO EN LOCALSTORAGE
+    // ──────────────────────────────────────────────────────────────
+    function updateTaskStatus(taskId, newStatus) {
+        try {
+            const projects = JSON.parse(localStorage.getItem('projects') || '[]');
+            const idx = localStorage.getItem('currentProjectIndex') || 0;
+            if (!projects[idx]) return;
+
+            const task = projects[idx].tasks.find(t => String(t.id) === String(taskId));
+            if (task) {
+                task.status = newStatus;
+                // Si se completa, marcar progreso 100
+                if (newStatus === 'completed') {
+                    task.progress = 100;
+                }
+                localStorage.setItem('projects', JSON.stringify(projects));
+                console.log('💾 Estado actualizado en localStorage');
+            }
+        } catch(e) {
+            console.warn('Error al guardar:', e);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 7. BLOQUEAR CLICS DURANTE EL DRAG
+    // ──────────────────────────────────────────────────────────────
+    function blockClicks(e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 8. ASIGNAR EVENTOS A LAS TAREAS
+    // ──────────────────────────────────────────────────────────────
+    function attachDragEvents() {
+        document.querySelectorAll('.task-item, .task-card').forEach(task => {
+            // Evitar duplicados
+            if (task._dragAttached) return;
+            task._dragAttached = true;
+            task.style.cursor = 'grab';
+
+            // Mouse
+            task.addEventListener('mousedown', startDrag);
+            // Touch
+            task.addEventListener('touchstart', startDrag, { passive: false });
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 9. REINICIAR TODO EL SISTEMA
+    // ──────────────────────────────────────────────────────────────
+    function fullReset() {
+        destroySortable();
+        // Limpiar eventos antiguos
+        document.querySelectorAll('.task-item, .task-card').forEach(task => {
+            task.removeEventListener('mousedown', startDrag);
+            task.removeEventListener('touchstart', startDrag);
+            task._dragAttached = false;
+        });
+        // Forzar re-asignación
+        setTimeout(attachDragEvents, 50);
+        console.log('🔄 Sistema de arrastre manual reiniciado');
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 10. INICIALIZAR
+    // ──────────────────────────────────────────────────────────────
+    function init() {
+        destroySortable();
+        attachDragEvents();
+        console.log('✅ Sistema de arrastre manual instalado. Arrastra cualquier tarea.');
+    }
+
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'complete') {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+    }
+
+    // Re-inicializar cuando cambie la vista (por si se recarga el board)
+    document.addEventListener('viewChanged', function() {
+        setTimeout(fullReset, 300);
+    });
+
+    // Exponer para depuración
+    window.resetDragManual = fullReset;
+
+    console.log('🔥 [ManualDrag] Listo. El arrastre ahora funciona manualmente.');
+})();
+</script>
  </body>
 </html>
  
