@@ -1364,6 +1364,8 @@ window.cambiarProyecto = cambiarProyecto;
 window.obtenerProyectoActual = obtenerProyectoActual;
 window.obtenerTodosProyectos = obtenerTodosProyectos;
 window.ultimoReporteId = null;
+window._ventanaPrevia = null;   // ← AGREGA ESTA LÍNEA
+
 function initProjectSelector() {
 const proyectos = obtenerTodosProyectos();
 if (!proyectos || proyectos.length === 0) return null;
@@ -1658,16 +1660,19 @@ ${options}
 var sel = document.getElementById('reportProjectSelector');
 if (!sel) return;
 sel.addEventListener('change', function() {
+var idx = parseInt(sel.value, 10);
+try { localStorage.setItem('selectedProjectIndex', String(idx)); } catch (e) {}
+var id = null;
+try { id = localStorage.getItem('ultimoReporteEjecutado'); } catch (e) {}
 var opener = window.opener;
-if (!opener) { location.reload(); return; }
-if (opener.cambiarProyecto) opener.cambiarProyecto(parseInt(sel.value, 10));
-var id = opener.ultimoReporteId;
-if (id && opener.reportesEjecutivos && opener.reportesEjecutivos[id]) {
-opener.reportesEjecutivos[id]();
-window.close();
-} else {
-location.reload();
-}
+if (!opener || !opener.reportesEjecutivos || !id || !opener.reportesEjecutivos[id]) { location.reload(); return; }
+if (opener.cambiarProyecto) { try { opener.cambiarProyecto(idx); } catch (e) {} }
+// La nueva ventana la abre ESTA ventana (aquí sí hay gesto del usuario → no la bloquea)
+var nueva = window.open('', '_blank');
+if (!nueva) { alert('⚠️ Permite las ventanas emergentes (popups) para este sitio.'); return; }
+opener._ventanaPrevia = nueva;
+try { opener.reportesEjecutivos[id](); window.close(); }
+catch (e) { nueva.close(); }
 });
 })();
 <\/script>`;
@@ -1698,10 +1703,18 @@ th{background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;font-weight:60
 </style></head><body><div class="report-container"><div class="btn-group"><button class="btn-pdf" onclick="window.print()">${_t('btn_exportar_pdf')}</button><button class="btn-print" onclick="window.print()">${_t('btn_imprimir')}</button></div>${generarSelectorProyectosHTML()}${contenido}<div class="footer"><p>${_t('confidential')} - ${escapeHtml(titulo)}</p><p>${_t('generated')}: ${new Date().toLocaleString()}</p></div></div></body></html>`;
 }
 function abrirVentanaReporte(html) {
-const ventana = window.open('', '_blank');
+// Si la ventana del reporte pre-creó una ventana (para evitar el bloqueador de popups), úsala
+const ventana = window._ventanaPrevia || window.open('', '_blank');
+window._ventanaPrevia = null;
+if (!ventana) {
+alert('⚠️ El navegador bloqueó la ventana del reporte. Permite las ventanas emergentes (popups) para este sitio.');
+return null;
+}
 ventana.document.write(html);
 ventana.document.close();
+return ventana;
 }
+
 // ============================================
 // REPORTE 1: EXECUTIVE DASHBOARD
 // ============================================
@@ -2390,11 +2403,23 @@ document.addEventListener('click', function(e) {
 const tarjeta = e.target.closest('.reporte-tarjeta');
 if (tarjeta && tarjeta.dataset.reporte && window.reportesEjecutivos[tarjeta.dataset.reporte]) {
 window.ultimoReporteId = tarjeta.dataset.reporte;
+try { localStorage.setItem('ultimoReporteEjecutado', tarjeta.dataset.reporte); } catch (err) {}
 window.reportesEjecutivos[tarjeta.dataset.reporte]();
 const modal = document.getElementById('modalReportesEjecutivos');
 if (modal) modal.remove();
 }
 });
+
+// 👇👇 PÉGALO AQUÍ (es un respaldo por si el acceso directo al opener falla) 👇👇
+window.addEventListener('message', function(e) {
+const d = e.data;
+if (!d || d.tipo !== 'cambiarProyectoReporte') return;
+cambiarProyecto(parseInt(d.index, 10));
+const id = d.reporte || window.ultimoReporteId;
+if (id && window.reportesEjecutivos[id]) window.reportesEjecutivos[id]();
+});
+// 👆👆 hasta aquí 👆👆
+
 // ============================================
 // 🌐 INICIALIZACIÓN CUANDO EL DOM ESTÉ LISTO
 // ============================================
