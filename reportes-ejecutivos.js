@@ -1659,19 +1659,35 @@ ${options}
 (function() {
 var sel = document.getElementById('reportProjectSelector');
 if (!sel) return;
+// Encuentra la ventana de la APP principal (no la ventana de reporte anterior)
+function getApp() {
+try {
+// 1) Referencia directa que hereda cada ventana nueva
+if (window.__appWindow && !window.__appWindow.closed && window.__appWindow.reportesEjecutivos) return window.__appWindow;
+// 2) Fallback: subir por la cadena de openers vivos
+var w = window.opener, i = 0;
+while (w && !w.closed && i < 10) {
+if (w.reportesEjecutivos) return w;
+w = w.opener; i++;
+}
+} catch (e) {}
+return null;
+}
 sel.addEventListener('change', function() {
 var idx = parseInt(sel.value, 10);
 try { localStorage.setItem('selectedProjectIndex', String(idx)); } catch (e) {}
 var id = null;
 try { id = localStorage.getItem('ultimoReporteEjecutado'); } catch (e) {}
-var opener = window.opener;
-if (!opener || !opener.reportesEjecutivos || !id || !opener.reportesEjecutivos[id]) { location.reload(); return; }
-if (opener.cambiarProyecto) { try { opener.cambiarProyecto(idx); } catch (e) {} }
-// La nueva ventana la abre ESTA ventana (aquí sí hay gesto del usuario → no la bloquea)
+var app = getApp();
+if (!app || !id || !app.reportesEjecutivos[id]) { location.reload(); return; }
+if (app.cambiarProyecto) { try { app.cambiarProyecto(idx); } catch (e) {} }
+// La nueva ventana la abre ESTA ventana (tiene el gesto del usuario → no la bloquea)
 var nueva = window.open('', '_blank');
 if (!nueva) { alert('⚠️ Permite las ventanas emergentes (popups) para este sitio.'); return; }
-opener._ventanaPrevia = nueva;
-try { opener.reportesEjecutivos[id](); window.close(); }
+// 🔑 Hereda la referencia a la app principal (sobrevive al document.write)
+try { nueva.__appWindow = app; } catch (e) {}
+app._ventanaPrevia = nueva;
+try { app.reportesEjecutivos[id](); window.close(); }
 catch (e) { nueva.close(); }
 });
 })();
