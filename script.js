@@ -1,3 +1,34 @@
+// ============================================
+// 🔧 INTERCEPTOR DE FETCH PARA EL TRANSCRIPTOR
+// ============================================
+(function interceptTranscriptorFetch() {
+    'use strict';
+    const originalFetch = window.fetch;
+    window.fetch = function(input, init) {
+        const url = typeof input === 'string' ? input : input.url;
+        // Si es la petición de transcripción, añadir token
+        if (url && url.includes('/api/transcribe-meeting')) {
+            init = init || {};
+            init.headers = init.headers || {};
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                init.headers.Authorization = 'Bearer ' + token;
+            }
+            // Añadir clienteId si es FormData
+            if (init.body instanceof FormData) {
+                const clienteId = localStorage.getItem('clienteId');
+                if (clienteId && !init.body.has('clienteId')) {
+                    init.body.append('clienteId', clienteId);
+                }
+            }
+        }
+        return originalFetch.call(this, input, init);
+    };
+    console.log('✅ Interceptor de fetch para transcriptor instalado.');
+})();
+
+
+
 // ═══════════════════════════════════════════════════
 // FIX: Pausar traducciones durante drag & drop
 // ═══════════════════════════════════════════════════
