@@ -1,3 +1,506 @@
+// ============================================================
+// 🚀 COLABORACIÓN REAL CON INVITACIONES - VERSIÓN DEFINITIVA
+// ============================================================
+(function() {
+  'use strict';
+
+  console.log('🚀 Iniciando colaboración REAL con invitaciones...');
+
+  // --- Estado ---
+  const state = {
+    projectId: null,
+    socket: window.tiempoRealSocket,
+    connected: false,
+    channel: null,
+    initialized: false,
+    collaborators: []
+  };
+
+  // --- Obtener proyecto actual ---
+  function getCurrentProject() {
+    let idx = window.currentProjectIndex;
+    if (idx === undefined || idx === null) {
+      const stored = localStorage.getItem('currentProjectIndex');
+      if (stored !== null) idx = parseInt(stored, 10);
+    }
+    if (window.projects && Array.isArray(window.projects) && idx !== undefined && idx !== null && idx >= 0 && idx < window.projects.length) {
+      return { project: window.projects[idx], index: idx };
+    }
+    if (window.projects && window.projects.length > 0) {
+      return { project: window.projects[0], index: 0 };
+    }
+    const newProject = {
+      id: Date.now(),
+      name: 'Mi Proyecto',
+      totalProjectTime: 100,
+      tasks: [],
+      colaboradores: []
+    };
+    window.projects = [newProject];
+    localStorage.setItem('projects', JSON.stringify(window.projects));
+    localStorage.setItem('currentProjectIndex', '0');
+    return { project: newProject, index: 0 };
+  }
+
+  // --- Guardar colaboradores en el proyecto ---
+  function saveCollaborators(project, emails) {
+    project.colaboradores = emails;
+    if (typeof updateLocalStorage === 'function') updateLocalStorage();
+    // Sincronizar
+    if (window.__collab && window.__collab.syncFullProject) {
+      window.__collab.syncFullProject();
+    }
+  }
+
+  // --- Generar enlace de invitación ---
+  function generateInviteLink(email) {
+    const { project } = getCurrentProject();
+    // Token simple basado en email + proyecto + timestamp
+    const token = btoa(`${email}|${project.id}|${Date.now()}`).replace(/=/g, '');
+    // Construir enlace
+    const baseUrl = window.location.origin + window.location.pathname;
+    const inviteUrl = `${baseUrl}?invite=${token}&project=${project.id}&email=${encodeURIComponent(email)}`;
+    return inviteUrl;
+  }
+
+  // --- Enviar invitación por email ---
+  function sendInviteByEmail(email) {
+    const inviteLink = generateInviteLink(email);
+    const subject = encodeURIComponent(`Invitación al proyecto "${getCurrentProject().project.name}"`);
+    const body = encodeURIComponent(
+      `Hola,\n\n` +
+      `Has sido invitado a colaborar en el proyecto "${getCurrentProject().project.name}".\n\n` +
+      `Para acceder, haz clic en el siguiente enlace:\n\n` +
+      `${inviteLink}\n\n` +
+      `Si el enlace no funciona, copia y pega esta URL en tu navegador.\n\n` +
+      `¡Te esperamos!\n\n` +
+      `Saludos.`
+    );
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+  }
+
+  // --- Copiar enlace al portapapeles ---
+  function copyInviteLink(email) {
+    const link = generateInviteLink(email);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => {
+        addNotification(`📋 Enlace copiado al portapapeles para ${email}`, 'success');
+        console.log('📋 Enlace copiado:', link);
+      }).catch(() => {
+        fallbackCopy(link);
+      });
+    } else {
+      fallbackCopy(link);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      addNotification('📋 Enlace copiado al portapapeles', 'success');
+    } catch (e) {
+      addNotification('❌ No se pudo copiar. Enlace: ' + text, 'error');
+    }
+    document.body.removeChild(textarea);
+  }
+
+  // --- Notificaciones ---
+  function addNotification(msg, type = 'info') {
+    const container = document.getElementById('collab-notifications');
+    if (!container) return;
+    const colors = {
+      info: '#60a5fa',
+      success: '#34d399',
+      warning: '#fbbf24',
+      error: '#f87171'
+    };
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.padding = '4px 0';
+    el.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    el.style.color = colors[type] || '#94a3b8';
+    container.prepend(el);
+    if (container.children.length > 20) container.lastChild.remove();
+  }
+
+  // --- UI ---
+  function createUI() {
+    const oldPanel = document.getElementById('collab-panel-exec');
+    if (oldPanel) oldPanel.remove();
+
+    const { project, index } = getCurrentProject();
+    state.projectId = index;
+    window.currentProjectIndex = index;
+
+    // Obtener colaboradores del proyecto
+    const collaborators = project.colaboradores || [];
+
+    const panel = document.createElement('div');
+    panel.id = 'collab-panel-exec';
+    panel.style.cssText = `
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  max-width: 900px;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 16px;
+  padding: 24px;
+  color: #e2e8f0;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  z-index: 999999;
+  backdrop-filter: blur(12px);
+  display: block;
+  max-height: 85vh;
+  overflow-y: auto;
+`;
+
+    panel.innerHTML = `
+      <!-- Proyecto -->
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <span style="font-size:16px;">📁</span>
+        <span style="font-size:15px; font-weight:600; color:#a78bfa;">${project.name}</span>
+        <span style="font-size:11px; color:#64748b; margin-left:auto;">ID: ${project.id}</span>
+      </div>
+
+      <!-- Colaboradores -->
+      <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:14px; margin-bottom:14px; border:1px solid #334155;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-weight:600; font-size:14px; color:#8b5cf6;">👥 Colaboradores</span>
+          <span style="font-size:12px; color:#64748b;">${collaborators.length} usuarios</span>
+        </div>
+
+        <!-- Lista de colaboradores -->
+        <div id="collab-users-list" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+          ${collaborators.map(email => `
+            <span style="background:rgba(99,102,241,0.15); padding:4px 12px; border-radius:20px; font-size:12px; border:1px solid rgba(99,102,241,0.2); display:flex; align-items:center; gap:6px;">
+              ${email === 'ajackson2672@gmail.com' ? '👑' : '👤'} ${email}
+              ${email !== 'ajackson2672@gmail.com' ? `<button onclick="window.__collab.removeCollaborator('${email}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:0 4px;">✕</button>` : ''}
+            </span>
+          `).join('')}
+          ${collaborators.length === 0 ? '<span style="color:#64748b; font-size:12px; font-style:italic;">Sin colaboradores</span>' : ''}
+        </div>
+
+        <!-- Agregar colaborador -->
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="email" id="collab-email-input" placeholder="Email del colaborador" style="
+            flex:1;
+            min-width:150px;
+            background:rgba(255,255,255,0.05);
+            border:1px solid #334155;
+            border-radius:8px;
+            color:white;
+            padding:8px 12px;
+            font-size:13px;
+            outline:none;
+          ">
+          <button id="collab-add-btn" style="
+            background:linear-gradient(135deg,#8b5cf6,#6d28d9);
+            border:none;
+            color:white;
+            padding:8px 16px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:600;
+            font-size:13px;
+          ">➕ Agregar</button>
+        </div>
+
+        <!-- Acciones por colaborador -->
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid #1e293b;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="collab-copy-link-btn" style="
+              background:rgba(16,185,129,0.15);
+              border:1px solid #10b981;
+              color:#6ee7b7;
+              padding:6px 14px;
+              border-radius:8px;
+              cursor:pointer;
+              font-size:11px;
+              font-weight:600;
+            ">📋 Copiar enlace</button>
+            <button id="collab-email-invite-btn" style="
+              background:rgba(59,130,246,0.15);
+              border:1px solid #3b82f6;
+              color:#93c5fd;
+              padding:6px 14px;
+              border-radius:8px;
+              cursor:pointer;
+              font-size:11px;
+              font-weight:600;
+            ">📧 Enviar por email</button>
+            <button id="collab-sync-btn" style="
+              background:rgba(99,102,241,0.15);
+              border:1px solid #6366f1;
+              color:#a5b4fc;
+              padding:6px 14px;
+              border-radius:8px;
+              cursor:pointer;
+              font-size:11px;
+              font-weight:600;
+            ">🔄 Sincronizar</button>
+            <button id="collab-close-btn" style="
+              background:rgba(239,68,68,0.15);
+              border:1px solid #ef4444;
+              color:#fca5a5;
+              padding:6px 14px;
+              border-radius:8px;
+              cursor:pointer;
+              font-size:11px;
+              font-weight:600;
+            ">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-weight:600; font-size:13px; color:#94a3b8;">📡 Estado</span>
+        <span id="collab-status-badge" style="background:#f59e0b; padding:2px 12px; border-radius:20px; font-size:10px; font-weight:600; color:#0f172a;">Iniciando</span>
+      </div>
+
+      <!-- Notificaciones -->
+      <div id="collab-notifications" style="max-height:120px; overflow-y:auto; font-size:12px; color:#94a3b8; border-top:1px solid #1e293b; padding-top:10px;">
+        <div style="color:#10b981;">✅ Sistema de invitaciones activo</div>
+        <div style="color:#94a3b8;">📌 Agrega colaboradores por email y comparte el enlace</div>
+      </div>
+    `;
+
+    document.body.appendChild(panel);
+
+    // --- Eventos ---
+
+    // Agregar colaborador
+    document.getElementById('collab-add-btn')?.addEventListener('click', function() {
+      const input = document.getElementById('collab-email-input');
+      const email = input.value.trim();
+      if (!email || !email.includes('@')) {
+        addNotification('❌ Ingresa un email válido', 'error');
+        return;
+      }
+      const { project } = getCurrentProject();
+      if (!project.colaboradores) project.colaboradores = [];
+      if (project.colaboradores.includes(email)) {
+        addNotification(`⚠️ ${email} ya es colaborador`, 'warning');
+        return;
+      }
+      project.colaboradores.push(email);
+      saveCollaborators(project, project.colaboradores);
+      input.value = '';
+      addNotification(`✅ ${email} agregado como colaborador`, 'success');
+      // Regenerar UI
+      setTimeout(() => createUI(), 100);
+    });
+
+    // Enter en el input
+    document.getElementById('collab-email-input')?.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('collab-add-btn').click();
+      }
+    });
+
+    // Copiar enlace de invitación
+    document.getElementById('collab-copy-link-btn')?.addEventListener('click', function() {
+      const input = document.getElementById('collab-email-input');
+      const email = input.value.trim();
+      if (!email || !email.includes('@')) {
+        addNotification('❌ Ingresa un email para generar el enlace', 'error');
+        return;
+      }
+      copyInviteLink(email);
+    });
+
+    // Enviar por email
+    document.getElementById('collab-email-invite-btn')?.addEventListener('click', function() {
+      const input = document.getElementById('collab-email-input');
+      const email = input.value.trim();
+      if (!email || !email.includes('@')) {
+        addNotification('❌ Ingresa un email para enviar la invitación', 'error');
+        return;
+      }
+      sendInviteByEmail(email);
+    });
+
+    // Sincronizar
+    document.getElementById('collab-sync-btn')?.addEventListener('click', function() {
+      addNotification('🔄 Sincronizando...');
+      if (window.__collab && window.__collab.syncFullProject) {
+        window.__collab.syncFullProject();
+        setTimeout(() => addNotification('✅ Sincronización completada', 'success'), 500);
+      } else {
+        // Fallback: recargar desde localStorage
+        const stored = localStorage.getItem('projects');
+        if (stored) {
+          try {
+            const projects = JSON.parse(stored);
+            if (projects && window.projects) {
+              window.projects = projects;
+              if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+              addNotification('✅ Datos recargados', 'success');
+            }
+          } catch(e) {}
+        }
+      }
+    });
+
+    // Cerrar
+    document.getElementById('collab-close-btn')?.addEventListener('click', function() {
+      document.getElementById('collab-panel-exec').style.display = 'none';
+    });
+
+    // Botón flotante
+    let toggleBtn = document.getElementById('collab-toggle-btn');
+    if (!toggleBtn) {
+      toggleBtn = document.createElement('button');
+      toggleBtn.id = 'collab-toggle-btn';
+      toggleBtn.innerHTML = '👥';
+      toggleBtn.title = 'Colaboración';
+      toggleBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(139,92,246,0.5);
+        z-index: 999998;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      toggleBtn.onmouseenter = () => { toggleBtn.style.transform = 'scale(1.08)'; };
+      toggleBtn.onmouseleave = () => { toggleBtn.style.transform = 'scale(1)'; };
+      toggleBtn.onclick = () => {
+        const p = document.getElementById('collab-panel-exec');
+        if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      };
+      document.body.appendChild(toggleBtn);
+    }
+
+    // Mostrar panel
+    panel.style.display = 'block';
+
+    // Actualizar estado
+    const badge = document.getElementById('collab-status-badge');
+    if (badge) {
+      badge.textContent = state.connected ? 'Conectado' : 'Local';
+      badge.style.background = state.connected ? '#22c55e' : '#f59e0b';
+      badge.style.color = '#0f172a';
+    }
+
+    return panel;
+  }
+
+  // --- Eliminar colaborador ---
+  function removeCollaborator(email) {
+    if (!confirm(`¿Eliminar a ${email} del proyecto?`)) return;
+    const { project } = getCurrentProject();
+    if (!project.colaboradores) return;
+    project.colaboradores = project.colaboradores.filter(e => e !== email);
+    saveCollaborators(project, project.colaboradores);
+    addNotification(`🗑️ ${email} eliminado del proyecto`, 'warning');
+    setTimeout(() => createUI(), 100);
+  }
+
+  // --- Exponer funciones ---
+  window.__collab = window.__collab || {};
+  window.__collab.removeCollaborator = removeCollaborator;
+  window.__collab.generateInviteLink = generateInviteLink;
+  window.__collab.copyInviteLink = copyInviteLink;
+  window.__collab.sendInviteByEmail = sendInviteByEmail;
+  window.__collab.createUI = createUI;
+  window.__collab.addNotification = addNotification;
+
+  // --- Inicialización ---
+  function init() {
+    if (state.initialized) return;
+    state.initialized = true;
+
+    const { project, index } = getCurrentProject();
+    state.projectId = index;
+    window.currentProjectIndex = index;
+
+    createUI();
+
+    // Conectar WebSocket
+    const socket = window.tiempoRealSocket;
+    if (socket) {
+      state.socket = socket;
+      state.connected = socket.connected;
+      if (socket.connected) {
+        document.getElementById('collab-status-badge').textContent = 'Conectado';
+        document.getElementById('collab-status-badge').style.background = '#22c55e';
+      } else {
+        socket.on('connect', () => {
+          state.connected = true;
+          document.getElementById('collab-status-badge').textContent = 'Conectado';
+          document.getElementById('collab-status-badge').style.background = '#22c55e';
+          addNotification('🔗 WebSocket conectado', 'success');
+        });
+        socket.on('disconnect', () => {
+          state.connected = false;
+          document.getElementById('collab-status-badge').textContent = 'Desconectado';
+          document.getElementById('collab-status-badge').style.background = '#ef4444';
+          addNotification('🔌 WebSocket desconectado', 'warning');
+        });
+      }
+    } else {
+      addNotification('⚠️ WebSocket no disponible, modo local', 'warning');
+    }
+
+    // BroadcastChannel
+    try {
+      state.channel = new BroadcastChannel('collab-channel');
+      state.channel.onmessage = (event) => {
+        const data = event.data;
+        if (data.type === 'project-sync' && data.payload) {
+          if (data.payload.projects) {
+            window.projects = data.payload.projects;
+            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+            addNotification('🔄 Proyecto sincronizado', 'success');
+          }
+        }
+      };
+    } catch(e) {}
+
+    addNotification(`✅ Proyecto: "${project.name}"`, 'success');
+    addNotification(`📌 Agrega colaboradores por email para trabajar juntos`, 'info');
+    console.log('✅ Colaboración REAL activa');
+    console.log('📌 Agrega colaboradores por email y comparte el enlace de invitación');
+  }
+
+  // Ejecutar
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  console.log('💡 Cómo invitar a un colaborador:');
+  console.log('  1. Escribe su email en el campo y haz clic en "Agregar"');
+  console.log('  2. Selecciona el email y haz clic en "📋 Copiar enlace"');
+  console.log('  3. Envía ese enlace a tu colaborador por WhatsApp/Telegram/Email');
+  console.log('  4. Cuando tu colaborador abra el enlace, se unirá automáticamente');
+})();
+
+
+
+
 // ============================================
 // 🔧 INTERCEPTOR DE FETCH PARA EL TRANSCRIPTOR
 // ============================================
@@ -75815,64 +76318,94 @@ if (!document.getElementById('notif-slack-styles')) {
     // ============================================
     // 7. PROCESAR INVITACIÓN (al cargar página)
     // ============================================
-    window.processInvitation = async function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        
-        if (!token) return;
-        
-        console.log('🔑 Procesando invitación con token:', token);
-        
+    // ============================================================
+// ✅ PROCESAMIENTO DE INVITACIÓN (VERSIÓN QUE SÍ ACTUALIZA EL MENÚ)
+// ============================================================
+window.procesarInvitacionURL = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) return; // No es una página de invitación, salir silenciosamente
+
+    console.log('🔑 Procesando invitación con token:', token);
+    
+    // Esperar 1.5s a que el sistema de login cargue el authToken en localStorage
+    setTimeout(async () => {
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            alert('⚠️ Debes iniciar sesión primero para aceptar esta invitación.');
+            // Guardamos el token en una variable pendiente para después del login
+            localStorage.setItem('pendingInviteToken', token);
+            window.location.href = '/'; // Redirigir al login
+            return;
+        }
+
         try {
-            // Primero validar la invitación
-            const validateResponse = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations/validate?token=${token}`);
-            const validateData = await validateResponse.json();
-            
-            if (!validateData.success) {
-                alert(`❌ Invitación inválida: ${validateData.error || 'Enlace no válido'}`);
-                window.location.href = window.location.pathname;
-                return;
-            }
-            
-            // Preguntar al usuario si acepta
-            const confirmar = confirm(
-                `📨 ¡Has sido invitado al proyecto "${validateData.proyecto}"!\n\n` +
-                `Rol: ${validateData.rol}\n\n` +
-                `¿Deseas aceptar la invitación?`
-            );
-            
-            if (!confirmar) {
-                window.location.href = window.location.pathname;
-                return;
-            }
-            
-            // Aceptar invitación
-            const acceptResponse = await fetch(`${COLLAB_CONFIG.API_URL}/api/invitations/accept`, {
+            // 1. Aceptar la invitación en el backend
+            const resAccept = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${authToken}` 
+                },
                 body: JSON.stringify({ token })
             });
             
-            const acceptData = await acceptResponse.json();
-            // ✅ CÓDIGO CORRECTO PARA SISTEMA CON MONGODB
-if (acceptResponse.ok && acceptData.success) {
-    // Solo guardar el clienteId - el proyecto ya está en MongoDB
-    localStorage.setItem(COLLAB_CONFIG.STORAGE_KEYS.CLIENTE_ID, acceptData.clienteId);
-    
-    // ✅ FORZAR RECARGA DE PROYECTOS DESDE MONGODB
-    localStorage.setItem('forceProjectRefresh', 'true');
-    
-    alert(`✅ ¡Bienvenido al proyecto "${validateData.proyecto}"!\n\nAhora verás este proyecto en tu lista.`);
-    
-    // Recargar la página para que safeLoad() traiga los proyectos desde MongoDB
-    window.location.href = window.location.pathname;
-}
+            const dataAccept = await resAccept.json();
+
+            if (resAccept.ok && dataAccept.success) {
+                alert(`✅ ¡Bienvenido al proyecto "${dataAccept.proyectoNombre}"!`);
+
+                // 2. 🔥 CLAVE: Obtener TODOS los proyectos (propios + colaborativos) del backend
+                console.log('🔄 Sincronizando proyectos desde el backend...');
+                const resProjects = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const dataProjects = await resProjects.json();
+
+                if (dataProjects.success) {
+                    // Fusionar arrays de forma segura
+                    const owned = dataProjects.ownedProjects || [];
+                    const collab = dataProjects.collaboratedProjects || [];
+                    const todosLosProyectos = [...owned, ...collab];
+
+                    console.log(`✅ Se encontraron ${owned.length} propios y ${collab.length} colaborativos.`);
+
+                    // 3. Actualizar la memoria y el localStorage
+                    window.projects = todosLosProyectos;
+                    localStorage.setItem('projects', JSON.stringify(todosLosProyectos));
+                    localStorage.setItem('currentProjectIndex', '0');
+
+                    // 4. 🔥 FORZAR RENDERIZADO DEL MENÚ LATERAL
+                    if (typeof renderProjects === 'function') {
+                        renderProjects();
+                        console.log('✅ Menú lateral actualizado.');
+                    }
+                    
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                    }
+                }
+
+                // 5. Limpiar la URL para que no se vuelva a ejecutar al recargar
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } else {
+                alert('❌ Error: ' + (dataAccept.error || 'La invitación no es válida o ya fue usada.'));
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         } catch (error) {
-            console.error('Error procesando invitación:', error);
-            alert('❌ Error al procesar la invitación');
-            window.location.href = window.location.pathname;
+            console.error('❌ Error procesando invitación:', error);
+            alert('❌ Error de conexión al aceptar la invitación.');
         }
-    };
+    }, 1500);
+};
+
+// Ejecutar automáticamente si la URL tiene el parámetro ?token=
+if (window.location.search.includes('token=')) {
+    window.procesarInvitacionURL();
+}
     
     // ============================================
     // 8. SOCKET.IO PARA TIEMPO REAL
