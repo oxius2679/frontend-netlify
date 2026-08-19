@@ -1,503 +1,616 @@
-// ============================================================
-// 🚀 COLABORACIÓN REAL CON INVITACIONES - VERSIÓN DEFINITIVA
-// ============================================================
-(function() {
+(async function() {
   'use strict';
+  console.clear();
+  console.log('%c🚀 Nexus Collab v2.2 (Conectado a tu Backend)', 'font-size:20px;font-weight:bold;color:#10b981;');
 
-  console.log('🚀 Iniciando colaboración REAL con invitaciones...');
-
-  // --- Estado ---
-  const state = {
-    projectId: null,
-    socket: window.tiempoRealSocket,
-    connected: false,
-    channel: null,
-    initialized: false,
-    collaborators: []
+  const CONFIG = {
+    // ✅ TU URL REAL DE RENDER
+    SERVER_URL: 'https://mi-sistema-proyectos-backend-4.onrender.com', 
+    OWNER_EMAIL: 'ajackson2672@gmail.com'
   };
 
-  // --- Obtener proyecto actual ---
-  function getCurrentProject() {
-    let idx = window.currentProjectIndex;
-    if (idx === undefined || idx === null) {
-      const stored = localStorage.getItem('currentProjectIndex');
-      if (stored !== null) idx = parseInt(stored, 10);
-    }
-    if (window.projects && Array.isArray(window.projects) && idx !== undefined && idx !== null && idx >= 0 && idx < window.projects.length) {
-      return { project: window.projects[idx], index: idx };
-    }
-    if (window.projects && window.projects.length > 0) {
-      return { project: window.projects[0], index: 0 };
-    }
-    const newProject = {
-      id: Date.now(),
-      name: 'Mi Proyecto',
-      totalProjectTime: 100,
-      tasks: [],
-      colaboradores: []
-    };
-    window.projects = [newProject];
-    localStorage.setItem('projects', JSON.stringify(window.projects));
-    localStorage.setItem('currentProjectIndex', '0');
-    return { project: newProject, index: 0 };
-  }
-
-  // --- Guardar colaboradores en el proyecto ---
-  function saveCollaborators(project, emails) {
-    project.colaboradores = emails;
-    if (typeof updateLocalStorage === 'function') updateLocalStorage();
-    // Sincronizar
-    if (window.__collab && window.__collab.syncFullProject) {
-      window.__collab.syncFullProject();
-    }
-  }
-
-  // --- Generar enlace de invitación ---
-  function generateInviteLink(email) {
-    const { project } = getCurrentProject();
-    // Token simple basado en email + proyecto + timestamp
-    const token = btoa(`${email}|${project.id}|${Date.now()}`).replace(/=/g, '');
-    // Construir enlace
-    const baseUrl = window.location.origin + window.location.pathname;
-    const inviteUrl = `${baseUrl}?invite=${token}&project=${project.id}&email=${encodeURIComponent(email)}`;
-    return inviteUrl;
-  }
-
-  // --- Enviar invitación por email ---
-  function sendInviteByEmail(email) {
-    const inviteLink = generateInviteLink(email);
-    const subject = encodeURIComponent(`Invitación al proyecto "${getCurrentProject().project.name}"`);
-    const body = encodeURIComponent(
-      `Hola,\n\n` +
-      `Has sido invitado a colaborar en el proyecto "${getCurrentProject().project.name}".\n\n` +
-      `Para acceder, haz clic en el siguiente enlace:\n\n` +
-      `${inviteLink}\n\n` +
-      `Si el enlace no funciona, copia y pega esta URL en tu navegador.\n\n` +
-      `¡Te esperamos!\n\n` +
-      `Saludos.`
-    );
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
-  }
-
-  // --- Copiar enlace al portapapeles ---
-  function copyInviteLink(email) {
-    const link = generateInviteLink(email);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(link).then(() => {
-        addNotification(`📋 Enlace copiado al portapapeles para ${email}`, 'success');
-        console.log('📋 Enlace copiado:', link);
-      }).catch(() => {
-        fallbackCopy(link);
-      });
-    } else {
-      fallbackCopy(link);
-    }
-  }
-
-  function fallbackCopy(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
-      addNotification('📋 Enlace copiado al portapapeles', 'success');
-    } catch (e) {
-      addNotification('❌ No se pudo copiar. Enlace: ' + text, 'error');
-    }
-    document.body.removeChild(textarea);
-  }
-
-  // --- Notificaciones ---
-  function addNotification(msg, type = 'info') {
-    const container = document.getElementById('collab-notifications');
-    if (!container) return;
-    const colors = {
-      info: '#60a5fa',
-      success: '#34d399',
-      warning: '#fbbf24',
-      error: '#f87171'
-    };
-    const el = document.createElement('div');
-    el.textContent = msg;
-    el.style.padding = '4px 0';
-    el.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-    el.style.color = colors[type] || '#94a3b8';
-    container.prepend(el);
-    if (container.children.length > 20) container.lastChild.remove();
-  }
-
-  // --- UI ---
-  function createUI() {
-    const oldPanel = document.getElementById('collab-panel-exec');
-    if (oldPanel) oldPanel.remove();
-
-    const { project, index } = getCurrentProject();
-    state.projectId = index;
-    window.currentProjectIndex = index;
-
-    // Obtener colaboradores del proyecto
-    const collaborators = project.colaboradores || [];
-
-    const panel = document.createElement('div');
-    panel.id = 'collab-panel-exec';
-    panel.style.cssText = `
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80vw;
-  max-width: 900px;
-  background: linear-gradient(145deg, #0f172a, #1e293b);
-  border: 1px solid rgba(99, 102, 241, 0.4);
-  border-radius: 16px;
-  padding: 24px;
-  color: #e2e8f0;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  z-index: 999999;
-  backdrop-filter: blur(12px);
-  display: block;
-  max-height: 85vh;
-  overflow-y: auto;
-`;
-
-    panel.innerHTML = `
-      <!-- Proyecto -->
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-        <span style="font-size:16px;">📁</span>
-        <span style="font-size:15px; font-weight:600; color:#a78bfa;">${project.name}</span>
-        <span style="font-size:11px; color:#64748b; margin-left:auto;">ID: ${project.id}</span>
-      </div>
-
-      <!-- Colaboradores -->
-      <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:14px; margin-bottom:14px; border:1px solid #334155;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <span style="font-weight:600; font-size:14px; color:#8b5cf6;">👥 Colaboradores</span>
-          <span style="font-size:12px; color:#64748b;">${collaborators.length} usuarios</span>
-        </div>
-
-        <!-- Lista de colaboradores -->
-        <div id="collab-users-list" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-          ${collaborators.map(email => `
-            <span style="background:rgba(99,102,241,0.15); padding:4px 12px; border-radius:20px; font-size:12px; border:1px solid rgba(99,102,241,0.2); display:flex; align-items:center; gap:6px;">
-              ${email === 'ajackson2672@gmail.com' ? '👑' : '👤'} ${email}
-              ${email !== 'ajackson2672@gmail.com' ? `<button onclick="window.__collab.removeCollaborator('${email}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; padding:0 4px;">✕</button>` : ''}
-            </span>
-          `).join('')}
-          ${collaborators.length === 0 ? '<span style="color:#64748b; font-size:12px; font-style:italic;">Sin colaboradores</span>' : ''}
-        </div>
-
-        <!-- Agregar colaborador -->
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <input type="email" id="collab-email-input" placeholder="Email del colaborador" style="
-            flex:1;
-            min-width:150px;
-            background:rgba(255,255,255,0.05);
-            border:1px solid #334155;
-            border-radius:8px;
-            color:white;
-            padding:8px 12px;
-            font-size:13px;
-            outline:none;
-          ">
-          <button id="collab-add-btn" style="
-            background:linear-gradient(135deg,#8b5cf6,#6d28d9);
-            border:none;
-            color:white;
-            padding:8px 16px;
-            border-radius:8px;
-            cursor:pointer;
-            font-weight:600;
-            font-size:13px;
-          ">➕ Agregar</button>
-        </div>
-
-        <!-- Acciones por colaborador -->
-        <div style="margin-top:12px; padding-top:12px; border-top:1px solid #1e293b;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button id="collab-copy-link-btn" style="
-              background:rgba(16,185,129,0.15);
-              border:1px solid #10b981;
-              color:#6ee7b7;
-              padding:6px 14px;
-              border-radius:8px;
-              cursor:pointer;
-              font-size:11px;
-              font-weight:600;
-            ">📋 Copiar enlace</button>
-            <button id="collab-email-invite-btn" style="
-              background:rgba(59,130,246,0.15);
-              border:1px solid #3b82f6;
-              color:#93c5fd;
-              padding:6px 14px;
-              border-radius:8px;
-              cursor:pointer;
-              font-size:11px;
-              font-weight:600;
-            ">📧 Enviar por email</button>
-            <button id="collab-sync-btn" style="
-              background:rgba(99,102,241,0.15);
-              border:1px solid #6366f1;
-              color:#a5b4fc;
-              padding:6px 14px;
-              border-radius:8px;
-              cursor:pointer;
-              font-size:11px;
-              font-weight:600;
-            ">🔄 Sincronizar</button>
-            <button id="collab-close-btn" style="
-              background:rgba(239,68,68,0.15);
-              border:1px solid #ef4444;
-              color:#fca5a5;
-              padding:6px 14px;
-              border-radius:8px;
-              cursor:pointer;
-              font-size:11px;
-              font-weight:600;
-            ">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Estado -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-weight:600; font-size:13px; color:#94a3b8;">📡 Estado</span>
-        <span id="collab-status-badge" style="background:#f59e0b; padding:2px 12px; border-radius:20px; font-size:10px; font-weight:600; color:#0f172a;">Iniciando</span>
-      </div>
-
-      <!-- Notificaciones -->
-      <div id="collab-notifications" style="max-height:120px; overflow-y:auto; font-size:12px; color:#94a3b8; border-top:1px solid #1e293b; padding-top:10px;">
-        <div style="color:#10b981;">✅ Sistema de invitaciones activo</div>
-        <div style="color:#94a3b8;">📌 Agrega colaboradores por email y comparte el enlace</div>
-      </div>
+  // ═══════════════════════════════════════════════════════════
+  // 🎨 ESTILOS PREMIUM
+  // ═══════════════════════════════════════════════════════════
+  const injectStyles = () => {
+    if (document.getElementById('nexus-collab-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'nexus-collab-styles';
+    style.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      :root {
+        --nexus-bg: #0a0a0f; --nexus-surface: rgba(17, 17, 27, 0.9);
+        --nexus-border: rgba(139, 92, 246, 0.2); --nexus-primary: #8b5cf6;
+        --nexus-success: #10b981; --nexus-warning: #f59e0b; --nexus-danger: #ef4444;
+        --nexus-text: #e2e8f0; --nexus-text-dim: #94a3b8; --nexus-text-muted: #64748b;
+      }
+      .nexus-fab {
+        position: fixed; bottom: 24px; left: 24px; width: 60px; height: 60px;
+        border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        border: none; color: white; font-size: 26px; cursor: pointer;
+        box-shadow: 0 10px 40px rgba(139, 92, 246, 0.5); z-index: 999998;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .nexus-fab:hover { transform: scale(1.08) translateY(-2px); }
+      .nexus-fab .nexus-badge {
+        position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px;
+        background: #ef4444; border: 2px solid #0a0a0f; border-radius: 11px;
+        font-size: 11px; font-weight: 700; display: flex; align-items: center;
+        justify-content: center; color: white;
+      }
+      .nexus-overlay {
+        position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px); z-index: 999999; display: flex;
+        align-items: center; justify-content: center; animation: nexus-fade-in 0.2s ease-out;
+      }
+      @keyframes nexus-fade-in { from { opacity: 0; } to { opacity: 1; } }
+      .nexus-modal {
+        width: 520px; max-width: 92vw; max-height: 88vh;
+        background: linear-gradient(145deg, rgba(17, 17, 27, 0.95), rgba(10, 10, 15, 0.95));
+        border: 1px solid var(--nexus-border); border-radius: 20px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); backdrop-filter: blur(20px);
+        display: flex; flex-direction: column; font-family: 'Inter', sans-serif;
+        animation: nexus-modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes nexus-modal-in { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+      .nexus-header {
+        padding: 20px 24px; background: rgba(139, 92, 246, 0.1);
+        border-bottom: 1px solid var(--nexus-border); display: flex; align-items: center; gap: 14px;
+      }
+      .nexus-logo {
+        width: 42px; height: 42px; border-radius: 12px;
+        background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+      }
+      .nexus-title h2 { margin: 0; font-size: 16px; font-weight: 700; color: var(--nexus-text); }
+      .nexus-title p { margin: 2px 0 0; font-size: 12px; color: var(--nexus-text-muted); }
+      .nexus-close {
+        width: 32px; height: 32px; border-radius: 8px; background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08); color: var(--nexus-text-dim);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+      }
+      .nexus-close:hover { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+      .nexus-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+      .nexus-section { margin-bottom: 20px; }
+      .nexus-section-label {
+        display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600;
+        color: var(--nexus-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+      }
+      .nexus-section-label::before {
+        content: ''; width: 3px; height: 12px; background: linear-gradient(180deg, #8b5cf6, #06b6d4); border-radius: 2px;
+      }
+      .nexus-input-group { display: flex; gap: 8px; }
+      .nexus-input {
+        flex: 1; padding: 11px 14px; background: rgba(255,255,255,0.05);
+        border: 1px solid var(--nexus-border); border-radius: 10px;
+        color: var(--nexus-text); font-size: 13px; font-family: inherit; outline: none;
+      }
+      .nexus-input:focus { border-color: var(--nexus-primary); background: rgba(139, 92, 246, 0.06); }
+      .nexus-btn {
+        padding: 11px 16px; border-radius: 10px; border: none; font-size: 13px;
+        font-weight: 600; font-family: inherit; cursor: pointer; display: inline-flex;
+        align-items: center; gap: 6px; transition: all 0.2s; white-space: nowrap;
+      }
+      .nexus-btn-primary { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; }
+      .nexus-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4); }
+      .nexus-btn-ghost { background: rgba(255,255,255,0.05); color: var(--nexus-text-dim); border: 1px solid var(--nexus-border); }
+      .nexus-btn-ghost:hover { background: rgba(139, 92, 246, 0.1); color: var(--nexus-text); }
+      .nexus-btn-success { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+      .nexus-collabs { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+      .nexus-collab-item {
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); border-radius: 10px;
+      }
+      .nexus-avatar {
+        width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+      }
+      .nexus-collab-info { flex: 1; min-width: 0; }
+      .nexus-collab-email { font-size: 13px; font-weight: 500; color: var(--nexus-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .nexus-collab-role { font-size: 11px; color: var(--nexus-text-muted); margin-top: 1px; }
+      .nexus-collab-remove {
+        width: 26px; height: 26px; border-radius: 6px; background: transparent; border: none;
+        color: var(--nexus-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      }
+      .nexus-collab-remove:hover { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+      .nexus-empty { padding: 20px; text-align: center; color: var(--nexus-text-muted); font-size: 12px; font-style: italic; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.08); }
+      .nexus-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .nexus-status {
+        padding: 14px 24px; background: rgba(0, 0, 0, 0.3); border-top: 1px solid var(--nexus-border);
+        display: flex; align-items: center; gap: 12px;
+      }
+      .nexus-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .nexus-status-dot.connected { background: var(--nexus-success); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation: nexus-pulse 2s infinite; }
+      .nexus-status-dot.local { background: var(--nexus-warning); }
+      .nexus-status-dot.connecting { background: var(--nexus-warning); animation: nexus-pulse 1s infinite; }
+      .nexus-status-dot.syncing { background: #06b6d4; animation: nexus-pulse 1s infinite; }
+      @keyframes nexus-pulse { 0%, 100% { box-shadow: 0 0 0 0 currentColor; } 50% { box-shadow: 0 0 0 6px transparent; } }
+      .nexus-status-text { flex: 1; font-size: 12px; color: var(--nexus-text-dim); }
+      .nexus-status-text strong { color: var(--nexus-text); font-weight: 600; }
+      .nexus-toasts { position: fixed; top: 20px; right: 20px; z-index: 10000000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+      .nexus-toast {
+        min-width: 280px; padding: 12px 16px; background: var(--nexus-surface);
+        border: 1px solid var(--nexus-border); border-radius: 12px; backdrop-filter: blur(20px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); display: flex; align-items: center; gap: 10px;
+        font-family: 'Inter', sans-serif; font-size: 13px; color: var(--nexus-text);
+        animation: nexus-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: auto;
+      }
+      .nexus-toast.removing { animation: nexus-toast-out 0.25s ease-in forwards; }
+      @keyframes nexus-toast-in { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes nexus-toast-out { to { opacity: 0; transform: translateX(40px); } }
+      .nexus-toast-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+      .nexus-toast.success .nexus-toast-icon { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+      .nexus-toast.error .nexus-toast-icon { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+      .nexus-toast.info .nexus-toast-icon { background: rgba(6, 182, 212, 0.15); color: #67e8f9; }
+      .nexus-toast.warning .nexus-toast-icon { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+      .nexus-menu-item {
+        display: flex; justify-content: space-between; align-items: center; padding: 12px 15px;
+        margin-bottom: 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+      }
+      .nexus-menu-item:hover { background: rgba(139, 92, 246, 0.08); border-color: rgba(139, 92, 246, 0.2); }
+      .nexus-menu-item.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.08)); border-color: rgba(139, 92, 246, 0.4); }
+      .nexus-menu-item-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+      .nexus-menu-item-name { color: white; font-weight: 500; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .nexus-collab-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+      .nexus-menu-item-count { font-size: 11px; color: var(--nexus-text-muted); display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
     `;
+    document.head.appendChild(style);
+  };
 
-    document.body.appendChild(panel);
+  // ═══════════════════════════════════════════════════════════
+  // 🎯 SISTEMA PRINCIPAL
+  // ═══════════════════════════════════════════════════════════
+  const Nexus = {
+    socket: null,
+    connectionState: 'connecting', // Iniciamos en 'connecting'
+    modalOpen: false,
 
-    // --- Eventos ---
-
-    // Agregar colaborador
-    document.getElementById('collab-add-btn')?.addEventListener('click', function() {
-      const input = document.getElementById('collab-email-input');
-      const email = input.value.trim();
-      if (!email || !email.includes('@')) {
-        addNotification('❌ Ingresa un email válido', 'error');
-        return;
-      }
-      const { project } = getCurrentProject();
-      if (!project.colaboradores) project.colaboradores = [];
-      if (project.colaboradores.includes(email)) {
-        addNotification(`⚠️ ${email} ya es colaborador`, 'warning');
-        return;
-      }
-      project.colaboradores.push(email);
-      saveCollaborators(project, project.colaboradores);
-      input.value = '';
-      addNotification(`✅ ${email} agregado como colaborador`, 'success');
-      // Regenerar UI
-      setTimeout(() => createUI(), 100);
-    });
-
-    // Enter en el input
-    document.getElementById('collab-email-input')?.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('collab-add-btn').click();
-      }
-    });
-
-    // Copiar enlace de invitación
-    document.getElementById('collab-copy-link-btn')?.addEventListener('click', function() {
-      const input = document.getElementById('collab-email-input');
-      const email = input.value.trim();
-      if (!email || !email.includes('@')) {
-        addNotification('❌ Ingresa un email para generar el enlace', 'error');
-        return;
-      }
-      copyInviteLink(email);
-    });
-
-    // Enviar por email
-    document.getElementById('collab-email-invite-btn')?.addEventListener('click', function() {
-      const input = document.getElementById('collab-email-input');
-      const email = input.value.trim();
-      if (!email || !email.includes('@')) {
-        addNotification('❌ Ingresa un email para enviar la invitación', 'error');
-        return;
-      }
-      sendInviteByEmail(email);
-    });
-
-    // Sincronizar
-    document.getElementById('collab-sync-btn')?.addEventListener('click', function() {
-      addNotification('🔄 Sincronizando...');
-      if (window.__collab && window.__collab.syncFullProject) {
-        window.__collab.syncFullProject();
-        setTimeout(() => addNotification('✅ Sincronización completada', 'success'), 500);
-      } else {
-        // Fallback: recargar desde localStorage
+    getProjects() {
+      try {
         const stored = localStorage.getItem('projects');
         if (stored) {
-          try {
-            const projects = JSON.parse(stored);
-            if (projects && window.projects) {
-              window.projects = projects;
-              if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-              addNotification('✅ Datos recargados', 'success');
-            }
-          } catch(e) {}
-        }
-      }
-    });
-
-    // Cerrar
-    document.getElementById('collab-close-btn')?.addEventListener('click', function() {
-      document.getElementById('collab-panel-exec').style.display = 'none';
-    });
-
-    // Botón flotante
-    let toggleBtn = document.getElementById('collab-toggle-btn');
-    if (!toggleBtn) {
-      toggleBtn = document.createElement('button');
-      toggleBtn.id = 'collab-toggle-btn';
-      toggleBtn.innerHTML = '👥';
-      toggleBtn.title = 'Colaboración';
-      toggleBtn.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        width: 56px;
-        height: 56px;
-        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-        border: none;
-        border-radius: 50%;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        box-shadow: 0 8px 24px rgba(139,92,246,0.5);
-        z-index: 999998;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      `;
-      toggleBtn.onmouseenter = () => { toggleBtn.style.transform = 'scale(1.08)'; };
-      toggleBtn.onmouseleave = () => { toggleBtn.style.transform = 'scale(1)'; };
-      toggleBtn.onclick = () => {
-        const p = document.getElementById('collab-panel-exec');
-        if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
-      };
-      document.body.appendChild(toggleBtn);
-    }
-
-    // Mostrar panel
-    panel.style.display = 'block';
-
-    // Actualizar estado
-    const badge = document.getElementById('collab-status-badge');
-    if (badge) {
-      badge.textContent = state.connected ? 'Conectado' : 'Local';
-      badge.style.background = state.connected ? '#22c55e' : '#f59e0b';
-      badge.style.color = '#0f172a';
-    }
-
-    return panel;
-  }
-
-  // --- Eliminar colaborador ---
-  function removeCollaborator(email) {
-    if (!confirm(`¿Eliminar a ${email} del proyecto?`)) return;
-    const { project } = getCurrentProject();
-    if (!project.colaboradores) return;
-    project.colaboradores = project.colaboradores.filter(e => e !== email);
-    saveCollaborators(project, project.colaboradores);
-    addNotification(`🗑️ ${email} eliminado del proyecto`, 'warning');
-    setTimeout(() => createUI(), 100);
-  }
-
-  // --- Exponer funciones ---
-  window.__collab = window.__collab || {};
-  window.__collab.removeCollaborator = removeCollaborator;
-  window.__collab.generateInviteLink = generateInviteLink;
-  window.__collab.copyInviteLink = copyInviteLink;
-  window.__collab.sendInviteByEmail = sendInviteByEmail;
-  window.__collab.createUI = createUI;
-  window.__collab.addNotification = addNotification;
-
-  // --- Inicialización ---
-  function init() {
-    if (state.initialized) return;
-    state.initialized = true;
-
-    const { project, index } = getCurrentProject();
-    state.projectId = index;
-    window.currentProjectIndex = index;
-
-    createUI();
-
-    // Conectar WebSocket
-    const socket = window.tiempoRealSocket;
-    if (socket) {
-      state.socket = socket;
-      state.connected = socket.connected;
-      if (socket.connected) {
-        document.getElementById('collab-status-badge').textContent = 'Conectado';
-        document.getElementById('collab-status-badge').style.background = '#22c55e';
-      } else {
-        socket.on('connect', () => {
-          state.connected = true;
-          document.getElementById('collab-status-badge').textContent = 'Conectado';
-          document.getElementById('collab-status-badge').style.background = '#22c55e';
-          addNotification('🔗 WebSocket conectado', 'success');
-        });
-        socket.on('disconnect', () => {
-          state.connected = false;
-          document.getElementById('collab-status-badge').textContent = 'Desconectado';
-          document.getElementById('collab-status-badge').style.background = '#ef4444';
-          addNotification('🔌 WebSocket desconectado', 'warning');
-        });
-      }
-    } else {
-      addNotification('⚠️ WebSocket no disponible, modo local', 'warning');
-    }
-
-    // BroadcastChannel
-    try {
-      state.channel = new BroadcastChannel('collab-channel');
-      state.channel.onmessage = (event) => {
-        const data = event.data;
-        if (data.type === 'project-sync' && data.payload) {
-          if (data.payload.projects) {
-            window.projects = data.payload.projects;
-            if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-            addNotification('🔄 Proyecto sincronizado', 'success');
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            window.projects = parsed;
           }
         }
+      } catch(e) { console.warn('Error leyendo projects', e); }
+
+      if (!window.projects || !Array.isArray(window.projects) || window.projects.length === 0) {
+        window.projects = [{ id: Date.now(), name: 'Mi Proyecto', tasks: [], colaboradores: [] }];
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        window.currentProjectIndex = 0;
+        localStorage.setItem('currentProjectIndex', '0');
+      }
+      return window.projects;
+    },
+
+    getCurrentIndex() {
+      let idx = window.currentProjectIndex;
+      if (idx === undefined || idx === null) {
+        const s = localStorage.getItem('currentProjectIndex');
+        idx = s !== null ? parseInt(s, 10) : 0;
+      }
+      const projects = this.getProjects();
+      return Math.max(0, Math.min(idx, projects.length - 1));
+    },
+
+    getCurrentProject() {
+      const projects = this.getProjects();
+      const idx = this.getCurrentIndex();
+      const project = projects[idx] || projects[0] || { id: Date.now(), name: 'Proyecto', tasks: [], colaboradores: [] };
+      if (!project.colaboradores) project.colaboradores = [];
+      return { project, index: idx };
+    },
+
+    saveProjects() {
+      localStorage.setItem('projects', JSON.stringify(window.projects));
+      if (typeof window.updateLocalStorage === 'function') window.updateLocalStorage();
+    },
+
+    hashColor(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return `hsl(${Math.abs(hash) % 360}, 65%, 55%)`;
+    },
+
+    getInitials(email) {
+      const name = email.split('@')[0];
+      const parts = name.split(/[._-]/);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return name.substring(0, 2).toUpperCase();
+    },
+
+    escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    },
+
+    toast(message, type = 'info', duration = 3500) {
+      let container = document.querySelector('.nexus-toasts');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'nexus-toasts';
+        document.body.appendChild(container);
+      }
+      const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+      const toast = document.createElement('div');
+      toast.className = `nexus-toast ${type}`;
+      toast.innerHTML = `<div class="nexus-toast-icon">${icons[type] || 'ℹ'}</div><div style="flex:1;">${message}</div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 250);
+      }, duration);
+    },
+
+    renderMenu() {
+      const container = document.getElementById('projectList');
+      if (!container) return;
+      const projects = this.getProjects();
+      const currentIdx = this.getCurrentIndex();
+
+      container.innerHTML = '';
+      projects.forEach((p, idx) => {
+        const isActive = idx === currentIdx;
+        const collabs = p.colaboradores || [];
+        const isCollab = collabs.length > 0;
+
+        const item = document.createElement('div');
+        item.className = `nexus-menu-item${isActive ? ' active' : ''}`;
+        item.dataset.projectIndex = idx;
+        item.innerHTML = `
+          <div class="nexus-menu-item-main">
+            <span class="nexus-menu-item-name">${this.escapeHtml(p.name)}</span>
+            ${isCollab ? `<span class="nexus-collab-badge">🤝 COLAB</span>` : ''}
+          </div>
+          <div class="nexus-menu-item-count"><span>👥</span><span>${collabs.length}</span></div>
+        `;
+        item.onclick = () => {
+          window.currentProjectIndex = idx;
+          localStorage.setItem('currentProjectIndex', idx.toString());
+          if (typeof window.selectProject === 'function') window.selectProject(idx);
+          if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+          this.renderMenu();
+          if (this.socket && this.connectionState === 'connected') {
+            this.socket.emit('join:project', window.projects[idx].id);
+          }
+        };
+        container.appendChild(item);
+      });
+    },
+
+    startMenuGuardian() {
+      const tryStart = () => {
+        const container = document.getElementById('projectList');
+        if (!container) return setTimeout(tryStart, 500);
+        this.renderMenu();
+        const observer = new MutationObserver(() => {
+          const first = container.firstElementChild;
+          if (first && !first.classList.contains('nexus-menu-item')) {
+            this.renderMenu();
+          }
+        });
+        observer.observe(container, { childList: true, subtree: true });
       };
-    } catch(e) {}
+      tryStart();
+    },
 
-    addNotification(`✅ Proyecto: "${project.name}"`, 'success');
-    addNotification(`📌 Agrega colaboradores por email para trabajar juntos`, 'info');
-    console.log('✅ Colaboración REAL activa');
-    console.log('📌 Agrega colaboradores por email y comparte el enlace de invitación');
-  }
+    initSocket() {
+      // ✅ Permitimos tu URL específica de Render
+      if (CONFIG.SERVER_URL === 'https://tu-servidor.onrender.com') {
+        this.setConnectionState('local');
+        return;
+      }
+      
+      this.setConnectionState('connecting');
+      this.toast('Conectando al servidor...', 'info', 2000);
 
-  // Ejecutar
+      const loadSocket = () => new Promise((resolve) => {
+        if (window.io) return resolve(true);
+        const s = document.createElement('script');
+        s.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+      });
+
+      loadSocket().then((loaded) => {
+        if (!loaded || !window.io) {
+          this.setConnectionState('local');
+          this.toast('No se pudo cargar Socket.io', 'error');
+          return;
+        }
+
+        try {
+          this.socket = io(CONFIG.SERVER_URL, { 
+            transports: ['websocket', 'polling'], 
+            reconnection: true,
+            reconnectionAttempts: 5,
+            timeout: 10000
+          });
+
+          this.socket.on('connect', () => {
+            this.setConnectionState('connected');
+            this.toast('✅ Conectado al servidor en tiempo real', 'success');
+            const { project } = this.getCurrentProject();
+            if (project) this.socket.emit('join:project', project.id);
+          });
+
+          this.socket.on('disconnect', () => {
+            this.setConnectionState('local');
+            this.toast('🔌 Desconectado del servidor', 'warning');
+          });
+
+          this.socket.on('connect_error', (err) => {
+            console.warn('Error de conexión WebSocket:', err.message);
+            this.setConnectionState('local');
+            this.toast('⚠️ Servidor no responde (¿está dormido?)', 'warning');
+          });
+
+          this.socket.on('project:sync', (data) => this.handleSync(data));
+          this.socket.on('task:change', (data) => this.handleSync(data));
+          
+          window.tiempoRealSocket = this.socket;
+        } catch(e) {
+          this.setConnectionState('local');
+        }
+      });
+    },
+
+    handleSync(data) {
+      if (!data || !data.type) return;
+      if (data.projects) {
+        window.projects = data.projects;
+        this.saveProjects();
+        this.renderMenu();
+        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+        if (this.modalOpen) this.renderModal();
+        this.toast('🔄 Sincronizado desde el servidor', 'info');
+      }
+    },
+
+    setConnectionState(state) {
+      this.connectionState = state;
+      const dot = document.querySelector('.nexus-status-dot');
+      const text = document.querySelector('.nexus-status-text');
+      if (dot) dot.className = `nexus-status-dot ${state}`;
+      if (text) {
+        const labels = {
+          connected: '<strong>🟢 En línea</strong> · Sincronización en tiempo real',
+          local: '<strong>🟠 Modo local</strong> · Usa el enlace para colaborar',
+          connecting: '<strong>🟡 Conectando...</strong> · Estableciendo vínculo',
+          syncing: '<strong>🔵 Sincronizando</strong> · Enviando cambios...'
+        };
+        text.innerHTML = labels[state] || labels.local;
+      }
+    },
+
+    syncFullProject() {
+      this.setConnectionState('syncing');
+      const { project } = this.getCurrentProject();
+      if (this.socket && this.connectionState === 'connected') {
+        this.socket.emit('project:sync', {
+          type: 'project:sync',
+          projectId: project.id,
+          projects: window.projects,
+          timestamp: Date.now()
+        });
+      }
+      setTimeout(() => this.setConnectionState(this.socket?.connected ? 'connected' : 'local'), 1000);
+    },
+
+    openModal() {
+      if (this.modalOpen) return;
+      this.modalOpen = true;
+      this.renderModal();
+    },
+
+    closeModal() {
+      this.modalOpen = false;
+      const overlay = document.querySelector('.nexus-overlay');
+      if (overlay) overlay.remove();
+    },
+
+    renderModal() {
+      const existing = document.querySelector('.nexus-overlay');
+      if (existing) existing.remove();
+
+      const { project } = this.getCurrentProject();
+      const collabs = project.colaboradores || [];
+
+      const overlay = document.createElement('div');
+      overlay.className = 'nexus-overlay';
+      overlay.onclick = (e) => { if (e.target === overlay) this.closeModal(); };
+      
+      overlay.innerHTML = `
+        <div class="nexus-modal" onclick="event.stopPropagation()">
+          <div class="nexus-header">
+            <div class="nexus-logo">⚡</div>
+            <div class="nexus-title">
+              <h2>Nexus Collab</h2>
+              <p>Colaboración en tiempo real</p>
+            </div>
+            <button class="nexus-close" id="nexus-close-btn">✕</button>
+          </div>
+          <div class="nexus-body">
+            <div class="nexus-section">
+              <div class="nexus-section-label">Proyecto activo</div>
+              <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--nexus-border); display:flex; align-items:center; gap:10px;">
+                <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #8b5cf6, #06b6d4); display:flex; align-items:center; justify-content:center;">📁</div>
+                <div>
+                  <div style="font-size:14px; font-weight:600; color:var(--nexus-text);">${this.escapeHtml(project.name)}</div>
+                  <div style="font-size:11px; color:var(--nexus-text-muted);">${collabs.length} colaborador${collabs.length !== 1 ? 'es' : ''}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="nexus-section">
+              <div class="nexus-section-label">Invitar colaborador</div>
+              <div class="nexus-input-group">
+                <input type="email" class="nexus-input" id="nexus-email-input" placeholder="nombre@ejemplo.com">
+                <button class="nexus-btn nexus-btn-primary" id="nexus-add-btn">➕ Agregar</button>
+              </div>
+            </div>
+
+            <div class="nexus-section">
+              <div class="nexus-section-label">Equipo del proyecto</div>
+              <div class="nexus-collabs">
+                ${collabs.length === 0 ? '<div class="nexus-empty">Aún no hay colaboradores. Invita a tu equipo arriba.</div>' : 
+                  collabs.map(email => `
+                  <div class="nexus-collab-item">
+                    <div class="nexus-avatar" style="background:${this.hashColor(email)}">${this.getInitials(email)}</div>
+                    <div class="nexus-collab-info">
+                      <div class="nexus-collab-email">${this.escapeHtml(email)}</div>
+                      <div class="nexus-collab-role">${email === CONFIG.OWNER_EMAIL ? '👑 Propietario' : '👤 Colaborador'}</div>
+                    </div>
+                    ${email !== CONFIG.OWNER_EMAIL ? `<button class="nexus-collab-remove" data-remove="${this.escapeHtml(email)}">🗑️</button>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="nexus-section">
+              <div class="nexus-section-label">Acciones</div>
+              <div class="nexus-actions">
+                <button class="nexus-btn nexus-btn-ghost" id="nexus-copy-btn">📋 Copiar enlace</button>
+                <button class="nexus-btn nexus-btn-ghost" id="nexus-mail-btn">📧 Enviar email</button>
+                <button class="nexus-btn nexus-btn-success" id="nexus-sync-btn" style="grid-column: span 2;">🔄 Sincronizar proyecto</button>
+              </div>
+            </div>
+          </div>
+          <div class="nexus-status">
+            <div class="nexus-status-dot ${this.connectionState}"></div>
+            <div class="nexus-status-text">
+              ${this.connectionState === 'connected' ? '<strong>🟢 En línea</strong> · Sincronización activa' : 
+                this.connectionState === 'connecting' ? '<strong>🟡 Conectando...</strong> · Estableciendo vínculo' : 
+                '<strong>🟠 Modo local</strong> · Usa el enlace para colaborar'}
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      this.attachModalEvents();
+    },
+
+    attachModalEvents() {
+      document.getElementById('nexus-close-btn').onclick = () => this.closeModal();
+
+      const emailInput = document.getElementById('nexus-email-input');
+      const addBtn = document.getElementById('nexus-add-btn');
+      
+      const addCollaborator = () => {
+        const email = emailInput.value.trim().toLowerCase();
+        if (!email || !email.includes('@')) return this.toast('Ingresa un email válido', 'error');
+        
+        const { project } = this.getCurrentProject();
+        if (!project.colaboradores) project.colaboradores = [];
+        if (project.colaboradores.includes(email)) return this.toast('Este colaborador ya está en el equipo', 'warning');
+        
+        project.colaboradores.push(email);
+        this.saveProjects();
+        this.renderMenu();
+        this.syncFullProject(); // Enviar al servidor
+        this.toast(`${email} agregado al equipo`, 'success');
+        this.closeModal();
+        setTimeout(() => this.openModal(), 100);
+      };
+
+      addBtn.onclick = addCollaborator;
+      emailInput.onkeypress = (e) => { if (e.key === 'Enter') addCollaborator(); };
+
+      document.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.onclick = () => {
+          const email = btn.dataset.remove;
+          if (!confirm(`¿Eliminar a ${email}?`)) return;
+          const { project } = this.getCurrentProject();
+          project.colaboradores = (project.colaboradores || []).filter(e => e !== email);
+          this.saveProjects();
+          this.renderMenu();
+          this.syncFullProject();
+          this.toast(`${email} eliminado del equipo`, 'info');
+          this.closeModal();
+          setTimeout(() => this.openModal(), 100);
+        };
+      });
+
+      document.getElementById('nexus-copy-btn').onclick = () => {
+        const email = emailInput.value.trim() || 'invitado';
+        const { project } = this.getCurrentProject();
+        const token = btoa(`${email}|${project.id}|${Date.now()}`).replace(/=/g, '');
+        const link = `${location.origin}${location.pathname}?invite=${token}&project=${project.id}`;
+        navigator.clipboard.writeText(link).then(() => this.toast('Enlace copiado al portapapeles', 'success'));
+      };
+
+      document.getElementById('nexus-mail-btn').onclick = () => {
+        const email = emailInput.value.trim();
+        if (!email || !email.includes('@')) return this.toast('Ingresa un email primero', 'error');
+        const { project } = this.getCurrentProject();
+        const token = btoa(`${email}|${project.id}|${Date.now()}`).replace(/=/g, '');
+        const link = `${location.origin}${location.pathname}?invite=${token}&project=${project.id}&email=${encodeURIComponent(email)}`;
+        window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Invitación: ${project.name}`)}&body=${encodeURIComponent(`Accede aquí: ${link}`)}`;
+      };
+
+      document.getElementById('nexus-sync-btn').onclick = () => {
+        this.syncFullProject();
+        this.toast('Proyecto sincronizado con el servidor', 'success');
+      };
+    },
+
+    renderFAB() {
+      if (document.getElementById('nexus-fab')) return;
+      const fab = document.createElement('button');
+      fab.id = 'nexus-fab';
+      fab.className = 'nexus-fab';
+      fab.innerHTML = `
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      `;
+      fab.title = 'Colaboración en tiempo real';
+      fab.onclick = () => this.openModal();
+      document.body.appendChild(fab);
+
+      setInterval(() => {
+        try {
+          const { project } = this.getCurrentProject();
+          const count = (project?.colaboradores || []).length;
+          let badge = fab.querySelector('.nexus-badge');
+          if (count > 0) {
+            if (!badge) {
+              badge = document.createElement('span');
+              badge.className = 'nexus-badge';
+              fab.appendChild(badge);
+            }
+            badge.textContent = count;
+          } else if (badge) {
+            badge.remove();
+          }
+        } catch(e) {}
+      }, 1000);
+    },
+
+    init() {
+      injectStyles();
+      this.renderFAB();
+      this.startMenuGuardian();
+      this.initSocket();
+      console.log('%c✅ Nexus Collab v2.2 Activo y Conectado a tu Backend', 'color:#10b981;font-weight:bold;');
+    }
+  };
+
+  window.Nexus = Nexus;
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => Nexus.init());
   } else {
-    init();
+    Nexus.init();
   }
-
-  console.log('💡 Cómo invitar a un colaborador:');
-  console.log('  1. Escribe su email en el campo y haz clic en "Agregar"');
-  console.log('  2. Selecciona el email y haz clic en "📋 Copiar enlace"');
-  console.log('  3. Envía ese enlace a tu colaborador por WhatsApp/Telegram/Email');
-  console.log('  4. Cuando tu colaborador abra el enlace, se unirá automáticamente');
 })();
-
 
 
 
@@ -4355,6 +4468,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filterPriority').value = '';
     document.getElementById('filterStatus').value = '';
     renderBoardTasks();
+// Cargar proyectos desde el backend (propios + colaborativos)
+loadUserProjectsAndRefresh().then(success => {
+    if (!success) {
+        // Fallback: cargar desde localStorage si existe
+        const stored = localStorage.getItem('projects');
+        if (stored) {
+            try {
+                window.projects = JSON.parse(stored);
+                if (typeof renderProjectList === 'function') {
+                    renderProjectList(window.projects);
+                }
+                console.log('📂 Proyectos cargados desde localStorage (fallback)');
+            } catch(e) {}
+        }
+    }
+});
   });
 
   // Re-renderizar al cambiar idioma
@@ -77426,12 +77555,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log('📌 No se usa backend para guardar/cargar');
     console.log('📌 WebSocket desconectado de proyectos');
 })();
-
-
-
-
-
-
 
 
 
