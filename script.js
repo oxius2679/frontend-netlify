@@ -40469,121 +40469,54 @@ async function register() {
 }
 
 async function login() {
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  
-  if (!email || !password) {
-    document.getElementById('loginError').textContent = 'Completa todos los campos';
-    return;
-  }
-  
-  try {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    console.log('🚀 Respuesta del backend:', res.status, res.statusText);
-
-    let data = {};
-    if (res.headers.get('content-length') !== '0') {
-      data = await res.json();
-    }
-
-    console.log('✅ Datos recibidos:', data);
-
-    if (res.ok) {
-      authToken = data.token;
-      localStorage.setItem('authToken', authToken);
-      localStorage.setItem('userRole', data.user.role || 'viewer');
-      
-      // ==================== 🔥 NUEVA VERSIÓN CORREGIDA ====================
-      let clienteIdGuardado = null;
-      
-      // OPCIÓN 1: Intentar obtener del token
-      try {
-        const payload = JSON.parse(atob(data.token.split('.')[1]));
-        console.log('🔑 Token payload:', payload);
-        
-        if (payload.clienteId || payload.clienteid) {
-          clienteIdGuardado = payload.clienteId || payload.clienteid;
-          console.log('🏢 Cliente ID desde token:', clienteIdGuardado);
-        }
-      } catch (e) {
-        console.warn('⚠️ Error decodificando token:', e.message);
-      }
-      
-      // OPCIÓN 2: Si no vino en el token, usar el del objeto user
-      if (!clienteIdGuardado && data.user && data.user.clienteId) {
-        clienteIdGuardado = data.user.clienteId;
-        console.log('🏢 Cliente ID desde user:', clienteIdGuardado);
-      }
-      
-      // OPCIÓN 3: Si el usuario tiene un campo _id (por si acaso)
-      if (!clienteIdGuardado && data.user && data.user._id) {
-        clienteIdGuardado = data.user._id;
-        console.log('🏢 Usando _id como clienteId:', clienteIdGuardado);
-      }
-      
-      // OPCIÓN 4: Para usuarios de prueba sin clienteId, generar uno basado en email
-      if (!clienteIdGuardado && data.user && data.user.email) {
-        // Crear un ID simple a partir del email (solo para prueba)
-        clienteIdGuardado = 'cliente_' + btoa(data.user.email).substring(0, 10);
-        console.log('🏢 Cliente ID generado (para prueba):', clienteIdGuardado);
-      }
-      
-      // Guardar el clienteId SIEMPRE
-      if (clienteIdGuardado) {
-        localStorage.setItem('clienteId', clienteIdGuardado);
-        console.log('✅ Cliente ID guardado en localStorage:', clienteIdGuardado);
-      } else {
-        console.error('❌ NO SE PUDO OBTENER CLIENTEID');
-        // Fallback: usar el email como ID
-        const fallbackId = 'user_' + (data.user?.email || Date.now());
-        localStorage.setItem('clienteId', fallbackId);
-        console.log('⚠️ Usando fallback ID:', fallbackId);
-      }
-      
-      // Guardar usuario completo
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-
-// ==================== 🔥 VERIFICAR LICENCIA (COLOCAR AQUÍ) ====================
-  try {
-    const userId = data.user?.uid || data.user?.id || clienteIdGuardado;
-    const licenseRes = await fetch(`${API_URL}/api/verificar-premium`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    const licenseData = await licenseRes.json();
+    const email = document.getElementById('loginEmail')?.value;
+    const password = document.getElementById('loginPassword')?.value;
     
-  if (licenseData.plan === 'premium' || licenseData.plan === 'professional') {
-  localStorage.setItem('userPlan', licenseData.plan);
-      localStorage.setItem('userLicense', licenseData.plan);
-      console.log(`✅ Licencia activa: ${licenseData.plan}`);
-    } else {
-      localStorage.setItem('userPlan', 'free');
-      localStorage.setItem('userLicense', 'free');
-      console.log('⚠️ Licencia expirada o free');
+    if (!email || !password) {
+        const errorEl = document.getElementById('loginError');
+        if (errorEl) errorEl.textContent = 'Completa todos los campos';
+        return;
     }
-  } catch (err) {
-    console.error('❌ Error verificando licencia:', err);
-    localStorage.setItem('userPlan', 'free');
-    localStorage.setItem('userLicense', 'free');
-  }
 
-      // Recargar para aplicar cambios
-      location.reload();
-
-    } else {
-      document.getElementById('loginError').textContent = data.error || 'Error desconocido';
+    try {
+        const res = await fetch(`${window.API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            // Guardar token y usuario
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // ==========================================
+            // 🚀 NUEVO: PROCESAR INVITACIÓN PENDIENTE
+            // ==========================================
+            const pendingInvite = localStorage.getItem('pendingInviteToken');
+            if (pendingInvite) {
+                console.log('🔄 Login exitoso. Procesando invitación pendiente...');
+                // Le damos 1 segundo a la UI para renderizarse antes de hacer la petición
+                setTimeout(async () => {
+                    await window.aceptarInvitacionEnBackend(pendingInvite);
+                    localStorage.removeItem('pendingInviteToken'); // Limpiar después de usar
+                }, 1000);
+            } else {
+                // Comportamiento normal si no hay invitación pendiente
+                location.reload();
+            }
+        } else {
+            const errorEl = document.getElementById('loginError');
+            if (errorEl) errorEl.textContent = data.error || 'Error desconocido';
+        }
+    } catch (err) {
+        console.error('❌ Error en login():', err);
+        const errorEl = document.getElementById('loginError');
+        if (errorEl) errorEl.textContent = 'Error de conexión con el servidor';
     }
-  } catch (err) {
-    console.error('❌ Error en login():', err);
-    document.getElementById('loginError').textContent = 'Error de conexión con el servidor';
-  }
 }
-
 
 // === MOSTRAR PANTALLA DE LOGIN CON IMAGEN ARRIBA ===
 function showLoginScreen() {
@@ -68328,7 +68261,6 @@ function mostrarMensajeInvitacion(texto, tipo = 'success') {
 // ============================================
 async function enviarInvitacion() {
     console.log('🚀 INICIO - enviarInvitacion');
-    
     const proyectoSelect = document.getElementById('selectProyectoInvitacion');
     const emailInput = document.getElementById('emailInvitacion');
     const rolSelect = document.getElementById('rolInvitado');
@@ -68340,62 +68272,41 @@ async function enviarInvitacion() {
     console.log('📊 Datos del formulario:', { proyectoIndex, email, rol });
     
     // Validaciones
-    if (!proyectoIndex) {
-        mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error');
-        return;
-    }
-    
-    if (!email) {
-        mostrarMensajeInvitacion('❌ Ingresa un email válido', 'error');
-        return;
-    }
-    
-    if (!rol) {
-        mostrarMensajeInvitacion('❌ Selecciona un rol', 'error');
-        return;
-    }
+    if (!proyectoIndex) { mostrarMensajeInvitacion('❌ Selecciona un proyecto', 'error'); return; }
+    if (!email) { mostrarMensajeInvitacion('❌ Ingresa un email válido', 'error'); return; }
+    if (!rol) { mostrarMensajeInvitacion('❌ Selecciona un rol', 'error'); return; }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        mostrarMensajeInvitacion('❌ Email inválido', 'error');
-        return;
-    }
+    if (!emailRegex.test(email)) { mostrarMensajeInvitacion('❌ Email inválido', 'error'); return; }
     
     const proyecto = projects[proyectoIndex];
-    if (!proyecto) {
-        mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error');
-        return;
-    }
+    if (!proyecto) { mostrarMensajeInvitacion('❌ Proyecto no encontrado', 'error'); return; }
     
     const token = localStorage.getItem('authToken');
-    if (!token) {
-        mostrarMensajeInvitacion('❌ No estás autenticado', 'error');
-        return;
-    }
+    if (!token) { mostrarMensajeInvitacion('❌ No estás autenticado', 'error'); return; }
     
     console.log('✅ Validaciones pasadas');
-    
     const btnEnviar = document.getElementById('btnEnviarInvitacion');
-    const textoOriginal = btnEnviar?.innerHTML;
+    const textoOriginal = btnEnviar?.innerHTML || 'Enviar';
+    
     if (btnEnviar) {
         btnEnviar.innerHTML = '⏳ Enviando...';
         btnEnviar.disabled = true;
     }
     
     try {
-        console.log('📤 PASO 1: Creando invitación en backend...');
-        
+        console.log('📤 Creando invitación en backend...');
         const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ 
-                email, 
-                proyectoIndex: parseInt(proyectoIndex), 
-                proyectoNombre: proyecto.name, 
-                rol 
+            body: JSON.stringify({
+                email,
+                proyectoIndex: parseInt(proyectoIndex),
+                proyectoNombre: proyecto.name,
+                rol
             })
         });
         
@@ -68406,26 +68317,30 @@ async function enviarInvitacion() {
             throw new Error(data.error || 'Error en backend');
         }
         
-        const inviteToken = data.token;
-     const enlace = `https://admonproject.netlify.app/invitacion.html?token=${inviteToken}`;
-        console.log('🔗 Link generado:', enlace);
+        // ✅ USAR LA URL QUE YA GENERA EL BACKEND (evita errores de dominio)
+        const enlace = data.url;
+        console.log('🔗 Link generado por backend:', enlace);
         
-        console.log('📧 PASO 2: Enviando correo con EmailJS...');
+        // Intentar enviar correo con EmailJS (opcional, no bloquea si falla)
+        if (typeof emailjs !== 'undefined') {
+            try {
+                emailjs.init('RKPQ7q1n2sDJdBqcG');
+                await emailjs.send('service_kccmxz7', 'template_we2gzml', {
+                    to_email: email,
+                    project_name: proyecto.name,
+                    role: rol,
+                    invite_link: enlace,
+                    from_name: 'Centro de Comando IA 4D Élite'
+                });
+                console.log('✅ EmailJS enviado correctamente');
+            } catch (emailError) {
+                console.warn('⚠️ EmailJS falló, pero la invitación se guardó en la BD:', emailError);
+            }
+        } else {
+            console.warn('⚠️ EmailJS no está cargado en el HTML. La invitación se guardó en la BD.');
+        }
         
-        // Inicializar EmailJS (por si acaso)
-        emailjs.init('RKPQ7q1n2sDJdBqcG');
-        
-        const emailResult = await emailjs.send('service_kccmxz7', 'template_we2gzml', {
-            to_email: email,
-            project_name: proyecto.name,
-            role: rol,
-            invite_link: enlace,
-            from_name: 'Centro de Comando IA 4D Élite'
-        });
-        
-        console.log('✅ EmailJS respuesta:', emailResult);
-        
-        mostrarMensajeInvitacion(`✅ Invitación enviada a ${email}`, 'success');
+        mostrarMensajeInvitacion(`✅ Invitación creada para ${email}`, 'success');
         mostrarModalLinkInvitacion(enlace, email);
         
         if (emailInput) emailInput.value = '';
@@ -68435,12 +68350,11 @@ async function enviarInvitacion() {
         mostrarMensajeInvitacion('❌ Error: ' + error.message, 'error');
     } finally {
         if (btnEnviar) {
-            btnEnviar.innerHTML = textoOriginal || 'Enviar';
+            btnEnviar.innerHTML = textoOriginal;
             btnEnviar.disabled = false;
         }
     }
 }
-
 
 // ============================================
 // 🖼️ MOSTRAR MODAL CON LINK DE INVITACIÓN
@@ -75642,80 +75556,183 @@ if (!document.getElementById('notif-slack-styles')) {
     };
 
     // ============================================
-    // 4. MODAL DE INVITACIÓN (usa endpoint real)
-    // ============================================
-    window.openInviteModal = function(projectIndex) {
-        const project = projects[projectIndex];
-        if (!project) {
-            console.error('Proyecto no encontrado en índice:', projectIndex);
-            return;
-        }
-        
-        // Eliminar modal anterior
-        const existingModal = document.getElementById('inviteCollaboratorModal');
-        if (existingModal) existingModal.remove();
-        
-        const modal = document.createElement('div');
-        modal.id = 'inviteCollaboratorModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 1000000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-        
-        modal.innerHTML = `
-            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; width: 450px; max-width: 90vw; border: 2px solid #8b5cf6;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: white;">➕ Invitar Colaborador</h3>
-                    <button onclick="this.closest('#inviteCollaboratorModal').remove()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">✕</button>
-                </div>
-                
-                <p style="color: #94a3b8; margin-bottom: 20px;">
-                    Proyecto: <strong style="color: #8b5cf6;">${escapeHtml(project.name)}</strong>
-                </p>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Email del colaborador</label>
-                    <input type="email" id="inviteEmail" placeholder="ejemplo@correo.com" 
-                           style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white;">
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Rol</label>
-                    <select id="inviteRole" style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white;">
-                        <option value="viewer">👁️ Visualizador - Solo lectura</option>
-                        <option value="editor">✏️ Editor - Puede crear/modificar tareas</option>
-                        <option value="admin">👑 Admin - Control total</option>
-                    </select>
-                </div>
-                
-                <div id="inviteMessage" style="margin-bottom: 15px; font-size: 13px;"></div>
-                
-                <div style="display: flex; gap: 15px;">
-                    <button onclick="window.sendInvitation(${projectIndex})" class="btn-4d" style="flex: 1; background: linear-gradient(135deg, #8b5cf6, #6d28d9);">📧 Enviar Invitación</button>
-                    <button onclick="this.closest('#inviteCollaboratorModal').remove()" class="btn-4d" style="flex: 1; background: #475569;">Cancelar</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    };
-    
-    // Función auxiliar para escapar HTML
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+// 🚀 SISTEMA DE INVITACIÓN UNIFICADO Y OPTIMIZADO
+// ============================================
+
+// 1. Función auxiliar de seguridad (evita inyección XSS en el HTML)
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 2. Función principal que abre el modal de invitación
+window.openInviteModal = function(projectIndex) {
+    const project = projects[projectIndex];
+    if (!project) {
+        console.error('Proyecto no encontrado en índice:', projectIndex);
+        alert('❌ Proyecto no encontrado');
+        return;
     }
+
+    // Eliminar modal anterior si existe para evitar duplicados
+    const existingModal = document.getElementById('inviteCollaboratorModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'inviteCollaboratorModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px);
+        z-index: 1000000; display: flex; align-items: center; justify-content: center;
+    `;
+
+    modal.innerHTML = `
+        <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 24px; padding: 30px; width: 450px; max-width: 90vw; border: 2px solid #8b5cf6;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: white;">➕ Invitar Colaborador</h3>
+                <button onclick="this.closest('#inviteCollaboratorModal').remove()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+            
+            <p style="color: #94a3b8; margin-bottom: 20px;">
+                Proyecto: <strong style="color: #8b5cf6;">${escapeHtml(project.name)}</strong>
+            </p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Email del colaborador</label>
+                <input type="email" id="inviteEmail" placeholder="ejemplo@correo.com" 
+                       style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white; outline: none;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #94a3b8; margin-bottom: 5px; font-size: 13px;">Rol</label>
+                <select id="inviteRole" style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; color: white; outline: none;">
+                    <option value="viewer">👁️ Visualizador - Solo lectura</option>
+                    <option value="editor" selected>✏️ Editor - Puede crear/modificar tareas</option>
+                    <option value="admin">👑 Admin - Control total</option>
+                </select>
+            </div>
+            
+            <div id="inviteMessage" style="margin-bottom: 15px; font-size: 13px; min-height: 20px;"></div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button id="btnSendInvite" style="flex: 1; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.3s;">📧 Enviar Invitación</button>
+                <button onclick="this.closest('#inviteCollaboratorModal').remove()" style="flex: 1; background: #475569; border: none; color: white; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Cancelar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Asignar el evento al botón de enviar
+    document.getElementById('btnSendInvite').onclick = () => window.sendInvitation(projectIndex);
+};
+
+// 3. Función que realiza la petición al backend y maneja la respuesta
+window.sendInvitation = async function(projectIndex) {
+    const project = projects[projectIndex];
+    const emailInput = document.getElementById('inviteEmail');
+    const roleSelect = document.getElementById('inviteRole');
+    const messageDiv = document.getElementById('inviteMessage');
+    const sendBtn = document.getElementById('btnSendInvite');
+
+    const email = emailInput.value.trim();
+    const rol = roleSelect.value;
+
+    // Validaciones
+    if (!email) {
+        messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Ingresa un email</span>';
+        return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Formato de email no válido</span>';
+        return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        alert('❌ No estás autenticado. Por favor, inicia sesión.');
+        return;
+    }
+
+    // Mostrar estado de carga y deshabilitar botón
+    messageDiv.innerHTML = '<span style="color: #f59e0b;">⏳ Enviando invitación...</span>';
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = '0.7';
+
+    try {
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                email: email,
+                proyectoIndex: projectIndex,
+                proyectoNombre: project.name,
+                rol: rol
+            })
+        });
+
+        const data = await response.json();
+        messageDiv.innerHTML = ''; // Limpiar mensaje de carga
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+
+        if (data.success) {
+            // Mostrar modal de éxito con el enlace
+            const successModal = document.createElement('div');
+            successModal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 1000001;
+                display: flex; align-items: center; justify-content: center;
+            `;
+            successModal.innerHTML = `
+                <div style="background:#0f172a; border-radius:20px; padding:30px; max-width:500px; width:90%; border:2px solid #10b981; text-align: center;">
+                    <h3 style="color:white; margin-bottom: 10px;">✅ ¡Invitación Enviada!</h3>
+                    <p style="color:#94a3b8;">Se ha registrado la invitación para <strong>${escapeHtml(email)}</strong> con rol <strong>${rol}</strong></p>
+                    <div style="background:#020617; padding:15px; border-radius:10px; margin:15px 0; text-align: left;">
+                        <p style="color:#94a3b8; font-size:12px; margin-bottom: 5px;">🔗 Enlace de invitación:</p>
+                        <p id="inviteLinkText" style="color:#10b981; font-size:12px; word-break:break-all; margin:0;">${data.url}</p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="copyLinkBtn" style="flex:1; background:#3b82f6; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight: bold;">📋 Copiar Enlace</button>
+                        <button id="closeSuccessBtn" style="flex:1; background:#475569; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight: bold;">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+            // Lógica del botón copiar
+            document.getElementById('copyLinkBtn').onclick = () => {
+                navigator.clipboard.writeText(data.url).then(() => {
+                    alert('📋 ¡Enlace copiado al portapapeles!');
+                }).catch(() => {
+                    alert('❌ No se pudo copiar automáticamente. Selecciónalo y cópialo manualmente.');
+                });
+            };
+
+            // Lógica del botón cerrar
+            document.getElementById('closeSuccessBtn').onclick = () => {
+                successModal.remove();
+                document.getElementById('inviteCollaboratorModal').remove();
+            };
+
+        } else {
+            messageDiv.innerHTML = `<span style="color: #ef4444;">❌ Error: ${data.error || 'Error desconocido del servidor'}</span>`;
+        }
+    } catch (error) {
+        messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Error de conexión con el servidor</span>';
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        console.error('Error en sendInvitation:', error);
+    }
+};
+
+console.log('✅ Sistema de invitación unificado y optimizado cargado correctamente.');
     
     // ============================================
     // 5. ENVIAR INVITACIÓN (usa tu endpoint real)
@@ -75838,92 +75855,65 @@ if (!document.getElementById('notif-slack-styles')) {
     // ============================================================
 // ✅ PROCESAMIENTO DE INVITACIÓN (VERSIÓN QUE SÍ ACTUALIZA EL MENÚ)
 // ============================================================
+// ============================================================
+// PROCESAR INVITACIÓN DESDE URL — NO REQUIERE LOGIN
+// ============================================================
 window.procesarInvitacionURL = async function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    
-    if (!token) return; // No es una página de invitación, salir silenciosamente
+    const inviteToken = urlParams.get('token');
+    if (!inviteToken) return;
 
-    console.log('🔑 Procesando invitación con token:', token);
-    
-    // Esperar 1.5s a que el sistema de login cargue el authToken en localStorage
-    setTimeout(async () => {
-        const authToken = localStorage.getItem('authToken');
-        if (!authToken) {
-            alert('⚠️ Debes iniciar sesión primero para aceptar esta invitación.');
-            // Guardamos el token en una variable pendiente para después del login
-            localStorage.setItem('pendingInviteToken', token);
-            window.location.href = '/'; // Redirigir al login
-            return;
-        }
+    console.log('🔑 Procesando invitación con token:', inviteToken);
 
-        try {
-            // 1. Aceptar la invitación en el backend
-            const resAccept = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${authToken}` 
-                },
-                body: JSON.stringify({ token })
-            });
-            
-            const dataAccept = await resAccept.json();
+    // Pequeña espera para que la UI cargue
+    await new Promise(r => setTimeout(r, 1000));
 
-            if (resAccept.ok && dataAccept.success) {
-                alert(`✅ ¡Bienvenido al proyecto "${dataAccept.proyectoNombre}"!`);
+    try {
+        // NO se envía Authorization. El token de invitación ya es la autenticación.
+        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: inviteToken })
+        });
 
-                // 2. 🔥 CLAVE: Obtener TODOS los proyectos (propios + colaborativos) del backend
-                console.log('🔄 Sincronizando proyectos desde el backend...');
-                const resProjects = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                const dataProjects = await resProjects.json();
+        const data = await res.json();
+        console.log('📥 Respuesta aceptar invitación:', data);
 
-                if (dataProjects.success) {
-                    // Fusionar arrays de forma segura
-                    const owned = dataProjects.ownedProjects || [];
-                    const collab = dataProjects.collaboratedProjects || [];
-                    const todosLosProyectos = [...owned, ...collab];
+        if (res.ok && data.success) {
+            alert(`✅ ¡Bienvenido al proyecto "${data.proyectoNombre}"!\n\nYa eres colaborador. Inicia sesión para verlo en tu panel.`);
 
-                    console.log(`✅ Se encontraron ${owned.length} propios y ${collab.length} colaborativos.`);
+            // Limpiar URL
+            window.history.replaceState({}, document.title, window.location.pathname);
 
-                    // 3. Actualizar la memoria y el localStorage
-                    window.projects = todosLosProyectos;
-                    localStorage.setItem('projects', JSON.stringify(todosLosProyectos));
-                    localStorage.setItem('currentProjectIndex', '0');
-
-                    // 4. 🔥 FORZAR RENDERIZADO DEL MENÚ LATERAL
-                    if (typeof renderProjects === 'function') {
-                        renderProjects();
-                        console.log('✅ Menú lateral actualizado.');
+            // Si el usuario está logueado, recargar proyectos
+            const authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                try {
+                    const resP = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    const dataP = await resP.json();
+                    if (dataP.success && dataP.projects) {
+                        window.projects = dataP.projects;
+                        localStorage.setItem('projects', JSON.stringify(dataP.projects));
+                        if (typeof renderProjects === 'function') renderProjects();
                     }
-                    
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
+                } catch (e) {
+                    console.warn('No se pudieron recargar proyectos:', e);
                 }
-
-                // 5. Limpiar la URL para que no se vuelva a ejecutar al recargar
-                window.history.replaceState({}, document.title, window.location.pathname);
-                
-            } else {
-                alert('❌ Error: ' + (dataAccept.error || 'La invitación no es válida o ya fue usada.'));
-                window.history.replaceState({}, document.title, window.location.pathname);
             }
-        } catch (error) {
-            console.error('❌ Error procesando invitación:', error);
-            alert('❌ Error de conexión al aceptar la invitación.');
+        } else {
+            alert('❌ ' + (data.error || 'Error al aceptar la invitación'));
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
-    }, 1500);
+    } catch (error) {
+        console.error('❌ Error de red:', error);
+        alert('❌ Error de conexión. Verifica que el backend esté activo.');
+    }
 };
 
-// Ejecutar automáticamente si la URL tiene el parámetro ?token=
-if (window.location.search.includes('token=')) {
-    window.procesarInvitacionURL();
-}
-    
+// Alias para compatibilidad con initialize()
+window.processInvitation = window.procesarInvitacionURL;
     // ============================================
     // 8. SOCKET.IO PARA TIEMPO REAL
     // ============================================
@@ -76096,66 +76086,6 @@ if (window.location.search.includes('token=')) {
 
 
 
-// ============================================
-// FUNCIONES DE INVITACIÓN - AGREGAR MANUALMENTE
-// ============================================
-
-window.openInviteModal = function(projectIndex) {
-    const project = projects[projectIndex];
-    if (!project) {
-        console.error('Proyecto no encontrado en índice:', projectIndex);
-        alert('Proyecto no encontrado');
-        return;
-    }
-    
-    const email = prompt('📧 Email del colaborador:', '');
-    if (!email) return;
-    
-    const rol = prompt('Rol (viewer/editor/admin):', 'editor');
-    if (!rol) return;
-    
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        alert('❌ No estás autenticado');
-        return;
-    }
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.textContent = '⏳ Enviando invitación...';
-    messageDiv.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#333;color:white;padding:10px;border-radius:8px;z-index:10000;';
-    document.body.appendChild(messageDiv);
-    
-    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            email: email,
-            proyectoIndex: projectIndex,
-            proyectoNombre: project.name,
-            rol: rol
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        messageDiv.remove();
-        if (data.success) {
-            const confirmMsg = `✅ ¡Invitación enviada a ${email}!\n\nEnlace: ${data.url}\n\n¿Copiar al portapapeles?`;
-            if (confirm(confirmMsg)) {
-                navigator.clipboard.writeText(data.url);
-                alert('📋 Enlace copiado');
-            }
-        } else {
-            alert('❌ Error: ' + (data.error || 'Error desconocido'));
-        }
-    })
-    .catch(error => {
-        messageDiv.remove();
-        alert('❌ Error: ' + error.message);
-    });
-};
 
 // También corregir getProyectosPermitidos para que use colaboradores
 const originalGetProyectos = window.getProyectosPermitidos;
@@ -76196,91 +76126,6 @@ console.log('📌 Uso: openInviteModal(índice_del_proyecto)');
 
 
 
-
-// ============================================
-// CREAR FUNCIÓN INVITAR MANUALMENTE
-// ============================================
-
-window.openInviteModal = async function(projectIndex) {
-    const project = projects[projectIndex];
-    if (!project) {
-        alert('❌ Proyecto no encontrado');
-        return;
-    }
-    
-    const email = prompt('📧 Email del colaborador:', 'ancorzacarias4@gmail.com');
-    if (!email) return;
-    
-    const rol = prompt('👑 Rol (viewer/editor/admin):', 'editor');
-    if (!rol) return;
-    
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        alert('❌ No estás autenticado');
-        return;
-    }
-    
-    // Mostrar loading
-    const loading = document.createElement('div');
-    loading.textContent = '⏳ Enviando invitación...';
-    loading.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e293b;color:white;padding:12px 20px;border-radius:10px;z-index:100000;';
-    document.body.appendChild(loading);
-    
-    try {
-        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                email: email,
-                proyectoIndex: projectIndex,
-                proyectoNombre: project.name,
-                rol: rol
-            })
-        });
-        
-        const data = await response.json();
-        loading.remove();
-        
-        if (data.success) {
-            // Mostrar enlace
-            const modal = document.createElement('div');
-            modal.innerHTML = `
-                <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000000;display:flex;align-items:center;justify-content:center;">
-                    <div style="background:#0f172a;border-radius:20px;padding:30px;max-width:500px;width:90%;border:2px solid #10b981;">
-                        <h3 style="color:white;">✅ ¡Invitación Enviada!</h3>
-                        <p style="color:#94a3b8;">A <strong>${email}</strong> con rol <strong>${rol}</strong></p>
-                        <div style="background:#020617;padding:15px;border-radius:10px;margin:15px 0;">
-                            <p style="color:#94a3b8;font-size:12px;">🔗 Enlace:</p>
-                            <p style="color:#10b981;font-size:12px;word-break:break-all;">${data.url}</p>
-                        </div>
-                        <div style="display:flex;gap:10px;">
-                            <button id="copyBtn" style="flex:1;background:#3b82f6;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;">📋 Copiar</button>
-                            <button id="closeBtn" style="flex:1;background:#475569;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;">Cerrar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            document.getElementById('copyBtn').onclick = () => {
-                navigator.clipboard.writeText(data.url);
-                alert('✅ Enlace copiado');
-            };
-            document.getElementById('closeBtn').onclick = () => modal.remove();
-        } else {
-            alert('❌ Error: ' + (data.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        loading.remove();
-        alert('❌ Error: ' + error.message);
-    }
-};
-
-console.log('✅ Función openInviteModal creada');
-console.log('📌 Ahora prueba: openInviteModal(0)');
 
 
 
