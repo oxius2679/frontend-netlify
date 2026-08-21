@@ -75956,7 +75956,6 @@ window.procesarInvitacionURL = async function() {
 if (window.location.search.includes('token=')) {
     window.procesarInvitacionURL();
 }
-
     // ============================================
     // 8. SOCKET.IO PARA TIEMPO REAL
     // ============================================
