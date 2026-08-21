@@ -76751,109 +76751,151 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 
-// ============================================================
-// 🚀 SISTEMA DE PERSISTENCIA SIMPLE Y FUNCIONAL
-// ============================================================
+// ============================================
+// 🚀 SISTEMA DE PERSISTENCIA AISLADO POR CLIENTE (CORREGIDO)
+// ============================================
 (function() {
-    console.log('🚀 Iniciando sistema de persistencia SIMPLE...');
+console.log('🚀 Iniciando sistema de persistencia AISLADO POR CLIENTE...');
 
-    // 1. safeLoad: SOLO carga desde localStorage, NUNCA desde backend
-    window.safeLoad = function() {
-        console.log('📥 Cargando proyectos desde localStorage...');
-        const stored = localStorage.getItem('projects');
-        if (stored) {
-            try {
-                const data = JSON.parse(stored);
-                if (data && data.length > 0) {
-                    window.projects = data;
-                    window.currentProjectIndex = parseInt(localStorage.getItem('currentProjectIndex') || '0');
-                    console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage`);
-                    return Promise.resolve(true);
-                }
-            } catch(e) {
-                console.warn('Error al parsear localStorage:', e);
-            }
-        }
-        // Si no hay datos, crear proyecto de ejemplo
-        window.projects = [{
-            id: Date.now(),
-            name: 'Mi Primer Proyecto',
-            clienteId: localStorage.getItem('clienteId') || 'sin_cliente',
-            tasks: [],
-            totalProjectTime: 0
-        }];
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        console.log('📝 Proyecto de ejemplo creado');
-        return Promise.resolve(true);
-    };
+// 1. safeLoad: Carga SOLO los proyectos del clienteId actual
+window.safeLoad = async function() {
+console.log('📥 Cargando proyectos aislados por clienteId...');
+const token = localStorage.getItem('authToken');
+const clienteId = localStorage.getItem('clienteId');
 
-    // 2. safeSave: SOLO guarda en localStorage, NUNCA en backend
-    window.safeSave = function() {
-        console.log('💾 Guardando proyectos en localStorage...');
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        localStorage.setItem('currentProjectIndex', String(window.currentProjectIndex || 0));
-        console.log('✅ Proyectos guardados en localStorage');
-        return Promise.resolve(true);
-    };
+try {
+// SIEMPRE intentar cargar desde el backend con la ruta CORRECTA
+if (token && clienteId) {
+try {
+console.log(`📡 Consultando backend para clienteId: ${clienteId}`);
+const response = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects/cliente/${clienteId}`, {
+headers: { 'Authorization': `Bearer ${token}` }
+});
+if (response.ok) {
+const data = await response.json();
+if (data.projects) {
+window.projects = data.projects;
+// Sobrescribir localStorage con los proyectos correctos de ESTE usuario
+localStorage.setItem('projects', JSON.stringify(window.projects));
+console.log(`✅ ${window.projects.length} proyectos cargados y guardados desde backend`);
+return Promise.resolve(true);
+}
+}
+} catch(e) {
+console.warn('Error cargando desde backend:', e.message);
+}
+}
 
-    // 3. Desactivar forceRefreshFromBackend (para que no haga nada)
-    window.forceRefreshFromBackend = function() {
-        console.warn('⛔ forceRefreshFromBackend DESACTIVADA');
-        return Promise.resolve();
-    };
+// Fallback a localStorage (FILTRADO para evitar ver proyectos de otros usuarios)
+const savedProjects = localStorage.getItem('projects');
+if (savedProjects) {
+try {
+const parsed = JSON.parse(savedProjects);
+if (clienteId) {
+const userEmail = JSON.parse(localStorage.getItem('user') || '{}').email;
+// Filtrar SOLO los proyectos de este clienteId o donde sea colaborador
+window.projects = parsed.filter(p => 
+p.clienteId === clienteId || 
+(p.colaboradores && Array.isArray(p.colaboradores) && p.colaboradores.includes(userEmail))
+);
+} else {
+window.projects = parsed;
+}
+localStorage.setItem('projects', JSON.stringify(window.projects));
+console.log(`✅ ${window.projects.length} proyectos cargados desde localStorage (filtrados)`);
+} catch(e) {
+console.warn('Error al parsear localStorage:', e);
+window.projects = [];
+}
+}
 
-    // 4. Desconectar WebSocket de eventos de proyectos (opcional pero seguro)
-    if (window.tiempoRealSocket) {
-        window.tiempoRealSocket.off('project-updated');
-        window.tiempoRealSocket.off('task-created');
-        window.tiempoRealSocket.off('task-updated');
-        window.tiempoRealSocket.off('task-deleted');
-        window.tiempoRealSocket.off('task-moved');
-        console.log('🔌 WebSocket desconectado de eventos de proyectos');
-    }
+// Si no hay datos, crear proyecto de ejemplo
+if (!window.projects || window.projects.length === 0) {
+window.projects = [{
+id: Date.now(),
+name: 'Mi Primer Proyecto',
+clienteId: clienteId || 'sin_cliente',
+tasks: [],
+totalProjectTime: 0
+}];
+localStorage.setItem('projects', JSON.stringify(window.projects));
+console.log('📝 Proyecto de ejemplo creado');
+}
 
-    // 5. Eliminar cualquier intervalo que pueda sobrescribir
-    let maxId = setInterval(() => {}, 10000);
-    for (let i = 0; i < maxId; i++) {
-        clearInterval(i);
-    }
-    console.log('🧹 Intervalos eliminados');
+window.currentProjectIndex = 0;
+return Promise.resolve(true);
+} catch(error) {
+console.error('Error en safeLoad:', error);
+return Promise.resolve(false);
+}
+};
 
-    // 6. Cargar proyectos AHORA
-    window.safeLoad().then(() => {
-        if (typeof renderProjects === 'function') renderProjects();
-        if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-        console.log(`✅ Renderizado completado con ${window.projects.length} proyectos`);
-    });
+// 2. safeSave: Guarda en localStorage y backend
+window.safeSave = function() {
+console.log('💾 Guardando proyectos...');
+localStorage.setItem('projects', JSON.stringify(window.projects));
+localStorage.setItem('currentProjectIndex', String(window.currentProjectIndex || 0));
 
-    console.log('🚀 Sistema de persistencia SIMPLE activado');
-    console.log('📌 Los proyectos se guardan SOLO en localStorage');
-    console.log('📌 No se usa backend para guardar/cargar');
-    console.log('📌 WebSocket desconectado de proyectos');
+// También guardar en backend
+const token = localStorage.getItem('authToken');
+const clienteId = localStorage.getItem('clienteId');
+if (token && clienteId) {
+fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${token}`
+},
+body: JSON.stringify({
+projects: window.projects,
+currentProjectIndex: window.currentProjectIndex || 0,
+clienteId: clienteId
+})
+}).catch(err => console.warn('Error guardando en backend:', err));
+}
+
+console.log('✅ Proyectos guardados');
+return Promise.resolve(true);
+};
+
+// 3. forceRefreshFromBackend: Usa la ruta CORRECTA
+window.forceRefreshFromBackend = async function() {
+const token = localStorage.getItem('authToken');
+const clienteId = localStorage.getItem('clienteId');
+if (!token || !clienteId) return;
+
+try {
+console.log(`🔄 Forzando refresh desde backend para clienteId: ${clienteId}`);
+const res = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/projects/cliente/${clienteId}`, {
+headers: { 'Authorization': `Bearer ${token}` }
+});
+if (res.ok) {
+const data = await res.json();
+if (data.projects) {
+const oldProjects = window.projects;
+window.projects = data.projects;
+localStorage.setItem('projects', JSON.stringify(data.projects));
+
+if (JSON.stringify(oldProjects) !== JSON.stringify(data.projects)) {
+console.log('🔄 Datos actualizados desde servidor');
+if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+else if (typeof refreshCurrentView === 'function') refreshCurrentView();
+else if (typeof renderDashboard === 'function') renderDashboard();
+}
+}
+}
+} catch (e) {
+console.error('❌ Error en forceRefreshFromBackend:', e);
+}
+};
+
+// 4. Cargar proyectos AHORA
+window.safeLoad().then(() => {
+if (typeof renderProjects === 'function') renderProjects();
+if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
+console.log(`✅ Renderizado completado con ${window.projects.length} proyectos`);
+});
+
+console.log('🚀 Sistema de persistencia AISLADO POR CLIENTE activado');
+console.log('📌 Los proyectos se filtran por clienteId para evitar que usuarios vean proyectos de otros');
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
