@@ -40479,7 +40479,7 @@ async function login() {
     }
 
     try {
-        const res = await fetch(`${window.API_URL}/api/auth/login`, {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -40488,25 +40488,47 @@ async function login() {
         const data = await res.json();
         
         if (res.ok) {
-            // Guardar token y usuario
             localStorage.setItem('authToken', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             
-            // ==========================================
-            // 🚀 NUEVO: PROCESAR INVITACIÓN PENDIENTE
-            // ==========================================
-            const pendingInvite = localStorage.getItem('pendingInviteToken');
-            if (pendingInvite) {
-                console.log('🔄 Login exitoso. Procesando invitación pendiente...');
-                // Le damos 1 segundo a la UI para renderizarse antes de hacer la petición
-                setTimeout(async () => {
-                    await window.aceptarInvitacionEnBackend(pendingInvite);
-                    localStorage.removeItem('pendingInviteToken'); // Limpiar después de usar
-                }, 1000);
-            } else {
-                // Comportamiento normal si no hay invitación pendiente
-                location.reload();
+            // 🔥 NUEVO: Verificar si hay invitación pendiente
+            const pendingInviteToken = localStorage.getItem('pendingInviteToken');
+            
+            if (pendingInviteToken) {
+                console.log('🎉 Invitación pendiente detectada, cargando proyectos colaborativos...');
+                
+                // Cargar proyectos desde el backend (incluye colaborativos)
+                try {
+                    const resProjects = await fetch(`${API_URL}/api/user/projects`, {
+                        headers: { 'Authorization': `Bearer ${data.token}` }
+                    });
+                    const dataProjects = await resProjects.json();
+                    
+                    if (dataProjects.success) {
+                        const owned = dataProjects.ownedProjects || [];
+                        const collab = dataProjects.collaboratedProjects || [];
+                        const todosLosProyectos = [...owned, ...collab];
+                        
+                        window.projects = todosLosProyectos;
+                        localStorage.setItem('projects', JSON.stringify(todosLosProyectos));
+                        
+                        console.log(`✅ ${todosLosProyectos.length} proyectos cargados (${owned.length} propios, ${collab.length} colaborativos)`);
+                        
+                        // Eliminar el token pendiente
+                        localStorage.removeItem('pendingInviteToken');
+                        
+                        // Mostrar mensaje de bienvenida
+                        setTimeout(() => {
+                            alert(`🎉 ¡Bienvenido! Tienes ${collab.length} proyecto(s) colaborativo(s) disponible(s).`);
+                        }, 500);
+                    }
+                } catch (err) {
+                    console.error('Error cargando proyectos colaborativos:', err);
+                }
             }
+            
+            // Recargar la página
+            location.reload();
         } else {
             const errorEl = document.getElementById('loginError');
             if (errorEl) errorEl.textContent = data.error || 'Error desconocido';
@@ -40517,7 +40539,6 @@ async function login() {
         if (errorEl) errorEl.textContent = 'Error de conexión con el servidor';
     }
 }
-
 // === MOSTRAR PANTALLA DE LOGIN CON IMAGEN ARRIBA ===
 function showLoginScreen() {
 
