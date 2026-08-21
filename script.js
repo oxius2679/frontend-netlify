@@ -75876,65 +75876,87 @@ console.log('✅ Sistema de invitación unificado y optimizado cargado correctam
     // ============================================================
 // ✅ PROCESAMIENTO DE INVITACIÓN (VERSIÓN QUE SÍ ACTUALIZA EL MENÚ)
 // ============================================================
-// ============================================================
-// PROCESAR INVITACIÓN DESDE URL — NO REQUIERE LOGIN
-// ============================================================
 window.procesarInvitacionURL = async function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const inviteToken = urlParams.get('token');
-    if (!inviteToken) return;
+    const token = urlParams.get('token');
+    if (!token) return; // No es una página de invitación, salir silenciosamente
 
-    console.log('🔑 Procesando invitación con token:', inviteToken);
+    console.log('🔑 Procesando invitación con token:', token);
 
-    // Pequeña espera para que la UI cargue
-    await new Promise(r => setTimeout(r, 1000));
-
-    try {
-        // NO se envía Authorization. El token de invitación ya es la autenticación.
-        const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: inviteToken })
-        });
-
-        const data = await res.json();
-        console.log('📥 Respuesta aceptar invitación:', data);
-
-        if (res.ok && data.success) {
-            alert(`✅ ¡Bienvenido al proyecto "${data.proyectoNombre}"!\n\nYa eres colaborador. Inicia sesión para verlo en tu panel.`);
-
-            // Limpiar URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Si el usuario está logueado, recargar proyectos
-            const authToken = localStorage.getItem('authToken');
-            if (authToken) {
-                try {
-                    const resP = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-                        headers: { 'Authorization': `Bearer ${authToken}` }
-                    });
-                    const dataP = await resP.json();
-                    if (dataP.success && dataP.projects) {
-                        window.projects = dataP.projects;
-                        localStorage.setItem('projects', JSON.stringify(dataP.projects));
-                        if (typeof renderProjects === 'function') renderProjects();
-                    }
-                } catch (e) {
-                    console.warn('No se pudieron recargar proyectos:', e);
-                }
-            }
-        } else {
-            alert('❌ ' + (data.error || 'Error al aceptar la invitación'));
-            window.history.replaceState({}, document.title, window.location.pathname);
+    // Esperar 1.5s a que el sistema de login cargue el authToken en localStorage
+    setTimeout(async () => {
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            alert('⚠️ Debes iniciar sesión primero para aceptar esta invitación.');
+            localStorage.setItem('pendingInviteToken', token);
+            window.location.href = '/'; // Redirigir al login
+            return;
         }
-    } catch (error) {
-        console.error('❌ Error de red:', error);
-        alert('❌ Error de conexión. Verifica que el backend esté activo.');
-    }
+
+        try {
+            // 1. Aceptar la invitación en el backend
+            const resAccept = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/invitations/accept', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ token })
+            });
+            
+            const dataAccept = await resAccept.json();
+            
+            if (resAccept.ok && dataAccept.success) {
+                alert(`✅ ¡Bienvenido al proyecto "${dataAccept.proyectoNombre}"!`);
+                
+                // 2. 🔥 CLAVE: Obtener TODOS los proyectos (propios + colaborativos) del backend
+                console.log('🔄 Sincronizando proyectos desde el backend...');
+                const resProjects = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const dataProjects = await resProjects.json();
+                
+                if (dataProjects.success) {
+                    // El backend devuelve: { success: true, ownedProjects: [], collaboratedProjects: [], projects: [] }
+                    // Usamos directamente el array 'projects' que el backend ya unificó y eliminó duplicados
+                    const todosLosProyectos = dataProjects.projects || [];
+                    
+                    console.log(`✅ Backend reportó: ${dataProjects.ownedProjects?.length || 0} propios, ${dataProjects.collaboratedProjects?.length || 0} colaborativos. Total a mostrar: ${todosLosProyectos.length}`);
+                    
+                    // 3. Actualizar la memoria y el localStorage
+                    window.projects = todosLosProyectos;
+                    localStorage.setItem('projects', JSON.stringify(todosLosProyectos));
+                    localStorage.setItem('currentProjectIndex', '0');
+                    
+                    // 4. 🔥 FORZAR RENDERIZADO DEL MENÚ LATERAL
+                    if (typeof renderProjects === 'function') {
+                        renderProjects();
+                        console.log('✅ Menú lateral actualizado con los nuevos proyectos.');
+                    }
+                    if (typeof renderKanbanTasks === 'function') {
+                        renderKanbanTasks();
+                    }
+                }
+                
+                // 5. Limpiar la URL para que no se vuelva a ejecutar al recargar
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                alert('❌ Error: ' + (dataAccept.error || 'La invitación no es válida o ya fue usada.'));
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        } catch (error) {
+            console.error('❌ Error procesando invitación:', error);
+            alert('❌ Error de conexión al aceptar la invitación.');
+        }
+    }, 1500);
 };
 
-// Alias para compatibilidad con initialize()
-window.processInvitation = window.procesarInvitacionURL;
+// Ejecutar automáticamente si la URL tiene el parámetro ?token=
+if (window.location.search.includes('token=')) {
+    window.procesarInvitacionURL();
+}
+
     // ============================================
     // 8. SOCKET.IO PARA TIEMPO REAL
     // ============================================
