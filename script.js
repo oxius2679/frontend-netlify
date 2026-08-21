@@ -76179,55 +76179,46 @@ console.log('📌 Uso: openInviteModal(índice_del_proyecto)');
 
 
 
-
-
-
-
-
-
-
-
-
 // ============================================
-// CARGA DE PROYECTOS COLABORADOS - CÓDIGO SEGURO CON FILTRO
+// 🔄 SINCRONIZACIÓN SEGURA DE PROYECTOS (FUSIÓN)
 // ============================================
-setTimeout(async () => {
+(async function syncProjectsSafely() {
+    console.log('🔄 Sincronizando proyectos de forma segura...');
     const token = localStorage.getItem('authToken');
     if (!token) return;
+
     try {
         const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
-        if (data.success) {
-            const owned = data.ownedProjects || [];
-            const collab = data.collaboratedProjects || [];
-            const todos = [...owned, ...collab];
 
-            // 🔥 FILTRO DE SEGURIDAD: Solo mantener proyectos propios o colaborativos
-            const userEmail = JSON.parse(localStorage.getItem('user') || '{}').email;
-            const userClienteId = localStorage.getItem('clienteId');
+        if (data.success && data.projects) {
+            // ✅ FUSIÓN SEGURA: El backend ya nos devuelve la lista unificada
+            window.projects = data.projects;
+            localStorage.setItem('projects', JSON.stringify(data.projects));
 
-            const proyectosPermitidos = todos.filter(project => {
-                if (userEmail === 'ajackson2672@gmail.com') return true; // Admin ve todo
-                if (project.clienteId === userClienteId) return true; // Es dueño
-                if (project.colaboradores && Array.isArray(project.colaboradores) && project.colaboradores.includes(userEmail)) return true; // Es colaborador
-                return false;
-            });
+            console.log(`✅ Sincronización exitosa: ${data.projects.length} proyectos totales`);
 
-            window.projects = proyectosPermitidos;
-            localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
-
-            const container = document.getElementById('projectList');
-            if (container && typeof renderProjects === 'function') {
+            // ✅ ACTUALIZAR EL MENÚ LATERAL Y LA VISTA CON LA FUNCIÓN OFICIAL
+            if (typeof renderProjects === 'function') {
                 renderProjects();
             }
-            console.log('✅', proyectosPermitidos.length, 'proyectos permitidos cargados y filtrados');
+            if (typeof renderKanbanTasks === 'function') {
+                renderKanbanTasks();
+            }
         }
-    } catch(e) {
-        console.error('Error:', e);
+    } catch (error) {
+        console.error('❌ Error sincronizando proyectos:', error);
     }
-}, 1500);
+})();
+
+
+
+
+
+
+
 
 
 // Agregar botón al sidebar
