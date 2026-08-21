@@ -75909,35 +75909,45 @@ window.procesarInvitacionURL = async function() {
             if (resAccept.ok && dataAccept.success) {
                 alert(`✅ ¡Bienvenido al proyecto "${dataAccept.proyectoNombre}"!`);
                 
-                // 2. 🔥 CLAVE: Obtener TODOS los proyectos (propios + colaborativos) del backend
-                console.log('🔄 Sincronizando proyectos desde el backend...');
-                const resProjects = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                const dataProjects = await resProjects.json();
-                
-                if (dataProjects.success) {
-                    // El backend devuelve: { success: true, ownedProjects: [], collaboratedProjects: [], projects: [] }
-                    // Usamos directamente el array 'projects' que el backend ya unificó y eliminó duplicados
-                    const todosLosProyectos = dataProjects.projects || [];
-                    
-                    console.log(`✅ Backend reportó: ${dataProjects.ownedProjects?.length || 0} propios, ${dataProjects.collaboratedProjects?.length || 0} colaborativos. Total a mostrar: ${todosLosProyectos.length}`);
-                    
-                    // 3. Actualizar la memoria y el localStorage
-                    window.projects = todosLosProyectos;
-                    localStorage.setItem('projects', JSON.stringify(todosLosProyectos));
-                    localStorage.setItem('currentProjectIndex', '0');
-                    
-                    // 4. 🔥 FORZAR RENDERIZADO DEL MENÚ LATERAL
-                    if (typeof renderProjects === 'function') {
-                        renderProjects();
-                        console.log('✅ Menú lateral actualizado con los nuevos proyectos.');
-                    }
-                    if (typeof renderKanbanTasks === 'function') {
-                        renderKanbanTasks();
-                    }
-                }
+               // 2. 🔥 CLAVE: Obtener proyectos del backend y FILTRARLOS
+console.log('🔄 Sincronizando proyectos desde el backend...');
+const resProjects = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
+    headers: { 'Authorization': `Bearer ${authToken}` }
+});
+const dataProjects = await resProjects.json();
+
+if (dataProjects.success) {
+    const owned = dataProjects.ownedProjects || [];
+    const collab = dataProjects.collaboratedProjects || [];
+    const todosLosProyectos = [...owned, ...collab];
+    
+    // 🔥 FILTRO DE SEGURIDAD: Solo mantener proyectos propios o colaborativos
+    const userEmail = JSON.parse(localStorage.getItem('user') || '{}').email;
+    const userClienteId = localStorage.getItem('clienteId');
+    
+    const proyectosPermitidos = todosLosProyectos.filter(project => {
+        if (userEmail === 'ajackson2672@gmail.com') return true; // Admin ve todo
+        if (project.clienteId === userClienteId) return true; // Es dueño
+        if (project.colaboradores && Array.isArray(project.colaboradores) && project.colaboradores.includes(userEmail)) return true; // Es colaborador
+        return false;
+    });
+
+    console.log(`✅ Se encontraron ${owned.length} propios y ${collab.length} colaborativos. Filtrados a ${proyectosPermitidos.length} permitidos.`);
+    
+    // 3. Actualizar la memoria y el localStorage CON LOS FILTRADOS
+    window.projects = proyectosPermitidos;
+    localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
+    localStorage.setItem('currentProjectIndex', '0');
+    
+    // 4. FORZAR RENDERIZADO DEL MENÚ LATERAL
+    if (typeof renderProjects === 'function') {
+        renderProjects();
+        console.log('✅ Menú lateral actualizado.');
+    }
+    if (typeof renderKanbanTasks === 'function') {
+        renderKanbanTasks();
+    }
+}
                 
                 // 5. Limpiar la URL para que no se vuelva a ejecutar al recargar
                 window.history.replaceState({}, document.title, window.location.pathname);
@@ -76179,41 +76189,45 @@ console.log('📌 Uso: openInviteModal(índice_del_proyecto)');
 
 
 // ============================================
-// CARGA DE PROYECTOS COLABORADOS - CÓDIGO FUNCIONAL
+// CARGA DE PROYECTOS COLABORADOS - CÓDIGO SEGURO CON FILTRO
 // ============================================
 setTimeout(async () => {
     const token = localStorage.getItem('authToken');
     if (!token) return;
-    
     try {
         const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/user/projects', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
-        
-        if (data.collaboratedProjects && data.collaboratedProjects.length > 0) {
-            window.projects = data.collaboratedProjects;
+        if (data.success) {
+            const owned = data.ownedProjects || [];
+            const collab = data.collaboratedProjects || [];
+            const todos = [...owned, ...collab];
+
+            // 🔥 FILTRO DE SEGURIDAD: Solo mantener proyectos propios o colaborativos
+            const userEmail = JSON.parse(localStorage.getItem('user') || '{}').email;
+            const userClienteId = localStorage.getItem('clienteId');
+
+            const proyectosPermitidos = todos.filter(project => {
+                if (userEmail === 'ajackson2672@gmail.com') return true; // Admin ve todo
+                if (project.clienteId === userClienteId) return true; // Es dueño
+                if (project.colaboradores && Array.isArray(project.colaboradores) && project.colaboradores.includes(userEmail)) return true; // Es colaborador
+                return false;
+            });
+
+            window.projects = proyectosPermitidos;
+            localStorage.setItem('projects', JSON.stringify(proyectosPermitidos));
+
             const container = document.getElementById('projectList');
-            if (container) {
-                container.innerHTML = '';
-                data.collaboratedProjects.forEach(p => {
-                    const div = document.createElement('div');
-                    div.textContent = p.name;
-                    div.style.cssText = 'background:#3b82f6;color:white;padding:15px;margin:10px;border-radius:8px;cursor:pointer;font-weight:bold;';
-                    div.onclick = () => {
-                        console.log('Proyecto:', p.name);
-                        if (typeof selectProject === 'function') selectProject(0);
-                    };
-                    container.appendChild(div);
-                });
-                console.log('✅', data.collaboratedProjects.length, 'proyectos cargados');
+            if (container && typeof renderProjects === 'function') {
+                renderProjects();
             }
+            console.log('✅', proyectosPermitidos.length, 'proyectos permitidos cargados y filtrados');
         }
     } catch(e) {
         console.error('Error:', e);
     }
 }, 1500);
-
 
 
 // Agregar botón al sidebar
