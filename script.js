@@ -4043,7 +4043,7 @@ loadUserProjectsAndRefresh().then(success => {
                     <!-- Plan Professional -->
                     <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(99,102,241,0.3);">
                         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Professional</h3>
-                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€30</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€39</div>
                         <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
                         <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
                             <li style="padding: 0.3rem 0;">✅ Proyectos ilimitados</li>
@@ -4058,7 +4058,7 @@ loadUserProjectsAndRefresh().then(success => {
                     <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(245,158,11,0.3); position: relative;">
                         <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f59e0b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: #0a0a1a;">MÁS POPULAR</div>
                         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Premium</h3>
-                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€35</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€59</div>
                         <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
                         <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
                             <li style="padding: 0.3rem 0;">🔥 Todo Professional</li>
@@ -26751,7 +26751,7 @@ function showLicensesView() {
             POPULAR
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€39/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
             <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
@@ -26773,7 +26773,7 @@ function showLicensesView() {
             EMPRESAS
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€35/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€59/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
             <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
