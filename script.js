@@ -32529,6 +32529,38 @@ function addPremiumStyles() {
 
 
 function createCompleteGanttForCurrentProject() {
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const isEn = lang === 'en';
+    
+    // Diccionario de traducciones
+    const T = {
+        dashboard: isEn ? 'Executive Dashboard' : 'Dashboard Ejecutivo',
+        dependencies: isEn ? 'Dependencies' : 'Dependencias',
+        tasksWithDeps: isEn ? 'tasks with dependencies' : 'tasks con dependencies',
+        noDepsDefined: isEn ? 'No dependencies defined' : 'No hay dependencies definidas',
+        criticalPath: isEn ? 'Critical Path' : 'Critical Path',
+        criticalTasks: isEn ? 'critical tasks identified' : 'tasks críticas identificadas',
+        noCritical: isEn ? 'No critical tasks' : 'No hay tasks críticas',
+        aiPredictor: isEn ? 'AI Predictor' : 'IA Predictor',
+        predictionBased: isEn ? 'Prediction based on' : 'Predicción basada en',
+        estimatedCompletion: isEn ? 'Estimated completion date' : 'Fecha estimada finalización',
+        runAnalysis: isEn ? 'Run Predictive Analysis' : 'Ejecutar Análisis Predictivo',
+        teamDist: isEn ? 'Team Distribution' : 'Team Distribution',
+        membersAssigned: isEn ? 'members assigned' : 'members asignados',
+        taskAssigned: isEn ? 'task assigned' : 'task asignada',
+        tasksAssigned: isEn ? 'tasks assigned' : 'tasks asignadas',
+        tasksPerMember: isEn ? 'tasks per member' : 'tasks por miembro',
+        viewStats: isEn ? 'View complete statistics' : 'Ver estadísticas completas',
+        execFilters: isEn ? 'Executive Filters' : 'Filtros Ejecutivos',
+        depsManagement: isEn ? 'Dependencies Management' : 'Gestión de Dependencias',
+        clearAll: isEn ? 'Clear All' : 'Limpiar Todas',
+        showAll: isEn ? 'Show All' : 'Mostrar Todas',
+        byTeam: isEn ? 'By Team' : 'Por Equipo',
+        budget: isEn ? 'Budget' : 'Presupuesto',
+        today: isEn ? 'TODAY' : 'HOY',
+        week: isEn ? 'Wk' : 'Sem',
+        unassigned: isEn ? 'Unassigned' : 'Sin asignar'
+    };
   // ✅ Sin verificaciones de licencia
   console.log('🚀 Creando Gantt completo...');
 
@@ -64399,9 +64431,10 @@ function T(ctx,text,x,y,sz,color,align){
 }
 
 // ============================================
-// 📉 BURNDOWN
+// 📉 BURNDOWN (CON TRADUCCIÓN DE CANVAS)
 // ============================================
 function drawBurndown(canvas, bd, popup) {
+    const lang = (typeof getLang === 'function' ? getLang() : (localStorage.getItem('preferredLanguage') || 'es'));
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     var pad = {t:45,r:25,b:55,l:60};
@@ -64414,7 +64447,6 @@ function drawBurndown(canvas, bd, popup) {
     grad.addColorStop(0,'#1a1a3a'); grad.addColorStop(1,'#0f172a');
     ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
 
-    // LEYENDA
     var legendY = 18;
     var item1Width = 160;
     var item2Width = 130;
@@ -64425,23 +64457,23 @@ function drawBurndown(canvas, bd, popup) {
     ctx.setLineDash([5,3]);ctx.strokeStyle='#10b981';ctx.lineWidth=2.5;
     ctx.beginPath();ctx.moveTo(x1,legendY);ctx.lineTo(x1+25,legendY);ctx.stroke();
     ctx.setLineDash([]);
-    T(ctx,'Ideal',x1+42,legendY+1,10,'#10b981','left');
+    T(ctx, lang === 'en' ? 'Ideal' : 'Ideal', x1+42, legendY+1, 10, '#10b981', 'left');
     
     var sepX = x1 + item1Width + 20;
-    T(ctx,'|',sepX,legendY+1,10,'#475569','center');
+    T(ctx, '|', sepX, legendY+1, 10, '#475569', 'center');
     
     var x2 = sepX + 15;
     ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;
     ctx.beginPath();ctx.moveTo(x2,legendY);ctx.lineTo(x2+25,legendY);ctx.stroke();
-    T(ctx,'Real',x2+42,legendY+1,10,'#f59e0b','left');
+    T(ctx, lang === 'en' ? 'Real' : 'Real', x2+42, legendY+1, 10, '#f59e0b', 'left');
 
     ctx.save(); ctx.translate(14, pad.t + ch/2); ctx.rotate(-Math.PI/2);
-    T(ctx, 'Horas Restantes', 0, 0, 10, '#94a3b8'); ctx.restore();
+    T(ctx, lang === 'en' ? 'Remaining Hours' : 'Horas Restantes', 0, 0, 10, '#94a3b8'); ctx.restore();
 
     ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
     for(var i=0;i<=5;i++){ var y=pad.t+ch-(ch*(i/5)); ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke(); T(ctx,Math.round(maxV*(i/5))+'h',pad.l-8,y,9,'#64748b','right'); }
 
-    var labels=['Inicio','Semana 1','Semana 2','Semana 3','Semana 4'];
+    var labels = lang === 'en' ? ['Start', 'Week 1', 'Week 2', 'Week 3', 'Week 4'] : ['Inicio', 'Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
     for(var i=0;i<5;i++){ var x=pad.l+(cw/4)*i; ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);ctx.stroke(); T(ctx,labels[i],x,H-pad.b+18,9,'#64748b'); }
 
     ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;
@@ -64458,11 +64490,13 @@ function drawBurndown(canvas, bd, popup) {
     drawLine(bd.trabajoReal,'#f59e0b',null,'rgba(245,158,11,0.05)');
 
     var dataY = H - 14;
-    var infoText = 'Total: ' + bd.totalHoras.toFixed(0) + ' h  |  Completadas: ' + bd.horasCompletadas.toFixed(0) + ' h  |  Restantes: ' + bd.horasRestantes.toFixed(0) + ' h';
+    var infoText = lang === 'en' 
+        ? 'Total: ' + bd.totalHoras.toFixed(0) + ' h  |  Completed: ' + bd.horasCompletadas.toFixed(0) + ' h  |  Remaining: ' + bd.horasRestantes.toFixed(0) + ' h'
+        : 'Total: ' + bd.totalHoras.toFixed(0) + ' h  |  Completadas: ' + bd.horasCompletadas.toFixed(0) + ' h  |  Restantes: ' + bd.horasRestantes.toFixed(0) + ' h';
     T(ctx, infoText, W/2, dataY, 11, '#94a3b8', 'center');
 
     setupTooltips(canvas,popup,function(mx,my){
-        var datasets=[{data:bd.trabajoIdeal,color:'#10b981',label:'Ideal'},{data:bd.trabajoReal,color:'#f59e0b',label:'Real'}];
+        var datasets=[{data:bd.trabajoIdeal,color:'#10b981',label: lang === 'en' ? 'Ideal' : 'Ideal'},{data:bd.trabajoReal,color:'#f59e0b',label: lang === 'en' ? 'Real' : 'Real'}];
         for(var d=0;d<datasets.length;d++){
             for(var i=0;i<datasets[d].data.length;i++){
                 var px=pad.l+(cw/4)*i,py=pad.t+ch-(ch*(datasets[d].data[i]/maxV));
@@ -64473,9 +64507,10 @@ function drawBurndown(canvas, bd, popup) {
 }
 
 // ============================================
-// 📈 EVM
+// 📈 EVM (CON TRADUCCIÓN DE CANVAS)
 // ============================================
 function drawEVM(canvas, evm, popup) {
+    const lang = (typeof getLang === 'function' ? getLang() : (localStorage.getItem('preferredLanguage') || 'es'));
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     var pad = {t:45,r:25,b:50,l:60};
@@ -64490,7 +64525,9 @@ function drawEVM(canvas, evm, popup) {
 
     var legendY = 18;
     var colors = ['#3b82f6','#10b981', evm.ac>evm.ev?'#ef4444':'#f59e0b'];
-    var colorLabels = ['PV - Planificado','EV - Ganado','AC - Costo Actual'];
+    var colorLabels = lang === 'en' 
+        ? ['PV - Planned', 'EV - Earned', 'AC - Actual Cost'] 
+        : ['PV - Planificado', 'EV - Ganado', 'AC - Costo Actual'];
     
     var itemWidth = 145; 
     var totalLegendWidth = itemWidth * 3;
@@ -64504,7 +64541,7 @@ function drawEVM(canvas, evm, popup) {
     }
 
     ctx.save(); ctx.translate(14, pad.t + ch/2); ctx.rotate(-Math.PI/2);
-    T(ctx, 'Horas', 0, 0, 10, '#94a3b8'); ctx.restore();
+    T(ctx, lang === 'en' ? 'Hours' : 'Horas', 0, 0, 10, '#94a3b8'); ctx.restore();
 
     ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
     for(var i=0;i<=5;i++){ var y=pad.t+ch-(ch*(i/5)); ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke(); T(ctx,Math.round(maxV*(i/5))+'h',pad.l-8,y,9,'#64748b','right'); }
@@ -64532,9 +64569,10 @@ function drawEVM(canvas, evm, popup) {
 }
 
 // ============================================
-// 🍩 DISTRIBUCIÓN
+// 🍩 DISTRIBUCIÓN (CON TRADUCCIÓN DE CANVAS)
 // ============================================
 function drawDist(canvas, dist, popup) {
+    const lang = (typeof getLang === 'function' ? getLang() : (localStorage.getItem('preferredLanguage') || 'es'));
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     var total = dist.completadas + dist.enProgreso + dist.pendientes + dist.atrasadas;
@@ -64545,17 +64583,24 @@ function drawDist(canvas, dist, popup) {
 
     var cx = W/2, cy = H/2 - 10;
     var oR = Math.min(cx,cy)-35, iR = oR*0.6;
+    var noDataText = lang === 'en' ? 'No data' : 'Sin datos';
+    var tasksText = lang === 'en' ? 'tasks' : 'tareas';
 
     if(total===0){
         ctx.strokeStyle='#334155';ctx.lineWidth=18;ctx.beginPath();ctx.arc(cx,cy,oR,0,Math.PI*2);ctx.stroke();
-        T(ctx,'Sin datos',cx,cy,12,'#64748b'); return;
+        T(ctx, noDataText, cx, cy, 12, '#64748b'); return;
     }
 
-    var cats=[
-        {v:dist.completadas,c:'#10b981',l:'Completadas'},
-        {v:dist.enProgreso,c:'#3b82f6',l:'En Progreso'},
-        {v:dist.pendientes,c:'#f59e0b',l:'Pendientes'},
-        {v:dist.atrasadas,c:'#ef4444',l:'Atrasadas'}
+    var cats = lang === 'en' ? [
+        {v:dist.completadas, c:'#10b981', l:'Completed'},
+        {v:dist.enProgreso, c:'#3b82f6', l:'In Progress'},
+        {v:dist.pendientes, c:'#f59e0b', l:'Pending'},
+        {v:dist.atrasadas, c:'#ef4444', l:'Overdue'}
+    ] : [
+        {v:dist.completadas, c:'#10b981', l:'Completadas'},
+        {v:dist.enProgreso, c:'#3b82f6', l:'En Progreso'},
+        {v:dist.pendientes, c:'#f59e0b', l:'Pendientes'},
+        {v:dist.atrasadas, c:'#ef4444', l:'Atrasadas'}
     ];
 
     var angle=-Math.PI/2, slices=[];
@@ -64568,7 +64613,7 @@ function drawDist(canvas, dist, popup) {
     }
 
     ctx.fillStyle='#1a1a3a';ctx.beginPath();ctx.arc(cx,cy,iR-2,0,Math.PI*2);ctx.fill();
-    T(ctx,total,cx,cy-10,22,'#e2e8f0'); T(ctx,'tareas',cx,cy+12,10,'#94a3b8');
+    T(ctx, total, cx, cy-10, 22, '#e2e8f0'); T(ctx, tasksText, cx, cy+12, 10, '#94a3b8');
 
     var ly = H - 18;
     var padding = 30;
@@ -64588,16 +64633,20 @@ function drawDist(canvas, dist, popup) {
         if(angle<-Math.PI/2)angle+=Math.PI*2;
         for(var i=0;i<slices.length;i++){
             var s=slices[i], sa=s.start, ea=s.end;
-            if(angle>=sa&&angle<ea) return {text:s.label+': '+s.value+' tareas ('+((s.value/total)*100).toFixed(0)+'%)',x:mx,y:my-30,color:s.color};
+            if(angle>=sa&&angle<ea) {
+                var taskWord = lang === 'en' ? 'tasks' : 'tareas';
+                return {text: s.label + ': ' + s.value + ' ' + taskWord + ' (' + ((s.value/total)*100).toFixed(0) + '%)', x: mx, y: my-30, color: s.color};
+            }
         }
         return null;
     });
 }
 
 // ============================================
-// 🕸️ SALUD
+// 🕸️ SALUD (CON TRADUCCIÓN DE CANVAS)
 // ============================================
 function drawSalud(canvas, evm, dist, tasks, popup) {
+    const lang = (typeof getLang === 'function' ? getLang() : (localStorage.getItem('preferredLanguage') || 'es'));
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
 
@@ -64608,7 +64657,10 @@ function drawSalud(canvas, evm, dist, tasks, popup) {
     var cx = W/2, cy = H/2;
     var R = Math.min(cx,cy)-30;
 
-    var labels=['Financiera\n(CPI)','Cronograma\n(SPI)','Costos\n(VAC)','Progreso\n(EV/BAC)','Cumplimiento'];
+    var labels = lang === 'en' 
+        ? ['Financial\n(CPI)', 'Schedule\n(SPI)', 'Costs\n(VAC)', 'Progress\n(EV/BAC)', 'Compliance']
+        : ['Financiera\n(CPI)', 'Cronograma\n(SPI)', 'Costos\n(VAC)', 'Progreso\n(EV/BAC)', 'Cumplimiento'];
+        
     var fh=Math.min(100,Math.max(0,(evm.cpi||1)*100));
     var sh=Math.min(100,Math.max(0,(evm.spi||1)*100));
     var chv=evm.bac>0?Math.max(0,100-Math.abs(evm.vac)/evm.bac*100):100;
@@ -64630,7 +64682,7 @@ function drawSalud(canvas, evm, dist, tasks, popup) {
         var lx=cx+(R+22)*Math.cos(ang),ly=cy+(R+22)*Math.sin(ang);
         var parts=labels[a].split('\n');T(ctx,parts[0],lx,ly,9,'#cbd5e1');if(parts[1])T(ctx,parts[1],lx,ly+12,7,'#64748b');
         var val=values[a]/100;
-        radarPoints.push({x:cx+R*val*Math.cos(ang),y:cy+R*val*Math.sin(ang),label:labels[a].split('\n')[0],value:values[a]});
+        radarPoints.push({x:cx+R*val*Math.cos(ang),y:cy+R*val*Math.sin(ang),label:parts[0],value:values[a]});
     }
 
     ctx.fillStyle='rgba(59,130,246,0.12)';ctx.strokeStyle='#3b82f6';ctx.lineWidth=2.5;ctx.beginPath();
@@ -64647,14 +64699,15 @@ function drawSalud(canvas, evm, dist, tasks, popup) {
         for(var i=0;i<radarPoints.length;i++){
             var p=radarPoints[i];
             if(Math.abs(mx-p.x)<12&&Math.abs(my-p.y)<12){
-                var status=p.value>=80?'✅ Excelente':p.value>=60?'🟢 Bueno':p.value>=40?'🟡 Regular':' Crítico';
+                var status = lang === 'en' 
+                    ? (p.value>=80 ? '✅ Excellent' : p.value>=60 ? '🟢 Good' : p.value>=40 ? '🟡 Fair' : ' Critical')
+                    : (p.value>=80 ? '✅ Excelente' : p.value>=60 ? '🟢 Bueno' : p.value>=40 ? '🟡 Regular' : ' Crítico');
                 var vColors=['#10b981','#3b82f6','#8b5cf6','#f59e0b','#f97316'];
                 return {text:p.label+': '+Math.round(p.value)+'% - '+status,x:p.x,y:p.y-30,color:vColors[i]};
             }
         } return null;
     });
 }
-
 // ============================================
 // 💬 SISTEMA DE TOOLTIPS
 // ============================================
@@ -76904,3 +76957,29 @@ console.log(`✅ Renderizado completado con ${window.projects.length} proyectos`
 console.log('🚀 Sistema de persistencia AISLADO POR CLIENTE activado');
 console.log('📌 Los proyectos se filtran por clienteId para evitar que usuarios vean proyectos de otros');
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
