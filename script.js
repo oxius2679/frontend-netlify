@@ -26472,7 +26472,7 @@ function mostrarPortadaConImagen() {
     
     // Imagen (ya tiene el logo y nombre)
     const img = document.createElement('img');
-    img.src = 'portada.jpg';
+    img.src = 'portada.png';
     img.style.cssText = 'max-width:80%;max-height:45%;border-radius:24px;box-shadow:0 30px 60px rgba(0,0,0,0.5),0 0 0 2px rgba(139,92,246,0.3);margin-bottom:20px;';
     
     // Slogan elegido
@@ -76774,41 +76774,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ============================================
 // 🚀 SISTEMA DE PERSISTENCIA AISLADO POR CLIENTE (CORREGIDO)
 // ============================================
@@ -76957,11 +76922,6 @@ console.log(`✅ Renderizado completado con ${window.projects.length} proyectos`
 console.log('🚀 Sistema de persistencia AISLADO POR CLIENTE activado');
 console.log('📌 Los proyectos se filtran por clienteId para evitar que usuarios vean proyectos de otros');
 })();
-
-
-
-
-
 
 
 
