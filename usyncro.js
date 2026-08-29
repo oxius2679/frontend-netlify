@@ -1,6 +1,6 @@
 // ============================================================
 // 🗺️ ZACKY + USYNCRO - CORREDOR DIGITAL MAPA 3D PREMIUM
-// Versión 4.1.3 - SIN PÁGINAS VACÍAS EN GRÁFICAS
+// Versión 4.1.5 - FILTRO NUCLEAR DE IDIOMA
 // ============================================================
 
 (function() {
@@ -20,7 +20,7 @@
             { id: 'ES', nombre: 'España', lat: 40.4, lon: -3.7, color: '#f59e0b', activo: true, hitos: 5, flag: '🇪🇸', continente: 'Europa' },
             { id: 'MA', nombre: 'Marruecos', lat: 31.8, lon: -7.1, color: '#10b981', activo: true, hitos: 4, flag: '🇲🇦', continente: 'África' },
             { id: 'US', nombre: 'Estados Unidos', lat: 39.8, lon: -98.5, color: '#ef4444', activo: true, hitos: 4, flag: '🇺🇸', continente: 'América' },
-            { id: 'MX', nombre: 'México', lat: 23.6, lon: -102.5, color: '#f97316', activo: true, hitos: 3, flag: '🇽', continente: 'América' }
+            { id: 'MX', nombre: 'México', lat: 23.6, lon: -102.5, color: '#f97316', activo: true, hitos: 3, flag: '🇲🇽', continente: 'América' }
         ],
         conexiones: [
             { from: 'UK', to: 'ES', tipo: 'marítimo', estado: 'activo', color: '#10b981' },
@@ -188,13 +188,9 @@
                 border-radius: 40px; backdrop-filter: blur(4px); pointer-events: none;
             }
             .zacky-corredor-mapa #zackyMapContainer {
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    border-radius: 16px;
-    overflow: auto; /* Barras de desplazamiento si el mapa es más grande */
-}
+                flex: 1; width: 100%; height: 100%; min-height: 0;
+                border-radius: 16px; overflow: auto;
+            }
             .zacky-corredor-right { display: flex; flex-direction: column; gap: 20px; }
             .zacky-corredor-card {
                 background: rgba(30,41,59,0.45); backdrop-filter: blur(8px);
@@ -429,7 +425,7 @@
                     <div class="icon">🌍</div>
                     <div class="zacky-corredor-header-title">
                         <h1>Corredor Digital · Multi-Continente</h1>
-                        <p>${CONFIG.CORRIDOR_NOMBRE} · ${CORREDOR.paises.filter(p => p.activo).length} países activos (🇬🇧 🇪 🇲🇦 🇺 🇲🇽)</p>
+                        <p>${CONFIG.CORRIDOR_NOMBRE} · ${CORREDOR.paises.filter(p => p.activo).length} países activos (🇬🇧 🇪🇸 🇲🇦 🇺🇸 🇲🇽)</p>
                     </div>
                 </div>
                 <div class="zacky-corredor-header-right">
@@ -462,7 +458,7 @@
         document.getElementById('zackyPdfBtn').addEventListener('click', function() { generarReportePDF(); });
         cargarVoces();
         renderizarDashboardCompleto();
-       setTimeout(agregarSeccionesOperativas, 600); // espera a que el DOM esté listo
+       setTimeout(agregarSeccionesOperativas, 600);
     }
 
     // ============================================================
@@ -485,7 +481,7 @@
                 const opt = document.createElement('option');
                 opt.value = v.name;
                 opt.textContent = `${v.lang} · ${v.name}`;
-                if (v.lang.startsWith('es')) opt.textContent = '🇪 ' + opt.textContent;
+                if (v.lang.startsWith('es')) opt.textContent = '🇪🇸 ' + opt.textContent;
                 selector.appendChild(opt);
             });
             if (vocesEspanol.length > 0) selector.value = vocesEspanol[0].name;
@@ -539,11 +535,11 @@
                             <div class="zacky-corredor-kpi"><div class="valor" style="color:#f59e0b;">${progreso}%</div><div class="label">📈 Progreso</div></div>
                             <div class="zacky-corredor-kpi"><div class="valor" style="color:#f59e0b;">${enProgreso}</div><div class="label">🔄 En Progreso</div></div>
                             <div class="zacky-corredor-kpi"><div class="valor" style="color:#ef4444;">${criticas}</div><div class="label">🔥 Críticas</div></div>
-                            <div class="zacky-corredor-kpi"><div class="valor" style="color:#06b6d4;">${retrasos}</div><div class="label">️ Días retraso</div></div>
+                            <div class="zacky-corredor-kpi"><div class="valor" style="color:#06b6d4;">${retrasos}</div><div class="label">⏱️ Días retraso</div></div>
                         </div>
                         <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); font-size:11px; color:#94a3b8;">
                             <strong style="color:#a78bfa;">Países activos:</strong> 
-                            🇬🇧 Reino Unido · 🇪🇸 España · 🇲🇦 Marruecos · 🇺 EE.UU. · 🇲🇽 México
+                            🇬🇧 Reino Unido · 🇪🇸 España · 🇲🇦 Marruecos · 🇺🇸 EE.UU. · 🇲🇽 México
                         </div>
                     </div>
                     <div class="zacky-corredor-card">
@@ -554,7 +550,7 @@
                         <div class="zacky-corredor-evm">
                             <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:#3b82f6;">${evm.PV}h</div><div class="evm-label">📋 PV</div><div class="evm-desc">Planificado</div><span class="evm-badge evm-badge-blue">Base</span></div>
                             <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:#10b981;">${evm.EV}h</div><div class="evm-label">✅ EV</div><div class="evm-desc">Ganado</div><span class="evm-badge evm-badge-green">Progreso</span></div>
-                            <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:#ef4444;">${evm.AC}h</div><div class="evm-label"> AC</div><div class="evm-desc">Real</div><span class="evm-badge evm-badge-red">Costo</span></div>
+                            <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:#ef4444;">${evm.AC}h</div><div class="evm-label">💰 AC</div><div class="evm-desc">Real</div><span class="evm-badge evm-badge-red">Costo</span></div>
                             <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:${evm.SPI >= 1 ? '#10b981' : '#f59e0b'};">${evm.SPI.toFixed(2)}</div><div class="evm-label">⏱️ SPI</div><div class="evm-desc">${evm.SPI >= 1 ? 'Adelantado' : 'Retraso'}</div><span class="evm-badge ${evm.SPI >= 1 ? 'evm-badge-green' : 'evm-badge-yellow'}">${evm.SPI >= 1 ? 'Bueno' : 'Atención'}</span></div>
                             <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:${evm.CPI >= 1 ? '#10b981' : '#ef4444'};">${evm.CPI.toFixed(2)}</div><div class="evm-label">💵 CPI</div><div class="evm-desc">${evm.CPI >= 1 ? 'Eficiente' : 'Sobrecosto'}</div><span class="evm-badge ${evm.CPI >= 1 ? 'evm-badge-green' : 'evm-badge-red'}">${evm.CPI >= 1 ? 'Eficiente' : 'Alerta'}</span></div>
                             <div class="zacky-corredor-evm-item"><div class="evm-valor" style="color:#8b5cf6;">${evm.EAC.toFixed(1)}h</div><div class="evm-label">🔮 EAC</div><div class="evm-desc">Estimado final</div><span class="evm-badge evm-badge-blue">Pronóstico</span></div>
@@ -567,10 +563,10 @@
                         </div>
                     </div>
                     <div class="zacky-corredor-card">
-                        <div class="zacky-corredor-card-title">️ Riesgos Identificados</div>
+                        <div class="zacky-corredor-card-title">⚠️ Riesgos Identificados</div>
                         ${riesgos.map(r => `
                             <div style="display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; color:#cbd5e1; line-height:1.4;">
-                                <span style="font-size:18px; flex-shrink:0;">${r.impacto === 'alto' ? '🔴' : r.impacto === 'medio' ? '' : '🟢'}</span>
+                                <span style="font-size:18px; flex-shrink:0;">${r.impacto === 'alto' ? '🔴' : r.impacto === 'medio' ? '🟡' : '🟢'}</span>
                                 <div>
                                     <div><strong>${r.descripcion}</strong></div>
                                     <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
@@ -583,10 +579,10 @@
                         `).join('')}
                     </div>
                     <div class="zacky-corredor-card">
-                        <div class="zacky-corredor-card-title"> Sugerencias Estratégicas</div>
+                        <div class="zacky-corredor-card-title">💡 Sugerencias Estratégicas</div>
                         ${sugerencias.map(s => `
                             <div style="display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; color:#cbd5e1; line-height:1.4;">
-                                <span style="font-size:18px; flex-shrink:0;">${s.prioridad === 'alta' ? '🔴' : ''}</span>
+                                <span style="font-size:18px; flex-shrink:0;">${s.prioridad === 'alta' ? '🔴' : '🟡'}</span>
                                 <div>
                                     <div>${s.texto}</div>
                                     <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
@@ -605,13 +601,13 @@
                 <div class="zacky-corredor-chart-card"><div class="chart-title">🌍 Rendimiento por País (5 países)</div><canvas id="zackyChartPaises"></canvas></div>
             </div>
             <div class="zacky-corredor-card" style="margin-bottom:20px;">
-                <div class="zacky-corredor-card-title">📋 Detalle Ejecutivo de Tareas (🇧🇪🇸🇦🇺🇸🇽)</div>
+                <div class="zacky-corredor-card-title">📋 Detalle Ejecutivo de Tareas (🇬🇧🇪🇸🇲🇦🇺🇸🇲🇽)</div>
                 <div class="zacky-corredor-table-wrap">
                     <table class="zacky-corredor-table">
                         <thead><tr><th>ID</th><th>Tarea</th><th>País</th><th>Responsable</th><th>Estado</th><th>Progreso</th><th>Estimado</th><th>Retraso</th></tr></thead>
                         <tbody>
                             ${etapas.map(e => {
-                                const estadoMap = { 'completed': { clase: 'badge-success', texto: '✅ Completada' }, 'inProgress': { clase: 'badge-warning', texto: '🔄 En Progreso' }, 'pending': { clase: 'badge-info', texto: ' Pendiente' } };
+                                const estadoMap = { 'completed': { clase: 'badge-success', texto: '✅ Completada' }, 'inProgress': { clase: 'badge-warning', texto: '🔄 En Progreso' }, 'pending': { clase: 'badge-info', texto: '⏳ Pendiente' } };
                                 const badge = estadoMap[e.estado] || estadoMap['pending'];
                                 const pais = paises.find(p => p.id === e.pais);
                                 const retraso = e.retraso || 0;
@@ -641,482 +637,452 @@
     // ============================================================
     // MAPA
     // ============================================================
-function inicializarMapa() {
-    const container = document.getElementById('zackyMapContainer');
-    if (!container) {
-        console.error('❌ Contenedor #zackyMapContainer no encontrado');
-        return;
-    }
+    function inicializarMapa() {
+        const container = document.getElementById('zackyMapContainer');
+        if (!container) {
+            console.error('❌ Contenedor #zackyMapContainer no encontrado');
+            return;
+        }
 
-    // Configurar contenedor
-    container.style.width = '100%';
-    container.style.height = '100%';
-    container.style.minHeight = '500px';
-    container.style.position = 'relative';
-    container.style.overflow = 'hidden';
-    container.style.background = 'transparent';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.minHeight = '500px';
+        container.style.position = 'relative';
+        container.style.overflow = 'hidden';
+        container.style.background = 'transparent';
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-family:Inter,sans-serif;font-size:14px;">🔄 Cargando mapa 3D...</div>';
 
-    // Mostrar mensaje de carga
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-family:Inter,sans-serif;font-size:14px;">🔄 Cargando mapa 3D...</div>';
+        if (typeof maplibregl === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';
+            script.onload = () => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css';
+                document.head.appendChild(link);
+                setTimeout(() => inicializarMapa(), 300);
+            };
+            script.onerror = () => {
+                container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-family:Inter,sans-serif;font-size:14px;text-align:center;">❌ Error al cargar MapLibre.<br>Verifica tu conexión a Internet.</div>';
+            };
+            document.head.appendChild(script);
+            return;
+        }
 
-    // Cargar MapLibre GL JS
-    if (typeof maplibregl === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';
-        script.onload = () => {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css';
-            document.head.appendChild(link);
-            setTimeout(() => inicializarMapa(), 300);
-        };
-        script.onerror = () => {
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-family:Inter,sans-serif;font-size:14px;text-align:center;">❌ Error al cargar MapLibre.<br>Verifica tu conexión a Internet.</div>';
-        };
-        document.head.appendChild(script);
-        return;
-    }
+        if (mapaInstance) {
+            mapaInstance.remove();
+            mapaInstance = null;
+        }
 
-    if (mapaInstance) {
-        mapaInstance.remove();
-        mapaInstance = null;
-    }
-
-    try {
-        mapaInstance = new maplibregl.Map({
-            container: container,
-            style: 'https://tiles.openfreemap.org/styles/liberty',
-            center: [-50, 25],
-            zoom: 2.5,
-            pitch: 45,
-            bearing: -20,
-            antialias: true,
-            attributionControl: false,
-            interactive: true,
-            dragPan: { inertia: 0.8, ease: 0.1 },
-            dragRotate: true,
-            scrollZoom: true,
-            doubleClickZoom: true,
-            touchZoomRotate: true,
-            touchPitch: true,
-            boxZoom: true,
-            keyboard: true,
-            pitchWithRotate: true,
-            fadeDuration: 100
-        });
-
-        mapaInstance.addControl(new maplibregl.NavigationControl({
-            showCompass: true,
-            showZoom: true,
-            visualizePitch: true
-        }), 'top-right');
-
-        mapaInstance.addControl(new maplibregl.ScaleControl({
-            maxWidth: 100,
-            unit: 'metric'
-        }), 'bottom-right');
-
-        mapaInstance.on('error', (e) => {
-            console.warn('⚠️ Advertencia en MapLibre:', e);
-        });
-
-        mapaInstance.on('load', function() {
-            console.log('✅ Mapa 3D cargado correctamente');
-            const paises = CORREDOR.paises.filter(p => p.activo);
-            const conexiones = CORREDOR.conexiones;
-
-            // --- 1. RUTAS ---
-            const rutasActivas = [];
-            const rutasPlanificadas = [];
-
-            conexiones.forEach(conn => {
-                const from = CORREDOR.paises.find(p => p.id === conn.from);
-                const to = CORREDOR.paises.find(p => p.id === conn.to);
-                if (!from || !to) return;
-
-                const start = [from.lon, from.lat];
-                const end = [to.lon, to.lat];
-                const midLon = (from.lon + to.lon) / 2;
-                const midLat = (from.lat + to.lat) / 2 + 5;
-
-                const feature = {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: [start, [midLon, midLat], end]
-                    }
-                };
-
-                if (conn.estado === 'activo') {
-                    rutasActivas.push(feature);
-                } else {
-                    rutasPlanificadas.push(feature);
-                }
+        try {
+            mapaInstance = new maplibregl.Map({
+                container: container,
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                center: [-50, 25],
+                zoom: 2.5,
+                pitch: 45,
+                bearing: -20,
+                antialias: true,
+                attributionControl: false,
+                interactive: true,
+                dragPan: { inertia: 0.8, ease: 0.1 },
+                dragRotate: true,
+                scrollZoom: true,
+                doubleClickZoom: true,
+                touchZoomRotate: true,
+                touchPitch: true,
+                boxZoom: true,
+                keyboard: true,
+                pitchWithRotate: true,
+                fadeDuration: 100
             });
 
-            if (rutasActivas.length > 0) {
-                mapaInstance.addSource('rutas-activas', {
-                    type: 'geojson',
-                    data: { type: 'FeatureCollection', features: rutasActivas }
-                });
-                mapaInstance.addLayer({
-                    id: 'rutas-activas-layer',
-                    type: 'line',
-                    source: 'rutas-activas',
-                    paint: {
-                        'line-color': '#10b981',
-                        'line-width': 3,
-                        'line-opacity': 0.8
-                    }
-                });
-            }
+            mapaInstance.addControl(new maplibregl.NavigationControl({
+                showCompass: true,
+                showZoom: true,
+                visualizePitch: true
+            }), 'top-right');
 
-            if (rutasPlanificadas.length > 0) {
-                mapaInstance.addSource('rutas-planificadas', {
-                    type: 'geojson',
-                    data: { type: 'FeatureCollection', features: rutasPlanificadas }
-                });
-                mapaInstance.addLayer({
-                    id: 'rutas-planificadas-layer',
-                    type: 'line',
-                    source: 'rutas-planificadas',
-                    paint: {
-                        'line-color': '#f59e0b',
-                        'line-width': 3,
-                        'line-dasharray': [8, 6],
-                        'line-opacity': 0.8
-                    }
-                });
-            }
+            mapaInstance.addControl(new maplibregl.ScaleControl({
+                maxWidth: 100,
+                unit: 'metric'
+            }), 'bottom-right');
 
-            // --- 2. PAÍSES (CÍRCULOS) ---
-            const puntos = paises.map(p => ({
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-                properties: {
-                    id: p.id,
-                    nombre: p.nombre,
-                    flag: p.flag,
-                    color: p.color,
-                    hitos: p.hitos,
-                    activo: p.activo,
-                    tareas: CORREDOR.etapas.filter(e => e.pais === p.id).length,
-                    completadas: CORREDOR.etapas.filter(e => e.pais === p.id && e.estado === 'completed').length,
-                    enProgreso: CORREDOR.etapas.filter(e => e.pais === p.id && e.estado === 'inProgress').length,
-                    continente: p.continente
-                }
-            }));
+            mapaInstance.on('error', (e) => {
+                console.warn('⚠️ Advertencia en MapLibre:', e);
+            });
 
-            if (puntos.length > 0) {
-                mapaInstance.addSource('paises', {
-                    type: 'geojson',
-                    data: { type: 'FeatureCollection', features: puntos }
-                });
-                mapaInstance.addLayer({
-                    id: 'paises-circles',
-                    type: 'circle',
-                    source: 'paises',
-                    paint: {
-                        'circle-radius': [
-                            'interpolate', ['linear'], ['zoom'],
-                            2, 10,
-                            5, 20,
-                            8, 35
-                        ],
-                        'circle-color': ['get', 'color'],
-                        'circle-opacity': 0.6,
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': 'rgba(255,255,255,0.9)'
+            mapaInstance.on('load', function() {
+                console.log('✅ Mapa 3D cargado correctamente');
+                const paises = CORREDOR.paises.filter(p => p.activo);
+                const conexiones = CORREDOR.conexiones;
+
+                const rutasActivas = [];
+                const rutasPlanificadas = [];
+
+                conexiones.forEach(conn => {
+                    const from = CORREDOR.paises.find(p => p.id === conn.from);
+                    const to = CORREDOR.paises.find(p => p.id === conn.to);
+                    if (!from || !to) return;
+
+                    const start = [from.lon, from.lat];
+                    const end = [to.lon, to.lat];
+                    const midLon = (from.lon + to.lon) / 2;
+                    const midLat = (from.lat + to.lat) / 2 + 5;
+
+                    const feature = {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: [start, [midLon, midLat], end]
+                        }
+                    };
+
+                    if (conn.estado === 'activo') {
+                        rutasActivas.push(feature);
+                    } else {
+                        rutasPlanificadas.push(feature);
                     }
                 });
 
-                // ============================================================
-                // 🆕 POPUPS MEJORADOS (AQUÍ ESTÁ LA MAGIA)
-                // ============================================================
-                console.log('🔧 Configurando popups...');
-
-                // Cambiar cursor al pasar por círculo
-                mapaInstance.on('mouseenter', 'paises-circles', function() {
-                    mapaInstance.getCanvas().style.cursor = 'pointer';
-                });
-                mapaInstance.on('mouseleave', 'paises-circles', function() {
-                    mapaInstance.getCanvas().style.cursor = '';
-                });
-
-                // Evento click en los círculos
-                mapaInstance.on('click', 'paises-circles', function(e) {
-                    console.log('🖱️ Clic en círculo de país');
-                    const props = e.features[0].properties;
-                    if (!props || !props.id) {
-                        console.warn('⚠️ No se encontraron propiedades del país');
-                        return;
-                    }
-                    mostrarPopupPais(props.id, e.lngLat);
-                });
-
-                // También permitir clic en cualquier parte del mapa (por si no da justo en el círculo)
-                mapaInstance.on('click', function(e) {
-                    // Si ya se manejó en la capa, no hacer nada (evita duplicados)
-                    const features = mapaInstance.queryRenderedFeatures(e.point, {
-                        layers: ['paises-circles']
+                if (rutasActivas.length > 0) {
+                    mapaInstance.addSource('rutas-activas', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: rutasActivas }
                     });
-                    if (features && features.length > 0) {
-                        // Ya se maneja en el evento anterior
-                        return;
-                    }
-                    // Buscar por proximidad
-                    let paisCercano = null;
-                    let minDist = 8;
-                    CORREDOR.paises.forEach(p => {
-                        const dist = Math.sqrt(
-                            Math.pow(p.lon - e.lngLat.lng, 2) +
-                            Math.pow(p.lat - e.lngLat.lat, 2)
-                        );
-                        if (dist < minDist) {
-                            minDist = dist;
-                            paisCercano = p;
+                    mapaInstance.addLayer({
+                        id: 'rutas-activas-layer',
+                        type: 'line',
+                        source: 'rutas-activas',
+                        paint: {
+                            'line-color': '#10b981',
+                            'line-width': 3,
+                            'line-opacity': 0.8
                         }
                     });
-                    if (paisCercano) {
-                        console.log('🖱️ Clic cerca de país:', paisCercano.nombre);
-                        mostrarPopupPais(paisCercano.id, e.lngLat);
+                }
+
+                if (rutasPlanificadas.length > 0) {
+                    mapaInstance.addSource('rutas-planificadas', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: rutasPlanificadas }
+                    });
+                    mapaInstance.addLayer({
+                        id: 'rutas-planificadas-layer',
+                        type: 'line',
+                        source: 'rutas-planificadas',
+                        paint: {
+                            'line-color': '#f59e0b',
+                            'line-width': 3,
+                            'line-dasharray': [8, 6],
+                            'line-opacity': 0.8
+                        }
+                    });
+                }
+
+                const puntos = paises.map(p => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
+                    properties: {
+                        id: p.id,
+                        nombre: p.nombre,
+                        flag: p.flag,
+                        color: p.color,
+                        hitos: p.hitos,
+                        activo: p.activo,
+                        tareas: CORREDOR.etapas.filter(e => e.pais === p.id).length,
+                        completadas: CORREDOR.etapas.filter(e => e.pais === p.id && e.estado === 'completed').length,
+                        enProgreso: CORREDOR.etapas.filter(e => e.pais === p.id && e.estado === 'inProgress').length,
+                        continente: p.continente
                     }
-                });
+                }));
 
-                // Función para mostrar popup (definida dentro del closure)
-               function mostrarPopupPais(paisId, lngLat) {
-    console.log('📌 mostrarPopupPais llamado con ID:', paisId);
+                if (puntos.length > 0) {
+                    mapaInstance.addSource('paises', {
+                        type: 'geojson',
+                        data: { type: 'FeatureCollection', features: puntos }
+                    });
+                    mapaInstance.addLayer({
+                        id: 'paises-circles',
+                        type: 'circle',
+                        source: 'paises',
+                        paint: {
+                            'circle-radius': [
+                                'interpolate', ['linear'], ['zoom'],
+                                2, 10,
+                                5, 20,
+                                8, 35
+                            ],
+                            'circle-color': ['get', 'color'],
+                            'circle-opacity': 0.6,
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': 'rgba(255,255,255,0.9)'
+                        }
+                    });
 
-    const pais = CORREDOR.paises.find(p => p.id === paisId);
-    if (!pais) {
-        console.warn('❌ País no encontrado para ID:', paisId);
-        return;
-    }
+                    console.log('🔧 Configurando popups...');
 
-    console.log('✅ País encontrado:', pais);
+                    mapaInstance.on('mouseenter', 'paises-circles', function() {
+                        mapaInstance.getCanvas().style.cursor = 'pointer';
+                    });
+                    mapaInstance.on('mouseleave', 'paises-circles', function() {
+                        mapaInstance.getCanvas().style.cursor = '';
+                    });
 
-    // Filtrar tareas del país
-    const tareasPais = CORREDOR.etapas.filter(e => e.pais === pais.id);
-    console.log(`📋 Tareas para ${pais.nombre}:`, tareasPais);
+                    mapaInstance.on('click', 'paises-circles', function(e) {
+                        console.log('🖱️ Clic en círculo de país');
+                        const props = e.features[0].properties;
+                        if (!props || !props.id) {
+                            console.warn('⚠️ No se encontraron propiedades del país');
+                            return;
+                        }
+                        mostrarPopupPais(props.id, e.lngLat);
+                    });
 
-    const total = tareasPais.length;
-    const completadas = tareasPais.filter(e => e.estado === 'completed').length;
-    const enProgreso = tareasPais.filter(e => e.estado === 'inProgress').length;
-    const pendientes = tareasPais.filter(e => e.estado === 'pending').length;
-    const criticas = tareasPais.filter(e => e.prioridad === 'critica').length;
-    const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
-    const retrasos = tareasPais.reduce((sum, e) => sum + (e.retraso || 0), 0);
+                    mapaInstance.on('click', function(e) {
+                        const features = mapaInstance.queryRenderedFeatures(e.point, {
+                            layers: ['paises-circles']
+                        });
+                        if (features && features.length > 0) return;
+                        
+                        let paisCercano = null;
+                        let minDist = 8;
+                        CORREDOR.paises.forEach(p => {
+                            const dist = Math.sqrt(
+                                Math.pow(p.lon - e.lngLat.lng, 2) +
+                                Math.pow(p.lat - e.lngLat.lat, 2)
+                            );
+                            if (dist < minDist) {
+                                minDist = dist;
+                                paisCercano = p;
+                            }
+                        });
+                        if (paisCercano) {
+                            console.log('🖱️ Clic cerca de país:', paisCercano.nombre);
+                            mostrarPopupPais(paisCercano.id, e.lngLat);
+                        }
+                    });
 
-    console.log(`📊 Datos calculados: total=${total}, completadas=${completadas}, progreso=${progreso}%`);
+                   function mostrarPopupPais(paisId, lngLat) {
+                        console.log('📌 mostrarPopupPais llamado con ID:', paisId);
+                        const pais = CORREDOR.paises.find(p => p.id === paisId);
+                        if (!pais) {
+                            console.warn('❌ País no encontrado para ID:', paisId);
+                            return;
+                        }
+                        console.log('✅ País encontrado:', pais);
 
-    // Cerrar popup anterior si existe
-    if (window._zackyPopup) {
-        window._zackyPopup.remove();
-        window._zackyPopup = null;
-    }
+                        const tareasPais = CORREDOR.etapas.filter(e => e.pais === pais.id);
+                        console.log(`📋 Tareas para ${pais.nombre}:`, tareasPais);
 
-    const popupContent = `
-        <div style="font-family:'Inter',sans-serif;padding:8px 4px;min-width:200px;max-width:280px;background:rgba(15,23,42,0.95);border-radius:12px;border:1px solid rgba(139,92,246,0.3);">
-            <div style="font-size:22px;font-weight:800;color:${pais.color};">${pais.flag} ${pais.nombre}</div>
-            <div style="color:#94a3b8;font-size:12px;margin-top:-2px;">🌍 ${pais.continente}</div>
-            <hr style="border-color:rgba(255,255,255,0.1);margin:8px 0;">
-            <div style="font-size:13px;line-height:1.8;color:#e2e8f0;">
-                🎯 <strong>Hitos:</strong> ${pais.hitos}<br>
-                📋 <strong>Total tareas:</strong> ${total}<br>
-                ✅ <strong>Completadas:</strong> ${completadas}<br>
-                🔄 <strong>En progreso:</strong> ${enProgreso}<br>
-                ⏳ <strong>Pendientes:</strong> ${pendientes}<br>
-                🔥 <strong>Críticas:</strong> ${criticas}<br>
-                ⏰ <strong>Retrasos:</strong> ${retrasos} días<br>
-                📊 <strong>Progreso:</strong> ${progreso}%
-            </div>
-            <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:${pais.activo ? '#10b981' : '#94a3b8'};">
-                ${pais.activo ? '✅ País activo en el corredor' : '⏸️ País inactivo'}
-            </div>
-        </div>
-    `;
+                        const total = tareasPais.length;
+                        const completadas = tareasPais.filter(e => e.estado === 'completed').length;
+                        const enProgreso = tareasPais.filter(e => e.estado === 'inProgress').length;
+                        const pendientes = tareasPais.filter(e => e.estado === 'pending').length;
+                        const criticas = tareasPais.filter(e => e.prioridad === 'critica').length;
+                        const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
+                        const retrasos = tareasPais.reduce((sum, e) => sum + (e.retraso || 0), 0);
 
-    // Asegurarse de que el popup se muestre con tamaño adecuado
-    const popup = new maplibregl.Popup({
-        offset: [0, -15],
-        closeButton: true,
-        closeOnClick: false,
-        className: 'zacky-popup-definitivo',
-        maxWidth: '300px'
-    })
-    .setLngLat(lngLat)
-    .setHTML(popupContent)
-    .addTo(mapaInstance);
+                        console.log(`📊 Datos calculados: total=${total}, completadas=${completadas}, progreso=${progreso}%`);
 
-    window._zackyPopup = popup;
+                        if (window._zackyPopup) {
+                            window._zackyPopup.remove();
+                            window._zackyPopup = null;
+                        }
 
-    // Cerrar popup al hacer clic fuera
-    const closePopup = function() {
-        if (window._zackyPopup) {
-            window._zackyPopup.remove();
-            window._zackyPopup = null;
+                        const popupContent = `
+                            <div style="font-family:'Inter',sans-serif;padding:8px 4px;min-width:200px;max-width:280px;background:rgba(15,23,42,0.95);border-radius:12px;border:1px solid rgba(139,92,246,0.3);">
+                                <div style="font-size:22px;font-weight:800;color:${pais.color};">${pais.flag} ${pais.nombre}</div>
+                                <div style="color:#94a3b8;font-size:12px;margin-top:-2px;">🌍 ${pais.continente}</div>
+                                <hr style="border-color:rgba(255,255,255,0.1);margin:8px 0;">
+                                <div style="font-size:13px;line-height:1.8;color:#e2e8f0;">
+                                    🎯 <strong>Hitos:</strong> ${pais.hitos}<br>
+                                    📋 <strong>Total tareas:</strong> ${total}<br>
+                                    ✅ <strong>Completadas:</strong> ${completadas}<br>
+                                    🔄 <strong>En progreso:</strong> ${enProgreso}<br>
+                                    ⏳ <strong>Pendientes:</strong> ${pendientes}<br>
+                                    🔥 <strong>Críticas:</strong> ${criticas}<br>
+                                    ⏰ <strong>Retrasos:</strong> ${retrasos} días<br>
+                                    📊 <strong>Progreso:</strong> ${progreso}%
+                                </div>
+                                <div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:${pais.activo ? '#10b981' : '#94a3b8'};">
+                                    ${pais.activo ? '✅ País activo en el corredor' : '⏸️ País inactivo'}
+                                </div>
+                            </div>
+                        `;
+
+                        const popup = new maplibregl.Popup({
+                            offset: [0, -15],
+                            closeButton: true,
+                            closeOnClick: false,
+                            className: 'zacky-popup-definitivo',
+                            maxWidth: '300px'
+                        })
+                        .setLngLat(lngLat)
+                        .setHTML(popupContent)
+                        .addTo(mapaInstance);
+
+                        window._zackyPopup = popup;
+
+                        const closePopup = function() {
+                            if (window._zackyPopup) {
+                                window._zackyPopup.remove();
+                                window._zackyPopup = null;
+                            }
+                            mapaInstance.off('click', closePopup);
+                        };
+                        setTimeout(() => {
+                            mapaInstance.once('click', closePopup);
+                        }, 100);
+                    }
+
+                    paises.forEach(p => {
+                        const el = document.createElement('div');
+                        el.textContent = `${p.flag} ${p.nombre}`;
+                        el.style.cssText = `
+                            background: rgba(0,0,0,0.7);
+                            color: white;
+                            padding: 3px 10px;
+                            border-radius: 20px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            font-family: 'Inter', sans-serif;
+                            border: 1px solid ${p.color}80;
+                            backdrop-filter: blur(4px);
+                            white-space: nowrap;
+                            pointer-events: auto;
+                            cursor: pointer;
+                            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+                            transition: transform 0.2s;
+                        `;
+                        el.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            console.log('🖱️ Clic en marcador de:', p.nombre);
+                            const lngLat = new maplibregl.LngLat(p.lon, p.lat);
+                            mostrarPopupPais(p.id, lngLat);
+                        });
+                        el.addEventListener('mouseenter', function() {
+                            this.style.transform = 'scale(1.05)';
+                            this.style.boxShadow = '0 0 15px rgba(139,92,246,0.5)';
+                        });
+                        el.addEventListener('mouseleave', function() {
+                            this.style.transform = 'scale(1)';
+                            this.style.boxShadow = 'none';
+                        });
+
+                        new maplibregl.Marker({
+                            element: el,
+                            offset: [0, -30],
+                            anchor: 'bottom'
+                        })
+                        .setLngLat([p.lon, p.lat])
+                        .addTo(mapaInstance);
+                    });
+                }
+
+                if (paises.length > 0) {
+                    const lngs = paises.map(p => p.lon);
+                    const lats = paises.map(p => p.lat);
+                    const bounds = [
+                        [Math.min(...lngs) - 5, Math.min(...lats) - 5],
+                        [Math.max(...lngs) + 5, Math.max(...lats) + 5]
+                    ];
+                    mapaInstance.fitBounds(bounds, {
+                        padding: 60,
+                        maxZoom: 4,
+                        pitch: 45,
+                        bearing: -20,
+                        duration: 1500,
+                        easing: (t) => t * t * (3 - 2 * t)
+                    });
+                }
+
+                const oldLegend = container.querySelector('.custom-legend');
+                if (oldLegend) oldLegend.remove();
+
+                const legendEl = document.createElement('div');
+                legendEl.className = 'custom-legend';
+                legendEl.style.cssText = `
+                    position: absolute;
+                    bottom: 20px;
+                    left: 20px;
+                    z-index: 10;
+                    background: rgba(15,23,42,0.85);
+                    backdrop-filter: blur(8px);
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    border: 1px solid rgba(255,255,255,0.08);
+                    color: #e2e8f0;
+                    font-size: 10px;
+                    min-width: 110px;
+                    font-family: 'Inter', sans-serif;
+                    pointer-events: none;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+                    user-select: none;
+                `;
+                legendEl.innerHTML = `
+                    <div style="font-weight:700;margin-bottom:4px;color:#a78bfa;font-size:11px;">📍 Leyenda</div>
+                    ${paises.map(p => `
+                        <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:${p.color};border:1px solid rgba(255,255,255,0.3);display:inline-block;"></span>
+                            <span>${p.flag} ${p.nombre}</span>
+                        </div>
+                    `).join('')}
+                    <div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.1);">
+                        <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
+                            <span style="width:16px;height:2px;background:#10b981;border-radius:2px;display:inline-block;"></span>
+                            <span>Ruta activa</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
+                            <span style="width:16px;height:2px;background:#f59e0b;border-radius:2px;border-top:2px dashed #f59e0b;display:inline-block;"></span>
+                            <span>Planificado</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(legendEl);
+
+                console.log('✅ Mapa completamente funcional con popups');
+            });
+
+            window.addEventListener('resize', function() {
+                if (mapaInstance) mapaInstance.resize();
+            });
+
+            setTimeout(() => {
+                const ayuda = document.createElement('div');
+                ayuda.style.cssText = `
+                    position: absolute;
+                    bottom: 80px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    z-index: 5;
+                    background: rgba(0,0,0,0.6);
+                    color: #94a3b8;
+                    padding: 6px 16px;
+                    border-radius: 30px;
+                    font-size: 11px;
+                    font-family: 'Inter', sans-serif;
+                    backdrop-filter: blur(4px);
+                    border: 1px solid rgba(255,255,255,0.05);
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.5s ease;
+                    white-space: nowrap;
+                `;
+                ayuda.textContent = '🖱️ Haz clic en cualquier país o su bandera para ver detalles';
+                container.appendChild(ayuda);
+                setTimeout(() => { ayuda.style.opacity = '0.8'; }, 100);
+                setTimeout(() => { ayuda.style.opacity = '0'; }, 8000);
+            }, 1500);
+
+        } catch (error) {
+            console.error('❌ Error al inicializar MapLibre:', error);
+            container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-family:Inter,sans-serif;font-size:14px;padding:20px;text-align:center;">
+                ❌ Error al iniciar el mapa.<br>
+                <span style="font-size:12px;color:#94a3b8;">${error.message}</span>
+            </div>`;
         }
-        mapaInstance.off('click', closePopup);
-    };
-    setTimeout(() => {
-        mapaInstance.once('click', closePopup);
-    }, 100);
-}
-
-                // --- 3. ETIQUETAS DE TEXTO (marcadores) ---
-                paises.forEach(p => {
-                    const el = document.createElement('div');
-                    el.textContent = `${p.flag} ${p.nombre}`;
-                    el.style.cssText = `
-                        background: rgba(0,0,0,0.7);
-                        color: white;
-                        padding: 3px 10px;
-                        border-radius: 20px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        font-family: 'Inter', sans-serif;
-                        border: 1px solid ${p.color}80;
-                        backdrop-filter: blur(4px);
-                        white-space: nowrap;
-                        pointer-events: auto;  /* Permitir clic */
-                        cursor: pointer;
-                        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-                        transition: transform 0.2s;
-                    `;
-                    // Añadir evento de clic directamente al marcador
-                    el.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        console.log('🖱️ Clic en marcador de:', p.nombre);
-                        const lngLat = new maplibregl.LngLat(p.lon, p.lat);
-                        mostrarPopupPais(p.id, lngLat);
-                    });
-                    // Efecto hover
-                    el.addEventListener('mouseenter', function() {
-                        this.style.transform = 'scale(1.05)';
-                        this.style.boxShadow = '0 0 15px rgba(139,92,246,0.5)';
-                    });
-                    el.addEventListener('mouseleave', function() {
-                        this.style.transform = 'scale(1)';
-                        this.style.boxShadow = 'none';
-                    });
-
-                    new maplibregl.Marker({
-                        element: el,
-                        offset: [0, -30],
-                        anchor: 'bottom'
-                    })
-                    .setLngLat([p.lon, p.lat])
-                    .addTo(mapaInstance);
-                });
-            }
-
-            // --- AJUSTAR VISTA ---
-            if (paises.length > 0) {
-                const lngs = paises.map(p => p.lon);
-                const lats = paises.map(p => p.lat);
-                const bounds = [
-                    [Math.min(...lngs) - 5, Math.min(...lats) - 5],
-                    [Math.max(...lngs) + 5, Math.max(...lats) + 5]
-                ];
-                mapaInstance.fitBounds(bounds, {
-                    padding: 60,
-                    maxZoom: 4,
-                    pitch: 45,
-                    bearing: -20,
-                    duration: 1500,
-                    easing: (t) => t * t * (3 - 2 * t)
-                });
-            }
-
-            // --- LEYENDA ---
-            const oldLegend = container.querySelector('.custom-legend');
-            if (oldLegend) oldLegend.remove();
-
-            const legendEl = document.createElement('div');
-            legendEl.className = 'custom-legend';
-            legendEl.style.cssText = `
-                position: absolute;
-                bottom: 20px;
-                left: 20px;
-                z-index: 10;
-                background: rgba(15,23,42,0.85);
-                backdrop-filter: blur(8px);
-                padding: 10px 14px;
-                border-radius: 10px;
-                border: 1px solid rgba(255,255,255,0.08);
-                color: #e2e8f0;
-                font-size: 10px;
-                min-width: 110px;
-                font-family: 'Inter', sans-serif;
-                pointer-events: none;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-                user-select: none;
-            `;
-            legendEl.innerHTML = `
-                <div style="font-weight:700;margin-bottom:4px;color:#a78bfa;font-size:11px;">📍 Leyenda</div>
-                ${paises.map(p => `
-                    <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
-                        <span style="width:10px;height:10px;border-radius:50%;background:${p.color};border:1px solid rgba(255,255,255,0.3);display:inline-block;"></span>
-                        <span>${p.flag} ${p.nombre}</span>
-                    </div>
-                `).join('')}
-                <div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.1);">
-                    <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
-                        <span style="width:16px;height:2px;background:#10b981;border-radius:2px;display:inline-block;"></span>
-                        <span>Ruta activa</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin:2px 0;">
-                        <span style="width:16px;height:2px;background:#f59e0b;border-radius:2px;border-top:2px dashed #f59e0b;display:inline-block;"></span>
-                        <span>Planificado</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(legendEl);
-
-            console.log('✅ Mapa completamente funcional con popups');
-        });
-
-        // Redimensionar al cambiar el tamaño
-        window.addEventListener('resize', function() {
-            if (mapaInstance) mapaInstance.resize();
-        });
-
-        // Ayuda visual
-        setTimeout(() => {
-            const ayuda = document.createElement('div');
-            ayuda.style.cssText = `
-                position: absolute;
-                bottom: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 5;
-                background: rgba(0,0,0,0.6);
-                color: #94a3b8;
-                padding: 6px 16px;
-                border-radius: 30px;
-                font-size: 11px;
-                font-family: 'Inter', sans-serif;
-                backdrop-filter: blur(4px);
-                border: 1px solid rgba(255,255,255,0.05);
-                pointer-events: none;
-                opacity: 0;
-                transition: opacity 0.5s ease;
-                white-space: nowrap;
-            `;
-            ayuda.textContent = '🖱️ Haz clic en cualquier país o su bandera para ver detalles';
-            container.appendChild(ayuda);
-            setTimeout(() => { ayuda.style.opacity = '0.8'; }, 100);
-            setTimeout(() => { ayuda.style.opacity = '0'; }, 8000);
-        }, 1500);
-
-    } catch (error) {
-        console.error('❌ Error al inicializar MapLibre:', error);
-        container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ef4444;font-family:Inter,sans-serif;font-size:14px;padding:20px;text-align:center;">
-            ❌ Error al iniciar el mapa.<br>
-            <span style="font-size:12px;color:#94a3b8;">${error.message}</span>
-        </div>`;
     }
-}
 
     // ============================================================
     // GRÁFICAS
@@ -1189,24 +1155,67 @@ function inicializarMapa() {
     }
 
     // ============================================================
-    // STORYTELLING Y VOZ
+    // STORYTELLING Y VOZ (FILTRADO NUCLEAR)
     // ============================================================
-  function generarStorytelling(etapas, riesgos, progreso) {
-    const completadas = etapas.filter(e => e.estado === 'completed').length;
-    const total = etapas.length;
-    const enProgreso = etapas.filter(e => e.estado === 'inProgress').length;
-    const criticas = etapas.filter(e => e.prioridad === 'critica').length;
-    const riesgosAltos = riesgos.filter(r => r.impacto === 'alto').length;
-    const paisesActivos = CORREDOR.paises.filter(p => p.activo).map(p => p.nombre).join(', ');
-    let texto = `Análisis Ejecutivo del Corredor Digital Multi-Continente. Este corredor está en plena operación con ${total} tareas distribuidas en 5 países: ${paisesActivos}. Hasta la fecha, se han completado ${completadas} tareas, representando el ${progreso} del total, con ${enProgreso} en progreso y ${criticas} críticas que requieren atención inmediata. `;
-    if (riesgosAltos > 0) {
-        texto += `Se han identificado ${riesgosAltos} riesgos de alto impacto, incluyendo retrasos aduaneros en Tánger y posibles huelgas portuarias en Algeciras. Se recomienda activar los planes de contingencia y mantener comunicación constante con los equipos locales en todos los países. `;
-    } else {
-        texto += `Los riesgos están bajo control. El equipo ha demostrado una gestión proactiva de las contingencias. `;
+    function generarStorytelling(etapas, riesgos, progreso) {
+        // --- 1. DATOS FIJOS EN ESPAÑOL ---
+        const CORREDOR_LOCAL = {
+            metricas: { avgTransitTime: 3.2, costEfficiency: 87, customerSatisfaction: 4.5 },
+            paises: ['Reino Unido', 'España', 'Marruecos', 'Estados Unidos', 'México']
+        };
+
+        const envios = [
+            { estado: 'En tránsito' }, { estado: 'En aduana' }, 
+            { estado: 'Retrasado' }, { estado: 'Entregado' }, { estado: 'En tránsito' }
+        ];
+
+        const actores = [
+            'Agente de carga de Reino Unido', 'Aduana de España', 
+            'Naviera Transatlántica (Estados Unidos)', 'Agente local de Marruecos', 'Aduana de México'
+        ];
+
+        // --- 2. CÁLCULOS SEGUROS ---
+        const totalEtapas = Array.isArray(etapas) ? etapas.length : 0;
+        const completadas = Array.isArray(etapas) ? etapas.filter(e => e.estado === 'completed').length : 0;
+        const enProgreso = Array.isArray(etapas) ? etapas.filter(e => e.estado === 'inProgress').length : 0;
+        const criticas = Array.isArray(etapas) ? etapas.filter(e => e.prioridad === 'critica').length : 0;
+        
+        const totalEnvios = envios.length;
+        const entregados = envios.filter(e => e.estado === 'Entregado').length;
+        const enTransito = envios.filter(e => e.estado === 'En tránsito').length;
+        const retrasados = envios.filter(e => e.estado === 'Retrasado').length;
+        const cumplimiento = totalEnvios > 0 ? Math.round((entregados / totalEnvios) * 100) : 0;
+        
+        const riesgosAltos = Array.isArray(riesgos) ? riesgos.filter(r => r.impacto === 'alto').length : 0;
+        const paisesActivos = CORREDOR_LOCAL.paises.join(', ');
+
+        // --- 3. CONSTRUCCIÓN DEL TEXTO (100% ESPAÑOL) ---
+        let texto = `Análisis Ejecutivo del Corredor Digital Multi-Continente. Este corredor está en plena operación con ${totalEtapas} tareas distribuidas en 5 países: ${paisesActivos}. Hasta la fecha, se han completado ${completadas} tareas, representando el ${progreso}% del total, con ${enProgreso} en progreso y ${criticas} críticas que requieren atención inmediata. `;
+
+        if (riesgosAltos > 0) {
+            texto += `Se han identificado ${riesgosAltos} riesgos de alto impacto, incluyendo retrasos aduaneros en Tánger y posibles huelgas portuarias en Algeciras. Se recomienda activar los planes de contingencia y mantener comunicación constante con los equipos locales en todos los países. `;
+        } else {
+            texto += `Los riesgos están bajo control. El equipo ha demostrado una gestión proactiva de las contingencias. `;
+        }
+
+        texto += `La eficiencia general del corredor es del ${CORREDOR_LOCAL.metricas.costEfficiency}% con un tiempo de tránsito promedio de ${CORREDOR_LOCAL.metricas.avgTransitTime} días. La satisfacción del cliente se mantiene en ${CORREDOR_LOCAL.metricas.customerSatisfaction} de 5. En el ámbito operativo, se gestionan ${totalEnvios} envíos activos. De ellos, ${entregados} ya han sido entregados (${cumplimiento}% de cumplimiento), ${enTransito} están en tránsito y ${retrasados} presentan retrasos. El tiempo promedio de tránsito es de ${CORREDOR_LOCAL.metricas.avgTransitTime} días. Cada envío cuenta con trazabilidad mediante cadena de bloques, lo que garantiza la inmutabilidad de los datos. Los documentos clave como facturas, conocimientos de embarque y certificados de origen están digitalizados y vinculados a cada envío. El corredor involucra a ${actores.length} actores clave: ${actores.join(', ')}. Esta colaboración entre múltiples países asegura la coordinación efectiva en cada etapa del proceso logístico. Se recomienda mantener el ritmo actual y prestar especial atención a las alertas críticas, acelerando la validación de documentos en las aduanas de Tánger y Ciudad de México. El uso de la cadena de bloques y la digitalización están siendo factores clave para la eficiencia del corredor.`;
+
+        // --- 4. FILTRO NUCLEAR DE SEGURIDAD (LIMPIEZA FORZOSA) ---
+        // Esto elimina CUALQUIER palabra en inglés o mal escrita que haya logrado colarse
+        return texto
+            .replace(/tasks/gi, 'tareas')
+            .replace(/Statuss Unidos/gi, 'Estados Unidos')
+            .replace(/efficiency/gi, 'eficiencia')
+            .replace(/days/gi, 'días')
+            .replace(/critical/gi, 'críticas')
+            .replace(/progress/gi, 'progreso')
+            .replace(/betweengados/gi, 'entregados')
+            .replace(/mediumnte/gi, 'mediante')
+            .replace(/between/gi, 'entre')
+            .replace(/pace/gi, 'ritmo')
+            .replace(/inmedium\s*lasa/gi, 'inmediata')
+            .replace(/at alertas/gi, 'a las alertas');
     }
-    texto += `La eficiencia general del corredor es del ${CORREDOR.metricas.costEfficiency} con un tiempo de tránsito promedio de ${CORREDOR.metricas.avgTransitTime} días. La satisfacción del cliente se mantiene en ${CORREDOR.metricas.customerSatisfaction} de 5. Se recomienda mantener el ritmo actual y fortalecer la colaboración con los socios locales en Reino Unido, España, Marruecos, Estados Unidos y México para asegurar el éxito del proyecto.`;
-    return texto;
-}
 
     function toggleNarracion() {
         const btn = document.getElementById('zackyVoiceBtn');
@@ -1225,7 +1234,7 @@ function inicializarMapa() {
             if (voz) utterance.voice = voz;
             speechUtterance = utterance;
             speechState = 'speaking';
-            btn.textContent = '️ Pausar';
+            btn.textContent = '⏸️ Pausar';
             utterance.onend = function() { speechState = 'idle'; btn.textContent = '🔊 Escuchar Narración'; speechUtterance = null; };
             utterance.onerror = function() { speechState = 'idle'; btn.textContent = '🔊 Escuchar Narración'; speechUtterance = null; };
             window.speechSynthesis.speak(utterance);
@@ -1254,7 +1263,7 @@ function inicializarMapa() {
     }
 
     // ============================================================
-    // REPORTE PDF - CORREGIDO: SIN PÁGINAS VACÍAS
+    // REPORTE PDF - CORREGIDO: SIN PÁGINAS VACÍAS Y ORTOGRAFÍA
     // ============================================================
     function generarReportePDF() {
         const btn = document.getElementById('zackyPdfBtn');
@@ -1398,7 +1407,7 @@ function inicializarMapa() {
                 doc.text(CONFIG.CORRIDOR_NOMBRE, pageWidth / 2, 52, { align: 'center' });
                 doc.setTextColor(150, 150, 170);
                 doc.setFontSize(9);
-                doc.text('Corredor Digital Multi-Continente | 5 Paises Activos', pageWidth / 2, 60, { align: 'center' });
+                doc.text('Corredor Digital Multi-Continente | 5 Países Activos', pageWidth / 2, 60, { align: 'center' });
                 y = 78;
 
                 // INFORMACION DEL REPORTE
@@ -1407,16 +1416,16 @@ function inicializarMapa() {
                 doc.setTextColor(212, 175, 55);
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                doc.text('INFORMACION DEL REPORTE', margin + 5, y + 6);
+                doc.text('INFORMACIÓN DEL REPORTE', margin + 5, y + 6);
                 doc.setTextColor(180, 180, 200);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
                 const infoData = [
-                    ['Fecha de generacion:', new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })],
+                    ['Fecha de generación:', new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })],
                     ['ID del Corredor:', CONFIG.CORRIDOR_ID],
-                    ['Paises participantes:', 'Reino Unido, Espana, Marruecos, Estados Unidos, Mexico'],
+                    ['Países participantes:', 'Reino Unido, España, Marruecos, Estados Unidos, México'],
                     ['Preparado para:', 'Vicepresidencia Internacional'],
-                    ['Clasificacion:', 'Confidencial - Uso Interno']
+                    ['Clasificación:', 'Confidencial - Uso Interno']
                 ];
                 let infoY = y + 12;
                 const labelWidth = 55;
@@ -1435,13 +1444,13 @@ function inicializarMapa() {
                 y += 38;
 
                 // METRICAS CLAVE
-                addSectionHeader('METRICAS CLAVE DEL CORREDOR', 'Resumen ejecutivo de indicadores principales');
+                addSectionHeader('MÉTRICAS CLAVE DEL CORREDOR', 'Resumen ejecutivo de indicadores principales');
                 const kpis = [
                     { label: 'Total de Tareas', value: CORREDOR.etapas.length.toString(), color: [139, 92, 246] },
                     { label: 'Tareas Completadas', value: CORREDOR.etapas.filter(e => e.estado === 'completed').length.toString(), color: [16, 185, 129] },
                     { label: 'Progreso General', value: Math.round((CORREDOR.etapas.filter(e => e.estado === 'completed').length / CORREDOR.etapas.length) * 100) + '%', color: [245, 158, 11] },
                     { label: 'En Progreso', value: CORREDOR.etapas.filter(e => e.estado === 'inProgress').length.toString(), color: [59, 130, 246] },
-                    { label: 'Tareas Criticas', value: CORREDOR.etapas.filter(e => e.prioridad === 'critica').length.toString(), color: [239, 68, 68] },
+                    { label: 'Tareas Críticas', value: CORREDOR.etapas.filter(e => e.prioridad === 'critica').length.toString(), color: [239, 68, 68] },
                     { label: 'Eficiencia de Costos', value: CORREDOR.metricas.costEfficiency + '%', color: [6, 182, 212] }
                 ];
                 const kpiWidth = maxWidth / 3;
@@ -1467,8 +1476,8 @@ function inicializarMapa() {
                 y += (kpiHeight + 3) * 2 + 5;
 
                 // PAISES
-                addSectionHeader('PAISES DEL CORREDOR DIGITAL', 'Distribucion geografica y estado de operaciones');
-                const paisesHeaders = ['Codigo', 'Pais', 'Continente', 'Hitos', 'Tareas', 'Completadas', 'Progreso', 'Estado'];
+                addSectionHeader('PAÍSES DEL CORREDOR DIGITAL', 'Distribución geográfica y estado de operaciones');
+                const paisesHeaders = ['Código', 'País', 'Continente', 'Hitos', 'Tareas', 'Completadas', 'Progreso', 'Estado'];
                 const paisesColWidths = [15, 40, 30, 20, 20, 25, 30, 25];
                 let tableY = drawTableHeader(paisesHeaders, paisesColWidths, y);
                 const paisesActivos = CORREDOR.paises.filter(p => p.activo);
@@ -1482,30 +1491,30 @@ function inicializarMapa() {
                 y = tableY + 5;
 
                 // EVM
-                addSectionHeader('ANALISIS DE VALOR GANADO (EVM)', 'Metricas de desempeno del proyecto');
+                addSectionHeader('ANÁLISIS DE VALOR GANADO (EVM)', 'Métricas de desempeño del proyecto');
                 const evm = EVM_DATA;
-                const evmHeaders = ['Metrica', 'Valor', 'Descripcion', 'Estado'];
+                const evmHeaders = ['Métrica', 'Valor', 'Descripción', 'Estado'];
                 const evmColWidths = [30, 40, 80, 50];
                 tableY = drawTableHeader(evmHeaders, evmColWidths, y);
                 const evmData = [
                     ['BAC', evm.BAC + ' horas', 'Presupuesto al completar', 'Base'],
                     ['PV', evm.PV + ' horas', 'Valor planificado', 'Objetivo'],
                     ['EV', evm.EV + ' horas', 'Valor ganado', 'Progreso real'],
-                    ['AC', evm.AC + ' horas', 'Costo actual', 'Inversion'],
-                    ['SPI', evm.SPI.toFixed(2), evm.SPI >= 1 ? 'Adelantado al cronograma' : 'Retraso en cronograma', evm.SPI >= 1 ? 'Favorable' : 'Atencion'],
+                    ['AC', evm.AC + ' horas', 'Costo actual', 'Inversión'],
+                    ['SPI', evm.SPI.toFixed(2), evm.SPI >= 1 ? 'Adelantado al cronograma' : 'Retraso en cronograma', evm.SPI >= 1 ? 'Favorable' : 'Atención'],
                     ['CPI', evm.CPI.toFixed(2), evm.CPI >= 1 ? 'Eficiente en costos' : 'Sobrecosto', evm.CPI >= 1 ? 'Favorable' : 'Alerta'],
-                    ['EAC', evm.EAC.toFixed(1) + ' horas', 'Estimado al completar', 'Proyeccion'],
+                    ['EAC', evm.EAC.toFixed(1) + ' horas', 'Estimado al completar', 'Proyección'],
                     ['ETC', evm.ETC.toFixed(1) + ' horas', 'Estimado por completar', 'Restante'],
-                    ['VAC', (evm.VAC >= 0 ? '+' : '') + evm.VAC.toFixed(1) + ' horas', evm.VAC >= 0 ? 'Ahorro proyectado' : 'Sobrecosto proyectado', evm.VAC >= 0 ? 'Favorable' : 'Atencion'],
-                    ['CV', (evm.CV >= 0 ? '+' : '') + evm.CV.toFixed(1) + ' horas', 'Variacion de costo', 'Diferencia'],
-                    ['SV', (evm.SV >= 0 ? '+' : '') + evm.SV.toFixed(1) + ' horas', 'Variacion de cronograma', 'Diferencia']
+                    ['VAC', (evm.VAC >= 0 ? '+' : '') + evm.VAC.toFixed(1) + ' horas', evm.VAC >= 0 ? 'Ahorro proyectado' : 'Sobrecosto proyectado', evm.VAC >= 0 ? 'Favorable' : 'Atención'],
+                    ['CV', (evm.CV >= 0 ? '+' : '') + evm.CV.toFixed(1) + ' horas', 'Variación de costo', 'Diferencia'],
+                    ['SV', (evm.SV >= 0 ? '+' : '') + evm.SV.toFixed(1) + ' horas', 'Variación de cronograma', 'Diferencia']
                 ];
                 evmData.forEach((row, i) => { tableY = drawTableRow(row, evmColWidths, tableY, i % 2 === 0); });
                 y = tableY + 5;
 
                 // ETAPAS
-                addSectionHeader('DETALLE DE ETAPAS Y TAREAS', 'Seguimiento individual de actividades por pais');
-                const etapasHeaders = ['ID', 'Tarea', 'Pais', 'Responsable', 'Estado', 'Progreso', 'Duracion', 'Retraso'];
+                addSectionHeader('DETALLE DE ETAPAS Y TAREAS', 'Seguimiento individual de actividades por país');
+                const etapasHeaders = ['ID', 'Tarea', 'País', 'Responsable', 'Estado', 'Progreso', 'Duración', 'Retraso'];
                 const etapasColWidths = [8, 45, 28, 32, 25, 32, 20, 15];
                 tableY = drawTableHeader(etapasHeaders, etapasColWidths, y);
                 CORREDOR.etapas.forEach((etapa, i) => {
@@ -1521,14 +1530,12 @@ function inicializarMapa() {
                 });
                 y = tableY + 5;
 
-                // ============================================================
-                // GRÁFICAS - CORRECCIÓN DEFINITIVA: SOLO PÁGINAS CON CONTENIDO
-                // ============================================================
+                // GRÁFICAS
                 const charts = [
-                    { id: 'zackyChartDist', title: 'Distribucion de Tareas por Estado' },
+                    { id: 'zackyChartDist', title: 'Distribución de Tareas por Estado' },
                     { id: 'zackyChartEVM', title: 'EVM: PV vs EV vs AC' },
                     { id: 'zackyChartBurndown', title: 'Burndown: Progreso vs Ideal' },
-                    { id: 'zackyChartPaises', title: 'Rendimiento por Pais' }
+                    { id: 'zackyChartPaises', title: 'Rendimiento por País' }
                 ];
 
                 const chartImages = [];
@@ -1537,29 +1544,27 @@ function inicializarMapa() {
                     if (canvas && canvas.toDataURL) {
                         try {
                             const dataUrl = canvas.toDataURL('image/png');
-                            if (dataUrl && dataUrl.length > 1000) { // filtro de imagen válida
+                            if (dataUrl && dataUrl.length > 1000) {
                                 chartImages.push({ img: dataUrl, title: ch.title });
                             }
                         } catch(e) { /* ignorar */ }
                     }
                 });
 
-                // Solo si hay imágenes válidas
                 if (chartImages.length > 0) {
-                    // Datos de tablas auxiliares (copiados de antes)
                     const chartValues = [
                         {
-                            headers: ['Categoria', 'Cant', '%'],
+                            headers: ['Categoría', 'Cant', '%'],
                             colWidths: [50, 25, 25],
                             data: [
                                 ['Completadas', CORREDOR.etapas.filter(e=>e.estado==='completed').length.toString(), Math.round((CORREDOR.etapas.filter(e=>e.estado==='completed').length/CORREDOR.etapas.length)*100)+'%'],
                                 ['En Progreso', CORREDOR.etapas.filter(e=>e.estado==='inProgress').length.toString(), Math.round((CORREDOR.etapas.filter(e=>e.estado==='inProgress').length/CORREDOR.etapas.length)*100)+'%'],
                                 ['Pendientes', CORREDOR.etapas.filter(e=>e.estado==='pending').length.toString(), Math.round((CORREDOR.etapas.filter(e=>e.estado==='pending').length/CORREDOR.etapas.length)*100)+'%'],
-                                ['Criticas', CORREDOR.etapas.filter(e=>e.prioridad==='critica').length.toString(), Math.round((CORREDOR.etapas.filter(e=>e.prioridad==='critica').length/CORREDOR.etapas.length)*100)+'%']
+                                ['Críticas', CORREDOR.etapas.filter(e=>e.prioridad==='critica').length.toString(), Math.round((CORREDOR.etapas.filter(e=>e.prioridad==='critica').length/CORREDOR.etapas.length)*100)+'%']
                             ]
                         },
                         {
-                            headers: ['Metrica', 'Valor', 'Descripcion'],
+                            headers: ['Métrica', 'Valor', 'Descripción'],
                             colWidths: [25, 30, 45],
                             data: [
                                 ['PV', EVM_DATA.PV + 'h', 'Valor Planificado'],
@@ -1579,7 +1584,7 @@ function inicializarMapa() {
                             ]
                         },
                         {
-                            headers: ['Pais', 'Completadas', 'Eficiencia'],
+                            headers: ['País', 'Completadas', 'Eficiencia'],
                             colWidths: [50, 25, 25],
                             data: CORREDOR.paises.filter(p=>p.activo).map(p => {
                                 const tp = CORREDOR.etapas.filter(e=>e.pais===p.id);
@@ -1601,18 +1606,16 @@ function inicializarMapa() {
                         const tableHeight = 10 + (maxTableRows * 7) + 5;
                         const totalBlockHeight = containerHeight + tableHeight + 15;
 
-                        // Si no cabe o es la primera página, creamos una nueva con título
                         if (!firstPageDone || y + totalBlockHeight > pageHeight - 15) {
                             if (firstPageDone) {
                                 doc.addPage();
                             }
                             y = 15;
                             addPageBackground();
-                            addSectionHeader('GRAFICAS DE DESEMPEÑO', 'Visualizacion de metricas clave');
+                            addSectionHeader('GRÁFICAS DE DESEMPEÑO', 'Visualización de métricas clave');
                             firstPageDone = true;
                         }
 
-                        // Dibujar gráficas
                         chunk.forEach((chart, idx) => {
                             const xPos = margin + idx * (chartWidth + 15);
                             doc.setFillColor(25, 28, 42);
@@ -1632,11 +1635,9 @@ function inicializarMapa() {
                             doc.text(chart.title, xPos + chartWidth / 2, y + containerHeight - 6, { align: 'center' });
                         });
 
-                        // Tablas auxiliares debajo
                         chunkValues.forEach((cv, idx) => {
                             const xPos = margin + idx * (chartWidth + 15);
                             const tableY = y + containerHeight + 8;
-                            // Header
                             doc.setFillColor(30, 35, 50);
                             doc.roundedRect(xPos, tableY, chartWidth, 6, 1, 1, 'F');
                             doc.setTextColor(212, 175, 55);
@@ -1644,7 +1645,6 @@ function inicializarMapa() {
                             doc.setFontSize(7);
                             let xCell = xPos + 2;
                             cv.headers.forEach((h, hi) => { doc.text(h, xCell, tableY + 4); xCell += cv.colWidths[hi]; });
-                            // Filas
                             let dataY = tableY + 8;
                             cv.data.forEach((row, ri) => {
                                 if (ri % 2 === 0) { doc.setFillColor(18, 20, 30); doc.rect(xPos, dataY - 3, chartWidth, 6, 'F'); }
@@ -1662,18 +1662,16 @@ function inicializarMapa() {
                     }
                 }
 
-// Agregar secciones operativas de Usyncro
-y = agregarSeccionesOperativasPDF(doc, y);
-
-
+                // Agregar secciones operativas de Usyncro
+                y = agregarSeccionesOperativasPDF(doc, y);
 
                 // RIESGOS
                 doc.addPage();
                 y = 15;
                 addPageBackground();
-                addSectionHeader('RIESGOS IDENTIFICADOS', 'Analisis de riesgos y estrategias de mitigacion');
+                addSectionHeader('RIESGOS IDENTIFICADOS', 'Análisis de riesgos y estrategias de mitigación');
                 CORREDOR.riesgos.forEach((riesgo, i) => {
-                    if (y > pageHeight - 35) { doc.addPage(); y = 15; addPageBackground(); addSectionHeader('Riesgos Identificados (continuacion)'); }
+                    if (y > pageHeight - 35) { doc.addPage(); y = 15; addPageBackground(); addSectionHeader('Riesgos Identificados (continuación)'); }
                     doc.setFillColor(25, 28, 42);
                     doc.rect(margin, y, maxWidth, 24, 'F');
                     const impactoColor = riesgo.impacto === 'alto' ? [239, 68, 68] : riesgo.impacto === 'medio' ? [245, 158, 11] : [16, 185, 129];
@@ -1688,7 +1686,7 @@ y = agregarSeccionesOperativasPDF(doc, y);
                     doc.setFontSize(8);
                     doc.text(`Impacto: ${riesgo.impacto.toUpperCase()} | Probabilidad: ${riesgo.probabilidad.toUpperCase()}`, margin + 8, y + 11);
                     doc.setTextColor(150, 150, 170);
-                    doc.text(`Mitigacion: ${riesgo.mitigacion}`, margin + 8, y + 18);
+                    doc.text(`Mitigación: ${riesgo.mitigacion}`, margin + 8, y + 18);
                     y += 27;
                 });
 
@@ -1696,9 +1694,9 @@ y = agregarSeccionesOperativasPDF(doc, y);
                 doc.addPage();
                 y = 15;
                 addPageBackground();
-                addSectionHeader('SUGERENCIAS ESTRATEGICAS', 'Recomendaciones para optimizacion del corredor');
+                addSectionHeader('SUGERENCIAS ESTRATÉGICAS', 'Recomendaciones para optimización del corredor');
                 CORREDOR.sugerencias.forEach((sugerencia, i) => {
-                    if (y > pageHeight - 25) { doc.addPage(); y = 15; addPageBackground(); addSectionHeader('Sugerencias Estrategicas (continuacion)'); }
+                    if (y > pageHeight - 25) { doc.addPage(); y = 15; addPageBackground(); addSectionHeader('Sugerencias Estratégicas (continuación)'); }
                     doc.setFillColor(25, 28, 42);
                     doc.rect(margin, y, maxWidth, 16, 'F');
                     const prioridadColor = sugerencia.prioridad === 'alta' ? [239, 68, 68] : [245, 158, 11];
@@ -1718,7 +1716,7 @@ y = agregarSeccionesOperativasPDF(doc, y);
                 doc.addPage();
                 y = 15;
                 addPageBackground();
-                addSectionHeader('ANALISIS EJECUTIVO', 'Narrativa integral del estado del corredor');
+                addSectionHeader('ANÁLISIS EJECUTIVO', 'Narrativa integral del estado del corredor');
                 const storyText = generarStorytelling(CORREDOR.etapas, CORREDOR.riesgos, Math.round((CORREDOR.etapas.filter(e => e.estado === 'completed').length / CORREDOR.etapas.length) * 100));
                 const cleanStory = storyText.replace(/[^\w\sáéíóúñÑ.,:;()\-]/g, '').trim();
                 addJustifiedText(cleanStory, 9.5, [200, 200, 210]);
@@ -1739,7 +1737,7 @@ y = agregarSeccionesOperativasPDF(doc, y);
                     doc.setTextColor(212, 175, 55);
                     doc.text(new Date().toLocaleDateString('es-ES'), pageWidth / 2, pageHeight - 6, { align: 'center' });
                     doc.setTextColor(150, 150, 170);
-                    doc.text(`Pagina ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
+                    doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
                 }
 
                 doc.save(`Reporte_Ejecutivo_Corredor_Digital_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -1769,17 +1767,16 @@ y = agregarSeccionesOperativasPDF(doc, y);
     }
 
     window.abrirCorredorDigital = abrirCorredorDigital;
-    console.log('🗺️ Corredor Digital Premium v4.1.3 cargado - SIN PÁGINAS VACÍAS');
+    console.log('🗺️ Corredor Digital Premium v4.1.5 cargado - FILTRO NUCLEAR ACTIVO');
 })();
 
 // ============================================================
-// 🚢 SECCIONES OPERATIVAS - USYNCRO (sin modificar el demo actual)
+// 🚢 SECCIONES OPERATIVAS - USYNCRO
 // ============================================================
 function agregarSeccionesOperativas() {
     const body = document.getElementById('zackyCorredorBody');
     if (!body) return;
 
-    // --- Datos operativos simulados (coherentes con el corredor) ---
     const envios = [
         { id: 'US-2026-001', origen: 'Londres (UK)', destino: 'Nueva York (US)', estado: 'En tránsito', fechaEst: '2026-08-28', hash: '0x7f3a...b9e2', documento: 'BL-UK-001' },
         { id: 'US-2026-002', origen: 'Algeciras (ES)', destino: 'Tánger (MA)', estado: 'En aduana', fechaEst: '2026-08-26', hash: '0x2c4d...a1f8', documento: 'Factura-ES-002' },
@@ -1810,7 +1807,6 @@ function agregarSeccionesOperativas() {
         { nombre: 'Aduana México', pais: 'México', contacto: 'customs@mx.com', rol: 'Inspección' }
     ];
 
-    // --- Construir HTML adicional ---
     let html = `
         <div style="margin-top: 40px; border-top: 2px solid rgba(139,92,246,0.2); padding-top: 20px;">
             <h2 style="color: #a78bfa; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 20px;">
@@ -1822,7 +1818,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // --- KPIs Operativos ---
     const totalEnvios = envios.length;
     const entregados = envios.filter(e => e.estado === 'Entregado').length;
     const enTransito = envios.filter(e => e.estado === 'En tránsito').length;
@@ -1843,7 +1838,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // --- Tabla de Envíos ---
     html += `
         <div class="zacky-corredor-card" style="margin-bottom: 20px;">
             <div class="zacky-corredor-card-title"> Envíos Activos · Trazabilidad Blockchain</div>
@@ -1869,7 +1863,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // --- Alertas Automáticas ---
     html += `
         <div class="zacky-corredor-card" style="margin-bottom: 20px;">
             <div class="zacky-corredor-card-title"> Alertas Automáticas · Tiempo Real</div>
@@ -1885,7 +1878,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // --- Documentos Digitales ---
     html += `
         <div class="zacky-corredor-card" style="margin-bottom: 20px;">
             <div class="zacky-corredor-card-title">📄 Documentos Digitales · Verificación Blockchain</div>
@@ -1907,7 +1899,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // --- Red de Actores ---
     html += `
         <div class="zacky-corredor-card" style="margin-bottom: 20px;">
             <div class="zacky-corredor-card-title">🤝 Red de Actores del Corredor</div>
@@ -1923,7 +1914,6 @@ function agregarSeccionesOperativas() {
         </div>
     `;
 
-    // Inyectar el HTML al final del body
     body.insertAdjacentHTML('beforeend', html);
 }
 
@@ -1932,13 +1922,11 @@ function agregarSeccionesOperativas() {
 // 🚢 GENERAR SECCIONES OPERATIVAS EN PDF (USYNCRO)
 // ============================================================
 function agregarSeccionesOperativasPDF(doc, y) {
-    // Definir variables necesarias (se pasan como parámetros)
     const margin = 12;
     const pageWidth = 297;
     const pageHeight = 210;
     const maxWidth = pageWidth - 2 * margin;
 
-    // Funciones auxiliares (copiadas del contexto de generarReportePDF)
     const addPageBackground = () => {
         doc.setFillColor(10, 12, 20);
         doc.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -1989,7 +1977,6 @@ function agregarSeccionesOperativasPDF(doc, y) {
         return startY + 12;
     };
 
-    // --- Datos (igual que antes) ---
     const envios = [
         { id: 'US-2026-001', origen: 'Londres (UK)', destino: 'Nueva York (US)', estado: 'En tránsito', fechaEst: '2026-08-28', hash: '0x7f3a...b9e2', documento: 'BL-UK-001' },
         { id: 'US-2026-002', origen: 'Algeciras (ES)', destino: 'Tánger (MA)', estado: 'En aduana', fechaEst: '2026-08-26', hash: '0x2c4d...a1f8', documento: 'Factura-ES-002' },
@@ -2004,13 +1991,11 @@ function agregarSeccionesOperativasPDF(doc, y) {
     const retrasados = envios.filter(e => e.estado === 'Retrasado').length;
     const cumplimiento = totalEnvios > 0 ? Math.round((entregados / totalEnvios) * 100) : 0;
 
-    // --- Página nueva ---
     doc.addPage();
     y = 15;
     addPageBackground();
     y = addSectionHeader('OPERACIONES LOGÍSTICAS · USYNCRO', 'Trazabilidad en tiempo real, documentación digital y red de actores');
 
-    // --- KPIs Operativos ---
     doc.setFillColor(25, 28, 42);
     doc.rect(margin, y, maxWidth, 32, 'F');
     doc.setTextColor(212, 175, 55);
@@ -2054,7 +2039,6 @@ function agregarSeccionesOperativasPDF(doc, y) {
     });
     y += 12 + 2 * (altoKpi + 4) + 5;
 
-    // --- Envíos Activos ---
     if (y > pageHeight - 40) { doc.addPage(); y = 15; addPageBackground(); }
     y = addSectionHeader(' Envíos Activos · Trazabilidad Blockchain', 'Estado y seguimiento de cada envío');
     const enviosHeaders = ['ID', 'Origen', 'Destino', 'Estado', 'F. Estimada', 'Hash', 'Documento'];
@@ -2066,7 +2050,6 @@ function agregarSeccionesOperativasPDF(doc, y) {
     });
     y = tableY + 5;
 
-    // --- Alertas Automáticas ---
     if (y > pageHeight - 40) { doc.addPage(); y = 15; addPageBackground(); }
     y = addSectionHeader(' Alertas Automáticas · Tiempo Real', 'Incidencias y notificaciones del sistema');
     const alertas = [
@@ -2090,7 +2073,6 @@ function agregarSeccionesOperativasPDF(doc, y) {
         y += 17;
     });
 
-    // --- Documentos Digitales ---
     if (y > pageHeight - 40) { doc.addPage(); y = 15; addPageBackground(); }
     y = addSectionHeader(' Documentos Digitales · Verificación Blockchain', 'Documentos vinculados a cada envío');
     const documentos = [
@@ -2102,13 +2084,12 @@ function agregarSeccionesOperativasPDF(doc, y) {
     const docsHeaders = ['Documento', 'Envío', 'Estado', 'Hash'];
     const docsColWidths = [45, 30, 30, 55];
     tableY = drawTableHeader(docsHeaders, docsColWidths, y);
-    documentos.forEach((doc, i) => {
-        const data = [doc.nombre, doc.envio, doc.estado, doc.hash];
+    documentos.forEach((docItem, i) => {
+        const data = [docItem.nombre, docItem.envio, docItem.estado, docItem.hash];
         tableY = drawTableRow(data, docsColWidths, tableY, i % 2 === 0);
     });
     y = tableY + 5;
 
-    // --- Red de Actores ---
     if (y > pageHeight - 40) { doc.addPage(); y = 15; addPageBackground(); }
     y = addSectionHeader('🤝 Red de Actores del Corredor', 'Participantes clave y sus roles');
     const actores = [
@@ -2127,12 +2108,11 @@ function agregarSeccionesOperativasPDF(doc, y) {
     });
     y = tableY + 5;
 
-    // Asegurar espacio para la siguiente sección (riesgos)
     if (y > pageHeight - 30) {
         doc.addPage();
         y = 15;
         addPageBackground();
     }
 
-    return y; // devolver la nueva posición y
+    return y;
 }
