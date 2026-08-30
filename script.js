@@ -76349,10 +76349,158 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
 
 
 
+// ============================================================
+// 🔄 SINCRONIZAR PROYECTOS COLABORATIVOS
+// ============================================================
 
+window.sincronizarProyectosColaborativos = async function() {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.log('ℹ️ No hay sesión activa, no se sincronizan proyectos colaborativos');
+      return;
+    }
 
+    console.log('🔄 Sincronizando proyectos colaborativos...');
 
+    // Obtener proyectos del backend (incluye colaboraciones)
+    const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (!res.ok) {
+      console.warn('⚠️ Error al obtener proyectos del backend:', res.status);
+      return;
+    }
 
+    const data = await res.json();
+    const proyectosBackend = data.projects || [];
 
+    // Obtener email del usuario actual
+    let userEmail = null;
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        userEmail = user.email;
+      }
+    } catch (e) {}
+    
+    if (!userEmail) {
+      // Intentar desde el token
+      const tokenPayload = localStorage.getItem('authToken');
+      if (tokenPayload) {
+        try {
+          const payload = JSON.parse(atob(tokenPayload.split('.')[1]));
+          userEmail = payload.email;
+        } catch (e) {}
+      }
+    }
 
+    if (!userEmail) {
+      console.warn('⚠️ No se pudo obtener el email del usuario');
+      return;
+    }
 
+    // Buscar proyectos donde el usuario es colaborador
+    const proyectosColaborativos = proyectosBackend.filter(p => 
+      p.colaboradores && Array.isArray(p.colaboradores) && 
+      p.colaboradores.some(c => c.email === userEmail)
+    );
+
+    if (proyectosColaborativos.length === 0) {
+      console.log('📭 No hay proyectos colaborativos nuevos');
+      return;
+    }
+
+    console.log(`📦 ${proyectosColaborativos.length} proyectos colaborativos encontrados`);
+
+    // Cargar proyectos actuales del frontend
+    let proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]');
+    let cambios = false;
+
+    proyectosColaborativos.forEach(pColab => {
+      // Verificar si ya existe en el frontend (por nombre y clienteId)
+      const existe = proyectosActuales.some(p => 
+        p.name === pColab.name && p.clienteId === pColab.clienteId
+      );
+      
+      if (!existe) {
+        const nuevoProyecto = {
+          id: pColab.id || Date.now() + Math.random() * 1000,
+          name: pColab.name,
+          totalProjectTime: pColab.totalProjectTime || 0,
+          tasks: pColab.tasks || [],
+          clienteId: pColab.clienteId,
+          _isCollaborative: true,
+          _rol: pColab.colaboradores.find(c => c.email === userEmail)?.rol || 'colaborador'
+        };
+        proyectosActuales.push(nuevoProyecto);
+        cambios = true;
+        console.log(`✅ Proyecto colaborativo agregado: "${pColab.name}"`);
+      }
+    });
+
+    if (cambios) {
+      // Guardar en localStorage
+      localStorage.setItem('projects', JSON.stringify(proyectosActuales));
+      
+      // Actualizar variable global projects si existe
+      if (typeof projects !== 'undefined') {
+        // Mantener los proyectos existentes y agregar los nuevos
+        proyectosActuales.forEach(p => {
+          const existe = projects.some(proj => proj.id === p.id);
+          if (!existe) projects.push(p);
+        });
+      } else {
+        // Si no existe la variable global, crearla
+        window.projects = proyectosActuales;
+      }
+
+      console.log('✅ Proyectos colaborativos sincronizados correctamente');
+      
+      // Actualizar interfaz
+      if (typeof renderProjects === 'function') {
+        renderProjects();
+        console.log('🔄 Menú de proyectos actualizado');
+      }
+      
+      if (typeof renderKanbanTasks === 'function') {
+        renderKanbanTasks();
+        console.log('🔄 Tablero actualizado');
+      }
+    } else {
+      console.log('ℹ️ No hay proyectos colaborativos nuevos para agregar');
+    }
+
+  } catch (error) {
+    console.error('❌ Error sincronizando proyectos colaborativos:', error);
+  }
+};
+
+// ============================================================
+// 🔄 EJECUTAR AL INICIAR SESIÓN
+// ============================================================
+
+// Escuchar evento de login (si tu sistema lo emite)
+document.addEventListener('userLoggedIn', function() {
+  console.log('🔑 Usuario logueado, sincronizando proyectos colaborativos...');
+  setTimeout(window.sincronizarProyectosColaborativos, 1500);
+});
+
+// También ejecutar al cargar la página si ya hay sesión
+if (localStorage.getItem('authToken')) {
+  setTimeout(window.sincronizarProyectosColaborativos, 2000);
+}
+
+// ============================================================
+// 🔧 FUNCIÓN PARA FORZAR SINCRONIZACIÓN DESDE CONSOLA
+// ============================================================
+
+window.forceSyncProjects = function() {
+  console.log('🔄 Forzando sincronización de proyectos...');
+  window.sincronizarProyectosColaborativos();
+};
+
+console.log('✅ Módulo de sincronización de proyectos colaborativos cargado');
+console.log('💡 Para forzar sincronización manual: forceSyncProjects()');
