@@ -26142,11 +26142,9 @@ function showLicensesView() {
       
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
   
-  <!-- Plan ELITE (Básico) -->
+  <!-- PLAN ELITE (Básico) -->
   <div style="background: ${currentLicense === 'elite' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'elite' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-    <div style="position: absolute; top: -10px; right: 20px; background: #FFD700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
-      BÁSICO
-    </div>
+    <div style="position: absolute; top: -10px; right: 20px; background: #FFD700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">BÁSICO</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'elite' ? '#4CAF50' : '#ffffff'};">ELITE</h3>
     <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€9/mes</div>
     <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
@@ -26158,18 +26156,15 @@ function showLicensesView() {
       <li style="margin: 5px 0; color: #666666;">✗ Dashboard Básico</li>
       <li style="margin: 5px 0; color: #666666;">✗ Funcionalidades avanzadas</li>
     </ul>
-    <button id="selectElitePlan" 
-            style="width: 100%; padding: 10px; background: ${currentLicense === 'elite' ? '#4CAF50' : '#FF9800'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'elite' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'elite' ? '0.7' : '1'};"
-            ${currentLicense === 'elite' ? 'disabled' : ''}>
+    <button id="selectElitePlan" data-plan="elite"
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'elite' ? '#4CAF50' : '#FF9800'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'elite' ? 'Plan actual' : 'Seleccionar'}
     </button>
   </div>
   
-  <!-- Plan PROFESSIONAL (Popular) -->
+  <!-- PLAN PROFESSIONAL (Popular) -->
   <div style="background: ${currentLicense === 'professional' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'professional' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-    <div style="position: absolute; top: -10px; right: 20px; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
-      POPULAR
-    </div>
+    <div style="position: absolute; top: -10px; right: 20px; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">POPULAR</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
     <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
     <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
@@ -26184,28 +26179,29 @@ function showLicensesView() {
       <li style="margin: 5px 0;">✓ Recursos Humanos (desempeño, habilidades)</li>
       <li style="margin: 5px 0;">✓ Automatización (integraciones)</li>
     </ul>
-    <button id="selectProfessionalPlan" 
-            style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'professional' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'professional' ? '0.7' : '1'};"
-            ${currentLicense === 'professional' ? 'disabled' : ''}>
+    <button id="selectProfessionalPlan" data-plan="professional"
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'professional' ? 'Plan actual' : 'Actualizar'}
     </button>
   </div>
   
-  <!-- Plan PREMIUM (Empresas) -->
+  <!-- PLAN PREMIUM (Empresas) -->
   <div style="background: ${currentLicense === 'premium' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'premium' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-    <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
-      EMPRESAS
-    </div>
+    <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">EMPRESAS</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
     <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€40/mes</div>
     <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
       <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
       <li style="margin: 5px 0;">✓ Centro de Comando IA (vista inicio con agentes)</li>
       <li style="margin: 5px 0;">✓ Agentes IA (PM, Analyst, Transcribir, Assistant)</li>
+      <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
+      <li style="margin: 5px 0;">✓ Soporte VIP 24/7</li>
+      <li style="margin: 5px 0;">✓ Asesoría mensual</li>
+      <li style="margin: 5px 0;">✓ Onboarding personalizado</li>
+      <li style="margin: 5px 0;">✓ APP móvil</li>
     </ul>
-    <button id="selectPremiumPlan" 
-            style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'premium' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'premium' ? '0.7' : '1'};"
-            ${currentLicense === 'premium' ? 'disabled' : ''}>
+    <button id="selectPremiumPlan" data-plan="premium"
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'premium' ? 'Plan actual' : 'Actualizar'}
     </button>
   </div>
