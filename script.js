@@ -26140,11 +26140,10 @@ function showLicensesView() {
         <p style="margin: 0; color: #cccccc;">${currentLicense === 'free' ? 'Plan gratuito con funcionalidades básicas' : currentLicense === 'professional' ? 'Plan profesional con todas las funcionalidades avanzadas' : 'Plan premium para empresas con colaboración avanzada'}</p>
       </div>
       
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
   
-  <!-- PLAN ELITE (Básico) -->
-  <div style="background: ${currentLicense === 'elite' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'elite' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-    <div style="position: absolute; top: -10px; right: 20px; background: #FFD700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">BÁSICO</div>
+  <!-- Plan ELITE -->
+  <div style="background: ${currentLicense === 'elite' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'elite' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px;">
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'elite' ? '#4CAF50' : '#ffffff'};">ELITE</h3>
     <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€9/mes</div>
     <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
@@ -26154,15 +26153,18 @@ function showLicensesView() {
       <li style="margin: 5px 0;">✓ Gantt Básico</li>
       <li style="margin: 5px 0; color: #666666;">✗ Rentabilidad</li>
       <li style="margin: 5px 0; color: #666666;">✗ Dashboard Básico</li>
-      <li style="margin: 5px 0; color: #666666;">✗ Funcionalidades avanzadas</li>
+      <li style="margin: 5px 0; color: #666666;">✗ PM Virtual</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Gantt Ejecutivo</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Dashboard 4D</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Reportes Ejecutivos</li>
     </ul>
-    <button id="selectElitePlan" data-plan="elite"
+    <button id="selectFreePlan" 
             style="width: 100%; padding: 10px; background: ${currentLicense === 'elite' ? '#4CAF50' : '#FF9800'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'elite' ? 'Plan actual' : 'Seleccionar'}
     </button>
   </div>
   
-  <!-- PLAN PROFESSIONAL (Popular) -->
+  <!-- Plan PROFESSIONAL -->
   <div style="background: ${currentLicense === 'professional' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'professional' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
     <div style="position: absolute; top: -10px; right: 20px; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">POPULAR</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
@@ -26179,13 +26181,13 @@ function showLicensesView() {
       <li style="margin: 5px 0;">✓ Recursos Humanos (desempeño, habilidades)</li>
       <li style="margin: 5px 0;">✓ Automatización (integraciones)</li>
     </ul>
-    <button id="selectProfessionalPlan" data-plan="professional"
+    <button id="selectProfessionalPlan" 
             style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'professional' ? 'Plan actual' : 'Actualizar'}
     </button>
   </div>
   
-  <!-- PLAN PREMIUM (Empresas) -->
+  <!-- Plan PREMIUM -->
   <div style="background: ${currentLicense === 'premium' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'premium' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
     <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">EMPRESAS</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
@@ -26200,12 +26202,43 @@ function showLicensesView() {
       <li style="margin: 5px 0;">✓ Onboarding personalizado</li>
       <li style="margin: 5px 0;">✓ APP móvil</li>
     </ul>
-    <button id="selectPremiumPlan" data-plan="premium"
+    <button id="selectPremiumPlan" 
             style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
       ${currentLicense === 'premium' ? 'Plan actual' : 'Actualizar'}
     </button>
   </div>
 </div>
+
+<!-- SCRIPT PARA ASIGNAR EVENTOS A LOS BOTONES -->
+<script>
+  // Esta función se ejecuta cuando el modal está abierto y los botones existen
+  (function() {
+    // Buscamos los botones por su ID
+    var eliteBtn = document.getElementById('selectFreePlan');
+    var profBtn = document.getElementById('selectProfessionalPlan');
+    var premBtn = document.getElementById('selectPremiumPlan');
+    
+    // Asignamos eventos a cada uno (si existen)
+    if (eliteBtn) {
+      eliteBtn.addEventListener('click', function() {
+        // Reemplaza con tu URL de Stripe para ELITE
+        window.location.href = 'https://checkout.stripe.com/...?plan=elite';
+      });
+    }
+    if (profBtn) {
+      profBtn.addEventListener('click', function() {
+        // Reemplaza con tu URL de Stripe para PROFESSIONAL
+        window.location.href = 'https://checkout.stripe.com/...?plan=professional';
+      });
+    }
+    if (premBtn) {
+      premBtn.addEventListener('click', function() {
+        // Reemplaza con tu URL de Stripe para PREMIUM
+        window.location.href = 'https://checkout.stripe.com/...?plan=premium';
+      });
+    }
+  })();
+</script>
       
       <div style="background: #2a2a2a; padding: 20px; border-radius: 10px;">
         <h3 style="margin: 0 0 15px 0; color: #FFD700;">¿Tienes un código de licencia?</h3>
