@@ -26106,7 +26106,7 @@ function showLicensesView() {
     existingModal.remove();
   }
   
-  const currentLicense = window.licenseManager?.getLicense() || 'free';
+  const currentLicense = window.licenseManager?.license || 'free';
   
   const modal = document.createElement('div');
   modal.id = 'licensesModal';
@@ -26430,7 +26430,7 @@ function showAbout() {
     font-family: Arial, sans-serif;
   `;
   
-  const license = window.licenseManager?.getLicense() || 'free';
+  const license = window.licenseManager?.license || 'free';
   const mode = window.methodologyManager?.getCurrentMode() || 'unknown';
   const projectsCount = typeof projects !== 'undefined' ? projects.length : 0;
   
