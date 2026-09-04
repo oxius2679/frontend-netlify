@@ -26140,73 +26140,76 @@ function showLicensesView() {
         <p style="margin: 0; color: #cccccc;">${currentLicense === 'free' ? 'Plan gratuito con funcionalidades básicas' : currentLicense === 'professional' ? 'Plan profesional con todas las funcionalidades avanzadas' : 'Plan premium para empresas con colaboración avanzada'}</p>
       </div>
       
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
-        
-        <!-- Plan FREE -->
-        <div style="background: ${currentLicense === 'free' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'free' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px;">
-          <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'free' ? '#4CAF50' : '#ffffff'};">FREE</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€0</div>
-          <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
-            <li style="margin: 5px 0;">✓ Tablero Kanban</li>
-            <li style="margin: 5px 0;">✓ Lista de tareas</li>
-            <li style="margin: 5px 0;">✓ Calendario básico</li>
-            <li style="margin: 5px 0;">✓ Dashboard básico</li>
-            <li style="margin: 5px 0; color: #666666;">✗ Gantt Ejecutivo</li>
-            <li style="margin: 5px 0; color: #666666;">✗ Dashboard 4D</li>
-            <li style="margin: 5px 0; color: #666666;">✗ Reportes EVM</li>
-            <li style="margin: 5px 0; color: #666666;">✗ Exportación PDF</li>
-          </ul>
-          <button id="selectFreePlan" 
-                  style="width: 100%; padding: 10px; background: ${currentLicense === 'free' ? '#4CAF50' : '#666666'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'free' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'free' ? '0.7' : '1'};"
-                  ${currentLicense === 'free' ? 'disabled' : ''}>
-            ${currentLicense === 'free' ? 'Plan actual' : 'Seleccionar'}
-          </button>
-        </div>
-        
-        <!-- Plan PROFESSIONAL -->
-        <div style="background: ${currentLicense === 'professional' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'professional' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-          <div style="position: absolute; top: -10px; right: 20px; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
-            POPULAR
-          </div>
-          <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
-          <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
-            <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
-            <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
-            <li style="margin: 5px 0;">✓ Dashboard 4D Global</li>
-            <li style="margin: 5px 0;">✓ Reportes EVM (CPI, SPI, EAC)</li>
-            <li style="margin: 5px 0;">✓ Exportación PDF Profesional</li>
-            <li style="margin: 5px 0;">✓ Seguimiento de tiempo avanzado</li>
-            <li style="margin: 5px 0;">✓ Proyectos ilimitados</li>
-          </ul>
-          <button id="selectProfessionalPlan" 
-                  style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            ${currentLicense === 'professional' ? 'Plan actual' : 'Actualizar'}
-          </button>
-        </div>
-        
-        <!-- Plan PREMIUM -->
-        <div style="background: ${currentLicense === 'premium' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'premium' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
-          <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
-            EMPRESAS
-          </div>
-          <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€40/mes</div>
-          <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
-            <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
-            <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
-            <li style="margin: 5px 0;">✓ Integración Power BI avanzada</li>
-            <li style="margin: 5px 0;">✓ API REST completa</li>
-            <li style="margin: 5px 0;">✓ Soporte prioritario</li>
-            <li style="margin: 5px 0;">✓ Plantillas profesionales</li>
-            <li style="margin: 5px 0;">✓ Auditoría de cambios</li>
-          </ul>
-          <button id="selectPremiumPlan" 
-                  style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            ${currentLicense === 'premium' ? 'Plan actual' : 'Actualizar'}
-          </button>
-        </div>
-      </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+  
+  <!-- Plan ELITE (Básico) -->
+  <div style="background: ${currentLicense === 'elite' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'elite' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
+    <div style="position: absolute; top: -10px; right: 20px; background: #FFD700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+      BÁSICO
+    </div>
+    <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'elite' ? '#4CAF50' : '#ffffff'};">ELITE</h3>
+    <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€9/mes</div>
+    <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
+      <li style="margin: 5px 0;">✓ Kanban, Lista, Calendario</li>
+      <li style="margin: 5px 0;">✓ Asignación de Horas</li>
+      <li style="margin: 5px 0;">✓ Plantillas (253)</li>
+      <li style="margin: 5px 0;">✓ Gantt Básico</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Rentabilidad</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Dashboard Básico</li>
+      <li style="margin: 5px 0; color: #666666;">✗ Funcionalidades avanzadas</li>
+    </ul>
+    <button id="selectElitePlan" 
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'elite' ? '#4CAF50' : '#FF9800'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'elite' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'elite' ? '0.7' : '1'};"
+            ${currentLicense === 'elite' ? 'disabled' : ''}>
+      ${currentLicense === 'elite' ? 'Plan actual' : 'Seleccionar'}
+    </button>
+  </div>
+  
+  <!-- Plan PROFESSIONAL (Popular) -->
+  <div style="background: ${currentLicense === 'professional' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'professional' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
+    <div style="position: absolute; top: -10px; right: 20px; background: #4CAF50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+      POPULAR
+    </div>
+    <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
+    <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
+    <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
+      <li style="margin: 5px 0;">✓ Todo lo de ELITE</li>
+      <li style="margin: 5px 0;">✓ Rentabilidad</li>
+      <li style="margin: 5px 0;">✓ Dashboard Básico</li>
+      <li style="margin: 5px 0;">✓ PM Virtual (panel completo)</li>
+      <li style="margin: 5px 0;">✓ Gantt Ejecutivo (vista GanttPro)</li>
+      <li style="margin: 5px 0;">✓ Dashboard 4D</li>
+      <li style="margin: 5px 0;">✓ Reportes Ejecutivos</li>
+      <li style="margin: 5px 0;">✓ Gestión de Cambios, Hitos, etc.</li>
+      <li style="margin: 5px 0;">✓ Recursos Humanos (desempeño, habilidades)</li>
+      <li style="margin: 5px 0;">✓ Automatización (integraciones)</li>
+    </ul>
+    <button id="selectProfessionalPlan" 
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'professional' ? '#4CAF50' : '#2196F3'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'professional' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'professional' ? '0.7' : '1'};"
+            ${currentLicense === 'professional' ? 'disabled' : ''}>
+      ${currentLicense === 'professional' ? 'Plan actual' : 'Actualizar'}
+    </button>
+  </div>
+  
+  <!-- Plan PREMIUM (Empresas) -->
+  <div style="background: ${currentLicense === 'premium' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'premium' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
+    <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">
+      EMPRESAS
+    </div>
+    <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
+    <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€40/mes</div>
+    <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
+      <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
+      <li style="margin: 5px 0;">✓ Centro de Comando IA (vista inicio con agentes)</li>
+      <li style="margin: 5px 0;">✓ Agentes IA (PM, Analyst, Transcribir, Assistant)</li>
+    </ul>
+    <button id="selectPremiumPlan" 
+            style="width: 100%; padding: 10px; background: ${currentLicense === 'premium' ? '#4CAF50' : '#9C27B0'}; color: white; border: none; border-radius: 5px; cursor: ${currentLicense === 'premium' ? 'default' : 'pointer'}; opacity: ${currentLicense === 'premium' ? '0.7' : '1'};"
+            ${currentLicense === 'premium' ? 'disabled' : ''}>
+      ${currentLicense === 'premium' ? 'Plan actual' : 'Actualizar'}
+    </button>
+  </div>
+</div>
       
       <div style="background: #2a2a2a; padding: 20px; border-radius: 10px;">
         <h3 style="margin: 0 0 15px 0; color: #FFD700;">¿Tienes un código de licencia?</h3>
