@@ -3456,7 +3456,7 @@ loadUserProjectsAndRefresh().then(success => {
                     <!-- Plan Professional -->
                     <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(99,102,241,0.3);">
                         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Professional</h3>
-                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€39</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€30</div>
                         <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
                         <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
                             <li style="padding: 0.3rem 0;">✅ Proyectos ilimitados</li>
@@ -3471,7 +3471,7 @@ loadUserProjectsAndRefresh().then(success => {
                     <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(245,158,11,0.3); position: relative;">
                         <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f59e0b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: #0a0a1a;">MÁS POPULAR</div>
                         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Premium</h3>
-                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€59</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€40</div>
                         <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
                         <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
                             <li style="padding: 0.3rem 0;">🔥 Todo Professional</li>
@@ -5526,6 +5526,11 @@ async function safeLoadConFiltro() {
     // VERIFICAR PREMIUM (para TODOS los usuarios)
     // ========================================
     async function verificarPremium() {
+// 🛑 BLOQUEO PARA PRUEBA: Si forzamos 'elite', no sobrescribir desde el backend
+  if (localStorage.getItem('userPlan') === 'elite') {
+    console.log('🛑 [PRUEBA] Respetando plan Elite forzado, no se consulta al backend.');
+    return;
+  }
         try {
             const token = localStorage.getItem('authToken');
             if (!token) return;
@@ -26164,7 +26169,7 @@ function showLicensesView() {
             POPULAR
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'professional' ? '#4CAF50' : '#ffffff'};">PROFESSIONAL</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€39/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€30/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de FREE</li>
             <li style="margin: 5px 0;">✓ Gantt Ejecutivo Premium</li>
@@ -26186,7 +26191,7 @@ function showLicensesView() {
             EMPRESAS
           </div>
           <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€59/mes</div>
+          <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€40/mes</div>
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
             <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
             <li style="margin: 5px 0;">✓ Colaboración en tiempo real</li>
@@ -27111,48 +27116,245 @@ window.methodologyManager = new MethodologyManager();
 
 
 
-// ✅ NUEVA CLASE DE LICENCIA REALISTA
-// ✅ NUEVA CLASE DE LICENCIA REALISTA (CON ACCESO TOTAL PARA PRUEBAS)
+// ============================================
+// 🎯 NUEVO SISTEMA DE PLANES - 4 NIVELES
+// ============================================
+
+const PLANES_CONFIG = {
+  free: {
+    nombre: 'FREE TRIAL',
+    duracionDias: 14,
+    precio: 0,
+    limiteProyectos: 1,
+    caracteristicas: {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      dashboardBasico: true,
+      asignacionHoras: true,
+      rentabilidad: true,
+      plantillas: 253,
+      ganttBasico: false,
+      ganttEjecutivo: false,
+      pmVirtual: false,
+      dashboard4D: false,
+      reportesEjecutivos: false,
+      gestionCambios: false,
+      recursosHumanos: false,
+      automatizacion: false,
+      centroComandoIA: false,
+      agentesIA: false,
+      transcripcionIA: false,
+      asistentePersonal: false,
+      sistemaVoz: false,
+      slackIntegration: false,
+      colaboracionTiempoReal: false,
+      soporteVIP: false,
+      appMovil: false
+    }
+  },
+  elite: {
+    nombre: 'ELITE',
+    precio: 19,
+    limiteProyectos: 3,
+    caracteristicas: {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      dashboardBasico: true,
+      asignacionHoras: true,
+      rentabilidad: true,
+      plantillas: 253,
+      ganttBasico: true,        // ✅ NUEVO: Gantt básico
+      ganttEjecutivo: false,
+      pmVirtual: false,
+      dashboard4D: false,
+      reportesEjecutivos: false,
+      gestionCambios: false,
+      recursosHumanos: false,
+      automatizacion: false,
+      centroComandoIA: false,
+      agentesIA: false,
+      transcripcionIA: false,
+      asistentePersonal: false,
+      sistemaVoz: false,
+      slackIntegration: false,
+      colaboracionTiempoReal: false,
+      soporteVIP: false,
+      appMovil: false
+    }
+  },
+  professional: {
+    nombre: 'PROFESSIONAL',
+    precio: 39,
+    limiteProyectos: Infinity,
+    caracteristicas: {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      dashboardBasico: true,
+      asignacionHoras: true,
+      rentabilidad: true,
+      plantillas: 253,
+      ganttBasico: true,
+      ganttEjecutivo: true,      // ✅ Gantt ejecutivo completo
+      pmVirtual: true,           // ✅ Panel completo
+      dashboard4D: true,
+      reportesEjecutivos: true,
+      gestionCambios: true,
+      recursosHumanos: true,
+      automatizacion: true,
+      centroComandoIA: true,
+      agentesIA: false,
+      transcripcionIA: false,
+      asistentePersonal: false,
+      sistemaVoz: false,
+      slackIntegration: false,
+      colaboracionTiempoReal: false,
+      soporteVIP: false,
+      appMovil: false
+    }
+  },
+  premium: {
+    nombre: 'PREMIUM',
+    precio: 59,
+    limiteProyectos: Infinity,
+    caracteristicas: {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      dashboardBasico: true,
+      asignacionHoras: true,
+      rentabilidad: true,
+      plantillas: 253,
+      ganttBasico: true,
+      ganttEjecutivo: true,
+      pmVirtual: true,
+      dashboard4D: true,
+      reportesEjecutivos: true,
+      gestionCambios: true,
+      recursosHumanos: true,
+      automatizacion: true,
+      centroComandoIA: true,
+      agentesIA: true,            // ✅ 4 Agentes IA
+      transcripcionIA: true,      // ✅ Transcripción reuniones
+      asistentePersonal: true,    // ✅ Asistente personal
+      sistemaVoz: true,           // ✅ Sistema de voz
+      slackIntegration: true,     // ✅ Slack
+      colaboracionTiempoReal: true, // ✅ Colaboración real
+      soporteVIP: true,           // ✅ VIP 24/7 (15 min)
+      appMovil: true              // ✅ App móvil
+    }
+  }
+};
+
+// ============================================
+// 🔒 LICENSE MANAGER ACTUALIZADO
+// ============================================
+
+// ============================================
+// 🔒 LICENSE MANAGER CORREGIDO (COPIA Y PEGA ESTO)
+// ============================================
+// ✅ NUEVA CLASE DE LICENCIA REALISTA Y SEGURA
 class LicenseManager {
-    constructor() {
-        this.license = localStorage.getItem('userLicense') || 'free';
+  constructor() {
+    // Compatibilidad con tu código actual (usa userLicense o userPlan)
+    this.license = localStorage.getItem('userLicense') || localStorage.getItem('userPlan') || 'free';
+    this.trialExpired = false;
+    this.verifyTrialExpiration(); // Calcula si ya pasaron los 14 días
+  }
+
+  // 🔍 Verifica si la prueba de 14 días ya terminó
+  verifyTrialExpiration() {
+    if (this.license === 'free') {
+      let trialStart = localStorage.getItem('freeTrialStart');
+      
+      // Si no tiene fecha de inicio, se la asignamos hoy
+      if (!trialStart) {
+        localStorage.setItem('freeTrialStart', new Date().toISOString());
+        trialStart = new Date().toISOString();
+      }
+
+      const start = new Date(trialStart);
+      const now = new Date();
+      const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff >= 14) {
+        this.trialExpired = true;
+        console.warn('⚠️ La prueba gratuita de 14 días ha expirado.');
+      }
+    }
+  }
+
+  // 🚨 AQUÍ ESTÁ LA CORRECCIÓN CLAVE PARA EL ACCESO
+  canAccess(feature) {
+    // 1. Si es plan FREE y la prueba NO ha expirado, permitir TODO (Acceso Total)
+    if (this.license === 'free' && !this.trialExpired) {
+      return true; // ✅ Desbloquea Dashboard 4D, Gantt Ejecutivo, etc.
     }
 
-    async getLicense() {
-        const user = firebase.auth().currentUser;
-        if (!user) return 'free';
-
-        try {
-            const res = await fetch(`${API_URL}/api/license/check/${user.uid}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-            });
-            const data = await res.json();
-            if (data.valid && data.plan) {
-                this.license = data.plan;
-                localStorage.setItem('userLicense', data.plan);
-                return data.plan;
-            }
-        } catch (err) {
-            console.warn('No se pudo verificar licencia:', err);
-        }
-        return this.license;
+    // 2. Para el resto de planes, verificar la configuración (si existe)
+    if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG[this.license]) {
+      const plan = PLANES_CONFIG[this.license];
+      return plan.caracteristicas[feature] === true;
     }
 
-    canAccess(feature) {
-        // 🔓 PROTECCIÓN DESACTIVADA - Siempre retorna true
-        // Los usuarios FREE pueden acceder a todas las funciones
-        return true;
-        
-        // Código original comentado
-        // const allowedPlans = {
-        //     'premiumExecutiveGantt': ['professional', 'premium']
-        // };
-        // return allowedPlans[feature]?.includes(this.license) || this.license === 'premium';
+    // 3. Fallback de seguridad: si no hay configuración, permitir acceso para no romper el sistema
+    return true;
+  }
+
+  canCreateProject() {
+    // Si la prueba expiró, no puede crear
+    if (this.license === 'free' && this.trialExpired) return false;
+    
+    // Verificar límite de proyectos según el plan
+    if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG[this.license]) {
+      const plan = PLANES_CONFIG[this.license];
+      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
+      return proyectosActuales < plan.limiteProyectos;
     }
+    
+    return true; // Fallback de seguridad
+  }
+
+  upgradePlan(newPlan) {
+    if (typeof PLANES_CONFIG !== 'undefined' && !PLANES_CONFIG[newPlan]) return false;
+    
+    this.license = newPlan;
+    localStorage.setItem('userPlan', newPlan);
+    localStorage.setItem('userLicense', newPlan); // Por compatibilidad con tu código
+    
+    if (newPlan !== 'free') {
+      localStorage.removeItem('freeTrialStart'); // Ya no es prueba
+    }
+    return true;
+  }
+
+  bloquearSistema() {
+    if (!document.getElementById('modalExpiracion')) {
+      const modal = document.createElement('div');
+      modal.id = 'modalExpiracion';
+      modal.innerHTML = `
+        <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:999999;display:flex;align-items:center;justify-content:center;">
+          <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:40px;border-radius:20px;max-width:500px;text-align:center;border:1px solid #ef4444;">
+            <div style="font-size:48px;margin-bottom:20px;">⏳</div>
+            <h2 style="color:#ef4444;font-size:24px;margin-bottom:15px;">Prueba Gratuita Finalizada</h2>
+            <p style="color:#94a3b8;font-size:16px;margin-bottom:25px;">
+              Tus 14 días de acceso total han terminado.<br>
+              Selecciona un plan para continuar usando el sistema.
+            </p>
+            <button onclick="if(typeof selectPlan==='function') selectPlan('professional');" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:12px 24px;border-radius:8px;border:none;font-weight:bold;cursor:pointer;font-size:16px;">
+              ✨ Ver Planes Disponibles
+            </button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+  }
 }
 
-
-
+// Inicializar globalmente (sobrescribe cualquier instancia anterior)
+window.licenseManager = new LicenseManager();
 // ========== PROTECCIÓN POR MODO DE TRABAJO ==========
 function requireModeAccess(view, callback) {
   const currentMode = window.methodologyManager.getCurrentMode();
@@ -33912,8 +34114,764 @@ window.exportBurndownChartPremium = function () {
 
 console.log('🟡 SCRIPT LLEGA HASTA AQUÍ');
 
+// ============================================
+//  GANTT BÁSICO PARA PLAN ELITE
+// ============================================
+// ============================================
+// 📊 GANTT BÁSICO ELITE - CON LÍNEAS DE DEPENDENCIA ELEGANTES Y TOOLTIPS EJECUTIVOS
+// ============================================
+window.showBasicGantt = function() {
+  try {
+    console.log('📊 Abriendo Gantt Básico Elite con dependencias elegantes');
 
-  
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan === 'free' && window.licenseManager && window.licenseManager.trialExpired) {
+      if (typeof window.licenseManager.bloquearSistema === 'function') {
+        window.licenseManager.bloquearSistema();
+      }
+      return;
+    }
+
+    // Detectar idioma
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const isEN = lang === 'en';
+
+    const T = {
+      title: isEN ? 'Basic Gantt' : 'Gantt Básico',
+      subtitle: isEN ? 'Simplified timeline view (Elite Plan)' : 'Vista simplificada de cronograma (Plan Elite)',
+      tasks: isEN ? 'TASKS' : 'TAREAS',
+      status: isEN ? 'STATUS' : 'ESTADO',
+      week: isEN ? 'Week' : 'Semana',
+      to: isEN ? 'to' : 'al',
+      completed: isEN ? 'Completed' : 'Completada',
+      inProgress: isEN ? 'In Progress' : 'En Progreso',
+      pending: isEN ? 'Pending' : 'Pendiente',
+      overdue: isEN ? 'Overdue' : 'Retrasada',
+      unnamed: isEN ? 'Unnamed task' : 'Tarea sin nombre',
+      noTasks: isEN ? 'No tasks in this project yet' : 'No hay tareas en este proyecto aún',
+      noTasksSub: isEN ? 'Add tasks to see them in the Gantt chart' : 'Agrega tareas para verlas en el diagrama de Gantt',
+      upgrade: isEN ? '⭐ Upgrade to Professional for Executive Gantt with EVM and Critical Path' : '⭐ Actualizar a Professional para Gantt Ejecutivo con EVM y Ruta Crítica',
+      close: isEN ? ' Close' : '✕ Cerrar',
+      unassigned: isEN ? 'Unassigned' : 'Sin asignar',
+      duration: isEN ? 'Duration' : 'Duración',
+      days: isEN ? 'days' : 'días',
+      progress: isEN ? 'Progress' : 'Progreso',
+      responsible: isEN ? 'Responsible' : 'Responsable',
+      start: isEN ? 'Start' : 'Inicio',
+      end: isEN ? 'End' : 'Fin',
+      project: isEN ? 'Project' : 'Proyecto',
+      dependencies: isEN ? 'Dependencies' : 'Dependencias',
+      addDependency: isEN ? 'Add Dependency' : 'Agregar Dependencia',
+      fromTask: isEN ? 'From Task' : 'Tarea Origen',
+      toTask: isEN ? 'To Task' : 'Tarea Destino',
+      selectTask: isEN ? 'Select a task...' : 'Selecciona una tarea...',
+      noDeps: isEN ? 'No dependencies defined' : 'No hay dependencias definidas',
+      delete: isEN ? 'Delete' : 'Eliminar',
+      manageDeps: isEN ? 'Manage Dependencies' : 'Gestionar Dependencias',
+      dependsOn: isEN ? 'depends on' : 'depende de'
+    };
+
+    // Ocultar otras vistas
+    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+    const boardView = document.getElementById('boardView');
+    if (boardView) boardView.style.display = 'none';
+
+    const oldGantt = document.getElementById('premiumExecutiveGantt');
+    if (oldGantt) oldGantt.remove();
+
+    // Obtener datos del proyecto
+    let project = null;
+    let tasks = [];
+    try {
+      if (typeof projects !== 'undefined' && typeof currentProjectIndex !== 'undefined') {
+        project = projects[currentProjectIndex] || null;
+        tasks = project ? (project.tasks || []) : [];
+      }
+    } catch (e) {
+      console.warn('⚠️ No se pudieron cargar las tareas:', e);
+    }
+
+    // Calcular fechas
+    let minDate = new Date();
+    let maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+
+    if (tasks.length > 0) {
+      try {
+        const dates = tasks.flatMap(t => [
+          new Date(t.startDate || Date.now()),
+          new Date(t.deadline || Date.now())
+        ]);
+        minDate = new Date(Math.min(...dates));
+        maxDate = new Date(Math.max(...dates));
+        maxDate.setDate(maxDate.getDate() + 7);
+      } catch (e) {
+        console.warn('⚠️ Error calculando fechas:', e);
+      }
+    }
+
+    minDate.setHours(0, 0, 0, 0);
+    const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Generar headers de semanas
+    let weekHeaders = '';
+    let currentWeek = new Date(minDate);
+    const weeks = [];
+    while (currentWeek <= maxDate) {
+      const weekStart = new Date(currentWeek);
+      const weekEnd = new Date(currentWeek);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weeks.push({ start: weekStart, end: weekEnd });
+      currentWeek.setDate(currentWeek.getDate() + 7);
+    }
+
+    weeks.forEach((week, i) => {
+      const weekNum = Math.ceil((week.start - minDate) / (1000 * 60 * 60 * 24) / 7) + 1;
+      weekHeaders += `<div style="flex:1; min-width:140px; text-align:center; padding:12px 8px; background:rgba(99,102,241,0.15); border-right:1px solid rgba(255,255,255,0.1); font-size:11px; font-weight:600; color:#e2e8f0;">
+        <div style="margin-bottom:4px;">${T.week} ${weekNum}</div>
+        <div style="font-size:10px; opacity:0.7; font-weight:400;">${week.start.getDate()}/${week.start.getMonth()+1} ${T.to} ${week.end.getDate()}/${week.end.getMonth()+1}</div>
+      </div>`;
+    });
+
+    // Generar opciones para dropdown de dependencias
+    let taskOptions = tasks.map((t, i) => 
+      `<option value="${i}">${t.name || T.unnamed}</option>`
+    ).join('');
+
+    // =================================================
+    //  Generar barras de tareas con detección de retraso
+    // =================================================
+    let taskBarsHTML = '';
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    tasks.forEach((task, index) => {
+      try {
+        const startDate = new Date(task.startDate || minDate);
+        const endDate = new Date(task.deadline || maxDate);
+
+        const daysFromStart = Math.max(0, Math.ceil((startDate - minDate) / (1000 * 60 * 60 * 24)));
+        const taskDuration = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1);
+        const leftPercent = (daysFromStart / totalDays) * 100;
+        const widthPercent = Math.max(3, (taskDuration / totalDays) * 100);
+
+        // Determinar color y estado
+        let barColor = '#f59e0b';  // por defecto amarillo (pendiente)
+        let statusText = T.pending;
+        let statusIcon = '⏳';
+
+        const isCompleted = task.status === 'completed';
+        const isInProgress = task.status === 'in_progress';
+        const isOverdue = (endDate < today) && !isCompleted; // retrasada si fecha fin < hoy y no completada
+
+        if (isCompleted) {
+          barColor = '#10b981';
+          statusText = T.completed;
+          statusIcon = '✅';
+        } else if (isOverdue) {
+          barColor = '#ef4444';  // ROJO
+          statusText = T.overdue;
+          statusIcon = '🔴';
+        } else if (isInProgress) {
+          barColor = '#3b82f6';
+          statusText = T.inProgress;
+          statusIcon = '🔄';
+        }
+        // Si es pendiente y no retrasada, se queda amarillo
+
+        const progress = task.progress || (task.status === 'completed' ? 100 : task.status === 'in_progress' ? 50 : 0);
+        const taskName = task.name || T.unnamed;
+        const assignee = task.assignee || T.unassigned;
+
+        taskBarsHTML += `
+          <div id="gantt-task-row-${index}" style="display:flex; align-items:center; margin-bottom:16px; min-height:70px; position:relative;">
+            <div style="width:280px; flex-shrink:0; padding-right:20px; border-right:2px solid rgba(255,255,255,0.15);">
+              <div style="color:white; font-weight:600; font-size:13px; margin-bottom:6px; line-height:1.3;">${taskName}</div>
+              <div style="color:#94a3b8; font-size:11px; display:flex; align-items:center; gap:6px;">
+                <span>📅</span>
+                <span>${startDate.getDate()}/${startDate.getMonth()+1} ${T.to} ${endDate.getDate()}/${endDate.getMonth()+1}</span>
+              </div>
+              <div style="color:#94a3b8; font-size:11px; margin-top:4px; display:flex; align-items:center; gap:6px;">
+                <span></span>
+                <span>${assignee}</span>
+              </div>
+            </div>
+            
+            <div style="flex:1; position:relative; height:50px; background:rgba(255,255,255,0.03); border-radius:10px; overflow:visible;">
+              <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; pointer-events:none;">
+                ${weeks.map(() => '<div style="flex:1; border-right:1px solid rgba(255,255,255,0.06);"></div>').join('')}
+              </div>
+              
+              <div id="gantt-bar-${index}" style="position:absolute; top:12px; height:26px; left:${leftPercent}%; width:${widthPercent}%; background:linear-gradient(135deg, ${barColor}, ${barColor}ee); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:600; box-shadow:0 4px 12px ${barColor}40; cursor:pointer; transition:all 0.3s; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:6px; padding:0 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${taskName.length < 25 ? taskName : ''}
+                </div>
+                <div style="position:absolute; left:0; top:0; height:100%; background:rgba(255,255,255,0.25); width:${progress}%;"></div>
+              </div>
+            </div>
+            
+            <div style="width:140px; flex-shrink:0; padding-left:20px;">
+              <div style="background:${barColor}20; color:${barColor}; padding:6px 14px; border-radius:20px; font-size:11px; font-weight:700; text-align:center; border:1px solid ${barColor}40; display:flex; align-items:center; justify-content:center; gap:6px;">
+                ${statusIcon} ${statusText}
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        console.warn('⚠️ Error renderizando tarea:', e);
+      }
+    });
+
+    if (tasks.length === 0) {
+      taskBarsHTML = `<div style="color:#94a3b8; text-align:center; padding:80px 20px; font-size:14px; background:rgba(255,255,255,0.03); border-radius:16px; border:2px dashed rgba(255,255,255,0.1);">
+        <div style="font-size:48px; margin-bottom:16px;">📋</div>
+        <div style="font-weight:600; margin-bottom:8px;">${T.noTasks}</div>
+        <div>${T.noTasksSub}</div>
+      </div>`;
+    }
+
+    // Crear contenedor de pantalla completa
+    const container = document.createElement('div');
+    container.id = 'basicGanttContainer';
+    container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);z-index:999999;overflow-y:auto;padding:30px;';
+
+    const projectName = project ? project.name : T.project;
+
+    container.innerHTML = `
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid rgba(255,255,255,0.1);">
+        <div>
+          <h2 style="color:white;margin:0;font-size:26px;font-weight:700;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:32px;">📊</span>
+            ${T.title}: ${projectName}
+          </h2>
+          <p style="color:#94a3b8;margin:8px 0 0 0;font-size:13px;">${T.subtitle}</p>
+        </div>
+        <button onclick="document.getElementById('basicGanttContainer').remove();if(typeof showView==='function')showView('board');" 
+                style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:12px 24px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;transition:all 0.3s;">
+          ${T.close}
+        </button>
+      </div>
+      
+      <!-- Sección de Dependencias -->
+      <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:16px;padding:25px;margin-bottom:30px;">
+        <h3 style="color:white;margin:0 0 20px 0;font-size:18px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">🔗</span>
+          ${T.manageDeps}
+        </h3>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:15px;margin-bottom:20px;">
+          <div>
+            <label style="color:#94a3b8;font-size:12px;font-weight:600;margin-bottom:8px;display:block;">${T.fromTask}</label>
+            <select id="depFromTask" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:white;font-size:14px;outline:none;">
+              <option value="">${T.selectTask}</option>
+              ${taskOptions}
+            </select>
+          </div>
+          
+          <div>
+            <label style="color:#94a3b8;font-size:12px;font-weight:600;margin-bottom:8px;display:block;">${T.toTask}</label>
+            <select id="depToTask" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:white;font-size:14px;outline:none;">
+              <option value="">${T.selectTask}</option>
+              ${taskOptions}
+            </select>
+          </div>
+          
+          <div style="display:flex;align-items:flex-end;">
+            <button onclick="window.addBasicGanttDependency()" 
+                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.3s;">
+              ${T.addDependency}
+            </button>
+          </div>
+        </div>
+        
+        <div id="basicGanttDepsList" style="margin-top:20px;">
+          <div style="color:#94a3b8;text-align:center;padding:20px;font-size:13px;">
+            ${T.noDeps}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Timeline Header -->
+      <div style="display:flex;margin-bottom:20px;padding:0 0 15px 0;border-bottom:2px solid rgba(255,255,255,0.1);">
+        <div style="width:280px;flex-shrink:0;padding-right:20px;border-right:2px solid rgba(255,255,255,0.15);">
+          <div style="color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">${T.tasks}</div>
+        </div>
+        <div style="flex:1;display:flex;overflow:hidden;">
+          ${weekHeaders}
+        </div>
+        <div style="width:140px;flex-shrink:0;padding-left:20px;">
+          <div style="color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;text-align:center;">${T.status}</div>
+        </div>
+      </div>
+      
+      <!-- Área de tareas con SVG para dependencias -->
+      <div style="position:relative;flex:1;overflow-y:auto;padding-right:15px;margin-right:-15px;" id="ganttTasksContainer">
+        ${taskBarsHTML}
+        <!-- SVG overlay para líneas de dependencia -->
+        <svg id="ganttDependencySVG" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;overflow:visible;">
+          <defs>
+            <linearGradient id="depGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.9"/>
+              <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1"/>
+              <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.9"/>
+            </linearGradient>
+            <filter id="depGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+            <marker id="depArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="#8b5cf6"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      
+      <!-- Footer con leyenda y botón -->
+      <div style="margin-top:25px;padding-top:20px;border-top:2px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;">
+        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:18px;height:18px;background:#10b981;border-radius:5px;box-shadow:0 2px 8px #10b98150;"></div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:500;">${T.completed}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:18px;height:18px;background:#3b82f6;border-radius:5px;box-shadow:0 2px 8px #3b82f650;"></div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:500;">${T.inProgress}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:18px;height:18px;background:#f59e0b;border-radius:5px;box-shadow:0 2px 8px #f59e0b50;"></div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:500;">${T.pending}</span>
+          </div>
+          <!-- NUEVO: Retrasada en ROJO -->
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:18px;height:18px;background:#ef4444;border-radius:5px;box-shadow:0 2px 8px #ef444450;"></div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:500;">${T.overdue}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-left:10px;padding-left:10px;border-left:1px solid rgba(255,255,255,0.2);">
+            <div style="width:30px;height:3px;background:linear-gradient(90deg,#8b5cf6,#6366f1);border-radius:2px;box-shadow:0 0 8px #8b5cf6;"></div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:500;">${T.dependencies}</span>
+          </div>
+        </div>
+        <button onclick="if(typeof selectPlan==='function')selectPlan('professional');" 
+                style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;padding:14px 28px;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;box-shadow:0 4px 15px rgba(99,102,241,0.4);transition:all 0.3s;">
+          ${T.upgrade}
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(container);
+
+    // Inicializar dependencias
+    window.basicGanttDependencies = project?.dependencies || [];
+    window.renderBasicGanttDependencies();
+
+    // ------ Crear tooltip ejecutivo global ------
+    if (!document.getElementById('ganttTooltipEjecutivo')) {
+      const tooltipDiv = document.createElement('div');
+      tooltipDiv.id = 'ganttTooltipEjecutivo';
+      tooltipDiv.style.cssText = `
+        position: fixed;
+        display: none;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(99,102,241,0.1) inset;
+        color: #f1f5f9;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        max-width: 380px;
+        pointer-events: none;
+        z-index: 9999999;
+        transition: opacity 0.2s ease;
+        opacity: 0;
+      `;
+      document.body.appendChild(tooltipDiv);
+    }
+
+    // ------ Inyectar estilos del tooltip (si no existen) ------
+    if (!document.getElementById('ganttTooltipStyles')) {
+      const style = document.createElement('style');
+      style.id = 'ganttTooltipStyles';
+      style.textContent = `
+        #ganttTooltipEjecutivo .tt-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 10px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        #ganttTooltipEjecutivo .tt-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 13px;
+          color: #cbd5e1;
+          padding: 4px 0;
+        }
+        #ganttTooltipEjecutivo .tt-icon {
+          width: 20px;
+          text-align: center;
+          flex-shrink: 0;
+        }
+        #ganttTooltipEjecutivo .tt-progress {
+          margin-top: 8px;
+          height: 6px;
+          background: rgba(255,255,255,0.1);
+          border-radius: 10px;
+          overflow: hidden;
+          width: 100%;
+        }
+        #ganttTooltipEjecutivo .tt-progress-fill {
+          height: 100%;
+          border-radius: 10px;
+          transition: width 0.3s;
+        }
+        #ganttTooltipEjecutivo .tt-badge {
+          display: inline-block;
+          padding: 2px 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          margin-left: 4px;
+        }
+        #ganttTooltipEjecutivo .tt-divider {
+          border-top: 1px solid rgba(255,255,255,0.06);
+          margin: 10px 0 8px 0;
+        }
+        svg path {
+          pointer-events: stroke;
+          cursor: pointer;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Definir funciones auxiliares para los tooltips
+    window._ganttShowTooltip = function(event, html) {
+      const tooltip = document.getElementById('ganttTooltipEjecutivo');
+      if (!tooltip) return;
+      const rect = tooltip.getBoundingClientRect();
+      let x = event.clientX + 18;
+      let y = event.clientY + 18;
+      if (x + rect.width > window.innerWidth - 20) x = event.clientX - rect.width - 20;
+      if (y + rect.height > window.innerHeight - 20) y = event.clientY - rect.height - 20;
+      if (x < 20) x = 20;
+      if (y < 20) y = 20;
+      tooltip.innerHTML = html;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+      tooltip.style.display = 'block';
+      void tooltip.offsetWidth;
+      tooltip.style.opacity = '1';
+    };
+
+    window._ganttHideTooltip = function() {
+      const tooltip = document.getElementById('ganttTooltipEjecutivo');
+      if (!tooltip) return;
+      tooltip.style.opacity = '0';
+      setTimeout(() => { tooltip.style.display = 'none'; }, 200);
+    };
+
+    window._ganttTaskTooltipHTML = function(task, index) {
+      const start = task.startDate ? new Date(task.startDate).toLocaleDateString() : '—';
+      const end = task.deadline ? new Date(task.deadline).toLocaleDateString() : '—';
+      const progress = task.progress || 0;
+      const status = task.status || 'pending';
+      const isOverdue = (task.deadline && new Date(task.deadline) < new Date() && status !== 'completed');
+      let st;
+      if (status === 'completed') st = { label: T.completed, color: '#10b981' };
+      else if (status === 'in_progress') st = { label: T.inProgress, color: '#3b82f6' };
+      else if (isOverdue) st = { label: T.overdue, color: '#ef4444' };
+      else st = { label: T.pending, color: '#f59e0b' };
+      const assignee = task.assignee || 'Sin asignar';
+      let duration = '—';
+      if (task.startDate && task.deadline) {
+        const d1 = new Date(task.startDate);
+        const d2 = new Date(task.deadline);
+        const diff = Math.ceil((d2 - d1) / (1000*60*60*24)) + 1;
+        duration = diff + ' días';
+      }
+      return `
+        <div class="tt-title">📋 ${task.name || 'Tarea ' + (index+1)}</div>
+        <div class="tt-row"><span class="tt-icon">📅</span> ${start} → ${end} <span style="margin-left:auto;color:#94a3b8;font-size:12px;">⏱ ${duration}</span></div>
+        <div class="tt-row"><span class="tt-icon">👤</span> ${assignee}</div>
+        <div class="tt-row">
+          <span class="tt-icon">📊</span> Progreso
+          <span style="margin-left:auto;font-weight:600;color:#e2e8f0;">${progress}%</span>
+        </div>
+        <div class="tt-progress">
+          <div class="tt-progress-fill" style="width:${progress}%;background:${st.color};"></div>
+        </div>
+        <div class="tt-row" style="margin-top:6px;">
+          <span class="tt-icon">⚡</span> Estado
+          <span class="tt-badge" style="background:${st.color}30;color:${st.color};border:1px solid ${st.color}50;">${st.label}</span>
+        </div>
+      `;
+    };
+
+    window._ganttDepTooltipHTML = function(fromTask, toTask) {
+      return `
+        <div class="tt-title">🔗 Dependencia</div>
+        <div class="tt-row" style="font-size:14px;font-weight:500;color:#e2e8f0;">
+          <span style="color:#a78bfa;">${fromTask}</span>
+          <span style="color:#94a3b8;margin:0 4px;">→</span>
+          <span style="color:#a78bfa;">${toTask}</span>
+        </div>
+        <div class="tt-divider"></div>
+        <div class="tt-row" style="font-size:12px;color:#94a3b8;">
+          <span class="tt-icon">⏳</span> La tarea destino depende de la origen
+        </div>
+      `;
+    };
+
+    // Dibujar dependencias y asignar tooltips
+    window.drawBasicGanttDependencies = function() {
+      const svg = document.getElementById('ganttDependencySVG');
+      if (!svg) return;
+      const defs = svg.querySelector('defs');
+      svg.innerHTML = '';
+      if (defs) svg.appendChild(defs);
+
+      const deps = window.basicGanttDependencies || [];
+      if (deps.length === 0) return;
+
+      const project = projects[currentProjectIndex];
+      const tasks = project?.tasks || [];
+
+      deps.forEach((dep, index) => {
+        try {
+          const fromIndex = dep.from;
+          const toIndex = dep.to;
+          const fromBar = document.getElementById(`gantt-bar-${fromIndex}`);
+          const toBar = document.getElementById(`gantt-bar-${toIndex}`);
+          const fromRow = document.getElementById(`gantt-task-row-${fromIndex}`);
+          const toRow = document.getElementById(`gantt-task-row-${toIndex}`);
+          const container = document.getElementById('ganttTasksContainer');
+          if (!fromBar || !toBar || !fromRow || !toRow || !container) return;
+
+          const containerRect = container.getBoundingClientRect();
+          const fromRect = fromBar.getBoundingClientRect();
+          const toRect = toBar.getBoundingClientRect();
+
+          const x1 = fromRect.right - containerRect.left;
+          const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+          const x2 = toRect.left - containerRect.left;
+          const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+
+          const controlOffset = Math.abs(x2 - x1) * 0.5;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const d = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
+          path.setAttribute('d', d);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', 'url(#depGradient)');
+          path.setAttribute('stroke-width', '2.5');
+          path.setAttribute('filter', 'url(#depGlow)');
+          path.setAttribute('marker-end', 'url(#depArrow)');
+          path.setAttribute('stroke-linecap', 'round');
+          path.style.opacity = '0';
+          path.style.transition = 'opacity 0.5s ease';
+          svg.appendChild(path);
+          setTimeout(() => { path.style.opacity = '0.85'; }, 50 + index * 100);
+
+          const flowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          flowPath.setAttribute('d', d);
+          flowPath.setAttribute('fill', 'none');
+          flowPath.setAttribute('stroke', '#c4b5fd');
+          flowPath.setAttribute('stroke-width', '1.5');
+          flowPath.setAttribute('stroke-dasharray', '6 4');
+          flowPath.style.opacity = '0.6';
+          flowPath.style.animation = `flowAnimation 1s linear infinite`;
+          svg.appendChild(flowPath);
+
+          // ------- ASIGNAR EVENTOS DE TOOLTIP A LOS PATHS -------
+          const fromTask = tasks[fromIndex]?.name || 'Tarea ' + (fromIndex+1);
+          const toTask = tasks[toIndex]?.name || 'Tarea ' + (toIndex+1);
+          const depHTML = window._ganttDepTooltipHTML(fromTask, toTask);
+          [path, flowPath].forEach(p => {
+            p.style.pointerEvents = 'stroke';
+            p.style.cursor = 'pointer';
+            p.addEventListener('mouseenter', (e) => {
+              window._ganttShowTooltip(e, depHTML);
+            });
+            p.addEventListener('mousemove', (e) => {
+              const tooltip = document.getElementById('ganttTooltipEjecutivo');
+              if (!tooltip || tooltip.style.display === 'none') return;
+              const rect = tooltip.getBoundingClientRect();
+              let x = e.clientX + 18;
+              let y = e.clientY + 18;
+              if (x + rect.width > window.innerWidth - 20) x = e.clientX - rect.width - 20;
+              if (y + rect.height > window.innerHeight - 20) y = e.clientY - rect.height - 20;
+              if (x < 20) x = 20;
+              if (y < 20) y = 20;
+              tooltip.style.left = x + 'px';
+              tooltip.style.top = y + 'px';
+            });
+            p.addEventListener('mouseleave', window._ganttHideTooltip);
+          });
+          // -----------------------------------------------
+        } catch (e) {
+          console.warn('⚠️ Error dibujando dependencia:', e);
+        }
+      });
+
+      // Añadir animación CSS si no existe
+      if (!document.getElementById('ganttFlowAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'ganttFlowAnimation';
+        style.textContent = `
+          @keyframes flowAnimation {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -20; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // ----- ASIGNAR TOOLTIPS A LAS BARRAS (eliminando title nativo) -----
+      const allBars = document.querySelectorAll('[id^="gantt-bar-"]');
+      allBars.forEach(bar => {
+        const idx = parseInt(bar.id.split('-')[2]);
+        const task = tasks[idx];
+        if (!task) return;
+        // Quitar title nativo si existe
+        bar.removeAttribute('title');
+        // Añadir eventos con el tooltip ejecutivo
+        const html = window._ganttTaskTooltipHTML(task, idx);
+        // Evitar duplicar eventos (clonar y reemplazar)
+        const newBar = bar.cloneNode(true);
+        bar.parentNode.replaceChild(newBar, bar);
+        newBar.addEventListener('mouseenter', (e) => {
+          window._ganttShowTooltip(e, html);
+        });
+        newBar.addEventListener('mousemove', (e) => {
+          const tooltip = document.getElementById('ganttTooltipEjecutivo');
+          if (!tooltip || tooltip.style.display === 'none') return;
+          const rect = tooltip.getBoundingClientRect();
+          let x = e.clientX + 18;
+          let y = e.clientY + 18;
+          if (x + rect.width > window.innerWidth - 20) x = e.clientX - rect.width - 20;
+          if (y + rect.height > window.innerHeight - 20) y = e.clientY - rect.height - 20;
+          if (x < 20) x = 20;
+          if (y < 20) y = 20;
+          tooltip.style.left = x + 'px';
+          tooltip.style.top = y + 'px';
+        });
+        newBar.addEventListener('mouseleave', window._ganttHideTooltip);
+        newBar.style.cursor = 'pointer';
+      });
+      console.log('✅ Tooltips ejecutivos y líneas de dependencia dibujadas correctamente');
+    };
+
+    // Dibujar por primera vez
+    setTimeout(() => {
+      window.drawBasicGanttDependencies();
+    }, 100);
+
+    // Redibujar al hacer scroll
+    const tasksContainer = document.getElementById('ganttTasksContainer');
+    if (tasksContainer) {
+      tasksContainer.addEventListener('scroll', () => {
+        window.drawBasicGanttDependencies();
+      });
+    }
+
+    console.log('✅ Gantt Básico Elite con tooltips ejecutivos cargado');
+
+  } catch (error) {
+    console.error('❌ Error en showBasicGantt:', error);
+    alert('Error al cargar el Gantt Básico: ' + error.message);
+  }
+};
+
+// ============================================
+// FUNCIONES PARA GESTIONAR DEPENDENCIAS (sin cambios)
+// ============================================
+window.addBasicGanttDependency = function() {
+  const fromIndex = document.getElementById('depFromTask').value;
+  const toIndex = document.getElementById('depToTask').value;
+  if (fromIndex === '' || toIndex === '') {
+    alert('Por favor selecciona ambas tareas');
+    return;
+  }
+  if (fromIndex === toIndex) {
+    alert('No puedes crear una dependencia de una tarea consigo misma');
+    return;
+  }
+  const exists = window.basicGanttDependencies.some(d => 
+    d.from === parseInt(fromIndex) && d.to === parseInt(toIndex)
+  );
+  if (exists) {
+    alert('Esta dependencia ya existe');
+    return;
+  }
+  window.basicGanttDependencies.push({
+    from: parseInt(fromIndex),
+    to: parseInt(toIndex)
+  });
+  const project = projects[currentProjectIndex];
+  if (project) {
+    project.dependencies = window.basicGanttDependencies;
+    if (typeof safeSave === 'function') safeSave();
+  }
+  window.renderBasicGanttDependencies();
+  setTimeout(() => window.drawBasicGanttDependencies(), 50);
+  document.getElementById('depFromTask').value = '';
+  document.getElementById('depToTask').value = '';
+  console.log('✅ Dependencia agregada:', fromIndex, '->', toIndex);
+};
+
+window.renderBasicGanttDependencies = function() {
+  const depsList = document.getElementById('basicGanttDepsList');
+  if (!depsList) return;
+  const lang = localStorage.getItem('preferredLanguage') || 'es';
+  const isEN = lang === 'en';
+  const T = {
+    noDeps: isEN ? 'No dependencies defined' : 'No hay dependencias definidas',
+    delete: isEN ? 'Delete' : 'Eliminar',
+    dependsOn: isEN ? 'depends on' : 'depende de'
+  };
+  if (window.basicGanttDependencies.length === 0) {
+    depsList.innerHTML = `<div style="color:#94a3b8;text-align:center;padding:20px;font-size:13px;">${T.noDeps}</div>`;
+    return;
+  }
+  const project = projects[currentProjectIndex];
+  const tasks = project?.tasks || [];
+  depsList.innerHTML = window.basicGanttDependencies.map((dep, i) => {
+    const fromTask = tasks[dep.from]?.name || 'Tarea ' + (dep.from + 1);
+    const toTask = tasks[dep.to]?.name || 'Tarea ' + (dep.to + 1);
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;margin-bottom:8px;border-left:3px solid #6366f1;">
+        <div style="flex:1;color:white;font-size:13px;">
+          <strong>${fromTask}</strong> <span style="color:#94a3b8;">${T.dependsOn}</span> <strong>${toTask}</strong>
+        </div>
+        <button onclick="window.deleteBasicGanttDependency(${i})" 
+                style="background:rgba(239,68,68,0.2);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.3s;">
+          ${T.delete}
+        </button>
+      </div>
+    `;
+  }).join('');
+};
+
+window.deleteBasicGanttDependency = function(index) {
+  window.basicGanttDependencies.splice(index, 1);
+  const project = projects[currentProjectIndex];
+  if (project) {
+    project.dependencies = window.basicGanttDependencies;
+    if (typeof safeSave === 'function') safeSave();
+  }
+  window.renderBasicGanttDependencies();
+  setTimeout(() => window.drawBasicGanttDependencies(), 50);
+  console.log('✅ Dependencia eliminada:', index);
+};
+
+
 function renderBurndownChartPremium(data) {
   try {
     // ===============================
@@ -48559,14 +49517,28 @@ document.addEventListener('DOMContentLoaded', function () {
   /**************************************
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
- window.showExecutiveGantt = async function() {
- // 🔒 VERIFICACIÓN DE LICENCIA DESDE LOCALSTORAGE
-const userPlan = localStorage.getItem('userPlan');
-if (userPlan !== 'professional' && userPlan !== 'premium') {
-  showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-  return;
-}
-
+window.showExecutiveGantt = async function() {
+  const userPlan = localStorage.getItem('userPlan') || 'free';
+  
+  //  Si es plan Elite, redirigir al Gantt Básico
+  if (userPlan === 'elite') {
+    console.log('🎯 Plan Elite detectado en showExecutiveGantt -> Redirigiendo a Gantt Básico');
+    if (typeof window.showBasicGantt === 'function') {
+      return window.showBasicGantt();
+    }
+  }
+  
+  // 🔒 Verificación de licencia para Free (prueba expirada)
+  if (userPlan === 'free' && window.licenseManager && window.licenseManager.trialExpired) {
+    showNotification('🔒 Tu prueba gratuita ha expirado. Selecciona un plan para continuar.');
+    if (typeof window.licenseManager.bloquearSistema === 'function') {
+      window.licenseManager.bloquearSistema();
+    }
+    return;
+  }
+  
+  // ✅ Permitir acceso a Professional, Premium y Free (con prueba activa)
+  // ... resto del código original (NO MODIFICAR)
   // ✅ USUARIO AUTORIZADO - mostrar Gantt
   console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
@@ -57112,20 +58084,33 @@ function addGanttToSidebarMenu() {
         </div>
       `;
       
-      // Evento click para abrir el Gantt
+            // Evento click para abrir el Gantt
       menuLink.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        console.log('🚀 Abriendo Gantt Ejecutivo desde menú lateral...');
         
+        const userPlan = localStorage.getItem('userPlan') || 'free';
+        console.log('🚀 Intentando abrir Gantt. Plan actual:', userPlan);
+        
+        // 🎯 Si es plan Elite, redirigir al Gantt Básico
+        if (userPlan === 'elite') {
+          console.log('🎯 Plan Elite detectado en menú lateral -> Redirigiendo a Gantt Básico');
+          if (typeof window.showBasicGantt === 'function') {
+            window.showBasicGantt();
+          }
+          return; // ⛔ DETIENE AQUÍ. No abre el Gantt Ejecutivo.
+        }
+
         // Cerrar Gantt existente si está abierto
         const existingGantt = document.getElementById('premiumExecutiveGantt');
         if (existingGantt) {
           existingGantt.remove();
         }
         
-        // Abrir el Gantt completo
-        createPremiumGanttWithYourData();
+        // Abrir el Gantt completo (para Free activo, Professional y Premium)
+        if (typeof createPremiumGanttWithYourData === 'function') {
+          createPremiumGanttWithYourData();
+        }
         
         // Efecto visual de confirmación
         menuLink.style.background = 'rgba(46, 204, 113, 0.2)';
@@ -65921,13 +66906,28 @@ document.getElementById('btnEstadoCronograma')?.addEventListener('click', functi
 // Proteger la función real del Gantt si se llama directamente
 const originalGanttFunction = window.createCompleteGanttForCurrentProject;
 window.createCompleteGanttForCurrentProject = function() {
-  if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
+  const userPlan = localStorage.getItem('userPlan') || 'free';
+  
+  // 🎯 Si es plan Elite, redirigir al Gantt Básico
+  if (userPlan === 'elite') {
+    console.log('🎯 [INTERCEPTOR] Plan Elite detectado -> Redirigiendo a Gantt Básico');
+    if (typeof window.showBasicGantt === 'function') {
+      return window.showBasicGantt();
+    }
+  }
+  
+  // 🔒 Verificación de licencia para Free (prueba expirada)
+  if (userPlan === 'free' && window.licenseManager && window.licenseManager.trialExpired) {
+    showNotification(' Tu prueba gratuita ha expirado. Selecciona un plan para continuar.');
+    if (typeof window.licenseManager.bloquearSistema === 'function') {
+      window.licenseManager.bloquearSistema();
+    }
     return;
   }
+  
+  // ✅ Para Professional, Premium y Free (con prueba activa), ejecutar el Gantt Ejecutivo original
   return originalGanttFunction.apply(this, arguments);
 };
-
 
 
 
@@ -67529,41 +68529,50 @@ const estilos4D = `
 `;
 
 // ============================================
-// 4. GUARDAR REFERENCIA ORIGINAL
+// 4. GUARDAR REFERENCIA ORIGINAL Y MODIFICAR showView
 // ============================================
 const originalShowViewFn = window.showView;
 
 window.showView = function(view) {
-    console.log('🧭 Navegando a vista:', view);
-    
-     // 🔓 VERIFICACIÓN DE LICENCIA DESACTIVADA
-    // Los usuarios FREE pueden ver todas las vistas
-    // const userPlan = localStorage.getItem('userPlan') || 'free';
-    // const vistasFree = ['board', 'list', 'calendar', 'reports', 'inicio'];
-    
-    // if (userPlan === 'free' && !vistasFree.includes(view)) {
-    //     showNotification('🔒 Esta vista requiere el plan Profesional o Premium. Actualiza tu licencia para acceder.', 'warning');
-    //     console.log(`🔒 Acceso denegado a "${view}" - Usuario FREE`);
-    //     return;
-    // }
-    
-    // Vista de inicio (Centro de Comando IA)
-    if (view === 'inicio') {
-        renderCentroComandoIA();
-        setTimeout(() => {
-            document.querySelectorAll('div').forEach(div => {
-                if (div.textContent && div.textContent.includes('Oxi')) {
-                    div.remove();
-                }
-            });
-        }, 100);
-    } else {
-        if (originalShowViewFn) {
-            originalShowViewFn(view);
-        }
+  // ==========================================
+  // 🎯 FILTRO PARA GANTT BÁSICO (PLAN ELITE)
+  // ==========================================
+  // CORRECCIÓN: Se cambió 'viewName' por 'view' para que coincida con el parámetro
+  if (view === 'gantt' || view === 'ganttPro') {
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    if (userPlan === 'elite') {
+      console.log('🎯 Plan Elite detectado: Redirigiendo a Gantt Básico');
+      if (typeof window.showBasicGantt === 'function') {
+        window.showBasicGantt();
+        return; // ⛔ DETIENE AQUÍ. No carga el Gantt Ejecutivo.
+      }
     }
-};
-// ============================================
+  }
+  // ==========================================
+  
+  console.log('🧭 Navegando a vista:', view);
+  
+  // 🔓 VERIFICACIÓN DE LICENCIA DESACTIVADA (Los usuarios FREE pueden ver todas las vistas durante la prueba)
+  
+  // Vista de inicio (Centro de Comando IA)
+  if (view === 'inicio') {
+    if (typeof renderCentroComandoIA === 'function') {
+      renderCentroComandoIA();
+    }
+    setTimeout(() => {
+      document.querySelectorAll('div').forEach(div => {
+        if (div.textContent && div.textContent.includes('Oxi')) {
+          div.remove();
+        }
+      });
+    }, 100);
+  } else {
+    // Llamar a la función original para el resto de las vistas
+    if (typeof originalShowViewFn === 'function') {
+      originalShowViewFn(view);
+    }
+  }
+};// ============================================
 // 5. FUNCIONES DE DRAG & DROP MEJORADAS
 // ============================================
 function handleDragStart(e) {
@@ -76347,5 +77356,54 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
 
 
 
-
-
+// ============================================
+// 🚨 INTERCEPTOR NUCLEAR DEFINITIVO (Pegar al final de script.js)
+// ============================================
+(function() {
+  console.log('🛡️ Instalando Interceptor Nuclear de Gantt...');
+  
+  // Guardamos la función original real que estaba definida antes
+  const _realOriginalGantt = window.createCompleteGanttForCurrentProject;
+  
+  // Redefinimos la función globalmente con prioridad absoluta
+  window.createCompleteGanttForCurrentProject = function() {
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    console.log('🔍 [INTERCEPTOR NUCLEAR] Plan detectado:', userPlan);
+    
+    // 1. Si es ELITE, forzar Gantt Básico y DETENER aquí
+    if (userPlan === 'elite') {
+      console.log('🎯 [INTERCEPTOR NUCLEAR] Plan Elite -> Abriendo Gantt Básico');
+      if (typeof window.showBasicGantt === 'function') {
+        return window.showBasicGantt();
+      } else {
+        alert('Error: La función showBasicGantt no está cargada.');
+        return;
+      }
+    }
+    
+    // 2. Si es FREE y expiró, bloquear
+    if (userPlan === 'free') {
+      const trialStart = localStorage.getItem('freeTrialStart');
+      if (trialStart) {
+        const daysDiff = Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff >= 14) {
+          console.log('🔒 [INTERCEPTOR NUCLEAR] Prueba Free expirada');
+          if (typeof window.licenseManager !== 'undefined' && typeof window.licenseManager.bloquearSistema === 'function') {
+            window.licenseManager.bloquearSistema();
+          } else {
+            alert('Tu prueba gratuita ha expirado.');
+          }
+          return;
+        }
+      }
+    }
+    
+    // 3. Para Professional, Premium y Free activo, ejecutar el Gantt Ejecutivo original
+    console.log('✅ [INTERCEPTOR NUCLEAR] Acceso autorizado al Gantt Ejecutivo');
+    if (typeof _realOriginalGantt === 'function') {
+      return _realOriginalGantt.apply(this, arguments);
+    }
+  };
+  
+  console.log('✅ Interceptor Nuclear instalado correctamente.');
+})();
