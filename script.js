@@ -1,3 +1,47 @@
+// ============================================================
+// 🛡️ INTERCEPTOR GLOBAL - DEBE IR AL INICIO DEL script.js
+// ============================================================
+// Bloquea listeners globales de 'change' que reaccionan a 
+// los filtros de Asignación de Horas (los resetean a "all").
+// ============================================================
+(function instalarInterceptorTimeAllocation() {
+    if (window._taInterceptorInstalado) return;
+    window._taInterceptorInstalado = true;
+
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+        // Bloquear SOLO listeners 'change' registrados en document/body que puedan resetear
+        if ((this === document || this === document.body || this === window) && type === 'change') {
+            const esFuncion = typeof listener === 'function';
+            const esObjeto = listener && typeof listener.handleEvent === 'function';
+            
+            if (esFuncion || esObjeto) {
+                const listenerOriginal = esFuncion ? listener : listener.handleEvent.bind(listener);
+                
+                const listenerFiltrado = function(event) {
+                    const target = event.target;
+                    // Si el evento viene de un filtro de timeAllocation → ignorar
+                    if (target && target.id && String(target.id).indexOf('filterTimeAllocation') === 0) {
+                        return; // 🛡️ BLOQUEADO
+                    }
+                    return listenerOriginal.call(this, event);
+                };
+
+                return originalAddEventListener.call(this, type, listenerFiltrado, options);
+            }
+        }
+
+        return originalAddEventListener.call(this, type, listener, options);
+    };
+
+    console.log('🛡️ [TA-Interceptor] Instalado — los filtros de timeAllocation están protegidos');
+})();
+
+
+
+
+
 // ============================================
 // 🔓 FIX DEFINITIVO - PREMIUM + BURNDOWN
 // ============================================
