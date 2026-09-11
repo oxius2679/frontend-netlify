@@ -1,4 +1,225 @@
+// ============================================
+// ✏️ TIEMPO TOTAL EDITABLE
+// ============================================
+(function hacerTiempoTotalEditable() {
+    console.log('✏️ Activando edición de Tiempo Total...');
 
+    // Inyectar estilos
+    if (!document.getElementById('tiempo-editable-styles')) {
+        const style = document.createElement('style');
+        style.id = 'tiempo-editable-styles';
+        style.textContent = `
+            .tiempo-editable {
+                cursor: pointer !important;
+                position: relative;
+                transition: all 0.2s ease;
+                border-radius: 6px;
+                padding: 2px 6px;
+            }
+            .tiempo-editable:hover {
+                background: rgba(139, 92, 246, 0.15);
+                outline: 2px dashed #8b5cf6;
+            }
+            .tiempo-editable:hover::after {
+                content: '✏️';
+                margin-left: 6px;
+                font-size: 0.85em;
+                opacity: 0.8;
+            }
+            .tiempo-editando {
+                background: #0f172a !important;
+                color: white !important;
+                border: 2px solid #8b5cf6 !important;
+                padding: 4px 8px !important;
+                border-radius: 6px !important;
+                font-size: inherit !important;
+                font-family: inherit !important;
+                font-weight: inherit !important;
+                text-align: center;
+                outline: none !important;
+                width: 130px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Función para guardar el nuevo valor
+    function guardarTiempoTotal(nuevoValor) {
+        const valor = parseFloat(nuevoValor);
+        
+        if (isNaN(valor) || valor < 0) {
+            alert('❌ Por favor ingresa un número válido mayor o igual a 0');
+            return false;
+        }
+
+        if (!projects || !projects[currentProjectIndex]) {
+            alert('❌ No hay proyecto activo');
+            return false;
+        }
+
+        // Actualizar el valor
+        projects[currentProjectIndex].totalProjectTime = valor;
+
+        // Guardar en localStorage
+        localStorage.setItem('projects', JSON.stringify(projects));
+
+        // Guardar en backend (si hay conexión)
+        if (typeof safeSave === 'function') {
+            safeSave().then(() => {
+                console.log('✅ Tiempo total guardado en backend:', valor, 'h');
+            }).catch(err => {
+                console.warn('⚠️ Solo se guardó localmente:', err);
+            });
+        }
+
+        console.log(`✅ Tiempo total actualizado a ${valor}h en "${projects[currentProjectIndex].name}"`);
+
+        // Refrescar vistas
+        setTimeout(() => {
+            if (typeof renderDashboard === 'function') renderDashboard();
+            if (typeof updateProjectProgress === 'function') updateProjectProgress();
+            if (typeof updateProjectHealthStatus === 'function') updateProjectHealthStatus();
+            if (typeof updateProjectStatusLabel === 'function') updateProjectStatusLabel();
+            if (typeof updateStatistics === 'function') updateStatistics();
+        }, 100);
+
+        if (typeof showNotification === 'function') {
+            showNotification(`✅ Tiempo total actualizado a ${valor}h`);
+        }
+
+        return true;
+    }
+
+    // Función para activar la edición en un elemento
+    function activarEdicion(elemento) {
+        // Evitar doble edición
+        if (elemento.dataset.editando === 'true') return;
+        elemento.dataset.editando = 'true';
+
+        // Guardar HTML original
+        const htmlOriginal = elemento.innerHTML;
+        const textoOriginal = elemento.textContent.trim();
+
+        // Extraer el número (quitar "h", "horas", etc.)
+        const numeroMatch = textoOriginal.match(/[\d.,]+/);
+        let valorActual = numeroMatch ? numeroMatch[0].replace(',', '') : '0';
+
+        // Crear input
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = valorActual;
+        input.className = 'tiempo-editando';
+        input.min = '0';
+        input.step = '1';
+
+        elemento.innerHTML = '';
+        elemento.appendChild(input);
+        input.focus();
+        input.select();
+
+        // Función para terminar la edición
+        let yaGuardado = false;
+
+        function terminarEdicion(guardar) {
+            if (yaGuardado) return;
+            yaGuardado = true;
+
+            elemento.dataset.editando = 'false';
+
+            if (guardar) {
+                const exito = guardarTiempoTotal(input.value);
+                if (exito) {
+                    // El renderDashboard se encargará de actualizar el display
+                    setTimeout(() => {
+                        // Si el elemento sigue mostrando el input, restaurar
+                        if (elemento.querySelector('input')) {
+                            elemento.innerHTML = htmlOriginal.replace(valorActual, input.value);
+                        }
+                    }, 200);
+                } else {
+                    elemento.innerHTML = htmlOriginal;
+                }
+            } else {
+                elemento.innerHTML = htmlOriginal;
+            }
+        }
+
+        // Eventos del input
+        input.addEventListener('blur', () => terminarEdicion(true));
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                terminarEdicion(true);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                terminarEdicion(false);
+            }
+        });
+    }
+
+    // Buscar y hacer editables TODOS los elementos de tiempo total
+    function hacerEditables() {
+        // IDs y selectores donde aparece el tiempo total
+        const selectores = [
+            '#totalProjectTime',           // Sidebar
+            '#totalProjectTimeDash',       // Dashboard
+            '#totalProjectTimeStatus'      // Reports/Status
+        ];
+
+        selectores.forEach(sel => {
+            const elemento = document.querySelector(sel);
+            if (!elemento) return;
+            
+            // Verificar si ya tiene el listener
+            if (elemento.dataset.editable === 'true') return;
+            elemento.dataset.editable = 'true';
+            elemento.classList.add('tiempo-editable');
+            elemento.title = '🖱️ Clic para editar el tiempo total del proyecto';
+
+            elemento.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                activarEdicion(this);
+            });
+
+            console.log(`✅ Elemento editable activado: ${sel}`);
+        });
+
+        // También buscar por texto en el dashboard (por si cambia el ID)
+        document.querySelectorAll('div, span, p, h3').forEach(el => {
+            const texto = el.textContent?.trim();
+            if (texto && /^\d+(\.\d+)?\s*h(oras?)?$/i.test(texto)) {
+                // Verificar que sea el "tiempo total" y no otro número
+                const padre = el.closest('[class*="total"], [id*="total"], [class*="time"]');
+                if (padre && !el.dataset.editable) {
+                    el.dataset.editable = 'true';
+                    el.classList.add('tiempo-editable');
+                    el.style.cursor = 'pointer';
+                    el.title = '🖱️ Clic para editar';
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        activarEdicion(el);
+                    });
+                }
+            }
+        });
+    }
+
+    // Ejecutar al cargar
+    setTimeout(hacerEditables, 2500);
+
+    // Re-ejecutar cuando cambie el proyecto o la vista
+    document.addEventListener('click', () => setTimeout(hacerEditables, 800));
+    setInterval(hacerEditables, 3000);
+
+    // Exponer función global para uso manual
+    window.editarTiempoTotal = guardarTiempoTotal;
+    window.hacerTiempoEditable = hacerEditables;
+
+    console.log('✅ Sistema de Tiempo Total Editable ACTIVADO');
+    console.log('💡 Haz clic en el "Tiempo Total" del proyecto para editarlo');
+    console.log('💡 O usa en consola: editarTiempoTotal(180000)');
+})();
 
 
 
@@ -143,129 +364,213 @@ window.fetchTrialStatus = async function() {
 
 // BLOQUEO DE PRUEBA EXPIRADA - DEFINITIVO
 function verificarBloqueoPrueba() {
-  if (window.trialStatus && !window.trialStatus.trialActive) {
-    // --- 1. Deshabilitar botones de creación y edición ---
+  // ⭐⭐⭐ EXCEPCIÓN ELITE: reports NUNCA se bloquea ⭐⭐⭐
+  const vistaActual = window.vistaActual || '';
+  if (localStorage.getItem('userPlan') === 'elite' && 
+      (vistaActual === 'reports' || vistaActual === 'reportes')) {
+    return false; // No bloquear Status del Proyecto en Elite
+  }
+  
+  const esBloqueado = window.licenseManager.trialExpired && window.licenseManager.license === 'free';
+
+
+  // ============================================
+  // 1. SI DEBE ESTAR BLOQUEADO → APLICAR BLOQUEO
+  // ============================================
+  if (esBloqueado) {
+    // Deshabilitar botones de creación/edición
     const selectores = [
-      '#createProjectBtn', '.new-project-btn', '[data-action="create-project"]',
-      '.task-edit-btn', '.task-delete-btn', '.task-move-up-btn', '.task-move-down-btn',
-      '.edit-task-btn', '.delete-task-btn', '.move-task-btn',
-      '.project-edit-btn', '.project-delete-btn', '.project-settings-btn',
-      '.task-status-select', '.task-assignee-select', '.task-due-date-input',
-      '.task-description-edit', '.task-title-edit',
-      'button[onclick*="editTask"]', 'button[onclick*="deleteTask"]',
-      'button[onclick*="moveTask"]', 'button[onclick*="saveTask"]',
-      '.drag-handle', '.sortable-handle'
+      '#createProjectBtn', '.new-project-btn',
+      '.task-edit-btn', '.task-delete-btn',
+      '.project-edit-btn', '.project-delete-btn',
+      '.task-status-select', '.task-assignee-select',
+      '.task-due-date-input', '.task-description-edit',
+      '.drag-handle', '.sortable-handle',
+      '#newTaskBtn', '#addTaskBtn', '#saveTaskBtn',
+      '#addRiskBtn', '#addActionBtn', '#addMilestoneBtn'
     ];
     document.querySelectorAll(selectores.join(',')).forEach(el => {
-      el.disabled = true;
-      el.style.opacity = '0.4';
-      el.style.cursor = 'not-allowed';
-      el.title = 'Prueba expirada - solo lectura';
-      // Para botones que no soportan disabled, evitar clics
-      el.style.pointerEvents = 'none';
+      if (el) {
+        el.disabled = true;
+        el.style.opacity = '0.3';
+        el.style.cursor = 'not-allowed';
+        el.title = '🔒 Prueba expirada - Contrata un plan';
+        el.style.pointerEvents = 'none';
+      }
     });
 
-    // --- 2. Bloquear drag & drop ---
-    document.querySelectorAll('.kanban-column, .task-item, .gantt-task, .draggable').forEach(el => {
+    // Bloquear Drag & Drop
+    document.querySelectorAll('.kanban-column, .task-item, .gantt-task, .draggable, .task-card').forEach(el => {
       el.style.pointerEvents = 'none';
-      el.style.opacity = '0.7';
+      el.style.opacity = '0.6';
+      el.draggable = false;
     });
 
-    // --- 3. Interceptar localStorage ---
-    const originalSetItem = localStorage.setItem;
+    // Interceptar localStorage (guardar referencia original)
+    if (!window._originalSetItem) {
+      window._originalSetItem = localStorage.setItem;
+    }
     localStorage.setItem = function(key, value) {
-      if (key === 'projects' || key === 'projectsData' || key === 'projectData' || key === 'tasks') {
-        console.warn('🚫 Intento de guardar proyecto bloqueado');
+      if (['projects', 'projectsData', 'projectData', 'tasks', 'project'].includes(key)) {
+        console.warn('🚫 Intento de guardar bloqueado (trial expirado)');
         return;
       }
-      originalSetItem.call(this, key, value);
+      window._originalSetItem.call(this, key, value);
     };
 
-    // --- 4. Interceptar fetch para bloquear TODAS las operaciones de modificación ---
-    const originalFetch = window.fetch;
+    // Interceptar fetch
+    if (!window._originalFetch) {
+      window._originalFetch = window.fetch;
+    }
     window.fetch = function(url, options) {
-      // Si es una llamada a la API y el método no es GET (y no es trial-status ni auth)
       if (typeof url === 'string' && url.includes('/api/')) {
         const method = options?.method || 'GET';
-        const isGet = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+        const isGet = ['GET', 'HEAD', 'OPTIONS'].includes(method);
         const isSafe = url.includes('/api/trial-status') || url.includes('/api/auth');
         if (!isGet && !isSafe) {
-          window.mostrarModalPruebaExpirada();
+          window.licenseManager.bloquearSistema();
           return Promise.reject(new Error('Prueba expirada - operación bloqueada'));
         }
       }
-      return originalFetch.call(this, url, options);
+      return window._originalFetch.call(this, url, options);
     };
 
-    // --- 5. Interceptar funciones globales de modificación ---
-    const funcionesAInterceptar = [
+    // Interceptar funciones globales
+    const funciones = [
       'createNewProject', 'createProject', 'addProject', 'saveProject',
       'saveTaskChanges', 'createNewTask', 'addTask', 'saveTask',
-      'deleteTask', 'removeTask', 'moveTaskUp', 'moveTaskDown',
-      'editTask', 'updateTask', 'updateProject', 'editProject',
-      'saveProjectChanges', 'updateTaskStatus', 'moveTask',
-      'changeTaskStatus', 'assignTask', 'setTaskDueDate',
-      'addComment', 'updateComment', 'deleteComment'
+      'deleteTask', 'editTask', 'updateTask', 'updateProject',
+      'editProject', 'saveProjectChanges', 'updateTaskStatus',
+      'moveTask', 'addComment', 'updateComment', 'deleteComment'
     ];
-    funcionesAInterceptar.forEach(funcName => {
+    funciones.forEach(funcName => {
       if (typeof window[funcName] === 'function') {
-        const original = window[funcName];
+        if (!window[`_${funcName}_original`]) {
+          window[`_${funcName}_original`] = window[funcName];
+        }
         window[funcName] = function() {
-          if (!window.pruebaActiva()) {
-            window.mostrarModalPruebaExpirada();
+          if (window.licenseManager.trialExpired && window.licenseManager.license === 'free') {
+            window.licenseManager.bloquearSistema();
             return;
           }
-          return original.apply(this, arguments);
+          return window[`_${funcName}_original`].apply(this, arguments);
         };
-        console.log(`✅ Función ${funcName} interceptada`);
       }
     });
 
-    // --- 6. Mostrar mensaje de solo lectura encima del contenido ---
+    // Mostrar mensaje fijo en la parte superior
     if (!document.getElementById('bloqueoPruebaMsg')) {
       const msg = document.createElement('div');
       msg.id = 'bloqueoPruebaMsg';
       msg.style.cssText = `
         position: fixed;
-        top: 70px;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 0;
+        left: 0;
+        width: 100%;
         background: #dc3545;
         color: white;
-        padding: 12px 25px;
-        border-radius: 10px;
-        z-index: 999999;
+        padding: 14px 20px;
+        z-index: 9999998;
         font-weight: bold;
-        box-shadow: 0 4px 15px rgba(220,53,69,0.5);
         text-align: center;
-        font-size: 14px;
+        font-size: 16px;
+        box-shadow: 0 4px 20px rgba(220,53,69,0.6);
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
       `;
-      msg.textContent = '⛔ MODO SOLO LECTURA - Prueba terminada. Haz clic para ver planes.';
-      msg.onclick = () => window.mostrarModalPruebaExpirada();
+      msg.innerHTML = `
+        <span>⛔</span>
+        <span>PRUEBA TERMINADA - Haz clic aquí para ver los planes y reactivar el sistema</span>
+        <span>⛔</span>
+      `;
+      msg.onclick = () => window.licenseManager.bloquearSistema();
       document.body.prepend(msg);
+      document.body.style.paddingTop = '70px';
     }
-
-    // --- 7. Ocultar botón de "Nuevo Proyecto" y otros ---
-    document.querySelectorAll('#createProjectBtn, .new-project-btn').forEach(el => {
-      el.style.display = 'none';
-    });
 
     return true;
   }
-  return false;
+
+  // ============================================
+  // 2. SI NO DEBE ESTAR BLOQUEADO → ELIMINAR BLOQUEO
+  // ============================================
+  else {
+    // 2.1 Eliminar banner rojo
+    const msg = document.getElementById('bloqueoPruebaMsg');
+    if (msg) msg.remove();
+    document.body.style.paddingTop = '0';
+
+    // 2.2 Eliminar modal de bloqueo si existe
+    const modal = document.getElementById('modalExpiracion');
+    if (modal) modal.remove();
+
+    // 2.3 Restaurar botones
+    const selectores = [
+      '#createProjectBtn', '.new-project-btn',
+      '.task-edit-btn', '.task-delete-btn',
+      '.project-edit-btn', '.project-delete-btn',
+      '.task-status-select', '.task-assignee-select',
+      '.task-due-date-input', '.task-description-edit',
+      '.drag-handle', '.sortable-handle',
+      '#newTaskBtn', '#addTaskBtn', '#saveTaskBtn',
+      '#addRiskBtn', '#addActionBtn', '#addMilestoneBtn'
+    ];
+    document.querySelectorAll(selectores.join(',')).forEach(el => {
+      if (el) {
+        el.disabled = false;
+        el.style.opacity = '';
+        el.style.cursor = '';
+        el.title = '';
+        el.style.pointerEvents = '';
+      }
+    });
+
+    // 2.4 Restaurar Drag & Drop
+    document.querySelectorAll('.kanban-column, .task-item, .gantt-task, .draggable, .task-card').forEach(el => {
+      el.style.pointerEvents = '';
+      el.style.opacity = '';
+      el.draggable = true;
+    });
+
+    // 2.5 Restaurar localStorage
+    if (window._originalSetItem) {
+      localStorage.setItem = window._originalSetItem;
+      window._originalSetItem = null;
+    }
+
+    // 2.6 Restaurar fetch
+    if (window._originalFetch) {
+      window.fetch = window._originalFetch;
+      window._originalFetch = null;
+    }
+
+    // 2.7 Restaurar funciones interceptadas
+    const funciones = [
+      'createNewProject', 'createProject', 'addProject', 'saveProject',
+      'saveTaskChanges', 'createNewTask', 'addTask', 'saveTask',
+      'deleteTask', 'editTask', 'updateTask', 'updateProject',
+      'editProject', 'saveProjectChanges', 'updateTaskStatus',
+      'moveTask', 'addComment', 'updateComment', 'deleteComment'
+    ];
+    funciones.forEach(funcName => {
+      if (window[`_${funcName}_original`]) {
+        window[funcName] = window[`_${funcName}_original`];
+        window[`_${funcName}_original`] = null;
+      }
+    });
+
+    // 2.8 Forzar actualización de la vista actual (para refrescar elementos visuales)
+    if (typeof refreshCurrentView === 'function') {
+      setTimeout(refreshCurrentView, 100);
+    }
+
+    console.log('✅ Bloqueo eliminado correctamente');
+    return false;
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 // ============================================================
@@ -23827,6 +24132,15 @@ function renderPmVirtualStats(container) {
 
 // ========== PANEL PRINCIPAL ==========
 function abrirPanelCompleto() {
+    // 🔒 Verificación de licencia
+    if (!window.licenseManager.canAccess('pmVirtual')) {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const msg = lang === 'es'
+            ? '🔒 PM Virtual requiere el plan Profesional o Premium.'
+            : '🔒 PM Virtual requires Professional or Premium plan.';
+        showNotification(msg, 'error');
+        return;
+    }
 const proyecto = obtenerProyectoActual();
 if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
 const overlay = document.createElement('div');
@@ -27155,93 +27469,73 @@ window.methodologyManager = new MethodologyManager();
 const PLANES_CONFIG = {
   free: {
     nombre: 'FREE TRIAL',
-    duracionDias: 14,
+    duracionDias: 7,
     precio: 0,
     limiteProyectos: 1,
     caracteristicas: {
-      kanban: true,
-      lista: true,
-      calendario: true,
-      dashboardBasico: true,
-      asignacionHoras: true,
-      rentabilidad: true,
-      plantillas: 253,
-      ganttBasico: false,
-      ganttEjecutivo: false,
-      pmVirtual: false,
-      dashboard4D: false,
-      reportesEjecutivos: false,
-      gestionCambios: false,
-      recursosHumanos: false,
-      automatizacion: false,
-      centroComandoIA: false,
-      agentesIA: false,
-      transcripcionIA: false,
-      asistentePersonal: false,
-      sistemaVoz: false,
-      slackIntegration: false,
-      colaboracionTiempoReal: false,
-      soporteVIP: false,
-      appMovil: false
+      centroComandoIA: false,   // ❌ BLOQUEADO
+      // ... otras características
     }
   },
+
   elite: {
-    nombre: 'ELITE',
-    precio: 19,
-    limiteProyectos: 3,
-    caracteristicas: {
-      kanban: true,
-      lista: true,
-      calendario: true,
-      dashboardBasico: true,
-      asignacionHoras: true,
-      rentabilidad: true,
-      plantillas: 253,
-      ganttBasico: true,        // ✅ NUEVO: Gantt básico
-      ganttEjecutivo: false,
-      pmVirtual: false,
-      dashboard4D: false,
-      reportesEjecutivos: false,
-      gestionCambios: false,
-      recursosHumanos: false,
-      automatizacion: false,
-      centroComandoIA: false,
-      agentesIA: false,
-      transcripcionIA: false,
-      asistentePersonal: false,
-      sistemaVoz: false,
-      slackIntegration: false,
-      colaboracionTiempoReal: false,
-      soporteVIP: false,
-      appMovil: false
-    }
-  },
+  nombre: 'ELITE',
+  precio: 9,
+  limiteProyectos: 10,
+  caracteristicas: {
+    // ✅ PERMITIDOS EN ELITE:
+    kanban: true,
+    lista: true,
+    calendario: true,
+    asignacionHoras: true,
+    plantillas: true,
+    ganttBasico: true,
+    reports: true,              // ⭐ ESTO FALTABA: Desbloquea "Status del Proyecto"
+    
+    // ❌ BLOQUEADOS EN ELITE:
+    rentabilidad: false,
+    dashboard: false,           // ⭐ Agregado explícitamente para bloquear Dashboard
+    dashboardBasico: false,
+    dashboard4D: false,
+    pmVirtual: false,
+    ganttEjecutivo: false,
+    reportesEjecutivos: false,  // 🔒 Centro de Reportes
+    gestionCambios: false,
+    recursosHumanos: false,     // 🔒 Control de RRHH
+  rrhh:false,            // 🔒 Control de RRHH
+    automatizacion: false,      // 🔒 Automatización Premium
+    centroComandoIA: false,     // 🔒 Centro de Comando 4D IA
+    agentesIA: false,           // 🔒 Agentes IA
+    integraciones: false,       // 🔒 Integraciones
+    storytelling: false,        // 🔒 Storytelling
+    centroControlPM: false,     // 🔒 Centro de Control PM
+    colaboracionTiempoReal: false,
+    soporteVIP: false,
+    appMovil: false
+  }
+},
   professional: {
     nombre: 'PROFESSIONAL',
-    precio: 39,
+    precio: 30,
     limiteProyectos: Infinity,
     caracteristicas: {
       kanban: true,
       lista: true,
       calendario: true,
-      dashboardBasico: true,
       asignacionHoras: true,
-      rentabilidad: true,
-      plantillas: 253,
+      plantillas: true,
       ganttBasico: true,
-      ganttEjecutivo: true,      // ✅ Gantt ejecutivo completo
-      pmVirtual: true,           // ✅ Panel completo
+      rentabilidad: true,
+      dashboardBasico: true,
+      pmVirtual: true,
+      ganttEjecutivo: true,
       dashboard4D: true,
       reportesEjecutivos: true,
       gestionCambios: true,
       recursosHumanos: true,
       automatizacion: true,
-      centroComandoIA: true,
+      centroComandoIA: false,
       agentesIA: false,
-      transcripcionIA: false,
-      asistentePersonal: false,
-      sistemaVoz: false,
-      slackIntegration: false,
       colaboracionTiempoReal: false,
       soporteVIP: false,
       appMovil: false
@@ -27249,37 +27543,32 @@ const PLANES_CONFIG = {
   },
   premium: {
     nombre: 'PREMIUM',
-    precio: 59,
+    precio: 40,
     limiteProyectos: Infinity,
     caracteristicas: {
       kanban: true,
       lista: true,
       calendario: true,
-      dashboardBasico: true,
       asignacionHoras: true,
-      rentabilidad: true,
-      plantillas: 253,
+      plantillas: true,
       ganttBasico: true,
-      ganttEjecutivo: true,
+      rentabilidad: true,
+      dashboardBasico: true,
       pmVirtual: true,
+      ganttEjecutivo: true,
       dashboard4D: true,
       reportesEjecutivos: true,
       gestionCambios: true,
       recursosHumanos: true,
       automatizacion: true,
       centroComandoIA: true,
-      agentesIA: true,            // ✅ 4 Agentes IA
-      transcripcionIA: true,      // ✅ Transcripción reuniones
-      asistentePersonal: true,    // ✅ Asistente personal
-      sistemaVoz: true,           // ✅ Sistema de voz
-      slackIntegration: true,     // ✅ Slack
-      colaboracionTiempoReal: true, // ✅ Colaboración real
-      soporteVIP: true,           // ✅ VIP 24/7 (15 min)
-      appMovil: true              // ✅ App móvil
+      agentesIA: true,
+      colaboracionTiempoReal: true,
+      soporteVIP: true,
+      appMovil: true
     }
   }
 };
-
 // ============================================
 // 🔒 LICENSE MANAGER ACTUALIZADO
 // ============================================
@@ -27290,135 +27579,222 @@ const PLANES_CONFIG = {
 // ✅ NUEVA CLASE DE LICENCIA REALISTA Y SEGURA
 class LicenseManager {
   constructor() {
-    // Compatibilidad con tu código actual (usa userLicense o userPlan)
-    this.license = localStorage.getItem('userLicense') || localStorage.getItem('userPlan') || 'free';
+    this.license = localStorage.getItem('userPlan') || 'free';
     this.trialExpired = false;
-    this.verifyTrialExpiration(); // Calcula si ya pasaron los 14 días
+    this.verifyTrialExpiration();
   }
 
-  // 🔍 Verifica si la prueba de 14 días ya terminó
   verifyTrialExpiration() {
     if (this.license === 'free') {
       let trialStart = localStorage.getItem('freeTrialStart');
-      
-      // Si no tiene fecha de inicio, se la asignamos hoy
       if (!trialStart) {
         localStorage.setItem('freeTrialStart', new Date().toISOString());
-        trialStart = new Date().toISOString();
+        trialStart = localStorage.getItem('freeTrialStart');
       }
-
       const start = new Date(trialStart);
       const now = new Date();
       const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff >= 14) {
+      if (daysDiff >= 7) {
         this.trialExpired = true;
-        console.warn('⚠️ La prueba gratuita de 14 días ha expirado.');
+        console.warn('⛔ El trial de 7 días ha expirado. Sistema BLOQUEADO.');
+      } else {
+        console.log(`⏳ Días restantes de prueba: ${7 - daysDiff}`);
       }
     }
   }
 
-  // 🚨 AQUÍ ESTÁ LA CORRECCIÓN CLAVE PARA EL ACCESO
-  canAccess(feature) {
-    // 1. Si es plan FREE y la prueba NO ha expirado, permitir TODO (Acceso Total)
-    if (this.license === 'free' && !this.trialExpired) {
-      return true; // ✅ Desbloquea Dashboard 4D, Gantt Ejecutivo, etc.
-    }
-
-    // 2. Para el resto de planes, verificar la configuración (si existe)
-    if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG[this.license]) {
-      const plan = PLANES_CONFIG[this.license];
-      return plan.caracteristicas[feature] === true;
-    }
-
-    // 3. Fallback de seguridad: si no hay configuración, permitir acceso para no romper el sistema
+canAccess(feature) {
+  // 🔥 1. FREE con trial activo → ACCESO TOTAL
+  if (this.license === 'free' && !this.trialExpired) {
     return true;
   }
-
+  // 🚫 2. FREE con trial expirado → BLOQUEADO COMPLETO
+  if (this.license === 'free' && this.trialExpired) {
+    return false;
+  }
+  // ⭐⭐⭐ EXCEPCIONES PARA PLAN ELITE ⭐⭐⭐
+  if (this.license === 'elite') {
+    // ✅ Status del Proyecto SIEMPRE permitido en Elite
+    if (feature === 'reports' || feature === 'reportes' || feature === 'status') {
+      return true;
+    }
+    // 🔒 Estas features SIEMPRE bloqueadas en Elite
+    const bloqueadasElite = ['recursosHumanos', 'rrhh', 'dashboard', 'dashboard4D', 'rentabilidad', 'automatizacion', 'storytelling', 'integraciones', 'centroComandoIA', 'centroControlPM', 'reportesEjecutivos', 'agentesIA'];
+    if (bloqueadasElite.includes(feature)) {
+      return false;
+    }
+  }
+  // 3. Planes de pago → según configuración
+  if (PLANES_CONFIG[this.license]) {
+    return PLANES_CONFIG[this.license].caracteristicas[feature] === true;
+  }
+  return false;
+}
   canCreateProject() {
-    // Si la prueba expiró, no puede crear
-    if (this.license === 'free' && this.trialExpired) return false;
-    
-    // Verificar límite de proyectos según el plan
-    if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG[this.license]) {
-      const plan = PLANES_CONFIG[this.license];
-      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
-      return proyectosActuales < plan.limiteProyectos;
+    // Si es free y expiró, no puede crear proyectos
+    if (this.license === 'free' && this.trialExpired) {
+      return false;
     }
-    
-    return true; // Fallback de seguridad
-  }
-
-  upgradePlan(newPlan) {
-    if (typeof PLANES_CONFIG !== 'undefined' && !PLANES_CONFIG[newPlan]) return false;
-    
-    this.license = newPlan;
-    localStorage.setItem('userPlan', newPlan);
-    localStorage.setItem('userLicense', newPlan); // Por compatibilidad con tu código
-    
-    if (newPlan !== 'free') {
-      localStorage.removeItem('freeTrialStart'); // Ya no es prueba
+    // Si es free con trial activo, solo 1 proyecto
+    if (this.license === 'free' && !this.trialExpired) {
+      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
+      return proyectosActuales < 1;
+    }
+    // Planes de pago
+    if (PLANES_CONFIG[this.license]) {
+      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
+      return proyectosActuales < PLANES_CONFIG[this.license].limiteProyectos;
     }
     return true;
   }
+
+ upgradePlan(newPlan) {
+  if (!PLANES_CONFIG[newPlan]) return false;
+  this.license = newPlan;
+  this.trialExpired = false;
+  localStorage.setItem('userPlan', newPlan);
+  localStorage.removeItem('freeTrialStart');
+  
+  // 🔥 Eliminar cualquier modal de bloqueo
+  const modal = document.getElementById('modalExpiracion');
+  if (modal) modal.remove();
+  
+  // 🔥 También eliminar el banner rojo si existe
+  const banner = document.getElementById('bloqueoPruebaMsg');
+  if (banner) banner.remove();
+  document.body.style.paddingTop = '0';
+  
+  // Restaurar localStorage y fetch (si fueron interceptados)
+  if (window._originalSetItem) {
+    localStorage.setItem = window._originalSetItem;
+    window._originalSetItem = null;
+  }
+  if (window._originalFetch) {
+    window.fetch = window._originalFetch;
+    window._originalFetch = null;
+  }
+  
+  return true;
+}
 
   bloquearSistema() {
+    // Muestra el modal de bloqueo total
     if (!document.getElementById('modalExpiracion')) {
       const modal = document.createElement('div');
       modal.id = 'modalExpiracion';
       modal.innerHTML = `
-        <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:999999;display:flex;align-items:center;justify-content:center;">
-          <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:40px;border-radius:20px;max-width:500px;text-align:center;border:1px solid #ef4444;">
-            <div style="font-size:48px;margin-bottom:20px;">⏳</div>
-            <h2 style="color:#ef4444;font-size:24px;margin-bottom:15px;">Prueba Gratuita Finalizada</h2>
-            <p style="color:#94a3b8;font-size:16px;margin-bottom:25px;">
-              Tus 14 días de acceso total han terminado.<br>
-              Selecciona un plan para continuar usando el sistema.
+        <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+          <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:45px;border-radius:24px;max-width:500px;width:90%;text-align:center;border:2px solid #ef4444;box-shadow:0 0 60px rgba(239,68,68,0.3);">
+            <div style="font-size:64px;margin-bottom:15px;">⛔</div>
+            <h2 style="color:#ef4444;font-size:28px;margin-bottom:10px;">Acceso Bloqueado</h2>
+            <p style="color:#94a3b8;font-size:16px;margin-bottom:25px;line-height:1.6;">
+              Tu período de prueba de 7 días ha terminado.<br>
+              <strong style="color:#fca5a5;">Selecciona un plan de pago</strong> para continuar usando el sistema.
             </p>
-            <button onclick="if(typeof selectPlan==='function') selectPlan('professional');" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:12px 24px;border-radius:8px;border:none;font-weight:bold;cursor:pointer;font-size:16px;">
-              ✨ Ver Planes Disponibles
-            </button>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <button onclick="window.selectPlan('elite')" style="background:linear-gradient(135deg,#facc15,#eab308);color:#0f172a;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                ⭐ ELITE - €9/mes
+              </button>
+              <button onclick="window.selectPlan('professional')" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                🚀 PROFESSIONAL - €30/mes
+              </button>
+              <button onclick="window.selectPlan('premium')" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                💎 PREMIUM - €40/mes
+              </button>
+            </div>
+            <p style="color:#64748b;font-size:12px;margin-top:20px;">
+              ¿Ya pagaste? <a href="#" onclick="alert('Contacta a soporte: ajackson2672@gmail.com')" style="color:#a78bfa;">Contacta a soporte</a>
+            </p>
           </div>
-        </div>`;
+        </div>
+      `;
       document.body.appendChild(modal);
     }
   }
 }
 
-// Inicializar globalmente (sobrescribe cualquier instancia anterior)
 window.licenseManager = new LicenseManager();
-// ========== PROTECCIÓN POR MODO DE TRABAJO ==========
-function requireModeAccess(view, callback) {
-  const currentMode = window.methodologyManager.getCurrentMode();
-  const allowedViews = {
-  agile: ["inicio", "board", "calendar", "list", "dashboard", "timeAllocation"],
-  traditional: ["inicioview", "list", "reports", "dashboard", "profitability", "timeAllocation"],
-  hybrid: ["inicioview", "board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
-};
 
-  if (!allowedViews[currentMode].includes(view)) {
-    showNotification(`💡 En modo ${currentMode} no se recomienda usar esta vista. Cambia a otro modo.`);
+// ============================================
+// 💳 FUNCIÓN GLOBAL PARA SELECCIONAR PLAN
+// ============================================
+window.selectPlan = function(plan) {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    showNotification('🔒 Debes iniciar sesión para seleccionar un plan.');
     return;
   }
-  callback();
-}
 
+  if (plan === 'elite' || plan === 'professional' || plan === 'premium') {
+    // 🔥 MODO PRUEBA LOCAL (sin Stripe) - Descomenta estas líneas para probar sin backend
+    // window.licenseManager.upgradePlan(plan);
+    // alert('✅ Plan ' + plan.toUpperCase() + ' activado en modo prueba.');
+    // location.reload();
+    // return;
+
+    // 🔥 MODO PRODUCCIÓN (con Stripe) - Esta es la versión que debes usar en producción
+    fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        plan: plan, 
+        userId: obtenerUserId() 
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Error al crear sesión de pago: ' + (data.error || 'desconocido'));
+      }
+    })
+    .catch(err => alert('Error de conexión: ' + err.message));
+  } else {
+    showNotification('Plan no válido');
+  }
+};
+
+
+
+// ============================================
+// 🔑 FUNCIÓN PARA OBTENER ID DEL USUARIO
+// ============================================
+function obtenerUserId() {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return 'unknown';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.userId || payload.uid || payload.sub || 'unknown';
+  } catch(e) {
+    return 'unknown';
+  }
+}
 
 
 
 // ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
 function requirePremiumAccess(featureName, callback) {
- // 🔓 PROTECCIÓN DESACTIVADA - Los usuarios FREE pueden acceder a todo
-    // if (!window.licenseManager.canAccess('premiumExecutiveGantt')) {
-    //     showNotification(`🔒 ${featureName} requiere el plan Profesional o Premium.`);
-    //     return;
-    // }
-    callback();
+    // Si el usuario tiene acceso, ejecutar el callback
+    if (window.licenseManager.canAccess(featureName)) {
+        if (typeof callback === 'function') {
+            callback();
+        }
+        return;
+    }
+
+    // Si NO tiene acceso, mostrar mensaje y NO ejecutar callback
+    if (window.licenseManager.license === 'free' && window.licenseManager.trialExpired) {
+        window.licenseManager.bloquearSistema();
+        return;
+    }
+
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const msg = lang === 'es'
+        ? `🔒 ${featureName} requiere el plan Profesional o Premium.`
+        : `🔒 ${featureName} requires Professional or Premium plan.`;
+    showNotification(msg, 'error');
 }
-
-
-
-
 
 
 
@@ -46581,43 +46957,45 @@ function getTimeStats(tasks = null) {
  * FUNCIONES DE RENTABILIDAD *
  ***********************/
 function renderProfitabilityView() {
-  const project = projects[currentProjectIndex];
-  if (!project) {
-    console.warn('No hay proyecto seleccionado para rentabilidad');
-    return;
-  }
+    // 🔒 PROTECCIÓN DE RENTABILIDAD
+    requirePremiumAccess('rentabilidad', function() {
 
-  const totalHours = project.tasks.reduce((sum, task) => sum + (task.timeLogged || 0), 0);
-  const hourlyCost = 50;
-  const projectBudget = 10000;
+        const project = projects[currentProjectIndex];
+        if (!project) {
+            console.warn('No hay proyecto seleccionado para rentabilidad');
+            return;
+        }
 
-  const totalCost = totalHours * hourlyCost;
-  const profitMargin = ((projectBudget - totalCost) / projectBudget) * 100;
+        const totalHours = project.tasks.reduce((sum, task) => sum + (task.timeLogged || 0), 0);
+        const hourlyCost = 50;
+        const projectBudget = 10000;
 
-  // Verificar existencia de elementos
-  const totalCostEl = document.getElementById('totalCost');
-  const totalIncomeEl = document.getElementById('totalIncome');
-  const profitMarginEl = document.getElementById('profitMargin');
+        const totalCost = totalHours * hourlyCost;
+        const profitMargin = ((projectBudget - totalCost) / projectBudget) * 100;
 
-  if (!totalCostEl || !totalIncomeEl || !profitMarginEl) {
-    console.warn('❌ Elementos de rentabilidad no encontrados en el DOM');
-    // Opcional: crearlos si es necesario (no recomendado, mejor asegurar que existan en el HTML)
-    return;
-  }
+        // Verificar existencia de elementos
+        const totalCostEl = document.getElementById('totalCost');
+        const totalIncomeEl = document.getElementById('totalIncome');
+        const profitMarginEl = document.getElementById('profitMargin');
 
-  totalCostEl.textContent = `$${totalCost.toFixed(2)}`;
-  totalIncomeEl.textContent = `$${projectBudget.toFixed(2)}`;
-  profitMarginEl.textContent = `${profitMargin.toFixed(2)}%`;
+        if (!totalCostEl || !totalIncomeEl || !profitMarginEl) {
+            console.warn('❌ Elementos de rentabilidad no encontrados en el DOM');
+            return;
+        }
 
-  // Gráfico (también con validación)
-  const canvas = document.getElementById('profitabilityChart');
-  if (canvas) {
-    renderProfitabilityChart(totalCost, projectBudget);
-  } else {
-    console.warn('Canvas profitabilityChart no encontrado');
-  }
+        totalCostEl.textContent = `$${totalCost.toFixed(2)}`;
+        totalIncomeEl.textContent = `$${projectBudget.toFixed(2)}`;
+        profitMarginEl.textContent = `${profitMargin.toFixed(2)}%`;
+
+        // Gráfico (también con validación)
+        const canvas = document.getElementById('profitabilityChart');
+        if (canvas) {
+            renderProfitabilityChart(totalCost, projectBudget);
+        } else {
+            console.warn('Canvas profitabilityChart no encontrado');
+        }
+    });
 }
-
 
 function renderProfitabilityChart(cost, income) {
   const canvas = document.getElementById('profitabilityChart');
@@ -47267,7 +47645,15 @@ const currentUserEmail = localStorage.getItem('userEmail');
 if (currentUserEmail === 'ajackson2672@gmail.com') {
   localStorage.setItem('userPlan', 'premium');
   // console.log('👑 Acceso premium activado para desarrollador'); // COMENTADO PARA PRUEBA FREE
-localStorage.setItem('userPlan', 'free'); // Forzamos free para prueba
+
+
+// 🛡️ RESPETAR EL PLAN ELITE SI ESTÁ CONFIGURADO
+const planForzado = localStorage.getItem('userPlan');
+if (!localStorage.getItem('userPlan')) {
+  localStorage.setItem('userPlan', 'free');
+} else {
+  console.log('🛡️ Plan ELITE protegido, no se sobrescribe');
+}
 }
 
 
@@ -47275,13 +47661,19 @@ localStorage.setItem('userPlan', 'free'); // Forzamos free para prueba
 
   console.log('✅ Token válido detectado');
   
-  try {
-    // 🛠️ Inicializar LicenseManager con el plan guardado
-    if (!window.licenseManager) {
-      window.licenseManager = new LicenseManager();
-      window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
-    }
+ // ============================================
+// 🚀 INICIALIZACIÓN PRINCIPAL
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
 
+  // 🔐 1. Inicializar LicenseManager (si no existe)
+  if (!window.licenseManager) {
+    window.licenseManager = new LicenseManager();
+    // No necesitas reasignar license porque el constructor ya lo hace
+  }
+
+  // 📦 2. Cargar datos (tu lógica original)
+  try {
     const dataLoaded = await safeLoad();
     console.log('📊 Datos cargados:', dataLoaded ? '✅' : '❌');
     
@@ -47293,21 +47685,38 @@ localStorage.setItem('userPlan', 'free'); // Forzamos free para prueba
       selectProject(currentProjectIndex);
       checkOverdueTasks();
     }
-    
-    setupEventListeners();
-
-    // Iniciar WebSocket después de cargar todo
-    setTimeout(() => {
-      if (window.authToken) {
-        console.log('🚀 Iniciando WebSockets...');
-        initWebSocket();
-      }
-    }, 1000);
-
   } catch (error) {
     console.error('❌ Error crítico al iniciar:', error);
     showNotification('Error al cargar la aplicación');
   }
+
+  // 🛡️ 3. ⭐ VERIFICAR BLOQUEO (esto es lo que te faltaba)
+  verificarBloqueoPrueba();
+
+  // 🚫 4. Si el trial expiró, mostrar el modal de bloqueo
+  if (window.licenseManager.trialExpired && window.licenseManager.license === 'free') {
+    setTimeout(() => {
+      window.licenseManager.bloquearSistema();
+    }, 1500); // Esperamos 1.5s para que cargue todo
+  }
+
+  // 👂 5. Escuchar cambios de proyecto o vista para re-evaluar bloqueo
+  document.addEventListener('projectChanged', verificarBloqueoPrueba);
+  document.addEventListener('viewChanged', verificarBloqueoPrueba);
+
+  // 🔧 6. Configurar el resto de event listeners (tu setupEventListeners)
+  setupEventListeners();
+
+  // 🌐 7. Iniciar WebSockets (si lo usas)
+  if (window.authToken) {
+    setTimeout(() => {
+      console.log('🚀 Iniciando WebSockets...');
+      initWebSocket();
+    }, 2000);
+  }
+
+  console.log('✅ Aplicación inicializada correctamente');
+});
 
 
 
@@ -50778,62 +51187,51 @@ document.addEventListener('DOMContentLoaded', function () {
    * FUNCIÓN PARA MOSTRAR GANTT COMO VISTA *
    **************************************/
   window.showExecutiveGantt = function() {
-    // 🔒 PROTECCIÓN POR LICENCIA: solo Profesional/Premium pueden usar el Gantt Ejecutivo
-    const userPlan = localStorage.getItem('userPlan');
-if (userPlan !== 'professional' && userPlan !== 'premium') {
-  showNotification('🔒 El Gantt Ejecutivo está disponible en los planes Profesional o Premium.');
-  return;
-}
+    // 🔒 PROTECCIÓN CON requirePremiumAccess
+    requirePremiumAccess('ganttEjecutivo', function() {
+        console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
 
-    console.log('🚀 Mostrando Gantt Ejecutivo como vista principal...');
+        // 1. Ocultar todas las otras vistas
+        const viewsToHide = [
+            'kanban-container', 'list-view', 'calendar-view',
+            'dashboard', 'projects-container', 'tasks-container'
+        ];
+        viewsToHide.forEach(viewId => {
+            const view = document.getElementById(viewId);
+            if (view) {
+                view.style.display = 'none';
+                console.log(`👁️ Ocultando vista: ${viewId}`);
+            }
+        });
 
-    // 1. Ocultar todas las otras vistas (busca los ID de tus vistas)
-    const viewsToHide = [
-      'kanban-container', 'list-view', 'calendar-view',
-      'dashboard', 'projects-container', 'tasks-container'
-    ];
+        // 2. También ocultar por clases comunes
+        document.querySelectorAll('.kanban-container, .list-container, .calendar-container, .dashboard-container').forEach(view => {
+            if (view) view.style.display = 'none';
+        });
 
-    // Primero intentar por ID
-    viewsToHide.forEach(viewId => {
-      const view = document.getElementById(viewId);
-      if (view) {
-        view.style.display = 'none';
-        console.log(`👁️ Ocultando vista: ${viewId}`);
-      }
+        // 3. Eliminar cualquier Gantt anterior
+        const oldGantt = document.getElementById('premiumExecutiveGantt');
+        if (oldGantt) {
+            oldGantt.remove();
+            console.log('🗑️ Gantt anterior removido');
+        }
+
+        // 4. Eliminar cualquier overlay/backdrop
+        document.querySelectorAll('.executive-overlay').forEach(overlay => overlay.remove());
+
+        // 5. Asegurar que body tenga espacio para el Gantt
+        document.body.style.overflow = 'hidden';
+
+        // 6. Crear el Gantt ejecutivo
+        if (typeof createCompleteGanttForCurrentProject === 'function') {
+            createCompleteGanttForCurrentProject();
+            console.log('✅ Gantt Ejecutivo creado como vista principal');
+        } else {
+            console.error('❌ Error: No se encontró la función createCompleteGanttForCurrentProject');
+            alert('Error al cargar el Gantt Ejecutivo. Recarga la página e intenta de nuevo.');
+        }
     });
-
-    // 2. También ocultar por clases comunes
-    document.querySelectorAll('.kanban-container, .list-container, .calendar-container, .dashboard-container').forEach(view => {
-      if (view) {
-        view.style.display = 'none';
-      }
-    });
-
-    // 3. Eliminar cualquier Gantt anterior
-    const oldGantt = document.getElementById('premiumExecutiveGantt');
-    if (oldGantt) {
-      oldGantt.remove();
-      console.log('🗑️ Gantt anterior removido');
-    }
-
-    // 4. Eliminar cualquier overlay/backdrop
-    const overlays = document.querySelectorAll('.executive-overlay');
-    overlays.forEach(overlay => {
-      overlay.remove();
-    });
-
-    // 5. Asegurar que body tenga espacio para el Gantt
-    document.body.style.overflow = 'hidden';
-
-    // 6. Crear el Gantt ejecutivo
-    if (typeof createCompleteGanttForCurrentProject === 'function') {
-      createCompleteGanttForCurrentProject();
-      console.log('✅ Gantt Ejecutivo creado como vista principal');
-    } else {
-      console.error('❌ Error: No se encontró la función createCompleteGanttForCurrentProject');
-      alert('Error al cargar el Gantt Ejecutivo. Recarga la página e intenta de nuevo.');
-    }
-  };
+};
 
   // Hacer la función disponible globalmente
   console.log('✅ Función showExecutiveGantt() cargada. Usa: showExecutiveGantt()');
@@ -66970,27 +67368,76 @@ function showView(view) {
 
   console.log("🧭 Navegando a vista:", view);
 
+// Dentro de showView(), antes de cambiar la vista:
+const vistasBloqueadasElite = {
+  'reportes': 'reportesEjecutivos',
+  'dashboard4d': 'dashboard4D',
+  'profitability': 'rentabilidad',
+  'habilidades': 'recursosHumanos',
+  'desempeno': 'recursosHumanos',
+  'reconocimientos': 'recursosHumanos',
+  'integraciones': 'integraciones',
+  'storytelling': 'storytelling',
+  'centroIA': 'centroComandoIA',
+  'controlPM': 'centroControlPM'
+};
+
+if (localStorage.getItem('userPlan') === 'elite') {
+  const feature = vistasBloqueadasElite[view];
+  if (feature) {
+    showNotification('🔒 Esta vista requiere plan Profesional o Premium.', 'error');
+    return;
+  }
+}
 
 
-  // 🔒 PROTECCIÓN POR LICENCIA
-  const premiumViews = ['reports', 'profitability', 'dashboard4d'];
-  if (premiumViews.includes(view)) {
+
+  // ============================================
+  // 🔒 PROTECCIÓN POR LICENCIA - VISTAS PREMIUM
+  // ============================================
+  const premiumViewsMap = {
+    'reports': 'reportesEjecutivos',
+    'profitability': 'rentabilidad',
+    'dashboard4d': 'dashboard4D',
+    'ganttPro': 'ganttEjecutivo'
+  };
+
+  if (premiumViewsMap[view]) {
+    const feature = premiumViewsMap[view];
+    if (!window.licenseManager?.canAccess(feature)) {
+      const lang = localStorage.getItem('preferredLanguage') || 'es';
+      const msg = lang === 'es'
+        ? `🔒 Esta vista requiere el plan Profesional o Premium.`
+        : `🔒 This view requires Professional or Premium plan.`;
+      showNotification(msg, 'error');
+
+      if (window.licenseManager?.license === 'free' && window.licenseManager?.trialExpired) {
+        window.licenseManager.bloquearSistema();
       }
+      return; // ⛔ NO CAMBIA DE VISTA
+    }
+  }
 
- // 🧭 PROTECCIÓN POR MODO DE TRABAJO
-const currentMode = window.methodologyManager?.getCurrentMode();
+  // ============================================
+  // 🧭 PROTECCIÓN POR MODO DE TRABAJO
+  // ============================================
+  const currentMode = window.methodologyManager?.getCurrentMode();
+ const userPlan = localStorage.getItem('userPlan') || 'free';
 const allowedViews = {
   agile: ["inicio", "board", "calendar", "list", "dashboard", "timeAllocation"],
   traditional: ["inicio", "list", "reports", "dashboard", "profitability", "timeAllocation"],
   hybrid: ["inicio", "board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
 };
 
-if (currentMode && !allowedViews[currentMode]?.includes(view)) {
-  showNotification(`💡 En modo ${currentMode} esta vista no está recomendada.`);
-  return;
-}
 
+  if (currentMode && !allowedViews[currentMode]?.includes(view)) {
+    showNotification(`💡 En modo ${currentMode} esta vista no está recomendada.`);
+    return;
+  }
+
+  // ============================================
   // 🔥 LIMPIEZA GLOBAL
+  // ============================================
   document.body.classList.remove(
     'loading',
     'overlay-active',
@@ -67000,11 +67447,11 @@ if (currentMode && !allowedViews[currentMode]?.includes(view)) {
     'modal-open'
   );
 
-  // =========================
+  // ============================================
   // 🟣 GANTT PRO (AISLADO)
-  // =========================
+  // ============================================
   if (view === "ganttPro") {
-
+    // La verificación de licencia ya se hizo arriba
     document.querySelectorAll('.view-content')
       .forEach(v => v.classList.remove('active'));
 
@@ -67012,7 +67459,6 @@ if (currentMode && !allowedViews[currentMode]?.includes(view)) {
     if (!ganttProView) return;
 
     ganttProView.style.display = 'block';
-
     renderGanttPro?.();
 
     Object.entries(viewButtons || {}).forEach(([key, btn]) => {
@@ -67022,19 +67468,15 @@ if (currentMode && !allowedViews[currentMode]?.includes(view)) {
     return;
   }
 
-  // =========================
+  // ============================================
   // 🔵 VISTAS NORMALES
-  // =========================
-
-  // Ocultar Gantt Pro
+  // ============================================
   const ganttProView = document.getElementById('ganttProView');
   if (ganttProView) ganttProView.style.display = 'none';
 
-  // Ocultar TODAS las vistas
   document.querySelectorAll('.view-content')
     .forEach(v => v.classList.remove('active'));
 
-  // Mostrar vista destino
   const targetView = document.getElementById(view + 'View');
   if (!targetView) {
     console.warn('❌ Vista no encontrada:', view + 'View');
@@ -67043,40 +67485,36 @@ if (currentMode && !allowedViews[currentMode]?.includes(view)) {
 
   targetView.classList.add('active');
 
-  // Botones del menú
   Object.entries(viewButtons || {}).forEach(([key, btn]) => {
     if (btn) btn.classList.toggle("active", key === view);
   });
 
-  // =========================
+  // ============================================
   // 🔧 LÓGICA POR VISTA
-  // =========================
-  
+  // ============================================
+  switch (view) {
 
-switch (view) {
-
-case "inicio":
-  console.log('🏠 Navegando a vista de inicio');
-  // Cargar datos inmediatamente sin retraso
-  syncProjectsToWindow();
-  loadProjects();
-  loadStatistics();
-  loadRecentActivity();
-  loadRecentReports();
-  break;
+    case "inicio":
+      console.log('🏠 Navegando a vista de inicio');
+      syncProjectsToWindow();
+      loadProjects();
+      loadStatistics();
+      loadRecentActivity();
+      loadRecentReports();
+      break;
 
     case "list":
       renderListTasks?.();
       break;
 
     case "calendar":
-    console.log('📅 Activando vista calendario...');
-    addCalendarStyles(); // Asegurar estilos
-    setTimeout(() => {
-        renderCalendar(); // Renderizar calendario
-        addCalendarHoverEffects(); // Efectos hover
-    }, 100);
-    break;
+      console.log('📅 Activando vista calendario...');
+      addCalendarStyles();
+      setTimeout(() => {
+        renderCalendar();
+        addCalendarHoverEffects();
+      }, 100);
+      break;
 
     case "reports":
       setTimeout(() => {
@@ -67099,11 +67537,13 @@ case "inicio":
 
     case "dashboard4d":
       console.log("✅ Dashboard 4D como vista fija");
+      // ✅ Ahora sí llama a la función que abre el Dashboard 4D
+      if (typeof window.showDashboard4DView === 'function') {
+        window.showDashboard4DView();
+      }
       break;
-   
-  }   
   }
-
+}
 
 // Exponer globalmente
 window.showView = showView;
@@ -67420,51 +67860,50 @@ function getLocalizedDayNames(lang) {
 // 4. FUNCIÓN PRINCIPAL: ABRIR DASHBOARD
 // -------------------------------------------------------------
 window.showDashboard4DView = function () {
-    const existingContainer = document.getElementById('mainAppContainer');
-    if (existingContainer) {
-        existingContainer.remove();
-        console.log('✅ Container anterior eliminado');
-    }
+    // 🔒 PROTECCIÓN CON requirePremiumAccess
+    requirePremiumAccess('dashboard4D', function() {
+        const existingContainer = document.getElementById('mainAppContainer');
+        if (existingContainer) {
+            existingContainer.remove();
+            console.log('✅ Container anterior eliminado');
+        }
 
-    if (!window.licenseManager?.canAccess('premiumExecutiveGantt')) {
-        showNotification('🔒 El Dashboard 4D requiere el plan Profesional o Premium.');
-        return;
-    }
-    const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
-    if (currentMode !== 'hybrid') {
-        showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
-        return;
-    }
+        // Verificación de modo Híbrido (restricción de funcionalidad, no de licencia)
+        const currentMode = window.methodologyManager?.getCurrentMode() || 'hybrid';
+        if (currentMode !== 'hybrid') {
+            showNotification(`💡 El Dashboard 4D solo está disponible en modo Híbrido.`);
+            return;
+        }
 
-    const container = document.createElement('div');
-    container.id = 'mainAppContainer';
-    container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: #0a0a1a;
-        z-index: 999999;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    `;
-    document.body.appendChild(container);
+        const container = document.createElement('div');
+        container.id = 'mainAppContainer';
+        container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a1a;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+        document.body.appendChild(container);
 
-    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-    document.querySelector('#dashboardView')?.classList.add('active');
+        document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+        document.querySelector('#dashboardView')?.classList.add('active');
 
-    const lang = localStorage.getItem('preferredLanguage') || 'es';
-    const t = getDashboardTexts();
-    const content = generateDashboard4DHTML(lang, t);
-    container.innerHTML = content;
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const t = getDashboardTexts();
+        const content = generateDashboard4DHTML(lang, t);
+        container.innerHTML = content;
 
-    setTimeout(() => {
-        initDashboard4DCharts(lang);
-    }, 0);
+        setTimeout(() => {
+            initDashboard4DCharts(lang);
+        }, 0);
+    });
 };
-
 // -------------------------------------------------------------
 // 5. GENERAR HTML DEL DASHBOARD
 // -------------------------------------------------------------
@@ -73971,6 +74410,7 @@ const generateReportsOriginal = generateReports;
 
 // Reemplazar con nuestra nueva función
 window.generateReports = function(tasks = null) {
+      
   console.log("📊 NUEVO REPORTE EJECUTIVO ACTIVADO");
   
   // Obtener datos
@@ -74141,15 +74581,6 @@ setTimeout(() => {
     });
   }
 }, 100);
-
-// Ejecutar la nueva función inmediatamente
-setTimeout(() => {
-  if (typeof generateReports === 'function') {
-    window.generateReports();
-  }
-}, 500);
-
-console.log("✅ NUEVO SISTEMA DE REPORTES ACTIVADO");
 
 };
 
@@ -77439,3 +77870,22 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
   
   console.log('✅ Interceptor Nuclear instalado correctamente.');
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
