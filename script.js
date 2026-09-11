@@ -1,4 +1,149 @@
 // ============================================
+// 🔓 FIX DEFINITIVO - PREMIUM + BURNDOWN
+// ============================================
+(function fixPremiumAndBurndown() {
+    console.log('🔧 Aplicando fix definitivo Premium + Burndown...');
+
+    // 1. Detectar si el usuario es admin
+    let userEmail = null;
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        userEmail = user.email;
+    } catch(e) {}
+    
+    if (!userEmail) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email;
+            } catch(e) {}
+        }
+    }
+    userEmail = userEmail || localStorage.getItem('userEmail');
+
+    // 2. Lista de emails con acceso premium automático
+    const ADMINS_PREMIUM = [
+        'ajackson2672@gmail.com'
+    ];
+
+    // 3. Si es admin, forzar premium (SIN dejarlo volver a free)
+    if (userEmail && ADMINS_PREMIUM.includes(userEmail)) {
+        localStorage.setItem('userPlan', 'premium');
+        localStorage.setItem('userLicense', 'premium');
+        console.log('👑 Acceso Premium forzado para:', userEmail);
+    }
+
+    // 4. Sincronizar licenseManager con el plan real
+    function sincronizarLicense() {
+        const plan = localStorage.getItem('userPlan') || 'free';
+        
+        if (!window.licenseManager) {
+            window.licenseManager = {
+                license: plan,
+                canAccess: function() { return plan === 'premium' || plan === 'professional'; }
+            };
+        } else {
+            window.licenseManager.license = plan;
+        }
+        
+        console.log('🔑 LicenseManager sincronizado →', plan);
+        return plan;
+    }
+
+    // 5. Sobrescribir la función mostrarPanelPremium para que funcione sin depender del canAccess
+    const originalShowBurndown = window.showBurnDownChartPremium;
+    window.showBurnDownChartPremium = function() {
+        const plan = sincronizarLicense();
+        
+        console.log('📉 Intentando abrir Burndown. Plan actual:', plan);
+        
+        // Aceptar professional Y premium
+        if (plan !== 'premium' && plan !== 'professional') {
+            if (typeof showNotification === 'function') {
+                showNotification('🔒 El Burndown Premium requiere el plan Profesional o Premium.');
+            } else {
+                alert('🔒 El Burndown Premium requiere el plan Profesional o Premium.');
+            }
+            return;
+        }
+        
+        // Verificar que el Gantt está abierto
+        const ganttContainer = document.getElementById('premiumExecutiveGantt');
+        if (!ganttContainer) {
+            if (typeof showNotification === 'function') {
+                showNotification('⚠️ Abre primero el Gantt Ejecutivo.');
+            } else {
+                alert('⚠️ Abre primero el Gantt Ejecutivo.');
+            }
+            return;
+        }
+        
+        // Ejecutar el original si existe
+        if (typeof originalShowBurndown === 'function') {
+            return originalShowBurndown.apply(this, arguments);
+        }
+        
+        console.warn('⚠️ Función original de Burndown no encontrada');
+    };
+
+    // 6. Sobrescribir canAccess para que sea más permisivo
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            sincronizarLicense();
+            
+            if (window.licenseManager) {
+                const originalCanAccess = window.licenseManager.canAccess;
+                window.licenseManager.canAccess = function(feature) {
+                    const plan = localStorage.getItem('userPlan') || 'free';
+                    
+                    // Si es premium o professional → acceso total
+                    if (plan === 'premium' || plan === 'professional') {
+                        return true;
+                    }
+                    
+                    // Si no, delegar al original
+                    if (typeof originalCanAccess === 'function') {
+                        return originalCanAccess.call(this, feature);
+                    }
+                    
+                    return false;
+                };
+                console.log('✅ canAccess sobrescrito para permitir premium/professional');
+            }
+        }, 1000);
+    });
+
+    // 7. Escuchar cambios en localStorage por si se cambia el plan
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'userPlan' || e.key === 'userLicense') {
+            sincronizarLicense();
+        }
+    });
+
+    // 8. Exponer función de diagnóstico
+    window.diagnosticoPremium = function() {
+        console.log('=== DIAGNÓSTICO PREMIUM ===');
+        console.log('userPlan:', localStorage.getItem('userPlan'));
+        console.log('userLicense:', localStorage.getItem('userLicense'));
+        console.log('userEmail:', localStorage.getItem('userEmail'));
+        console.log('licenseManager.license:', window.licenseManager?.license);
+        console.log('canAccess(premiumExecutiveGantt):', window.licenseManager?.canAccess('premiumExecutiveGantt'));
+        console.log('Gantt abierto:', !!document.getElementById('premiumExecutiveGantt'));
+        console.log('showBurnDownChartPremium:', typeof window.showBurnDownChartPremium);
+    };
+
+    // 9. Ejecutar sincronización inicial
+    sincronizarLicense();
+
+    console.log('✅ Fix Premium + Burndown aplicado correctamente');
+    console.log('💡 Usa diagnosticoPremium() en consola para verificar');
+})();
+
+
+
+
+// ============================================
 // ✏️ TIEMPO TOTAL EDITABLE
 // ============================================
 (function hacerTiempoTotalEditable() {
