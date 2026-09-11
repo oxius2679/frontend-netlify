@@ -1,4 +1,431 @@
 // ============================================================
+// 🔓 FIX DEFINITIVO: Liberar scroll al salir del Gantt Ejecutivo
+// ============================================================
+(function liberarScrollGanttDefinitivo() {
+    if (window._ganttScrollFix) return;
+    window._ganttScrollFix = true;
+
+    console.log('🔓 [Gantt Fix] Instalando liberador de scroll...');
+
+    // ---------------------------------------------------------
+    // 1) FUNCIÓN MAESTRA DE LIMPIEZA
+    // ---------------------------------------------------------
+    function limpiarGanttYLiberarScroll(volverATablero = true) {
+        console.log('🧹 [Gantt Fix] Limpiando Gantt y liberando scroll...');
+
+        // a) Eliminar el contenedor del Gantt Ejecutivo
+        ['premiumExecutiveGantt', 'basicGanttContainer'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                console.log(`   🗑️ Eliminando #${id}`);
+                el.remove();
+            }
+        });
+
+        // b) Eliminar overlays internos del Gantt
+        document.querySelectorAll(
+            '.executive-overlay, .dependency-overlay, #dashboard-evm-premium, #evmPreviewOverlay, #exportFullOverlay'
+        ).forEach(el => {
+            console.log('   🗑️ Eliminando overlay:', el.id || el.className);
+            el.remove();
+        });
+
+        // c) Limpiar el contenedor principal (por si quedó con overflow:hidden)
+        const mainContainer = document.getElementById('mainAppContainer');
+        if (mainContainer) {
+            mainContainer.innerHTML = '';
+            mainContainer.style.cssText = '';
+            mainContainer.removeAttribute('id'); // evita conflictos futuros
+        }
+
+        // d) Restaurar TODOS los estilos que bloquean scroll
+        document.body.style.overflow = '';
+        document.body.style.overflowY = '';
+        document.body.style.overflowX = '';
+        document.body.style.height = '';
+        document.body.style.maxHeight = '';
+        document.body.style.position = '';
+        document.body.style.paddingRight = '';
+        document.body.classList.remove('modal-open');
+
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.overflowY = '';
+        document.documentElement.style.height = '';
+
+        // e) Restaurar las vistas que el Gantt ocultó
+        document.querySelectorAll('.view-container, #boardView, #listView, #calendarView, #dashboardView, #reportsView, #dashboard4dView, #profitabilityView, #timeAllocationView, #inicioView').forEach(v => {
+            v.style.display = '';
+            v.style.visibility = '';
+        });
+
+        // f) Volver al tablero (Kanban) por defecto
+        if (volverATablero && typeof window.showView === 'function') {
+            try {
+                window.showView('board');
+            } catch (e) {
+                console.warn('⚠️ showView("board") falló:', e);
+            }
+        }
+
+        // g) Forzar un reflow para que el navegador recalcule el scroll
+        void document.body.offsetHeight;
+
+        console.log('✅ [Gantt Fix] Scroll liberado correctamente');
+    }
+
+    // ---------------------------------------------------------
+    // 2) DEFINIR LA FUNCIÓN QUE FALTABA EN TU CÓDIGO
+    // ---------------------------------------------------------
+    window.goBackToDashboard = function() {
+        console.log('⬅️ goBackToDashboard() invocado desde el botón "Volver al Tablero"');
+        limpiarGanttYLiberarScroll(true);
+    };
+
+    // ---------------------------------------------------------
+    // 3) INTERCEPTAR showView PARA LIMPIAR SI SE NAVEGA POR OTRA VÍA
+    // ---------------------------------------------------------
+    function interceptarShowView() {
+        if (typeof window.showView !== 'function' || window._showViewInterceptado) {
+            // Si aún no está lista, reintentar
+            if (!window._showViewInterceptado) {
+                setTimeout(interceptarShowView, 500);
+            }
+            return;
+        }
+
+        const original = window.showView;
+        window.showView = function(viewName, ...args) {
+            // Si el Gantt está abierto y vamos a otra vista → limpiar
+            const ganttAbierto = !!document.getElementById('premiumExecutiveGantt');
+            const targetEsGantt = viewName === 'gantt' || viewName === 'ganttPro';
+
+            if (ganttAbierto && !targetEsGantt) {
+                console.log(`🧹 Cambiando de "${viewName}" → limpiando Gantt antes`);
+                limpiarGanttYLiberarScroll(false); // no cambiar de vista aquí, ya lo hace showView
+            }
+
+            // Si el destino NO es gantt, asegurarse de que el body nunca quede bloqueado
+            if (!targetEsGantt) {
+                document.body.style.overflow = '';
+                document.body.style.overflowY = '';
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.overflowY = '';
+            }
+
+            return original.apply(this, [viewName, ...args]);
+        };
+        window._showViewInterceptado = true;
+        console.log('✅ [Gantt Fix] showView interceptado');
+    }
+    interceptarShowView();
+
+    // ---------------------------------------------------------
+    // 4) LISTENER GLOBAL: SIEMPRE QUE SE CIERRE CON ESC O CLICK FUERA
+    // ---------------------------------------------------------
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('premiumExecutiveGantt')) {
+            // solo si NO hay overlay real dentro (evitar cerrar modales anidados)
+            const overlayInterno = document.querySelector('#premiumExecutiveGantt .executive-overlay');
+            if (!overlayInterno) {
+                console.log('⌨️ ESC detectado con Gantt abierto → cerrando y liberando scroll');
+                limpiarGanttYLiberarScroll(true);
+            }
+        }
+    }, true);
+
+    // ---------------------------------------------------------
+    // 5) MONITOR DE EMERGENCIA CADA 1s
+    //    Si el Gantt ya no está pero el scroll sigue bloqueado → liberar
+    // ---------------------------------------------------------
+    setInterval(() => {
+        const ganttAbierto = !!document.getElementById('premiumExecutiveGantt');
+        const bodyBloqueado = document.body.style.overflow === 'hidden'
+                          || document.documentElement.style.overflow === 'hidden';
+
+        if (!ganttAbierto && bodyBloqueado) {
+            console.warn('🚨 [Gantt Fix] Scroll bloqueado sin Gantt → liberando automáticamente');
+            limpiarGanttYLiberarScroll(false);
+        }
+    }, 1000);
+
+    // ---------------------------------------------------------
+    // 6) COMANDO MANUAL DE EMERGENCIA
+    // ---------------------------------------------------------
+    window.forzarSalidaGantt = function() {
+        console.log('🆘 Forzando salida del Gantt');
+        limpiarGanttYLiberarScroll(true);
+    };
+
+    console.log('✅ [Gantt Fix] Instalado. Comandos:');
+    console.log('   → forzarSalidaGantt()  — Salir del Gantt y recuperar scroll');
+})();
+
+
+
+
+// ============================================================
+// 🎯 PM VIRTUAL v11 - BLOQUEO TOTAL DEL ÍNDICE
+// ============================================================
+(function() {
+    console.log('🎯 [PM v11] Instalando...');
+
+    // 🔑 ÍNDICE FIJO
+    let _pmIdxFijo = null;
+    let _realIndex = 0;
+
+    // Inicializar valor real
+    try {
+        _realIndex = window.__getCPI ? window.__getCPI() : parseInt(localStorage.getItem('currentProjectIndex') || '0', 10);
+        if (isNaN(_realIndex)) _realIndex = 0;
+    } catch(e) {}
+
+    function panelAbierto() {
+        return !!document.getElementById('pmVirtualPanel');
+    }
+
+    // ==========================================================
+    // 🔑 BLOQUEAR window.currentProjectIndex
+    // ==========================================================
+    try { delete window.currentProjectIndex; } catch(e) {}
+
+    Object.defineProperty(window, 'currentProjectIndex', {
+        get: function() {
+            if (panelAbierto() && _pmIdxFijo !== null) {
+                return _pmIdxFijo;
+            }
+            return _realIndex;
+        },
+        set: function(v) {
+            if (panelAbierto() && _pmIdxFijo !== null) {
+                // 🔒 BLOQUEAR mientras panel abierto
+                return;
+            }
+            _realIndex = v;
+            try { if (window.__setCPI) window.__setCPI(v); } catch(e) {}
+        },
+        configurable: true
+    });
+
+    // ==========================================================
+    // 🔑 BLOQUEAR localStorage.getItem('currentProjectIndex')
+    // ==========================================================
+    const _origGetItem = localStorage.getItem.bind(localStorage);
+    const _origSetItem = localStorage.setItem.bind(localStorage);
+
+    localStorage.getItem = function(key) {
+        if (key === 'currentProjectIndex' && panelAbierto() && _pmIdxFijo !== null) {
+            return String(_pmIdxFijo);
+        }
+        return _origGetItem(key);
+    };
+
+    localStorage.setItem = function(key, value) {
+        if (key === 'currentProjectIndex' && panelAbierto() && _pmIdxFijo !== null) {
+            // 🔒 Ignorar intentos de cambiar el índice con panel abierto
+            return;
+        }
+        return _origSetItem(key, value);
+    };
+
+    // ==========================================================
+    // 🔑 BLOQUEAR window.projects
+    // ==========================================================
+    let _projectsValue = window.projects;
+
+    try { delete window.projects; } catch(e) {}
+
+    Object.defineProperty(window, 'projects', {
+        get: function() {
+            return _projectsValue;
+        },
+        set: function(v) {
+            if (panelAbierto()) {
+                return; // 🔒
+            }
+            _projectsValue = v;
+        },
+        configurable: true
+    });
+
+    // ==========================================================
+    // TOAST + VENTANAS SIN BLOQUEO
+    // ==========================================================
+    window.alertNoBloqueante = function(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;top:30px;right:30px;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:18px 24px;border-radius:16px;box-shadow:0 15px 40px rgba(16,185,129,0.4);z-index:99999999;font-family:system-ui;font-size:14px;font-weight:600;max-width:400px;display:flex;align-items:center;gap:12px;';
+        t.innerHTML = '<span style="font-size:24px;">✅</span><div>' + String(msg).replace(/\n/g, '<br>') + '</div>';
+        document.body.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 4000);
+    };
+
+    window.abrirVentanaDocumento = function(html, nombre) {
+        const w = window.open('', '_blank', 'width=' + Math.min(1200, screen.width * 0.9) + ',height=' + Math.min(900, screen.height * 0.9) + ',menubar=no,toolbar=no,resizable=yes,scrollbars=yes');
+        if (!w) { window.alertNoBloqueante('⚠️ Permite ventanas emergentes'); return null; }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        setTimeout(() => { try { w.focus(); w.document.title = nombre || 'Documento'; } catch(e) {} }, 100);
+        return w;
+    };
+
+    const _alertOrig = window.alert;
+    window.alert = function(msg) {
+        if (typeof msg === 'string') {
+            const l = msg.toLowerCase();
+            if (['wbs','kickoff','acta','informe','reporte','documento','generad','business','charter','raci','evm','lecciones','checklist'].some(w => l.includes(w))) {
+                window.alertNoBloqueante(msg);
+                return;
+            }
+        }
+        return _alertOrig.call(window, msg);
+    };
+
+    // ==========================================================
+    // INYECTAR SELECTOR
+    // ==========================================================
+    function inyectar() {
+        const panel = document.getElementById('pmVirtualPanel');
+        if (!panel) return;
+        if (document.getElementById('pmVirtualProjectSelector')) return;
+
+        const firstBtn = panel.querySelector('.pm-tab-btn');
+        if (!firstBtn) return;
+
+        const tabsContainer = firstBtn.parentNode;
+        const header = tabsContainer.parentNode;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:4px 12px;margin-right:15px;';
+        wrapper.innerHTML = '<span style="font-size:16px;">📁</span><span style="color:#94a3b8;font-size:12px;font-weight:500;">Proyecto:</span>';
+
+        const sel = document.createElement('select');
+        sel.id = 'pmVirtualProjectSelector';
+        sel.style.cssText = 'background:#0f172a;border:1px solid #3b82f6;color:white;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;outline:none;min-width:200px;';
+
+        const ps = _projectsValue || [];
+        const idxInicial = _pmIdxFijo !== null ? _pmIdxFijo : _realIndex;
+        ps.forEach((p, i) => {
+            const o = document.createElement('option');
+            o.value = i;
+            o.textContent = p.name;
+            if (i === idxInicial) o.selected = true;
+            sel.appendChild(o);
+        });
+
+        // 🔑 LISTENER
+        sel.onchange = function() {
+            const newIdx = parseInt(this.value, 10);
+            console.log('🔀 [PM v11] → Índice:', newIdx, '|', ps[newIdx]?.name);
+
+            // 🔑 FIJAR EL ÍNDICE (queda bloqueado)
+            _pmIdxFijo = newIdx;
+            _realIndex = newIdx;
+
+            // Guardar en backend
+            setTimeout(() => {
+                if (typeof safeSave === 'function') { try { safeSave(); } catch(e) {} }
+            }, 50);
+
+            // Re-renderizar panel
+            setTimeout(() => {
+                const contentDiv = document.getElementById('pmContent');
+                if (!contentDiv) return;
+
+                let tabActivo = '📊 Dashboard';
+                document.querySelectorAll('.pm-tab-btn').forEach(b => {
+                    const c = b.style.color || '';
+                    if (c.includes('59, 130, 246') || c.includes('rgb(59')) {
+                        tabActivo = b.textContent.trim();
+                    }
+                });
+
+                const TABS = {
+                    '📊 Dashboard': 'renderPmVirtualStats', '📄 Documentos': 'renderDocumentos',
+                    '⚙️ Control': 'renderControl', '🗓️ Reuniones': 'renderReuniones',
+                    '📅 Gantt': 'renderGantt', '👥 Recursos': 'renderAsignacionRecursos',
+                    '💰 Costos': 'renderLineaBaseCostos', '🔄 Cambios': 'renderGestionCambios',
+                    '🎯 Hitos': 'renderSeguimientoHitos', '📧 Reportes': 'renderReportesAutomaticos',
+                    '📊 Desempeño': 'renderEvaluacionDesempeno', '🧠 Habilidades': 'renderMatrizHabilidades',
+                    '🏆 Reconocimientos': 'renderReconocimientos', '⚠️ MatrizRiesgos': 'renderMatrizRiesgos',
+                    '🛡️ AccionesPrev': 'renderAccionesPreventivas', '📊 Calidad': 'renderIndicadoresCalidad',
+                    '📝 Encuestas': 'renderEncuestas', '🌐 Portal': 'renderPortalProyecto',
+                    '✅ Checklist': 'renderChecklistCierre', '📁 Archivo': 'renderArchivoDocumentos',
+                    '🔄 Transferencia': 'renderTransferencia', '📊 Scrum': 'renderScrum'
+                };
+
+                const fn = TABS[tabActivo];
+                if (fn && typeof window[fn] === 'function') {
+                    contentDiv.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;">⏳ Cargando...</div>';
+                    setTimeout(() => {
+                        try {
+                            contentDiv.innerHTML = '';
+                            window[fn](contentDiv);
+                            console.log('✅ [PM v11] Recargado:', tabActivo);
+                        } catch(e) {
+                            contentDiv.innerHTML = '<div style="padding:40px;color:#ef4444;">❌ ' + e.message + '</div>';
+                        }
+                    }, 20);
+                }
+            }, 100);
+
+            if (typeof showNotification === 'function') showNotification('📁 ' + ps[newIdx]?.name);
+        };
+
+        wrapper.appendChild(sel);
+        header.insertBefore(wrapper, tabsContainer);
+        console.log('✅ [PM v11] Selector inyectado');
+    }
+
+    // ==========================================================
+    // AUTO-CONFIGURAR al abrir
+    // ==========================================================
+    let panelEstaba = false;
+    setInterval(() => {
+        const abierto = panelAbierto();
+        
+        if (abierto && !panelEstaba) {
+            console.log('📂 [PM v11] Panel ABIERTO — fijando índice');
+            
+            // Si no hay índice fijo, usar el actual
+            if (_pmIdxFijo === null) {
+                _pmIdxFijo = _realIndex;
+            }
+            
+            // 🔑 Sincronizar _projectsValue desde la variable local
+            try {
+                const localProj = eval('typeof projects !== "undefined" ? projects : null');
+                if (localProj && Array.isArray(localProj)) {
+                    _projectsValue = localProj;
+                }
+            } catch(e) {}
+            
+            inyectar();
+        }
+        
+        if (!abierto && panelEstaba) {
+            console.log('📁 [PM v11] Panel CERRADO — liberando índice');
+            _pmIdxFijo = null;
+        }
+        
+        if (abierto) {
+            inyectar();
+            // Asegurar que _projectsValue apunte al array correcto
+            try {
+                const localProj = eval('typeof projects !== "undefined" ? projects : null');
+                if (localProj && Array.isArray(localProj) && _projectsValue !== localProj) {
+                    _projectsValue = localProj;
+                }
+            } catch(e) {}
+        }
+        panelEstaba = abierto;
+    }, 300);
+
+    console.log('✅ [PM v11] Listo — índice BLOQUEADO + localStorage BLOQUEADO');
+})();
+
+
+
+// ============================================================
 // 🛡️ INTERCEPTOR GLOBAL - DEBE IR AL INICIO DEL script.js
 // ============================================================
 // Bloquea listeners globales de 'change' que reaccionan a 
@@ -10727,7 +11154,7 @@ alert('✅ Plan de Proyecto con Gantt generado exitosamente.\n\n📋 Código: ' 
 
 
 
-// WBS Ejecutiva - VERSIÓN ESPECTACULAR PARA ALTA DIRECCIÓN
+// WBS Ejecutiva - VERSIÓN CON SUBTAREAS (Nivel 4)
 function generarWBS() {
 const proyecto = obtenerProyectoActual();
 if (!proyecto) { alert('No hay proyecto seleccionado'); return; }
@@ -10740,27 +11167,39 @@ const pendientes = tasks.filter(t => t.status === 'pending').length;
 const atrasadas = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
 const horasTotales = tasks.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0);
 
-// ✅ Agrupar tareas por fase/categoría para jerarquía visual
+// ✅ NUEVO: Contar subtareas totales
+const totalSubtareas = tasks.reduce((s, t) => s + (t.subtasks ? t.subtasks.length : 0), 0);
+const subtareasCompletadas = tasks.reduce((s, t) => {
+    return s + (t.subtasks ? t.subtasks.filter(st => st.completed).length : 0);
+}, 0);
+
+// ✅ Agrupar tareas por fase
 const fases = [...new Set(tasks.map(t => t.fase || 'General').filter(Boolean))];
 
-// ✅ Calcular métricas por fase
+// ✅ Calcular métricas por fase (incluyendo subtareas)
 const metricsPorFase = fases.map(fase => {
-const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
-return {
-fase,
-total: tareasFase.length,
-completadas: tareasFase.filter(t => t.status === 'completed').length,
-horas: tareasFase.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0)
-};
+    const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
+    const subtareasFase = tareasFase.reduce((s, t) => s + (t.subtasks ? t.subtasks.length : 0), 0);
+    const subtareasCompFase = tareasFase.reduce((s, t) => {
+        return s + (t.subtasks ? t.subtasks.filter(st => st.completed).length : 0);
+    }, 0);
+    return {
+        fase,
+        total: tareasFase.length,
+        completadas: tareasFase.filter(t => t.status === 'completed').length,
+        horas: tareasFase.reduce((s,t) => s + (Number(t.estimatedTime)||0), 0),
+        subtareas: subtareasFase,
+        subtareasCompletadas: subtareasCompFase
+    };
 });
 
-// ✅ Generar código único para trazabilidad
+// ✅ Generar código único
 const codigoWBS = 'WBS-' + Date.now().toString().slice(-6);
 const fechaEmision = new Date().toLocaleDateString('es-ES', { year:'numeric', month:'long', day:'numeric' });
 
 // ✅ Contenido HTML ejecutivo espectacular
 const contenido = `
-<!-- Header Ejecutivo con Gradiente (ULTRA COMPACTO) -->
+<!-- Header Ejecutivo -->
 <div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:white; padding:18px 25px; border-radius:10px 10px 0 0; position:relative; overflow:hidden;">
 <div style="position:absolute; top:-20px; right:-20px; width:60px; height:60px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
 <div style="position:absolute; bottom:-15px; left:-15px; width:50px; height:50px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
@@ -10781,6 +11220,7 @@ const contenido = `
 </div>
 </div>
 </div>
+
 <!-- Barra de Progreso del Proyecto -->
 <div style="background:#f8fafc; padding:25px 40px; border-bottom:3px solid #3b82f6;">
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -10791,11 +11231,15 @@ const contenido = `
 <div style="background:linear-gradient(90deg,#10b981,#3b82f6); height:100%; width:${Math.round(completadas/totalTasks*100) || 0}%; border-radius:6px; transition:width 0.5s ease;"></div>
 </div>
 
-
-<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:15px; margin-top:20px; text-align:center;">
+<!-- ✅ NUEVO: KPIs incluyen Subtareas -->
+<div style="display:grid; grid-template-columns:repeat(6,1fr); gap:15px; margin-top:20px; text-align:center;">
 <div style="background:#dbeafe; padding:15px; border-radius:10px;">
 <div style="font-size:24px; font-weight:bold; color:#1e40af;">${totalTasks}</div>
 <div style="font-size:11px; color:#64748b;">Total Tareas</div>
+</div>
+<div style="background:#ede9fe; padding:15px; border-radius:10px;">
+<div style="font-size:24px; font-weight:bold; color:#6d28d9;">${totalSubtareas}</div>
+<div style="font-size:11px; color:#64748b;">📋 Subtareas</div>
 </div>
 <div style="background:#86efac; padding:15px; border-radius:10px;">
 <div style="font-size:24px; font-weight:bold; color:#14532d;">${completadas}</div>
@@ -10816,14 +11260,14 @@ const contenido = `
 </div>
 </div>
 
-<!-- Cuerpo Principal con Jerarquía Visual -->
+<!-- Cuerpo Principal -->
 <div style="padding:40px;">
 
 <!-- Resumen Ejecutivo -->
 <h2 style="color:#1e3a8a; border-left:6px solid #3b82f6; padding-left:20px; margin:0 0 25px 0; font-size:20px; font-weight:600;">📋 Resumen Ejecutivo</h2>
 <p style="line-height:1.9; color:#374151; text-align:justify; font-size:14px; margin-bottom:35px;">
 La presente Estructura de Desglose del Trabajo (WBS) define de manera jerárquica y exhaustiva todos los entregables, 
-actividades y componentes necesarios para la ejecución exitosa del proyecto <strong>${proyecto.name}</strong>. 
+actividades, componentes y subtareas necesarios para la ejecución exitosa del proyecto <strong>${proyecto.name}</strong>. 
 Este documento sirve como base fundamental para la planificación, asignación de recursos, estimación de costos 
 y seguimiento del avance. Cada elemento ha sido identificado, codificado y asignado para garantizar trazabilidad 
 completa y responsabilidad clara en toda la organización.
@@ -10839,10 +11283,14 @@ ${metricsPorFase.map(m => `
 <h3 style="margin:0; color:#1e3a8a; font-size:16px; font-weight:600;">${m.fase}</h3>
 <span style="background:${m.completadas===m.total?'#10b981':'#3b82f6'}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${Math.round(m.completadas/m.total*100) || 0}%</span>
 </div>
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;">
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
 <div style="background:white; padding:12px; border-radius:8px;">
 <div style="font-size:20px; font-weight:bold; color:#1e40af;">${m.total}</div>
 <div style="font-size:10px; color:#64748b;">Tareas</div>
+</div>
+<div style="background:white; padding:12px; border-radius:8px;">
+<div style="font-size:20px; font-weight:bold; color:#6d28d9;">${m.subtareas}</div>
+<div style="font-size:10px; color:#64748b;">Subtareas</div>
 </div>
 <div style="background:white; padding:12px; border-radius:8px;">
 <div style="font-size:20px; font-weight:bold; color:#166534;">${m.horas}h</div>
@@ -10878,13 +11326,13 @@ ${metricsPorFase.map(m => `
 <!-- Nivel 2: Fases -->
 <div style="margin-left:30px; border-left:3px dashed #cbd5e1; padding-left:25px;">
 ${fases.map((fase, idx) => {
-const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
-const completadasFase = tareasFase.filter(t => t.status === 'completed').length;
-return `
+    const tareasFase = tasks.filter(t => (t.fase || 'General') === fase);
+    const completadasFase = tareasFase.filter(t => t.status === 'completed').length;
+    return `
 <div style="margin-bottom:25px;">
 <div style="background:linear-gradient(135deg,#475569,#64748b); color:white; padding:15px 20px; border-radius:10px; margin-bottom:15px; box-shadow:0 3px 12px rgba(0,0,0,0.15);">
 <div style="display:flex; align-items:center; gap:12px;">
-<div style="background:white; color:#475569; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; flex-shrink:0;">${idx+1}.${idx+1}</div>
+<div style="background:white; color:#475569; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; flex-shrink:0;">${idx+1}</div>
 <div style="flex:1;">
 <div style="font-size:15px; font-weight:600;">${fase}</div>
 <div style="font-size:11px; opacity:0.9; margin-top:3px;">Nivel 2 • Fase • ${tareasFase.length} actividades</div>
@@ -10896,28 +11344,65 @@ return `
 </div>
 </div>
 
-<!-- Nivel 3: Tareas -->
+<!-- Nivel 3: Tareas + Nivel 4: Subtareas -->
 <div style="margin-left:25px; border-left:2px solid #e2e8f0; padding-left:20px;">
 ${tareasFase.map((t, tIdx) => {
-// ✅ NUEVOS COLORES DE STATUS ACTUALIZADOS
-const statusColor = t.status === 'completed' ? '#86efac' : (t.status === 'inProgress' ? '#2dd4bf' : (t.status === 'pending' ? '#fde047' : '#ef4444'));
-const statusIcon = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : (t.status === 'pending' ? '⏳' : '🔴'));
-const priorityColor = t.priority === 'high' ? '#ef4444' : (t.priority === 'medium' ? '#f59e0b' : '#22c55e');
+    const statusColor = t.status === 'completed' ? '#86efac' : (t.status === 'inProgress' ? '#2dd4bf' : (t.status === 'pending' ? '#fde047' : '#ef4444'));
+    const statusIcon = t.status === 'completed' ? '✅' : (t.status === 'inProgress' ? '🔄' : (t.status === 'pending' ? '⏳' : '🔴'));
+    const priorityColor = t.priority === 'high' ? '#ef4444' : (t.priority === 'medium' ? '#f59e0b' : '#22c55e');
+    const estaAtrasada = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+    const displayColor = estaAtrasada ? '#ef4444' : statusColor;
+    const displayIcon = estaAtrasada ? '🔴' : statusIcon;
+    
+    // ✅ NUEVO: Procesar subtareas
+    const subtasks = t.subtasks || [];
+    const subtasksCompleted = subtasks.filter(st => st.completed).length;
+    const subtasksTotal = subtasks.length;
+    const subtasksProgress = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
+    
+    // ✅ NUEVO: Subtareas HTML (Nivel 4)
+    const subtasksHTML = subtasksTotal > 0 ? `
+<div style="margin-top:15px; margin-left:20px; padding-left:20px; border-left:3px solid #c4b5fd; background:rgba(139,92,246,0.03); padding:15px 20px; border-radius:0 8px 8px 0;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+<div style="display:flex; align-items:center; gap:8px;">
+<span style="background:#8b5cf6; color:white; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:bold;">📋 NIVEL 4</span>
+<span style="font-size:12px; color:#6d28d9; font-weight:600;">Subtareas (${subtasksCompleted}/${subtasksTotal})</span>
+</div>
+<div style="display:flex; align-items:center; gap:8px;">
+<div style="background:#e2e8f0; height:6px; width:80px; border-radius:3px; overflow:hidden;">
+<div style="background:linear-gradient(90deg,#8b5cf6,#ec4899); height:100%; width:${subtasksProgress}%; border-radius:3px;"></div>
+</div>
+<span style="font-size:11px; color:#8b5cf6; font-weight:bold;">${subtasksProgress}%</span>
+</div>
+</div>
+${subtasks.map((st, stIdx) => `
+<div style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; background:white; border-radius:8px; border-left:3px solid ${st.completed ? '#10b981' : '#f59e0b'}; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+<div style="background:${st.completed ? '#10b981' : '#f59e0b'}; color:white; width:22px; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; flex-shrink:0;">${idx+1}.${tIdx+1}.${stIdx+1}</div>
+<span style="font-size:14px; color:${st.completed ? '#64748b' : '#1e293b'}; ${st.completed ? 'text-decoration:line-through;' : ''}flex:1; font-weight:500;">
+    ${st.completed ? '✅' : '⏳'} ${st.name || 'Subtarea sin nombre'}
+</span>
+<span style="background:${st.completed ? '#dcfce7' : '#fef3c7'}; color:${st.completed ? '#166534' : '#92400e'}; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:600;">
+    ${st.completed ? 'Completada' : 'Pendiente'}
+</span>
+</div>
+`).join('')}
+</div>
+` : `
+<div style="margin-top:10px; margin-left:20px; padding:8px 15px; background:rgba(148,163,184,0.05); border-radius:8px; font-size:11px; color:#94a3b8; font-style:italic;">
+    📋 Sin subtareas definidas
+</div>
+`;
 
-// ✅ VERIFICAR SI ESTÁ ATRASADA (REZAGADA)
-const estaAtrasada = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-const displayColor = estaAtrasada ? '#ef4444' : statusColor;
-const displayIcon = estaAtrasada ? '🔴' : statusIcon;
-
-return `
-<div style="background:white; padding:15px 20px; border-radius:10px; margin-bottom:12px; border-left:4px solid ${displayColor}; box-shadow:0 2px 8px rgba(0,0,0,0.06); transition:transform 0.2s;">
+    return `
+<div style="background:white; padding:15px 20px; border-radius:10px; margin-bottom:12px; border-left:4px solid ${displayColor}; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 <div style="display:flex; align-items:start; gap:12px;">
-<div style="background:${displayColor}; color:white; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}.${idx+1}.${tIdx+1}</div>
+<div style="background:${displayColor}; color:white; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}.${tIdx+1}</div>
 <div style="flex:1; min-width:0;">
-<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
 <span style="font-size:14px; font-weight:600; color:#1e293b;">${t.name}</span>
 <span style="background:${priorityColor}; color:white; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">${t.priority || 'Media'}</span>
 <span style="background:${displayColor}; color:white; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">${displayIcon}</span>
+${subtasksTotal > 0 ? `<span style="background:#8b5cf6; color:white; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:bold;">📋 ${subtasksCompleted}/${subtasksTotal} subtareas</span>` : ''}
 </div>
 <p style="margin:0 0 10px 0; color:#64748b; font-size:13px; line-height:1.5;">${t.description || 'Sin descripción'}</p>
 <div style="display:flex; flex-wrap:wrap; gap:15px; font-size:12px;">
@@ -10929,6 +11414,8 @@ ${estaAtrasada ? `<span style="color:#ef4444; font-weight:bold;"><strong>⚠️ 
 </div>
 </div>
 </div>
+<!-- ✅ SUBTAREAS (NIVEL 4) -->
+${subtasksHTML}
 </div>
 `;
 }).join('')}
@@ -10944,14 +11431,11 @@ ${estaAtrasada ? `<span style="color:#ef4444; font-weight:bold;"><strong>⚠️ 
 <div style="background:#f8fafc; padding:20px; border-radius:12px;">
 <h4 style="margin:0 0 15px 0; color:#1e3a8a; font-size:14px; font-weight:600;">Estados de Tarea</h4>
 <div style="display:flex; flex-wrap:wrap; gap:12px;">
-<!-- ✅ VERDE CLARO para Completadas -->
 <span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#86efac; border-radius:4px;"></span> ✅ Completada</span>
-<!-- ✅ VERDE AZULADO para En Progreso -->
 <span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#2dd4bf; border-radius:4px;"></span> 🔄 En Progreso</span>
-<!-- ✅ AMARILLO para Pendientes -->
 <span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#fde047; border-radius:4px;"></span> ⏳ Pendiente</span>
-<!-- ✅ ROJO para Atrasadas/Rezagadas -->
 <span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#ef4444; border-radius:4px;"></span> 🔴 Atrasada</span>
+<span style="display:flex; align-items:center; gap:8px; font-size:13px;"><span style="width:16px; height:16px; background:#8b5cf6; border-radius:4px;"></span> 📋 Subtarea</span>
 </div>
 </div><div style="background:#f8fafc; padding:20px; border-radius:12px;">
 <h4 style="margin:0 0 15px 0; color:#1e3a8a; font-size:14px; font-weight:600;">Niveles de Prioridad</h4>
@@ -10970,18 +11454,20 @@ ${estaAtrasada ? `<span style="color:#ef4444; font-weight:bold;"><strong>⚠️ 
 <tr style="background:#e2e8f0; color:#000000;">
 <th style="padding:15px; text-align:left; border:1px solid #3b82f6; font-weight:600;">Fase</th>
 <th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Tareas</th>
-<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Horas Estimadas</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Subtareas</th>
+<th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Horas Est.</th>
 <th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Responsables</th>
 <th style="padding:15px; text-align:center; border:1px solid #3b82f6; font-weight:600;">Avance</th>
 </tr>
 </thead>
 <tbody>
 ${metricsPorFase.map(m => {
-const responsables = [...new Set(tasks.filter(t => (t.fase||'General')===m.fase && t.assignee).map(t => t.assignee))].join(', ') || 'No asignado';
-return `
+    const responsables = [...new Set(tasks.filter(t => (t.fase||'General')===m.fase && t.assignee).map(t => t.assignee))].join(', ') || 'No asignado';
+    return `
 <tr style="background:#f8fafc;">
 <td style="padding:15px; border:1px solid #e2e8f0; font-weight:500; color:#1e293b;">${m.fase}</td>
 <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#3b82f6;">${m.total}</td>
+<td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#8b5cf6;">${m.subtareas} <span style="font-size:10px; color:#94a3b8;">(${m.subtareasCompletadas}✓)</span></td>
 <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-weight:bold; color:#166534;">${m.horas}h</td>
 <td style="padding:15px; border:1px solid #e2e8f0; text-align:center; font-size:13px; color:#64748b;">${responsables}</td>
 <td style="padding:15px; border:1px solid #e2e8f0; text-align:center;">
@@ -11023,12 +11509,11 @@ abrirVentanaDocumento(html, `WBS_Ejecutiva_${proyecto.name.replace(/\s+/g, '_')}
 
 // Guardar en historial
 let wbsGeneradas = JSON.parse(localStorage.getItem('wbsGeneradas') || '[]');
-wbsGeneradas.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoWBS, totalTareas: totalTasks });
+wbsGeneradas.push({ proyecto: proyecto.name, fecha: new Date().toISOString(), codigo: codigoWBS, totalTareas: totalTasks, totalSubtareas: totalSubtareas });
 localStorage.setItem('wbsGeneradas', JSON.stringify(wbsGeneradas));
 
 alert('✅ WBS Ejecutiva generada exitosamente.\n\n📋 Código: ' + codigoWBS + '\n📄 Documento listo para presentación ejecutiva');
 }
-
 
 
 
