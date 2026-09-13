@@ -924,7 +924,7 @@
                 <h3 class="vip-blue-card-title">Detalle de Tareas</h3>
                 <table class="vip-blue-table">
                   <thead>
-                    <tr><th>Tarea</th><th style="width:34%">Progreso</th><th>Estado</th><th style="text-align:right;">Horas</th></tr>
+                    <tr><th>Tarea</th><th style="width:34%">Progreso</th><th>Estado</th><th style="text-align:right;">Reg. / Est.</th></tr>
                   </thead>
                   <tbody>
                     ${tasks.slice(0,8).map(t => {
@@ -943,7 +943,10 @@
                             </div>
                           </td>
                           <td style="color:${c};font-weight:700;">${st}</td>
-                          <td style="font-variant-numeric:tabular-nums;">${(t.estimatedHours||0)}h</td>
+                          <td style="font-variant-numeric:tabular-nums;">
+                            <span style="color:#34d399;font-weight:800;">${(t.timeLogged||0)}h</span>
+                            <span style="color:#7ea7d6;"> / ${(t.estimatedTime||0)}h</span>
+                          </td>
                         </tr>`;
                     }).join('')}
                   </tbody>
