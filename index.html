@@ -34290,7 +34290,29 @@ console.log('📌 MutationObserver como respaldo');
   console.log('✅ Permitido solo para: premium');
 })();
 </script>
+<script>
+// 🔄 SYNC AUTOMÁTICO: window.projects → localStorage
+// Evita que localStorage quede desfasado cuando el backend actualiza
+(function autoSyncProjectsToLocalStorage() {
+  let lastSynced = null;
 
+  setInterval(() => {
+    if (!window.projects || !Array.isArray(window.projects)) return;
+
+    const newJson = JSON.stringify(window.projects);
+    if (newJson === lastSynced) return; // sin cambios
+
+    const current = localStorage.getItem('projects');
+    if (current !== newJson) {
+      localStorage.setItem('projects', newJson);
+      lastSynced = newJson;
+      console.log(`🔄 [AUTO-SYNC] localStorage actualizado: ${window.projects.length} proyectos`);
+    } else {
+      lastSynced = newJson;
+    }
+  }, 2000);
+})();
+</script>
 </body>
 </html>
  
