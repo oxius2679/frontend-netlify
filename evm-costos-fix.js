@@ -383,24 +383,19 @@
 
 /* ═══════════════════════════════════════════════════════════
    PRINT FIX — Reporte con VALORES REALES (texto plano legible)
-   Evita: overlay fijo repetido, valores en €0, barras en 0px,
-          texto claro sobre fondo claro, sombras/gradientes raros
    ═══════════════════════════════════════════════════════════ */
 @media print {
     @page { size: A4; margin: 10mm; }
 
-    /* 0) Color exacto en TODO el documento al imprimir */
     html, body, .vip-blue-overlay, .vip-blue-overlay * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
-    /* 1) Ocultar TODO excepto el overlay cuando se imprime */
     body.vip-blue-printing > *:not(.vip-blue-overlay) {
         display: none !important;
     }
 
-    /* 2) Overlay a flujo normal (no fixed, sin animaciones) */
     .vip-blue-overlay {
         position: static !important;
         inset: auto !important;
@@ -418,7 +413,6 @@
     }
     .vip-blue-overlay::before { display: none !important; }
 
-    /* 3) Shell sin decoraciones */
     .vip-blue-shell {
         max-width: 100% !important;
         width: 100% !important;
@@ -433,7 +427,6 @@
     }
     .vip-blue-shell::before { display: none !important; }
 
-    /* 4) Header con color corporativo pero texto legible */
     .vip-blue-header {
         background: linear-gradient(135deg, #1e3a8a, #1e40af) !important;
         border-bottom: 2px solid #2563eb !important;
@@ -458,7 +451,6 @@
 
     .vip-blue-body { padding: 18px 22px !important; }
 
-    /* 5) Cards planas, con borde sutil, sin pseudo-decoraciones */
     .vip-blue-card,
     .vip-blue-status-card,
     .vip-blue-kpi,
@@ -483,7 +475,6 @@
     .vip-blue-card-title { color: #1e293b !important; }
     .vip-blue-card-title::before { background: #2563eb !important; box-shadow: none !important; }
 
-    /* 6) TODOS los valores numéricos → texto oscuro sobre fondo claro */
     .vip-blue-kpi-value,
     .vip-blue-status-value,
     .vip-blue-forecast-value,
@@ -507,7 +498,6 @@
         box-shadow: none !important;
     }
 
-    /* 7) Análisis ejecutivo */
     .vip-blue-analysis {
         background: #eff6ff !important;
         border-left: 4px solid #2563eb !important;
@@ -519,7 +509,6 @@
     }
     .vip-blue-analysis-text { color: #0f172a !important; }
 
-    /* 8) Detalle / análisis detallado */
     .vip-blue-detail-item {
         background: #f1f5f9 !important;
         color: #1e293b !important;
@@ -528,7 +517,6 @@
     }
     .vip-blue-detail-item strong { color: #1e40af !important; }
 
-    /* 9) Recomendaciones */
     .vip-blue-rec-item { color: #1e293b !important; }
     .vip-blue-rec-icon {
         background: #dbeafe !important;
@@ -537,7 +525,6 @@
         box-shadow: none !important;
     }
 
-    /* 10) Tabla de tareas legible */
     .vip-blue-table { border-spacing: 0 2px !important; }
     .vip-blue-table th {
         color: #1e40af !important;
@@ -555,7 +542,6 @@
         border-left: 3px solid #2563eb !important;
     }
 
-    /* 11) Barras 3D — aplanar pero mantener altura real */
     .vip-blue-bars-wrap { height: auto !important; padding: 10px !important; gap: 14px !important; }
     .vip-blue-bar {
         box-shadow: none !important;
@@ -568,13 +554,10 @@
     .vip-blue-bar::after { display: none !important; }
     .vip-blue-bar-label { color: #1e40af !important; text-shadow: none !important; }
 
-    /* 12) Footer */
     .vip-blue-footer { color: #64748b !important; border-top: 1px solid #cbd5e1 !important; }
 
-    /* 13) Ocultar botones */
     .vip-blue-btn { display: none !important; }
 
-    /* 14) Evitar cortes feos dentro de bloques grandes */
     .vip-blue-card,
     .vip-blue-status,
     .vip-blue-kpi-grid,
@@ -668,21 +651,16 @@
     }
 
     // ========== HELPER: finalizar animaciones antes de imprimir ==========
-    // Fuerza contadores KPI y barras 3D a su valor FINAL para que el
-    // reporte impreso muestre los CÁLCULOS REALES y no valores iniciales.
     function vipBlueFinalizeForPrint() {
-        // 1) Contadores KPI (BAC, PV, EV, AC) → valor numérico final formateado
         document.querySelectorAll('.vip-blue-overlay [data-count]').forEach(el => {
             const target = parseFloat(el.dataset.count) || 0;
             el.textContent = fmtMoney(target);
         });
 
-        // 2) Barras 3D → altura final (evita barras en 0px)
         document.querySelectorAll('.vip-blue-overlay .vip-blue-bar').forEach(bar => {
             if (bar.dataset.h) bar.style.height = bar.dataset.h + 'px';
         });
 
-        // 3) Redibujar cualquier Chart.js pendiente (doughnut)
         try {
             if (typeof Chart !== 'undefined' && Chart.instances) {
                 Object.values(Chart.instances).forEach(ch => {
@@ -697,27 +675,19 @@
         const overlay = document.querySelector('.vip-blue-overlay');
         if (!overlay) { window.print(); return; }
 
-        // 🔑 CLAVE: asegurar que TODOS los valores reales estén pintados
         vipBlueFinalizeForPrint();
 
-        // Guardar posición original (por si estaba dentro del Gantt)
         const originalParent = overlay.parentNode;
         const originalNext = overlay.nextSibling;
 
-        // Mover a body para que `body > *:not(.vip-blue-overlay)` funcione
         document.body.appendChild(overlay);
-
-        // Activar flag de impresión
         document.body.classList.add('vip-blue-printing');
 
-        // Pequeño delay para que el navegador recalcule layout
         setTimeout(() => {
-            // Reforzar por si algo se reinició al mover el nodo
             vipBlueFinalizeForPrint();
 
             window.print();
 
-            // Restaurar tras cerrar el diálogo
             const cleanup = () => {
                 document.body.classList.remove('vip-blue-printing');
                 if (originalParent && originalParent !== document.body) {
@@ -730,7 +700,6 @@
                 window.removeEventListener('afterprint', cleanup);
             };
             window.addEventListener('afterprint', cleanup);
-            // Fallback por si afterprint no dispara (Safari viejo)
             setTimeout(cleanup, 2000);
         }, 120);
     }
@@ -748,7 +717,6 @@
 
         const ganttContainer = document.getElementById('premiumExecutiveGantt');
         if (!ganttContainer) {
-            // Fallback: overlay fijo aunque no exista el Gantt
             console.warn('⚠️ Gantt no encontrado, usando overlay fijo');
         }
 
@@ -927,10 +895,29 @@
                     <tr><th>Tarea</th><th style="width:34%">Progreso</th><th>Estado</th><th style="text-align:right;">Reg. / Est.</th></tr>
                   </thead>
                   <tbody>
-                    ${tasks.slice(0,8).map(t => {
+                    ${tasks.slice(0,20).map(t => {
                       const prog = Math.max(0, Math.min(100, t.progress || 0));
-                      const c = prog >= 100 ? '#34d399' : prog > 0 ? '#f59e0b' : '#93c5fd';
-                      const st = prog >= 100 ? 'Completada' : prog > 0 ? 'En curso' : 'Pendiente';
+                      const hoy = new Date(); hoy.setHours(0,0,0,0);
+                      const deadlineDate = t.deadline ? new Date(t.deadline) : (t.originalTask?.deadline ? new Date(t.originalTask.deadline) : null);
+                      const vencida = deadlineDate && !isNaN(deadlineDate) && deadlineDate < hoy && prog < 100;
+
+                      const statusRaw = String(t.status || t.originalTask?.status || '').trim().toLowerCase();
+
+                      let c, st;
+                      if (statusRaw === 'completed' || statusRaw === 'complete' || statusRaw === 'done' || prog >= 100) {
+                          c = '#86efac'; st = 'Completada';        // ✅ verde claro
+                      }
+                      else if (statusRaw === 'overdue' || statusRaw === 'late' || statusRaw === 'delayed' || vencida) {
+                          c = '#ef4444'; st = 'Rezagada';          // 🔴 rojo
+                      }
+                      else if (statusRaw === 'inprogress' || statusRaw === 'in_progress' || statusRaw === 'in-progress'
+                            || statusRaw === 'ongoing' || statusRaw === 'active' || prog > 0) {
+                          c = '#2dd4bf'; st = 'En curso';          // ⚠️ verde azulado (teal)
+                      }
+                      else {
+                          c = '#facc15'; st = 'Pendiente';         // ⏳ amarillo
+                      }
+
                       return `
                         <tr style="--rowc:${c}">
                           <td>${(t.name || 'Tarea').substring(0,50)}</td>
@@ -944,7 +931,7 @@
                           </td>
                           <td style="color:${c};font-weight:700;">${st}</td>
                           <td style="font-variant-numeric:tabular-nums;">
-                            <span style="color:#34d399;font-weight:800;">${(t.timeLogged||0)}h</span>
+                            <span style="color:#86efac;font-weight:800;">${(t.timeLogged||0)}h</span>
                             <span style="color:#7ea7d6;"> / ${(t.estimatedTime||0)}h</span>
                           </td>
                         </tr>`;
@@ -1071,7 +1058,6 @@
     // ========== 8. FALLBACK CTRL+P DIRECTO ==========
     window.addEventListener('beforeprint', () => {
         if (document.querySelector('.vip-blue-overlay')) {
-            // 🔑 CLAVE: forzar valores reales antes de que el navegador capture
             vipBlueFinalizeForPrint();
 
             document.body.classList.add('vip-blue-printing');
