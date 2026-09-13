@@ -1,0 +1,86 @@
+// collaborationService.js
+const API_URL = 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+class CollaborationService {
+    constructor() {
+        this.token = localStorage.getItem('authToken');
+    }
+
+    // Obtener TODOS los proyectos (Propios + Colaborativos)
+    async getAllProjects() {
+        try {
+            const response = await fetch(`${API_URL}/api/user/projects`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                // Fusionamos los arrays para tener una lista única
+                const allProjects = [...(data.ownedProjects || []), ...(data.collaboratedProjects || [])];
+                
+                // Marcamos cuáles son colaborativos para la UI
+                return allProjects.map(p => ({
+                    ...p,
+                    isCollaborative: !!c.data.collaboratedProjects.find(cp => cp.id === p.id)
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('❌ Error obteniendo proyectos:', error);
+            return [];
+        }
+    }
+
+    // Obtener invitaciones pendientes
+    async getPendingInvitations() {
+        try {
+            const response = await fetch(`${API_URL}/api/colaboracion/invitaciones`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            const data = await response.json();
+            return data.success ? data.invitaciones : [];
+        } catch (error) {
+            console.error('❌ Error obteniendo invitaciones:', error);
+            return [];
+        }
+    }
+
+    // Aceptar una invitación
+    async acceptInvitation(invitationId) {
+        try {
+            const response = await fetch(`${API_URL}/api/colaboracion/aceptar-invitacion`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}` 
+                },
+                body: JSON.stringify({ invitacionId })
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('❌ Error aceptando invitación:', error);
+            throw error;
+        }
+    }
+
+    // Rechazar invitación
+    async rejectInvitation(invitationId) {
+        try {
+            const response = await fetch(`${API_URL}/api/colaboracion/rechazar-invitacion`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}` 
+                },
+                body: JSON.stringify({ invitacionId })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('❌ Error rechazando invitación:', error);
+            throw error;
+        }
+    }
+}
+
+export default new CollaborationService();

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Gestión de Proyectos</title>
@@ -20,7 +21,9 @@
   <!-- Librerías externas -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2089,8 +2092,7 @@
    <script src="cabildo-advanced-module.js"></script>
     <script src="executive-dashboard.js"></script>
    <script src="usyncro.js"></script>
-
-
+  
 
 
 
@@ -33746,7 +33748,549 @@ console.log('📌 MutationObserver como respaldo');
     
 })();
 </script>
+<!-- 🔒 BLOQUEO ELITE DEFINITIVO - SIN ROMPER MODOS DE TRABAJO -->
+<script>
+(function() {
+  if (localStorage.getItem('userPlan') !== 'elite') return;
+  console.log('🔒 [ELITE] Aplicando bloqueos puntuales...');
 
- </body>
+  // 1. NOTIFICACIÓN
+  function avisar(modulo) {
+    const msg = '🔒 ' + modulo + ' requiere plan Profesional o Premium.';
+    if (typeof window.showNotification === 'function') {
+      try { window.showNotification(msg, 'error'); return; } catch(e) {}
+    }
+    alert(msg);
+  }
+
+  // 2. BLOQUEAR FUNCIONES ESPECÍFICAS
+  const funcs = [
+    ['showRealDashboard', 'Control de Recursos Humanos'],
+    ['renderMatrizHabilidades', 'Control de Recursos Humanos'],
+    ['mostrarPanel', 'Integraciones'],
+    ['mostrarPanelIntegraciones', 'Integraciones'],
+    ['renderCentroComandoIA', 'Centro Comando 4D IA'],
+    ['openAutomationCenter', 'Automatización Premium'],
+    ['openStorytelling', 'Storytelling'],
+    ['showQuantumDashboard', 'Centro de Control PM'],
+    ['showDashboard4DView', 'Dashboard 4D'],
+    ['renderProfitabilityView', 'Rentabilidad']
+  ];
+  
+  funcs.forEach(([fn, mod]) => {
+    if (typeof window[fn] === 'function' && !window[fn].__eliteBlocked) {
+      window[fn] = function() {
+        avisar(mod);
+        return null;
+      };
+      window[fn].__eliteBlocked = true;
+    }
+  });
+
+  // 3. BLOQUEAR BOTONES POR ID
+  const idsBloqueados = {
+    'nexusRealSidebarBtn': 'Control de Recursos Humanos',
+    'showInicioView': 'Centro Comando 4D IA',
+    'btnReportesSidebarContainer': 'Centro de Reportes',
+    'autoBlueSidebar': 'Automatización Premium',
+    'storytellingSidebarBtn': 'Storytelling',
+    'quantumV10Btn': 'Centro de Control PM',
+    'showDashboard4DView': 'Dashboard 4D',
+    'showProfitabilityView': 'Rentabilidad'
+  };
+
+  function bloquearPorID() {
+    Object.keys(idsBloqueados).forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.dataset.eliteLocked) {
+        el.dataset.eliteLocked = 'true';
+        if (!el.querySelector('.elite-lock-badge')) {
+          const lock = document.createElement('span');
+          lock.className = 'elite-lock-badge';
+          lock.textContent = ' 🔒';
+          lock.style.cssText = 'font-size:12px;margin-left:5px;';
+          el.appendChild(lock);
+        }
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          avisar(idsBloqueados[id]);
+          return false;
+        }, true);
+      }
+    });
+    
+    // Integraciones por texto
+    document.querySelectorAll('button, li, a').forEach(el => {
+      const txt = (el.textContent || '').toLowerCase().trim();
+      if (txt === 'integraciones' && !el.dataset.eliteLocked) {
+        el.dataset.eliteLocked = 'true';
+        if (!el.querySelector('.elite-lock-badge')) {
+          const lock = document.createElement('span');
+          lock.className = 'elite-lock-badge';
+          lock.textContent = ' 🔒';
+          lock.style.cssText = 'font-size:12px;margin-left:5px;';
+          el.appendChild(lock);
+        }
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          avisar('Integraciones');
+          return false;
+        }, true);
+      }
+    });
+  }
+
+  // 4. ASEGURAR QUE STATUS DEL PROYECTO FUNCIONE
+  function desbloquearReports() {
+    const btn = document.getElementById('showReportsView');
+    if (btn) {
+      delete btn.dataset.eliteLocked;
+      const candado = btn.querySelector('.elite-lock-badge');
+      if (candado) candado.remove();
+    }
+  }
+
+  // EJECUTAR
+  bloquearPorID();
+  desbloquearReports();
+
+  setInterval(() => {
+    bloquearPorID();
+    desbloquearReports();
+  }, 2000);
+
+  console.log('🔒 [ELITE] Bloqueos puntuales aplicados');
+})();
+</script>
+<!-- 🔧 FIX QUIRÚRGICO: Dashboard BLOQUEADO + Reports DESBLOQUEADO -->
+<script>
+(function() {
+  if (localStorage.getItem('userPlan') !== 'elite') return;
+  console.log('🔧 [ELITE FIX] Arreglando Dashboard y Reports...');
+
+  // ============================================
+  // 1. BLOQUEAR DASHBOARD (ID + función + vista)
+  // ============================================
+  
+  // A. Bloquear el botón por ID
+  function bloquearDashboard() {
+    const btnDash = document.getElementById('showDashboardView');
+    if (btnDash && !btnDash.dataset.eliteLocked) {
+      btnDash.dataset.eliteLocked = 'true';
+      if (!btnDash.querySelector('.elite-lock-badge')) {
+        const lock = document.createElement('span');
+        lock.className = 'elite-lock-badge';
+        lock.textContent = ' 🔒';
+        lock.style.cssText = 'font-size:12px;margin-left:5px;';
+        btnDash.appendChild(lock);
+      }
+      btnDash.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const msg = '🔒 Dashboard requiere plan Profesional o Premium.';
+        if (typeof window.showNotification === 'function') window.showNotification(msg, 'error');
+        else alert(msg);
+        return false;
+      }, true);
+      console.log('✅ [FIX] Botón Dashboard bloqueado');
+    }
+  }
+
+  // B. Bloquear la función global showDashboardView
+  if (typeof window.showDashboardView === 'function' && !window.showDashboardView.__eliteBlocked) {
+    window.showDashboardView = function() {
+      const msg = '🔒 Dashboard requiere plan Profesional o Premium.';
+      if (typeof window.showNotification === 'function') window.showNotification(msg, 'error');
+      else alert(msg);
+      return null;
+    };
+    window.showDashboardView.__eliteBlocked = true;
+    console.log('✅ [FIX] Función showDashboardView bloqueada');
+  }
+
+  // ============================================
+  // 2. DESBLOQUEAR REPORTS (Status del Proyecto)
+  // ============================================
+  
+  // A. Arreglar allowedViews (el problema real: los strings tienen espacios)
+  function arreglarAllowedViews() {
+    if (typeof window.methodologyManager !== 'undefined' && window.methodologyManager.getCurrentMode) {
+      const currentMode = window.methodologyManager.getCurrentMode();
+      
+      // Forzar que 'reports' esté en allowedViews para el modo actual
+      if (currentMode === 'hybrid' || currentMode === 'traditional' || currentMode === 'agile') {
+        // Buscar el objeto allowedViews en el scope global
+        // Como está dentro de showView, necesitamos parchear showView
+      }
+    }
+  }
+
+  // B. Parchear showView para PERMITIR reports
+  function parchearShowViewParaReports() {
+    if (typeof window.showView === 'function' && !window.showView.__reportsFixed) {
+      const originalShowView = window.showView;
+      window.showView = function(viewName) {
+        // ⭐⭐⭐ EXCEPCIÓN: reports SIEMPRE permitido en Elite ⭐⭐⭐
+        if (viewName === 'reports' || viewName === 'reports ' || viewName === 'reportes') {
+          console.log('✅ [FIX] reports PERMITIDO - Status del Proyecto');
+          // Saltar la verificación de allowedViews y renderizar directamente
+          return forzarVistaReports();
+        }
+        // Bloquear dashboard
+        if (viewName === 'dashboard' || viewName === 'dashboard ') {
+          const msg = '🔒 Dashboard requiere plan Profesional o Premium.';
+          if (typeof window.showNotification === 'function') window.showNotification(msg, 'error');
+          else alert(msg);
+          return null;
+        }
+        return originalShowView.apply(this, arguments);
+      };
+      window.showView.__reportsFixed = true;
+      console.log('✅ [FIX] showView parcheado para reports');
+    }
+  }
+
+  // C. Función para forzar la vista de reports sin pasar por bloqueos
+  function forzarVistaReports() {
+    // Ocultar todas las vistas
+    document.querySelectorAll('.view-content').forEach(v => {
+      v.classList.remove('active');
+      v.style.display = 'none';
+    });
+    
+    // Mostrar la vista de reports
+    const reportsView = document.getElementById('reportsView');
+    if (reportsView) {
+      reportsView.classList.add('active');
+      reportsView.style.display = 'block';
+      window.vistaActual = 'reports';
+      console.log('✅ [FIX] Vista reports mostrada');
+      return true;
+    }
+    
+    // Si no existe reportsView, intentar con la función original
+    console.warn('⚠️ [FIX] reportsView no encontrado, intentando método alternativo');
+    return false;
+  }
+
+  // D. Asegurar que el botón de reports funcione
+  function asegurarBotonReports() {
+    const btnReports = document.getElementById('showReportsView');
+    if (btnReports) {
+      // Quitar cualquier bloqueo
+      delete btnReports.dataset.eliteBloq;
+      delete btnReports.dataset.eliteLocked;
+      btnReports.style.pointerEvents = 'auto';
+      btnReports.style.opacity = '1';
+      btnReports.style.cursor = 'pointer';
+      btnReports.style.filter = 'none';
+      
+      // Quitar candado si lo tiene
+      const candado = btnReports.querySelector('.elite-lock-badge');
+      if (candado) candado.remove();
+      
+      // Forzar click handler correcto
+      if (!btnReports.dataset.reportsFixed) {
+        btnReports.dataset.reportsFixed = 'true';
+        btnReports.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          forzarVistaReports();
+          return false;
+        }, true);
+      }
+      
+      console.log('✅ [FIX] Botón reports asegurado');
+    }
+  }
+
+  // ============================================
+  // 3. EJECUTAR Y REFRESCAR
+  // ============================================
+  bloquearDashboard();
+  parchearShowViewParaReports();
+  asegurarBotonReports();
+
+  // Refuerzos
+  setInterval(() => {
+    bloquearDashboard();
+    asegurarBotonReports();
+  }, 2000);
+
+  const obs = new MutationObserver(() => {
+    setTimeout(() => {
+      bloquearDashboard();
+      asegurarBotonReports();
+    }, 100);
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+
+  console.log('🔧 [ELITE FIX] Dashboard bloqueado + Reports desbloqueado');
+})();
+</script>
+<!-- 🔒 BLOQUEO: EXECUTIVE DASHBOARD 3D (Modal Premium) -->
+<script>
+(function() {
+  if (localStorage.getItem('userPlan') !== 'elite') return;
+  console.log('🔒 [ELITE] Bloqueando Executive Dashboard 3D (modal)...');
+
+  // 1. NOTIFICACIÓN
+  function avisar() {
+    const msg = '🔒 Executive Dashboard 3D requiere plan Profesional o Premium.';
+    if (typeof window.showNotification === 'function') {
+      try { window.showNotification(msg, 'error'); return; } catch(e) {}
+    }
+    const n = document.createElement('div');
+    n.style.cssText = 'position:fixed;top:20px;right:20px;z-index:999999999;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;padding:16px 24px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.4);font-family:system-ui;font-weight:700;font-size:15px;max-width:420px;';
+    n.textContent = msg;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 4000);
+  }
+
+  // 2. OCULTAR Y BLOQUEAR EL MODAL
+  function bloquearModal3D() {
+    const modal = document.getElementById('modal3DPremium');
+    if (modal && !modal.dataset.eliteLocked) {
+      modal.dataset.eliteLocked = 'true';
+      
+      // Ocultar el modal completamente
+      modal.style.display = 'none';
+      modal.style.visibility = 'hidden';
+      modal.style.opacity = '0';
+      modal.style.pointerEvents = 'none';
+      
+      // Quitar clase 'active' si la tiene
+      modal.classList.remove('active');
+      
+      console.log('✅ [ELITE] Modal modal3DPremium ocultado');
+    }
+  }
+
+  // 3. BLOQUEAR FUNCIONES QUE ABREN EL MODAL
+  const funcs = [
+    'openModal3D',
+    'showModal3D',
+    'openExecutiveDashboard3D',
+    'showExecutiveDashboard3D',
+    'openDashboard3D',
+    'showDashboard3D',
+    'executiveDashboard3D',
+    'toggleModal3D',
+    'displayModal3D'
+  ];
+  
+  funcs.forEach(fn => {
+    if (typeof window[fn] === 'function' && !window[fn].__eliteBlocked) {
+      window[fn] = function() {
+        avisar();
+        return null;
+      };
+      window[fn].__eliteBlocked = true;
+      console.log('✅ [ELITE] Función bloqueada: ' + fn);
+    }
+  });
+
+  // 4. INTERCEPTAR CLICKS EN CUALQUIER ELEMENTO QUE INTENTE ABRIR EL MODAL
+  document.addEventListener('click', function(e) {
+    const target = e.target;
+    const txt = (target.textContent || '').toLowerCase();
+    
+    // Si el texto menciona "dashboard 3d" o "executive dashboard"
+    if (txt.includes('dashboard 3d') || txt.includes('executive dashboard')) {
+      // Verificar si es un botón (no el modal mismo)
+      if (target.tagName === 'BUTTON' || target.tagName === 'A' || target.getAttribute('role') === 'button') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        avisar();
+        return false;
+      }
+    }
+    
+    // Si intenta hacer click en el modal mismo
+    if (target.id === 'modal3DPremium' || target.closest('#modal3DPremium')) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }, true);
+
+  // 5. BUSCAR BOTÓN QUE ABRE EL MODAL Y AGREGARLE CANDADO
+  function buscarYBloquearBoton() {
+    const botones = document.querySelectorAll('button, a, [role="button"]');
+    botones.forEach(btn => {
+      if (btn.dataset.dashboard3dBtnBlocked === 'true') return;
+      
+      const txt = (btn.textContent || '').toLowerCase().trim();
+      
+      // Buscar botón que abra el modal
+      if ((txt.includes('dashboard 3d') || txt.includes('executive dashboard')) && 
+          !txt.includes('modal') && 
+          btn.getBoundingClientRect().width < 300) {
+        
+        btn.dataset.dashboard3dBtnBlocked = 'true';
+        
+        // Agregar candado 🔒
+        if (!btn.querySelector('.elite-lock-badge-3d')) {
+          const lock = document.createElement('span');
+          lock.className = 'elite-lock-badge-3d';
+          lock.textContent = ' 🔒';
+          lock.style.cssText = 'font-size:12px; margin-left:5px; vertical-align: middle;';
+          btn.appendChild(lock);
+        }
+        
+        // Interceptar click
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          avisar();
+          return false;
+        }, true);
+        
+        console.log('✅ [ELITE] Botón de Dashboard 3D bloqueado');
+      }
+    });
+  }
+
+  // 6. CSS PARA ASEGURAR QUE EL MODAL ESTÉ OCULTO
+  const style = document.createElement('style');
+  style.textContent = `
+    #modal3DPremium {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    #modal3DPremium.active {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 7. EJECUTAR Y REFRESCAR
+  bloquearModal3D();
+  buscarYBloquearBoton();
+  
+  setInterval(() => {
+    bloquearModal3D();
+    buscarYBloquearBoton();
+  }, 2000);
+
+  const obs = new MutationObserver(() => {
+    setTimeout(() => {
+      bloquearModal3D();
+      buscarYBloquearBoton();
+    }, 100);
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+
+  console.log('🔒 [ELITE] Executive Dashboard 3D (modal) bloqueado completamente');
+})();
+
+<!-- 🔒 BLOQUEO DEFINITIVO: Centro de Comando 4D IA -->
+<script>
+(function() {
+  console.log('🔒 [BLOQUEO] Activando bloqueo definitivo de Centro de Comando 4D IA...');
+
+  // 1. GUARDAR LA FUNCIÓN ORIGINAL
+  const renderCentroComandoIA_Original = window.renderCentroComandoIA;
+
+  // 2. SOBREESCRIBIR LA FUNCIÓN con verificación de plan
+  window.renderCentroComandoIA = function() {
+    const plan = localStorage.getItem('userPlan') || 'free';
+    
+    // Planes que NO pueden acceder al Centro de Comando
+    if (plan === 'free' || plan === 'elite' || plan === 'professional') {
+      const msg = '🔒 Centro de Comando 4D IA requiere plan Premium.';
+      if (typeof window.showNotification === 'function') {
+        window.showNotification(msg, 'error');
+      } else {
+        alert(msg);
+      }
+      console.log('🔒 [BLOQUEO] Centro de Comando bloqueado para plan:', plan);
+      return null;
+    }
+    
+    // Solo Premium puede ejecutarlo
+    console.log('✅ [BLOQUEO] Plan Premium detectado, ejecutando Centro de Comando');
+    if (renderCentroComandoIA_Original) {
+      return renderCentroComandoIA_Original.apply(this, arguments);
+    }
+  };
+
+  // 3. TAMBIÉN bloquear showView para la vista 'inicio'
+  if (typeof window.showView === 'function') {
+    const showView_Original = window.showView;
+    window.showView = function(vista) {
+      const plan = localStorage.getItem('userPlan') || 'free';
+      
+      if (vista === 'inicio' && (plan === 'free' || plan === 'elite' || plan === 'professional')) {
+        const msg = '🔒 Centro de Comando 4D IA requiere plan Premium.';
+        if (typeof window.showNotification === 'function') {
+          window.showNotification(msg, 'error');
+        } else {
+          alert(msg);
+        }
+        console.log('🔒 [BLOQUEO] Vista inicio bloqueada para plan:', plan);
+        return null;
+      }
+      
+      return showView_Original.apply(this, arguments);
+    };
+  }
+
+  // 4. BLOQUEAR el botón #showInicioView directamente
+  function bloquearBoton() {
+    const btn = document.getElementById('showInicioView');
+    if (btn && !btn.dataset.bloqueoDefinitivo) {
+      btn.dataset.bloqueoDefinitivo = 'true';
+      
+      // Agregar candado visual
+      if (!btn.querySelector('.lock-badge')) {
+        const lock = document.createElement('span');
+        lock.className = 'lock-badge';
+        lock.textContent = ' 🔒';
+        lock.style.cssText = 'font-size:12px;margin-left:5px;';
+        btn.appendChild(lock);
+      }
+      
+      // Interceptar click en fase de captura
+      btn.addEventListener('click', function(e) {
+        const plan = localStorage.getItem('userPlan') || 'free';
+        if (plan === 'free' || plan === 'elite' || plan === 'professional') {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          const msg = '🔒 Centro de Comando 4D IA requiere plan Premium.';
+          if (typeof window.showNotification === 'function') {
+            window.showNotification(msg, 'error');
+          } else {
+            alert(msg);
+          }
+          return false;
+        }
+      }, true);
+      
+      console.log('✅ [BLOQUEO] Botón #showInicioView bloqueado');
+    }
+  }
+
+  bloquearBoton();
+  setInterval(bloquearBoton, 2000);
+
+  console.log('🔒 [BLOQUEO] Sistema de bloqueo definitivo activado');
+  console.log('📌 Bloqueado para: free, elite, professional');
+  console.log('✅ Permitido solo para: premium');
+})();
+</script>
+
+</body>
 </html>
  

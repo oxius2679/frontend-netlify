@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🔍 Diagnóstico de Datos - Human Impact</title>
+<style>
+  body { font-family: monospace; background: #0a0a0a; color: #f5d97e; padding: 20px; line-height: 1.6; }
+  h1 { color: #c9a84c; border-bottom: 2px solid #c9a84c; padding-bottom: 10px; }
+  h2 { color: #fff; margin-top: 25px; background: rgba(201,168,76,0.15); padding: 8px 15px; border-radius: 8px; }
+  .found { background: rgba(74,222,128,0.15); padding: 10px; border-left: 4px solid #4ade80; margin: 10px 0; border-radius: 6px; }
+  .empty { background: rgba(100,100,100,0.1); padding: 10px; border-left: 4px solid #666; margin: 10px 0; border-radius: 6px; color: #888; }
+  pre { background: #1a1a1a; padding: 15px; border-radius: 8px; overflow-x: auto; max-height: 300px; border: 1px solid #333; }
+  .copy-btn { background: #c9a84c; color: #000; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; margin: 5px 0; }
+  .copy-btn:hover { background: #f5d97e; }
+  .url-box { background: #2a1810; padding: 8px; border-radius: 4px; color: #ff9800; font-size: 12px; word-break: break-all; }
+  #report { background: #000; padding: 20px; border-radius: 10px; border: 2px solid #c9a84c; }
+</style>
+</head>
+<body>
+
+<h1>🔍 DIAGNÓSTICO: ¿Dónde están tus datos?</h1>
+<p style="color:#aaa;">Este script busca AUTOMÁTICAMENTE dónde están los datos en tu sistema. Ejecútalo en la misma URL/página donde corre tu dashboard principal.</p>
+
+<div id="report">
+<h2>📡 1. URL ACTUAL</h2>
+<div class="url-box" id="currentUrl"></div>
+
+<h2>🌐 2. VARIABLES GLOBALES (window)</h2>
+<div id="globalVars"></div>
+
+<h2>💾 3. LOCAL STORAGE</h2>
+<div id="localStorage"></div>
+
+<h2>📦 4. SESSION STORAGE</h2>
+<div id="sessionStorage"></div>
+
+<h2>📜 5. DATOS EN EL DOM</h2>
+<div id="domData"></div>
+
+<h2>🔌 6. APIS DETECTADAS (Fetch interceptado)</h2>
+<div id="apiCalls"></div>
+
+<h2>📊 RESUMEN FINAL (para pegarme)</h2>
+<button class="copy-btn" onclick="copyReport()">📋 COPIAR REPORTE COMPLETO</button>
+<pre id="finalReport"></pre>
+</div>
+
+<script>
+const report = {
+  url: window.location.href,
+  globals: {},
+  localStorage: {},
+  sessionStorage: {},
+  domData: {},
+  apiCalls: []
+};
+
+// 1. URL
+document.getElementById('currentUrl').textContent = window.location.href;
+
+// 2. BUSCAR VARIABLES GLOBALES CON DATOS
+console.log('🔍 Buscando variables globales con datos...');
+const interestingKeys = ['data', 'users', 'leaders', 'members', 'team', 'sessions', 'projects', 'tasks', 'skills', 'employees', 'staff', 'personas', 'usuarios', 'lideres', 'tareas', 'proyectos', 'app', 'appData', 'mainData', 'store', 'state', 'db', 'database', 'config'];
+
+const htmlContent = [];
+
+interestingKeys.forEach(key => {
+  if (window[key] !== undefined && window[key] !== null) {
+    try {
+      const val = window[key];
+      const type = Array.isArray(val) ? `Array(${val.length})` : typeof val;
+      console.log(`✅ Encontrado: window.${key} (${type})`, val);
+      
+      let preview = '';
+      if (Array.isArray(val) && val.length > 0) {
+        preview = JSON.stringify(val[0], null, 2).substring(0, 500);
+      } else if (typeof val === 'object') {
+        preview = JSON.stringify(val, null, 2).substring(0, 500);
+      }
+      
+      htmlContent.push(`
+        <div class="found">
+          <strong>✅ window.${key}</strong> — ${type}
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(JSON.stringify(window['${key}'], null, 2))">📋 Copiar valor</button>
+          <pre>${preview}${preview.length >= 500 ? '\n... (truncado)' : ''}</pre>
+        </div>
+      `);
+      
+      report.globals[key] = {
+        type: type,
+        length: Array.isArray(val) ? val.length : null,
+        sample: Array.isArray(val) && val[0] ? val[0] : (typeof val === 'object' ? val : null)
+      };
+    } catch(e) {
+      console.warn(`No se pudo leer window.${key}:`, e);
+    }
+  }
+});
+
+// Buscar también en window[key] que sean objetos con propiedades tipo data
+Object.keys(window).forEach(key => {
+  try {
+    const val = window[key];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const keys = Object.keys(val);
+      if (keys.some(k => interestingKeys.includes(k.toLowerCase()))) {
+        if (!report.globals[key]) {
+          console.log(`🎯 Objeto con datos internos: window.${key}`, val);
+          htmlContent.push(`
+            <div class="found">
+              <strong>🎯 window.${key}</strong> (objeto con propiedades interesantes)
+              <pre>Propiedades: ${keys.join(', ')}</pre>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText(JSON.stringify(window['${key}'], null, 2))">📋 Copiar objeto completo</button>
+            </div>
+          `);
+          report.globals[key] = { type: 'object', properties: keys };
+        }
+      }
+    }
+  } catch(e) {}
+});
+
+document.getElementById('globalVars').innerHTML = htmlContent.length > 0 
+  ? htmlContent.join('') 
+  : '<div class="empty">No se encontraron variables globales con datos. Los datos pueden estar encapsulados.</div>';
+
+// 3. LOCAL STORAGE
+console.log('🔍 Buscando en localStorage...');
+const lsHtml = [];
+for (let i = 0; i < localStorage.length; i++) {
+  const key = localStorage.key(i);
+  const value = localStorage.getItem(key);
+  console.log(`📦 localStorage.${key}:`, value.substring(0, 200));
+  lsHtml.push(`
+    <div class="found">
+      <strong>localStorage['${key}']</strong> (${value.length} chars)
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(localStorage.getItem('${key}'))">📋 Copiar</button>
+      <pre>${value.substring(0, 400)}${value.length > 400 ? '...' : ''}</pre>
+    </div>
+  `);
+  try {
+    report.localStorage[key] = JSON.parse(value);
+  } catch(e) {
+    report.localStorage[key] = value;
+  }
+}
+document.getElementById('localStorage').innerHTML = lsHtml.length > 0 
+  ? lsHtml.join('') 
+  : '<div class="empty">localStorage vacío</div>';
+
+// 4. SESSION STORAGE
+console.log('🔍 Buscando en sessionStorage...');
+const ssHtml = [];
+for (let i = 0; i < sessionStorage.length; i++) {
+  const key = sessionStorage.key(i);
+  const value = sessionStorage.getItem(key);
+  console.log(`📦 sessionStorage.${key}:`, value.substring(0, 200));
+  ssHtml.push(`
+    <div class="found">
+      <strong>sessionStorage['${key}']</strong>
+      <pre>${value.substring(0, 400)}</pre>
+    </div>
+  `);
+  try {
+    report.sessionStorage[key] = JSON.parse(value);
+  } catch(e) {
+    report.sessionStorage[key] = value;
+  }
+}
+document.getElementById('sessionStorage').innerHTML = ssHtml.length > 0 
+  ? ssHtml.join('') 
+  : '<div class="empty">sessionStorage vacío</div>';
+
+// 5. DATOS EN EL DOM (data-*, scripts type=application/json)
+console.log('🔍 Buscando datos embebidos en el DOM...');
+const domHtml = [];
+
+// Buscar scripts con JSON
+document.querySelectorAll('script[type="application/json"], script[id*="data"], script[id*="store"]').forEach((script, idx) => {
+  try {
+    const data = JSON.parse(script.textContent);
+    console.log(`🎯 Script JSON #${idx}:`, data);
+    domHtml.push(`
+      <div class="found">
+        <strong>Script JSON #${idx}</strong> ${script.id ? `(id="${script.id}")` : ''}
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelectorAll('script[type=\\'application/json\\'], script[id*=\\'data\\']')[${idx}].textContent)">📋 Copiar</button>
+        <pre>${script.textContent.substring(0, 400)}</pre>
+      </div>
+    `);
+    report.domData[`script_${idx}`] = data;
+  } catch(e) {}
+});
+
+// Buscar en window.__NEXT_DATA__ (Next.js), window.__NUXT__ (Nuxt), window.__INITIAL_STATE__ (Vuex)
+const frameworkKeys = ['__NEXT_DATA__', '__NUXT__', '__INITIAL_STATE__', '__APP_DATA__', '__DATA__', '__PRELOADED_STATE__'];
+frameworkKeys.forEach(key => {
+  if (window[key]) {
+    console.log(`🎯 Framework data: window.${key}`, window[key]);
+    domHtml.push(`
+      <div class="found">
+        <strong>🎯 window.${key}</strong> (framework)
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(JSON.stringify(window['${key}'], null, 2))">📋 Copiar</button>
+        <pre>${JSON.stringify(window[key], null, 2).substring(0, 400)}</pre>
+      </div>
+    `);
+    report.domData[key] = window[key];
+  }
+});
+
+document.getElementById('domData').innerHTML = domHtml.length > 0 
+  ? domHtml.join('') 
+  : '<div class="empty">No se encontraron datos embebidos en el DOM</div>';
+
+// 6. INTERCEPTAR LLAMADAS FETCH
+console.log('🔍 Interceptando llamadas fetch/XHR por 10 segundos...');
+const apiHtml = [];
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+  console.log(`📡 Fetch a: ${url}`);
+  report.apiCalls.push({ type: 'fetch', url, time: new Date().toISOString() });
+  
+  const response = await originalFetch.apply(this, args);
+  const clone = response.clone();
+  
+  try {
+    const data = await clone.json();
+    console.log(`✅ Respuesta de ${url}:`, data);
+    report.apiCalls.push({ type: 'fetch_response', url, data, time: new Date().toISOString() });
+  } catch(e) {}
+  
+  return response;
+};
+
+const originalXHR = XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open = function(method, url) {
+  console.log(`📡 XHR a: ${method} ${url}`);
+  report.apiCalls.push({ type: 'xhr', method, url, time: new Date().toISOString() });
+  return originalXHR.apply(this, arguments);
+};
+
+// Esperar 10 segundos para capturar llamadas
+setTimeout(() => {
+  apiHtml.push(`<p>📡 <strong>${report.apiCalls.length} llamadas capturadas</strong> en 10 segundos:</p>`);
+  report.apiCalls.forEach((call, idx) => {
+    apiHtml.push(`
+      <div class="found">
+        <strong>${call.type.toUpperCase()}</strong> ${call.method || ''} ${call.url || ''}
+        ${call.data ? `<pre>${JSON.stringify(call.data, null, 2).substring(0, 400)}</pre>` : ''}
+      </div>
+    `);
+  });
+  
+  document.getElementById('apiCalls').innerHTML = apiHtml.length > 0 
+    ? apiHtml.join('') 
+    : '<div class="empty">No se detectaron llamadas API en 10 segundos</div>';
+  
+  // Generar reporte final
+  const finalReport = {
+    timestamp: new Date().toISOString(),
+    url: report.url,
+    globalsFound: Object.keys(report.globals),
+    localStorageKeys: Object.keys(report.localStorage),
+    sessionStorageKeys: Object.keys(report.sessionStorage),
+    domDataKeys: Object.keys(report.domData),
+    apiCalls: report.apiCalls.length,
+    summary: `
+📊 RESUMEN:
+- URL: ${report.url}
+- Variables globales con datos: ${Object.keys(report.globals).join(', ') || 'ninguna'}
+- LocalStorage: ${Object.keys(report.localStorage).join(', ') || 'vacío'}
+- SessionStorage: ${Object.keys(report.sessionStorage).join(', ') || 'vacío'}
+- DOM data: ${Object.keys(report.domData).join(', ') || 'ninguno'}
+- Llamadas API detectadas: ${report.apiCalls.length}
+
+🎯 PRÓXIMO PASO: Copia este reporte y pégamelo.
+Con eso sabré exactamente dónde están tus datos.
+    `.trim()
+  };
+  
+  document.getElementById('finalReport').textContent = finalReport.summary;
+  window._finalReport = finalReport;
+  
+  console.log('\n═══════════════════════════════════════');
+  console.log('✅ DIAGNÓSTICO COMPLETO');
+  console.log('═══════════════════════════════════════');
+  console.log(finalReport.summary);
+  console.log('Reporte completo:', finalReport);
+  console.log('═══════════════════════════════════════\n');
+  
+}, 10000);
+
+function copyReport() {
+  navigator.clipboard.writeText(JSON.stringify(window._finalReport, null, 2));
+  alert('✅ Reporte copiado al portapapeles. Pégamelo.');
+}
+</script>
+
+</body>
+</html>
