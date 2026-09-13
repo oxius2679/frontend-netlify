@@ -1,3 +1,737 @@
+/* ============================================================
+   🔧 FIX · CONFIGURACIÓN DE COSTOS POR PROYECTO
+   - Mantiene TODA la estructura original (secciones, botones, textos)
+   - Solo añade: selector de proyecto + guardado real por proyecto
+   - Corrige: exportGanttData sin repetir páginas
+   - FIX selector: sincronización agresiva con TODAS las fuentes
+   ============================================================ */
+(function fixCostosYExport() {
+  console.log('%c🔧 Aplicando FIX respetando estructura original...', 'color:#22c55e;font-weight:bold;font-size:14px');
+
+  /* ═══════════════════════════════════════════════════════════
+     Utilidades por proyecto
+     ═══════════════════════════════════════════════════════════ */
+  const PREFIX = 'evmCostConfig_';
+
+  function projectKey(project, idx) {
+    if (project && project.id) return 'p_' + project.id;
+    return 'idx_' + (idx != null ? idx : (window.currentProjectIndex || 0));
+  }
+  function storageKey(pk) { return PREFIX + pk; }
+
+  function defaultConfig() {
+    return {
+      costPerHour: 50,
+      roles: [
+        { name: 'Desarrollador Senior', costPerHour: 75 },
+        { name: 'Desarrollador Junior', costPerHour: 40 },
+        { name: 'Diseñador UX/UI',      costPerHour: 60 },
+        { name: 'Project Manager',      costPerHour: 80 },
+        { name: 'QA Tester',            costPerHour: 45 }
+      ],
+      fixedCosts: [
+        { name: 'Licencias software',  amount: 1200 },
+        { name: 'Servidores hosting',  amount: 300  },
+        { name: 'Herramientas equipo', amount: 500  }
+      ],
+      overheadPercentage: 15
+    };
+  }
+
+  function loadConfig(pk) {
+    try {
+      const raw = localStorage.getItem(storageKey(pk));
+      if (raw) {
+        const c = JSON.parse(raw);
+        const d = defaultConfig();
+        return {
+          costPerHour:        (c.costPerHour != null) ? c.costPerHour : d.costPerHour,
+          roles:              Array.isArray(c.roles) && c.roles.length ? c.roles : d.roles,
+          fixedCosts:         Array.isArray(c.fixedCosts) && c.fixedCosts.length ? c.fixedCosts : d.fixedCosts,
+          overheadPercentage: (c.overheadPercentage != null) ? c.overheadPercentage : d.overheadPercentage
+        };
+      }
+      const legacy = localStorage.getItem('evmCostConfig');
+      if (legacy) return JSON.parse(legacy);
+    } catch (e) { console.warn('loadConfig:', e); }
+    return defaultConfig();
+  }
+
+  function saveConfig(pk, cfg) {
+    try {
+      localStorage.setItem(storageKey(pk), JSON.stringify(cfg));
+      localStorage.setItem('evmCostConfig', JSON.stringify(cfg)); // legacy
+      return true;
+    } catch (e) { console.error('saveConfig:', e); return false; }
+  }
+
+  window.__costKeyFor  = projectKey;
+  window.__loadCostCfg = loadConfig;
+  window.__saveCostCfg = saveConfig;
+
+  /* ═══════════════════════════════════════════════════════════
+     SYNC AGRESIVO: fuerza el proyecto activo en TODAS las fuentes
+     ═══════════════════════════════════════════════════════════ */
+  function forceProjectSync(newIdx, newProj) {
+    console.log('%c🔄 SYNC AGRESIVO → índice ' + newIdx + ' (' + (newProj?.name || '?') + ')', 'color:#22d3ee;font-weight:bold');
+
+    // ── 1) Variables globales (todas las plausibles) ──
+    const globals = ['currentProjectIndex','activeProjectIndex','selectedProjectIndex',
+                     'currentProjectIdx','activeProjectIdx','currentIdx','projectIndex'];
+    globals.forEach(k => { try { window[k] = newIdx; } catch(e){} });
+
+    const objGlobals = ['currentProject','activeProject','selectedProject','project'];
+    objGlobals.forEach(k => { try { if (k in window || true) window[k] = newProj; } catch(e){} });
+
+    if ('currentProjectId' in window) window.currentProjectId = newProj?.id;
+
+    // ── 2) TODOS los elementos del DOM con data-project-index / dataset ──
+    const domCandidates = document.querySelectorAll('[data-project-index], [data-project], [data-project-id]');
+    console.log('🔍 Elementos con dataset de proyecto:', domCandidates.length);
+    domCandidates.forEach(el => {
+      try {
+        if (el.dataset.projectIndex !== undefined) el.dataset.projectIndex = String(newIdx);
+        if (el.dataset.project      !== undefined) el.dataset.project      = String(newIdx);
+        if (el.dataset.projectId    !== undefined && newProj?.id) el.dataset.projectId = String(newProj.id);
+        console.log('  ✔ Actualizado:', el.id || el.className || el.tagName);
+      } catch(e) {}
+    });
+
+    // ── 3) Contenedores conocidos del Gantt ──
+    ['premiumExecutiveGantt','ganttContainer','ganttView','projectGantt','ganttChart','premiumGantt']
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.dataset) {
+          el.dataset.projectIndex = String(newIdx);
+          if (newProj?.id) el.dataset.projectId = String(newProj.id);
+          console.log('  ✔ Gantt container actualizado:', id, '→', newIdx);
+        }
+      });
+
+    // ── 4) Limpiar CUALQUIER caché plausible ──
+    ['lastEVMPreviewData','__lastPreview','evmPreviewCache','__evmCache','lastEVMData']
+      .forEach(k => { try { window[k] = null; } catch(e){} });
+
+    // ── 5) Intentar funciones "switch project" que existan ──
+    const switchFns = ['switchProject','selectProject','setActiveProject','cambiarProyecto',
+                       'changeProject','onProjectChange','loadProject','activateProject',
+                       'goToProject','openProject'];
+    switchFns.forEach(fn => {
+      if (typeof window[fn] === 'function') {
+        try {
+          console.log('  ▶ Llamando window.' + fn + '(' + newIdx + ')');
+          window[fn](newIdx);
+        } catch(e) { console.warn('  ⚠ ' + fn + ' falló:', e.message); }
+      }
+    });
+
+    // ── 6) Guardar en una variable "puente" para el override del preview ──
+    window.__forcedProjectIndex = newIdx;
+    window.__forcedProject      = newProj;
+
+    console.log('%c✅ SYNC COMPLETO — todas las fuentes apuntan a índice ' + newIdx, 'color:#22c55e;font-weight:bold');
+  }
+  window.__forceProjectSync = forceProjectSync;
+
+  /* ═══════════════════════════════════════════════════════════
+     OVERRIDE del preview: fuerza el proyecto seleccionado
+     ═══════════════════════════════════════════════════════════ */
+  function installPreviewOverride() {
+    if (window.__previewOverrideInstalled) return;
+    const originalPreview = window.calculateAndShowEVMPreview;
+    if (typeof originalPreview !== 'function') {
+      console.warn('⚠️ calculateAndShowEVMPreview no existe todavía, reintentando...');
+      setTimeout(installPreviewOverride, 500);
+      return;
+    }
+
+    window.calculateAndShowEVMPreview = function() {
+      // Si hay un override guardado, aplicarlo ANTES de llamar al original
+      if (typeof window.__forcedProjectIndex === 'number') {
+        const idx = window.__forcedProjectIndex;
+        const proj = window.__forcedProject || (window.projects || [])[idx];
+        console.log('%c🎯 Preview override → forzando índice ' + idx + ' (' + (proj?.name || '?') + ')', 'color:#f59e0b;font-weight:bold;background:#000;padding:2px 6px');
+        forceProjectSync(idx, proj);
+      }
+      return originalPreview.apply(this, arguments);
+    };
+    window.__previewOverrideInstalled = true;
+    console.log('%c✅ Preview override instalado', 'color:#22c55e;font-weight:bold');
+  }
+  installPreviewOverride();
+  // Reintento por si la app recarga las funciones después
+  setTimeout(installPreviewOverride, 1500);
+
+  /* ═══════════════════════════════════════════════════════════
+     Reemplazo de showCostConfigurationPanel
+     ═══════════════════════════════════════════════════════════ */
+  window.showCostConfigurationPanel = function () {
+    console.log('💰 Abriendo panel de configuración de costos (con selector por proyecto)');
+
+    const old = document.getElementById('costConfigOverlay');
+    if (old) old.remove();
+
+    const projectsList = (window.projects || []);
+    if (!projectsList.length) { alert('No hay proyectos cargados'); return; }
+
+    const currentIdx = window.currentProjectIndex || 0;
+    const currentProject = projectsList[currentIdx];
+    const currentKey = projectKey(currentProject, currentIdx);
+    window.__activeCostKey = currentKey;
+
+    // Asignar ANTES de construir los handlers
+    window.currentCostConfig = JSON.parse(JSON.stringify(loadConfig(currentKey)));
+
+    const optionsHTML = projectsList.map((p, i) =>
+      `<option value="${i}" ${i === currentIdx ? 'selected' : ''}>${p.name}</option>`
+    ).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'costConfigOverlay';
+    overlay.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+    overlay.innerHTML = `
+      <div style="width:90vw;max-width:800px;max-height:85vh;background:linear-gradient(135deg,#0a0a1a 0%,#121230 100%);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,0.8);border:2px solid rgba(46,204,113,0.4);overflow:hidden;display:flex;flex-direction:column;">
+
+        <div style="background:linear-gradient(90deg,#0a0a1a,#1a1a3a);padding:25px 35px;border-bottom:1px solid rgba(46,204,113,0.3);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+          <div>
+            <h2 style="margin:0 0 8px 0;color:white;font-size:28px;">💰 <span style="color:#2ecc71;">CONFIGURACIÓN DE COSTOS EVM</span></h2>
+            <p style="margin:0;color:#95a5a6;font-size:14px;">Configura los parámetros de costos para el análisis de Valor Ganado</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(46,204,113,0.1);padding:8px 14px;border-radius:12px;border:1px solid rgba(46,204,113,0.4);">
+            <label style="color:#a7f3d0;font-size:12px;font-weight:600;white-space:nowrap;">📁 Proyecto:</label>
+            <select id="costProjectSelector" style="background:#0f172a;border:1px solid #2ecc71;color:white;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;outline:none;min-width:200px;">
+              ${optionsHTML}
+            </select>
+          </div>
+          <button id="closeCostConfig" style="background:rgba(231,76,60,0.2);border:1px solid #e74c3c;color:#e74c3c;padding:12px 25px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;">× Cerrar</button>
+        </div>
+
+        <div style="flex:1;padding:30px;overflow-y:auto;display:flex;flex-direction:column;gap:25px;">
+
+          <div style="background:rgba(26,31,60,0.8);border-radius:18px;padding:25px;border:2px solid rgba(255,255,255,0.15);">
+            <h3 style="color:white;margin:0 0 20px 0;font-size:20px;">⏱️ COSTO BASE POR HORA</h3>
+            <div style="color:#95a5a6;font-size:14px;margin-bottom:20px;">Costo promedio por hora de trabajo (se usa cuando no hay rol específico)</div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div style="flex:1;">
+                <input type="range" id="costPerHourSlider" min="20" max="150" value="${window.currentCostConfig.costPerHour}" style="width:100%;"/>
+              </div>
+              <div style="text-align:center;min-width:120px;">
+                <div id="costPerHourDisplay" style="color:#2ecc71;font-size:32px;font-weight:bold;">€${window.currentCostConfig.costPerHour}</div>
+                <div style="color:#95a5a6;font-size:12px;">por hora</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(26,31,60,0.8);border-radius:18px;padding:25px;border:2px solid rgba(255,255,255,0.15);">
+            <h3 style="color:white;margin:0 0 20px 0;font-size:20px;">👥 CONFIGURACIÓN DE ROLES</h3>
+            <div style="color:#95a5a6;font-size:14px;margin-bottom:20px;">Define diferentes tarifas por tipo de recurso</div>
+            <div id="rolesContainer" style="margin-bottom:20px;"></div>
+            <button id="addRoleBtn" style="width:100%;background:rgba(155,89,182,0.2);border:1px solid #9b59b6;color:#9b59b6;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:10px;">+ Agregar Nuevo Rol</button>
+          </div>
+
+          <div style="background:rgba(26,31,60,0.8);border-radius:18px;padding:25px;border:2px solid rgba(255,255,255,0.15);">
+            <h3 style="color:white;margin:0 0 20px 0;font-size:20px;">🏢 COSTOS FIJOS DEL PROYECTO</h3>
+            <div style="color:#95a5a6;font-size:14px;margin-bottom:20px;">Costos que no dependen de horas trabajadas</div>
+            <div id="fixedCostsContainer" style="margin-bottom:20px;"></div>
+            <button id="addFixedBtn" style="width:100%;background:rgba(52,152,219,0.2);border:1px solid #3498db;color:#3498db;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;gap:10px;">+ Agregar Costo Fijo</button>
+          </div>
+
+          <div style="background:rgba(26,31,60,0.8);border-radius:18px;padding:25px;border:2px solid rgba(255,255,255,0.15);">
+            <h3 style="color:white;margin:0 0 20px 0;font-size:20px;">📊 GASTOS GENERALES (OVERHEAD)</h3>
+            <div style="color:#95a5a6;font-size:14px;margin-bottom:20px;">Porcentaje adicional para gastos indirectos</div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div style="flex:1;">
+                <input type="range" id="overheadSlider" min="0" max="50" value="${window.currentCostConfig.overheadPercentage}" style="width:100%;"/>
+              </div>
+              <div style="text-align:center;min-width:120px;">
+                <div id="overheadDisplay" style="color:#9b59b6;font-size:32px;font-weight:bold;">${window.currentCostConfig.overheadPercentage}%</div>
+                <div style="color:#95a5a6;font-size:12px;">sobre costos directos</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(46,204,113,0.1);border:2px solid rgba(46,204,113,0.3);border-radius:18px;padding:25px;">
+            <h3 style="color:white;margin:0 0 20px 0;font-size:20px;">📋 RESUMEN DE CONFIGURACIÓN</h3>
+            <div id="costSummary" style="color:#95a5a6;font-size:14px;line-height:1.6;"></div>
+            <button id="previewEVMBtn" style="width:100%;background:linear-gradient(45deg,#8b5cf6,#6d28d9);border:none;color:white;padding:12px;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:10px;">📈 Calcular Previsualización EVM</button>
+          </div>
+
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03);border-top:1px solid rgba(255,255,255,0.1);padding:15px 35px;display:flex;justify-content:space-between;align-items:center;color:#95a5a6;font-size:13px;gap:14px;flex-wrap:wrap;">
+          <div id="costSaveStatus">💾 Los cambios se guardan automáticamente</div>
+          <div style="display:flex;gap:15px;">
+            <button id="loadDefaultBtn" style="background:rgba(243,156,18,0.2);border:1px solid #f39c12;color:#f39c12;padding:8px 15px;border-radius:6px;cursor:pointer;font-size:12px;">🔄 Valores por Defecto</button>
+            <button id="saveConfigBtn" style="background:rgba(46,204,113,0.2);border:1px solid #2ecc71;color:#2ecc71;padding:8px 15px;border-radius:6px;cursor:pointer;font-size:12px;">💾 Guardar Configuración</button>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const $ = (id) => overlay.querySelector('#' + id);
+
+    function updateCostSummary() {
+      const el = $('costSummary');
+      if (!el || !window.currentCostConfig) return;
+      const cfg = window.currentCostConfig;
+      const totalFixedCosts = cfg.fixedCosts.reduce((s, c) => s + (c.amount || 0), 0);
+      const avgRoleCost = cfg.roles.length
+        ? cfg.roles.reduce((s, r) => s + r.costPerHour, 0) / cfg.roles.length
+        : cfg.costPerHour;
+
+      el.innerHTML = `
+        <ul style="margin:0;padding-left:20px;">
+          <li style="margin-bottom:8px;"><strong>Costo base por hora:</strong> €${cfg.costPerHour}</li>
+          <li style="margin-bottom:8px;"><strong>Roles configurados:</strong> ${cfg.roles.length} roles (promedio: €${avgRoleCost.toFixed(0)}/hora)</li>
+          <li style="margin-bottom:8px;"><strong>Costos fijos:</strong> €${totalFixedCosts.toLocaleString()}</li>
+          <li style="margin-bottom:8px;"><strong>Overhead:</strong> ${cfg.overheadPercentage}% adicional</li>
+          <li><strong>Total costos directos estimados:</strong> €${(totalFixedCosts * (1 + cfg.overheadPercentage / 100)).toLocaleString()}</li>
+        </ul>
+        <div style="margin-top:15px;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;font-size:12px;">
+          💡 <strong>Nota:</strong> Los cálculos EVM usarán estos parámetros junto con las horas estimadas y registradas de tus tareas.
+        </div>`;
+    }
+
+    function readFormIntoConfig() {
+      const cfg = window.currentCostConfig;
+      cfg.costPerHour        = parseInt($('costPerHourSlider').value, 10) || 50;
+      cfg.overheadPercentage = parseInt($('overheadSlider').value, 10) || 0;
+
+      cfg.roles = [];
+      overlay.querySelectorAll('#rolesContainer .role-item').forEach((el) => {
+        const name = el.querySelector('.role-name').value.trim();
+        const cost = parseInt(el.querySelector('.role-cost').value, 10) || 0;
+        if (name) cfg.roles.push({ name, costPerHour: cost });
+      });
+
+      cfg.fixedCosts = [];
+      overlay.querySelectorAll('#fixedCostsContainer .fixed-cost-item').forEach((el) => {
+        const name   = el.querySelector('.fixed-name').value.trim();
+        const amount = parseFloat(el.querySelector('.fixed-amount').value) || 0;
+        if (name) cfg.fixedCosts.push({ name, amount });
+      });
+      return cfg;
+    }
+
+    function renderRoles() {
+      const cont = $('rolesContainer');
+      cont.innerHTML = window.currentCostConfig.roles.map((role, i) => `
+        <div class="role-item" data-index="${i}" style="background:rgba(255,255,255,0.05);border-radius:12px;padding:15px;margin-bottom:10px;display:flex;align-items:center;gap:15px;">
+          <div style="flex:1;">
+            <input type="text" class="role-name" value="${role.name}" placeholder="Nombre del rol" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 12px;border-radius:6px;width:100%;font-size:14px;"/>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;min-width:200px;">
+            <span style="color:#95a5a6;font-size:14px;">Costo:</span>
+            <input type="number" class="role-cost" value="${role.costPerHour}" min="20" max="500" step="5" style="background:rgba(52,152,219,0.1);border:1px solid #3498db;color:white;padding:8px 12px;border-radius:6px;width:100px;text-align:center;font-size:14px;"/>
+            <span style="color:#95a5a6;font-size:14px;">/hora</span>
+            <button class="role-remove" data-index="${i}" style="background:rgba(231,76,60,0.2);border:1px solid #e74c3c;color:#e74c3c;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">×</button>
+          </div>
+        </div>`).join('');
+
+      cont.querySelectorAll('.role-remove').forEach((btn) => {
+        btn.onclick = () => {
+          readFormIntoConfig();
+          window.currentCostConfig.roles.splice(parseInt(btn.dataset.index, 10), 1);
+          renderRoles();
+          updateCostSummary();
+        };
+      });
+    }
+
+    function renderFixed() {
+      const cont = $('fixedCostsContainer');
+      cont.innerHTML = window.currentCostConfig.fixedCosts.map((cost, i) => `
+        <div class="fixed-cost-item" data-index="${i}" style="background:rgba(255,255,255,0.05);border-radius:12px;padding:15px;margin-bottom:10px;display:flex;align-items:center;gap:15px;">
+          <div style="flex:1;">
+            <input type="text" class="fixed-name" value="${cost.name}" placeholder="Descripción del costo" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:white;padding:8px 12px;border-radius:6px;width:100%;font-size:14px;"/>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;min-width:200px;">
+            <span style="color:#95a5a6;font-size:14px;">Monto:</span>
+            <input type="number" class="fixed-amount" value="${cost.amount}" min="0" max="100000" step="100" style="background:rgba(243,156,18,0.1);border:1px solid #f39c12;color:white;padding:8px 12px;border-radius:6px;width:120px;text-align:center;font-size:14px;"/>
+            <button class="fixed-remove" data-index="${i}" style="background:rgba(231,76,60,0.2);border:1px solid #e74c3c;color:#e74c3c;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">×</button>
+          </div>
+        </div>`).join('');
+
+      cont.querySelectorAll('.fixed-remove').forEach((btn) => {
+        btn.onclick = () => {
+          readFormIntoConfig();
+          window.currentCostConfig.fixedCosts.splice(parseInt(btn.dataset.index, 10), 1);
+          renderFixed();
+          updateCostSummary();
+        };
+      });
+    }
+
+    renderRoles();
+    renderFixed();
+    updateCostSummary();
+
+    /* ═══════════════════════════════════════════════════════════
+       Eventos
+       ═══════════════════════════════════════════════════════════ */
+
+    $('costPerHourSlider').oninput = function () {
+      $('costPerHourDisplay').textContent = '€' + this.value;
+      window.currentCostConfig.costPerHour = parseInt(this.value, 10);
+      updateCostSummary();
+    };
+
+    $('overheadSlider').oninput = function () {
+      $('overheadDisplay').textContent = this.value + '%';
+      window.currentCostConfig.overheadPercentage = parseInt(this.value, 10);
+      updateCostSummary();
+    };
+
+    $('addRoleBtn').onclick = () => {
+      readFormIntoConfig();
+      window.currentCostConfig.roles.push({ name: 'Nuevo Rol', costPerHour: 50 });
+      renderRoles();
+      updateCostSummary();
+    };
+
+    $('addFixedBtn').onclick = () => {
+      readFormIntoConfig();
+      window.currentCostConfig.fixedCosts.push({ name: 'Nuevo Costo Fijo', amount: 0 });
+      renderFixed();
+      updateCostSummary();
+    };
+
+    $('loadDefaultBtn').onclick = () => {
+      if (!confirm('¿Restaurar valores por defecto para este proyecto?')) return;
+      window.currentCostConfig = defaultConfig();
+      $('costPerHourSlider').value = window.currentCostConfig.costPerHour;
+      $('costPerHourDisplay').textContent = '€' + window.currentCostConfig.costPerHour;
+      $('overheadSlider').value = window.currentCostConfig.overheadPercentage;
+      $('overheadDisplay').textContent = window.currentCostConfig.overheadPercentage + '%';
+      renderRoles(); renderFixed(); updateCostSummary();
+    };
+
+    // ─── Guardar configuración (NO TOCADO) ───
+    $('saveConfigBtn').onclick = () => {
+      readFormIntoConfig();
+      const ok = saveConfig(window.__activeCostKey, window.currentCostConfig);
+      if (ok) {
+        const s = $('costSaveStatus');
+        s.innerHTML = '<span style="color:#2ecc71;font-weight:bold;">✅ Guardado correctamente</span>';
+        if (typeof window.showNotification === 'function') {
+          window.showNotification('✅ Configuración guardada para este proyecto');
+        }
+        console.log('✅ Config guardada [' + window.__activeCostKey + ']:', window.currentCostConfig);
+        setTimeout(() => { if (s) s.innerHTML = '💾 Los cambios se guardan automáticamente'; }, 3000);
+      } else {
+        $('costSaveStatus').innerHTML = '<span style="color:#ef4444;font-weight:bold;">❌ Error al guardar</span>';
+      }
+    };
+
+    // ─── Previsualización EVM (con sync agresivo) ───
+    $('previewEVMBtn').onclick = () => {
+      readFormIntoConfig();
+      saveConfig(window.__activeCostKey, window.currentCostConfig);
+
+      // 🔧 FIX: forzar el proyecto seleccionado ANTES de previsualizar
+      const sel = $('costProjectSelector');
+      if (sel) {
+        const idx = parseInt(sel.value, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < projectsList.length) {
+          forceProjectSync(idx, projectsList[idx]);
+        }
+      }
+
+      if (typeof window.calculateAndShowEVMPreview === 'function') {
+        window.calculateAndShowEVMPreview();
+      } else {
+        console.warn('calculateAndShowEVMPreview no disponible');
+      }
+    };
+
+    // ─── Cambio de proyecto en el selector (con sync agresivo) ───
+    $('costProjectSelector').onchange = function () {
+      // 1) guardar el actual
+      readFormIntoConfig();
+      saveConfig(window.__activeCostKey, window.currentCostConfig);
+
+      // 2) cargar el nuevo
+      const newIdx = parseInt(this.value, 10);
+      const newProj = projectsList[newIdx];
+      const newKey = projectKey(newProj, newIdx);
+      window.__activeCostKey = newKey;
+      window.currentCostConfig = JSON.parse(JSON.stringify(loadConfig(newKey)));
+
+      // 3) 🔧 SYNC AGRESIVO con toda la app
+      forceProjectSync(newIdx, newProj);
+
+      // 4) refrescar UI del modal
+      $('costPerHourSlider').value = window.currentCostConfig.costPerHour;
+      $('costPerHourDisplay').textContent = '€' + window.currentCostConfig.costPerHour;
+      $('overheadSlider').value = window.currentCostConfig.overheadPercentage;
+      $('overheadDisplay').textContent = window.currentCostConfig.overheadPercentage + '%';
+      renderRoles(); renderFixed(); updateCostSummary();
+
+      $('costSaveStatus').innerHTML = `<span style="color:#93c5fd;">📁 Cambiado a: ${newProj.name}</span>`;
+      setTimeout(() => { const s = $('costSaveStatus'); if (s) s.innerHTML = '💾 Los cambios se guardan automáticamente'; }, 2200);
+    };
+
+    // ─── Cerrar ───
+    $('closeCostConfig').onclick = () => {
+      readFormIntoConfig();
+      saveConfig(window.__activeCostKey, window.currentCostConfig);
+      overlay.remove();
+    };
+  };
+
+  console.log('%c✅ FIX costos (estructura original conservada + selector por proyecto + sync agresivo)', 'color:#22c55e;font-weight:bold');
+
+  /* ═══════════════════════════════════════════════════════════
+     FIX 2 · exportGanttData sin páginas repetidas (SIN CAMBIOS)
+     ═══════════════════════════════════════════════════════════ */
+  window.exportGanttData = function () {
+    const project = (window.projects || [])[window.currentProjectIndex];
+    if (!project) { alert('No hay proyecto activo'); return; }
+    const tasks = project.tasks || [];
+
+    const evm = (typeof window.calculateEVMRealFromTasks === 'function')
+      ? window.calculateEVMRealFromTasks(tasks)
+      : null;
+    if (!evm) { alert('Error calculando EVM'); return; }
+
+    const { PV, EV, AC, BAC, CPI, SPI, CV, SV } = evm;
+    const EAC = CPI > 0 ? BAC / CPI : BAC;
+    const ETC = EAC - AC;
+    const VAC = BAC - EAC;
+    const TCPI = (BAC - EV) / Math.max((BAC - AC), 0.01);
+    const unit = 'h';
+
+    const statusData = {
+      completed:  tasks.filter(t => t.status === 'completed').length,
+      inProgress: tasks.filter(t => t.status === 'inProgress').length,
+      pending:    tasks.filter(t => t.status === 'pending').length,
+      overdue:    tasks.filter(t => t.status === 'overdue' || t.status === 'rezagado').length
+    };
+
+    const progress = BAC > 0 ? (EV / BAC) * 100 : 0;
+
+    const taskEarnedValues = tasks.map(t => {
+      const est = Number(t.estimatedTime) || 0;
+      const log = Number(t.timeLogged) || 0;
+      const st  = t.status || 'pending';
+      let p = 0;
+      if (st === 'completed') p = 1;
+      else if (log > 0 && est > 0 && st !== 'pending') p = Math.min(0.99, log / est);
+      else if (typeof t.progress === 'number') p = Math.min(0.99, t.progress / 100);
+      else if (st === 'inProgress' || st === 'overdue' || st === 'rezagado') p = 0.5;
+      return { name: t.name, estimated: est, logged: log, status: st, progress: p * 100, earned: est * p };
+    });
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte EVM - ${project.name}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#f1f5f9;}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;}
+  .pdf-page{width:210mm;min-height:297mm;margin:0 auto 12px auto;padding:15mm;background:#fff;page-break-after:always;break-after:page;position:relative;}
+  .pdf-page:last-child{page-break-after:auto;break-after:auto;}
+  h1{font-size:34px;margin:0 0 20px 0;color:#2c3e50;}
+  h2{font-size:22px;margin:0 0 18px 0;color:#2c3e50;border-bottom:3px solid #3498db;padding-bottom:8px;}
+  h3{font-size:16px;margin:0 0 12px 0;}
+  .cover{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:250mm;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .metric{background:#f8fafc;border-radius:10px;padding:16px;text-align:center;border-left:4px solid #3498db;}
+  .metric .v{font-size:22px;font-weight:bold;}
+  .metric .l{font-size:11px;color:#64748b;margin-top:4px;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;}
+  th{background:#f1f5f9;font-weight:600;}
+  .badge{padding:3px 8px;border-radius:10px;font-size:10px;color:#fff;display:inline-block;}
+  .chart-wrap{position:relative;height:280px;}
+  @media print{
+    @page{size:A4;margin:0;}
+    body{background:#fff;}
+    .pdf-page{margin:0;box-shadow:none;page-break-after:always;break-after:page;}
+    .pdf-page:last-child{page-break-after:auto;break-after:auto;}
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  }
+</style>
+</head>
+<body>
+
+<section class="pdf-page">
+  <div class="cover">
+    <h1>Reporte Ejecutivo EVM</h1>
+    <h2 style="border:none;color:#3498db;font-size:22px;">${project.name}</h2>
+    <div style="margin:20px auto;width:100px;height:4px;background:linear-gradient(to right,#3498db,#2ecc71);"></div>
+    <p style="font-size:14px;color:#64748b;">${new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
+    <p style="font-size:12px;color:#94a3b8;margin-top:24px;">Análisis de Valor Ganado (EVM) - PMI Standard</p>
+  </div>
+</section>
+
+<section class="pdf-page">
+  <h2>📊 Resumen Ejecutivo EVM</h2>
+  <div class="grid2" style="margin-bottom:20px;">
+    <div style="background:${SPI>=1?'#e8f6f3':SPI>=0.8?'#fef9e7':'#fdebd0'};border:2px solid ${SPI>=1?'#2ecc71':SPI>=0.8?'#f39c12':'#e74c3c'};border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-size:13px;font-weight:bold;">ÍNDICE DE CRONOGRAMA (SPI)</div>
+      <div style="font-size:44px;font-weight:bold;color:${SPI>=1?'#2ecc71':SPI>=0.8?'#f39c12':'#e74c3c'};">${SPI.toFixed(2)}</div>
+      <div style="font-size:12px;color:#64748b;">SPI = EV / PV = ${EV.toFixed(2)} / ${PV.toFixed(2)}</div>
+    </div>
+    <div style="background:${CPI>=1?'#e8f6f3':CPI>=0.9?'#fef9e7':'#fdebd0'};border:2px solid ${CPI>=1?'#2ecc71':CPI>=0.9?'#f39c12':'#e74c3c'};border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-size:13px;font-weight:bold;">ÍNDICE DE COSTO (CPI)</div>
+      <div style="font-size:44px;font-weight:bold;color:${CPI>=1?'#2ecc71':CPI>=0.9?'#f39c12':'#e74c3c'};">${CPI.toFixed(2)}</div>
+      <div style="font-size:12px;color:#64748b;">CPI = EV / AC = ${EV.toFixed(2)} / ${AC.toFixed(2)}</div>
+    </div>
+  </div>
+  <div class="grid4">
+    <div class="metric"><div class="v">${BAC.toFixed(2)} ${unit}</div><div class="l">BAC</div></div>
+    <div class="metric" style="border-left-color:#2ecc71;"><div class="v">${EV.toFixed(2)} ${unit}</div><div class="l">EV</div></div>
+    <div class="metric" style="border-left-color:#f59e0b;"><div class="v">${PV.toFixed(2)} ${unit}</div><div class="l">PV</div></div>
+    <div class="metric" style="border-left-color:#ef4444;"><div class="v">${AC.toFixed(2)} ${unit}</div><div class="l">AC</div></div>
+  </div>
+  <div class="grid2" style="margin-top:20px;">
+    <div class="metric" style="border-left-color:${CV>=0?'#2ecc71':'#ef4444'};">
+      <div class="l">VARIANZA DE COSTO (CV)</div>
+      <div class="v">${CV>=0?'+':''}${CV.toFixed(2)} ${unit}</div>
+    </div>
+    <div class="metric" style="border-left-color:${SV>=0?'#2ecc71':'#ef4444'};">
+      <div class="l">VARIANZA DE TIEMPO (SV)</div>
+      <div class="v">${SV>=0?'+':''}${SV.toFixed(2)} ${unit}</div>
+    </div>
+  </div>
+</section>
+
+<section class="pdf-page">
+  <h2>📈 Análisis Gráfico EVM</h2>
+  <div class="grid2">
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+      <h3 style="text-align:center;">Distribución de Tareas</h3>
+      <div class="chart-wrap"><canvas id="chartEstado"></canvas></div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+      <h3 style="text-align:center;">PV vs EV vs AC</h3>
+      <div class="chart-wrap"><canvas id="chartEVM"></canvas></div>
+    </div>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-top:18px;">
+    <h3 style="text-align:center;">Burndown del Proyecto</h3>
+    <div class="chart-wrap" style="height:300px;"><canvas id="chartBurndown"></canvas></div>
+  </div>
+</section>
+
+<section class="pdf-page">
+  <h2>📋 Detalle de Tareas</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Tarea</th><th>Estado</th><th style="text-align:right;">Plan (h)</th><th style="text-align:right;">Real (h)</th><th style="text-align:center;">Progreso</th><th style="text-align:right;">EV (h)</th></tr>
+    </thead>
+    <tbody>
+      ${taskEarnedValues.map((t,i) => {
+        const st = t.status;
+        let color = '#95a5a6', label = st;
+        if (st==='completed') { color='#2ecc71'; label='Completada'; }
+        else if (st==='inProgress') { color='#008090'; label='En Progreso'; }
+        else if (st==='overdue'||st==='rezagado') { color='#e74c3c'; label='Rezagada'; }
+        else if (st==='pending') { color='#f39c12'; label='Pendiente'; }
+        return `<tr>
+          <td>${i+1}</td>
+          <td>${t.name}</td>
+          <td><span class="badge" style="background:${color};">${label}</span></td>
+          <td style="text-align:right;">${t.estimated.toFixed(1)}</td>
+          <td style="text-align:right;">${t.logged.toFixed(1)}</td>
+          <td style="text-align:center;">${t.progress.toFixed(0)}%</td>
+          <td style="text-align:right;font-weight:bold;">${t.earned.toFixed(2)}</td>
+        </tr>`;
+      }).join('')}
+      <tr style="background:#f1f5f9;font-weight:bold;">
+        <td colspan="3">TOTALES</td>
+        <td style="text-align:right;">${BAC.toFixed(2)}</td>
+        <td style="text-align:right;">${AC.toFixed(2)}</td>
+        <td style="text-align:center;">${progress.toFixed(0)}%</td>
+        <td style="text-align:right;">${EV.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="pdf-page">
+  <h2>🔮 Pronósticos y Recomendaciones</h2>
+  <div style="background:linear-gradient(135deg,#6a11cb,#2575fc);color:#fff;border-radius:12px;padding:22px;margin-bottom:22px;">
+    <div class="grid4" style="text-align:center;">
+      <div><div style="font-size:12px;opacity:.9;">EAC</div><div style="font-size:24px;font-weight:bold;">${EAC.toFixed(2)} ${unit}</div></div>
+      <div><div style="font-size:12px;opacity:.9;">ETC</div><div style="font-size:24px;font-weight:bold;">${ETC.toFixed(2)} ${unit}</div></div>
+      <div><div style="font-size:12px;opacity:.9;">VAC</div><div style="font-size:24px;font-weight:bold;">${VAC>=0?'+':''}${VAC.toFixed(2)} ${unit}</div></div>
+      <div><div style="font-size:12px;opacity:.9;">TCPI</div><div style="font-size:24px;font-weight:bold;">${TCPI.toFixed(2)}</div></div>
+    </div>
+  </div>
+  <div style="background:#f8fafc;border-left:4px solid ${SPI>=0.8&&CPI>=0.9?'#2ecc71':'#f39c12'};padding:20px;border-radius:0 8px 8px 0;">
+    <h3>Análisis Final</h3>
+    <p style="line-height:1.6;font-size:13px;"><strong>${project.name}</strong> presenta un desempeño <strong>${SPI>=1?'óptimo':SPI>=0.8?'moderado':'crítico'}</strong> en cronograma (SPI: ${SPI.toFixed(2)}) y manejo de costos <strong>${CPI>=1?'eficiente':CPI>=0.9?'aceptable':'problemático'}</strong> (CPI: ${CPI.toFixed(2)}).</p>
+    <p style="line-height:1.6;font-size:13px;margin-top:8px;">Progreso actual: <strong>${progress.toFixed(1)}%</strong> (${EV.toFixed(2)}${unit} de ${BAC.toFixed(2)}${unit}) · ${tasks.length} tareas.</p>
+  </div>
+  <div style="margin-top:24px;text-align:center;font-size:11px;color:#94a3b8;">
+    Reporte EVM · ${new Date().toLocaleString()} · BAC=${BAC.toFixed(2)} · PV=${PV.toFixed(2)} · EV=${EV.toFixed(2)} · AC=${AC.toFixed(2)}
+  </div>
+</section>
+
+<script>
+window.addEventListener('load', function () {
+  try {
+    new Chart(document.getElementById('chartEstado').getContext('2d'), {
+      type:'doughnut',
+      data:{ labels:['Completadas','En Progreso','Pendientes','Rezagadas'],
+        datasets:[{ data:[${statusData.completed},${statusData.inProgress},${statusData.pending},${statusData.overdue}],
+          backgroundColor:['#2ecc71','#008090','#f39c12','#e74c3c'],borderWidth:1,borderColor:'#fff' }] },
+      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}} }
+    });
+    new Chart(document.getElementById('chartEVM').getContext('2d'), {
+      type:'bar',
+      data:{ labels:['PV','EV','AC'],
+        datasets:[{ data:[${PV},${EV},${AC}],
+          backgroundColor:['#3498db','#2ecc71', ${AC<=EV?"'#f39c12'":"'#e74c3c'"}],borderWidth:0 }] },
+      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true,title:{display:true,text:'Horas'}}} }
+    });
+    new Chart(document.getElementById('chartBurndown').getContext('2d'), {
+      type:'line',
+      data:{ labels:['Inicio','25%','50%','75%','Actual','Fin'],
+        datasets:[
+          { label:'Ideal',data:[${BAC},${BAC*0.75},${BAC*0.5},${BAC*0.25},0,0],
+            borderColor:'#3498db',borderDash:[6,6],borderWidth:2,fill:false,pointRadius:0,tension:0 },
+          { label:'Real',data:[${BAC},${BAC*0.75},${BAC*0.5},${BAC*0.25},${BAC-EV},0],
+            borderColor:${EV>=PV?"'#2ecc71'":"'#e74c3c'"},borderWidth:3,
+            backgroundColor:${EV>=PV?"'rgba(46,204,113,0.1)'":"'rgba(231,76,60,0.1)'"},
+            fill:true,tension:0.2,pointRadius:4 }
+        ] },
+      options:{ responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'Horas'}}} }
+    });
+  } catch(e) { console.warn('chart err', e); }
+  setTimeout(function(){ window.print(); }, 600);
+});
+<\/script>
+
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { alert('Permite ventanas emergentes'); return; }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    console.log('✅ Reporte generado');
+  };
+
+  console.log('%c🚀 Ambos fixes aplicados (estructura original intacta).', 'color:#3b82f6;font-weight:bold;font-size:13px');
+})();
+
+
+
+
+
 // ============================================================
 // 🔓 FIX DEFINITIVO: Liberar scroll al salir del Gantt Ejecutivo
 // ============================================================
