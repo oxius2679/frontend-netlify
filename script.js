@@ -2334,7 +2334,7 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
         const T = {
             panel: es ? 'Panel de Control EVM' : 'EVM Control Panel',
             health: es ? 'Salud' : 'Health',
-            spi: 'SPI',
+            spi: es ? 'SPI' : 'SPI',
             cpi: 'CPI',
             pv: es ? 'Valor Planificado' : 'Planned Value',
             ev: es ? 'Valor Ganado' : 'Earned Value',
@@ -2419,8 +2419,8 @@ const GA_MEASUREMENT_ID = 'G-6H6L9TF1KE'; // ← PEGA AQUÍ TU ID REAL (ej: G-XX
                         <!-- SPI, CPI, CV, SV -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
                             <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">
-                                <div style="color: #94a3b8; font-size: 9px;">${T.spi}</div>
-                                <div style="font-size: 20px; font-weight: 700; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI.toFixed(2)}</div>
+                                <div style="color: #94a3b8; font-size: 9px;" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto. No mide cumplimiento de calendario.">${T.spi} Operativo</div>
+<div style="font-size: 20px; font-weight: 700; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI.toFixed(2)}</div>
                                 <div style="font-size: 9px; color: ${data.SPI >= 1 ? '#10b981' : '#ef4444'};">${data.SPI >= 1 ? '✅' : '⚠️'}</div>
                             </div>
                             <div style="background: rgba(10, 22, 40, 0.75); backdrop-filter: blur(8px); border-radius: 10px; padding: 10px; text-align: center; border: 1px solid ${data.CPI >= 1 ? '#10b981' : '#ef4444'};">
@@ -6460,7 +6460,7 @@ async function safeLoadConFiltro() {
                     <div class="grid-3d">
                         <!-- 1. EVM 3D -->
                         <div class="card-3d">
-                            <div class="card-title"><span>📈</span> EVM - Valor Ganado <span class="kpi-badge">SPI: ${datos.metrics.SPI.toFixed(2)} | CPI: ${datos.metrics.CPI.toFixed(2)}</span></div>
+                            <div class="card-title" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto."><span>📈</span> EVM - Valor Ganado <span class="kpi-badge" style="cursor:help;">SPI Operativo: ${datos.metrics.SPI.toFixed(2)} | CPI: ${datos.metrics.CPI.toFixed(2)}</span></div>
                             <div style="position: relative;">
                                 <canvas id="evmChart3D" class="canvas-3d"></canvas>
                                 <div class="legend-3d">
@@ -14946,7 +14946,7 @@ function generarInformeEVMPMI() {
         <h2 style="color:#1e3a8a;border-left:6px solid #3b82f6;padding-left:20px;margin:0 0 20px 0;">📈 Estado General del Proyecto</h2>
         <div style="background:${colorEstado}20;border:2px solid ${colorEstado};border-radius:16px;padding:25px;text-align:center;margin-bottom:20px;">
             <div style="font-size:28px;font-weight:bold;color:${colorEstado};">${estadoProyecto}</div>
-            <div style="margin-top:10px;font-size:14px;opacity:0.8;">Basado en SPI=${SPI.toFixed(2)} y CPI=${CPI.toFixed(2)}</div>
+            <div style="margin-top:10px;font-size:14px;opacity:0.8;">Basado en SPI Operativo=${SPI.toFixed(2)} y CPI=${CPI.toFixed(2)}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;">
             <div style="background:#dbeafe;padding:20px;border-radius:12px;text-align:center;">
@@ -18631,8 +18631,7 @@ function renderGantt(container) {
                 <div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">${rezagadas}</div><div class="kpi-label">🔴 Rezagadas</div></div>
                 <div class="kpi-card"><div class="kpi-value" style="color:#f97316;">${criticas}</div><div class="kpi-label">⚠️ Críticas</div></div>
                 <div class="kpi-card"><div class="kpi-value" style="color:#f59e0b;">${hitos.length}</div><div class="kpi-label">⭐ Hitos</div></div>
-                <div class="kpi-card"><div class="kpi-value" style="color:#8b5cf6;">${spi}</div><div class="kpi-label">📈 SPI</div></div>
-            </div>
+                <div class="kpi-card-3d" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto. No mide cumplimiento de calendario PMI."><div class="kpi-value-3d" style="color:#8b5cf6;">${spi}</div><div class="kpi-label-3d" style="cursor:help;">📈 SPI Operativo</div></div>
 
             <!-- GRÁFICOS Y ANÁLISIS -->
             <div class="two-columns">
@@ -37583,7 +37582,7 @@ function crearDashboardEVMCompleto() {
                 border-radius: 12px;
                 padding: 20px;
               ">
-                <div style="color: #fde68a; font-size: 14px; margin-bottom: 5px;">SPI</div>
+                <div style="color: #fde68a; font-size: 14px; margin-bottom: 5px; cursor: help;" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto. No mide cumplimiento de calendario PMI.">SPI Operativo ⓘ</div>
                 <div style="color: white; font-size: 42px; font-weight: bold;" id="spiValue"></div>
                 <div style="color: #fde68a; font-size: 13px; margin-top: 8px;">
               
@@ -37635,14 +37634,14 @@ function crearDashboardEVMCompleto() {
                 <div style="margin-bottom: 10px;">
                   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <div style="width: 12px; height: 12px; background: #3498db; border-radius: 50%; flex-shrink: 0;"></div>
-                    <div style="color: #93c5fd; font-weight: 500;">SPI ≥ 1.0</div>
+                    <div style="color: #93c5fd; font-weight: 500;">SPI Operativo ≥ 1.0</div>
                   </div>
                   <div style="color: #cbd5e1; padding-left: 22px; margin-bottom: 8px;">
                     Adelantado o conforme al cronograma
                   </div>
                   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                     <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 50%; flex-shrink: 0;"></div>
-                    <div style="color: #fde68a; font-weight: 500;">SPI < 1.0</div>
+                    <div style="color: #fde68a; font-weight: 500;">SPI Operativo < 1.0</div>
                   </div>
                   <div style="color: #cbd5e1; padding-left: 22px;">
                     Atrasado respecto al cronograma
@@ -39487,12 +39486,15 @@ window.calculateAndShowEVMPreview = function() {
             </div>
             
             <div style="
-              background: ${SPI >= 1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'};
-              border-left: 4px solid ${SPI >= 1 ? '#10b981' : '#f59e0b'};
-              border-radius: 10px;
-              padding: 15px;
-            ">
-              <div style="color: ${SPI >= 1 ? '#a7f3d0' : '#fde68a'}; font-size: 12px; margin-bottom: 5px;">SPI</div>
+  background: ${SPI >= 1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'};
+  border-left: 4px solid ${SPI >= 1 ? '#10b981' : '#f59e0b'};
+  border-radius: 10px;
+  padding: 15px;
+">
+  <div style="color: ${SPI >= 1 ? '#a7f3d0' : '#fde68a'}; font-size: 12px; margin-bottom: 5px; cursor: help;"
+       title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto.">
+    SPI Operativo <span style="opacity:0.6; font-size:10px;">ⓘ</span>
+  </div>
               <div style="color: white; font-size: 28px; font-weight: bold;">${SPI.toFixed(2)}</div>
               <div style="color: ${SPI >= 1 ? '#a7f3d0' : '#fde68a'}; font-size: 11px;">
                 ${SPI >= 1 ? '✅ En tiempo' : '⚠️ Retraso en cronograma'}
