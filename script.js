@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+
 /* ============================================================
    🔧 FIX · CONFIGURACIÓN DE COSTOS POR PROYECTO
    - Mantiene TODA la estructura original (secciones, botones, textos)
@@ -39270,48 +39278,69 @@ window.calculateAndShowEVMPreview = function() {
   console.log('Tareas:', tasks.length);
   console.log('Configuración de costos:', window.currentCostConfig);
   
-  // Calcular métricas EVM
+    // ============================================================
+  // 📊 CÁLCULO EVM — UNIFICADO CON DASHBOARD 3D
+  // ============================================================
   const config = window.currentCostConfig;
-  
-  // 1. Calcular BAC (Presupuesto al Término)
-  const totalEstimatedHours = tasks.reduce((sum, task) => sum + (task.estimatedTime || 0), 0);
-  const totalFixedCosts = config.fixedCosts.reduce((sum, cost) => sum + (cost.amount || 0), 0);
-  
-  // BAC = Costos variables (horas) + Costos fijos + Overhead
-  const variableCosts = totalEstimatedHours * config.costPerHour;
-  const overheadAmount = (variableCosts + totalFixedCosts) * (config.overheadPercentage / 100);
-  const BAC = variableCosts + totalFixedCosts + overheadAmount;
-  
-  // 2. Calcular PV (Valor Planificado) - Suponiendo 60% del tiempo transcurrido
-  const PV = BAC * 0.6;
-  
-  // 3. Calcular EV (Valor Ganado) basado en progreso real
-  let totalEV = 0;
+  const cph = Number(config.costPerHour) || 50;
+
+  // --- 1) Horas ---
+  const totalEstimatedHours = tasks.reduce(
+    (sum, task) => sum + (Number(task.estimatedTime) || 0), 0
+  );
+  const totalLoggedHours = tasks.reduce(
+    (sum, task) => sum + (Number(task.timeLogged) || 0), 0
+  );
+
+  // --- 2) PV = BAC_horas (igual que Dashboard 3D) ---
+  const PV_horas = totalEstimatedHours;
+
+  // --- 3) EV en HORAS (misma regla que Dashboard 3D) ---
+  let EV_horas = 0;
   tasks.forEach(task => {
-    const taskCost = (task.estimatedTime || 0) * config.costPerHour;
-    let taskProgress = 0;
-    
-    if (task.status === 'completed') {
-      taskProgress = 1;
-    } else if (task.timeLogged && task.estimatedTime) {
-      taskProgress = Math.min(1, (task.timeLogged || 0) / (task.estimatedTime || 1));
-    } else if (task.status === 'inProgress') {
-      taskProgress = 0.5; // Asumir 50% si está en progreso
+    const est    = Number(task.estimatedTime) || 0;
+    const logged = Number(task.timeLogged)    || 0;
+    const status = task.status || 'pending';
+
+    if (status === 'completed') {
+      EV_horas += est;
+    } else if (
+      status === 'inProgress' ||
+      status === 'rezagado'   ||
+      status === 'overdue'    ||
+      status === 'retrasado'
+    ) {
+      EV_horas += est * Math.min(1, logged / (est || 1));
     }
-    
-    totalEV += taskCost * taskProgress;
   });
-  
-  const EV = totalEV;
-  
-  // 4. Calcular AC (Costo Real)
-  const AC = tasks.reduce((sum, task) => sum + ((task.timeLogged || 0) * config.costPerHour), 0);
-  
-  // 5. Calcular métricas de desempeño
-  const CV = EV - AC;  // Varianza de Costo
-  const SV = EV - PV;  // Varianza de Tiempo
-  const CPI = AC > 0 ? EV / AC : 0;  // Índice de Desempeño de Costo
-  const SPI = PV > 0 ? EV / PV : 0;  // Índice de Desempeño de Tiempo
+
+  // --- 4) Conversión a € SOLO para mostrar ---
+  const PV = PV_horas * cph;
+  const EV = EV_horas * cph;
+  const AC = totalLoggedHours * cph;
+
+  // --- 5) BAC presupuestario (con fijos + overhead) ---
+  const totalFixedCosts = config.fixedCosts.reduce(
+    (sum, cost) => sum + (Number(cost.amount) || 0), 0
+  );
+  const variableCosts  = totalEstimatedHours * cph;
+  const overheadAmount = (variableCosts + totalFixedCosts) *
+                         (Number(config.overheadPercentage) / 100);
+  const BAC = variableCosts + totalFixedCosts + overheadAmount;
+
+  // --- 6) Índices unitless (idénticos al Dashboard 3D) ---
+  const CPI = AC > 0 ? EV / AC : 1;
+  const SPI = PV > 0 ? EV / PV : 1;
+
+  // --- 7) Varianzas (en €) ---
+  const CV = EV - AC;
+  const SV = EV - PV;
+
+  // --- 8) Proyecciones PMI ---
+  const EAC  = CPI > 0 ? BAC / CPI : BAC;
+  const ETC  = EAC - AC;
+  const VAC  = BAC - EAC;
+  const TCPI = (BAC - EV) / Math.max((BAC - AC), 0.01);
   
   // Mostrar resultados
   const overlay = document.createElement('div');
@@ -39551,15 +39580,21 @@ overlay.innerHTML = overlay.innerHTML.replace(/\$/g, '€');
 // ✅ GUARDAR EVM DE COSTOS GLOBAL
 // ===============================
 window.lastEVMPreviewData = {
-  PV: Math.round(PV),
-  EV: Math.round(EV),
-  AC: Math.round(AC),
+  PV:  Math.round(PV),
+  EV:  Math.round(EV),
+  AC:  Math.round(AC),
   BAC: Math.round(BAC),
   CPI: parseFloat(CPI.toFixed(2)),
   SPI: parseFloat(SPI.toFixed(2)),
-  
+  CV:  Math.round(CV),
+  SV:  Math.round(SV),
+  EAC: Math.round(EAC),
+  ETC: Math.round(ETC),
+  VAC: Math.round(VAC)
 };
 
+console.log('💾 lastEVMPreviewData guardado (unificado):', window.lastEVMPreviewData);
+console.log('   → SPI:', SPI.toFixed(2), '| CPI:', CPI.toFixed(2));
 
 const variances = window.calculateCostVariances(window.lastEVMPreviewData);
 
