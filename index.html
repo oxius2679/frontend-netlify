@@ -34313,6 +34313,98 @@ console.log('📌 MutationObserver como respaldo');
   }, 2000);
 })();
 </script>
+<!-- ================================================================ -->
+<!-- 🎯 FIX DEFINITIVO V2 — Bloquea solo el reporte VIP Premium        -->
+<!-- cuando el click viene del botón "Reporte Ejecutivo" del Gantt.   -->
+<!-- NO interfiere con el handler correcto del Gantt.                 -->
+<!-- ================================================================ -->
+<script>
+(function() {
+    'use strict';
+    
+    console.log('🎯 [FIX V2] Instalando solución definitiva...');
+    
+    if (window.__fixV2Instalado) {
+        console.log('⚠️ Fix V2 ya estaba instalado');
+        return;
+    }
+    window.__fixV2Instalado = true;
+    
+    // ═══════════════════════════════════════════════════════════
+    // PASO 1: Bandera — marcar cuando el click viene del Gantt
+    // ═══════════════════════════════════════════════════════════
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#premiumExecutiveGantt button');
+        if (!btn) return;
+        
+        const txt = (btn.textContent || '').toLowerCase();
+        const esReporte = (txt.includes('reporte') && txt.includes('ejecutivo')) ||
+                          (txt.includes('report')  && txt.includes('executive'));
+        
+        if (esReporte) {
+            window.__clickDesdeGantt = true;
+            console.log('🎯 [FIX V2] Click desde Gantt detectado → flag ON');
+            // Limpiar el flag después de un momento
+            setTimeout(() => {
+                window.__clickDesdeGantt = false;
+                console.log('🎯 [FIX V2] Flag OFF');
+            }, 1500);
+        }
+    }, true); // capture:true para que se ejecute ANTES que todo
+    
+    // ═══════════════════════════════════════════════════════════
+    // PASO 2: Envolver generarReporteVIPPremium
+    // ═══════════════════════════════════════════════════════════
+    function instalarBloqueoVIP() {
+        if (typeof window.generarReporteVIPPremium !== 'function') {
+            return false;
+        }
+        if (window.generarReporteVIPPremium.__ganttGuard) {
+            return true;
+        }
+        
+        const original = window.generarReporteVIPPremium;
+        
+        window.generarReporteVIPPremium = function() {
+            if (window.__clickDesdeGantt) {
+                console.log('🚫 [FIX V2] Reporte VIP Premium BLOQUEADO (click desde Gantt)');
+                return null;
+            }
+            console.log('✅ [FIX V2] Reporte VIP Premium permitido (click desde Dashboard)');
+            return original.apply(this, arguments);
+        };
+        
+        window.generarReporteVIPPremium.__ganttGuard = true;
+        console.log('✅ [FIX V2] generarReporteVIPPremium protegido');
+        return true;
+    }
+    
+    // ═══════════════════════════════════════════════════════════
+    // PASO 3: Ejecutar y vigilar (por si el script se redefine)
+    // ═══════════════════════════════════════════════════════════
+    if (!instalarBloqueoVIP()) {
+        // Reintentar hasta que esté disponible
+        const check = setInterval(() => {
+            if (instalarBloqueoVIP()) {
+                clearInterval(check);
+            }
+        }, 300);
+        setTimeout(() => clearInterval(check), 15000);
+    }
+    
+    // Guardia permanente: si algo reemplaza la función, la volvemos a proteger
+    setInterval(instalarBloqueoVIP, 2000);
+    
+    // ═══════════════════════════════════════════════════════════
+    // PASO 4: Exponer la función correcta para debug
+    // ═══════════════════════════════════════════════════════════
+    // (Solo informativo: la función real vive en un IIFE, no la tocamos)
+    
+    console.log('✅ [FIX V2] Listo. Un solo reporte por click en el Gantt.');
+    console.log('📌 Para probar: haz click en "Reporte Ejecutivo" del Gantt.');
+    console.log('📌 Deberías ver SOLO el reporte del Gantt (con dependencias y ruta crítica).');
+})();
+</script>
 </body>
 </html>
  
