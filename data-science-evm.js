@@ -76,12 +76,21 @@
         box-shadow: 0 30px 90px rgba(0,0,0,0.85), 0 0 130px rgba(139,92,246,0.25), inset 0 1px 0 rgba(196,181,253,0.2);
         overflow: hidden; backdrop-filter: blur(20px);
       }
-      .ds-header {
-        padding: 26px 34px;
+           .ds-header {
+        padding: 22px 34px;
         background: linear-gradient(135deg, rgba(30,12,70,0.95), rgba(40,20,90,0.55));
         border-bottom: 1px solid rgba(167,139,250,0.22);
+        display: flex; flex-direction: column;
+        gap: 16px;
+      }
+      .ds-header-top {
         display: flex; justify-content: space-between; align-items: center;
         flex-wrap: wrap; gap: 16px;
+      }
+      .ds-header-bottom {
+        display: flex; justify-content: center; align-items: center;
+        padding-top: 14px;
+        border-top: 1px solid rgba(167,139,250,0.15);
       }
       .ds-header-brand { display: flex; align-items: center; gap: 18px; }
       .ds-logo {
@@ -101,7 +110,10 @@
         background-clip: text; animation: dsShine 6s linear infinite;
       }
       .ds-subtitle { color: #a78bfa; font-size: 11px; margin-top: 5px; letter-spacing: 3px; text-transform: uppercase; }
-      .ds-header-actions { display: flex; gap: 10px; }
+          .ds-header-actions {
+        display: flex; gap: 8px; flex-wrap: wrap;
+        justify-content: flex-end;
+      }
       .ds-btn {
         padding: 10px 18px; border-radius: 12px; font-weight: 800; font-size: 12px;
         cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
@@ -1380,15 +1392,23 @@
           <div class="ds-shell">
 
             <!-- HEADER -->
-            <div class="ds-header">
-              <div class="ds-header-brand">
-                <div class="ds-logo">🧠</div>
-                <div>
-                  <h1 class="ds-title">IA EXECUTIVE ANALYTICS</h1>
-                  <div class="ds-subtitle">Machine Learning · Deep Learning · Predictive Suite</div>
+                        <div class="ds-header">
+              <div class="ds-header-top">
+                <div class="ds-header-brand">
+                  <div class="ds-logo">🧠</div>
+                  <div>
+                    <h1 class="ds-title">IA EXECUTIVE ANALYTICS</h1>
+                    <div class="ds-subtitle">Machine Learning · Deep Learning · Predictive Suite</div>
+                  </div>
+                </div>
+                <div class="ds-header-actions">
+                  <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openHistory()">📚 Historial</button>
+                  <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openComparison()">⚖️ Comparar</button>
+                  <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.exportReport()">📄 Exportar Reporte</button>
+                  <button class="ds-btn ds-btn-danger" onclick="window.EVMAI.close()">✕ Cerrar</button>
                 </div>
               </div>
-                            <div class="ds-header-actions">
+              <div class="ds-header-bottom">
                 <div class="ds-role-selector" id="ds-role-selector">
                   <button class="ds-role-btn" data-role="CFO" title="Chief Financial Officer">💰 CFO</button>
                   <button class="ds-role-btn" data-role="CEO" title="Chief Executive Officer">👔 CEO</button>
@@ -1396,10 +1416,6 @@
                   <button class="ds-role-btn ds-role-active" data-role="PMO" title="Project Management Officer">🎯 PMO</button>
                   <button class="ds-role-btn" data-role="Auditor" title="Auditor Senior">🔍 Auditor</button>
                 </div>
-                                               <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openHistory()">📚 Historial</button>
-                <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openComparison()">⚖️ Comparar</button>
-                <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.exportReport()">📄 Exportar Reporte</button>
-                <button class="ds-btn ds-btn-danger" onclick="window.EVMAI.close()">✕ Cerrar</button>
               </div>
             </div>
 
@@ -1633,19 +1649,52 @@
       await this.renderComparison();
     },
 
-    // ⚖️ Calcula KPIs aproximados de un proyecto desde sus tareas
+        // ⚖️ Calcula KPIs de un proyecto usando la CONFIG REAL de costes
     calcularKPIsProyecto(project) {
-      const costPerHour = 50; // valor por defecto si no hay config
+      // 1) Leer config de costes real desde localStorage
+      let costPerHour = 50;
+      let overheadPct = 0;
+      let fixedCostsTotal = 0;
+
+      try {
+        const cfgRaw = localStorage.getItem(`evmCostConfig_p_${project.id}`);
+        if (cfgRaw) {
+          const cfg = JSON.parse(cfgRaw);
+          if (typeof cfg.costPerHour === 'number' && cfg.costPerHour > 0) costPerHour = cfg.costPerHour;
+          if (typeof cfg.overheadPercentage === 'number') overheadPct = cfg.overheadPercentage;
+          if (Array.isArray(cfg.fixedCosts)) {
+            fixedCostsTotal = cfg.fixedCosts.reduce((s, fc) => s + (parseFloat(fc.amount) || 0), 0);
+          }
+        }
+      } catch (e) {
+        console.warn('Config de costes no disponible para', project.name);
+      }
+
+      // 2) Coste por hora efectivo (con overhead)
+      const costeEfectivoHora = costPerHour * (1 + overheadPct / 100);
+
       const tasks = project.tasks || [];
 
-      const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0) * costPerHour, 0);
-      const AC = tasks.reduce((s, t) => s + (t.timeLogged || 0) * costPerHour, 0);
+      // 3) Cálculos con config real
+      const totalEstimated = tasks.reduce((s, t) => s + (t.estimatedTime || 0), 0);
+      const totalLogged = tasks.reduce((s, t) => s + (t.timeLogged || 0), 0);
+
+      // BAC = horas estimadas × coste efectivo + costes fijos
+      const BAC = totalEstimated * costeEfectivoHora + fixedCostsTotal;
+
+      // AC = horas registradas × coste efectivo + costes fijos incurridos
+      const AC = totalLogged * costeEfectivoHora + fixedCostsTotal;
+
+      // EV = progreso ponderado de tareas + porción de costes fijos según avance
+      const progresoPonderado = totalEstimated > 0
+        ? tasks.reduce((s, t) => s + ((t.progress || 0) / 100) * (t.estimatedTime || 0), 0) / totalEstimated
+        : 0;
       const EV = tasks.reduce((s, t) => {
         const p = Math.max(0, Math.min(100, t.progress || 0)) / 100;
-        return s + (t.estimatedTime || 0) * costPerHour * p;
-      }, 0);
+        return s + (t.estimatedTime || 0) * costeEfectivoHora * p;
+      }, 0) + (fixedCostsTotal * progresoPonderado);
 
-      // PV aproximado
+      // PV aproximado por tiempo transcurrido
       const hoy = Date.now();
       const conDeadline = tasks.filter(t => t.deadline);
       let PV = 0;
@@ -1667,7 +1716,7 @@
       const VAC = BAC - EAC;
       const progresoPct = BAC > 0 ? (EV / BAC) * 100 : 0;
 
-      // Score 0-100: 50 por CPI + 50 por SPI (capped)
+      // Score 0-100 ponderado
       const scoreCPI = Math.min(1.5, CPI) / 1.5 * 50;
       const scoreSPI = Math.min(1.5, SPI) / 1.5 * 50;
       const score = Math.round(scoreCPI + scoreSPI);
@@ -1685,7 +1734,10 @@
         score,
         taskCount: tasks.length,
         completedTasks: tasks.filter(t => (t.progress || 0) >= 100).length,
-        delayedTasks: tasks.filter(t => t.status === 'overdue').length
+        delayedTasks: tasks.filter(t => t.status === 'overdue').length,
+        costPerHour: parseFloat(costeEfectivoHora.toFixed(2)),
+        fixedCosts: fixedCostsTotal,
+        tieneConfigReal: costPerHour !== 50 || fixedCostsTotal > 0
       };
     },
 
