@@ -1947,154 +1947,681 @@
         });
       },
 
-      // 📄 GENERADOR DE REPORTES EJECUTIVOS
-            generarReporte(tipo) {
-        console.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
-        alert('🎯 Reporte solicitado: ' + tipo);
+           // 📄 GENERADOR DE REPORTES EJECUTIVOS — NIVEL C-SUITE
+      generarReporte(tipo) {
         const projects = State.projects;
         const agg = DataLayer.aggregate(projects);
+        const activos = projects.filter(p => p.totalTasks > 0);
         const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+        const fechaCorta = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
-        let titulo = '';
-        let contenido = '';
+        // ============================================================
+        // 🎨 SISTEMA DE DISEÑO PREMIUM (CSS)
+        // ============================================================
+        const CSS = `
+          @page { size: A4; margin: 0; }
+          * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { margin: 0; font-family: 'Georgia', 'Times New Roman', serif; color: #0f172a; background: #fff; line-height: 1.55; font-size: 11pt; }
 
-        const headerStyle = `
-          <div style="background:linear-gradient(135deg,#0a0620,#1e1145);color:#fff;padding:30px 40px;border-radius:12px;margin-bottom:24px;">
-            <div style="font-size:10px;letter-spacing:6px;text-transform:uppercase;color:#fbbf24;font-weight:800;margin-bottom:10px;">Executive Intelligence Report</div>
-            <h1 style="margin:0;font-size:32px;font-weight:900;letter-spacing:-0.5px;">TITULO_PLACEHOLDER</h1>
-            <div style="margin-top:10px;font-size:12px;color:#a78bfa;letter-spacing:1px;">Generado: ${ahora} · CONFIDENCIAL</div>
+          /* PORTADA */
+          .cover {
+            height: 297mm; padding: 60mm 25mm 30mm;
+            background: linear-gradient(160deg, #0a0620 0%, #1e1145 40%, #2d1a6e 75%, #0ea5e9 130%);
+            color: #fff; page-break-after: always; position: relative; overflow: hidden;
+          }
+          .cover::before {
+            content: ''; position: absolute; top: -50%; right: -30%;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 60%);
+            border-radius: 50%;
+          }
+          .cover::after {
+            content: ''; position: absolute; bottom: -40%; left: -20%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 60%);
+            border-radius: 50%;
+          }
+          .cover-content { position: relative; z-index: 1; }
+          .cover-brand {
+            font-size: 10pt; letter-spacing: 8px; text-transform: uppercase;
+            color: #fbbf24; font-weight: 700; margin-bottom: 60px;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          .cover-brand::after {
+            content: ''; display: block; width: 60px; height: 3px;
+            background: linear-gradient(90deg, #fbbf24, transparent);
+            margin-top: 12px;
+          }
+          .cover-title {
+            font-size: 52pt; font-weight: 900; line-height: 1; margin: 0;
+            font-family: 'Georgia', serif; letter-spacing: -2px;
+            background: linear-gradient(135deg, #fff 0%, #fbbf24 50%, #fff 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          .cover-subtitle {
+            font-size: 18pt; font-weight: 300; font-style: italic;
+            color: #ddd6fe; margin-top: 24px; max-width: 480px;
+            font-family: 'Georgia', serif; line-height: 1.4;
+          }
+          .cover-meta {
+            margin-top: 80px; display: flex; gap: 40px; flex-wrap: wrap;
+            padding-top: 30px; border-top: 1px solid rgba(251,191,36,0.3);
+          }
+          .cover-meta-item { font-family: 'Inter', Arial, sans-serif; }
+          .cover-meta-label {
+            font-size: 8pt; letter-spacing: 4px; text-transform: uppercase;
+            color: #fbbf24; margin-bottom: 6px; font-weight: 800;
+          }
+          .cover-meta-value { font-size: 12pt; font-weight: 700; color: #fff; }
+          .cover-badge {
+            position: absolute; bottom: 30mm; right: 25mm;
+            padding: 12px 24px; border: 2px solid #fbbf24;
+            border-radius: 100px; font-size: 9pt; letter-spacing: 4px;
+            text-transform: uppercase; font-weight: 900; color: #fbbf24;
+            background: rgba(251,191,36,0.1); backdrop-filter: blur(10px);
+            font-family: 'Inter', Arial, sans-serif;
+          }
+
+          /* PÁGINAS */
+          .page { padding: 20mm 20mm 25mm; min-height: 297mm; page-break-after: always; position: relative; }
+          .page:last-child { page-break-after: auto; }
+          .page-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding-bottom: 12px; border-bottom: 3px solid #fbbf24;
+            margin-bottom: 24px;
+          }
+          .page-title {
+            font-size: 22pt; font-weight: 900; color: #1e1145;
+            margin: 0; letter-spacing: -0.5px; font-family: 'Georgia', serif;
+          }
+          .page-meta {
+            font-size: 8pt; letter-spacing: 3px; text-transform: uppercase;
+            color: #a78bfa; font-weight: 800; font-family: 'Inter', Arial, sans-serif;
+            text-align: right;
+          }
+          .page-footer {
+            position: absolute; bottom: 12mm; left: 20mm; right: 20mm;
+            display: flex; justify-content: space-between;
+            font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase;
+            color: #94a3b8; font-family: 'Inter', Arial, sans-serif;
+            padding-top: 10px; border-top: 1px solid #e2e8f0;
+          }
+
+          /* SECCIONES */
+          .section { margin-bottom: 28px; page-break-inside: avoid; }
+          .section-title {
+            font-size: 11pt; font-weight: 900; letter-spacing: 3px;
+            text-transform: uppercase; color: #1e1145;
+            padding-bottom: 8px; margin-bottom: 16px; position: relative;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          .section-title::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 60px; height: 3px; background: linear-gradient(90deg, #fbbf24, #a78bfa);
+          }
+
+          /* KPI GRID */
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+          .kpi-card {
+            padding: 16px 14px; border-radius: 8px;
+            background: linear-gradient(160deg, #fafaff 0%, #f1f5f9 100%);
+            border: 1px solid #e0d9f5;
+            border-top: 3px solid var(--c, #7c3aed);
+            position: relative; overflow: hidden;
+          }
+          .kpi-card::before {
+            content: ''; position: absolute; top: 0; right: 0;
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, var(--c, #7c3aed) 0%, transparent 70%);
+            opacity: 0.08; border-radius: 50%;
+          }
+          .kpi-label {
+            font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase;
+            color: #7c3aed; font-weight: 800; margin-bottom: 8px;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          .kpi-value {
+            font-size: 22pt; font-weight: 900; color: var(--c, #1e1145);
+            line-height: 1; letter-spacing: -1px;
+            font-family: 'Georgia', serif;
+          }
+          .kpi-sub { font-size: 8pt; color: #64748b; margin-top: 6px; font-style: italic; }
+
+          /* GAUGE CIRCULAR */
+          .gauge-wrap {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 90px; height: 90px; border-radius: 50%;
+            background: conic-gradient(var(--gauge-c, #22c55e) var(--gauge-pct, 0%), #e2e8f0 0%);
+            position: relative; margin: 8px 0;
+          }
+          .gauge-inner {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: #fff; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+          }
+          .gauge-value {
+            font-size: 16pt; font-weight: 900; color: var(--c, #1e1145);
+            line-height: 1; font-family: 'Georgia', serif;
+          }
+          .gauge-label { font-size: 6.5pt; letter-spacing: 1.5px; text-transform: uppercase; color: #64748b; margin-top: 2px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; }
+
+          /* BARRAS HORIZONTALES */
+          .bar-row { margin-bottom: 14px; }
+          .bar-header {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 6px; font-family: 'Inter', Arial, sans-serif;
+          }
+          .bar-name { font-size: 9.5pt; font-weight: 700; color: #1e1145; }
+          .bar-value { font-size: 10pt; font-weight: 900; color: var(--c, #7c3aed); }
+          .bar-track {
+            height: 10px; border-radius: 5px; background: #e2e8f0;
+            overflow: hidden; position: relative;
+          }
+          .bar-fill {
+            height: 100%; border-radius: 5px;
+            background: linear-gradient(90deg, var(--c, #7c3aed), color-mix(in srgb, var(--c, #7c3aed) 70%, #fff));
+            position: relative;
+          }
+          .bar-fill::after {
+            content: ''; position: absolute; top: 0; right: 0;
+            width: 4px; height: 100%; background: rgba(255,255,255,0.5);
+            border-radius: 5px;
+          }
+
+          /* TABLAS */
+          table.premium {
+            width: 100%; border-collapse: collapse; margin: 12px 0;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          table.premium thead th {
+            background: linear-gradient(135deg, #1e1145, #2d1a6e); color: #fff;
+            padding: 10px 12px; text-align: left;
+            font-size: 8pt; letter-spacing: 2px; text-transform: uppercase;
+            font-weight: 800;
+          }
+          table.premium thead th.num { text-align: right; }
+          table.premium tbody td {
+            padding: 11px 12px; border-bottom: 1px solid #e2e8f0;
+            font-size: 9.5pt; color: #1e293b;
+            font-variant-numeric: tabular-nums;
+          }
+          table.premium tbody td.num { text-align: right; font-weight: 700; }
+          table.premium tbody tr:nth-child(even) td { background: #fafaff; }
+          table.premium tbody tr:last-child td { border-bottom: 2px solid #1e1145; }
+          table.premium tfoot td {
+            padding: 12px; background: linear-gradient(90deg, #1e1145, #2d1a6e);
+            color: #fbbf24; font-weight: 900; font-size: 10pt;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          table.premium tfoot td.num { text-align: right; }
+
+          /* BADGES */
+          .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 100px;
+            font-size: 7.5pt; font-weight: 900; letter-spacing: 1px;
+            text-transform: uppercase; font-family: 'Inter', Arial, sans-serif;
+          }
+          .badge-green { background: #dcfce7; color: #166534; }
+          .badge-yellow { background: #fef3c7; color: #854d0e; }
+          .badge-orange { background: #fed7aa; color: #9a3412; }
+          .badge-red { background: #fee2e2; color: #991b1b; }
+          .badge-purple { background: #e9d5ff; color: #6b21a8; }
+
+          /* STORY BOX */
+          .story {
+            padding: 20px 24px; background: linear-gradient(90deg, #fafaff, #f1f5f9);
+            border-left: 5px solid #7c3aed; border-radius: 6px;
+            font-size: 10pt; line-height: 1.7; color: #1e293b;
+            margin-bottom: 20px;
+          }
+          .story strong { color: #1e1145; }
+
+          /* INSIGHT CARD */
+          .insight {
+            display: flex; gap: 14px; padding: 14px 16px; margin-bottom: 10px;
+            border-radius: 8px; background: linear-gradient(90deg, var(--ic)15, transparent);
+            border-left: 4px solid var(--ic, #7c3aed);
+            page-break-inside: avoid;
+          }
+          .insight-icon { font-size: 20pt; flex-shrink: 0; }
+          .insight-content { flex: 1; }
+          .insight-title {
+            font-size: 10pt; font-weight: 900; color: var(--ic, #1e1145);
+            margin-bottom: 4px; letter-spacing: 0.5px;
+            font-family: 'Inter', Arial, sans-serif;
+          }
+          .insight-text { font-size: 9.5pt; color: #334155; line-height: 1.6; }
+
+          /* DIVIDER */
+          .divider {
+            height: 1px; background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            margin: 24px 0;
+          }
+
+          /* GRID 2 COLUMNAS */
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+          /* HALO / CARD DESTACADA */
+          .highlight-card {
+            padding: 20px; border-radius: 10px;
+            background: linear-gradient(135deg, #1e1145, #2d1a6e);
+            color: #fff; margin-bottom: 16px;
+          }
+          .highlight-card .kpi-label { color: #fbbf24; }
+          .highlight-card .kpi-value { color: #fff; }
+          .highlight-card .kpi-sub { color: #cbd5e1; }
+        `;
+
+        // ============================================================
+        // 🖨️ UTILIDADES
+        // ============================================================
+        const pageHeader = (titulo, seccion) => `
+          <div class="page-header">
+            <h2 class="page-title">${titulo}</h2>
+            <div class="page-meta">
+              ${seccion}<br>${fechaCorta}
+            </div>
           </div>
         `;
 
-        const tableStyle = `
-          table { width:100%; border-collapse:collapse; margin:16px 0; font-size:12px; }
-          th { background:#1e1145; color:#fff; padding:10px 12px; text-align:left; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
-          td { padding:10px 12px; border-bottom:1px solid #e0d9f5; font-variant-numeric:tabular-nums; }
-          tr:nth-child(even) td { background:#fafaff; }
-          .num { text-align:right; font-weight:700; }
-        `;
-
-        const sectionStyle = `
-          section { margin-bottom:26px; page-break-inside:avoid; }
-          h2 { font-size:16px; font-weight:900; color:#2d1a6e; letter-spacing:1.5px; text-transform:uppercase; border-bottom:2px solid #fbbf24; padding-bottom:8px; margin-bottom:14px; }
-          .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
-          .kpi-box { padding:16px; border-radius:10px; background:#f8f5ff; border:1px solid #e0d9f5; }
-          .kpi-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#7c3aed; font-weight:800; margin-bottom:6px; }
-          .kpi-value { font-size:22px; font-weight:900; color:#1a1a2e; line-height:1; }
-          .kpi-sub { font-size:10px; color:#666; margin-top:4px; }
-          .story { padding:18px 22px; background:#f8f5ff; border-left:4px solid #7c3aed; font-size:12.5px; line-height:1.7; color:#1a1a2e; border-radius:6px; }
-          .alert-row { padding:12px 16px; border-radius:8px; margin-bottom:10px; background:#fff7ed; border-left:4px solid #f97316; font-size:12px; line-height:1.6; }
-        `;
-
-        const footer = `
-          <div style="text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #e0d9f5;font-size:10px;color:#888;letter-spacing:2px;text-transform:uppercase;">
-            The Jacksons Solutions · Executive Intelligence · ${ahora}
+        const pageFooter = (num) => `
+          <div class="page-footer">
+            <div>The Jacksons Solutions · Executive Intelligence</div>
+            <div>Confidencial · Página ${num}</div>
           </div>
         `;
 
-        const wrap = (t, c) => `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t}</title><style>body{font-family:Georgia,'Times New Roman',serif;color:#1a1a2e;margin:0;padding:40px;line-height:1.55;background:#fff;} ${tableStyle} ${sectionStyle}</style></head><body>${headerStyle.replace('TITULO_PLACEHOLDER', t)}${c}${footer}</body></html>`;
+        const gauge = (pct, color, label, value) => `
+          <div style="text-align:center;">
+            <div class="gauge-wrap" style="--gauge-pct:${Math.min(100, pct)}%;--gauge-c:${color};">
+              <div class="gauge-inner" style="--c:${color};">
+                <div class="gauge-value">${value}</div>
+              </div>
+            </div>
+            <div class="gauge-label" style="color:${color};">${label}</div>
+          </div>
+        `;
 
-        // ============ REPORTE 1: EJECUTIVO ============
+        const bar = (label, value, max, color, sufijo = '') => {
+          const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+          return `
+            <div class="bar-row">
+              <div class="bar-header">
+                <span class="bar-name">${label}</span>
+                <span class="bar-value" style="--c:${color};">${value}${sufijo}</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" style="--c:${color};width:${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        };
+
+        const badgeHealth = (health) => {
+          const map = { saludable: 'badge-green', aceptable: 'badge-purple', riesgo: 'badge-yellow', critico: 'badge-red' };
+          return `<span class="badge ${map[health] || 'badge-purple'}">${health}</span>`;
+        };
+
+        // ============================================================
+        // 📄 PORTADA COMÚN
+        // ============================================================
+        const portada = (titulo, subtitulo) => `
+          <div class="cover">
+            <div class="cover-content">
+              <div class="cover-brand">The Jacksons Solutions</div>
+              <h1 class="cover-title">${titulo}</h1>
+              <div class="cover-subtitle">${subtitulo}</div>
+              <div class="cover-meta">
+                <div class="cover-meta-item">
+                  <div class="cover-meta-label">Fecha</div>
+                  <div class="cover-meta-value">${fechaCorta}</div>
+                </div>
+                <div class="cover-meta-item">
+                  <div class="cover-meta-label">Proyectos</div>
+                  <div class="cover-meta-value">${activos.length} activos</div>
+                </div>
+                <div class="cover-meta-item">
+                  <div class="cover-meta-label">Presupuesto</div>
+                  <div class="cover-meta-value">${fmt.moneyCompact(agg.BAC)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="cover-badge">Confidencial</div>
+          </div>
+        `;
+
+        // ============================================================
+        // 📊 REPORTES
+        // ============================================================
+        let contenidoHTML = '';
+
+        // ============ 1. REPORTE EJECUTIVO ============
         if (tipo === 'ejecutivo') {
-          titulo = 'Reporte Ejecutivo';
-          const activos = projects.filter(p => p.totalTasks > 0);
-          contenido = `
-            <section>
-              <h2>Resumen del Portfolio</h2>
-              <div class="kpi-row">
-                <div class="kpi-box"><div class="kpi-label">Proyectos Activos</div><div class="kpi-value">${activos.length}</div><div class="kpi-sub">de ${projects.length} totales</div></div>
-                <div class="kpi-box"><div class="kpi-label">CPI Global</div><div class="kpi-value" style="color:${agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.CPI.toFixed(2)}</div><div class="kpi-sub">${agg.CPI >= 1 ? 'Óptimo' : 'En atención'}</div></div>
-                <div class="kpi-box"><div class="kpi-label">SPI Global</div><div class="kpi-value" style="color:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.SPI.toFixed(2)}</div><div class="kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : 'Retrasado'}</div></div>
-                <div class="kpi-box"><div class="kpi-label">Presupuesto Total</div><div class="kpi-value">${fmt.money(agg.BAC)}</div><div class="kpi-sub">portfolio consolidado</div></div>
+          const cpiColor = agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#f59e0b' : '#ef4444';
+          const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
+          const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
+
+          contenidoHTML = portada('Reporte Ejecutivo', 'Análisis consolidado del portfolio y estado estratégico de los proyectos activos.') + `
+
+          <!-- PÁGINA 1: KPIs -->
+          <div class="page">
+            ${pageHeader('Resumen Ejecutivo', 'Dashboard Consolidado')}
+
+            <div class="story">
+              El portfolio gestiona <strong>${activos.length} proyectos activos</strong> con un presupuesto total de <strong>${fmt.money(agg.BAC)}</strong>.
+              El desempeño financiero global muestra un CPI de <strong>${agg.CPI.toFixed(2)}</strong> ${agg.CPI >= 1 ? 'por encima del objetivo' : agg.CPI >= 0.9 ? 'en zona de tolerancia' : 'requiriendo atención ejecutiva'},
+              mientras que el cronograma presenta un SPI de <strong>${agg.SPI.toFixed(2)}</strong>.
+              El margen proyectado al cierre es de <strong>${fmt.money(agg.margen)}</strong> (${fmt.pct(agg.margenPct)}).
+            </div>
+
+            <div class="section">
+              <div class="section-title">Indicadores Clave del Portfolio</div>
+              <div class="kpi-grid">
+                <div class="kpi-card" style="--c:#fbbf24">
+                  <div class="kpi-label">Presupuesto Total</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
+                  <div class="kpi-sub">${activos.length} proyectos activos</div>
+                </div>
+                <div class="kpi-card" style="--c:#22c55e">
+                  <div class="kpi-label">Valor Ganado</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.EV)}</div>
+                  <div class="kpi-sub">${fmt.pct(agg.progresoPct)} completado</div>
+                </div>
+                <div class="kpi-card" style="--c:#ef4444">
+                  <div class="kpi-label">Costo Real</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.AC)}</div>
+                  <div class="kpi-sub">${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} consumido</div>
+                </div>
+                <div class="kpi-card" style="--c:${margenColor}">
+                  <div class="kpi-label">Margen Proyectado</div>
+                  <div class="kpi-value">${agg.margen >= 0 ? '+' : ''}${fmt.moneyCompact(agg.margen)}</div>
+                  <div class="kpi-sub">${fmt.pct(agg.margenPct)}</div>
+                </div>
               </div>
-            </section>
-            <section>
-              <h2>Estado por Proyecto</h2>
-              <table>
-                <thead><tr><th>Proyecto</th><th class="num">Progreso</th><th class="num">CPI</th><th class="num">SPI</th><th class="num">EAC</th><th class="num">VAC</th></tr></thead>
-                <tbody>
-                  ${activos.map(p => `<tr><td>${p.name}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td class="num">${p.CPI.toFixed(2)}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${fmt.money(p.EAC)}</td><td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td></tr>`).join('')}
-                </tbody>
-              </table>
-            </section>
-            <section>
-              <h2>Estado Consolidado</h2>
-              <div class="story">
-                El portfolio tiene <strong>${activos.length} proyectos activos</strong> con un CPI consolidado de <strong>${agg.CPI.toFixed(2)}</strong> y un SPI de <strong>${agg.SPI.toFixed(2)}</strong>. 
-                La salud del portfolio se distribuye en ${agg.distribucion.saludable} proyecto(s) saludable(s), ${agg.distribucion.riesgo} en riesgo y ${agg.distribucion.critico} crítico(s).
-                ${agg.margen < 0 ? 'Se detecta sobrecosto en el portfolio que requiere atención ejecutiva inmediata.' : 'El portfolio opera con margen positivo.'}
+            </div>
+
+            <div class="section">
+              <div class="section-title">Salud del Portfolio</div>
+              <div class="grid-2" style="align-items:center;">
+                <div style="display:flex;gap:26px;justify-content:space-around;">
+                  ${gauge(agg.CPI * 100 / 1.5, cpiColor, 'CPI', agg.CPI.toFixed(2))}
+                  ${gauge(agg.SPI * 100 / 1.5, spiColor, 'SPI', agg.SPI.toFixed(2))}
+                  ${gauge(agg.progresoPct, '#7c3aed', 'Progreso', agg.progresoPct.toFixed(0) + '%')}
+                </div>
+                <div>
+                  ${bar('Saludable', agg.distribucion.saludable, activos.length, '#22c55e')}
+                  ${bar('Aceptable', agg.distribucion.aceptable, activos.length, '#a78bfa')}
+                  ${bar('En Riesgo', agg.distribucion.riesgo, activos.length, '#f59e0b')}
+                  ${bar('Crítico', agg.distribucion.critico, activos.length, '#ef4444')}
+                </div>
               </div>
-            </section>
+            </div>
+
+            ${pageFooter(1)}
+          </div>
+
+          <!-- PÁGINA 2: DETALLE POR PROYECTO -->
+          <div class="page">
+            ${pageHeader('Desglose por Proyecto', 'Análisis Detallado')}
+
+            <table class="premium">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th class="num">Presupuesto</th>
+                  <th class="num">CPI</th>
+                  <th class="num">SPI</th>
+                  <th class="num">EAC</th>
+                  <th class="num">VAC</th>
+                  <th style="text-align:center;">Salud</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activos.map(p => `
+                  <tr>
+                    <td><strong>${p.name}</strong></td>
+                    <td class="num">${fmt.money(p.BAC)}</td>
+                    <td class="num" style="color:${p.CPI >= 1 ? '#22c55e' : p.CPI >= 0.9 ? '#f59e0b' : '#ef4444'};font-weight:900;">${p.CPI.toFixed(2)}</td>
+                    <td class="num" style="color:${p.SPI >= 1 ? '#22c55e' : p.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};font-weight:900;">${p.SPI.toFixed(2)}</td>
+                    <td class="num">${fmt.money(p.EAC)}</td>
+                    <td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};font-weight:900;">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td>
+                    <td style="text-align:center;">${badgeHealth(p.health)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>PORTFOLIO CONSOLIDADO</td>
+                  <td class="num">${fmt.money(agg.BAC)}</td>
+                  <td class="num">${agg.CPI.toFixed(2)}</td>
+                  <td class="num">${agg.SPI.toFixed(2)}</td>
+                  <td class="num">${fmt.money(agg.EAC)}</td>
+                  <td class="num">${agg.VAC >= 0 ? '+' : ''}${fmt.money(agg.VAC)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div class="divider"></div>
+
+            <div class="section-title">Análisis de Desviaciones</div>
+            ${activos.filter(p => p.VAC < 0).length > 0 ? activos.filter(p => p.VAC < 0).map(p => `
+              <div class="insight" style="--ic:#ef4444;">
+                <div class="insight-icon">⚠️</div>
+                <div class="insight-content">
+                  <div class="insight-title">${p.name}</div>
+                  <div class="insight-text">Sobrecosto proyectado de <strong>${fmt.money(Math.abs(p.VAC))}</strong>. El CPI de ${p.CPI.toFixed(2)} indica que por cada euro invertido se generan solo ${(p.CPI * 100).toFixed(1)} céntimos de valor ganado. Requiere auditoría de costes.</div>
+                </div>
+              </div>
+            `).join('') : '<div class="story">✅ Ningún proyecto presenta sobrecosto proyectado al cierre.</div>'}
+
+            ${pageFooter(2)}
+          </div>
           `;
         }
 
-        // ============ REPORTE 2: FINANCIERO ============
+        // ============ 2. REPORTE FINANCIERO ============
         else if (tipo === 'financiero') {
-          titulo = 'Reporte Financiero';
-          contenido = `
-            <section>
-              <h2>Resumen Financiero</h2>
-              <div class="kpi-row">
-                <div class="kpi-box"><div class="kpi-label">BAC Total</div><div class="kpi-value">${fmt.money(agg.BAC)}</div><div class="kpi-sub">presupuesto autorizado</div></div>
-                <div class="kpi-box"><div class="kpi-label">AC Total</div><div class="kpi-value" style="color:#ef4444;">${fmt.money(agg.AC)}</div><div class="kpi-sub">${(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0).toFixed(1)}% consumido</div></div>
-                <div class="kpi-box"><div class="kpi-label">EAC Proyectado</div><div class="kpi-value">${fmt.money(agg.EAC)}</div><div class="kpi-sub">estimado al cierre</div></div>
-                <div class="kpi-box"><div class="kpi-label">VAC Proyectado</div><div class="kpi-value" style="color:${agg.VAC >= 0 ? '#22c55e' : '#ef4444'};">${agg.VAC >= 0 ? '+' : ''}${fmt.money(agg.VAC)}</div><div class="kpi-sub">${agg.VAC >= 0 ? 'ahorro' : 'sobrecosto'}</div></div>
+          const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
+
+          contenidoHTML = portada('Reporte Financiero', 'Análisis exhaustivo de costes, márgenes y proyecciones financieras del portfolio.') + `
+
+          <div class="page">
+            ${pageHeader('Estado Financiero', 'Análisis Consolidado')}
+
+            <div class="section">
+              <div class="section-title">Resumen Financiero</div>
+              <div class="kpi-grid">
+                <div class="kpi-card" style="--c:#fbbf24">
+                  <div class="kpi-label">Presupuesto Total</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
+                  <div class="kpi-sub">Autorizado</div>
+                </div>
+                <div class="kpi-card" style="--c:#ef4444">
+                  <div class="kpi-label">Costo Real</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.AC)}</div>
+                  <div class="kpi-sub">${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} consumido</div>
+                </div>
+                <div class="kpi-card" style="--c:#7c3aed">
+                  <div class="kpi-label">EAC Proyectado</div>
+                  <div class="kpi-value">${fmt.moneyCompact(agg.EAC)}</div>
+                  <div class="kpi-sub">Estimado al cierre</div>
+                </div>
+                <div class="kpi-card" style="--c:${margenColor}">
+                  <div class="kpi-label">VAC</div>
+                  <div class="kpi-value">${agg.VAC >= 0 ? '+' : ''}${fmt.moneyCompact(agg.VAC)}</div>
+                  <div class="kpi-sub">${agg.VAC >= 0 ? 'Ahorro' : 'Sobrecosto'}</div>
+                </div>
               </div>
-            </section>
-            <section>
-              <h2>Detalle Financiero por Proyecto</h2>
-              <table>
-                <thead><tr><th>Proyecto</th><th class="num">BAC</th><th class="num">AC</th><th class="num">EAC</th><th class="num">VAC</th><th class="num">Margen %</th></tr></thead>
-                <tbody>
-                  ${projects.filter(p => p.totalTasks > 0).map(p => `<tr><td>${p.name}</td><td class="num">${fmt.money(p.BAC)}</td><td class="num">${fmt.money(p.AC)}</td><td class="num">${fmt.money(p.EAC)}</td><td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td><td class="num" style="color:${p.margenPct >= 0 ? '#22c55e' : '#ef4444'};">${p.margenPct.toFixed(1)}%</td></tr>`).join('')}
-                </tbody>
-              </table>
-            </section>
-            <section>
-              <h2>Análisis Financiero</h2>
-              <div class="story">
-                El portfolio presenta un consumo del <strong>${(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0).toFixed(1)}%</strong> del presupuesto con un avance del <strong>${agg.progresoPct.toFixed(1)}%</strong>. 
-                El CPI de <strong>${agg.CPI.toFixed(2)}</strong> indica que ${agg.CPI >= 1 ? 'la eficiencia financiera es óptima' : 'existe sobrecosto respecto al plan'}.
-                ${agg.margen < 0 ? `El margen proyectado es negativo (${fmt.money(agg.margen)}), lo que requiere auditoría de costes inmediata.` : `El margen proyectado es positivo (${fmt.money(agg.margen)}).`}
-              </div>
-            </section>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Consumo vs Presupuesto</div>
+              ${bar('Presupuesto (BAC)', agg.BAC, agg.BAC, '#fbbf24', ' €')}
+              ${bar('Costo Real (AC)', agg.AC, agg.BAC, '#ef4444', ' €')}
+              ${bar('Valor Ganado (EV)', agg.EV, agg.BAC, '#22c55e', ' €')}
+              ${bar('Proyección Final (EAC)', agg.EAC, Math.max(agg.BAC, agg.EAC), '#7c3aed', ' €')}
+            </div>
+
+            ${pageFooter(1)}
+          </div>
+
+          <div class="page">
+            ${pageHeader('Desglose por Proyecto', 'Análisis Individual')}
+
+            <table class="premium">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th class="num">BAC</th>
+                  <th class="num">AC</th>
+                  <th class="num">EAC</th>
+                  <th class="num">VAC</th>
+                  <th class="num">Margen %</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activos.map(p => `
+                  <tr>
+                    <td><strong>${p.name}</strong></td>
+                    <td class="num">${fmt.money(p.BAC)}</td>
+                    <td class="num">${fmt.money(p.AC)}</td>
+                    <td class="num">${fmt.money(p.EAC)}</td>
+                    <td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};font-weight:900;">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td>
+                    <td class="num" style="color:${p.margenPct >= 0 ? '#22c55e' : '#ef4444'};font-weight:900;">${fmt.pct(p.margenPct)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>PORTFOLIO CONSOLIDADO</td>
+                  <td class="num">${fmt.money(agg.BAC)}</td>
+                  <td class="num">${fmt.money(agg.AC)}</td>
+                  <td class="num">${fmt.money(agg.EAC)}</td>
+                  <td class="num">${agg.VAC >= 0 ? '+' : ''}${fmt.money(agg.VAC)}</td>
+                  <td class="num">${fmt.pct(agg.margenPct)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div class="divider"></div>
+
+            <div class="section-title">Análisis Financiero</div>
+            <div class="story">
+              El portfolio ha consumido <strong>${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)}</strong> del presupuesto con un avance del <strong>${fmt.pct(agg.progresoPct)}</strong>.
+              El CPI de <strong>${agg.CPI.toFixed(2)}</strong> indica que ${agg.CPI >= 1 ? 'la eficiencia financiera supera el plan' : 'se está generando menos valor del esperado por cada euro invertido'}.
+              ${agg.margen < 0 ? `El margen proyectado es negativo (<strong>${fmt.money(agg.margen)}</strong>), lo que requiere auditoría de costes inmediata.` : `El margen proyectado es positivo (<strong>${fmt.money(agg.margen)}</strong>).`}
+            </div>
+
+            ${pageFooter(2)}
+          </div>
           `;
         }
 
-        // ============ REPORTE 3: CRONOGRAMA ============
+        // ============ 3. REPORTE DE CRONOGRAMA ============
         else if (tipo === 'cronograma') {
-          titulo = 'Reporte de Cronograma';
-          const conRezagos = projects.filter(p => p.delayedTasks > 0);
-          contenido = `
-            <section>
-              <h2>Resumen del Cronograma</h2>
-              <div class="kpi-row">
-                <div class="kpi-box"><div class="kpi-label">SPI Global</div><div class="kpi-value" style="color:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.SPI.toFixed(2)}</div><div class="kpi-sub">${agg.SPI >= 1 ? 'en tiempo' : 'retrasado'}</div></div>
-                <div class="kpi-box"><div class="kpi-label">Total Tareas</div><div class="kpi-value">${agg.tasks}</div><div class="kpi-sub">portfolio</div></div>
-                <div class="kpi-box"><div class="kpi-label">Completadas</div><div class="kpi-value" style="color:#22c55e;">${agg.completed}</div><div class="kpi-sub">${((agg.completed / Math.max(1, agg.tasks)) * 100).toFixed(1)}% del total</div></div>
-                <div class="kpi-box"><div class="kpi-label">Rezagadas</div><div class="kpi-value" style="color:#ef4444;">${agg.delayed}</div><div class="kpi-sub">${((agg.delayed / Math.max(1, agg.tasks)) * 100).toFixed(1)}% del total</div></div>
+          const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
+          const conRezagos = activos.filter(p => p.delayedTasks > 0);
+
+          contenidoHTML = portada('Reporte de Cronograma', 'Estado de cumplimiento temporal, hitos y análisis de desviaciones del portfolio.') + `
+
+          <div class="page">
+            ${pageHeader('Estado del Cronograma', 'Análisis Temporal')}
+
+            <div class="section">
+              <div class="section-title">Indicadores de Cronograma</div>
+              <div class="kpi-grid">
+                <div class="kpi-card" style="--c:${spiColor}">
+                  <div class="kpi-label">SPI Global</div>
+                  <div class="kpi-value">${agg.SPI.toFixed(2)}</div>
+                  <div class="kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : agg.SPI >= 0.9 ? 'Tolerancia' : 'Retrasado'}</div>
+                </div>
+                <div class="kpi-card" style="--c:#7c3aed">
+                  <div class="kpi-label">Total Tareas</div>
+                  <div class="kpi-value">${agg.tasks}</div>
+                  <div class="kpi-sub">portfolio</div>
+                </div>
+                <div class="kpi-card" style="--c:#22c55e">
+                  <div class="kpi-label">Completadas</div>
+                  <div class="kpi-value">${agg.completed}</div>
+                  <div class="kpi-sub">${fmt.pct((agg.completed / Math.max(1, agg.tasks)) * 100)} del total</div>
+                </div>
+                <div class="kpi-card" style="--c:#ef4444">
+                  <div class="kpi-label">Rezagadas</div>
+                  <div class="kpi-value">${agg.delayed}</div>
+                  <div class="kpi-sub">${fmt.pct((agg.delayed / Math.max(1, agg.tasks)) * 100)} del total</div>
+                </div>
               </div>
-            </section>
-            <section>
-              <h2>Proyectos con Rezagos</h2>
-              ${conRezagos.length === 0 ? '<div class="story">✅ No hay tareas rezagadas en el portfolio.</div>' : `
-                <table>
-                  <thead><tr><th>Proyecto</th><th class="num">Tareas Rezagadas</th><th class="num">SPI</th><th class="num">Progreso</th><th>Estado</th></tr></thead>
-                  <tbody>
-                    ${conRezagos.map(p => `<tr><td>${p.name}</td><td class="num" style="color:#ef4444;font-weight:900;">${p.delayedTasks}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td>${p.health.toUpperCase()}</td></tr>`).join('')}
-                  </tbody>
-                </table>
-              `}
-            </section>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Distribución de Tareas</div>
+              <div style="text-align:center;margin:20px 0;">
+                ${gauge(agg.progresoPct, spiColor, 'Progreso General', agg.progresoPct.toFixed(0) + '%')}
+              </div>
+              ${bar('Completadas', agg.completed, agg.tasks, '#22c55e')}
+              ${bar('En curso', activos.reduce((s, p) => s + p.inProgressTasks, 0), agg.tasks, '#f59e0b')}
+              ${bar('Rezagadas', agg.delayed, agg.tasks, '#ef4444')}
+              ${bar('Pendientes', activos.reduce((s, p) => s + p.pendingTasks, 0), agg.tasks, '#a78bfa')}
+            </div>
+
+            ${pageFooter(1)}
+          </div>
+
+          ${conRezagos.length > 0 ? `
+          <div class="page">
+            ${pageHeader('Proyectos con Rezagos', 'Análisis de Riesgos Temporales')}
+
+            <table class="premium">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th class="num">Tareas Rezagadas</th>
+                  <th class="num">SPI</th>
+                  <th class="num">Progreso</th>
+                  <th style="text-align:center;">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${conRezagos.map(p => `
+                  <tr>
+                    <td><strong>${p.name}</strong></td>
+                    <td class="num" style="color:#ef4444;font-weight:900;">${p.delayedTasks}</td>
+                    <td class="num">${p.SPI.toFixed(2)}</td>
+                    <td class="num">${fmt.pct(p.progresoPct)}</td>
+                    <td style="text-align:center;">${badgeHealth(p.health)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <div class="section-title" style="margin-top:24px;">Recomendaciones Ejecutivas</div>
+            <div class="insight" style="--ic:#f59e0b;">
+              <div class="insight-icon">⚡</div>
+              <div class="insight-content">
+                <div class="insight-title">Fast-Tracking en Ruta Crítica</div>
+                <div class="insight-text">Priorizar tareas bloqueantes y añadir recursos a actividades críticas para recuperar el cronograma.</div>
+              </div>
+            </div>
+            <div class="insight" style="--ic:#7c3aed;">
+              <div class="insight-icon">🎯</div>
+              <div class="insight-content">
+                <div class="insight-title">Revisión de Dependencias</div>
+                <div class="insight-text">Auditar dependencias entre tareas y eliminar cuellos de botella que ralentizan el avance.</div>
+              </div>
+            </div>
+
+            ${pageFooter(2)}
+          </div>
+          ` : ''}
           `;
         }
 
-        // ============ REPORTE 4: EQUIPO ============
+        // ============ 4. REPORTE DE EQUIPO ============
         else if (tipo === 'equipo') {
-          titulo = 'Reporte de Equipo';
-          const activos = projects.filter(p => p.totalTasks > 0);
           const personas = {};
-          activos.forEach(p => p.tasks.forEach(t => {
+          activos.forEach(p => (p.tasks || []).forEach(t => {
             const n = (t.assignee || '').trim();
             if (!n || n === 'Sin asignar' || n === 'Sistema') return;
             if (!personas[n]) personas[n] = { tareas: 0, horas: 0, completadas: 0, proyectos: new Set() };
@@ -2104,102 +2631,204 @@
             personas[n].proyectos.add(p.name);
           }));
           const lista = Object.entries(personas).map(([n, d]) => ({ nombre: n, ...d, proyectos: Array.from(d.proyectos) }));
+          const eficiencia = (agg.loggedHours / Math.max(1, agg.totalHours)) * 100;
 
-          contenido = `
-            <section>
-              <h2>Resumen del Equipo</h2>
-              <div class="kpi-row">
-                <div class="kpi-box"><div class="kpi-label">Personas Asignadas</div><div class="kpi-value">${lista.length}</div><div class="kpi-sub">en el portfolio</div></div>
-                <div class="kpi-box"><div class="kpi-label">Horas Asignadas</div><div class="kpi-value">${agg.totalHours}h</div><div class="kpi-sub">estimadas</div></div>
-                <div class="kpi-box"><div class="kpi-label">Horas Registradas</div><div class="kpi-value">${agg.loggedHours}h</div><div class="kpi-sub">reales</div></div>
-                <div class="kpi-box"><div class="kpi-label">Eficiencia</div><div class="kpi-value">${((agg.loggedHours / Math.max(1, agg.totalHours)) * 100).toFixed(1)}%</div><div class="kpi-sub">registro vs estimación</div></div>
+          contenidoHTML = portada('Reporte de Equipo', 'Distribución de carga, utilización y performance del equipo asignado al portfolio.') + `
+
+          <div class="page">
+            ${pageHeader('Resumen del Equipo', 'Análisis de Recursos')}
+
+            <div class="section">
+              <div class="section-title">Indicadores Clave</div>
+              <div class="kpi-grid">
+                <div class="kpi-card" style="--c:#7c3aed">
+                  <div class="kpi-label">Personas Asignadas</div>
+                  <div class="kpi-value">${lista.length}</div>
+                  <div class="kpi-sub">En el portfolio</div>
+                </div>
+                <div class="kpi-card" style="--c:#fbbf24">
+                  <div class="kpi-label">Horas Estimadas</div>
+                  <div class="kpi-value">${agg.totalHours}h</div>
+                  <div class="kpi-sub">Planificadas</div>
+                </div>
+                <div class="kpi-card" style="--c:#22c55e">
+                  <div class="kpi-label">Horas Registradas</div>
+                  <div class="kpi-value">${agg.loggedHours}h</div>
+                  <div class="kpi-sub">Reales</div>
+                </div>
+                <div class="kpi-card" style="--c:${eficiencia >= 90 ? '#22c55e' : eficiencia >= 70 ? '#f59e0b' : '#ef4444'}">
+                  <div class="kpi-label">Eficiencia</div>
+                  <div class="kpi-value">${eficiencia.toFixed(1)}%</div>
+                  <div class="kpi-sub">Registro vs estimación</div>
+                </div>
               </div>
-            </section>
-            <section>
-              <h2>Detalle por Persona</h2>
-              <table>
-                <thead><tr><th>Persona</th><th class="num">Tareas</th><th class="num">Completadas</th><th class="num">Horas Est.</th><th class="num">Proyectos</th></tr></thead>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Detalle por Persona</div>
+              <table class="premium">
+                <thead>
+                  <tr>
+                    <th>Persona</th>
+                    <th class="num">Tareas</th>
+                    <th class="num">Completadas</th>
+                    <th class="num">Horas Est.</th>
+                    <th class="num">Proyectos</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  ${lista.sort((a, b) => b.tareas - a.tareas).map(p => `<tr><td>${p.nombre}</td><td class="num">${p.tareas}</td><td class="num" style="color:#22c55e;">${p.completadas}</td><td class="num">${p.horas}h</td><td class="num">${p.proyectos.length}</td></tr>`).join('')}
+                  ${lista.sort((a, b) => b.tareas - a.tareas).map(p => `
+                    <tr>
+                      <td><strong>${p.nombre}</strong></td>
+                      <td class="num">${p.tareas}</td>
+                      <td class="num" style="color:#22c55e;font-weight:900;">${p.completadas}</td>
+                      <td class="num">${p.horas}h</td>
+                      <td class="num">${p.proyectos.length}</td>
+                    </tr>
+                  `).join('')}
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <td>TOTAL EQUIPO</td>
+                    <td class="num">${lista.reduce((s, p) => s + p.tareas, 0)}</td>
+                    <td class="num">${lista.reduce((s, p) => s + p.completadas, 0)}</td>
+                    <td class="num">${lista.reduce((s, p) => s + p.horas, 0)}h</td>
+                    <td class="num">—</td>
+                  </tr>
+                </tfoot>
               </table>
-            </section>
+            </div>
+
+            ${pageFooter(1)}
+          </div>
           `;
         }
 
-        // ============ REPORTE 5: RIESGOS ============
+        // ============ 5. REPORTE DE RIESGOS ============
         else if (tipo === 'riesgos') {
-          titulo = 'Reporte de Riesgos';
           const riesgos = [];
-          if (agg.CPI < 0.9) riesgos.push({ nivel: 'ALTO', desc: 'Sobrecosto en el portfolio', exp: Math.abs(agg.VAC), accion: 'Auditoría de horas + renegociación' });
-          if (agg.SPI < 0.9) riesgos.push({ nivel: 'ALTO', desc: 'Retraso en el cronograma', exp: agg.BAC * 0.15, accion: 'Fast-tracking en ruta crítica' });
-          if (agg.delayed > 0) riesgos.push({ nivel: agg.delayed > 5 ? 'MEDIO' : 'BAJO', desc: `${agg.delayed} tareas rezagadas`, exp: agg.delayed * 500, accion: 'Reasignación de recursos' });
+          if (agg.CPI < 0.9) riesgos.push({ nivel: 'CRÍTICO', color: '#ef4444', desc: 'Sobrecosto consolidado en el portfolio', exp: Math.abs(agg.VAC), accion: 'Auditoría inmediata de horas y renegociación de contratos' });
+          if (agg.SPI < 0.9) riesgos.push({ nivel: 'ALTO', color: '#f97316', desc: 'Retraso significativo en el cronograma', exp: agg.BAC * 0.15, accion: 'Fast-tracking en ruta crítica y refuerzo de recursos' });
+          if (agg.delayed > 0) riesgos.push({ nivel: agg.delayed > 5 ? 'MEDIO' : 'BAJO', color: agg.delayed > 5 ? '#f59e0b' : '#22c55e', desc: `${agg.delayed} tareas rezagadas identificadas`, exp: agg.delayed * 500, accion: 'Reasignación de recursos y revisión de dependencias' });
           const vacios = projects.filter(p => p.totalTasks === 0);
-          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', desc: `${vacios.length} proyecto(s) sin alcance`, exp: 0, accion: 'Definir alcance o archivar' });
+          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', color: '#a78bfa', desc: `${vacios.length} proyectos sin alcance definido`, exp: 0, accion: 'Definir alcance o archivar para limpiar el portfolio' });
 
-          contenido = `
-            <section>
-              <h2>Matriz de Riesgos Identificados</h2>
-              ${riesgos.length === 0 ? '<div class="story">✅ No se detectaron riesgos significativos en el portfolio.</div>' : `
-                <table>
-                  <thead><tr><th>Nivel</th><th>Riesgo</th><th class="num">Exposición</th><th>Mitigación</th></tr></thead>
-                  <tbody>
-                    ${riesgos.map(r => `<tr><td><strong>${r.nivel}</strong></td><td>${r.desc}</td><td class="num">${fmt.money(r.exp)}</td><td>${r.accion}</td></tr>`).join('')}
-                  </tbody>
-                </table>
-              `}
-            </section>
-            <section>
-              <h2>Exposición Total al Riesgo</h2>
-              <div class="story">
-                La exposición agregada al riesgo del portfolio es de <strong>${fmt.money(riesgos.reduce((s, r) => s + r.exp, 0))}</strong>. 
-                ${riesgos.filter(r => r.nivel === 'ALTO').length > 0 ? `Existen <strong>${riesgos.filter(r => r.nivel === 'ALTO').length} riesgos de nivel ALTO</strong> que requieren plan de mitigación ejecutivo en los próximos 7 días.` : 'No hay riesgos de nivel ALTO que requieran intervención inmediata.'}
+          const exposicionTotal = riesgos.reduce((s, r) => s + r.exp, 0);
+
+          contenidoHTML = portada('Reporte de Riesgos', 'Identificación, evaluación y mitigación de riesgos del portfolio activo.') + `
+
+          <div class="page">
+            ${pageHeader('Matriz de Riesgos', 'Análisis de Exposición')}
+
+            <div class="section">
+              <div class="section-title">Exposición Total al Riesgo</div>
+              <div class="highlight-card">
+                <div class="kpi-label">Exposición Agregada del Portfolio</div>
+                <div style="font-size:36pt;font-weight:900;color:#fbbf24;line-height:1;margin:12px 0;font-family:'Georgia',serif;">${fmt.money(exposicionTotal)}</div>
+                <div class="kpi-sub">Basado en ${riesgos.length} riesgos identificados · ${riesgos.filter(r => r.nivel === 'CRÍTICO' || r.nivel === 'ALTO').length} de nivel alto o crítico</div>
               </div>
-            </section>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Riesgos Identificados</div>
+              ${riesgos.map(r => `
+                <div class="insight" style="--ic:${r.color};">
+                  <div class="insight-icon">${r.nivel === 'CRÍTICO' ? '🚨' : r.nivel === 'ALTO' ? '⚠️' : r.nivel === 'MEDIO' ? '⚡' : 'ℹ️'}</div>
+                  <div class="insight-content">
+                    <div class="insight-title" style="color:${r.color};">[${r.nivel}] ${r.desc}</div>
+                    <div class="insight-text">
+                      <strong>Exposición:</strong> ${fmt.money(r.exp)}<br>
+                      <strong>Mitigación:</strong> ${r.accion}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            ${pageFooter(1)}
+          </div>
           `;
         }
 
-        // ============ REPORTE 6: COMPARATIVO ============
+        // ============ 6. REPORTE COMPARATIVO ============
         else if (tipo === 'comparativo') {
-          titulo = 'Reporte Comparativo';
-          const activos = projects.filter(p => p.totalTasks > 0);
           const ordenados = [...activos].sort((a, b) => (b.CPI + b.SPI) - (a.CPI + a.SPI));
+          const maxScore = 200;
 
-          contenido = `
-            <section>
-              <h2>Benchmark entre Proyectos</h2>
-              <table>
-                <thead><tr><th>#</th><th>Proyecto</th><th class="num">CPI</th><th class="num">SPI</th><th class="num">Progreso</th><th class="num">Margen %</th><th>Score</th></tr></thead>
-                <tbody>
-                  ${ordenados.map((p, i) => {
-                    const score = Math.round(((p.CPI + p.SPI) / 2) * 100);
-                    return `<tr><td>${i + 1}</td><td>${p.name}</td><td class="num">${p.CPI.toFixed(2)}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td class="num">${p.margenPct.toFixed(1)}%</td><td><strong>${score}</strong></td></tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
-            </section>
-            <section>
-              <h2>Análisis Comparativo</h2>
-              <div class="story">
-                El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el portfolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100. 
-                ${ordenados.length > 1 ? `El proyecto <strong>${ordenados[ordenados.length - 1].name}</strong> requiere mayor atención con un score de ${Math.round(((ordenados[ordenados.length - 1].CPI + ordenados[ordenados.length - 1].SPI) / 2) * 100)}/100.` : ''}
-                La media del portfolio se sitúa en CPI ${agg.CPI.toFixed(2)} y SPI ${agg.SPI.toFixed(2)}.
-              </div>
-            </section>
+          contenidoHTML = portada('Reporte Comparativo', 'Benchmarking interno del portfolio y ranking de desempeño ejecutivo.') + `
+
+          <div class="page">
+            ${pageHeader('Ranking de Performance', 'Benchmark Interno')}
+
+            <div class="section">
+              <div class="section-title">Score Comparativo (CPI + SPI)</div>
+              ${ordenados.map((p, i) => {
+                const score = (p.CPI + p.SPI) * 100;
+                const color = score >= 180 ? '#22c55e' : score >= 140 ? '#fbbf24' : '#ef4444';
+                return bar(`#${i + 1} · ${p.name}`, Math.round(score), maxScore, color, ' pts');
+              }).join('')}
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">Tabla Comparativa Detallada</div>
+            <table class="premium">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Proyecto</th>
+                  <th class="num">CPI</th>
+                  <th class="num">SPI</th>
+                  <th class="num">Progreso</th>
+                  <th class="num">Margen %</th>
+                  <th class="num">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ordenados.map((p, i) => {
+                  const score = Math.round(((p.CPI + p.SPI) / 2) * 100);
+                  return `
+                    <tr>
+                      <td><strong>${i + 1}</strong></td>
+                      <td><strong>${p.name}</strong></td>
+                      <td class="num" style="color:${p.CPI >= 1 ? '#22c55e' : p.CPI >= 0.9 ? '#f59e0b' : '#ef4444'};font-weight:900;">${p.CPI.toFixed(2)}</td>
+                      <td class="num" style="color:${p.SPI >= 1 ? '#22c55e' : p.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};font-weight:900;">${p.SPI.toFixed(2)}</td>
+                      <td class="num">${fmt.pct(p.progresoPct)}</td>
+                      <td class="num" style="color:${p.margenPct >= 0 ? '#22c55e' : '#ef4444'};">${fmt.pct(p.margenPct)}</td>
+                      <td class="num"><strong>${score}</strong></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+
+            <div class="divider"></div>
+
+            <div class="section-title">Análisis Comparativo</div>
+            <div class="story">
+              El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el portfolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100.
+              ${ordenados.length > 1 ? `El proyecto <strong>${ordenados[ordenados.length - 1].name}</strong> requiere mayor atención con un score de ${Math.round(((ordenados[ordenados.length - 1].CPI + ordenados[ordenados.length - 1].SPI) / 2) * 100)}/100.` : ''}
+              La media del portfolio se sitúa en CPI <strong>${agg.CPI.toFixed(2)}</strong> y SPI <strong>${agg.SPI.toFixed(2)}</strong>.
+            </div>
+
+            ${pageFooter(1)}
+          </div>
           `;
         }
 
-        console.log('🎯 [BI] A punto de abrir ventana. titulo:', titulo, '| contenido length:', contenido?.length);
+        // ============================================================
+        // 🖨️ GENERAR Y ABRIR
+        // ============================================================
+        const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Executive Report</title><style>${CSS}</style></head><body>${contenidoHTML}</body></html>`;
 
-        // Abrir ventana e imprimir
         const w = window.open('', '_blank');
         if (!w) {
           alert('⚠️ Permite las ventanas emergentes para generar el reporte.');
           return;
         }
-        w.document.write(wrap(titulo, contenido));
+        w.document.write(html);
         w.document.close();
-        setTimeout(() => { w.focus(); w.print(); }, 500);
+        setTimeout(() => { w.focus(); w.print(); }, 800);
       },
 
             calcularTendencias(projects) {
