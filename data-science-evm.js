@@ -267,6 +267,58 @@
       }
       .ds-mic-status.ds-active { display: block; }
 
+
+      .ds-btn-attach {
+        padding: 12px 16px; border-radius: 12px;
+        border: 1px solid rgba(167,139,250,0.5);
+        background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(88,28,135,0.1));
+        color: #ddd6fe; font-size: 16px; cursor: pointer;
+        transition: all 0.25s ease; font-family: inherit;
+        min-width: 50px;
+      }
+      .ds-btn-attach:hover {
+        background: linear-gradient(135deg, rgba(139,92,246,0.4), rgba(88,28,135,0.25));
+        box-shadow: 0 0 20px rgba(139,92,246,0.5);
+      }
+      .ds-image-preview {
+        display: none;
+        padding: 12px 14px; border-radius: 12px; margin-bottom: 10px;
+        background: rgba(139,92,246,0.1);
+        border: 1px dashed rgba(167,139,250,0.5);
+        align-items: center; gap: 14px;
+      }
+      .ds-image-preview.ds-active { display: flex; }
+      .ds-image-preview-thumb {
+        width: 70px; height: 70px; border-radius: 10px;
+        object-fit: cover; border: 2px solid rgba(167,139,250,0.5);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+      .ds-image-preview-info {
+        flex: 1; font-size: 12px; color: #ddd6fe;
+      }
+      .ds-image-preview-name {
+        font-weight: 700; margin-bottom: 4px;
+      }
+      .ds-image-preview-size {
+        font-size: 10px; color: #a78bfa; letter-spacing: 1px;
+      }
+      .ds-image-preview-remove {
+        padding: 6px 12px; border-radius: 8px;
+        border: 1px solid rgba(239,68,68,0.5);
+        background: rgba(239,68,68,0.15); color: #fca5a5;
+        font-size: 11px; font-weight: 800; letter-spacing: 1px;
+        cursor: pointer; font-family: inherit;
+      }
+      .ds-image-preview-remove:hover {
+        background: rgba(239,68,68,0.3);
+      }
+      .ds-chat-msg-image {
+        max-width: 220px; max-height: 220px; border-radius: 10px;
+        margin-bottom: 8px; border: 2px solid rgba(167,139,250,0.4);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+
+
       .ds-chat-send {
         padding: 12px 22px; border-radius: 12px; font-weight: 800; font-size: 12px;
         cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
@@ -1147,8 +1199,18 @@
       const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
 
       try {
-                const payload = { question, projectData, role: ROL_ACTIVO };
+                       const payload = { question, projectData, role: ROL_ACTIVO };
         if (historicalContext) payload.historicalContext = historicalContext;
+
+        // 🖼️ Adjuntar imagen si existe (leer del estado de UI)
+        const imgAdjunta = UI._imageAdjunta;
+        if (imgAdjunta && imgAdjunta.data) {
+          payload.image = {
+            data: imgAdjunta.data,
+            mimeType: imgAdjunta.mimeType
+          };
+          console.log(`🖼️ Enviando imagen adjunta: ${imgAdjunta.fileName}`);
+        }
 
         const response = await fetch(`${API_URL}/api/ai-analyst`, {
           method: 'POST',
@@ -1611,12 +1673,22 @@
                       <div class="ds-chat-bubble">👋 Hola. Soy tu analista ejecutivo IA. Puedo responder sobre finanzas, cronograma, tareas, predicciones, anomalías y recomendaciones del proyecto <strong>${project?.name || ''}</strong>. ¿Qué quieres saber?</div>
                     </div>
                   </div>
-                                    <div class="ds-mic-status" id="ds-mic-status">🎤 Grabando... Habla con claridad y vuelve a pulsar el micrófono para transcribir.</div>
+                                                     <div class="ds-mic-status" id="ds-mic-status">🎤 Grabando... Habla con claridad y vuelve a pulsar el micrófono para transcribir.</div>
+                  <div class="ds-image-preview" id="ds-image-preview">
+                    <img class="ds-image-preview-thumb" id="ds-image-preview-thumb" alt="Preview" />
+                    <div class="ds-image-preview-info">
+                      <div class="ds-image-preview-name" id="ds-image-preview-name">imagen.jpg</div>
+                      <div class="ds-image-preview-size" id="ds-image-preview-size">0 KB</div>
+                    </div>
+                    <button class="ds-image-preview-remove" id="ds-image-preview-remove">✕ Quitar</button>
+                  </div>
                   <div class="ds-chat-input-row">
-                    <input class="ds-chat-input" id="ds-chat-input" placeholder="Escribe tu pregunta o usa el micrófono..." />
+                    <input class="ds-chat-input" id="ds-chat-input" placeholder="Escribe tu pregunta, adjunta imagen o usa el micrófono..." />
+                    <button class="ds-btn-attach" id="ds-btn-attach" title="Adjuntar imagen">📎</button>
                     <button class="ds-btn-mic" id="ds-btn-mic" title="Grabar pregunta por voz">🎤</button>
                     <button class="ds-chat-send" id="ds-chat-send">Enviar</button>
                   </div>
+                  <input type="file" id="ds-file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
                 </div>
               </div>
 
@@ -2101,6 +2173,11 @@
     },
 
 
+    // 🖼️ Estado de imagen adjunta
+    _imageAdjunta: null, // { data: base64, mimeType, fileName, size }
+
+
+
               // 🎤 Estado de la grabación
     _voiceRecorder: null,
     _voiceChunks: [],
@@ -2327,6 +2404,138 @@
       }
     },
 
+
+    // 🖼️ Abrir selector de archivos para imagen
+    abrirSelectorImagen() {
+      const input = document.getElementById('ds-file-input');
+      if (input) input.click();
+    },
+
+    // 🖼️ Procesar imagen seleccionada (comprimir si es muy grande)
+    async procesarImagenSeleccionada(file) {
+      if (!file) return;
+
+      // Validar tipo
+      const tiposOK = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!tiposOK.includes(file.type)) {
+        alert('⚠️ Formato no soportado. Usa JPG, PNG, WEBP o GIF.');
+        return;
+      }
+
+      // Validar tamaño máximo 20 MB
+      if (file.size > 20 * 1024 * 1024) {
+        alert('⚠️ La imagen es demasiado grande (máx 20 MB).');
+        return;
+      }
+
+      try {
+        // Comprimir si es necesario
+        const comprimida = await this.comprimirImagen(file, 1600, 0.85);
+
+        // Convertir a base64
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            // Quitar el prefijo "data:image/jpeg;base64,"
+            const base64Data = result.split(',')[1];
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(comprimida);
+        });
+
+        // Guardar en estado
+        this._imageAdjunta = {
+          data: base64,
+          mimeType: comprimida.type || 'image/jpeg',
+          fileName: file.name,
+          size: comprimida.size
+        };
+
+        // Mostrar preview
+        const preview = document.getElementById('ds-image-preview');
+        const thumb = document.getElementById('ds-image-preview-thumb');
+        const name = document.getElementById('ds-image-preview-name');
+        const size = document.getElementById('ds-image-preview-size');
+
+        if (preview && thumb) {
+          thumb.src = URL.createObjectURL(comprimida);
+          if (name) name.textContent = file.name;
+          if (size) size.textContent = `${(comprimida.size / 1024).toFixed(0)} KB`;
+          preview.classList.add('ds-active');
+        }
+
+        console.log(`🖼️ Imagen lista: ${file.name} (${(comprimida.size / 1024).toFixed(0)} KB)`);
+
+      } catch (err) {
+        console.error('❌ Error procesando imagen:', err);
+        alert('⚠️ No se pudo procesar la imagen: ' + err.message);
+      }
+    },
+
+    // 🖼️ Comprimir imagen usando canvas
+    comprimirImagen(file, maxWidth = 1600, quality = 0.85) {
+      return new Promise((resolve, reject) => {
+        // GIF no se recomprime (mantener animación si la tiene)
+        if (file.type === 'image/gif') return resolve(file);
+
+        // Si es pequeña (< 500KB), no comprimir
+        if (file.size < 500 * 1024) return resolve(file);
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let { width, height } = img;
+
+          // Redimensionar si excede maxWidth
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return reject(new Error('Error comprimiendo imagen'));
+              // Mantener tipo original
+              resolve(new File([blob], file.name, { type: file.type }));
+            },
+            file.type,
+            quality
+          );
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('Error cargando imagen'));
+        };
+
+        img.src = url;
+      });
+    },
+
+    // 🖼️ Quitar imagen adjunta
+    quitarImagen() {
+      this._imageAdjunta = null;
+      const preview = document.getElementById('ds-image-preview');
+      const thumb = document.getElementById('ds-image-preview-thumb');
+      const input = document.getElementById('ds-file-input');
+
+      if (preview) preview.classList.remove('ds-active');
+      if (thumb) thumb.src = '';
+      if (input) input.value = '';
+    },
+
+
+
     // 🔍 Validar si el texto de Whisper es una pregunta real (filtro anti-alucinaciones)
     validarPreguntaVoz(texto) {
       if (!texto || texto.trim().length === 0) {
@@ -2400,16 +2609,34 @@
       const send = document.getElementById('ds-chat-send');
       const log = document.getElementById('ds-chat-log');
 
-      const ask = async (question) => {
-        if (!question.trim()) return;
-        log.insertAdjacentHTML('beforeend', `<div class="ds-chat-msg user"><div class="ds-chat-bubble">${question}</div></div>`);
+           const ask = async (question) => {
+        // 🖼️ Permitir enviar si hay imagen (aunque no haya texto)
+        const imgAdjunta = UI._imageAdjunta;
+        if (!question.trim() && !imgAdjunta) return;
+
+        // Si hay imagen, mostrar miniatura en el chat del usuario
+        let bubbleContent = '';
+        if (imgAdjunta) {
+          bubbleContent += `<img src="data:${imgAdjunta.mimeType};base64,${imgAdjunta.data}" class="ds-chat-msg-image" alt="${imgAdjunta.fileName}" />`;
+        }
+        if (question.trim()) {
+          bubbleContent += `<div>${question}</div>`;
+        }
+
+               log.insertAdjacentHTML('beforeend', `<div class="ds-chat-msg user"><div class="ds-chat-bubble">${bubbleContent}</div></div>`);
         log.scrollTop = log.scrollHeight;
 
         try {
           const answer = await Assistant.respond(question);
+
+          // 🖼️ Limpiar imagen DESPUÉS de enviarla
+          UI.quitarImagen();
+
           log.insertAdjacentHTML('beforeend', `<div class="ds-chat-msg bot"><div class="ds-chat-bubble">${answer}</div></div>`);
           log.scrollTop = log.scrollHeight;
         } catch (e) {
+          // 🖼️ Limpiar también si hay error
+          UI.quitarImagen();
           console.error('❌ Error en chat:', e);
           log.insertAdjacentHTML('beforeend', `<div class="ds-chat-msg bot"><div class="ds-chat-bubble">⚠️ Error inesperado. Intenta de nuevo.</div></div>`);
         }
@@ -2421,6 +2648,27 @@
       if (micBtn) {
         micBtn.addEventListener('click', () => this.handleMicClick());
       }
+
+      // 🖼️ Botón adjuntar imagen
+      const attachBtn = document.getElementById('ds-btn-attach');
+      const fileInput = document.getElementById('ds-file-input');
+      const removeBtn = document.getElementById('ds-image-preview-remove');
+
+      if (attachBtn) {
+        attachBtn.addEventListener('click', () => this.abrirSelectorImagen());
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          const file = e.target.files?.[0];
+          if (file) this.procesarImagenSeleccionada(file);
+        });
+      }
+
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => this.quitarImagen());
+      }
+
       input.addEventListener('keypress', e => {
         if (e.key === 'Enter') { ask(input.value); input.value = ''; }
       });
