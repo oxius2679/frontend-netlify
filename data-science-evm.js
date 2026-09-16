@@ -1202,7 +1202,7 @@
                        const payload = { question, projectData, role: ROL_ACTIVO };
         if (historicalContext) payload.historicalContext = historicalContext;
 
-        // 🖼️ Adjuntar imagen si existe (leer del estado de UI)
+                // 🖼️ Adjuntar imagen si existe (leer del estado de UI)
         const imgAdjunta = UI._imageAdjunta;
         if (imgAdjunta && imgAdjunta.data) {
           payload.image = {
@@ -1210,6 +1210,19 @@
             mimeType: imgAdjunta.mimeType
           };
           console.log(`🖼️ Enviando imagen adjunta: ${imgAdjunta.fileName}`);
+        }
+
+        // 📄 Adjuntar documento si existe
+        const docAdjunto = UI._documentoAdjunto;
+        if (docAdjunto && docAdjunto.text) {
+          payload.documentContext = {
+            fileName: docAdjunto.fileName,
+            mimeType: docAdjunto.mimeType,
+            text: docAdjunto.text,
+            metadata: docAdjunto.metadata,
+            truncado: docAdjunto.truncado
+          };
+          console.log(`📄 Enviando documento adjunto: ${docAdjunto.fileName} (${docAdjunto.chars} caracteres)`);
         }
 
         const response = await fetch(`${API_URL}/api/ai-analyst`, {
@@ -1688,7 +1701,7 @@
                     <button class="ds-btn-mic" id="ds-btn-mic" title="Grabar pregunta por voz">🎤</button>
                     <button class="ds-chat-send" id="ds-chat-send">Enviar</button>
                   </div>
-                  <input type="file" id="ds-file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" />
+                                   <input type="file" id="ds-file-input" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword" style="display:none" />
                 </div>
               </div>
 
@@ -2173,8 +2186,11 @@
     },
 
 
-    // 🖼️ Estado de imagen adjunta
+     // 🖼️ Estado de imagen adjunta
     _imageAdjunta: null, // { data: base64, mimeType, fileName, size }
+
+    // 📄 Estado de documento adjunto (PDF, Excel, Word, CSV)
+    _documentoAdjunto: null, // { text, fileName, mimeType, size, metadata, truncado }
 
 
 
@@ -2411,41 +2427,52 @@
       if (input) input.click();
     },
 
-    // 🖼️ Procesar imagen seleccionada (comprimir si es muy grande)
-    async procesarImagenSeleccionada(file) {
+        // 📎 Procesar archivo seleccionado (imagen o documento)
+    async procesarArchivoSeleccionado(file) {
       if (!file) return;
 
-      // Validar tipo
-      const tiposOK = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!tiposOK.includes(file.type)) {
-        alert('⚠️ Formato no soportado. Usa JPG, PNG, WEBP o GIF.');
-        return;
+      const esImagen = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type);
+      const esDocumento = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword',
+        'application/octet-stream'
+      ].includes(file.type) || /\.(pdf|xlsx?|csv|docx?)$/i.test(file.name);
+
+      // 🖼️ IMAGEN → comportamiento actual
+      if (esImagen) {
+        return this.procesarImagen(file);
       }
 
-      // Validar tamaño máximo 20 MB
-      if (file.size > 20 * 1024 * 1024) {
-        alert('⚠️ La imagen es demasiado grande (máx 20 MB).');
-        return;
+      // 📄 DOCUMENTO → nuevo flujo
+      if (esDocumento) {
+        return this.procesarDocumento(file);
       }
+
+      alert('⚠️ Tipo de archivo no soportado. Usa imagen (JPG/PNG/WEBP/GIF), PDF, Excel (XLSX/XLS/CSV) o Word (DOCX).');
+    },
+
+    // 🖼️ Procesar imagen (la función original)
+    async procesarImagen(file) {
+      // Limpiar cualquier documento que hubiera antes
+      this._documentoAdjunto = null;
 
       try {
-        // Comprimir si es necesario
         const comprimida = await this.comprimirImagen(file, 1600, 0.85);
 
-        // Convertir a base64
         const base64 = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
             const result = reader.result;
-            // Quitar el prefijo "data:image/jpeg;base64,"
-            const base64Data = result.split(',')[1];
-            resolve(base64Data);
+            resolve(result.split(',')[1]);
           };
           reader.onerror = reject;
           reader.readAsDataURL(comprimida);
         });
 
-        // Guardar en estado
         this._imageAdjunta = {
           data: base64,
           mimeType: comprimida.type || 'image/jpeg',
@@ -2453,18 +2480,12 @@
           size: comprimida.size
         };
 
-        // Mostrar preview
-        const preview = document.getElementById('ds-image-preview');
-        const thumb = document.getElementById('ds-image-preview-thumb');
-        const name = document.getElementById('ds-image-preview-name');
-        const size = document.getElementById('ds-image-preview-size');
-
-        if (preview && thumb) {
-          thumb.src = URL.createObjectURL(comprimida);
-          if (name) name.textContent = file.name;
-          if (size) size.textContent = `${(comprimida.size / 1024).toFixed(0)} KB`;
-          preview.classList.add('ds-active');
-        }
+        this.mostrarPreviewArchivo({
+          tipo: 'imagen',
+          thumb: URL.createObjectURL(comprimida),
+          nombre: file.name,
+          tamaño: `${(comprimida.size / 1024).toFixed(0)} KB`
+        });
 
         console.log(`🖼️ Imagen lista: ${file.name} (${(comprimida.size / 1024).toFixed(0)} KB)`);
 
@@ -2472,6 +2493,119 @@
         console.error('❌ Error procesando imagen:', err);
         alert('⚠️ No se pudo procesar la imagen: ' + err.message);
       }
+    },
+
+    // 📄 Procesar documento (PDF/Excel/Word/CSV)
+    async procesarDocumento(file) {
+      // Limpiar cualquier imagen que hubiera antes
+      this._imageAdjunta = null;
+
+      // Validar tamaño
+      if (file.size > 10 * 1024 * 1024) {
+        alert('⚠️ El documento es demasiado grande (máx 10 MB).');
+        return;
+      }
+
+      // Mostrar preview inmediatamente con "Procesando..."
+      this.mostrarPreviewArchivo({
+        tipo: 'documento',
+        icono: this.getIconoDocumento(file.name),
+        nombre: file.name,
+        tamaño: `${(file.size / 1024).toFixed(0)} KB — Extrayendo texto...`
+      });
+
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        const formData = new FormData();
+        formData.append('document', file);
+
+        const r = await fetch(`${API_URL}/api/upload-doc`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await r.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Error desconocido procesando el documento');
+        }
+
+        this._documentoAdjunto = {
+          text: data.text,
+          fileName: data.fileName,
+          mimeType: data.mimeType,
+          size: data.size,
+          metadata: data.metadata,
+          truncado: data.truncado,
+          chars: data.chars
+        };
+
+        // Actualizar preview con info del documento procesado
+        const sizeLabel = `${(data.size / 1024).toFixed(0)} KB · ${data.chars.toLocaleString('es-ES')} caracteres${data.truncado ? ' (truncado)' : ''}`;
+        this.mostrarPreviewArchivo({
+          tipo: 'documento',
+          icono: this.getIconoDocumento(file.name),
+          nombre: file.name,
+          tamaño: sizeLabel
+        });
+
+        console.log(`📄 Documento listo: ${file.name} (${data.metadata.tipo}, ${data.chars} caracteres)`);
+
+      } catch (err) {
+        console.error('❌ Error procesando documento:', err);
+        this.quitarImagen(); // limpia preview
+        alert('⚠️ No se pudo procesar el documento:\n\n' + err.message);
+      }
+    },
+
+    // 📄 Icono según extensión
+    getIconoDocumento(fileName) {
+      const ext = (fileName || '').toLowerCase().split('.').pop();
+      if (ext === 'pdf') return '📕';
+      if (['xlsx', 'xls', 'csv'].includes(ext)) return '📊';
+      if (['docx', 'doc'].includes(ext)) return '📝';
+      return '📄';
+    },
+
+    // 📎 Mostrar preview unificada (imagen o documento)
+    mostrarPreviewArchivo({ tipo, thumb, icono, nombre, tamaño }) {
+      const preview = document.getElementById('ds-image-preview');
+      const thumbEl = document.getElementById('ds-image-preview-thumb');
+      const nameEl = document.getElementById('ds-image-preview-name');
+      const sizeEl = document.getElementById('ds-image-preview-size');
+
+      if (!preview) return;
+
+      if (tipo === 'imagen' && thumb) {
+        if (thumbEl) {
+          thumbEl.src = thumb;
+          thumbEl.style.display = 'block';
+          thumbEl.outerHTML = `<img class="ds-image-preview-thumb" id="ds-image-preview-thumb" alt="Preview" src="${thumb}" />`;
+        }
+      } else {
+        // Para documentos: reemplazar thumb por un icono grande
+        const oldThumb = document.getElementById('ds-image-preview-thumb');
+        if (oldThumb) {
+          const span = document.createElement('div');
+          span.id = 'ds-image-preview-thumb';
+          span.className = 'ds-image-preview-thumb';
+          span.style.display = 'flex';
+          span.style.alignItems = 'center';
+          span.style.justifyContent = 'center';
+          span.style.fontSize = '34px';
+          span.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(88,28,135,0.15))';
+          span.textContent = icono || '📄';
+          oldThumb.replaceWith(span);
+        }
+      }
+
+      if (nameEl) nameEl.textContent = nombre || 'archivo';
+      if (sizeEl) sizeEl.textContent = tamaño || '';
+
+      preview.classList.add('ds-active');
     },
 
     // 🖼️ Comprimir imagen usando canvas
@@ -2522,15 +2656,22 @@
       });
     },
 
-    // 🖼️ Quitar imagen adjunta
+       // 🖼️ Quitar archivo adjunto (imagen o documento)
     quitarImagen() {
       this._imageAdjunta = null;
+      this._documentoAdjunto = null;
+
       const preview = document.getElementById('ds-image-preview');
-      const thumb = document.getElementById('ds-image-preview-thumb');
       const input = document.getElementById('ds-file-input');
 
       if (preview) preview.classList.remove('ds-active');
-      if (thumb) thumb.src = '';
+
+      // Restaurar thumb como <img>
+      const thumb = document.getElementById('ds-image-preview-thumb');
+      if (thumb) {
+        thumb.outerHTML = `<img class="ds-image-preview-thumb" id="ds-image-preview-thumb" alt="Preview" />`;
+      }
+
       if (input) input.value = '';
     },
 
@@ -2609,21 +2750,33 @@
       const send = document.getElementById('ds-chat-send');
       const log = document.getElementById('ds-chat-log');
 
-                 const ask = async (question) => {
-        // 🖼️ Permitir enviar si hay imagen (aunque no haya texto)
+                      const ask = async (question) => {
+        // 📎 Permitir enviar si hay algún archivo adjunto (imagen o documento)
         const imgAdjunta = UI._imageAdjunta;
-        if (!question.trim() && !imgAdjunta) return;
+        const docAdjunto = UI._documentoAdjunto;
+        const hayAdjunto = imgAdjunta || docAdjunto;
 
-        // 🖼️ Si hay imagen pero no texto, usar prompt por defecto
+        if (!question.trim() && !hayAdjunto) return;
+
+        // 📎 Si hay adjunto pero no texto, usar prompt por defecto
         let preguntaFinal = question.trim();
-        if (!preguntaFinal && imgAdjunta) {
+        if (!preguntaFinal && imgAdjunta && !docAdjunto) {
           preguntaFinal = 'Analiza esta imagen y dime qué información relevante contiene para el proyecto.';
+        } else if (!preguntaFinal && docAdjunto) {
+          preguntaFinal = 'Analiza este documento y dime qué información relevante contiene para el proyecto.';
         }
 
-        // Si hay imagen, mostrar miniatura en el chat del usuario
+        // Si hay adjunto, mostrar miniatura en el chat del usuario
         let bubbleContent = '';
         if (imgAdjunta) {
           bubbleContent += `<img src="data:${imgAdjunta.mimeType};base64,${imgAdjunta.data}" class="ds-chat-msg-image" alt="${imgAdjunta.fileName}" />`;
+        }
+        if (docAdjunto) {
+          const icono = UI.getIconoDocumento(docAdjunto.fileName);
+          bubbleContent += `<div style="padding:10px 14px;background:rgba(139,92,246,0.15);border-radius:10px;margin-bottom:8px;font-size:12px;border-left:3px solid #a78bfa;">
+            ${icono} <strong>${docAdjunto.fileName}</strong><br>
+            <span style="opacity:0.75;font-size:11px;">${docAdjunto.chars.toLocaleString('es-ES')} caracteres${docAdjunto.truncado ? ' (truncado)' : ''}</span>
+          </div>`;
         }
         if (question.trim()) {
           bubbleContent += `<div>${question}</div>`;
@@ -2664,10 +2817,10 @@
         attachBtn.addEventListener('click', () => this.abrirSelectorImagen());
       }
 
-      if (fileInput) {
+            if (fileInput) {
         fileInput.addEventListener('change', (e) => {
           const file = e.target.files?.[0];
-          if (file) this.procesarImagenSeleccionada(file);
+          if (file) this.procesarArchivoSeleccionado(file);
         });
       }
 
