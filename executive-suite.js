@@ -1037,11 +1037,11 @@
           accion: agg.SPI >= 1 ? 'Mantener velocidad' : 'Fast-tracking en ruta crítica'
         });
 
-        // Objetivo 3: Alcanzar margen positivo
+               // Objetivo 3: Alcanzar margen positivo
         objetivos.push({
           titulo: 'Alcanzar margen positivo del portfolio',
           descripcion: `Margen actual: ${fmt.money(agg.margen)} (${fmt.pct(agg.margenPct)}). Objetivo: reducir sobrecostos y proteger rentabilidad.`,
-          progreso: agg.margen >= 0 ? 100 : Math.max(0, Math.min(100, 50 + agg.margenPct)),
+          progreso: agg.margen >= 0 ? 100 : Math.round(Math.max(0, Math.min(100, 50 + agg.margenPct))),
           estado: agg.margen >= 0 ? 'logrado' : agg.margenPct > -5 ? 'en-curso' : agg.margenPct > -15 ? 'riesgo' : 'critico',
           accion: agg.margen >= 0 ? 'Documentar prácticas exitosas' : 'Renegociar contratos y revisar estimaciones'
         });
