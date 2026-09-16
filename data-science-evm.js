@@ -1755,18 +1755,428 @@
       const hp = document.getElementById('ds-history-panel');
       if (hp) hp.remove();
     },
-    exportReport: () => {
-      const ov = document.getElementById('ds-ia-overlay');
-      if (!ov) return;
-      const html = ov.outerHTML;
+        exportReport: async () => {
+      const overlay = document.getElementById('ds-ia-overlay');
+      if (!overlay) {
+        alert('⚠️ Abre primero el análisis IA.');
+        return;
+      }
+
+      // Recolectar datos actuales
+      const data = DataExtractor.extract();
+      if (!data) {
+        alert('⚠️ No hay datos disponibles para exportar.');
+        return;
+      }
+
+      const metrics = UI.computeMetrics(data);
+      Assistant.buildKB(data, metrics);
+      Assistant.kb.tasks = data.tasks;
+
+      const k = Assistant.kb;
+      const story = Storyteller.generate(data, metrics);
+      const recomendaciones = metrics.recommendations || [];
+
+      // Últimas 5 conversaciones (si el panel está abierto, usarlas; si no, fetch del backend)
+      let conversaciones = [];
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const pIdx = window.currentProjectIndex || 0;
+        const project = window.projects?.[pIdx];
+
+        if (token && clienteId && project) {
+          const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+          const r = await fetch(`${API_URL}/api/chat-history/${project.id}?clienteId=${clienteId}&limit=5`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const histData = await r.json();
+          if (histData.success && histData.conversaciones) {
+            conversaciones = histData.conversaciones;
+          }
+        }
+      } catch (e) {
+        console.warn('No se pudo cargar el histórico de conversaciones para el PDF:', e);
+      }
+
+      // Construir HTML del reporte
+      const fechaGeneracion = new Date().toLocaleString('es-ES', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const cpiColor = k.CPI >= 1 ? '#22c55e' : k.CPI >= 0.95 ? '#f59e0b' : '#ef4444';
+      const spiColor = k.SPI >= 1 ? '#22c55e' : k.SPI >= 0.95 ? '#f59e0b' : '#ef4444';
+      const vacColor = k.VAC >= 0 ? '#22c55e' : '#ef4444';
+      const probSobrecosto = metrics.monteCarlo?.probabilityOverBudget ?? 0;
+      const probColor = probSobrecosto < 0.3 ? '#22c55e' : probSobrecosto < 0.7 ? '#f59e0b' : '#ef4444';
+
+      const htmlReporte = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reporte Ejecutivo IA — ${k.project}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1a2e; background: #fff; line-height: 1.55; font-size: 11pt;
+  }
+  .cover {
+    page-break-after: always; height: 100vh;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 30mm 20mm;
+    background: linear-gradient(160deg, #0a0620 0%, #1e1145 50%, #2d1a6e 100%);
+    color: #fff;
+  }
+  .cover-top { }
+  .cover-brand {
+    font-size: 10pt; letter-spacing: 6px; text-transform: uppercase;
+    color: #a78bfa; font-weight: 700; margin-bottom: 40px;
+  }
+  .cover-title {
+    font-size: 42pt; font-weight: 900; letter-spacing: -1px; line-height: 1.1;
+    margin: 0 0 20px 0;
+    background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover-subtitle {
+    font-size: 13pt; color: #ddd6fe; font-weight: 300; font-style: italic;
+    letter-spacing: 1px; max-width: 500px;
+  }
+  .cover-divider {
+    width: 80px; height: 3px; background: #a78bfa; margin: 30px 0;
+  }
+  .cover-project {
+    font-size: 20pt; font-weight: 700; color: #fff; margin-top: 20px;
+  }
+  .cover-project-label {
+    font-size: 9pt; letter-spacing: 4px; text-transform: uppercase;
+    color: #a78bfa; margin-bottom: 8px; font-weight: 700;
+  }
+  .cover-bottom {
+    border-top: 1px solid rgba(167,139,250,0.3);
+    padding-top: 20px; display: flex; justify-content: space-between;
+    font-size: 9pt; color: #b8a4e8; letter-spacing: 1px;
+  }
+  .cover-status {
+    display: inline-block; padding: 8px 18px; border-radius: 100px;
+    background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.5);
+    font-size: 9pt; letter-spacing: 3px; text-transform: uppercase;
+    color: #ddd6fe; font-weight: 700; margin-top: 20px;
+  }
+
+  .page {
+    padding: 0; page-break-after: always;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  .page-header {
+    border-bottom: 2px solid #2d1a6e;
+    padding-bottom: 12px; margin-bottom: 24px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .page-header-title {
+    font-size: 18pt; font-weight: 900; color: #2d1a6e; letter-spacing: -0.5px;
+    margin: 0;
+  }
+  .page-header-meta {
+    font-size: 8pt; color: #666; letter-spacing: 2px; text-transform: uppercase;
+  }
+
+  .section { margin-bottom: 26px; }
+  .section-title {
+    font-size: 12pt; font-weight: 900; color: #2d1a6e;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding-bottom: 6px; border-bottom: 1px solid #c4b5fd; margin-bottom: 14px;
+  }
+
+  .story-block {
+    padding: 18px 22px; background: #f8f5ff;
+    border-left: 4px solid #7c3aed; font-size: 11pt; line-height: 1.7;
+    color: #1a1a2e; font-style: italic;
+  }
+  .story-block strong { color: #2d1a6e; font-style: normal; }
+  .story-block em { color: #7c3aed; font-style: normal; font-weight: 700; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-box {
+    padding: 14px 16px; border: 1px solid #e0d9f5; border-radius: 8px;
+    background: #fafaff;
+  }
+  .kpi-box-label {
+    font-size: 8pt; letter-spacing: 2px; text-transform: uppercase;
+    color: #7c3aed; font-weight: 700; margin-bottom: 6px;
+  }
+  .kpi-box-value {
+    font-size: 20pt; font-weight: 900; color: #1a1a2e; letter-spacing: -1px;
+    line-height: 1; margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-box-desc { font-size: 8.5pt; color: #666; font-style: italic; }
+
+  .data-table {
+    width: 100%; border-collapse: collapse; font-size: 10pt;
+  }
+  .data-table th {
+    background: #2d1a6e; color: #fff; padding: 10px 12px;
+    text-align: left; font-size: 8.5pt; letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .data-table td {
+    padding: 10px 12px; border-bottom: 1px solid #e0d9f5;
+  }
+  .data-table tr:last-child td { border-bottom: 2px solid #2d1a6e; }
+  .data-table .value-col { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .rec-item {
+    display: flex; gap: 14px; padding: 14px 18px; margin-bottom: 10px;
+    background: #fafaff; border-left: 4px solid #7c3aed; border-radius: 4px;
+    page-break-inside: avoid;
+  }
+  .rec-badge {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: #7c3aed; color: #fff; font-weight: 900; font-size: 13pt;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rec-content { flex: 1; }
+  .rec-title { font-size: 11pt; font-weight: 900; color: #2d1a6e; margin-bottom: 4px; }
+  .rec-detail { font-size: 9.5pt; color: #444; line-height: 1.55; }
+
+  .chat-item {
+    padding: 14px 18px; margin-bottom: 12px;
+    border-left: 3px solid #c4b5fd; background: #fafaff;
+    page-break-inside: avoid;
+  }
+  .chat-meta {
+    font-size: 8pt; color: #7c3aed; letter-spacing: 2px;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 6px;
+  }
+  .chat-q { font-size: 10.5pt; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .chat-a { font-size: 10pt; color: #333; line-height: 1.55; }
+
+  .footer-note {
+    text-align: center; font-size: 8pt; color: #888;
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-top: 30px; padding-top: 16px; border-top: 1px solid #e0d9f5;
+  }
+
+  @media print {
+    .cover { height: 297mm; }
+    .page { page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    body { font-size: 10.5pt; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover">
+  <div class="cover-top">
+    <div class="cover-brand">Executive Intelligence Report</div>
+    <h1 class="cover-title">Análisis Ejecutivo<br>de Proyecto</h1>
+    <div class="cover-divider"></div>
+    <div class="cover-subtitle">
+      Informe confidencial preparado con análisis predictivo,<br>
+      inteligencia artificial y evaluación de valor ganado (EVM).
+    </div>
+    <div class="cover-status">Confidencial</div>
+  </div>
+  <div class="cover-bottom-block">
+    <div class="cover-project-label">Proyecto</div>
+    <div class="cover-project">${k.project}</div>
+    <div class="cover-bottom" style="margin-top: 40px;">
+      <div>ROL ACTIVO · ${ROL_ACTIVO}</div>
+      <div>GENERADO · ${fechaGeneracion}</div>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA 1: RESUMEN EJECUTIVO -->
+<div class="page">
+  <div class="page-header">
+    <h2 class="page-header-title">Resumen Ejecutivo</h2>
+    <div class="page-header-meta">${k.project}</div>
+  </div>
+
+  <div class="section">
+    <div class="story-block">${story}</div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">Indicadores Clave del Proyecto</h3>
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-box-label">CPI · Eficiencia Costos</div>
+        <div class="kpi-box-value" style="color: ${cpiColor};">${k.CPI.toFixed(2)}</div>
+        <div class="kpi-box-desc">${k.CPI >= 1 ? 'Óptimo' : k.CPI >= 0.95 ? 'En tolerancia' : 'Requiere atención'}</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-box-label">SPI · Eficiencia Cronograma</div>
+        <div class="kpi-box-value" style="color: ${spiColor};">${k.SPI.toFixed(2)}</div>
+        <div class="kpi-box-desc">${k.SPI >= 1 ? 'Adelantado' : k.SPI >= 0.95 ? 'En tiempo' : 'Retrasado'}</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-box-label">VAC · Variación Final</div>
+        <div class="kpi-box-value" style="color: ${vacColor};">${k.VAC >= 0 ? '+' : '-'}${fmtMoney(Math.abs(k.VAC))}</div>
+        <div class="kpi-box-desc">${k.VAC >= 0 ? 'Ahorro proyectado' : 'Sobrecosto proyectado'}</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Métrica</th>
+          <th class="value-col">Valor</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>BAC</strong> · Presupuesto Total</td><td class="value-col">${fmtMoney(k.BAC)}</td><td>Monto autorizado del proyecto</td></tr>
+        <tr><td><strong>PV</strong> · Valor Planificado</td><td class="value-col">${fmtMoney(k.PV)}</td><td>Trabajo planificado a la fecha</td></tr>
+        <tr><td><strong>EV</strong> · Valor Ganado</td><td class="value-col">${fmtMoney(k.EV)}</td><td>Trabajo realmente completado</td></tr>
+        <tr><td><strong>AC</strong> · Costo Real</td><td class="value-col">${fmtMoney(k.AC)}</td><td>Costo incurrido a la fecha</td></tr>
+        <tr><td><strong>EAC</strong> · Estimación al Cierre</td><td class="value-col">${fmtMoney(k.EAC)}</td><td>Proyección total del proyecto</td></tr>
+        <tr><td><strong>Progreso Actual</strong></td><td class="value-col">${k.pctComp.toFixed(1)}%</td><td>Avance sobre el presupuesto</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">Executive Intelligence Report · ${k.project}</div>
+</div>
+
+<!-- PÁGINA 2: ANÁLISIS PREDICTIVO -->
+<div class="page">
+  <div class="page-header">
+    <h2 class="page-header-title">Análisis Predictivo</h2>
+    <div class="page-header-meta">${k.project}</div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">Simulación Monte Carlo (${CFG.mcIterations} iteraciones)</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Escenario</th>
+          <th class="value-col">EAC Proyectado</th>
+          <th>Interpretación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Optimista (P10)</strong></td><td class="value-col" style="color:#22c55e;">${fmtMoney(metrics.monteCarlo.p10)}</td><td>Mejor caso con 10% de probabilidad</td></tr>
+        <tr><td><strong>Base (P50)</strong></td><td class="value-col" style="color:#7c3aed;">${fmtMoney(metrics.monteCarlo.p50)}</td><td>Escenario más probable</td></tr>
+        <tr><td><strong>Pesimista (P90)</strong></td><td class="value-col" style="color:#ef4444;">${fmtMoney(metrics.monteCarlo.p90)}</td><td>Peor caso con 10% de probabilidad</td></tr>
+        <tr><td><strong>Probabilidad Sobrecosto</strong></td><td class="value-col" style="color:${probColor};">${(probSobrecosto * 100).toFixed(0)}%</td><td>Riesgo de exceder el presupuesto</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  ${metrics.eta ? `
+  <div class="section">
+    <h3 class="section-title">Proyección Temporal</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Indicador</th>
+          <th class="value-col">Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Fecha estimada de finalización</td><td class="value-col">${metrics.eta.eta.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</td></tr>
+        <tr><td>Días restantes estimados</td><td class="value-col">${Math.round(metrics.eta.daysNeeded)} días</td></tr>
+        <tr><td>Velocidad actual de ejecución</td><td class="value-col">${fmtMoney(metrics.eta.velocity)} / día</td></tr>
+      </tbody>
+    </table>
+  </div>` : ''}
+
+  ${metrics.nn ? `
+  <div class="section">
+    <h3 class="section-title">Modelo Predictivo · Red Neuronal (MLP 4-5-1)</h3>
+    <div class="kpi-box" style="margin-bottom: 14px;">
+      <div class="kpi-box-label">Confianza Global de Cumplimiento</div>
+      <div class="kpi-box-value" style="color: ${metrics.nn.confidence >= 0.7 ? '#22c55e' : metrics.nn.confidence >= 0.4 ? '#f59e0b' : '#ef4444'};">${(metrics.nn.confidence * 100).toFixed(1)}%</div>
+      <div class="kpi-box-desc">Modelo entrenado con ${metrics.nn.trainedEpochs} épocas sobre los datos del proyecto</div>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tarea con Mayor Riesgo</th>
+          <th class="value-col">Nivel de Riesgo</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${metrics.nn.perTask.slice(0, 5).map(t => `
+          <tr>
+            <td>${(t.name || '').substring(0, 60)}</td>
+            <td class="value-col" style="color:${t.risk > 0.6 ? '#ef4444' : t.risk > 0.3 ? '#f59e0b' : '#22c55e'};">${(t.risk * 100).toFixed(0)}%</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>` : ''}
+
+  <div class="footer-note">Executive Intelligence Report · ${k.project}</div>
+</div>
+
+<!-- PÁGINA 3: RECOMENDACIONES -->
+<div class="page">
+  <div class="page-header">
+    <h2 class="page-header-title">Recomendaciones Ejecutivas</h2>
+    <div class="page-header-meta">${k.project}</div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">Plan de Acción Priorizado</h3>
+    ${recomendaciones.map(r => `
+      <div class="rec-item">
+        <div class="rec-badge" style="background: ${r.c};">${r.p}</div>
+        <div class="rec-content">
+          <div class="rec-title">${r.title}</div>
+          <div class="rec-detail">${r.detail}</div>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+
+  ${conversaciones.length > 0 ? `
+  <div class="section">
+    <h3 class="section-title">Consultas Clave al Asistente IA</h3>
+    ${conversaciones.map(c => `
+      <div class="chat-item">
+        <div class="chat-meta">${c.rol || 'PMO'} · ${new Date(c.timestamp).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</div>
+        <div class="chat-q">❓ ${c.pregunta}</div>
+        <div class="chat-a">${c.respuesta.replace(/<[^>]*>/g, '').substring(0, 500)}${c.respuesta.length > 500 ? '...' : ''}</div>
+      </div>
+    `).join('')}
+  </div>` : ''}
+
+  <div class="footer-note">Executive Intelligence Report · ${k.project} · CONFIDENCIAL</div>
+</div>
+
+</body>
+</html>`;
+
+      // Abrir en nueva pestaña y lanzar impresión
       const w = window.open('', '_blank');
-      w.document.write(`
-        <!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte IA Ejecutivo</title>
-        ${document.getElementById('ds-evm-styles')?.outerHTML || ''}
-        </head><body>${html}</body></html>
-      `);
+      if (!w) {
+        alert('⚠️ Permite las ventanas emergentes para exportar el reporte.');
+        return;
+      }
+      w.document.write(htmlReporte);
       w.document.close();
-      setTimeout(() => w.print(), 500);
+
+      // Esperar a que se renderice antes de imprimir
+      setTimeout(() => {
+        w.focus();
+        w.print();
+      }, 600);
     },
     version: CFG.version,
     analyze: () => {
