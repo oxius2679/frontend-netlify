@@ -1950,7 +1950,7 @@
 
       // 📄 GENERADOR DE REPORTES EJECUTIVOS
       generarReporte(tipo) {
-         onsole.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
+         console.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
         const projects = State.projects;
         const agg = DataLayer.aggregate(projects);
         const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
