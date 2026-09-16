@@ -2215,22 +2215,797 @@
         return { porProyecto, total, maxProyecto };
       }
     },
-    integrations: {
+
+
+
+        integrations: {
       id: 'integrations', icon: '🔌', label: 'Integraciones', subtitle: 'SSO, API, Webhooks', badge: 'IT',
       render(container) {
-        container.innerHTML = `<div class="exec-loading">Módulo disponible en la siguiente entrega</div>`;
+        // Estado de integraciones
+        const integraciones = [
+          // SSO / Identidad
+          { cat: 'Identidad y Acceso', nombre: 'SSO con Google', icon: '🔐', estado: 'activo', detalle: 'Login mediante Google Workspace' },
+          { cat: 'Identidad y Acceso', nombre: 'SSO con Microsoft', icon: '🔐', estado: 'activo', detalle: 'Azure AD / Microsoft 365' },
+          { cat: 'Identidad y Acceso', nombre: 'Active Directory / LDAP', icon: '🏢', estado: 'disponible', detalle: 'Sincronización con directorio corporativo' },
+          { cat: 'Identidad y Acceso', nombre: 'SAML 2.0', icon: '🛡️', estado: 'disponible', detalle: 'Federación de identidad empresarial' },
+
+          // Colaboración
+          { cat: 'Colaboración', nombre: 'Slack', icon: '💬', estado: 'activo', detalle: 'Notificaciones y comandos' },
+          { cat: 'Colaboración', nombre: 'Microsoft Teams', icon: '👥', estado: 'activo', detalle: 'Reuniones y transcripción automática' },
+          { cat: 'Colaboración', nombre: 'Google Meet', icon: '📹', estado: 'disponible', detalle: 'Integración de reuniones' },
+
+          // Gestión de Proyectos
+          { cat: 'Proyectos', nombre: 'Jira', icon: '📋', estado: 'activo', detalle: 'Importación y sincronización bidireccional' },
+          { cat: 'Proyectos', nombre: 'ClickUp', icon: '✅', estado: 'activo', detalle: 'Sincronización de tareas' },
+          { cat: 'Proyectos', nombre: 'Trello', icon: '📌', estado: 'activo', detalle: 'Importación de tableros' },
+          { cat: 'Proyectos', nombre: 'Asana', icon: '🎯', estado: 'activo', detalle: 'Integración de proyectos' },
+          { cat: 'Proyectos', nombre: 'Monday.com', icon: '📅', estado: 'disponible', detalle: 'Sincronización de boards' },
+
+          // ERP / Finanzas
+          { cat: 'ERP & Finanzas', nombre: 'SAP', icon: '🏭', estado: 'disponible', detalle: 'Integración con SAP ERP' },
+          { cat: 'ERP & Finanzas', nombre: 'Oracle NetSuite', icon: '💼', estado: 'disponible', detalle: 'Sincronización contable' },
+          { cat: 'ERP & Finanzas', nombre: 'QuickBooks', icon: '📊', estado: 'disponible', detalle: 'Facturación automática' },
+          { cat: 'ERP & Finanzas', nombre: 'Stripe', icon: '💳', estado: 'activo', detalle: 'Pagos y suscripciones' },
+
+          // CRM
+          { cat: 'CRM & Ventas', nombre: 'Salesforce', icon: '☁️', estado: 'disponible', detalle: 'Sincronización de clientes' },
+          { cat: 'CRM & Ventas', nombre: 'HubSpot', icon: '🧡', estado: 'disponible', detalle: 'Gestión de leads' },
+
+          // Business Intelligence
+          { cat: 'Business Intelligence', nombre: 'Power BI', icon: '📈', estado: 'activo', detalle: 'Streaming de datos' },
+          { cat: 'Business Intelligence', nombre: 'Tableau', icon: '📉', estado: 'disponible', detalle: 'Exportación de datasets' },
+          { cat: 'Business Intelligence', nombre: 'Looker Studio', icon: '🔍', estado: 'disponible', detalle: 'Conectores nativos' }
+        ];
+
+        const cats = [...new Set(integraciones.map(i => i.cat))];
+        const totalActivas = integraciones.filter(i => i.estado === 'activo').length;
+        const totalDisponibles = integraciones.filter(i => i.estado === 'disponible').length;
+
+        // Endpoints de la API pública
+        const endpoints = [
+          { met: 'GET', path: '/api/projects', desc: 'Lista todos los proyectos del cliente' },
+          { met: 'POST', path: '/api/projects', desc: 'Crea o actualiza proyectos' },
+          { met: 'GET', path: '/api/history/kpis/:projectId', desc: 'Serie temporal de KPIs' },
+          { met: 'GET', path: '/api/history/summary/:projectId', desc: 'Resumen agregado con tendencias' },
+          { met: 'POST', path: '/api/ai-analyst', desc: 'Consultas al asistente IA' },
+          { met: 'POST', path: '/api/snapshots/guardar', desc: 'Guarda snapshot de KPIs' },
+          { met: 'POST', path: '/api/audit/task-change', desc: 'Registra cambio en tarea' },
+          { met: 'POST', path: '/api/transcribe', desc: 'Transcribe audio con Whisper' },
+          { met: 'POST', path: '/api/upload-doc', desc: 'Extrae texto de PDF/Excel/Word' }
+        ];
+
+        // Webhooks
+        const webhooks = [
+          { evento: 'task.created', desc: 'Se dispara al crear una tarea' },
+          { evento: 'task.updated', desc: 'Al modificar una tarea existente' },
+          { evento: 'task.overdue', desc: 'Cuando una tarea vence sin completarse' },
+          { evento: 'project.at-risk', desc: 'Proyecto entra en zona de riesgo' },
+          { evento: 'budget.exceeded', desc: 'Costo real supera el presupuestado' },
+          { evento: 'milestone.reached', desc: 'Al alcanzar un hito' }
+        ];
+
+        container.innerHTML = `
+          <!-- KPIs INTEGRACIONES -->
+          <div class="exec-grid-4">
+            <div class="exec-kpi" style="--c:#22c55e">
+              <div class="exec-kpi-label">Integraciones Activas</div>
+              <div class="exec-kpi-value">${totalActivas}</div>
+              <div class="exec-kpi-sub">conectadas en producción</div>
+            </div>
+            <div class="exec-kpi" style="--c:#a78bfa">
+              <div class="exec-kpi-label">Disponibles</div>
+              <div class="exec-kpi-value">${totalDisponibles}</div>
+              <div class="exec-kpi-sub">listas para activar</div>
+            </div>
+            <div class="exec-kpi" style="--c:#fbbf24">
+              <div class="exec-kpi-label">API Endpoints</div>
+              <div class="exec-kpi-value">${endpoints.length}</div>
+              <div class="exec-kpi-sub">REST documentados</div>
+            </div>
+            <div class="exec-kpi" style="--c:#67e8f9">
+              <div class="exec-kpi-label">Webhooks</div>
+              <div class="exec-kpi-value">${webhooks.length}</div>
+              <div class="exec-kpi-sub">eventos en tiempo real</div>
+            </div>
+          </div>
+
+          <!-- INTEGRACIONES POR CATEGORÍA -->
+          ${cats.map(cat => {
+            const items = integraciones.filter(i => i.cat === cat);
+            return `
+              <div class="exec-card">
+                <h3 class="exec-card-title">🔌 ${cat}</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px;">
+                  ${items.map(i => {
+                    const color = i.estado === 'activo' ? '#22c55e' : '#a78bfa';
+                    const badge = i.estado === 'activo' ? 'ACTIVO' : 'DISPONIBLE';
+                    return `
+                      <div style="padding:14px 16px;border-radius:12px;background:linear-gradient(160deg, ${color}10, rgba(12,6,30,0.75));border:1px solid ${color}40;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                          <span style="font-size:22px;">${i.icon}</span>
+                          <span style="font-size:9px;padding:3px 8px;border-radius:100px;background:${color}22;color:${color};font-weight:800;letter-spacing:1px;">${badge}</span>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${i.nombre}</div>
+                        <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${i.detalle}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <!-- API PÚBLICA -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">🚀 API REST Pública</h3>
+            <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
+              Todos los endpoints requieren autenticación mediante Bearer Token en el header <code style="background:rgba(251,191,36,0.15);padding:2px 6px;border-radius:4px;color:#fbbf24;">Authorization</code>.
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="exec-table">
+                <thead>
+                  <tr>
+                    <th style="width:80px;">Método</th>
+                    <th style="width:340px;">Endpoint</th>
+                    <th>Descripción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${endpoints.map(e => {
+                    const metodoColor = e.met === 'GET' ? '#22c55e' : e.met === 'POST' ? '#fbbf24' : e.met === 'DELETE' ? '#ef4444' : '#a78bfa';
+                    return `
+                      <tr style="--rowc:${metodoColor}">
+                        <td><span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:900;background:${metodoColor}22;color:${metodoColor};letter-spacing:1px;">${e.met}</span></td>
+                        <td style="font-family:'Courier New',monospace;color:#fbbf24;font-weight:800;">${e.path}</td>
+                        <td style="color:#b8a4e8;">${e.desc}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- WEBHOOKS -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">📡 Webhooks Disponibles</h3>
+            <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
+              Configura URLs de callback para recibir notificaciones en tiempo real cuando ocurran eventos en el sistema.
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+              ${webhooks.map(w => `
+                <div style="padding:14px 16px;border-radius:12px;background:rgba(10,5,25,0.5);border-left:3px solid #67e8f9;">
+                  <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:900;color:#67e8f9;margin-bottom:6px;">${w.evento}</div>
+                  <div style="font-size:11.5px;color:#b8a4e8;line-height:1.5;">${w.desc}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- SEGURIDAD ENTERPRISE -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">🛡️ Seguridad Enterprise</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+              ${[
+                { icon: '🔐', titulo: 'JWT Authentication', desc: 'Tokens firmados con rotación automática' },
+                { icon: '🛡️', titulo: 'RBAC', desc: 'Control de acceso basado en roles' },
+                { icon: '🔒', titulo: 'HTTPS/TLS 1.3', desc: 'Cifrado extremo a extremo' },
+                { icon: '🚦', titulo: 'Rate Limiting', desc: 'Protección contra abuso y DDoS' },
+                { icon: '🔍', titulo: 'Audit Logging', desc: 'Registro completo de operaciones' },
+                { icon: '💾', titulo: 'Backups Diarios', desc: 'RPO 24h · RTO 4h' }
+              ].map(s => `
+                <div style="padding:14px;border-radius:12px;background:linear-gradient(160deg, rgba(34,197,94,0.08), rgba(12,6,30,0.75));border:1px solid rgba(34,197,94,0.3);">
+                  <div style="font-size:24px;margin-bottom:8px;">${s.icon}</div>
+                  <div style="font-size:12px;font-weight:800;color:#fff;margin-bottom:4px;">${s.titulo}</div>
+                  <div style="font-size:10.5px;color:#8b7cb8;line-height:1.5;">${s.desc}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
       }
     },
-    finance: {
+
+
+
+
+        finance: {
       id: 'finance', icon: '💎', label: 'Finanzas Avanzadas', subtitle: 'Facturación y márgenes', badge: 'FIN',
       render(container) {
-        container.innerHTML = `<div class="exec-loading">Módulo disponible en la siguiente entrega</div>`;
+        const projects = State.projects;
+        if (!projects.length) {
+          container.innerHTML = `<div class="exec-empty">📭 No hay datos financieros disponibles</div>`;
+          return;
+        }
+
+        const agg = DataLayer.aggregate(projects);
+        const activos = projects.filter(p => p.totalTasks > 0);
+
+        // Configuración por proyecto: tarifas y márgenes
+        const proyectosEnriquecidos = activos.map(p => {
+          const cfg = DataLayer.loadCostConfig(p.id) || {};
+          const tarifaCliente = cfg.clientHourlyRate || p.costPerHour * 1.5;
+          const tarifaInterna = p.costPerHour;
+          const margenHora = tarifaCliente - tarifaInterna;
+          const horasFacturables = p.totalLogged;
+          const ingresosFacturables = horasFacturables * tarifaCliente;
+          const costesFacturables = horasFacturables * tarifaInterna;
+          const margenReal = ingresosFacturables - costesFacturables;
+          const margenRealPct = ingresosFacturables > 0 ? (margenReal / ingresosFacturables) * 100 : 0;
+
+          return {
+            ...p,
+            tarifaCliente,
+            tarifaInterna,
+            margenHora,
+            horasFacturables,
+            ingresosFacturables,
+            costesFacturables,
+            margenReal,
+            margenRealPct,
+            moneda: cfg.currency || 'EUR'
+          };
+        });
+
+        // KPIs globales
+        const ingresosTotales = proyectosEnriquecidos.reduce((s, p) => s + p.ingresosFacturables, 0);
+        const costesTotales = proyectosEnriquecidos.reduce((s, p) => s + p.costesFacturables, 0);
+        const margenTotal = ingresosTotales - costesTotales;
+        const margenTotalPct = ingresosTotales > 0 ? (margenTotal / ingresosTotales) * 100 : 0;
+        const horasTotales = proyectosEnriquecidos.reduce((s, p) => s + p.horasFacturables, 0);
+
+        // Facturación pendiente (simulada para demo)
+        const facturacionPendiente = ingresosTotales * 0.35;
+
+        // Multi-moneda (demo)
+        const monedas = [
+          { code: 'EUR', symbol: '€', rate: 1, nombre: 'Euro' },
+          { code: 'USD', symbol: '$', rate: 1.08, nombre: 'Dólar Americano' },
+          { code: 'GBP', symbol: '£', rate: 0.85, nombre: 'Libra Esterlina' },
+          { code: 'MXN', symbol: '$', rate: 20.5, nombre: 'Peso Mexicano' }
+        ];
+
+        // Centros de coste (demo)
+        const centrosCoste = [
+          { nombre: 'Operaciones', pct: 45, color: '#fbbf24' },
+          { nombre: 'Desarrollo', pct: 30, color: '#22c55e' },
+          { nombre: 'Consultoría', pct: 15, color: '#a78bfa' },
+          { nombre: 'Administración', pct: 10, color: '#67e8f9' }
+        ];
+
+        container.innerHTML = `
+          <!-- KPIs FINANCIEROS AVANZADOS -->
+          <div class="exec-grid-4">
+            <div class="exec-kpi" style="--c:#22c55e">
+              <div class="exec-kpi-label">Ingresos Facturables</div>
+              <div class="exec-kpi-value">${fmt.money(ingresosTotales)}</div>
+              <div class="exec-kpi-sub">${fmt.num(horasTotales)}h facturables</div>
+            </div>
+            <div class="exec-kpi" style="--c:#ef4444">
+              <div class="exec-kpi-label">Costes Totales</div>
+              <div class="exec-kpi-value">${fmt.money(costesTotales)}</div>
+              <div class="exec-kpi-sub">tarifas internas aplicadas</div>
+            </div>
+            <div class="exec-kpi" style="--c:${margenTotal >= 0 ? '#22c55e' : '#ef4444'}">
+              <div class="exec-kpi-label">Margen Bruto</div>
+              <div class="exec-kpi-value">${margenTotal >= 0 ? '+' : ''}${fmt.money(margenTotal)}</div>
+              <div class="exec-kpi-sub">${fmt.pct(margenTotalPct)} margen</div>
+            </div>
+            <div class="exec-kpi" style="--c:#fbbf24">
+              <div class="exec-kpi-label">Facturación Pendiente</div>
+              <div class="exec-kpi-value">${fmt.money(facturacionPendiente)}</div>
+              <div class="exec-kpi-sub">35% por facturar</div>
+            </div>
+          </div>
+
+          <!-- FACTURACIÓN POR PROYECTO -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">💰 Rentabilidad por Proyecto</h3>
+            <div style="overflow-x:auto;">
+              <table class="exec-table">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th class="num">Tarifa Cliente</th>
+                    <th class="num">Tarifa Interna</th>
+                    <th class="num">Margen/h</th>
+                    <th class="num">Horas Facturables</th>
+                    <th class="num">Ingresos</th>
+                    <th class="num">Costes</th>
+                    <th class="num">Margen</th>
+                    <th class="num">% Margen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${proyectosEnriquecidos.map(p => {
+                    const color = p.margenReal >= 0 ? '#22c55e' : '#ef4444';
+                    return `
+                      <tr style="--rowc:${color}">
+                        <td>${p.name.substring(0, 30)}</td>
+                        <td class="num">${fmt.money(p.tarifaCliente)}</td>
+                        <td class="num">${fmt.money(p.tarifaInterna)}</td>
+                        <td class="num" style="color:${color};font-weight:900;">${fmt.money(p.margenHora)}</td>
+                        <td class="num">${fmt.num(p.horasFacturables)}h</td>
+                        <td class="num" style="color:#22c55e;font-weight:900;">${fmt.money(p.ingresosFacturables)}</td>
+                        <td class="num" style="color:#ef4444;">${fmt.money(p.costesFacturables)}</td>
+                        <td class="num" style="color:${color};font-weight:900;">${p.margenReal >= 0 ? '+' : ''}${fmt.money(p.margenReal)}</td>
+                        <td class="num" style="color:${color};font-weight:900;">${fmt.pct(p.margenRealPct)}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+                <tfoot>
+                  <tr style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(139,92,246,0.1));">
+                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL PORTFOLIO</td>
+                    <td class="num">—</td>
+                    <td class="num">—</td>
+                    <td class="num">—</td>
+                    <td class="num" style="font-weight:900;color:#fbbf24;">${fmt.num(horasTotales)}h</td>
+                    <td class="num" style="font-weight:900;color:#22c55e;">${fmt.money(ingresosTotales)}</td>
+                    <td class="num" style="font-weight:900;color:#ef4444;">${fmt.money(costesTotales)}</td>
+                    <td class="num" style="font-weight:900;color:${margenTotal >= 0 ? '#22c55e' : '#ef4444'};">${margenTotal >= 0 ? '+' : ''}${fmt.money(margenTotal)}</td>
+                    <td class="num" style="font-weight:900;color:${margenTotal >= 0 ? '#22c55e' : '#ef4444'};">${fmt.pct(margenTotalPct)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- MULTI-MONEDA + CENTROS DE COSTE -->
+          <div class="exec-grid-2">
+            <div class="exec-card">
+              <h3 class="exec-card-title">💱 Multi-Moneda</h3>
+              <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
+                Conversión automática para proyectos internacionales:
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                ${monedas.map(m => {
+                  const valorConvertido = ingresosTotales * m.rate;
+                  return `
+                    <div style="padding:12px 14px;border-radius:10px;background:rgba(10,5,25,0.5);border-left:3px solid #67e8f9;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                          <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.code} · tasa ${m.rate}</div>
+                        </div>
+                        <div style="text-align:right;">
+                          <div style="font-size:16px;font-weight:900;color:#67e8f9;">${m.symbol}${Math.round(valorConvertido).toLocaleString('es-ES')}</div>
+                          <div style="font-size:10px;color:#8b7cb8;">equivalente</div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="exec-card">
+              <h3 class="exec-card-title">🏢 Distribución por Centro de Coste</h3>
+              <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
+                Asignación de costes por área funcional:
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${centrosCoste.map(c => {
+                  const valor = costesTotales * (c.pct / 100);
+                  return `
+                    <div>
+                      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                        <span style="font-size:12.5px;font-weight:800;color:#fff;">${c.nombre}</span>
+                        <span style="font-size:13px;font-weight:900;color:${c.color};">${fmt.money(valor)}</span>
+                      </div>
+                      <div class="exec-bar"><div class="exec-bar-fill" style="--c:${c.color};width:0" data-w="${c.pct}%"></div></div>
+                      <div style="font-size:10px;color:#8b7cb8;margin-top:2px;">${c.pct}% del total</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- ANÁLISIS DE MARGEN -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">📊 Análisis de Margen y Rentabilidad</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+              ${[
+                { label: 'Margen Bruto', valor: fmt.money(margenTotal), sub: fmt.pct(margenTotalPct), color: margenTotal >= 0 ? '#22c55e' : '#ef4444', icon: '💵' },
+                { label: 'Margen por Hora', valor: fmt.money(horasTotales > 0 ? margenTotal / horasTotales : 0), sub: 'por hora facturable', color: '#fbbf24', icon: '⏱️' },
+                { label: 'Precio Medio Hora', valor: fmt.money(horasTotales > 0 ? ingresosTotales / horasTotales : 0), sub: 'tarifa media cliente', color: '#a78bfa', icon: '📈' },
+                { label: 'Coste Medio Hora', valor: fmt.money(horasTotales > 0 ? costesTotales / horasTotales : 0), sub: 'coste interno medio', color: '#67e8f9', icon: '📉' }
+              ].map(k => `
+                <div style="padding:16px;border-radius:12px;background:linear-gradient(160deg, ${k.color}12, rgba(12,6,30,0.7));border:1px solid ${k.color}40;">
+                  <div style="font-size:22px;margin-bottom:8px;">${k.icon}</div>
+                  <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:6px;">${k.label}</div>
+                  <div style="font-size:22px;font-weight:900;color:${k.color};line-height:1;">${k.valor}</div>
+                  <div style="font-size:10.5px;color:#8b7cb8;margin-top:6px;">${k.sub}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- PROYECCIONES -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">🔮 Proyección de Ingresos (próximos 6 meses)</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+              ${['Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'].map((mes, i) => {
+                const factor = 1 + (i * 0.08);
+                const proyeccion = ingresosTotales * factor;
+                const color = i < 3 ? '#22c55e' : i < 5 ? '#fbbf24' : '#a78bfa';
+                return `
+                  <div style="padding:14px;border-radius:12px;background:linear-gradient(160deg, ${color}12, rgba(12,6,30,0.7));border:1px solid ${color}40;text-align:center;">
+                    <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${mes}</div>
+                    <div style="font-size:18px;font-weight:900;color:${color};">${fmt.moneyCompact(proyeccion)}</div>
+                    <div style="font-size:10px;color:#8b7cb8;margin-top:6px;">+${((factor - 1) * 100).toFixed(0)}%</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <div style="margin-top:16px;padding:14px;border-radius:10px;background:rgba(10,5,25,0.5);font-size:12px;color:#b8a4e8;line-height:1.6;">
+              <strong style="color:#fbbf24;">💡 Insight financiero:</strong>
+              Con la estructura actual y el pipeline proyectado, se espera alcanzar <strong style="color:#22c55e;">${fmt.moneyCompact(ingresosTotales * 1.4)}</strong> en los próximos 6 meses, asumiendo una tasa de conversión conservadora del 8% mensual.
+            </div>
+          </div>
+        `;
+
+        setTimeout(() => {
+          container.querySelectorAll('.exec-bar-fill').forEach(el => {
+            el.style.width = el.dataset.w || '0%';
+          });
+        }, 100);
       }
     },
-    experience: {
+
+
+       experience: {
       id: 'experience', icon: '📱', label: 'Executive Experience', subtitle: 'Vista C-Suite', badge: 'VIP',
       render(container) {
-        container.innerHTML = `<div class="exec-loading">Módulo disponible en la siguiente entrega</div>`;
+        const projects = State.projects;
+        if (!projects.length) {
+          container.innerHTML = `<div class="exec-empty">📭 No hay datos para mostrar</div>`;
+          return;
+        }
+
+        const agg = DataLayer.aggregate(projects);
+        const activos = projects.filter(p => p.totalTasks > 0);
+
+        // Estado general para el CEO (interpretación ejecutiva)
+        const estadoGeneral = this.interpretarEstado(agg);
+        const alertas = this.generarAlertas(projects, agg);
+        const decisionesDelDia = this.generarDecisiones(projects, agg);
+        const pulsoEquipo = this.calcularPulsoEquipo(projects);
+
+        // Score general ejecutivo (0-100)
+        const scoreGeneral = Math.round(
+          (Math.min(1.5, agg.CPI) / 1.5 * 30) +
+          (Math.min(1.5, agg.SPI) / 1.5 * 30) +
+          (agg.margenPct > 0 ? 20 : Math.max(0, 20 + agg.margenPct * 0.5)) +
+          (activos.length > 0 ? 20 : 10)
+        );
+
+        const scoreColor = scoreGeneral >= 80 ? '#22c55e' : scoreGeneral >= 60 ? '#fbbf24' : scoreGeneral >= 40 ? '#f97316' : '#ef4444';
+
+        container.innerHTML = `
+          <!-- HERO EJECUTIVO -->
+          <div class="exec-card" style="background:linear-gradient(135deg, ${scoreColor}15, rgba(12,6,30,0.95));border:1px solid ${scoreColor}55;padding:34px;">
+            <div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap;">
+              <div style="text-align:center;">
+                <div style="font-size:96px;font-weight:900;line-height:1;background:linear-gradient(135deg, ${scoreColor}, ${scoreColor}99);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                  ${scoreGeneral}
+                </div>
+                <div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">
+                  Executive Score
+                </div>
+              </div>
+              <div style="flex:1;min-width:280px;">
+                <div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">${estadoGeneral.titulo}</div>
+                <div style="font-size:14px;color:#b8a4e8;line-height:1.7;">${estadoGeneral.mensaje}</div>
+                <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <span style="padding:6px 14px;border-radius:100px;background:${scoreColor}22;color:${scoreColor};font-size:11px;font-weight:800;letter-spacing:1px;">
+                    ${estadoGeneral.estado.toUpperCase()}
+                  </span>
+                  <span style="padding:6px 14px;border-radius:100px;background:rgba(251,191,36,0.15);color:#fbbf24;font-size:11px;font-weight:800;letter-spacing:1px;">
+                    ACTUALIZADO ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPIs EJECUTIVOS -->
+          <div class="exec-grid-4">
+            <div class="exec-kpi" style="--c:${agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#fbbf24' : '#ef4444'}">
+              <div class="exec-kpi-label">Estado Financiero</div>
+              <div class="exec-kpi-value">${agg.CPI.toFixed(2)}</div>
+              <div class="exec-kpi-sub">${agg.CPI >= 1 ? 'Óptimo' : agg.CPI >= 0.9 ? 'En tolerancia' : 'Atención'}</div>
+            </div>
+            <div class="exec-kpi" style="--c:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444'}">
+              <div class="exec-kpi-label">Estado Cronograma</div>
+              <div class="exec-kpi-value">${agg.SPI.toFixed(2)}</div>
+              <div class="exec-kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : agg.SPI >= 0.9 ? 'Tolerancia' : 'Retrasado'}</div>
+            </div>
+            <div class="exec-kpi" style="--c:#a78bfa">
+              <div class="exec-kpi-label">Portfolio</div>
+              <div class="exec-kpi-value">${activos.length}</div>
+              <div class="exec-kpi-sub">proyectos activos</div>
+            </div>
+            <div class="exec-kpi" style="--c:#67e8f9">
+              <div class="exec-kpi-label">Valor Total</div>
+              <div class="exec-kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
+              <div class="exec-kpi-sub">presupuesto portfolio</div>
+            </div>
+          </div>
+
+          <!-- ALERTAS INTELIGENTES -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">🚨 Alertas Inteligentes Priorizadas</h3>
+            ${alertas.length === 0 ? `
+              <div style="text-align:center;padding:30px;color:#22c55e;font-size:13px;">
+                ✅ No hay alertas críticas. Todos los indicadores en rango.
+              </div>
+            ` : `
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${alertas.map(a => `
+                  <div style="padding:16px 20px;border-radius:12px;background:linear-gradient(90deg, ${a.color}15, rgba(12,6,30,0.75));border-left:4px solid ${a.color};">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+                      <div style="flex:1;min-width:250px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                          <span style="font-size:20px;">${a.icon}</span>
+                          <span style="font-size:10px;padding:3px 10px;border-radius:100px;background:${a.color}22;color:${a.color};font-weight:900;letter-spacing:1px;">${a.nivel.toUpperCase()}</span>
+                          <span style="font-size:13.5px;font-weight:900;color:#fff;">${a.titulo}</span>
+                        </div>
+                        <div style="font-size:12px;color:#b8a4e8;line-height:1.6;margin-bottom:8px;">${a.descripcion}</div>
+                        <div style="font-size:11.5px;color:${a.color};font-weight:700;">→ ${a.accion}</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- DECISIONES DEL DÍA -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">⚡ Decisiones Ejecutivas de Hoy</h3>
+            <div style="font-size:12px;color:#8b7cb8;margin-bottom:16px;">
+              Las 3 decisiones más importantes que el C-Suite debería tomar hoy:
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+              ${decisionesDelDia.map((d, i) => `
+                <div style="padding:18px;border-radius:14px;background:linear-gradient(160deg, ${d.color}15, rgba(12,6,30,0.85));border:1px solid ${d.color}55;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                    <span style="width:32px;height:32px;border-radius:10px;background:${d.color};color:#1a0a2e;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;">${i + 1}</span>
+                    <span style="font-size:13px;font-weight:900;color:#fff;">${d.titulo}</span>
+                  </div>
+                  <div style="font-size:11.5px;color:#b8a4e8;line-height:1.6;">${d.detalle}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- PULSO DEL EQUIPO + VISTA POR ROL -->
+          <div class="exec-grid-2">
+            <div class="exec-card">
+              <h3 class="exec-card-title">💓 Pulso del Equipo</h3>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                ${pulsoEquipo.map(p => `
+                  <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:12.5px;font-weight:700;color:#ddd6fe;">${p.label}</span>
+                      <span style="font-size:13px;font-weight:900;color:${p.color};">${p.valor}</span>
+                    </div>
+                    <div class="exec-bar"><div class="exec-bar-fill" style="--c:${p.color};width:0" data-w="${p.pct}%"></div></div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="exec-card">
+              <h3 class="exec-card-title">🎯 Vista por Rol Ejecutivo</h3>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${[
+                  { rol: 'CEO', icon: '👔', color: '#fbbf24', mensaje: estadoGeneral.mensajeCEO || 'Estrategia global bajo control', accion: 'Revisar portfolio mensual' },
+                  { rol: 'CFO', icon: '💰', color: '#22c55e', mensaje: `Margen total: ${fmt.pct(agg.margenPct)}`, accion: 'Auditoría de costes semanal' },
+                  { rol: 'COO', icon: '⚙️', color: '#a78bfa', mensaje: `SPI: ${agg.SPI.toFixed(2)}`, accion: 'Optimizar asignación de recursos' },
+                  { rol: 'PMO', icon: '🎯', color: '#67e8f9', mensaje: `${agg.delayed} tareas rezagadas`, accion: 'Revisar ruta crítica' }
+                ].map(r => `
+                  <div style="padding:12px 14px;border-radius:10px;background:linear-gradient(90deg, ${r.color}12, rgba(12,6,30,0.7));border-left:3px solid ${r.color};">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                      <span style="font-size:18px;">${r.icon}</span>
+                      <span style="font-size:12px;font-weight:900;color:${r.color};letter-spacing:1px;">${r.rol}</span>
+                    </div>
+                    <div style="font-size:11.5px;color:#b8a4e8;line-height:1.5;margin-bottom:6px;">${r.mensaje}</div>
+                    <div style="font-size:10.5px;color:${r.color};font-weight:800;letter-spacing:0.5px;">→ ${r.accion}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- RESUMEN ULTRA-LIMPIO PARA CEO -->
+          <div class="exec-card" style="background:linear-gradient(135deg, rgba(20,10,50,0.95), rgba(6,4,24,1));">
+            <h3 class="exec-card-title">📌 Resumen Ultra-Ejecutivo (15 segundos)</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+              ${[
+                { label: 'Dónde estamos', value: `${agg.progresoPct.toFixed(0)}%`, sub: 'avance del portfolio', color: '#fbbf24' },
+                { label: 'Vamos bien?', value: agg.CPI >= 1 && agg.SPI >= 1 ? '✅ Sí' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '⚠️ Con cautela' : '🔴 No', sub: 'estado global', color: agg.CPI >= 1 && agg.SPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444' },
+                { label: 'Riesgo principal', value: agg.CPI < 0.9 ? 'Costes' : agg.SPI < 0.9 ? 'Cronograma' : 'Ninguno', sub: 'foco de atención', color: '#ef4444' },
+                { label: 'Acción hoy', value: decisionesDelDia[0]?.titulo?.split(' ').slice(0, 3).join(' ') || 'Mantener rumbo', sub: 'decisión clave', color: '#a78bfa' }
+              ].map(k => `
+                <div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(10,5,25,0.5);">
+                  <div style="font-size:10px;color:#8b7cb8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">${k.label}</div>
+                  <div style="font-size:24px;font-weight:900;color:${k.color};line-height:1;">${k.value}</div>
+                  <div style="font-size:10.5px;color:#8b7cb8;margin-top:6px;">${k.sub}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        setTimeout(() => {
+          container.querySelectorAll('.exec-bar-fill').forEach(el => {
+            el.style.width = el.dataset.w || '0%';
+          });
+        }, 100);
+      },
+
+      interpretarEstado(agg) {
+        if (agg.CPI >= 1 && agg.SPI >= 1 && agg.margenPct > 0) {
+          return {
+            titulo: '🏆 Excelencia Ejecutiva',
+            mensaje: 'El portfolio opera con rentabilidad positiva, eficiencia de costes y cumplimiento del cronograma. Oportunidad de escalar y consolidar.',
+            estado: 'óptimo'
+          };
+        }
+        if (agg.CPI >= 0.95 && agg.SPI >= 0.95) {
+          return {
+            titulo: '✅ Operación Estable',
+            mensaje: 'Todos los indicadores en zona de tolerancia. Continuar con monitoreo semanal para mantener el rumbo.',
+            estado: 'estable'
+          };
+        }
+        if (agg.CPI < 0.85 || agg.SPI < 0.85) {
+          return {
+            titulo: '🚨 Intervención Necesaria',
+            mensaje: 'El portfolio muestra desviaciones significativas. Se requiere plan de recuperación ejecutivo en los próximos 7 días.',
+            estado: 'crítico'
+          };
+        }
+        return {
+          titulo: '⚠️ Requiere Atención',
+          mensaje: 'Algunos indicadores están fuera de rango óptimo. Recomendamos revisión cercana y acciones correctivas tempranas.',
+          estado: 'atención'
+        };
+      },
+
+      generarAlertas(projects, agg) {
+        const alertas = [];
+
+        // Alerta 1: Proyectos críticos
+        const criticos = projects.filter(p => p.totalTasks > 0 && p.health === 'critico');
+        if (criticos.length > 0) {
+          alertas.push({
+            nivel: 'crítico', icon: '🚨', color: '#ef4444',
+            titulo: `${criticos.length} proyecto(s) en estado crítico`,
+            descripcion: `Proyectos con desviaciones severas en CPI y/o SPI: ${criticos.map(p => p.name.substring(0, 25)).join(', ')}`,
+            accion: 'Reunión urgente con los PM + plan de recuperación en 48h'
+          });
+        }
+
+        // Alerta 2: Sobrecostos
+        const sobrecosto = projects.filter(p => p.totalTasks > 0 && p.VAC < 0);
+        if (sobrecosto.length > 0) {
+          const exposicion = Math.abs(sobrecosto.reduce((s, p) => s + p.VAC, 0));
+          alertas.push({
+            nivel: 'alto', icon: '💰', color: '#f97316',
+            titulo: `Sobrecosto proyectado de ${fmt.moneyCompact(exposicion)}`,
+            descripcion: `${sobrecosto.length} proyecto(s) con EAC superior al BAC. Si no se corrige, el portfolio cerrará por encima del presupuesto.`,
+            accion: 'Auditoría financiera + renegociación de alcance'
+          });
+        }
+
+        // Alerta 3: Tareas rezagadas
+        const totalRezagos = agg.delayed;
+        if (totalRezagos > 3) {
+          alertas.push({
+            nivel: 'medio', icon: '⏰', color: '#fbbf24',
+            titulo: `${totalRezagos} tareas rezagadas`,
+            descripcion: 'El volumen de rezagos puede impactar la entrega final y generar penalizaciones contractuales.',
+            accion: 'Reasignación de recursos y revisión de dependencias'
+          });
+        }
+
+        // Alerta 4: Proyectos sin datos
+        const vacios = projects.filter(p => p.totalTasks === 0);
+        if (vacios.length > 0) {
+          alertas.push({
+            nivel: 'bajo', icon: '📭', color: '#a78bfa',
+            titulo: `${vacios.length} proyecto(s) sin datos`,
+            descripcion: 'Proyectos sin tareas definidas. Distorsionan las métricas del portfolio.',
+            accion: 'Definir alcance o archivar'
+          });
+        }
+
+        return alertas;
+      },
+
+      generarDecisiones(projects, agg) {
+        const decisiones = [];
+
+        // Decisión 1
+        if (agg.CPI < 0.9) {
+          decisiones.push({
+            titulo: 'Reestructurar costes',
+            detalle: 'Aprobar un plan de auditoría de horas y renegociación de contratos para los proyectos con mayor desviación de costes.',
+            color: '#ef4444'
+          });
+        } else if (agg.SPI < 0.9) {
+          decisiones.push({
+            titulo: 'Recuperar cronograma',
+            detalle: 'Aprobar refuerzo del equipo en tareas críticas y fast-tracking en la ruta crítica del portfolio.',
+            color: '#f97316'
+          });
+        } else {
+          decisiones.push({
+            titulo: 'Acelerar el crecimiento',
+            detalle: 'Aprobar la expansión del portfolio con 2 proyectos adicionales usando el equipo actual.',
+            color: '#22c55e'
+          });
+        }
+
+        // Decisión 2
+        const activos = projects.filter(p => p.totalTasks > 0);
+        const vacios = projects.filter(p => p.totalTasks === 0);
+        if (vacios.length > 0) {
+          decisiones.push({
+            titulo: 'Limpiar el portfolio',
+            detalle: `Decidir sobre ${vacios.length} proyecto(s) sin alcance: definir tareas o archivar para mantener métricas limpias.`,
+            color: '#a78bfa'
+          });
+        } else {
+          decisiones.push({
+            titulo: 'Invertir en equipo',
+            detalle: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del portfolio.',
+            color: '#a78bfa'
+          });
+        }
+
+        // Decisión 3
+        const conMargenPositivo = activos.filter(p => p.margenProyectado >= 0);
+        const pctRentables = activos.length > 0 ? (conMargenPositivo.length / activos.length) * 100 : 0;
+        if (pctRentables < 50) {
+          decisiones.push({
+            titulo: 'Revisar pricing',
+            detalle: `Solo ${pctRentables.toFixed(0)}% de proyectos son rentables. Revisar tarifas y costes para mejorar el margen global.`,
+            color: '#ef4444'
+          });
+        } else {
+          decisiones.push({
+            titulo: 'Consolidar contratos',
+            detalle: `El ${pctRentables.toFixed(0)}% de los proyectos son rentables. Renegociar contratos con clientes clave para asegurar recurrencia.`,
+            color: '#22c55e'
+          });
+        }
+
+        return decisiones;
+      },
+
+      calcularPulsoEquipo(projects) {
+        const activos = projects.filter(p => p.totalTasks > 0);
+        if (activos.length === 0) return [];
+
+        const totalTareas = activos.reduce((s, p) => s + p.totalTasks, 0);
+        const completadas = activos.reduce((s, p) => s + p.completedTasks, 0);
+        const rezagadas = activos.reduce((s, p) => s + p.delayedTasks, 0);
+        const enCurso = activos.reduce((s, p) => s + p.inProgressTasks, 0);
+
+        // Carga media
+        const cargaMedia = activos.reduce((s, p) => s + (p.totalEstimated > 0 ? (p.totalLogged / p.totalEstimated) * 100 : 0), 0) / activos.length;
+
+        return [
+          { label: 'Productividad', valor: `${((completadas / Math.max(1, totalTareas)) * 100).toFixed(0)}%`, pct: (completadas / Math.max(1, totalTareas)) * 100, color: '#22c55e' },
+          { label: 'Carga media', valor: `${cargaMedia.toFixed(0)}%`, pct: Math.min(100, cargaMedia), color: cargaMedia > 100 ? '#ef4444' : cargaMedia > 80 ? '#fbbf24' : '#22c55e' },
+          { label: 'Tareas activas', valor: `${enCurso}`, pct: (enCurso / Math.max(1, totalTareas)) * 100, color: '#a78bfa' },
+          { label: 'Rezagos', valor: `${rezagadas}`, pct: (rezagadas / Math.max(1, totalTareas)) * 100, color: rezagadas > 3 ? '#ef4444' : '#fbbf24' }
+        ];
       }
     }
   };
