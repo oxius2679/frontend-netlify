@@ -4003,6 +4003,167 @@
       State.projects = DataLayer.load();
     },
 
+
+
+    // 📄 Exportar el módulo activo como PDF ejecutivo
+    exportarModuloActivo() {
+      const modulo = Modules[State.module];
+      if (!modulo) return;
+
+      const content = document.getElementById('exec-content');
+      if (!content) return;
+
+      // Capturar el HTML del módulo activo
+      const htmlModulo = content.innerHTML;
+
+      const fechaCorta = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+      const horaCorta = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+      // Verificar que hay contenido visible
+      if (!htmlModulo || htmlModulo.trim().length < 50) {
+        alert('⚠️ No hay contenido para exportar en este módulo.');
+        return;
+      }
+
+      // CSS premium con colores preservados
+      const CSS = `
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body {
+          margin: 0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+          background: #0a0620; color: #e9d5ff;
+          padding: 20px;
+        }
+
+        .portada {
+          min-height: 160mm; padding: 40px 50px;
+          background: linear-gradient(160deg, #0a0620 0%, #1e1145 40%, #2d1a6e 70%, #0ea5e9 130%);
+          color: #fff; border-radius: 20px;
+          margin-bottom: 30px; position: relative; overflow: hidden;
+          page-break-after: always;
+        }
+        .portada::before {
+          content: ''; position: absolute; top: -30%; right: -20%;
+          width: 600px; height: 600px;
+          background: radial-gradient(circle, rgba(251,191,36,0.25) 0%, transparent 60%);
+          border-radius: 50%;
+        }
+        .portada-content { position: relative; z-index: 1; }
+        .portada-brand {
+          font-size: 10px; letter-spacing: 8px; text-transform: uppercase;
+          color: #fbbf24; font-weight: 700; margin-bottom: 40px;
+        }
+        .portada-brand::after {
+          content: ''; display: block; width: 60px; height: 3px;
+          background: linear-gradient(90deg, #fbbf24, transparent);
+          margin-top: 12px;
+        }
+        .portada-title {
+          font-size: 46px; font-weight: 900; line-height: 1.1;
+          letter-spacing: -1.5px; margin: 0;
+          background: linear-gradient(135deg, #fff 0%, #fbbf24 50%, #fff 100%);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .portada-subtitle {
+          font-size: 15px; font-weight: 300; font-style: italic;
+          color: #ddd6fe; margin-top: 16px; max-width: 600px;
+          line-height: 1.5;
+        }
+        .portada-meta {
+          margin-top: 60px; display: flex; gap: 40px; flex-wrap: wrap;
+          padding-top: 24px; border-top: 1px solid rgba(251,191,36,0.3);
+        }
+        .portada-meta-label {
+          font-size: 8px; letter-spacing: 4px; text-transform: uppercase;
+          color: #fbbf24; margin-bottom: 6px; font-weight: 800;
+        }
+        .portada-meta-value { font-size: 14px; font-weight: 700; color: #fff; }
+
+        /* MANTENER ESTILOS DEL MÓDULO ORIGINAL */
+        #contenido-export { background: #0a0620; padding: 20px; border-radius: 16px; }
+
+        /* Neutralizar fixed/sticky para impresión */
+        #contenido-export [style*="position:fixed"],
+        #contenido-export [style*="position: sticky"] {
+          position: static !important;
+        }
+
+        /* Evitar cortes feos */
+        #contenido-export > div,
+        #contenido-export .exec-card,
+        #contenido-export .exec-kpi {
+          page-break-inside: avoid;
+        }
+
+        /* Asegurar que los textos oscuros se ven sobre fondos oscuros */
+        #contenido-export { color: #e9d5ff; }
+
+        .footer-reporte {
+          text-align: center; padding: 20px;
+          color: #6b4fa8; font-size: 9px; letter-spacing: 3px;
+          text-transform: uppercase; margin-top: 30px;
+          border-top: 1px solid rgba(251,191,36,0.2);
+        }
+      `;
+
+      const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Executive Report - ${modulo.label}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>${CSS}</style>
+</head>
+<body>
+
+  <!-- PORTADA -->
+  <div class="portada">
+    <div class="portada-content">
+      <div class="portada-brand">The Jacksons Solutions</div>
+      <h1 class="portada-title">${modulo.label}</h1>
+      <div class="portada-subtitle">${modulo.subtitle || 'Análisis ejecutivo del portfolio'}</div>
+      <div class="portada-meta">
+        <div>
+          <div class="portada-meta-label">Rol</div>
+          <div class="portada-meta-value">${modulo.badge || 'C-Suite'}</div>
+        </div>
+        <div>
+          <div class="portada-meta-label">Fecha</div>
+          <div class="portada-meta-value">${fechaCorta}</div>
+        </div>
+        <div>
+          <div class="portada-meta-label">Hora</div>
+          <div class="portada-meta-value">${horaCorta}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO DEL MÓDULO -->
+  <div id="contenido-export">${htmlModulo}</div>
+
+  <div class="footer-reporte">
+    Executive Intelligence Report · ${modulo.label} · CONFIDENCIAL · ${fechaCorta}
+  </div>
+
+</body>
+</html>`;
+
+      const w = window.open('', '_blank');
+      if (!w) {
+        alert('⚠️ Permite las ventanas emergentes para exportar.');
+        return;
+      }
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => { w.focus(); w.print(); }, 800);
+    },
+
+
+
+
+
     renderModule(moduleId) {
       const mod = Modules[moduleId];
       if (!mod) return;
@@ -4050,12 +4211,10 @@
         });
       }
 
-      // Export (placeholder para próxima entrega)
+           // Export — genera PDF ejecutivo del módulo activo
       const exportBtn = document.getElementById('exec-btn-export');
       if (exportBtn) {
-        exportBtn.addEventListener('click', () => {
-          alert('📄 Exportación ejecutiva disponible en la próxima entrega.');
-        });
+        exportBtn.addEventListener('click', () => this.exportarModuloActivo());
       }
 
       // Close
