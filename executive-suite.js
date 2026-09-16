@@ -2855,7 +2855,8 @@
         };
       },
 
-      identificarRiesgos(projects, agg) {
+            identificarRiesgos(projects, agg) {
+        const riesgos = [];
 
         // Riesgo 1: Proyectos con CPI < 0.9
         const bajoCPI = projects.filter(p => p.totalTasks > 0 && p.CPI < 0.9);
