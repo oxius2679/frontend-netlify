@@ -237,6 +237,36 @@
         color: #fff; font-size: 13.5px; font-family: inherit; outline: none;
       }
       .ds-chat-input:focus { border-color: #a78bfa; box-shadow: 0 0 20px rgba(167,139,250,0.4); }
+
+      .ds-btn-mic {
+        padding: 12px 16px; border-radius: 12px;
+        border: 1px solid rgba(167,139,250,0.5);
+        background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(88,28,135,0.1));
+        color: #ddd6fe; font-size: 18px; cursor: pointer;
+        transition: all 0.25s ease; font-family: inherit;
+        min-width: 50px;
+      }
+      .ds-btn-mic:hover {
+        background: linear-gradient(135deg, rgba(139,92,246,0.4), rgba(88,28,135,0.25));
+        box-shadow: 0 0 20px rgba(139,92,246,0.5);
+      }
+      .ds-btn-mic.ds-recording {
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        border-color: #ef4444; color: #fff;
+        animation: dsMicPulse 1s ease-in-out infinite;
+      }
+      @keyframes dsMicPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+        50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+      }
+      .ds-mic-status {
+        padding: 8px 14px; border-radius: 10px; margin-bottom: 10px;
+        background: rgba(239,68,68,0.15); border-left: 3px solid #ef4444;
+        color: #fca5a5; font-size: 12px; font-weight: 700;
+        display: none;
+      }
+      .ds-mic-status.ds-active { display: block; }
+
       .ds-chat-send {
         padding: 12px 22px; border-radius: 12px; font-weight: 800; font-size: 12px;
         cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
@@ -1581,8 +1611,10 @@
                       <div class="ds-chat-bubble">👋 Hola. Soy tu analista ejecutivo IA. Puedo responder sobre finanzas, cronograma, tareas, predicciones, anomalías y recomendaciones del proyecto <strong>${project?.name || ''}</strong>. ¿Qué quieres saber?</div>
                     </div>
                   </div>
+                                    <div class="ds-mic-status" id="ds-mic-status">🎤 Grabando... Habla con claridad y vuelve a pulsar el micrófono para transcribir.</div>
                   <div class="ds-chat-input-row">
-                    <input class="ds-chat-input" id="ds-chat-input" placeholder="Escribe tu pregunta..." />
+                    <input class="ds-chat-input" id="ds-chat-input" placeholder="Escribe tu pregunta o usa el micrófono..." />
+                    <button class="ds-btn-mic" id="ds-btn-mic" title="Grabar pregunta por voz">🎤</button>
                     <button class="ds-chat-send" id="ds-chat-send">Enviar</button>
                   </div>
                 </div>
@@ -2068,6 +2100,162 @@
       }
     },
 
+
+    // 🎤 Estado de la grabación (por instancia de UI)
+    _voiceRecorder: null,
+    _voiceChunks: [],
+    _voiceStream: null,
+
+    // 🎤 Manejar clic del micrófono (start/stop toggle)
+    async handleMicClick() {
+      const btn = document.getElementById('ds-btn-mic');
+      const status = document.getElementById('ds-mic-status');
+      if (!btn) return;
+
+      // Si ya está grabando → detener y transcribir
+      if (this._voiceRecorder && this._voiceRecorder.state === 'recording') {
+        return this.stopVoiceRecording();
+      }
+
+      // Comprobar soporte del navegador
+      if (!navigator.mediaDevices || !window.MediaRecorder) {
+        alert('⚠️ Tu navegador no soporta grabación de voz. Prueba con Chrome, Edge o Safari.');
+        return;
+      }
+
+      try {
+        // Pedir permiso de micrófono
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 16000
+          }
+        });
+
+        this._voiceStream = stream;
+        this._voiceChunks = [];
+
+        // Detectar formato soportado (Chrome → webm, Safari → mp4, Firefox → ogg)
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : 'audio/webm';
+
+        this._voiceRecorder = new MediaRecorder(stream, { mimeType });
+
+        this._voiceRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) this._voiceChunks.push(e.data);
+        };
+
+        this._voiceRecorder.onstop = () => this.processVoiceRecording();
+
+        // Arrancar grabación
+        this._voiceRecorder.start();
+
+        // UI: modo grabando
+        btn.classList.add('ds-recording');
+        btn.textContent = '⏹️';
+        btn.title = 'Detener y transcribir';
+        if (status) status.classList.add('ds-active');
+
+      } catch (err) {
+        console.error('❌ Error accediendo al micrófono:', err);
+        alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos del navegador.');
+      }
+    },
+
+    // 🎤 Detener grabación y transcribir
+    async stopVoiceRecording() {
+      const btn = document.getElementById('ds-btn-mic');
+      const status = document.getElementById('ds-mic-status');
+
+      if (this._voiceRecorder && this._voiceRecorder.state !== 'inactive') {
+        this._voiceRecorder.stop();
+      }
+    },
+
+    // 🎤 Procesar el audio grabado y enviarlo al backend
+    async processVoiceRecording() {
+      const btn = document.getElementById('ds-btn-mic');
+      const status = document.getElementById('ds-mic-status');
+      const input = document.getElementById('ds-chat-input');
+
+      // Detener stream de micrófono
+      if (this._voiceStream) {
+        this._voiceStream.getTracks().forEach(t => t.stop());
+        this._voiceStream = null;
+      }
+
+      // Restaurar UI
+      if (btn) {
+        btn.classList.remove('ds-recording');
+        btn.textContent = '🎤';
+        btn.title = 'Grabar pregunta por voz';
+        btn.disabled = true;
+      }
+      if (status) {
+        status.textContent = '🧠 Transcribiendo audio...';
+        status.style.background = 'rgba(167,139,250,0.15)';
+        status.style.borderLeftColor = '#a78bfa';
+        status.style.color = '#ddd6fe';
+      }
+
+      try {
+        // Crear blob del audio
+        const blob = new Blob(this._voiceChunks, {
+          type: this._voiceRecorder?.mimeType || 'audio/webm'
+        });
+
+        if (blob.size < 1000) {
+          throw new Error('El audio es demasiado corto. Intenta grabar al menos 1 segundo.');
+        }
+
+        // Enviar al backend
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.webm');
+
+        const r = await fetch(`${API_URL}/api/transcribe`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await r.json();
+
+        // Restaurar estado normal
+        if (status) status.classList.remove('ds-active');
+        if (btn) btn.disabled = false;
+
+        if (!data.success) {
+          throw new Error(data.error || 'Error desconocido en la transcripción');
+        }
+
+        // Insertar el texto en el input del chat
+        if (input && data.text) {
+          input.value = (input.value + ' ' + data.text).trim();
+          input.focus();
+        }
+
+        console.log('🎤 Transcripción insertada:', data.text);
+
+      } catch (err) {
+        console.error('❌ Error transcribiendo voz:', err);
+        if (status) {
+          status.textContent = `❌ ${err.message}`;
+          status.style.background = 'rgba(239,68,68,0.15)';
+          setTimeout(() => status.classList.remove('ds-active'), 4000);
+        }
+        if (btn) btn.disabled = false;
+      }
+    },
+
+
     // Helper: escapar HTML para evitar XSS
     escapeHtml(text) {
       if (!text) return '';
@@ -2100,6 +2288,11 @@
       };
 
       send.addEventListener('click', () => { ask(input.value); input.value = ''; });
+      // 🎤 Botón de micrófono
+      const micBtn = document.getElementById('ds-btn-mic');
+      if (micBtn) {
+        micBtn.addEventListener('click', () => this.handleMicClick());
+      }
       input.addEventListener('keypress', e => {
         if (e.key === 'Enter') { ask(input.value); input.value = ''; }
       });
