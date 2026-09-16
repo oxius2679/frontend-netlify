@@ -1497,8 +1497,8 @@
           <div class="exec-card">
             <h3 class="exec-card-title">📋 Reportes Ejecutivos Disponibles</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px;">
-              ${reportes.map(r => `
-                <div style="padding:16px;border-radius:12px;background:linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));border:1px solid rgba(251,191,36,0.25);cursor:pointer;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='#fbbf24';" onmouseout="this.style.transform='';this.style.borderColor='rgba(251,191,36,0.25)';" onclick="alert('📄 Generando reporte: ${r.label}...\\n\\nDisponible en la próxima versión')">
+                            ${reportes.map(r => `
+                <div class="exec-report-btn" data-report="${r.id}" style="padding:16px;border-radius:12px;background:linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));border:1px solid rgba(251,191,36,0.25);cursor:pointer;transition:all 0.25s;">
                   <div style="font-size:28px;margin-bottom:8px;">${r.icon}</div>
                   <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${r.label}</div>
                   <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${r.desc}</div>
@@ -1934,12 +1934,272 @@
           </div>
         `;
 
-        setTimeout(() => {
+                setTimeout(() => {
           container.querySelectorAll('.exec-bar-fill').forEach(el => {
             el.style.width = el.dataset.w || '0%';
           });
         }, 100);
+
+        // 📄 Wire de botones de reporte
+        container.querySelectorAll('.exec-report-btn').forEach(btn => {
+          btn.addEventListener('mouseover', () => { btn.style.transform = 'translateY(-3px)'; btn.style.borderColor = '#fbbf24'; });
+          btn.addEventListener('mouseout', () => { btn.style.transform = ''; btn.style.borderColor = 'rgba(251,191,36,0.25)'; });
+          btn.addEventListener('click', () => this.generarReporte(btn.dataset.report));
+        });
       },
+
+      // 📄 GENERADOR DE REPORTES EJECUTIVOS
+      generarReporte(tipo) {
+        const projects = State.projects;
+        const agg = DataLayer.aggregate(projects);
+        const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+
+        let titulo = '';
+        let contenido = '';
+
+        const headerStyle = `
+          <div style="background:linear-gradient(135deg,#0a0620,#1e1145);color:#fff;padding:30px 40px;border-radius:12px;margin-bottom:24px;">
+            <div style="font-size:10px;letter-spacing:6px;text-transform:uppercase;color:#fbbf24;font-weight:800;margin-bottom:10px;">Executive Intelligence Report</div>
+            <h1 style="margin:0;font-size:32px;font-weight:900;letter-spacing:-0.5px;">TITULO_PLACEHOLDER</h1>
+            <div style="margin-top:10px;font-size:12px;color:#a78bfa;letter-spacing:1px;">Generado: ${ahora} · CONFIDENCIAL</div>
+          </div>
+        `;
+
+        const tableStyle = `
+          table { width:100%; border-collapse:collapse; margin:16px 0; font-size:12px; }
+          th { background:#1e1145; color:#fff; padding:10px 12px; text-align:left; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
+          td { padding:10px 12px; border-bottom:1px solid #e0d9f5; font-variant-numeric:tabular-nums; }
+          tr:nth-child(even) td { background:#fafaff; }
+          .num { text-align:right; font-weight:700; }
+        `;
+
+        const sectionStyle = `
+          section { margin-bottom:26px; page-break-inside:avoid; }
+          h2 { font-size:16px; font-weight:900; color:#2d1a6e; letter-spacing:1.5px; text-transform:uppercase; border-bottom:2px solid #fbbf24; padding-bottom:8px; margin-bottom:14px; }
+          .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
+          .kpi-box { padding:16px; border-radius:10px; background:#f8f5ff; border:1px solid #e0d9f5; }
+          .kpi-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:#7c3aed; font-weight:800; margin-bottom:6px; }
+          .kpi-value { font-size:22px; font-weight:900; color:#1a1a2e; line-height:1; }
+          .kpi-sub { font-size:10px; color:#666; margin-top:4px; }
+          .story { padding:18px 22px; background:#f8f5ff; border-left:4px solid #7c3aed; font-size:12.5px; line-height:1.7; color:#1a1a2e; border-radius:6px; }
+          .alert-row { padding:12px 16px; border-radius:8px; margin-bottom:10px; background:#fff7ed; border-left:4px solid #f97316; font-size:12px; line-height:1.6; }
+        `;
+
+        const footer = `
+          <div style="text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #e0d9f5;font-size:10px;color:#888;letter-spacing:2px;text-transform:uppercase;">
+            The Jacksons Solutions · Executive Intelligence · ${ahora}
+          </div>
+        `;
+
+        const wrap = (t, c) => `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t}</title><style>body{font-family:Georgia,'Times New Roman',serif;color:#1a1a2e;margin:0;padding:40px;line-height:1.55;background:#fff;} ${tableStyle} ${sectionStyle}</style></head><body>${headerStyle.replace('TITULO_PLACEHOLDER', t)}${c}${footer}</body></html>`;
+
+        // ============ REPORTE 1: EJECUTIVO ============
+        if (tipo === 'ejecutivo') {
+          titulo = 'Reporte Ejecutivo';
+          const activos = projects.filter(p => p.totalTasks > 0);
+          contenido = `
+            <section>
+              <h2>Resumen del Portfolio</h2>
+              <div class="kpi-row">
+                <div class="kpi-box"><div class="kpi-label">Proyectos Activos</div><div class="kpi-value">${activos.length}</div><div class="kpi-sub">de ${projects.length} totales</div></div>
+                <div class="kpi-box"><div class="kpi-label">CPI Global</div><div class="kpi-value" style="color:${agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.CPI.toFixed(2)}</div><div class="kpi-sub">${agg.CPI >= 1 ? 'Óptimo' : 'En atención'}</div></div>
+                <div class="kpi-box"><div class="kpi-label">SPI Global</div><div class="kpi-value" style="color:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.SPI.toFixed(2)}</div><div class="kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : 'Retrasado'}</div></div>
+                <div class="kpi-box"><div class="kpi-label">Presupuesto Total</div><div class="kpi-value">${fmt.money(agg.BAC)}</div><div class="kpi-sub">portfolio consolidado</div></div>
+              </div>
+            </section>
+            <section>
+              <h2>Estado por Proyecto</h2>
+              <table>
+                <thead><tr><th>Proyecto</th><th class="num">Progreso</th><th class="num">CPI</th><th class="num">SPI</th><th class="num">EAC</th><th class="num">VAC</th></tr></thead>
+                <tbody>
+                  ${activos.map(p => `<tr><td>${p.name}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td class="num">${p.CPI.toFixed(2)}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${fmt.money(p.EAC)}</td><td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </section>
+            <section>
+              <h2>Estado Consolidado</h2>
+              <div class="story">
+                El portfolio tiene <strong>${activos.length} proyectos activos</strong> con un CPI consolidado de <strong>${agg.CPI.toFixed(2)}</strong> y un SPI de <strong>${agg.SPI.toFixed(2)}</strong>. 
+                La salud del portfolio se distribuye en ${agg.distribucion.saludable} proyecto(s) saludable(s), ${agg.distribucion.riesgo} en riesgo y ${agg.distribucion.critico} crítico(s).
+                ${agg.margen < 0 ? 'Se detecta sobrecosto en el portfolio que requiere atención ejecutiva inmediata.' : 'El portfolio opera con margen positivo.'}
+              </div>
+            </section>
+          `;
+        }
+
+        // ============ REPORTE 2: FINANCIERO ============
+        else if (tipo === 'financiero') {
+          titulo = 'Reporte Financiero';
+          contenido = `
+            <section>
+              <h2>Resumen Financiero</h2>
+              <div class="kpi-row">
+                <div class="kpi-box"><div class="kpi-label">BAC Total</div><div class="kpi-value">${fmt.money(agg.BAC)}</div><div class="kpi-sub">presupuesto autorizado</div></div>
+                <div class="kpi-box"><div class="kpi-label">AC Total</div><div class="kpi-value" style="color:#ef4444;">${fmt.money(agg.AC)}</div><div class="kpi-sub">${(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0).toFixed(1)}% consumido</div></div>
+                <div class="kpi-box"><div class="kpi-label">EAC Proyectado</div><div class="kpi-value">${fmt.money(agg.EAC)}</div><div class="kpi-sub">estimado al cierre</div></div>
+                <div class="kpi-box"><div class="kpi-label">VAC Proyectado</div><div class="kpi-value" style="color:${agg.VAC >= 0 ? '#22c55e' : '#ef4444'};">${agg.VAC >= 0 ? '+' : ''}${fmt.money(agg.VAC)}</div><div class="kpi-sub">${agg.VAC >= 0 ? 'ahorro' : 'sobrecosto'}</div></div>
+              </div>
+            </section>
+            <section>
+              <h2>Detalle Financiero por Proyecto</h2>
+              <table>
+                <thead><tr><th>Proyecto</th><th class="num">BAC</th><th class="num">AC</th><th class="num">EAC</th><th class="num">VAC</th><th class="num">Margen %</th></tr></thead>
+                <tbody>
+                  ${projects.filter(p => p.totalTasks > 0).map(p => `<tr><td>${p.name}</td><td class="num">${fmt.money(p.BAC)}</td><td class="num">${fmt.money(p.AC)}</td><td class="num">${fmt.money(p.EAC)}</td><td class="num" style="color:${p.VAC >= 0 ? '#22c55e' : '#ef4444'};">${p.VAC >= 0 ? '+' : ''}${fmt.money(p.VAC)}</td><td class="num" style="color:${p.margenPct >= 0 ? '#22c55e' : '#ef4444'};">${p.margenPct.toFixed(1)}%</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </section>
+            <section>
+              <h2>Análisis Financiero</h2>
+              <div class="story">
+                El portfolio presenta un consumo del <strong>${(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0).toFixed(1)}%</strong> del presupuesto con un avance del <strong>${agg.progresoPct.toFixed(1)}%</strong>. 
+                El CPI de <strong>${agg.CPI.toFixed(2)}</strong> indica que ${agg.CPI >= 1 ? 'la eficiencia financiera es óptima' : 'existe sobrecosto respecto al plan'}.
+                ${agg.margen < 0 ? `El margen proyectado es negativo (${fmt.money(agg.margen)}), lo que requiere auditoría de costes inmediata.` : `El margen proyectado es positivo (${fmt.money(agg.margen)}).`}
+              </div>
+            </section>
+          `;
+        }
+
+        // ============ REPORTE 3: CRONOGRAMA ============
+        else if (tipo === 'cronograma') {
+          titulo = 'Reporte de Cronograma';
+          const conRezagos = projects.filter(p => p.delayedTasks > 0);
+          contenido = `
+            <section>
+              <h2>Resumen del Cronograma</h2>
+              <div class="kpi-row">
+                <div class="kpi-box"><div class="kpi-label">SPI Global</div><div class="kpi-value" style="color:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444'};">${agg.SPI.toFixed(2)}</div><div class="kpi-sub">${agg.SPI >= 1 ? 'en tiempo' : 'retrasado'}</div></div>
+                <div class="kpi-box"><div class="kpi-label">Total Tareas</div><div class="kpi-value">${agg.tasks}</div><div class="kpi-sub">portfolio</div></div>
+                <div class="kpi-box"><div class="kpi-label">Completadas</div><div class="kpi-value" style="color:#22c55e;">${agg.completed}</div><div class="kpi-sub">${((agg.completed / Math.max(1, agg.tasks)) * 100).toFixed(1)}% del total</div></div>
+                <div class="kpi-box"><div class="kpi-label">Rezagadas</div><div class="kpi-value" style="color:#ef4444;">${agg.delayed}</div><div class="kpi-sub">${((agg.delayed / Math.max(1, agg.tasks)) * 100).toFixed(1)}% del total</div></div>
+              </div>
+            </section>
+            <section>
+              <h2>Proyectos con Rezagos</h2>
+              ${conRezagos.length === 0 ? '<div class="story">✅ No hay tareas rezagadas en el portfolio.</div>' : `
+                <table>
+                  <thead><tr><th>Proyecto</th><th class="num">Tareas Rezagadas</th><th class="num">SPI</th><th class="num">Progreso</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    ${conRezagos.map(p => `<tr><td>${p.name}</td><td class="num" style="color:#ef4444;font-weight:900;">${p.delayedTasks}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td>${p.health.toUpperCase()}</td></tr>`).join('')}
+                  </tbody>
+                </table>
+              `}
+            </section>
+          `;
+        }
+
+        // ============ REPORTE 4: EQUIPO ============
+        else if (tipo === 'equipo') {
+          titulo = 'Reporte de Equipo';
+          const activos = projects.filter(p => p.totalTasks > 0);
+          const personas = {};
+          activos.forEach(p => p.tasks.forEach(t => {
+            const n = (t.assignee || '').trim();
+            if (!n || n === 'Sin asignar' || n === 'Sistema') return;
+            if (!personas[n]) personas[n] = { tareas: 0, horas: 0, completadas: 0, proyectos: new Set() };
+            personas[n].tareas++;
+            personas[n].horas += t.estimatedTime || 0;
+            if ((t.progress || 0) >= 100) personas[n].completadas++;
+            personas[n].proyectos.add(p.name);
+          }));
+          const lista = Object.entries(personas).map(([n, d]) => ({ nombre: n, ...d, proyectos: Array.from(d.proyectos) }));
+
+          contenido = `
+            <section>
+              <h2>Resumen del Equipo</h2>
+              <div class="kpi-row">
+                <div class="kpi-box"><div class="kpi-label">Personas Asignadas</div><div class="kpi-value">${lista.length}</div><div class="kpi-sub">en el portfolio</div></div>
+                <div class="kpi-box"><div class="kpi-label">Horas Asignadas</div><div class="kpi-value">${agg.totalHours}h</div><div class="kpi-sub">estimadas</div></div>
+                <div class="kpi-box"><div class="kpi-label">Horas Registradas</div><div class="kpi-value">${agg.loggedHours}h</div><div class="kpi-sub">reales</div></div>
+                <div class="kpi-box"><div class="kpi-label">Eficiencia</div><div class="kpi-value">${((agg.loggedHours / Math.max(1, agg.totalHours)) * 100).toFixed(1)}%</div><div class="kpi-sub">registro vs estimación</div></div>
+              </div>
+            </section>
+            <section>
+              <h2>Detalle por Persona</h2>
+              <table>
+                <thead><tr><th>Persona</th><th class="num">Tareas</th><th class="num">Completadas</th><th class="num">Horas Est.</th><th class="num">Proyectos</th></tr></thead>
+                <tbody>
+                  ${lista.sort((a, b) => b.tareas - a.tareas).map(p => `<tr><td>${p.nombre}</td><td class="num">${p.tareas}</td><td class="num" style="color:#22c55e;">${p.completadas}</td><td class="num">${p.horas}h</td><td class="num">${p.proyectos.length}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </section>
+          `;
+        }
+
+        // ============ REPORTE 5: RIESGOS ============
+        else if (tipo === 'riesgos') {
+          titulo = 'Reporte de Riesgos';
+          const riesgos = [];
+          if (agg.CPI < 0.9) riesgos.push({ nivel: 'ALTO', desc: 'Sobrecosto en el portfolio', exp: Math.abs(agg.VAC), accion: 'Auditoría de horas + renegociación' });
+          if (agg.SPI < 0.9) riesgos.push({ nivel: 'ALTO', desc: 'Retraso en el cronograma', exp: agg.BAC * 0.15, accion: 'Fast-tracking en ruta crítica' });
+          if (agg.delayed > 0) riesgos.push({ nivel: agg.delayed > 5 ? 'MEDIO' : 'BAJO', desc: `${agg.delayed} tareas rezagadas`, exp: agg.delayed * 500, accion: 'Reasignación de recursos' });
+          const vacios = projects.filter(p => p.totalTasks === 0);
+          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', desc: `${vacios.length} proyecto(s) sin alcance`, exp: 0, accion: 'Definir alcance o archivar' });
+
+          contenido = `
+            <section>
+              <h2>Matriz de Riesgos Identificados</h2>
+              ${riesgos.length === 0 ? '<div class="story">✅ No se detectaron riesgos significativos en el portfolio.</div>' : `
+                <table>
+                  <thead><tr><th>Nivel</th><th>Riesgo</th><th class="num">Exposición</th><th>Mitigación</th></tr></thead>
+                  <tbody>
+                    ${riesgos.map(r => `<tr><td><strong>${r.nivel}</strong></td><td>${r.desc}</td><td class="num">${fmt.money(r.exp)}</td><td>${r.accion}</td></tr>`).join('')}
+                  </tbody>
+                </table>
+              `}
+            </section>
+            <section>
+              <h2>Exposición Total al Riesgo</h2>
+              <div class="story">
+                La exposición agregada al riesgo del portfolio es de <strong>${fmt.money(riesgos.reduce((s, r) => s + r.exp, 0))}</strong>. 
+                ${riesgos.filter(r => r.nivel === 'ALTO').length > 0 ? `Existen <strong>${riesgos.filter(r => r.nivel === 'ALTO').length} riesgos de nivel ALTO</strong> que requieren plan de mitigación ejecutivo en los próximos 7 días.` : 'No hay riesgos de nivel ALTO que requieran intervención inmediata.'}
+              </div>
+            </section>
+          `;
+        }
+
+        // ============ REPORTE 6: COMPARATIVO ============
+        else if (tipo === 'comparativo') {
+          titulo = 'Reporte Comparativo';
+          const activos = projects.filter(p => p.totalTasks > 0);
+          const ordenados = [...activos].sort((a, b) => (b.CPI + b.SPI) - (a.CPI + a.SPI));
+
+          contenido = `
+            <section>
+              <h2>Benchmark entre Proyectos</h2>
+              <table>
+                <thead><tr><th>#</th><th>Proyecto</th><th class="num">CPI</th><th class="num">SPI</th><th class="num">Progreso</th><th class="num">Margen %</th><th>Score</th></tr></thead>
+                <tbody>
+                  ${ordenados.map((p, i) => {
+                    const score = Math.round(((p.CPI + p.SPI) / 2) * 100);
+                    return `<tr><td>${i + 1}</td><td>${p.name}</td><td class="num">${p.CPI.toFixed(2)}</td><td class="num">${p.SPI.toFixed(2)}</td><td class="num">${p.progresoPct.toFixed(1)}%</td><td class="num">${p.margenPct.toFixed(1)}%</td><td><strong>${score}</strong></td></tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </section>
+            <section>
+              <h2>Análisis Comparativo</h2>
+              <div class="story">
+                El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el portfolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100. 
+                ${ordenados.length > 1 ? `El proyecto <strong>${ordenados[ordenados.length - 1].name}</strong> requiere mayor atención con un score de ${Math.round(((ordenados[ordenados.length - 1].CPI + ordenados[ordenados.length - 1].SPI) / 2) * 100)}/100.` : ''}
+                La media del portfolio se sitúa en CPI ${agg.CPI.toFixed(2)} y SPI ${agg.SPI.toFixed(2)}.
+              </div>
+            </section>
+          `;
+        }
+
+        // Abrir ventana e imprimir
+        const w = window.open('', '_blank');
+        if (!w) {
+          alert('⚠️ Permite las ventanas emergentes para generar el reporte.');
+          return;
+        }
+        w.document.write(wrap(titulo, contenido));
+        w.document.close();
+        setTimeout(() => { w.focus(); w.print(); }, 500);
+      },
+
+      calcularTendencias(projects) {
 
       identificarRiesgos(projects, agg) {
         const riesgos = [];
@@ -2225,41 +2485,41 @@
         const integraciones = [
           // SSO / Identidad
           { cat: 'Identidad y Acceso', nombre: 'SSO con Google', icon: '🔐', estado: 'activo', detalle: 'Login mediante Google Workspace' },
-          { cat: 'Identidad y Acceso', nombre: 'SSO con Microsoft', icon: '🔐', estado: 'activo', detalle: 'Azure AD / Microsoft 365' },
-          { cat: 'Identidad y Acceso', nombre: 'Active Directory / LDAP', icon: '🏢', estado: 'disponible', detalle: 'Sincronización con directorio corporativo' },
-          { cat: 'Identidad y Acceso', nombre: 'SAML 2.0', icon: '🛡️', estado: 'disponible', detalle: 'Federación de identidad empresarial' },
+                   { cat: 'Identidad y Acceso', nombre: 'SSO con Microsoft', icon: '🔐', estado: 'beta', detalle: 'Login Azure AD (SSO empresarial en desarrollo)' },
+          { cat: 'Identidad y Acceso', nombre: 'Active Directory / LDAP', icon: '🏢', estado: 'roadmap', detalle: 'Sincronización con directorio corporativo' },
+          { cat: 'Identidad y Acceso', nombre: 'SAML 2.0', icon: '🛡️', estado: 'roadmap', detalle: 'Federación de identidad empresarial' },
 
           // Colaboración
           { cat: 'Colaboración', nombre: 'Slack', icon: '💬', estado: 'activo', detalle: 'Notificaciones y comandos' },
           { cat: 'Colaboración', nombre: 'Microsoft Teams', icon: '👥', estado: 'activo', detalle: 'Reuniones y transcripción automática' },
-          { cat: 'Colaboración', nombre: 'Google Meet', icon: '📹', estado: 'disponible', detalle: 'Integración de reuniones' },
+          { cat: 'Colaboración', nombre: 'Google Meet', icon: '📹', estado: 'roadmap', detalle: 'Integración de reuniones' },
 
           // Gestión de Proyectos
           { cat: 'Proyectos', nombre: 'Jira', icon: '📋', estado: 'activo', detalle: 'Importación y sincronización bidireccional' },
-          { cat: 'Proyectos', nombre: 'ClickUp', icon: '✅', estado: 'activo', detalle: 'Sincronización de tareas' },
-          { cat: 'Proyectos', nombre: 'Trello', icon: '📌', estado: 'activo', detalle: 'Importación de tableros' },
-          { cat: 'Proyectos', nombre: 'Asana', icon: '🎯', estado: 'activo', detalle: 'Integración de proyectos' },
-          { cat: 'Proyectos', nombre: 'Monday.com', icon: '📅', estado: 'disponible', detalle: 'Sincronización de boards' },
+                    { cat: 'Proyectos', nombre: 'ClickUp', icon: '✅', estado: 'roadmap', detalle: 'Sincronización de tareas' },
+          { cat: 'Proyectos', nombre: 'Trello', icon: '📌', estado: 'roadmap', detalle: 'Importación de tableros' },
+          { cat: 'Proyectos', nombre: 'Asana', icon: '🎯', estado: 'roadmap', detalle: 'Integración de proyectos' },
+          { cat: 'Proyectos', nombre: 'Monday.com', icon: '📅', estado: 'roadmap', detalle: 'Sincronización de boards' },
 
           // ERP / Finanzas
-          { cat: 'ERP & Finanzas', nombre: 'SAP', icon: '🏭', estado: 'disponible', detalle: 'Integración con SAP ERP' },
-          { cat: 'ERP & Finanzas', nombre: 'Oracle NetSuite', icon: '💼', estado: 'disponible', detalle: 'Sincronización contable' },
-          { cat: 'ERP & Finanzas', nombre: 'QuickBooks', icon: '📊', estado: 'disponible', detalle: 'Facturación automática' },
+          { cat: 'ERP & Finanzas', nombre: 'SAP', icon: '🏭', estado: 'roadmap', detalle: 'Integración con SAP ERP' },
+          { cat: 'ERP & Finanzas', nombre: 'Oracle NetSuite', icon: '💼', estado: 'roadmap', detalle: 'Sincronización contable' },
+          { cat: 'ERP & Finanzas', nombre: 'QuickBooks', icon: '📊', estado: 'roadmap', detalle: 'Facturación automática' },
           { cat: 'ERP & Finanzas', nombre: 'Stripe', icon: '💳', estado: 'activo', detalle: 'Pagos y suscripciones' },
 
           // CRM
-          { cat: 'CRM & Ventas', nombre: 'Salesforce', icon: '☁️', estado: 'disponible', detalle: 'Sincronización de clientes' },
-          { cat: 'CRM & Ventas', nombre: 'HubSpot', icon: '🧡', estado: 'disponible', detalle: 'Gestión de leads' },
+          { cat: 'CRM & Ventas', nombre: 'Salesforce', icon: '☁️', estado: 'roadmap', detalle: 'Sincronización de clientes' },
+          { cat: 'CRM & Ventas', nombre: 'HubSpot', icon: '🧡', estado: 'roadmap', detalle: 'Gestión de leads' },
 
           // Business Intelligence
           { cat: 'Business Intelligence', nombre: 'Power BI', icon: '📈', estado: 'activo', detalle: 'Streaming de datos' },
-          { cat: 'Business Intelligence', nombre: 'Tableau', icon: '📉', estado: 'disponible', detalle: 'Exportación de datasets' },
-          { cat: 'Business Intelligence', nombre: 'Looker Studio', icon: '🔍', estado: 'disponible', detalle: 'Conectores nativos' }
+          { cat: 'Business Intelligence', nombre: 'Tableau', icon: '📉', estado: 'roadmap', detalle: 'Exportación de datasets' },
+          { cat: 'Business Intelligence', nombre: 'Looker Studio', icon: '🔍', estado: 'roadmap', detalle: 'Conectores nativos' }
         ];
 
         const cats = [...new Set(integraciones.map(i => i.cat))];
-        const totalActivas = integraciones.filter(i => i.estado === 'activo').length;
-        const totalDisponibles = integraciones.filter(i => i.estado === 'disponible').length;
+                const totalActivas = integraciones.filter(i => i.estado === 'activo').length;
+        const totalRoadmap = integraciones.filter(i => i.estado === 'roadmap').length;
 
         // Endpoints de la API pública
         const endpoints = [
@@ -2292,10 +2552,10 @@
               <div class="exec-kpi-value">${totalActivas}</div>
               <div class="exec-kpi-sub">conectadas en producción</div>
             </div>
-            <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">Disponibles</div>
-              <div class="exec-kpi-value">${totalDisponibles}</div>
-              <div class="exec-kpi-sub">listas para activar</div>
+                        <div class="exec-kpi" style="--c:#a78bfa">
+              <div class="exec-kpi-label">En Roadmap</div>
+              <div class="exec-kpi-value">${totalRoadmap}</div>
+              <div class="exec-kpi-sub">planificadas para 2027</div>
             </div>
             <div class="exec-kpi" style="--c:#fbbf24">
               <div class="exec-kpi-label">API Endpoints</div>
@@ -2316,9 +2576,9 @@
               <div class="exec-card">
                 <h3 class="exec-card-title">🔌 ${cat}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px;">
-                  ${items.map(i => {
-                    const color = i.estado === 'activo' ? '#22c55e' : '#a78bfa';
-                    const badge = i.estado === 'activo' ? 'ACTIVO' : 'DISPONIBLE';
+                                    ${items.map(i => {
+                    const color = i.estado === 'activo' ? '#22c55e' : i.estado === 'beta' ? '#fbbf24' : '#a78bfa';
+                    const badge = i.estado === 'activo' ? 'ACTIVO' : i.estado === 'beta' ? 'BETA' : 'ROADMAP';
                     return `
                       <div style="padding:14px 16px;border-radius:12px;background:linear-gradient(160deg, ${color}10, rgba(12,6,30,0.75));border:1px solid ${color}40;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
