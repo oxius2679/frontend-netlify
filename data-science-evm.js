@@ -2184,7 +2184,7 @@
       }
     },
 
-       // 🎤 Detener grabación
+           // 🎤 Detener grabación
     async stopVoiceRecording() {
       // 🔧 FIX: parar timer primero
       if (this._voiceTimer) {
@@ -2197,6 +2197,17 @@
 
       if (this._voiceRecorder && this._voiceRecorder.state !== 'inactive') {
         try { this._voiceRecorder.stop(); } catch(e) { console.warn(e); }
+      }
+    },
+
+    // 🔧 FIX: reactivar botón del micrófono (por si algún flujo lo dejó deshabilitado)
+    reactivarBotonMic() {
+      const btn = document.getElementById('ds-btn-mic');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('ds-recording');
+        btn.textContent = '🎤';
+        btn.title = 'Grabar pregunta por voz';
       }
     },
 
@@ -2279,8 +2290,11 @@
           return;
         }
 
-        const textoLimpio = esPreguntaValida.textoLimpio;
+               const textoLimpio = esPreguntaValida.textoLimpio;
         console.log('🎤 Pregunta validada:', textoLimpio);
+
+        // 🔧 FIX: reactivar botón antes de auto-enviar
+        if (btn) btn.disabled = false;
 
         if (input) {
           input.value = textoLimpio;
