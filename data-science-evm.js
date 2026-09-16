@@ -797,11 +797,11 @@
       };
     },
 
-    async respond(question) {
+        async respond(question) {
       const k = this.kb;
       if (!k) return '⚠️ Aún no hay datos. Abre primero el dashboard EVM y pulsa 🧠 IA Analytics.';
 
-      // Indicador visual de "pensando"
+      // Indicador visual
       const log = document.getElementById('ds-chat-log');
       const thinkingId = 'thinking-' + Date.now();
       if (log) {
@@ -813,7 +813,20 @@
         log.scrollTop = log.scrollHeight;
       }
 
-      // Empaquetar datos compactos para enviar al backend
+      // Detectar si la pregunta es sobre el pasado
+      const esPreguntaHistorica = /pasado|histórico|historico|evolución|evolucion|tendencia|cambi|ayer|anterior|últimos|ultimos|semana pasada|mes pasado|antes|progreso.*día|comparar.*antes|qué cambió|que cambio|había|habia|estaba|era antes/i.test(question);
+
+      // Si es histórica, traer contexto del backend
+      let historicalContext = null;
+      if (esPreguntaHistorica) {
+        if (log) {
+          const thinkEl = document.getElementById(thinkingId);
+          if (thinkEl) thinkEl.querySelector('.ds-chat-bubble').textContent = '📚 Consultando histórico...';
+        }
+        historicalContext = await this.fetchHistoricalContext();
+      }
+
+      // Empaquetar datos actuales
       const projectData = {
         nombre: k.project,
         BAC: k.BAC,
@@ -863,18 +876,20 @@
       const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
 
       try {
+        const payload = { question, projectData };
+        if (historicalContext) payload.historicalContext = historicalContext;
+
         const response = await fetch(`${API_URL}/api/ai-analyst`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ question, projectData })
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
-        // Quitar indicador "pensando"
         document.getElementById(thinkingId)?.remove();
 
         if (!data.success) {
@@ -888,14 +903,72 @@
         console.error('❌ Error consultando IA:', error);
         return '⚠️ Error de conexión con el asistente IA. Verifica tu conexión e intenta de nuevo.';
       }
-    }
-  };
+    },
+
+    // 📚 Trae el contexto histórico (KPIs últimos 30 días + cambios recientes)
+    async fetchHistoricalContext() {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const projectId = this.kb?.projectId || 
+                         window.projects?.[window.currentProjectIndex || 0]?.id;
+
+        if (!token || !clienteId || !projectId) {
+          console.log('📚 Histórico: faltan datos para consultar');
+          return null;
+        }
+
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        // Fetch en paralelo: KPIs + resumen + auditoría reciente
+        const [kpisRes, summaryRes, tasksRes] = await Promise.all([
+          fetch(`${API_URL}/api/history/kpis/${projectId}?clienteId=${clienteId}&days=30`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json()).catch(() => null),
+          fetch(`${API_URL}/api/history/summary/${projectId}?clienteId=${clienteId}&days=30`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json()).catch(() => null),
+          fetch(`${API_URL}/api/history/tasks/${projectId}?clienteId=${clienteId}&limit=50`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json()).catch(() => null)
+        ]);
+
+        const contexto = {};
+
+        if (kpisRes?.success && kpisRes.series?.length) {
+          contexto.serieKPIs = kpisRes.series;
+          contexto.diasConDatos = kpisRes.count;
+        }
+
+        if (summaryRes?.success && summaryRes.agregados) {
+          contexto.agregados = summaryRes.agregados;
+          contexto.rango = summaryRes.rango;
+        }
+
+        if (tasksRes?.success && tasksRes.cambios?.length) {
+          contexto.cambiosRecientes = tasksRes.cambios.slice(0, 20);
+        }
+
+        const tieneDatos = Object.keys(contexto).length > 0;
+        if (!tieneDatos) {
+          console.log('📚 Histórico: sin datos todavía (los snapshots se acumulan día a día)');
+          return { sinDatos: true, mensaje: 'Aún no hay suficiente histórico. Se empezará a acumular a partir de hoy.' };
+        }
+
+        console.log('📚 Histórico cargado:', Object.keys(contexto));
+        return contexto;
+
+      } catch (error) {
+        console.warn('📚 Error cargando histórico:', error.message);
+        return null;
+      }
+    },
 
   /* ==========================================================
      SECCIÓN 11 · UI RENDERER
      ========================================================== */
   const UI = {
-    async open() {
+       async open() {
       const data = DataExtractor.extract();
       if (!data) {
         alert('⚠️ Abre primero el dashboard EVM (Costos) para poder analizarlo.');
@@ -911,6 +984,9 @@
       Assistant.buildKB(data, metrics);
       Assistant.kb.tasks = data.tasks;
 
+      // 📸 Guardar snapshot histórico (silencioso, no bloquea el render)
+      this.guardarSnapshot(data, metrics);
+
       // Render
       const html = this.buildHTML(data, metrics);
       document.body.insertAdjacentHTML('beforeend', html);
@@ -924,6 +1000,69 @@
 
       // Wire eventos
       this.wireEvents();
+    },
+
+    // 📸 Envía snapshot al backend (no bloquea UI, errores silenciosos)
+    async guardarSnapshot(data, metrics) {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        if (!token) {
+          console.log('📸 Snapshot: sin token, omitiendo');
+          return;
+        }
+
+        const clienteId = localStorage.getItem('clienteId') ||
+                          localStorage.getItem('userClienteId') ||
+                          window.userClienteId;
+
+        if (!clienteId) {
+          console.log('📸 Snapshot: sin clienteId, omitiendo');
+          return;
+        }
+
+        const { BAC, PV, EV, AC, projectIndex } = data;
+        const CPI = AC > 0 ? EV / AC : 1;
+        const SPI = PV > 0 ? EV / PV : 1;
+        const EAC = CPI > 0 ? BAC / CPI : BAC;
+        const VAC = BAC - EAC;
+        const progresoPct = BAC > 0 ? (EV / BAC) * 100 : 0;
+
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        const response = await fetch(`${API_URL}/api/snapshots/guardar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            clienteId,
+            projectIndex: projectIndex || 0,
+            kpis: {
+              BAC: Math.round(BAC),
+              PV: Math.round(PV),
+              EV: Math.round(EV),
+              AC: Math.round(AC),
+              CPI: parseFloat(CPI.toFixed(3)),
+              SPI: parseFloat(SPI.toFixed(3)),
+              EAC: Math.round(EAC),
+              VAC: Math.round(VAC),
+              progresoPct: parseFloat(progresoPct.toFixed(1))
+            }
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          console.log(`📸 Snapshot guardado: ${result.snapshots?.length || 0} proyectos`);
+        } else {
+          console.warn('📸 Snapshot error:', result.error);
+        }
+      } catch (error) {
+        // Silencioso: no rompe la UX si el snapshot falla
+        console.warn('📸 Snapshot no guardado (silencioso):', error.message);
+      }
     },
 
     computeMetrics(data) {
