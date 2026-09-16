@@ -1497,8 +1497,8 @@
           <div class="exec-card">
             <h3 class="exec-card-title">📋 Reportes Ejecutivos Disponibles</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px;">
-                            ${reportes.map(r => `
-                <div class="exec-report-btn" data-report="${r.id}" style="padding:16px;border-radius:12px;background:linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));border:1px solid rgba(251,191,36,0.25);cursor:pointer;transition:all 0.25s;">
+                                          ${reportes.map(r => `
+                <div class="exec-report-btn" data-report="${r.id}" onclick="window.__ExecutiveSuiteReport('${r.id}')" style="padding:16px;border-radius:12px;background:linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));border:1px solid rgba(251,191,36,0.25);cursor:pointer;transition:all 0.25s;">
                   <div style="font-size:28px;margin-bottom:8px;">${r.icon}</div>
                   <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${r.label}</div>
                   <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${r.desc}</div>
@@ -1940,17 +1940,17 @@
           });
         }, 100);
 
-        // 📄 Wire de botones de reporte
-        container.querySelectorAll('.exec-report-btn').forEach(btn => {
+                // 📄 Wire de botones de reporte (solo efectos hover; el clic usa onclick inline)
+               container.querySelectorAll('.exec-report-btn').forEach(btn => {
           btn.addEventListener('mouseover', () => { btn.style.transform = 'translateY(-3px)'; btn.style.borderColor = '#fbbf24'; });
           btn.addEventListener('mouseout', () => { btn.style.transform = ''; btn.style.borderColor = 'rgba(251,191,36,0.25)'; });
-          btn.addEventListener('click', () => this.generarReporte(btn.dataset.report));
         });
       },
 
       // 📄 GENERADOR DE REPORTES EJECUTIVOS
-      generarReporte(tipo) {
-         console.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
+            generarReporte(tipo) {
+        console.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
+        alert('🎯 Reporte solicitado: ' + tipo);
         const projects = State.projects;
         const agg = DataLayer.aggregate(projects);
         const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
@@ -3487,12 +3487,22 @@
     }, 5000);
   }
 
-  // API pública
+   // API pública
   window.ExecutiveSuite = {
     open: () => UI.open(),
     close: () => UI.close(),
     version: CFG.version,
     modules: () => Object.keys(Modules)
+  };
+
+  // 🎯 Fix: función global para generar reportes (evita problemas de 'this')
+  window.__ExecutiveSuiteReport = (tipo) => {
+    try {
+      Modules.bi.generarReporte(tipo);
+    } catch (e) {
+      console.error('❌ Error generando reporte:', e.message);
+      alert('⚠️ Error generando reporte: ' + e.message);
+    }
   };
 
   // Arranque
