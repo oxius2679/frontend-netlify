@@ -798,16 +798,638 @@
     },
 
     /* ---------- MÓDULOS PENDIENTES (placeholders hasta próxima entrega) ---------- */
-    okrs: {
+        okrs: {
       id: 'okrs', icon: '🎯', label: 'OKRs & Estrategia', subtitle: 'Alineación estratégica', badge: 'CEO',
       render(container) {
-        container.innerHTML = `<div class="exec-loading">Módulo disponible en la siguiente entrega</div>`;
+        const projects = State.projects;
+        if (!projects.length) {
+          container.innerHTML = `<div class="exec-loading">📭 No hay proyectos disponibles</div>`;
+          return;
+        }
+
+        const agg = DataLayer.aggregate(projects);
+
+        // Scorecard estratégico consolidado
+        const scorecard = {
+          financiera: this.calcularFinanciera(agg),
+          cliente: this.calcularCliente(projects),
+          procesos: this.calcularProcesos(agg),
+          aprendizaje: this.calcularAprendizaje(projects)
+        };
+
+        // Objetivos estratégicos derivados
+        const objetivos = this.derivarObjetivos(projects, agg, scorecard);
+
+        // Alineación proyectos vs objetivos
+        const alineacion = this.calcularAlineacion(projects, objetivos);
+
+        // Forecast estratégico
+        const forecast = this.calcularForecast(projects, agg);
+
+        const totalScorecard = Math.round((scorecard.financiera.score + scorecard.cliente.score + scorecard.procesos.score + scorecard.aprendizaje.score) / 4);
+
+        container.innerHTML = `
+          <!-- SCORECARD BALANCEADO -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Balanced Scorecard · Salud Estratégica Global</h3>
+            <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+              <div style="text-align:center;min-width:180px;">
+                <div style="font-size:72px;font-weight:900;background:linear-gradient(135deg,#22c55e,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">
+                  ${totalScorecard}
+                </div>
+                <div style="font-size:11px;color:#fbbf24;letter-spacing:3px;text-transform:uppercase;margin-top:8px;font-weight:800;">
+                  Score Estratégico / 100
+                </div>
+                <div style="font-size:11px;color:#8b7cb8;margin-top:6px;">
+                  ${totalScorecard >= 75 ? '🟢 Excelente' : totalScorecard >= 50 ? '🟡 Estable' : '🔴 Requiere acción'}
+                </div>
+              </div>
+              <div style="flex:1;min-width:280px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                ${[
+                  { key: 'financiera', icon: '💰', label: 'Perspectiva Financiera', color: '#22c55e' },
+                  { key: 'cliente', icon: '🎯', label: 'Perspectiva Cliente', color: '#a78bfa' },
+                  { key: 'procesos', icon: '⚙️', label: 'Procesos Internos', color: '#fbbf24' },
+                  { key: 'aprendizaje', icon: '🧠', label: 'Aprendizaje & Crecimiento', color: '#67e8f9' }
+                ].map(p => {
+                  const persp = scorecard[p.key];
+                  return `
+                    <div style="padding:14px 16px;border-radius:12px;background:linear-gradient(160deg, ${p.color}12, rgba(12,6,30,0.7));border:1px solid ${p.color}40;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div style="font-size:16px;">${p.icon}</div>
+                        <div style="font-size:22px;font-weight:900;color:${p.color};">${persp.score}</div>
+                      </div>
+                      <div style="font-size:10px;color:#8b7cb8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">${p.label}</div>
+                      <div class="exec-bar"><div class="exec-bar-fill" style="--c:${p.color};width:0" data-w="${persp.score}%"></div></div>
+                      <div style="font-size:11px;color:${p.color};margin-top:8px;font-weight:700;">${persp.insight}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- OBJETIVOS ESTRATÉGICOS -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Objetivos Estratégicos Derivados</h3>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              ${objetivos.map(obj => {
+                const color = obj.estado === 'logrado' ? '#22c55e' : obj.estado === 'en-curso' ? '#fbbf24' : obj.estado === 'riesgo' ? '#f97316' : '#ef4444';
+                const icon = obj.estado === 'logrado' ? '🏆' : obj.estado === 'en-curso' ? '⏳' : obj.estado === 'riesgo' ? '⚠️' : '🔴';
+                return `
+                  <div style="padding:16px 20px;border-radius:12px;background:linear-gradient(90deg, rgba(45,25,90,0.5), rgba(12,6,30,0.35));border-left:4px solid ${color};">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+                      <div style="flex:1;min-width:250px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                          <span style="font-size:20px;">${icon}</span>
+                          <span style="font-size:15px;font-weight:900;color:#fff;">${obj.titulo}</span>
+                          <span style="padding:2px 10px;border-radius:100px;font-size:10px;font-weight:800;letter-spacing:1px;background:${color}22;color:${color};">${obj.estado.toUpperCase()}</span>
+                        </div>
+                        <div style="font-size:12px;color:#b8a4e8;line-height:1.6;">${obj.descripcion}</div>
+                      </div>
+                      <div style="text-align:right;min-width:120px;">
+                        <div style="font-size:26px;font-weight:900;color:${color};">${obj.progreso}%</div>
+                        <div style="font-size:10px;color:#8b7cb8;letter-spacing:1.5px;text-transform:uppercase;">Progreso</div>
+                      </div>
+                    </div>
+                    <div class="exec-bar" style="margin-top:12px;"><div class="exec-bar-fill" style="--c:${color};width:0" data-w="${obj.progreso}%"></div></div>
+                    <div style="margin-top:10px;font-size:11px;color:#a78bfa;font-style:italic;">💡 ${obj.accion}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- ALINEACIÓN PROYECTOS-ESTRATEGIA -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Matriz de Alineación Estratégica</h3>
+            <div style="overflow-x:auto;">
+              <table class="exec-table">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th class="num">Alineación</th>
+                    <th class="num">Impacto Estratégico</th>
+                    <th class="num">Prioridad</th>
+                    <th>Recomendación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${alineacion.map(a => {
+                    const prioridadColor = a.prioridad === 'crítica' ? '#ef4444' : a.prioridad === 'alta' ? '#f97316' : a.prioridad === 'media' ? '#fbbf24' : '#22c55e';
+                    return `
+                      <tr style="--rowc:${prioridadColor}">
+                        <td>${a.proyecto.substring(0, 40)}</td>
+                        <td class="num" style="color:${a.alineacion >= 70 ? '#22c55e' : a.alineacion >= 40 ? '#fbbf24' : '#ef4444'};font-weight:900;">${a.alineacion}%</td>
+                        <td class="num">${a.impacto}</td>
+                        <td class="num"><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;background:${prioridadColor}22;color:${prioridadColor};">${a.prioridad.toUpperCase()}</span></td>
+                        <td style="font-size:12px;color:#b8a4e8;">${a.recomendacion}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FORECAST ESTRATÉGICO -->
+          <div class="exec-grid-2">
+            <div class="exec-card">
+              <h3 class="exec-card-title">Forecast Estratégico 12 meses</h3>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                ${forecast.trimestres.map(t => `
+                  <div style="padding:14px 16px;border-radius:12px;background:rgba(10,5,25,0.5);border-left:3px solid ${t.color};">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:13px;font-weight:800;color:#fff;">${t.label}</span>
+                      <span style="font-size:14px;font-weight:900;color:${t.color};">${fmt.moneyCompact(t.ingresos)}</span>
+                    </div>
+                    <div style="font-size:11px;color:#8b7cb8;">${t.descripcion}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="exec-card">
+              <h3 class="exec-card-title">Decisiones Estratégicas Recomendadas</h3>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${forecast.decisiones.map((d, i) => `
+                  <div style="padding:12px 14px;border-radius:10px;background:linear-gradient(90deg, rgba(45,25,90,0.5), rgba(12,6,30,0.35));border-left:3px solid ${d.color};">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                      <span style="width:24px;height:24px;border-radius:6px;background:${d.color};color:#1a0a2e;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;">${i + 1}</span>
+                      <span style="font-size:13px;font-weight:800;color:#fff;">${d.titulo}</span>
+                    </div>
+                    <div style="font-size:11.5px;color:#b8a4e8;line-height:1.5;">${d.detalle}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        setTimeout(() => {
+          container.querySelectorAll('.exec-bar-fill').forEach(el => {
+            el.style.width = el.dataset.w || '0%';
+          });
+        }, 100);
+      },
+
+      calcularFinanciera(agg) {
+        const score = Math.round(
+          Math.min(100, Math.max(0, (agg.CPI * 40) + (agg.margenPct > 0 ? 30 : 10) + (agg.VAC >= 0 ? 30 : 5)))
+        );
+        let insight = 'Situación estable';
+        if (score >= 75) insight = 'Finanzas sólidas';
+        else if (score >= 50) insight = 'Margen ajustado';
+        else insight = 'Requiere intervención';
+        return { score: Math.min(100, Math.max(0, score)), insight };
+      },
+
+      calcularCliente(projects) {
+        const avgProgress = projects.reduce((s, p) => s + p.progresoPct, 0) / Math.max(1, projects.length);
+        const healthyRatio = projects.filter(p => p.health === 'saludable' || p.health === 'aceptable').length / Math.max(1, projects.length);
+        const score = Math.round(avgProgress * 0.5 + healthyRatio * 100 * 0.5);
+        let insight = 'Satisfacción moderada';
+        if (score >= 75) insight = 'Clientes satisfechos';
+        else if (score >= 50) insight = 'Atención requerida';
+        else insight = 'Riesgo de insatisfacción';
+        return { score: Math.min(100, Math.max(0, score)), insight };
+      },
+
+      calcularProcesos(agg) {
+        const score = Math.round(Math.min(100, Math.max(0, agg.SPI * 60 + (agg.tasks > 0 ? (agg.completed / agg.tasks) * 40 : 40))));
+        let insight = 'Procesos funcionales';
+        if (score >= 75) insight = 'Excelencia operativa';
+        else if (score >= 50) insight = 'Oportunidades de mejora';
+        else insight = 'Reingeniería necesaria';
+        return { score: Math.min(100, Math.max(0, score)), insight };
+      },
+
+      calcularAprendizaje(projects) {
+        const conTareas = projects.filter(p => p.totalTasks > 0);
+        const ratioCompletado = conTareas.length > 0
+          ? conTareas.reduce((s, p) => s + (p.completedTasks / p.totalTasks), 0) / conTareas.length
+          : 0;
+        const score = Math.round(ratioCompletado * 100);
+        let insight = 'Equipo productivo';
+        if (score >= 75) insight = 'Alto desempeño';
+        else if (score >= 40) insight = 'Aprendizaje continuo';
+        else insight = 'Requiere formación';
+        return { score: Math.min(100, Math.max(0, score)), insight };
+      },
+
+      derivarObjetivos(projects, agg, scorecard) {
+        const objetivos = [];
+
+        // Objetivo 1: Mejorar CPI global
+        objetivos.push({
+          titulo: 'Optimizar eficiencia de costos (CPI ≥ 1.00)',
+          descripcion: `Actualmente el CPI global es ${agg.CPI.toFixed(2)}. Objetivo: recuperar el margen y alcanzar eficiencia financiera sostenible.`,
+          progreso: Math.min(100, Math.round(agg.CPI * 100)),
+          estado: agg.CPI >= 1 ? 'logrado' : agg.CPI >= 0.95 ? 'en-curso' : agg.CPI >= 0.85 ? 'riesgo' : 'critico',
+          accion: agg.CPI >= 1 ? 'Mantener el control actual' : 'Auditoría de horas y revisión de alcance'
+        });
+
+        // Objetivo 2: Cumplir cronograma
+        objetivos.push({
+          titulo: 'Alinear el cronograma (SPI ≥ 1.00)',
+          descripcion: `SPI global: ${agg.SPI.toFixed(2)}. Objetivo: ejecutar al ritmo planificado y recuperar retrasos acumulados.`,
+          progreso: Math.min(100, Math.round(agg.SPI * 100)),
+          estado: agg.SPI >= 1 ? 'logrado' : agg.SPI >= 0.95 ? 'en-curso' : agg.SPI >= 0.85 ? 'riesgo' : 'critico',
+          accion: agg.SPI >= 1 ? 'Mantener velocidad' : 'Fast-tracking en ruta crítica'
+        });
+
+        // Objetivo 3: Alcanzar margen positivo
+        objetivos.push({
+          titulo: 'Alcanzar margen positivo del portfolio',
+          descripcion: `Margen actual: ${fmt.money(agg.margen)} (${fmt.pct(agg.margenPct)}). Objetivo: reducir sobrecostos y proteger rentabilidad.`,
+          progreso: agg.margen >= 0 ? 100 : Math.max(0, Math.min(100, 50 + agg.margenPct)),
+          estado: agg.margen >= 0 ? 'logrado' : agg.margenPct > -5 ? 'en-curso' : agg.margenPct > -15 ? 'riesgo' : 'critico',
+          accion: agg.margen >= 0 ? 'Documentar prácticas exitosas' : 'Renegociar contratos y revisar estimaciones'
+        });
+
+        // Objetivo 4: Reducir tareas rezagadas
+        const totalTareas = projects.reduce((s, p) => s + p.totalTasks, 0);
+        const tareasRezagadas = projects.reduce((s, p) => s + p.delayedTasks, 0);
+        const pctRezago = totalTareas > 0 ? (tareasRezagadas / totalTareas) * 100 : 0;
+        objetivos.push({
+          titulo: 'Reducir tareas rezagadas a < 5%',
+          descripcion: `Actualmente ${tareasRezagadas} de ${totalTareas} tareas están rezagadas (${fmt.pct(pctRezago)}). Objetivo: cero rezagos críticos.`,
+          progreso: Math.max(0, Math.min(100, 100 - pctRezago * 5)),
+          estado: pctRezago < 5 ? 'logrado' : pctRezago < 15 ? 'en-curso' : pctRezago < 30 ? 'riesgo' : 'critico',
+          accion: pctRezago < 5 ? 'Mantener seguimiento' : 'Reasignación de recursos y revisión de dependencias'
+        });
+
+        // Objetivo 5: Escalar portfolio
+        const proyectosActivos = projects.filter(p => p.totalTasks > 0).length;
+        objetivos.push({
+          titulo: 'Consolidar el portfolio activo',
+          descripcion: `${proyectosActivos} proyectos activos. Objetivo: escalar a ${proyectosActivos + 2} proyectos con el mismo equipo.`,
+          progreso: Math.round((proyectosActivos / (proyectosActivos + 2)) * 100),
+          estado: 'en-curso',
+          accion: 'Estandarizar procesos y automatizar reportes'
+        });
+
+        return objetivos;
+      },
+
+      calcularAlineacion(projects, objetivos) {
+        return projects.map(p => {
+          // Proyectos sin tareas: alineación baja (no aportan valor)
+          if (p.totalTasks === 0) {
+            return {
+              proyecto: p.name,
+              alineacion: 10,
+              impacto: 'Nulo',
+              prioridad: 'baja',
+              recomendacion: 'Definir alcance o archivar'
+            };
+          }
+
+          const alineacion = Math.round(
+            (p.CPI >= 1 ? 30 : p.CPI >= 0.9 ? 20 : 5) +
+            (p.SPI >= 1 ? 30 : p.SPI >= 0.9 ? 20 : 5) +
+            (p.progresoPct >= 50 ? 20 : p.progresoPct >= 25 ? 15 : 5) +
+            (p.health === 'saludable' ? 20 : p.health === 'aceptable' ? 15 : 5)
+          );
+
+          let prioridad = 'baja';
+          if (p.health === 'critico') prioridad = 'crítica';
+          else if (p.health === 'riesgo') prioridad = 'alta';
+          else if (p.health === 'aceptable') prioridad = 'media';
+
+          let impacto = 'Bajo';
+          if (p.BAC > 5000) impacto = 'Alto';
+          else if (p.BAC > 2000) impacto = 'Medio';
+
+          let recomendacion = 'Mantener monitoreo';
+          if (p.health === 'critico') recomendacion = 'Intervención ejecutiva inmediata';
+          else if (p.health === 'riesgo') recomendacion = 'Plan de recuperación en 7 días';
+          else if (p.totalTasks === 0) recomendacion = 'Definir alcance o archivar';
+
+          return { proyecto: p.name, alineacion, impacto, prioridad, recomendacion };
+        }).sort((a, b) => b.alineacion - a.alineacion);
+      },
+
+      calcularForecast(projects, agg) {
+        const ingresosBase = agg.EV;
+        const margenActual = agg.margenPct / 100;
+
+        const trimestres = [
+          { label: 'Q1 2027', ingresos: ingresosBase * 1.15, color: '#fbbf24', descripcion: 'Recuperación del margen actual' },
+          { label: 'Q2 2027', ingresos: ingresosBase * 1.35, color: '#a78bfa', descripcion: 'Consolidación del portfolio' },
+          { label: 'Q3 2027', ingresos: ingresosBase * 1.60, color: '#67e8f9', descripcion: 'Escalado del equipo' },
+          { label: 'Q4 2027', ingresos: ingresosBase * 1.90, color: '#22c55e', descripcion: 'Nuevos mercados' }
+        ];
+
+        const decisiones = [
+          {
+            titulo: agg.margen < 0 ? 'Auditoría financiera urgente' : 'Optimización del margen',
+            detalle: agg.margen < 0
+              ? 'Sobrecosto detectado en el portfolio. Revisar estimaciones, horas facturables y alcance de los proyectos en riesgo.'
+              : 'El portfolio es rentable. Documentar prácticas exitosas para replicar.',
+            color: agg.margen < 0 ? '#ef4444' : '#22c55e'
+          },
+          {
+            titulo: 'Priorizar proyectos con mayor alineación',
+            detalle: 'Enfocar recursos en proyectos con CPI/SPI ≥ 0.95 para maximizar el retorno del portfolio.',
+            color: '#fbbf24'
+          },
+          {
+            titulo: projects.filter(p => p.totalTasks === 0).length > 0
+              ? 'Decidir sobre proyectos sin alcance'
+              : 'Revisar oportunidades de escalado',
+            detalle: projects.filter(p => p.totalTasks === 0).length > 0
+              ? `Hay ${projects.filter(p => p.totalTasks === 0).length} proyectos sin tareas. Definir alcance o archivar para no distorsionar métricas.`
+              : 'La estructura actual permite añadir 2 proyectos más con el equipo existente.',
+            color: '#a78bfa'
+          }
+        ];
+
+        return { trimestres, decisiones };
       }
     },
-    capacity: {
+
+
+        capacity: {
       id: 'capacity', icon: '⚙️', label: 'Capacity Planning', subtitle: 'Gestión de recursos', badge: 'COO',
       render(container) {
-        container.innerHTML = `<div class="exec-loading">Módulo disponible en la siguiente entrega</div>`;
+        const projects = State.projects;
+        if (!projects.length) {
+          container.innerHTML = `<div class="exec-loading">📭 No hay proyectos disponibles</div>`;
+          return;
+        }
+
+        // Extraer equipo desde las tareas
+        const equipo = this.extraerEquipo(projects);
+
+        if (equipo.length === 0) {
+          container.innerHTML = `<div class="exec-empty">👥 No hay asignaciones de equipo registradas en los proyectos</div>`;
+          return;
+        }
+
+        // KPIs de capacidad
+        const kpis = this.calcularKPIs(equipo, projects);
+
+        // Forecast de necesidades
+        const forecast = this.calcularForecast(equipo, projects);
+
+        // Bench (personas sin asignación)
+        const bench = equipo.filter(m => m.tareasActivas === 0);
+
+        // Top cargados
+        const topCargados = [...equipo].sort((a, b) => b.utilizacion - a.utilizacion).slice(0, 8);
+
+        container.innerHTML = `
+          <!-- KPIs CAPACIDAD -->
+          <div class="exec-grid-4">
+            <div class="exec-kpi" style="--c:#fbbf24">
+              <div class="exec-kpi-label">Equipo Total</div>
+              <div class="exec-kpi-value">${equipo.length}</div>
+              <div class="exec-kpi-sub">personas asignadas</div>
+            </div>
+            <div class="exec-kpi" style="--c:#22c55e">
+              <div class="exec-kpi-label">Utilización Media</div>
+              <div class="exec-kpi-value">${kpis.utilizacionMedia}%</div>
+              <div class="exec-kpi-sub">${kpis.utilizacionMedia >= 75 ? 'Óptima' : kpis.utilizacionMedia >= 50 ? 'Aceptable' : 'Baja'}</div>
+            </div>
+            <div class="exec-kpi" style="--c:#ef4444">
+              <div class="exec-kpi-label">Sobrecargados</div>
+              <div class="exec-kpi-value">${kpis.sobrecargados}</div>
+              <div class="exec-kpi-sub">personas > 100%</div>
+            </div>
+            <div class="exec-kpi" style="--c:#a78bfa">
+              <div class="exec-kpi-label">En Bench</div>
+              <div class="exec-kpi-value">${kpis.enBench}</div>
+              <div class="exec-kpi-sub">sin asignación activa</div>
+            </div>
+          </div>
+
+          <!-- DISTRIBUCIÓN POR UTILIZACIÓN -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Distribución por Nivel de Carga</h3>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;">
+              ${[
+                { label: 'Sobrecargados', rango: '> 100%', color: '#ef4444', icon: '🔴', filtro: m => m.utilizacion > 100 },
+                { label: 'Alta carga', rango: '75-100%', color: '#f59e0b', icon: '🟠', filtro: m => m.utilizacion > 75 && m.utilizacion <= 100 },
+                { label: 'Óptimos', rango: '50-75%', color: '#22c55e', icon: '🟢', filtro: m => m.utilizacion > 50 && m.utilizacion <= 75 },
+                { label: 'Disponibles', rango: '25-50%', color: '#67e8f9', icon: '🔵', filtro: m => m.utilizacion > 25 && m.utilizacion <= 50 },
+                { label: 'En bench', rango: '0-25%', color: '#a78bfa', icon: '🟣', filtro: m => m.utilizacion <= 25 }
+              ].map(s => {
+                const count = equipo.filter(s.filtro).length;
+                const pct = equipo.length > 0 ? (count / equipo.length) * 100 : 0;
+                return `
+                  <div style="flex:1;min-width:140px;padding:16px;border-radius:12px;background:linear-gradient(160deg, ${s.color}15, rgba(12,6,30,0.9));border:1px solid ${s.color}44;">
+                    <div style="font-size:24px;">${s.icon}</div>
+                    <div style="font-size:28px;font-weight:900;color:${s.color};margin-top:6px;">${count}</div>
+                    <div style="font-size:10px;color:#8b7cb8;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">${s.label}</div>
+                    <div style="font-size:10px;color:${s.color};margin-top:2px;">${s.rango}</div>
+                    <div class="exec-bar" style="margin-top:8px;"><div class="exec-bar-fill" style="--c:${s.color};width:0" data-w="${pct}%"></div></div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- TOP CARGADOS + BENCH -->
+          <div class="exec-grid-2">
+            <div class="exec-card">
+              <h3 class="exec-card-title">🔥 Top Personas por Carga</h3>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                ${topCargados.map(m => {
+                  const color = m.utilizacion > 100 ? '#ef4444' : m.utilizacion > 75 ? '#f59e0b' : m.utilizacion > 50 ? '#22c55e' : '#67e8f9';
+                  const pct = Math.min(150, m.utilizacion);
+                  return `
+                    <div style="padding:12px 14px;border-radius:10px;background:rgba(10,5,25,0.5);border-left:3px solid ${color};">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <div>
+                          <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas} tareas activas · ${m.horasAsignadas}h asignadas</div>
+                        </div>
+                        <div style="font-size:16px;font-weight:900;color:${color};">${m.utilizacion}%</div>
+                      </div>
+                      <div class="exec-bar"><div class="exec-bar-fill" style="--c:${color};width:0" data-w="${(pct / 150) * 100}%"></div></div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="exec-card">
+              <h3 class="exec-card-title">💤 Personas en Bench / Disponibles</h3>
+              ${bench.length === 0 && equipo.filter(m => m.utilizacion <= 25).length === 0 ? `
+                <div style="text-align:center;padding:30px;color:#22c55e;font-size:13px;">
+                  ✅ Todo el equipo está asignado a tareas activas
+                </div>
+              ` : `
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  ${equipo.filter(m => m.utilizacion <= 50).sort((a, b) => a.utilizacion - b.utilizacion).slice(0, 8).map(m => `
+                    <div style="padding:12px 14px;border-radius:10px;background:rgba(10,5,25,0.5);border-left:3px solid #a78bfa;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                          <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas === 0 ? 'Sin asignación activa' : `${m.tareasActivas} tareas · ${m.utilizacion}% carga`}</div>
+                        </div>
+                        <div style="font-size:11px;padding:4px 10px;border-radius:100px;background:${m.utilizacion <= 25 ? '#a78bfa22' : '#67e8f922'};color:${m.utilizacion <= 25 ? '#a78bfa' : '#67e8f9'};font-weight:800;letter-spacing:1px;">
+                          ${m.utilizacion <= 25 ? 'BENCH' : 'DISPONIBLE'}
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+
+          <!-- CARGA POR PROYECTO -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Carga por Proyecto</h3>
+            <div style="overflow-x:auto;">
+              <table class="exec-table">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th class="num">Personas</th>
+                    <th class="num">Horas Asignadas</th>
+                    <th class="num">Horas Registradas</th>
+                    <th class="num">% Avance</th>
+                    <th class="num">Tareas Activas</th>
+                    <th>Carga</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${projects.filter(p => p.totalTasks > 0).map(p => {
+                    const personas = new Set(p.tasks.map(t => t.assignee).filter(Boolean)).size;
+                    const carga = p.totalEstimated > 0 ? (p.totalLogged / p.totalEstimated) * 100 : 0;
+                    const cargaColor = carga > 100 ? '#ef4444' : carga > 75 ? '#f59e0b' : '#22c55e';
+                    return `
+                      <tr style="--rowc:${cargaColor}">
+                        <td>${p.name.substring(0, 40)}</td>
+                        <td class="num">${personas}</td>
+                        <td class="num">${fmt.num(p.totalEstimated)}h</td>
+                        <td class="num">${fmt.num(p.totalLogged)}h</td>
+                        <td class="num" style="color:#fbbf24;font-weight:900;">${fmt.pct(p.progresoPct)}</td>
+                        <td class="num">${p.inProgressTasks}</td>
+                        <td>
+                          <div class="exec-bar" style="width:100px;">
+                            <div class="exec-bar-fill" style="--c:${cargaColor};width:0" data-w="${Math.min(100, carga)}%"></div>
+                          </div>
+                          <div style="font-size:10px;color:${cargaColor};margin-top:2px;font-weight:700;">${carga.toFixed(0)}%</div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FORECAST DE NECESIDADES -->
+          <div class="exec-card">
+            <h3 class="exec-card-title">Forecast de Necesidades (próximos 6 meses)</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+              ${forecast.map(f => `
+                <div style="padding:16px;border-radius:12px;background:linear-gradient(160deg, ${f.color}15, rgba(12,6,30,0.7));border:1px solid ${f.color}44;">
+                  <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">${f.mes}</div>
+                  <div style="font-size:26px;font-weight:900;color:${f.color};line-height:1;">${f.personasNecesarias}</div>
+                  <div style="font-size:11px;color:#8b7cb8;margin-top:6px;">personas necesarias</div>
+                  <div style="font-size:11px;color:${f.color};margin-top:8px;font-weight:700;">${f.recomendacion}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        setTimeout(() => {
+          container.querySelectorAll('.exec-bar-fill').forEach(el => {
+            el.style.width = el.dataset.w || '0%';
+          });
+        }, 100);
+      },
+
+      extraerEquipo(projects) {
+        const personas = {};
+
+        projects.forEach(p => {
+          (p.tasks || []).forEach(t => {
+            const nombre = (t.assignee || '').trim();
+            if (!nombre || nombre === 'Sin asignar' || nombre === 'Sistema') return;
+
+            if (!personas[nombre]) {
+              personas[nombre] = {
+                nombre,
+                tareasActivas: 0,
+                tareasCompletadas: 0,
+                tareasRezagadas: 0,
+                horasAsignadas: 0,
+                horasRegistradas: 0,
+                proyectos: new Set(),
+                tareas: []
+              };
+            }
+
+            const m = personas[nombre];
+            m.proyectos.add(p.name);
+            m.tareas.push(t);
+
+            if ((t.progress || 0) >= 100) m.tareasCompletadas++;
+            else if (t.status === 'overdue') m.tareasRezagadas++;
+            else if (t.status === 'inProgress' || (t.progress || 0) > 0) m.tareasActivas++;
+            else m.tareasActivas++;
+
+            m.horasAsignadas += (t.estimatedTime || 0);
+            m.horasRegistradas += (t.timeLogged || 0);
+          });
+        });
+
+        // Calcular utilización (horas registradas / horas asignadas, escalado a 100)
+        return Object.values(personas).map(m => {
+          const utilizacionRaw = m.horasAsignadas > 0
+            ? (m.horasRegistradas / m.horasAsignadas) * 100
+            : 0;
+          // Penalizar si tiene muchas tareas rezagadas
+          const penalizacion = m.tareasRezagadas * 5;
+          const utilizacion = Math.min(150, Math.round(utilizacionRaw + penalizacion));
+
+          return {
+            ...m,
+            proyectos: Array.from(m.proyectos),
+            utilizacion,
+            carga: utilizacion
+          };
+        }).sort((a, b) => b.utilizacion - a.utilizacion);
+      },
+
+      calcularKPIs(equipo, projects) {
+        const utilizacionMedia = equipo.length > 0
+          ? Math.round(equipo.reduce((s, m) => s + m.utilizacion, 0) / equipo.length)
+          : 0;
+
+        const sobrecargados = equipo.filter(m => m.utilizacion > 100).length;
+        const enBench = equipo.filter(m => m.utilizacion <= 25).length;
+
+        return { utilizacionMedia, sobrecargados, enBench, total: equipo.length };
+      },
+
+      calcularForecast(equipo, projects) {
+        const baseEquipo = equipo.length;
+        const totalTareas = projects.reduce((s, p) => s + p.totalTasks, 0);
+        const tareasRestantes = projects.reduce((s, p) => s + (p.totalTasks - p.completedTasks), 0);
+
+        const meses = ['Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'];
+        const colores = ['#22c55e', '#22c55e', '#fbbf24', '#fbbf24', '#f97316', '#a78bfa'];
+
+        return meses.map((mes, i) => {
+          // Simulación: necesidad crece +10% cada mes por expansión
+          const factor = 1 + (i * 0.1);
+          const personasNecesarias = Math.ceil(baseEquipo * factor);
+          const delta = personasNecesarias - baseEquipo;
+
+          let recomendacion = 'Equipo suficiente';
+          if (delta > 3) recomendacion = `+${delta} contrataciones`;
+          else if (delta > 0) recomendacion = `+${delta} contratación`;
+          else recomendacion = 'Capacidad óptima';
+
+          return { mes, personasNecesarias, recomendacion, color: colores[i] };
+        });
       }
     },
     bi: {
