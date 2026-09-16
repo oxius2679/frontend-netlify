@@ -16,15 +16,19 @@
   /* ==========================================================
      SECCIÓN 0 · CONFIGURACIÓN
      ========================================================== */
-  const CFG = {
+    const CFG = {
     name: 'EVM Data Science VIP',
     version: '1.0.0',
-    mcIterations: 500,          // iteraciones Monte Carlo
-    nnEpochs: 800,              // épocas de entrenamiento NN
-    nnLearningRate: 0.08,       // tasa de aprendizaje
-    kClusters: 3,               // clusters K-means
-    autoOpenAfterMs: 0          // 0 = no auto-abrir
+    mcIterations: 500,
+    nnEpochs: 800,
+    nnLearningRate: 0.08,
+    kClusters: 3,
+    autoOpenAfterMs: 0,
+    defaultRole: 'PMO'
   };
+
+  // Rol activo (persiste durante la sesión del overlay)
+  let ROL_ACTIVO = CFG.defaultRole;
 
   /* ==========================================================
      SECCIÓN 1 · ESTILOS VIP (autoinyectados)
@@ -255,6 +259,37 @@
         border-left: 3px solid #ef4444; font-size: 12.5px; color: #fecaca;
       }
       .ds-anomaly strong { color: #fca5a5; }
+
+
+
+      .ds-role-selector {
+        display: flex; gap: 4px; padding: 4px;
+        background: rgba(10,5,25,0.6);
+        border: 1px solid rgba(167,139,250,0.3);
+        border-radius: 12px;
+      }
+      .ds-role-btn {
+        padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+        cursor: pointer; transition: all 0.25s ease;
+        background: transparent; border: none; color: #a78bfa;
+        font-family: inherit; letter-spacing: 0.5px; white-space: nowrap;
+      }
+      .ds-role-btn:hover {
+        background: rgba(139,92,246,0.15); color: #ddd6fe;
+      }
+      .ds-role-btn.ds-role-active {
+        background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff;
+        box-shadow: 0 0 16px rgba(139,92,246,0.6);
+      }
+      .ds-role-badge {
+        display: inline-block; padding: 2px 8px; border-radius: 6px;
+        font-size: 10px; font-weight: 800; letter-spacing: 1px;
+        background: rgba(139,92,246,0.25); color: #ddd6fe;
+        margin-left: 8px;
+      }
+
+
+
 
       .ds-footer {
         text-align: center; padding: 18px;
@@ -876,7 +911,7 @@
       const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
 
       try {
-        const payload = { question, projectData };
+                const payload = { question, projectData, role: ROL_ACTIVO };
         if (historicalContext) payload.historicalContext = historicalContext;
 
         const response = await fetch(`${API_URL}/api/ai-analyst`, {
@@ -1112,7 +1147,14 @@
                   <div class="ds-subtitle">Machine Learning · Deep Learning · Predictive Suite</div>
                 </div>
               </div>
-              <div class="ds-header-actions">
+                            <div class="ds-header-actions">
+                <div class="ds-role-selector" id="ds-role-selector">
+                  <button class="ds-role-btn" data-role="CFO" title="Chief Financial Officer">💰 CFO</button>
+                  <button class="ds-role-btn" data-role="CEO" title="Chief Executive Officer">👔 CEO</button>
+                  <button class="ds-role-btn" data-role="COO" title="Chief Operating Officer">⚙️ COO</button>
+                  <button class="ds-role-btn ds-role-active" data-role="PMO" title="Project Management Officer">🎯 PMO</button>
+                  <button class="ds-role-btn" data-role="Auditor" title="Auditor Senior">🔍 Auditor</button>
+                </div>
                 <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.exportReport()">📄 Exportar Reporte</button>
                 <button class="ds-btn ds-btn-danger" onclick="window.EVMAI.close()">✕ Cerrar</button>
               </div>
@@ -1321,6 +1363,35 @@
       input.addEventListener('keypress', e => {
         if (e.key === 'Enter') { ask(input.value); input.value = ''; }
       });
+
+
+
+      // Selector de rol
+      document.querySelectorAll('.ds-role-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const role = btn.dataset.role;
+          ROL_ACTIVO = role;
+
+          // Actualizar UI
+          document.querySelectorAll('.ds-role-btn').forEach(b => b.classList.remove('ds-role-active'));
+          btn.classList.add('ds-role-active');
+
+          // Confirmar en el chat
+          const log = document.getElementById('ds-chat-log');
+          if (log) {
+            log.insertAdjacentHTML('beforeend', `
+              <div class="ds-chat-msg bot">
+                <div class="ds-chat-bubble">
+                  ✅ Rol cambiado a <strong>${role}</strong>. A partir de ahora mis respuestas tendrán enfoque de ${role === 'CFO' ? 'director financiero' : role === 'CEO' ? 'dirección ejecutiva' : role === 'COO' ? 'dirección de operaciones' : role === 'PMO' ? 'gestión de proyectos' : 'auditoría y compliance'}.
+                </div>
+              </div>
+            `);
+            log.scrollTop = log.scrollHeight;
+          }
+        });
+      });
+
+
 
       document.querySelectorAll('.ds-chat-chip').forEach(chip => {
         chip.addEventListener('click', () => ask(chip.dataset.q));
