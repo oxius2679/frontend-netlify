@@ -2609,10 +2609,16 @@
       const send = document.getElementById('ds-chat-send');
       const log = document.getElementById('ds-chat-log');
 
-           const ask = async (question) => {
+                 const ask = async (question) => {
         // 🖼️ Permitir enviar si hay imagen (aunque no haya texto)
         const imgAdjunta = UI._imageAdjunta;
         if (!question.trim() && !imgAdjunta) return;
+
+        // 🖼️ Si hay imagen pero no texto, usar prompt por defecto
+        let preguntaFinal = question.trim();
+        if (!preguntaFinal && imgAdjunta) {
+          preguntaFinal = 'Analiza esta imagen y dime qué información relevante contiene para el proyecto.';
+        }
 
         // Si hay imagen, mostrar miniatura en el chat del usuario
         let bubbleContent = '';
@@ -2626,8 +2632,8 @@
                log.insertAdjacentHTML('beforeend', `<div class="ds-chat-msg user"><div class="ds-chat-bubble">${bubbleContent}</div></div>`);
         log.scrollTop = log.scrollHeight;
 
-        try {
-          const answer = await Assistant.respond(question);
+               try {
+          const answer = await Assistant.respond(preguntaFinal);
 
           // 🖼️ Limpiar imagen DESPUÉS de enviarla
           UI.quitarImagen();
