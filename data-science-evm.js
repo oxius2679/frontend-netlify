@@ -288,7 +288,89 @@
         margin-left: 8px;
       }
 
-
+      /* 📚 PANEL DE HISTORIAL */
+      .ds-history-panel {
+        position: fixed; top: 0; right: 0; bottom: 0; width: 520px; max-width: 100vw;
+        background: linear-gradient(160deg, rgba(24,16,60,0.99), rgba(6,4,24,1));
+        border-left: 1px solid rgba(167,139,250,0.4);
+        box-shadow: -20px 0 60px rgba(0,0,0,0.7);
+        z-index: 2147483647;
+        display: flex; flex-direction: column;
+        animation: dsSlideIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      }
+      @keyframes dsSlideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to   { transform: translateX(0); opacity: 1; }
+      }
+      .ds-history-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(167,139,250,0.25);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .ds-history-title {
+        font-size: 16px; font-weight: 900; color: #ddd6fe;
+        letter-spacing: 2px; text-transform: uppercase;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .ds-history-search {
+        padding: 12px 24px; border-bottom: 1px solid rgba(167,139,250,0.15);
+        display: flex; gap: 8px;
+      }
+      .ds-history-input {
+        flex: 1; padding: 10px 14px; border-radius: 10px;
+        background: rgba(10,5,25,0.75); border: 1px solid rgba(167,139,250,0.3);
+        color: #fff; font-size: 13px; font-family: inherit; outline: none;
+      }
+      .ds-history-input:focus { border-color: #a78bfa; box-shadow: 0 0 16px rgba(167,139,250,0.4); }
+      .ds-history-list {
+        flex: 1; overflow-y: auto; padding: 16px 20px;
+      }
+      .ds-history-item {
+        padding: 14px 16px; border-radius: 12px; margin-bottom: 10px;
+        background: linear-gradient(90deg, rgba(45,25,90,0.5), rgba(12,6,30,0.35));
+        border-left: 3px solid #a78bfa;
+        cursor: pointer; transition: all 0.25s ease;
+        position: relative;
+      }
+      .ds-history-item:hover {
+        background: linear-gradient(90deg, rgba(139,92,246,0.35), rgba(30,12,70,0.5));
+        transform: translateX(-3px);
+      }
+      .ds-history-item-meta {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 10px; color: #a78bfa; letter-spacing: 1.5px;
+        margin-bottom: 6px; text-transform: uppercase;
+      }
+      .ds-history-item-rol {
+        padding: 2px 8px; border-radius: 6px;
+        background: rgba(139,92,246,0.3); color: #ddd6fe;
+        font-weight: 800;
+      }
+      .ds-history-item-question {
+        font-size: 13px; font-weight: 700; color: #fff;
+        margin-bottom: 4px; line-height: 1.4;
+      }
+      .ds-history-item-answer {
+        font-size: 11.5px; color: #b8a4e8; line-height: 1.5;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .ds-history-item-delete {
+        position: absolute; top: 8px; right: 8px;
+        width: 22px; height: 22px; border-radius: 6px;
+        background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4);
+        color: #fca5a5; font-size: 11px; font-weight: 800;
+        cursor: pointer; display: none; align-items: center; justify-content: center;
+      }
+      .ds-history-item:hover .ds-history-item-delete { display: flex; }
+      .ds-history-empty {
+        text-align: center; padding: 60px 20px;
+        color: #6b4fa8; font-size: 13px; letter-spacing: 1px;
+      }
+      .ds-history-loading {
+        text-align: center; padding: 40px 20px;
+        color: #a78bfa; font-size: 13px;
+      }
 
 
       .ds-footer {
@@ -925,11 +1007,14 @@
 
         const data = await response.json();
 
-        document.getElementById(thinkingId)?.remove();
+                document.getElementById(thinkingId)?.remove();
 
         if (!data.success) {
           return `⚠️ ${data.error || 'No se pudo obtener respuesta del asistente.'}`;
         }
+
+        // 💬 Guardar conversación en MongoDB (silencioso, no bloquea UX)
+        this.guardarConversacion(question, data.answer, data.usage?.total_tokens);
 
         return data.answer;
 
@@ -939,6 +1024,50 @@
         return '⚠️ Error de conexión con el asistente IA. Verifica tu conexión e intenta de nuevo.';
       }
     },
+
+
+    // 💬 Guarda la conversación en MongoDB (silencioso, errores no rompen la UX)
+    async guardarConversacion(pregunta, respuesta, tokens) {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const pIdx = window.currentProjectIndex || 0;
+        const project = window.projects?.[pIdx];
+
+        if (!token || !clienteId || !project) {
+          console.log('💬 Chat no guardado: faltan datos (token/clienteId/project)');
+          return;
+        }
+
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        await fetch(`${API_URL}/api/chat-history/guardar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            clienteId,
+            projectId: project.id,
+            projectName: project.name || 'Sin nombre',
+            rol: ROL_ACTIVO,
+            pregunta,
+            respuesta,
+            tokens: tokens || null
+          })
+        });
+
+        console.log(`💬 Chat guardado: "${pregunta.substring(0, 40)}..."`);
+
+      } catch (error) {
+        // Silencioso: no rompe la UX si falla el guardado
+        console.warn('💬 Chat no guardado:', error.message);
+      }
+    },
+
+
+
 
     // 📚 Trae el contexto histórico (KPIs últimos 30 días + cambios recientes)
     async fetchHistoricalContext() {
@@ -1155,6 +1284,7 @@
                   <button class="ds-role-btn ds-role-active" data-role="PMO" title="Project Management Officer">🎯 PMO</button>
                   <button class="ds-role-btn" data-role="Auditor" title="Auditor Senior">🔍 Auditor</button>
                 </div>
+                                <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openHistory()">📚 Historial</button>
                 <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.exportReport()">📄 Exportar Reporte</button>
                 <button class="ds-btn ds-btn-danger" onclick="window.EVMAI.close()">✕ Cerrar</button>
               </div>
@@ -1339,6 +1469,194 @@
       `;
     },
 
+
+    // 📚 Abrir panel de historial
+    async openHistory() {
+      // Cerrar si ya está abierto
+      if (document.getElementById('ds-history-panel')) {
+        document.getElementById('ds-history-panel').remove();
+        return;
+      }
+
+      const panel = document.createElement('div');
+      panel.className = 'ds-history-panel';
+      panel.id = 'ds-history-panel';
+      panel.innerHTML = `
+        <div class="ds-history-header">
+          <div class="ds-history-title">📚 Historial de Conversaciones</div>
+          <button class="ds-btn ds-btn-danger" onclick="document.getElementById('ds-history-panel').remove()">✕</button>
+        </div>
+        <div class="ds-history-search">
+          <input type="text" class="ds-history-input" id="ds-history-search" placeholder="Buscar en el historial..." />
+          <button class="ds-btn ds-btn-primary" id="ds-history-clear" title="Borrar todo el historial del proyecto">🗑️</button>
+        </div>
+        <div class="ds-history-list" id="ds-history-list">
+          <div class="ds-history-loading">⏳ Cargando historial...</div>
+        </div>
+      `;
+      document.body.appendChild(panel);
+
+      // Cargar conversaciones
+      await this.loadHistory();
+
+      // Wire búsqueda con debounce
+      let debounceTimer;
+      const input = document.getElementById('ds-history-search');
+      input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => this.loadHistory(input.value), 400);
+      });
+
+      // Wire borrar todo
+      document.getElementById('ds-history-clear').addEventListener('click', async () => {
+        if (!confirm('¿Borrar TODO el historial de este proyecto? Esta acción no se puede deshacer.')) return;
+        await this.clearHistory();
+      });
+    },
+
+    // 📚 Cargar historial desde el backend
+    async loadHistory(search = '') {
+      const list = document.getElementById('ds-history-list');
+      if (!list) return;
+
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const pIdx = window.currentProjectIndex || 0;
+        const project = window.projects?.[pIdx];
+
+        if (!token || !clienteId || !project) {
+          list.innerHTML = `<div class="ds-history-empty">⚠️ No se pudo cargar el historial</div>`;
+          return;
+        }
+
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+        const params = new URLSearchParams({ clienteId, limit: 50 });
+        if (search) params.append('search', search);
+
+        const r = await fetch(`${API_URL}/api/chat-history/${project.id}?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await r.json();
+
+        if (!data.success || !data.conversaciones?.length) {
+          list.innerHTML = `<div class="ds-history-empty">${search ? '🔍 Sin resultados para tu búsqueda' : '📭 Aún no hay conversaciones guardadas'}</div>`;
+          return;
+        }
+
+        list.innerHTML = data.conversaciones.map(c => `
+          <div class="ds-history-item" data-id="${c.id}">
+            <div class="ds-history-item-delete" data-delete="${c.id}">✕</div>
+            <div class="ds-history-item-meta">
+              <span class="ds-history-item-rol">${c.rol || 'PMO'}</span>
+              <span>${new Date(c.timestamp).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</span>
+            </div>
+            <div class="ds-history-item-question">❓ ${this.escapeHtml(c.pregunta)}</div>
+            <div class="ds-history-item-answer">💬 ${this.escapeHtml(c.respuesta)}</div>
+          </div>
+        `).join('');
+
+        // Wire click en cada item (mostrar en el chat principal)
+        list.querySelectorAll('.ds-history-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            if (e.target.dataset.delete) return; // ignorar si hizo clic en borrar
+            const id = item.dataset.id;
+            const conv = data.conversaciones.find(x => String(x.id) === id);
+            if (conv) this.mostrarConversacionEnChat(conv);
+          });
+        });
+
+        // Wire borrar individual
+        list.querySelectorAll('.ds-history-item-delete').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.delete;
+            if (!confirm('¿Eliminar esta conversación?')) return;
+            await this.deleteHistoryItem(id);
+            await this.loadHistory(search);
+          });
+        });
+
+      } catch (error) {
+        console.error('❌ Error cargando historial:', error);
+        list.innerHTML = `<div class="ds-history-empty">❌ Error cargando historial</div>`;
+      }
+    },
+
+    // 📚 Mostrar una conversación del historial en el chat principal
+    mostrarConversacionEnChat(conv) {
+      const log = document.getElementById('ds-chat-log');
+      if (!log) return;
+
+      // Limpiar y mostrar contexto
+      log.innerHTML = `
+        <div class="ds-chat-msg bot">
+          <div class="ds-chat-bubble">
+            📚 <strong>Conversación recuperada del historial</strong><br>
+            <span style="font-size: 11px; opacity: 0.7;">Rol: ${conv.rol || 'PMO'} · ${new Date(conv.timestamp).toLocaleString('es-ES')}</span>
+          </div>
+        </div>
+        <div class="ds-chat-msg user">
+          <div class="ds-chat-bubble">${this.escapeHtml(conv.pregunta)}</div>
+        </div>
+        <div class="ds-chat-msg bot">
+          <div class="ds-chat-bubble">${conv.respuesta}</div>
+        </div>
+      `;
+      log.scrollTop = log.scrollHeight;
+
+      // Cerrar panel
+      document.getElementById('ds-history-panel')?.remove();
+    },
+
+    // 📚 Borrar un item
+    async deleteHistoryItem(id) {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        await fetch(`${API_URL}/api/chat-history/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (error) {
+        console.warn('Error borrando item:', error);
+      }
+    },
+
+    // 📚 Borrar todo el historial del proyecto
+    async clearHistory() {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const pIdx = window.currentProjectIndex || 0;
+        const project = window.projects?.[pIdx];
+
+        if (!project) return;
+
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+        await fetch(`${API_URL}/api/chat-history/clear/${project.id}?clienteId=${clienteId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        await this.loadHistory();
+      } catch (error) {
+        console.warn('Error borrando historial:', error);
+      }
+    },
+
+    // Helper: escapar HTML para evitar XSS
+    escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    },
+
+
+
+
     wireEvents() {
       const input = document.getElementById('ds-chat-input');
       const send = document.getElementById('ds-chat-send');
@@ -1428,11 +1746,14 @@
   }
 
   // === API PÚBLICA ===
-  window.EVMAI = {
+    window.EVMAI = {
     open: () => UI.open(),
+    openHistory: () => UI.openHistory(),
     close: () => {
       const ov = document.getElementById('ds-ia-overlay');
       if (ov) ov.remove();
+      const hp = document.getElementById('ds-history-panel');
+      if (hp) hp.remove();
     },
     exportReport: () => {
       const ov = document.getElementById('ds-ia-overlay');
