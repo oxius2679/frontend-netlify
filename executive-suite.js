@@ -1950,6 +1950,7 @@
 
       // 📄 GENERADOR DE REPORTES EJECUTIVOS
       generarReporte(tipo) {
+         onsole.log('🎯 [BI] generarReporte llamado con tipo:', tipo);
         const projects = State.projects;
         const agg = DataLayer.aggregate(projects);
         const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
@@ -2187,6 +2188,8 @@
             </section>
           `;
         }
+
+        console.log('🎯 [BI] A punto de abrir ventana. titulo:', titulo, '| contenido length:', contenido?.length);
 
         // Abrir ventana e imprimir
         const w = window.open('', '_blank');
