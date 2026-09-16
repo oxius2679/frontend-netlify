@@ -2101,24 +2101,20 @@
     },
 
 
-           // 🎤 Estado de la grabación
+              // 🎤 Estado de la grabación
     _voiceRecorder: null,
     _voiceChunks: [],
     _voiceStream: null,
     _isRecording: false,
     _voiceTimer: null,
     _voiceStartTime: 0,
-    _voiceAudioContext: null,
-    _voiceAnalyser: null,
-    _voiceVolumeSamples: [],
 
-        // 🎤 Manejar clic del micrófono (start/stop toggle)
+            // 🎤 Manejar clic del micrófono (start/stop toggle)
     async handleMicClick() {
       const btn = document.getElementById('ds-btn-mic');
       const status = document.getElementById('ds-mic-status');
       if (!btn) return;
 
-      // 🔧 FIX: usar flag propio, no MediaRecorder.state (tarda en actualizarse)
       if (this._isRecording) {
         return this.stopVoiceRecording();
       }
@@ -2148,7 +2144,6 @@
             ? 'audio/mp4'
             : 'audio/webm';
 
-        // 🔧 FIX: bitrate bajo = archivo más pequeño = transcripción más rápida
         this._voiceRecorder = new MediaRecorder(stream, {
           mimeType,
           audioBitsPerSecond: 24000
@@ -2158,50 +2153,13 @@
           if (e.data && e.data.size > 0) this._voiceChunks.push(e.data);
         };
 
-               this._voiceRecorder.onstop = () => this.processVoiceRecording();
+        this._voiceRecorder.onstop = () => this.processVoiceRecording();
 
-        // 🔊 NUEVO: Analizar volumen en tiempo real
-        this._voiceVolumeSamples = [];
-        try {
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          this._voiceAudioContext = audioCtx;
-          const source = audioCtx.createMediaStreamSource(stream);
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 512;
-          analyser.smoothingTimeConstant = 0.3;
-          source.connect(analyser);
-          this._voiceAnalyser = analyser;
+        this._voiceRecorder.start(250);
 
-                    const bufferLength = analyser.frequencyBinCount;
-          const dataArray = new Uint8Array(bufferLength);
-
-          // 🐛 FIX: guardar referencia a `this` para usar dentro de requestAnimationFrame
-          const self = this;
-          const sampleVolume = () => {
-            if (!self._isRecording || !self._voiceAnalyser) return;
-            self._voiceAnalyser.getByteFrequencyData(dataArray);
-            // Calcular RMS (energía media del audio)
-            let sum = 0;
-            for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
-            const avgVolume = sum / bufferLength;
-            self._voiceVolumeSamples.push(avgVolume);
-            requestAnimationFrame(sampleVolume);
-          };
-
-          if (audioCtx.state === 'suspended') await audioCtx.resume();
-          sampleVolume();
-
-        } catch (e) {
-          console.warn('⚠️ No se pudo analizar volumen:', e.message);
-        }
-
-        this._voiceRecorder.start(250); // chunk cada 250ms
-
-        // 🔧 FIX: marcar grabación ANTES de cambiar UI
         this._isRecording = true;
         this._voiceStartTime = Date.now();
 
-        // UI: modo grabando
         btn.classList.add('ds-recording');
         btn.textContent = '⏹️';
         btn.title = 'Detener y transcribir';
@@ -2210,7 +2168,6 @@
           status.textContent = '🎤 Grabando... 0s (máx 30s)';
         }
 
-        // 🔧 FIX: timer visible + auto-stop a 30 seg
         this._voiceTimer = setInterval(() => {
           const seg = Math.floor((Date.now() - this._voiceStartTime) / 1000);
           if (status) status.textContent = `🎤 Grabando... ${seg}s (máx 30s)`;
@@ -2243,22 +2200,19 @@
       }
     },
 
-       // 🎤 Procesar audio → transcribir → AUTO-ENVIAR al chat
+           // 🎤 Procesar audio → transcribir → validar → AUTO-ENVIAR
     async processVoiceRecording() {
       const btn = document.getElementById('ds-btn-mic');
       const status = document.getElementById('ds-mic-status');
       const input = document.getElementById('ds-chat-input');
 
-      // Duración real de la grabación
       const duracion = this._voiceStartTime ? Math.round((Date.now() - this._voiceStartTime) / 1000) : 0;
 
-      // Detener stream de micrófono
       if (this._voiceStream) {
         this._voiceStream.getTracks().forEach(t => t.stop());
         this._voiceStream = null;
       }
 
-      // Restaurar UI
       if (btn) {
         btn.classList.remove('ds-recording');
         btn.textContent = '🎤';
@@ -2266,44 +2220,9 @@
         btn.disabled = true;
       }
 
-           // 🔊 NUEVO: Calcular volumen promedio real del audio
-      const muestras = this._voiceVolumeSamples || [];
-      const volumenPromedio = muestras.length > 0
-        ? muestras.reduce((a, b) => a + b, 0) / muestras.length
-        : 0;
-      const volumenMax = muestras.length > 0 ? Math.max(...muestras) : 0;
-
-      // Limpiar recursos del analizador
-      if (this._voiceAudioContext) {
-        try { this._voiceAudioContext.close(); } catch(e) {}
-        this._voiceAudioContext = null;
-      }
-      this._voiceAnalyser = null;
-      this._voiceVolumeSamples = [];
-
-      console.log(`🎤 Audio: ${duracion}s, volumen prom: ${volumenPromedio.toFixed(1)}, max: ${volumenMax}`);
-
-      // 🔧 FIX: validar duración mínima
       if (duracion < 1) {
         if (status) status.classList.remove('ds-active');
         if (btn) btn.disabled = false;
-        console.warn('🎤 Audio demasiado corto');
-        return;
-      }
-
-      // 🔧 FIX DEFINITIVO: rechazar si es silencio (volumen demasiado bajo)
-      // El volumen se mide en escala 0-255 de frecuencia media
-      // Silencio real = < 5, voz baja = 15-30, voz normal = 30-80
-      if (volumenPromedio < 8 || volumenMax < 15) {
-        if (status) {
-          status.textContent = '⚠️ No se detectó voz. Habla más cerca del micrófono o sube el volumen.';
-          status.style.background = 'rgba(239,68,68,0.15)';
-          status.style.borderLeftColor = '#ef4444';
-          status.style.color = '#fca5a5';
-          setTimeout(() => status.classList.remove('ds-active'), 4000);
-        }
-        if (btn) btn.disabled = false;
-        console.warn('🎤 Rechazado por silencio');
         return;
       }
 
@@ -2318,8 +2237,6 @@
         const blob = new Blob(this._voiceChunks, {
           type: this._voiceRecorder?.mimeType || 'audio/webm'
         });
-
-        console.log(`🎤 Enviando audio: ${blob.size} bytes, ${duracion}s`);
 
         if (blob.size < 2000) {
           throw new Error('Audio demasiado corto. Habla al menos 1 segundo.');
@@ -2339,72 +2256,37 @@
 
         const data = await r.json();
 
-        if (status) status.classList.remove('ds-active');
-        if (btn) btn.disabled = false;
-
         if (!data.success) {
           throw new Error(data.error || 'Error desconocido en la transcripción');
         }
 
         const texto = (data.text || '').trim();
+        console.log('🎤 Texto crudo de Whisper:', texto);
 
-               // Limpiar texto de "alucinaciones" típicas de Whisper
-        const limpiarAlucinaciones = (t) => {
-          if (!t) return '';
-          const patrones = [
-            // Frases comunes de YouTube/streaming (Whisper aprende de videos)
-            /no pregunté, perdón.*/gi,
-            /gracias por ver.*/gi,
-            /subtítulos.*(por|hecho por).*/gi,
-            /suscríbete.*/gi,
-            /amara\.org.*/gi,
-            /quería ser un flagrante.*/gi,
-            /la formación en brave.*/gi,
-            /como en que un.*/gi,
-            // Ruido
-            /^\s*[\.,\s\?¡¿!]*$/,
-            /^[\s\.\,\?\!]+$/,
-            // Inglés espurio
-            /thanks for watching.*/gi,
-            /subscribe.*/gi,
-            /subtitles by.*/gi,
-            /www\..*\.com/gi
-          ];
-          let limpio = t;
-          patrones.forEach(p => { limpio = limpio.replace(p, ''); });
-          return limpio.trim();
-        };
+        // 🔍 VALIDACIÓN ROBUSTA DEL TEXTO (sin tocar el audio)
+        const esPreguntaValida = this.validarPreguntaVoz(texto);
 
-        const textoLimpio = limpiarAlucinaciones(texto);
-
-        // 🔧 FIX: validaciones más estrictas del texto
-        // 1) Debe tener al menos 3 caracteres
-        // 2) Debe tener al menos 2 palabras
-        // 3) Debe contener al menos una letra vocal (no solo números/símbolos)
-        const palabras = textoLimpio.split(/\s+/).filter(p => p.length > 0);
-        const tieneVocales = /[aeiouáéíóúñ]/i.test(textoLimpio);
-
-        if (!textoLimpio || textoLimpio.length < 3 || palabras.length < 2 || !tieneVocales) {
-          console.warn('🎤 Texto transcrito inválido:', { texto, textoLimpio, palabras: palabras.length, tieneVocales });
+        if (!esPreguntaValida.valida) {
+          console.warn('🎤 Rechazado:', esPreguntaValida.razon);
           if (status) {
-            status.textContent = '⚠️ No se detectó una pregunta clara. Intenta de nuevo.';
+            status.textContent = `⚠️ ${esPreguntaValida.razon}`;
             status.style.background = 'rgba(239,68,68,0.15)';
             status.style.borderLeftColor = '#ef4444';
             status.style.color = '#fca5a5';
             setTimeout(() => status.classList.remove('ds-active'), 4000);
           }
+          if (btn) btn.disabled = false;
           return;
         }
 
-        console.log('🎤 Transcripción:', textoLimpio);
+        const textoLimpio = esPreguntaValida.textoLimpio;
+        console.log('🎤 Pregunta validada:', textoLimpio);
 
-        // Insertar en el input
         if (input) {
           input.value = textoLimpio;
           input.focus();
         }
 
-        // 🔧 FIX: AUTO-ENVIAR tras transcribir
         if (status) {
           status.textContent = '✅ Pregunta lista — enviando...';
           status.style.background = 'rgba(34,197,94,0.15)';
@@ -2413,7 +2295,6 @@
           setTimeout(() => status.classList.remove('ds-active'), 1500);
         }
 
-        // Disparar el envío automáticamente
         setTimeout(() => {
           const sendBtn = document.getElementById('ds-chat-send');
           if (sendBtn) sendBtn.click();
@@ -2430,6 +2311,62 @@
         }
         if (btn) btn.disabled = false;
       }
+    },
+
+    // 🔍 Validar si el texto de Whisper es una pregunta real (filtro anti-alucinaciones)
+    validarPreguntaVoz(texto) {
+      if (!texto || texto.trim().length === 0) {
+        return { valida: false, razon: 'No se detectó voz. Intenta de nuevo.' };
+      }
+
+      let limpio = texto;
+
+      // 1) Eliminar frases típicas de YouTube/streaming (Whisper aprende de videos)
+      const patronesAlucinacion = [
+        /no pregunté, perdón.*/gi,
+        /gracias por ver.*/gi,
+        /subtítulos.*(por|hecho por).*/gi,
+        /suscríbete.*/gi,
+        /amara\.org.*/gi,
+        /quería ser un flagrante.*/gi,
+        /la formación en brave.*/gi,
+        /como en que un.*/gi,
+        /thanks for watching.*/gi,
+        /subscribe.*/gi,
+        /subtitles by.*/gi,
+        /www\..*\.com/gi,
+        /^\s*[\.,\s\?¡¿!\-]*$/,
+        /^[\s\.\,\?\!\-]+$/
+      ];
+      patronesAlucinacion.forEach(p => { limpio = limpio.replace(p, ''); });
+      limpio = limpio.trim();
+
+      // 2) Longitud mínima
+      if (limpio.length < 5) {
+        return { valida: false, razon: 'No se detectó voz clara. Habla más cerca del micrófono.' };
+      }
+
+      // 3) Al menos 2 palabras reales (con 2+ letras cada una)
+      const palabrasReales = limpio.split(/\s+/).filter(p => /[a-záéíóúñü]{2,}/i.test(p));
+      if (palabrasReales.length < 2) {
+        return { valida: false, razon: 'No se detectó una pregunta clara. Intenta de nuevo.' };
+      }
+
+      // 4) Al menos una vocal (evita cadenas de números/símbolos)
+      if (!/[aeiouáéíóúñ]/i.test(limpio)) {
+        return { valida: false, razon: 'No se detectó voz comprensible.' };
+      }
+
+      // 5) Al menos un indicio de pregunta (interrogativo, verbo, o palabra clave)
+      const tieneIndicadorPregunta = 
+        /\?/.test(limpio) ||
+        /\b(qué|que|cómo|como|cuál|cual|cuándo|cuando|dónde|donde|por qué|porque|quién|quien|cuánto|cuanto|cuánta|cuanta|hay|está|esta|están|estan|puede|puedes|debe|debes|tiene|tienes|dime|dame|muestra|explícame|explicame|resume|analiza|compara|calcula|evalúa|evalua)\b/i.test(limpio);
+
+      if (!tieneIndicadorPregunta) {
+        return { valida: false, razon: 'No se detectó una pregunta. Intenta decir algo como "¿Cuál es el CPI?"' };
+      }
+
+      return { valida: true, textoLimpio: limpio };
     },
 
 
