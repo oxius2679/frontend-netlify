@@ -2101,35 +2101,37 @@
     },
 
 
-    // 🎤 Estado de la grabación (por instancia de UI)
+        // 🎤 Estado de la grabación
     _voiceRecorder: null,
     _voiceChunks: [],
     _voiceStream: null,
+    _isRecording: false,
+    _voiceTimer: null,
+    _voiceStartTime: 0,
 
-    // 🎤 Manejar clic del micrófono (start/stop toggle)
+        // 🎤 Manejar clic del micrófono (start/stop toggle)
     async handleMicClick() {
       const btn = document.getElementById('ds-btn-mic');
       const status = document.getElementById('ds-mic-status');
       if (!btn) return;
 
-      // Si ya está grabando → detener y transcribir
-      if (this._voiceRecorder && this._voiceRecorder.state === 'recording') {
+      // 🔧 FIX: usar flag propio, no MediaRecorder.state (tarda en actualizarse)
+      if (this._isRecording) {
         return this.stopVoiceRecording();
       }
 
-      // Comprobar soporte del navegador
       if (!navigator.mediaDevices || !window.MediaRecorder) {
         alert('⚠️ Tu navegador no soporta grabación de voz. Prueba con Chrome, Edge o Safari.');
         return;
       }
 
       try {
-        // Pedir permiso de micrófono
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             channelCount: 1,
             echoCancellation: true,
             noiseSuppression: true,
+            autoGainControl: true,
             sampleRate: 16000
           }
         });
@@ -2137,14 +2139,17 @@
         this._voiceStream = stream;
         this._voiceChunks = [];
 
-        // Detectar formato soportado (Chrome → webm, Safari → mp4, Firefox → ogg)
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : MediaRecorder.isTypeSupported('audio/mp4')
             ? 'audio/mp4'
             : 'audio/webm';
 
-        this._voiceRecorder = new MediaRecorder(stream, { mimeType });
+        // 🔧 FIX: bitrate bajo = archivo más pequeño = transcripción más rápida
+        this._voiceRecorder = new MediaRecorder(stream, {
+          mimeType,
+          audioBitsPerSecond: 24000
+        });
 
         this._voiceRecorder.ondataavailable = (e) => {
           if (e.data && e.data.size > 0) this._voiceChunks.push(e.data);
@@ -2152,36 +2157,62 @@
 
         this._voiceRecorder.onstop = () => this.processVoiceRecording();
 
-        // Arrancar grabación
-        this._voiceRecorder.start();
+        this._voiceRecorder.start(250); // chunk cada 250ms
+
+        // 🔧 FIX: marcar grabación ANTES de cambiar UI
+        this._isRecording = true;
+        this._voiceStartTime = Date.now();
 
         // UI: modo grabando
         btn.classList.add('ds-recording');
         btn.textContent = '⏹️';
         btn.title = 'Detener y transcribir';
-        if (status) status.classList.add('ds-active');
+        if (status) {
+          status.classList.add('ds-active');
+          status.textContent = '🎤 Grabando... 0s (máx 30s)';
+        }
+
+        // 🔧 FIX: timer visible + auto-stop a 30 seg
+        this._voiceTimer = setInterval(() => {
+          const seg = Math.floor((Date.now() - this._voiceStartTime) / 1000);
+          if (status) status.textContent = `🎤 Grabando... ${seg}s (máx 30s)`;
+          if (seg >= 30) {
+            console.log('🎤 Auto-stop: 30 seg alcanzados');
+            this.stopVoiceRecording();
+          }
+        }, 1000);
 
       } catch (err) {
         console.error('❌ Error accediendo al micrófono:', err);
+        this._isRecording = false;
         alert('⚠️ No se pudo acceder al micrófono. Verifica los permisos del navegador.');
       }
     },
 
-    // 🎤 Detener grabación y transcribir
+       // 🎤 Detener grabación
     async stopVoiceRecording() {
-      const btn = document.getElementById('ds-btn-mic');
-      const status = document.getElementById('ds-mic-status');
+      // 🔧 FIX: parar timer primero
+      if (this._voiceTimer) {
+        clearInterval(this._voiceTimer);
+        this._voiceTimer = null;
+      }
+
+      // 🔧 FIX: marcar como NO grabando para que el próximo clic no la reinicie
+      this._isRecording = false;
 
       if (this._voiceRecorder && this._voiceRecorder.state !== 'inactive') {
-        this._voiceRecorder.stop();
+        try { this._voiceRecorder.stop(); } catch(e) { console.warn(e); }
       }
     },
 
-    // 🎤 Procesar el audio grabado y enviarlo al backend
+       // 🎤 Procesar audio → transcribir → AUTO-ENVIAR al chat
     async processVoiceRecording() {
       const btn = document.getElementById('ds-btn-mic');
       const status = document.getElementById('ds-mic-status');
       const input = document.getElementById('ds-chat-input');
+
+      // Duración real de la grabación
+      const duracion = this._voiceStartTime ? Math.round((Date.now() - this._voiceStartTime) / 1000) : 0;
 
       // Detener stream de micrófono
       if (this._voiceStream) {
@@ -2196,24 +2227,33 @@
         btn.title = 'Grabar pregunta por voz';
         btn.disabled = true;
       }
+
+      // 🔧 FIX: validar duración mínima
+      if (duracion < 1) {
+        if (status) status.classList.remove('ds-active');
+        if (btn) btn.disabled = false;
+        console.warn('🎤 Audio demasiado corto');
+        return;
+      }
+
       if (status) {
-        status.textContent = '🧠 Transcribiendo audio...';
+        status.textContent = `🧠 Transcribiendo ${duracion}s de audio...`;
         status.style.background = 'rgba(167,139,250,0.15)';
         status.style.borderLeftColor = '#a78bfa';
         status.style.color = '#ddd6fe';
       }
 
       try {
-        // Crear blob del audio
         const blob = new Blob(this._voiceChunks, {
           type: this._voiceRecorder?.mimeType || 'audio/webm'
         });
 
-        if (blob.size < 1000) {
-          throw new Error('El audio es demasiado corto. Intenta grabar al menos 1 segundo.');
+        console.log(`🎤 Enviando audio: ${blob.size} bytes, ${duracion}s`);
+
+        if (blob.size < 2000) {
+          throw new Error('Audio demasiado corto. Habla al menos 1 segundo.');
         }
 
-        // Enviar al backend
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
 
@@ -2228,7 +2268,6 @@
 
         const data = await r.json();
 
-        // Restaurar estado normal
         if (status) status.classList.remove('ds-active');
         if (btn) btn.disabled = false;
 
@@ -2236,19 +2275,68 @@
           throw new Error(data.error || 'Error desconocido en la transcripción');
         }
 
-        // Insertar el texto en el input del chat
-        if (input && data.text) {
-          input.value = (input.value + ' ' + data.text).trim();
+        const texto = (data.text || '').trim();
+
+        // Limpiar texto de "alucinaciones" típicas de Whisper con silencio
+        const limpiarAlucinaciones = (t) => {
+          if (!t) return '';
+          // Frases comunes que Whisper inventa con silencio/ruido
+          const patrones = [
+            /no pregunté, perdón.*/gi,
+            /gracias por ver.*/gi,
+            /subtítulos.*/gi,
+            /suscríbete.*/gi,
+            /amara\.org.*/gi,
+            /^\s*[\.,\s]*$/,
+            /quería ser un flagrante.*/gi
+          ];
+          let limpio = t;
+          patrones.forEach(p => { limpio = limpio.replace(p, ''); });
+          return limpio.trim();
+        };
+
+        const textoLimpio = limpiarAlucinaciones(texto);
+
+        if (!textoLimpio || textoLimpio.length < 3) {
+          console.warn('🎤 Texto transcrito vacío o sin sentido:', texto);
+          if (status) {
+            status.textContent = '⚠️ No se detectó voz clara. Intenta de nuevo hablando más cerca del micrófono.';
+            status.style.background = 'rgba(239,68,68,0.15)';
+            setTimeout(() => status.classList.remove('ds-active'), 4000);
+          }
+          return;
+        }
+
+        console.log('🎤 Transcripción:', textoLimpio);
+
+        // Insertar en el input
+        if (input) {
+          input.value = textoLimpio;
           input.focus();
         }
 
-        console.log('🎤 Transcripción insertada:', data.text);
+        // 🔧 FIX: AUTO-ENVIAR tras transcribir
+        if (status) {
+          status.textContent = '✅ Pregunta lista — enviando...';
+          status.style.background = 'rgba(34,197,94,0.15)';
+          status.style.borderLeftColor = '#22c55e';
+          status.style.color = '#86efac';
+          setTimeout(() => status.classList.remove('ds-active'), 1500);
+        }
+
+        // Disparar el envío automáticamente
+        setTimeout(() => {
+          const sendBtn = document.getElementById('ds-chat-send');
+          if (sendBtn) sendBtn.click();
+        }, 400);
 
       } catch (err) {
         console.error('❌ Error transcribiendo voz:', err);
         if (status) {
           status.textContent = `❌ ${err.message}`;
           status.style.background = 'rgba(239,68,68,0.15)';
+          status.style.borderLeftColor = '#ef4444';
+          status.style.color = '#fca5a5';
           setTimeout(() => status.classList.remove('ds-active'), 4000);
         }
         if (btn) btn.disabled = false;
