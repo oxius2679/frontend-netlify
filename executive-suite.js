@@ -3495,10 +3495,38 @@
     modules: () => Object.keys(Modules)
   };
 
-  // 🎯 Fix: función global para generar reportes (evita problemas de 'this')
+    // 🎯 Fix: buscar generarReporte donde sea que esté anidado
   window.__ExecutiveSuiteReport = (tipo) => {
     try {
-      Modules.bi.generarReporte(tipo);
+      let fn = null;
+      let ctx = null;
+
+      // Búsqueda recursiva en todos los módulos
+      const searchIn = (obj, depth = 0) => {
+        if (depth > 3 || !obj || typeof obj !== 'object') return;
+        for (const key in obj) {
+          const val = obj[key];
+          if (typeof val === 'function' && key === 'generarReporte') {
+            fn = val;
+            ctx = obj;
+            return;
+          }
+          if (val && typeof val === 'object') {
+            searchIn(val, depth + 1);
+            if (fn) return;
+          }
+        }
+      };
+
+      searchIn(Modules);
+
+      if (!fn) {
+        throw new Error('generarReporte no encontrado en ningún módulo');
+      }
+
+      console.log('🎯 Ejecutando generarReporte encontrado en:', Object.keys(ctx).slice(0, 3).join(', ') + '...');
+      fn.call(ctx, tipo);
+
     } catch (e) {
       console.error('❌ Error generando reporte:', e.message);
       alert('⚠️ Error generando reporte: ' + e.message);
