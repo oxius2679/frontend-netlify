@@ -4025,9 +4025,9 @@
         content.innerHTML = '';
         try {
           mod.render(content);
-        } catch (e) {
+               } catch (e) {
           console.error('❌ Error renderizando módulo', moduleId, e);
-          content.innerHTML = `<div class="exec-empty">⚠️ Error cargando el módulo: ${e.message}</div>`;
+          content.innerHTML = `<div class="exec-empty">⚠️ Error: ${e.message}<br><br><pre style="text-align:left;font-size:10px;color:#888;max-height:300px;overflow:auto;background:#111;padding:10px;border-radius:6px;white-space:pre-wrap;">${e.stack || 'Sin stack'}</pre></div>`;
         }
       }
     },
