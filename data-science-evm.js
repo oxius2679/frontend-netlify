@@ -2172,17 +2172,19 @@
           source.connect(analyser);
           this._voiceAnalyser = analyser;
 
-          const bufferLength = analyser.frequencyBinCount;
+                    const bufferLength = analyser.frequencyBinCount;
           const dataArray = new Uint8Array(bufferLength);
 
+          // 🐛 FIX: guardar referencia a `this` para usar dentro de requestAnimationFrame
+          const self = this;
           const sampleVolume = () => {
-            if (!this._isRecording || !this._voiceAnalyser) return;
-            this._voiceAnalyser.getByteFrequencyData(dataArray);
+            if (!self._isRecording || !self._voiceAnalyser) return;
+            self._voiceAnalyser.getByteFrequencyData(dataArray);
             // Calcular RMS (energía media del audio)
             let sum = 0;
             for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
             const avgVolume = sum / bufferLength;
-            this._voiceVolumeSamples.push(avgVolume);
+            self._voiceVolumeSamples.push(avgVolume);
             requestAnimationFrame(sampleVolume);
           };
 
