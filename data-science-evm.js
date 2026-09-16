@@ -2101,13 +2101,16 @@
     },
 
 
-        // 🎤 Estado de la grabación
+           // 🎤 Estado de la grabación
     _voiceRecorder: null,
     _voiceChunks: [],
     _voiceStream: null,
     _isRecording: false,
     _voiceTimer: null,
     _voiceStartTime: 0,
+    _voiceAudioContext: null,
+    _voiceAnalyser: null,
+    _voiceVolumeSamples: [],
 
         // 🎤 Manejar clic del micrófono (start/stop toggle)
     async handleMicClick() {
@@ -2155,7 +2158,40 @@
           if (e.data && e.data.size > 0) this._voiceChunks.push(e.data);
         };
 
-        this._voiceRecorder.onstop = () => this.processVoiceRecording();
+               this._voiceRecorder.onstop = () => this.processVoiceRecording();
+
+        // 🔊 NUEVO: Analizar volumen en tiempo real
+        this._voiceVolumeSamples = [];
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          this._voiceAudioContext = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 512;
+          analyser.smoothingTimeConstant = 0.3;
+          source.connect(analyser);
+          this._voiceAnalyser = analyser;
+
+          const bufferLength = analyser.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+
+          const sampleVolume = () => {
+            if (!this._isRecording || !this._voiceAnalyser) return;
+            this._voiceAnalyser.getByteFrequencyData(dataArray);
+            // Calcular RMS (energía media del audio)
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+            const avgVolume = sum / bufferLength;
+            this._voiceVolumeSamples.push(avgVolume);
+            requestAnimationFrame(sampleVolume);
+          };
+
+          if (audioCtx.state === 'suspended') await audioCtx.resume();
+          sampleVolume();
+
+        } catch (e) {
+          console.warn('⚠️ No se pudo analizar volumen:', e.message);
+        }
 
         this._voiceRecorder.start(250); // chunk cada 250ms
 
@@ -2228,11 +2264,44 @@
         btn.disabled = true;
       }
 
+           // 🔊 NUEVO: Calcular volumen promedio real del audio
+      const muestras = this._voiceVolumeSamples || [];
+      const volumenPromedio = muestras.length > 0
+        ? muestras.reduce((a, b) => a + b, 0) / muestras.length
+        : 0;
+      const volumenMax = muestras.length > 0 ? Math.max(...muestras) : 0;
+
+      // Limpiar recursos del analizador
+      if (this._voiceAudioContext) {
+        try { this._voiceAudioContext.close(); } catch(e) {}
+        this._voiceAudioContext = null;
+      }
+      this._voiceAnalyser = null;
+      this._voiceVolumeSamples = [];
+
+      console.log(`🎤 Audio: ${duracion}s, volumen prom: ${volumenPromedio.toFixed(1)}, max: ${volumenMax}`);
+
       // 🔧 FIX: validar duración mínima
       if (duracion < 1) {
         if (status) status.classList.remove('ds-active');
         if (btn) btn.disabled = false;
         console.warn('🎤 Audio demasiado corto');
+        return;
+      }
+
+      // 🔧 FIX DEFINITIVO: rechazar si es silencio (volumen demasiado bajo)
+      // El volumen se mide en escala 0-255 de frecuencia media
+      // Silencio real = < 5, voz baja = 15-30, voz normal = 30-80
+      if (volumenPromedio < 8 || volumenMax < 15) {
+        if (status) {
+          status.textContent = '⚠️ No se detectó voz. Habla más cerca del micrófono o sube el volumen.';
+          status.style.background = 'rgba(239,68,68,0.15)';
+          status.style.borderLeftColor = '#ef4444';
+          status.style.color = '#fca5a5';
+          setTimeout(() => status.classList.remove('ds-active'), 4000);
+        }
+        if (btn) btn.disabled = false;
+        console.warn('🎤 Rechazado por silencio');
         return;
       }
 
@@ -2277,18 +2346,27 @@
 
         const texto = (data.text || '').trim();
 
-        // Limpiar texto de "alucinaciones" típicas de Whisper con silencio
+               // Limpiar texto de "alucinaciones" típicas de Whisper
         const limpiarAlucinaciones = (t) => {
           if (!t) return '';
-          // Frases comunes que Whisper inventa con silencio/ruido
           const patrones = [
+            // Frases comunes de YouTube/streaming (Whisper aprende de videos)
             /no pregunté, perdón.*/gi,
             /gracias por ver.*/gi,
-            /subtítulos.*/gi,
+            /subtítulos.*(por|hecho por).*/gi,
             /suscríbete.*/gi,
             /amara\.org.*/gi,
-            /^\s*[\.,\s]*$/,
-            /quería ser un flagrante.*/gi
+            /quería ser un flagrante.*/gi,
+            /la formación en brave.*/gi,
+            /como en que un.*/gi,
+            // Ruido
+            /^\s*[\.,\s\?¡¿!]*$/,
+            /^[\s\.\,\?\!]+$/,
+            // Inglés espurio
+            /thanks for watching.*/gi,
+            /subscribe.*/gi,
+            /subtitles by.*/gi,
+            /www\..*\.com/gi
           ];
           let limpio = t;
           patrones.forEach(p => { limpio = limpio.replace(p, ''); });
@@ -2297,11 +2375,20 @@
 
         const textoLimpio = limpiarAlucinaciones(texto);
 
-        if (!textoLimpio || textoLimpio.length < 3) {
-          console.warn('🎤 Texto transcrito vacío o sin sentido:', texto);
+        // 🔧 FIX: validaciones más estrictas del texto
+        // 1) Debe tener al menos 3 caracteres
+        // 2) Debe tener al menos 2 palabras
+        // 3) Debe contener al menos una letra vocal (no solo números/símbolos)
+        const palabras = textoLimpio.split(/\s+/).filter(p => p.length > 0);
+        const tieneVocales = /[aeiouáéíóúñ]/i.test(textoLimpio);
+
+        if (!textoLimpio || textoLimpio.length < 3 || palabras.length < 2 || !tieneVocales) {
+          console.warn('🎤 Texto transcrito inválido:', { texto, textoLimpio, palabras: palabras.length, tieneVocales });
           if (status) {
-            status.textContent = '⚠️ No se detectó voz clara. Intenta de nuevo hablando más cerca del micrófono.';
+            status.textContent = '⚠️ No se detectó una pregunta clara. Intenta de nuevo.';
             status.style.background = 'rgba(239,68,68,0.15)';
+            status.style.borderLeftColor = '#ef4444';
+            status.style.color = '#fca5a5';
             setTimeout(() => status.classList.remove('ds-active'), 4000);
           }
           return;
