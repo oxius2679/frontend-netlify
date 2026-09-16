@@ -288,6 +288,118 @@
         margin-left: 8px;
       }
 
+
+
+      /* ⚖️ PANEL DE COMPARATIVA */
+      .ds-comparison-panel {
+        position: fixed; inset: 40px; z-index: 2147483647;
+        background: linear-gradient(145deg, rgba(24,16,60,0.99), rgba(6,4,24,1));
+        border: 1px solid rgba(167,139,250,0.4);
+        border-radius: 22px;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 120px rgba(139,92,246,0.2);
+        display: flex; flex-direction: column;
+        overflow: hidden;
+        animation: dsFadeIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      }
+      .ds-comparison-header {
+        padding: 22px 28px;
+        background: linear-gradient(135deg, rgba(30,12,70,0.95), rgba(40,20,90,0.55));
+        border-bottom: 1px solid rgba(167,139,250,0.25);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .ds-comparison-title {
+        font-size: 16pt; font-weight: 900; color: #ddd6fe;
+        letter-spacing: 2px; text-transform: uppercase;
+        display: flex; align-items: center; gap: 12px;
+      }
+      .ds-comparison-body {
+        flex: 1; overflow-y: auto; padding: 26px 30px;
+      }
+      .ds-comparison-selector {
+        display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
+        padding: 14px 18px; border-radius: 12px;
+        background: rgba(10,5,25,0.5); border: 1px solid rgba(167,139,250,0.2);
+      }
+      .ds-comparison-chip {
+        padding: 8px 14px; border-radius: 100px; font-size: 12px; font-weight: 700;
+        background: rgba(139,92,246,0.15); border: 1px solid rgba(167,139,250,0.4);
+        color: #ddd6fe; cursor: pointer; transition: all 0.25s;
+      }
+      .ds-comparison-chip:hover { background: rgba(139,92,246,0.4); }
+      .ds-comparison-chip.ds-comparison-selected {
+        background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff;
+        box-shadow: 0 0 16px rgba(139,92,246,0.6);
+      }
+      .ds-comparison-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px; margin-bottom: 24px;
+      }
+      .ds-comparison-card {
+        padding: 20px; border-radius: 16px;
+        background: linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));
+        border: 1px solid rgba(167,139,250,0.25);
+        position: relative; overflow: hidden;
+      }
+      .ds-comparison-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent, var(--c, #a78bfa), transparent);
+        box-shadow: 0 0 16px var(--c, #a78bfa);
+      }
+      .ds-comparison-card-name {
+        font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 4px;
+        letter-spacing: 0.5px;
+      }
+      .ds-comparison-card-rank {
+        display: inline-block; padding: 3px 10px; border-radius: 100px;
+        background: var(--c, #a78bfa); color: #1a0a2e;
+        font-size: 10px; font-weight: 900; letter-spacing: 1px; margin-bottom: 12px;
+      }
+      .ds-comparison-card-metrics {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;
+      }
+      .ds-comparison-metric {
+        padding: 10px 12px; border-radius: 10px;
+        background: rgba(10,5,25,0.6);
+      }
+      .ds-comparison-metric-label {
+        font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+        color: #a78bfa; margin-bottom: 4px;
+      }
+      .ds-comparison-metric-value {
+        font-size: 16px; font-weight: 900; color: #fff;
+        font-variant-numeric: tabular-nums;
+      }
+      .ds-comparison-table {
+        width: 100%; border-collapse: collapse; margin-bottom: 24px;
+        background: rgba(10,5,25,0.4); border-radius: 12px; overflow: hidden;
+      }
+      .ds-comparison-table th {
+        padding: 12px 14px; text-align: left;
+        font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+        color: #a78bfa; font-weight: 800;
+        border-bottom: 1px solid rgba(167,139,250,0.25);
+      }
+      .ds-comparison-table td {
+        padding: 12px 14px; font-size: 13px; color: #ddd6fe;
+        border-bottom: 1px solid rgba(167,139,250,0.1);
+        font-variant-numeric: tabular-nums;
+      }
+      .ds-comparison-table td:first-child { font-weight: 700; color: #fff; }
+      .ds-comparison-table .ds-col-value { text-align: right; font-weight: 800; }
+      .ds-comparison-analysis {
+        padding: 20px 24px; border-radius: 14px; margin-top: 8px;
+        background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(30,12,70,0.4));
+        border-left: 4px solid #a78bfa;
+        font-size: 13.5px; line-height: 1.7; color: #e9d5ff;
+      }
+      .ds-comparison-analysis strong { color: #c4b5fd; }
+      .ds-comparison-empty {
+        text-align: center; padding: 40px 20px;
+        color: #8b7cb8; font-size: 13px; letter-spacing: 1px;
+      }
+
+
+
       /* 📚 PANEL DE HISTORIAL */
       .ds-history-panel {
         position: fixed; top: 0; right: 0; bottom: 0; width: 520px; max-width: 100vw;
@@ -1284,7 +1396,8 @@
                   <button class="ds-role-btn ds-role-active" data-role="PMO" title="Project Management Officer">🎯 PMO</button>
                   <button class="ds-role-btn" data-role="Auditor" title="Auditor Senior">🔍 Auditor</button>
                 </div>
-                                <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openHistory()">📚 Historial</button>
+                                               <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openHistory()">📚 Historial</button>
+                <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.openComparison()">⚖️ Comparar</button>
                 <button class="ds-btn ds-btn-primary" onclick="window.EVMAI.exportReport()">📄 Exportar Reporte</button>
                 <button class="ds-btn ds-btn-danger" onclick="window.EVMAI.close()">✕ Cerrar</button>
               </div>
@@ -1468,6 +1581,263 @@
         </div>
       `;
     },
+
+
+    // ⚖️ Abrir panel de comparativa multi-proyecto
+    async openComparison() {
+      if (document.getElementById('ds-comparison-panel')) {
+        document.getElementById('ds-comparison-panel').remove();
+        return;
+      }
+
+      const projects = window.projects || [];
+      if (projects.length < 2) {
+        alert('⚠️ Necesitas al menos 2 proyectos para usar la comparativa.');
+        return;
+      }
+
+      const panel = document.createElement('div');
+      panel.className = 'ds-comparison-panel';
+      panel.id = 'ds-comparison-panel';
+      panel.innerHTML = `
+        <div class="ds-comparison-header">
+          <div class="ds-comparison-title">⚖️ Comparativa de Proyectos</div>
+          <button class="ds-btn ds-btn-danger" onclick="document.getElementById('ds-comparison-panel').remove()">✕ Cerrar</button>
+        </div>
+        <div class="ds-comparison-body" id="ds-comparison-body">
+          <div class="ds-comparison-empty">Selecciona 2 o más proyectos para comparar:</div>
+          <div class="ds-comparison-selector" id="ds-comparison-selector">
+            ${projects.map((p, i) => `
+              <div class="ds-comparison-chip" data-index="${i}">${p.name}</div>
+            `).join('')}
+          </div>
+          <div id="ds-comparison-content"></div>
+        </div>
+      `;
+      document.body.appendChild(panel);
+
+      // Seleccionar automáticamente los 2 primeros
+      const chips = panel.querySelectorAll('.ds-comparison-chip');
+      if (chips[0]) chips[0].classList.add('ds-comparison-selected');
+      if (chips[1]) chips[1].classList.add('ds-comparison-selected');
+
+      // Wire chips
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          chip.classList.toggle('ds-comparison-selected');
+          this.renderComparison();
+        });
+      });
+
+      // Render inicial
+      await this.renderComparison();
+    },
+
+    // ⚖️ Calcula KPIs aproximados de un proyecto desde sus tareas
+    calcularKPIsProyecto(project) {
+      const costPerHour = 50; // valor por defecto si no hay config
+      const tasks = project.tasks || [];
+
+      const BAC = tasks.reduce((s, t) => s + (t.estimatedTime || 0) * costPerHour, 0);
+      const AC = tasks.reduce((s, t) => s + (t.timeLogged || 0) * costPerHour, 0);
+      const EV = tasks.reduce((s, t) => {
+        const p = Math.max(0, Math.min(100, t.progress || 0)) / 100;
+        return s + (t.estimatedTime || 0) * costPerHour * p;
+      }, 0);
+
+      // PV aproximado
+      const hoy = Date.now();
+      const conDeadline = tasks.filter(t => t.deadline);
+      let PV = 0;
+      if (conDeadline.length > 0) {
+        const starts = conDeadline.map(t => new Date(t.startDate || t.deadline).getTime()).filter(d => !isNaN(d));
+        const ends = conDeadline.map(t => new Date(t.deadline).getTime()).filter(d => !isNaN(d));
+        const earliest = Math.min(...starts);
+        const latest = Math.max(...ends);
+        const dur = latest - earliest;
+        const transcurrido = Math.max(0, Math.min(dur, hoy - earliest));
+        PV = BAC * (dur > 0 ? transcurrido / dur : 0.5);
+      } else {
+        PV = BAC * 0.5;
+      }
+
+      const CPI = AC > 0 ? EV / AC : 1;
+      const SPI = PV > 0 ? EV / PV : 1;
+      const EAC = CPI > 0 ? BAC / CPI : BAC;
+      const VAC = BAC - EAC;
+      const progresoPct = BAC > 0 ? (EV / BAC) * 100 : 0;
+
+      // Score 0-100: 50 por CPI + 50 por SPI (capped)
+      const scoreCPI = Math.min(1.5, CPI) / 1.5 * 50;
+      const scoreSPI = Math.min(1.5, SPI) / 1.5 * 50;
+      const score = Math.round(scoreCPI + scoreSPI);
+
+      return {
+        BAC: Math.round(BAC),
+        PV: Math.round(PV),
+        EV: Math.round(EV),
+        AC: Math.round(AC),
+        CPI: parseFloat(CPI.toFixed(3)),
+        SPI: parseFloat(SPI.toFixed(3)),
+        EAC: Math.round(EAC),
+        VAC: Math.round(VAC),
+        progresoPct: parseFloat(progresoPct.toFixed(1)),
+        score,
+        taskCount: tasks.length,
+        completedTasks: tasks.filter(t => (t.progress || 0) >= 100).length,
+        delayedTasks: tasks.filter(t => t.status === 'overdue').length
+      };
+    },
+
+    // ⚖️ Renderiza la comparativa
+    async renderComparison() {
+      const panel = document.getElementById('ds-comparison-panel');
+      if (!panel) return;
+
+      const chips = panel.querySelectorAll('.ds-comparison-chip.ds-comparison-selected');
+      const selectedIndices = [...chips].map(c => parseInt(c.dataset.index));
+      const content = document.getElementById('ds-comparison-content');
+
+      if (selectedIndices.length < 2) {
+        content.innerHTML = `<div class="ds-comparison-empty">⚠️ Selecciona al menos 2 proyectos para comparar.</div>`;
+        return;
+      }
+
+      const projects = window.projects || [];
+      const projectData = selectedIndices.map(i => ({
+        index: i,
+        project: projects[i],
+        kpis: this.calcularKPIsProyecto(projects[i])
+      }));
+
+      // Ranking por score descendente
+      const ranking = [...projectData].sort((a, b) => b.kpis.score - a.kpis.score);
+      const rankMap = new Map();
+      ranking.forEach((p, i) => rankMap.set(p.index, i + 1));
+
+      const colors = ['#22c55e', '#a78bfa', '#67e8f9', '#f59e0b', '#ef4444'];
+
+      // Construir HTML
+      let html = `<div class="ds-comparison-grid">`;
+      projectData.forEach(p => {
+        const rank = rankMap.get(p.index);
+        const c = colors[(rank - 1) % colors.length];
+        html += `
+          <div class="ds-comparison-card" style="--c:${c};">
+            <div class="ds-comparison-card-name">${p.project.name}</div>
+            <div class="ds-comparison-card-rank" style="background:${c};">RANKING #${rank}</div>
+            <div style="font-size:36px;font-weight:900;color:${c};margin-top:8px;text-shadow:0 0 20px ${c};">${p.kpis.score}<span style="font-size:16px;color:#8b7cb8;">/100</span></div>
+            <div style="font-size:10px;color:#a78bfa;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Score de Salud</div>
+            <div class="ds-comparison-card-metrics">
+              <div class="ds-comparison-metric">
+                <div class="ds-comparison-metric-label">CPI</div>
+                <div class="ds-comparison-metric-value" style="color:${p.kpis.CPI >= 1 ? '#22c55e' : p.kpis.CPI >= 0.95 ? '#f59e0b' : '#ef4444'};">${p.kpis.CPI.toFixed(2)}</div>
+              </div>
+              <div class="ds-comparison-metric">
+                <div class="ds-comparison-metric-label">SPI</div>
+                <div class="ds-comparison-metric-value" style="color:${p.kpis.SPI >= 1 ? '#22c55e' : p.kpis.SPI >= 0.95 ? '#f59e0b' : '#ef4444'};">${p.kpis.SPI.toFixed(2)}</div>
+              </div>
+              <div class="ds-comparison-metric">
+                <div class="ds-comparison-metric-label">Progreso</div>
+                <div class="ds-comparison-metric-value">${p.kpis.progresoPct}%</div>
+              </div>
+              <div class="ds-comparison-metric">
+                <div class="ds-comparison-metric-label">Tareas</div>
+                <div class="ds-comparison-metric-value">${p.kpis.taskCount}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+
+      // Tabla comparativa
+      html += `
+        <table class="ds-comparison-table">
+          <thead>
+            <tr>
+              <th>Métrica</th>
+              ${projectData.map(p => `<th class="ds-col-value">${p.project.name.substring(0, 25)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>BAC</td>${projectData.map(p => `<td class="ds-col-value">${fmtMoney(p.kpis.BAC)}</td>`).join('')}</tr>
+            <tr><td>PV</td>${projectData.map(p => `<td class="ds-col-value">${fmtMoney(p.kpis.PV)}</td>`).join('')}</tr>
+            <tr><td>EV</td>${projectData.map(p => `<td class="ds-col-value">${fmtMoney(p.kpis.EV)}</td>`).join('')}</tr>
+            <tr><td>AC</td>${projectData.map(p => `<td class="ds-col-value">${fmtMoney(p.kpis.AC)}</td>`).join('')}</tr>
+            <tr><td>EAC</td>${projectData.map(p => `<td class="ds-col-value">${fmtMoney(p.kpis.EAC)}</td>`).join('')}</tr>
+            <tr><td>VAC</td>${projectData.map(p => `<td class="ds-col-value" style="color:${p.kpis.VAC >= 0 ? '#22c55e' : '#ef4444'};">${p.kpis.VAC >= 0 ? '+' : '-'}${fmtMoney(Math.abs(p.kpis.VAC))}</td>`).join('')}</tr>
+            <tr><td>Progreso</td>${projectData.map(p => `<td class="ds-col-value">${p.kpis.progresoPct}%</td>`).join('')}</tr>
+            <tr><td>Tareas Completadas</td>${projectData.map(p => `<td class="ds-col-value">${p.kpis.completedTasks} / ${p.kpis.taskCount}</td>`).join('')}</tr>
+            <tr><td>Tareas Rezagadas</td>${projectData.map(p => `<td class="ds-col-value" style="color:${p.kpis.delayedTasks > 0 ? '#ef4444' : '#22c55e'};">${p.kpis.delayedTasks}</td>`).join('')}</tr>
+            <tr><td><strong>Score Global</strong></td>${projectData.map(p => `<td class="ds-col-value" style="color:${colors[(rankMap.get(p.index) - 1) % colors.length]};"><strong>${p.kpis.score}/100</strong></td>`).join('')}</tr>
+          </tbody>
+        </table>
+      `;
+
+      // Análisis del LLM (async)
+      html += `
+        <div id="ds-comparison-analysis-block">
+          <div class="ds-comparison-analysis" id="ds-comparison-analysis">
+            🧠 Generando análisis comparativo ejecutivo...
+          </div>
+        </div>
+      `;
+
+      content.innerHTML = html;
+
+      // Llamar al LLM para el análisis comparativo
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        const clienteId = localStorage.getItem('clienteId');
+        const API_URL = window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com';
+
+        const pregunta = `Compara estos ${projectData.length} proyectos y dime cuál tiene mejor salud ejecutiva, cuál requiere más atención y qué acciones concretas recomiendas. Sé conciso y ejecutivo.`;
+
+        const projectDataPayload = projectData.map(p => ({
+          nombre: p.project.name,
+          CPI: p.kpis.CPI,
+          SPI: p.kpis.SPI,
+          BAC: p.kpis.BAC,
+          EV: p.kpis.EV,
+          AC: p.kpis.AC,
+          EAC: p.kpis.EAC,
+          VAC: p.kpis.VAC,
+          progresoPct: p.kpis.progresoPct,
+          tareas: { total: p.kpis.taskCount, completadas: p.kpis.completedTasks, rezagadas: p.kpis.delayedTasks },
+          score: p.kpis.score
+        }));
+
+        const r = await fetch(`${API_URL}/api/ai-analyst`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            question: pregunta,
+            projectData: { proyectos: projectDataPayload, modo: 'comparativa' },
+            role: ROL_ACTIVO
+          })
+        });
+        const data = await r.json();
+
+        const analysisEl = document.getElementById('ds-comparison-analysis');
+        if (analysisEl) {
+          if (data.success) {
+            analysisEl.innerHTML = data.answer.replace(/\n/g, '<br>');
+          } else {
+            analysisEl.innerHTML = `⚠️ ${data.error || 'No se pudo generar el análisis.'}`;
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error comparando:', error);
+        const analysisEl = document.getElementById('ds-comparison-analysis');
+        if (analysisEl) analysisEl.innerHTML = '⚠️ Error de conexión con el asistente IA.';
+      }
+    },
+
+
 
 
     // 📚 Abrir panel de historial
@@ -1746,14 +2116,17 @@
   }
 
   // === API PÚBLICA ===
-    window.EVMAI = {
+      window.EVMAI = {
     open: () => UI.open(),
     openHistory: () => UI.openHistory(),
+    openComparison: () => UI.openComparison(),
     close: () => {
       const ov = document.getElementById('ds-ia-overlay');
       if (ov) ov.remove();
-      const hp = document.getElementById('ds-history-panel');
+            const hp = document.getElementById('ds-history-panel');
       if (hp) hp.remove();
+      const cp = document.getElementById('ds-comparison-panel');
+      if (cp) cp.remove();
     },
         exportReport: async () => {
       const overlay = document.getElementById('ds-ia-overlay');
