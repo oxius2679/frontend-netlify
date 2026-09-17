@@ -29,6 +29,82 @@
     locale: 'es-ES'
   };
 
+
+  /* ==========================================================
+     SECCIÓN 0.5 · INTERNACIONALIZACIÓN (i18n)
+     ========================================================== */
+  function getLang() {
+    return localStorage.getItem('zacky_lang') || 'es';
+  }
+
+  const I18N = {
+    es: {
+      // Sidebar
+      nav_section_title: 'Módulos C-Suite',
+
+      // 8 Módulos - Labels
+      nav_portfolio: 'Portafolio Financiero',
+      nav_okrs: 'OKRs y Estrategia',
+      nav_capacity: 'Planificación de Capacidad',
+      nav_bi: 'Inteligencia de Negocio',
+      nav_governance: 'Gobernanza y Cumplimiento',
+      nav_integrations: 'Integraciones',
+      nav_finance: 'Finanzas Avanzadas',
+      nav_experience: 'Experiencia Ejecutiva',
+
+      // 8 Módulos - Subtitles
+      sub_portfolio: 'Consolidado de todos los proyectos',
+      sub_okrs: 'Alineación estratégica',
+      sub_capacity: 'Gestión de recursos',
+      sub_bi: 'Reportes avanzados',
+      sub_governance: 'Auditoría y riesgos',
+      sub_integrations: 'SSO, API, Webhooks',
+      sub_finance: 'Facturación y márgenes',
+      sub_experience: 'Vista C-Suite',
+
+      // Topbar
+      btn_refresh: '🔄 Actualizar',
+      btn_export: '📄 Exportar',
+      btn_close: '✕ Cerrar'
+    },
+    en: {
+      // Sidebar
+      nav_section_title: 'C-Suite Modules',
+
+      // 8 Modules - Labels
+      nav_portfolio: 'Financial Portfolio',
+      nav_okrs: 'OKRs & Strategy',
+      nav_capacity: 'Capacity Planning',
+      nav_bi: 'Business Intelligence',
+      nav_governance: 'Governance & Compliance',
+      nav_integrations: 'Integrations',
+      nav_finance: 'Advanced Finance',
+      nav_experience: 'Executive Experience',
+
+      // 8 Modules - Subtitles
+      sub_portfolio: 'All projects consolidated',
+      sub_okrs: 'Strategic alignment',
+      sub_capacity: 'Resource management',
+      sub_bi: 'Advanced reports',
+      sub_governance: 'Audit and risks',
+      sub_integrations: 'SSO, API, Webhooks',
+      sub_finance: 'Billing and margins',
+      sub_experience: 'C-Suite view',
+
+      // Topbar
+      btn_refresh: '🔄 Refresh',
+      btn_export: '📄 Export',
+      btn_close: '✕ Close'
+    }
+  };
+
+  function t(key) {
+    const lang = getLang();
+    return (I18N[lang] && I18N[lang][key]) || I18N.es[key] || key;
+  }
+
+
+
   /* ==========================================================
      SECCIÓN 0 · UTILIDADES
      ========================================================== */
@@ -385,6 +461,40 @@
   letter-spacing: 2px; text-transform: uppercase;
 }
 .exec-topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+      .exec-topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .exec-lang-switch {
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        background: rgba(10,5,25,0.6);
+        border: 1px solid rgba(251,191,36,0.35);
+        border-radius: 10px;
+        margin-right: 4px;
+      }
+      .exec-lang-btn {
+        padding: 6px 12px;
+        border-radius: 7px;
+        background: transparent;
+        border: none;
+        color: #a78bfa;
+        font-family: inherit;
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+      }
+      .exec-lang-btn:hover {
+        background: rgba(251,191,36,0.15);
+        color: #fbbf24;
+      }
+      .exec-lang-btn.active {
+        background: linear-gradient(135deg, #fbbf24, #d97706);
+        color: #1a0a2e;
+        box-shadow: 0 0 12px rgba(251,191,36,0.5);
+      }
+
 .exec-btn {
   padding: 10px 16px; border-radius: 10px;
   font-weight: 800; font-size: 11px; letter-spacing: 1px;
@@ -605,8 +715,8 @@
   const Modules = {
 
     /* ---------- MÓDULO 1 · Portafolio FINANCIERO (CFO) ---------- */
-    Portafolio: {
-      id: 'Portafolio',
+        portfolio: {
+      id: 'portfolio',
       icon: '💰',
       label: 'Portafolio Financiero',
       subtitle: 'Consolidado de todos los proyectos',
@@ -3951,12 +4061,12 @@
               <p>C-Suite Command</p>
             </div>
           </div>
-          <nav class="exec-nav">
-            <div class="exec-nav-section">C-Suite Modules</div>
+                    <nav class="exec-nav">
+            <div class="exec-nav-section">${t('nav_section_title')}</div>
             ${Object.values(Modules).map(m => `
               <div class="exec-nav-item ${m.id === State.module ? 'active' : ''}" data-module="${m.id}">
                 <span class="exec-nav-icon">${m.icon}</span>
-                <span class="exec-nav-label">${m.label}</span>
+                <span class="exec-nav-label">${t('nav_' + m.id)}</span>
                 ${m.badge ? `<span class="exec-nav-badge">${m.badge}</span>` : ''}
               </div>
             `).join('')}
@@ -3971,10 +4081,14 @@
               <h1 class="exec-topbar-title" id="exec-module-title">Portafolio Financiero</h1>
               <div class="exec-topbar-sub" id="exec-module-subtitle">Consolidado de todos los proyectos</div>
             </div>
-            <div class="exec-topbar-actions">
-              <button class="exec-btn exec-btn-gold" id="exec-btn-refresh">🔄 Actualizar</button>
-              <button class="exec-btn exec-btn-gold" id="exec-btn-export">📄 Exportar</button>
-              <button class="exec-btn exec-btn-danger" id="exec-btn-close">✕ Cerrar</button>
+                                    <div class="exec-topbar-actions">
+              <div class="exec-lang-switch" id="exec-lang-switch">
+                <button class="exec-lang-btn ${getLang() === 'es' ? 'active' : ''}" data-lang="es">ES</button>
+                <button class="exec-lang-btn ${getLang() === 'en' ? 'active' : ''}" data-lang="en">EN</button>
+              </div>
+              <button class="exec-btn exec-btn-gold" id="exec-btn-refresh">${t('btn_refresh')}</button>
+              <button class="exec-btn exec-btn-gold" id="exec-btn-export">${t('btn_export')}</button>
+              <button class="exec-btn exec-btn-danger" id="exec-btn-close">${t('btn_close')}</button>
             </div>
           </div>
           <div class="exec-content" id="exec-content"></div>
@@ -4003,6 +4117,32 @@
       State.projects = DataLayer.load();
     },
 
+
+
+    // 🌐 Refrescar todo el shell (sidebar + topbar + módulo activo) sin perder el estado
+    refreshShell() {
+      const overlay = document.getElementById('exec-suite-overlay');
+      if (!overlay) return;
+
+      const sectionEl = overlay.querySelector('.exec-nav-section');
+      if (sectionEl) sectionEl.textContent = t('nav_section_title');
+
+      overlay.querySelectorAll('.exec-nav-item').forEach(el => {
+        const labelEl = el.querySelector('.exec-nav-label');
+        if (labelEl) labelEl.textContent = t('nav_' + el.dataset.module);
+      });
+
+      const refreshBtn = document.getElementById('exec-btn-refresh');
+      const exportBtn = document.getElementById('exec-btn-export');
+      const closeBtn = document.getElementById('exec-btn-close');
+      if (refreshBtn) refreshBtn.textContent = t('btn_refresh');
+      if (exportBtn) exportBtn.textContent = t('btn_export');
+      if (closeBtn) closeBtn.textContent = t('btn_close');
+
+      if (typeof this.renderModule === 'function') {
+        this.renderModule(State.module);
+      }
+    },
 
 
     // 📄 Exportar el módulo activo como PDF ejecutivo
@@ -4164,22 +4304,30 @@
 
 
 
-    renderModule(moduleId) {
+       renderModule(moduleId) {
       const mod = Modules[moduleId];
       if (!mod) return;
 
       State.module = moduleId;
 
-      // Actualizar títulos
+      // Actualizar títulos (i18n)
+      const label = t('nav_' + moduleId);
+      const subtitleText = t('sub_' + moduleId);
       const title = document.getElementById('exec-module-title');
       const subtitle = document.getElementById('exec-module-subtitle');
-      if (title) title.textContent = mod.label;
-      if (subtitle) subtitle.textContent = mod.subtitle || '';
+      if (title) title.textContent = label;
+      if (subtitle) subtitle.textContent = subtitleText || '';
 
       // Actualizar navegación
       document.querySelectorAll('.exec-nav-item').forEach(el => {
         el.classList.toggle('active', el.dataset.module === moduleId);
+        const labelEl = el.querySelector('.exec-nav-label');
+        if (labelEl) labelEl.textContent = t('nav_' + el.dataset.module);
       });
+
+      // Actualizar el título del sidebar (por si acaso)
+      const sectionTitle = document.querySelector('.exec-nav-section');
+      if (sectionTitle) sectionTitle.textContent = t('nav_section_title');
 
       // Render del módulo
       const content = document.getElementById('exec-content');
@@ -4187,9 +4335,9 @@
         content.innerHTML = '';
         try {
           mod.render(content);
-               } catch (e) {
+        } catch (e) {
           console.error('❌ Error renderizando módulo', moduleId, e);
-          content.innerHTML = `<div class="exec-empty">⚠️ Error: ${e.message}<br><br><pre style="text-align:left;font-size:10px;color:#888;max-height:300px;overflow:auto;background:#111;padding:10px;border-radius:6px;white-space:pre-wrap;">${e.stack || 'Sin stack'}</pre></div>`;
+          content.innerHTML = `<div class="exec-empty">⚠️ Error cargando el módulo: ${e.message}</div>`;
         }
       }
     },
@@ -4222,6 +4370,28 @@
       if (closeBtn) {
         closeBtn.addEventListener('click', () => this.close());
       }
+
+
+      // 🌐 Language switcher (dentro del Executive Suite)
+      const langSwitcher = document.getElementById('exec-lang-switch');
+      if (langSwitcher) {
+        langSwitcher.querySelectorAll('.exec-lang-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const newLang = btn.dataset.lang;
+            if (newLang === getLang()) return;
+
+            localStorage.setItem('zacky_lang', newLang);
+
+            langSwitcher.querySelectorAll('.exec-lang-btn').forEach(b => {
+              b.classList.toggle('active', b.dataset.lang === newLang);
+            });
+
+            this.refreshShell();
+          });
+        });
+      }
+
+
 
       // ESC para cerrar
       const escHandler = (e) => {
@@ -4332,6 +4502,42 @@
     injectStyles();
     watchForLogin();
   }
+
+
+  // 🔄 Re-renderizar al cambiar idioma en la landing
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.lang-btn')) {
+      setTimeout(() => {
+        const overlay = document.getElementById('exec-suite-overlay');
+        if (!overlay) return;
+
+        // Actualizar sidebar
+        overlay.querySelectorAll('.exec-nav-item').forEach(el => {
+          const labelEl = el.querySelector('.exec-nav-label');
+          if (labelEl) labelEl.textContent = t('nav_' + el.dataset.module);
+        });
+
+        // Actualizar section header
+        const sectionEl = overlay.querySelector('.exec-nav-section');
+        if (sectionEl) sectionEl.textContent = t('nav_section_title');
+
+        // Actualizar topbar buttons
+        const refreshBtn = document.getElementById('exec-btn-refresh');
+        const exportBtn = document.getElementById('exec-btn-export');
+        const closeBtn = document.getElementById('exec-btn-close');
+        if (refreshBtn) refreshBtn.textContent = t('btn_refresh');
+        if (exportBtn) exportBtn.textContent = t('btn_export');
+        if (closeBtn) closeBtn.textContent = t('btn_close');
+
+        // Re-renderizar el módulo activo (por si acaso)
+        if (typeof UI !== 'undefined' && UI.renderModule) {
+          UI.renderModule(State.module);
+        }
+      }, 150);
+    }
+  });
+
+
 
   console.log(`✅ Executive Suite v${CFG.version} cargado — 8 módulos C-Suite disponibles`);
 })();
