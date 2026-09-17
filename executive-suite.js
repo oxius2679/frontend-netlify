@@ -209,7 +209,51 @@
       p2_dec3_title_clean: 'Decidir sobre proyectos sin alcance',
       p2_dec3_title_scale: 'Revisar oportunidades de escalado',
       p2_dec3_detail_clean: 'Hay {count} proyectos sin tareas. Definir alcance o archivar para no distorsionar métricas.',
-            p2_dec3_detail_scale: 'La estructura actual permite añadir 2 proyectos más con el equipo existente.'
+                  p2_dec3_detail_scale: 'La estructura actual permite añadir 2 proyectos más con el equipo existente.',
+
+      // ═══════════ MÓDULO 3: CAPACITY PLANNING ═══════════
+      p3_no_projects: 'No hay proyectos disponibles',
+      p3_no_team: 'No hay asignaciones de equipo registradas en los proyectos',
+      p3_kpi_total_team: 'Equipo Total',
+      p3_kpi_total_team_sub: 'personas asignadas',
+      p3_kpi_avg_util: 'Utilización Media',
+      p3_kpi_avg_util_optimal: 'Óptima',
+      p3_kpi_avg_util_ok: 'Aceptable',
+      p3_kpi_avg_util_low: 'Baja',
+      p3_kpi_overloaded: 'Sobrecargados',
+      p3_kpi_overloaded_sub: 'personas > 100%',
+      p3_kpi_bench: 'En Bench',
+      p3_kpi_bench_sub: 'sin asignación activa',
+      p3_distribution_title: 'Distribución por Nivel de Carga',
+      p3_load_overloaded: 'Sobrecargados',
+      p3_load_high: 'Alta carga',
+      p3_load_optimal: 'Óptimos',
+      p3_load_available: 'Disponibles',
+      p3_load_bench: 'En bench',
+      p3_top_title: '🔥 Top Personas por Carga',
+      p3_active_tasks: 'tareas activas',
+      p3_hours_assigned: 'h asignadas',
+      p3_bench_title: '💤 Personas en Bench / Disponibles',
+      p3_all_assigned: '✅ Todo el equipo está asignado a tareas activas',
+      p3_no_active: 'Sin asignación activa',
+      p3_tasks_word: 'tareas',
+      p3_load_word: 'carga',
+      p3_badge_bench: 'BENCH',
+      p3_badge_available: 'DISPONIBLE',
+      p3_project_load_title: 'Carga por Proyecto',
+      p3_col_project: 'Proyecto',
+      p3_col_people: 'Personas',
+      p3_col_hours_assigned: 'Horas Asignadas',
+      p3_col_hours_logged: 'Horas Registradas',
+      p3_col_pct_progress: '% Avance',
+      p3_col_active_tasks: 'Tareas Activas',
+      p3_col_load: 'Carga',
+      p3_forecast_title: 'Previsión de Necesidades (próximos 6 meses)',
+      p3_forecast_people_needed: 'personas necesarias',
+      p3_forecast_optimal: 'Capacidad óptima',
+      p3_forecast_hire_singular: '+1 contratación',
+            p3_forecast_hire_plural: '+{count} contrataciones',
+      p3_forecast_sufficient: 'Equipo suficiente'
     },
     en: {
       // Sidebar
@@ -382,7 +426,51 @@
       p2_dec3_title_clean: 'Decide on projects without scope',
       p2_dec3_title_scale: 'Review scaling opportunities',
       p2_dec3_detail_clean: 'There are {count} projects without tasks. Define scope or archive to avoid distorting metrics.',
-      p2_dec3_detail_scale: 'The current structure allows adding 2 more projects with the existing team.'
+            p2_dec3_detail_scale: 'The current structure allows adding 2 more projects with the existing team.',
+
+      // ═══════════ MODULE 3: CAPACITY PLANNING ═══════════
+      p3_no_projects: 'No projects available',
+      p3_no_team: 'No team assignments registered in the projects',
+      p3_kpi_total_team: 'Total Team',
+      p3_kpi_total_team_sub: 'assigned people',
+      p3_kpi_avg_util: 'Average Utilization',
+      p3_kpi_avg_util_optimal: 'Optimal',
+      p3_kpi_avg_util_ok: 'Acceptable',
+      p3_kpi_avg_util_low: 'Low',
+      p3_kpi_overloaded: 'Overloaded',
+      p3_kpi_overloaded_sub: 'people > 100%',
+      p3_kpi_bench: 'On Bench',
+      p3_kpi_bench_sub: 'no active assignment',
+      p3_distribution_title: 'Load Level Distribution',
+      p3_load_overloaded: 'Overloaded',
+      p3_load_high: 'High load',
+      p3_load_optimal: 'Optimal',
+      p3_load_available: 'Available',
+      p3_load_bench: 'On bench',
+      p3_top_title: '🔥 Top People by Workload',
+      p3_active_tasks: 'active tasks',
+      p3_hours_assigned: 'h assigned',
+      p3_bench_title: '💤 People on Bench / Available',
+      p3_all_assigned: '✅ The entire team is assigned to active tasks',
+      p3_no_active: 'No active assignment',
+      p3_tasks_word: 'tasks',
+      p3_load_word: 'load',
+      p3_badge_bench: 'BENCH',
+      p3_badge_available: 'AVAILABLE',
+      p3_project_load_title: 'Project Workload',
+      p3_col_project: 'Project',
+      p3_col_people: 'People',
+      p3_col_hours_assigned: 'Assigned Hours',
+      p3_col_hours_logged: 'Logged Hours',
+      p3_col_pct_progress: '% Progress',
+      p3_col_active_tasks: 'Active Tasks',
+      p3_col_load: 'Workload',
+      p3_forecast_title: 'Needs Forecast (next 6 months)',
+      p3_forecast_people_needed: 'people needed',
+      p3_forecast_optimal: 'Optimal capacity',
+      p3_forecast_hire_singular: '+1 hire',
+            p3_forecast_hire_plural: '+{count} hires',
+      p3_forecast_sufficient: 'Sufficient team'
     }
   };
 
@@ -1555,12 +1643,12 @@
     },
 
 
-        capacity: {
+           capacity: {
       id: 'capacity', icon: '⚙️', label: 'Capacity Planning', subtitle: 'Gestión de recursos', badge: 'COO',
       render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-loading">📭 No hay proyectos disponibles</div>`;
+          container.innerHTML = `<div class="exec-loading">📭 ${t('p3_no_projects')}</div>`;
           return;
         }
 
@@ -1568,7 +1656,7 @@
         const equipo = this.extraerEquipo(projects);
 
         if (equipo.length === 0) {
-          container.innerHTML = `<div class="exec-empty">👥 No hay asignaciones de equipo registradas en los proyectos</div>`;
+          container.innerHTML = `<div class="exec-empty">👥 ${t('p3_no_team')}</div>`;
           return;
         }
 
@@ -1588,37 +1676,37 @@
           <!-- KPIs CAPACIDAD -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:#fbbf24">
-              <div class="exec-kpi-label">Equipo Total</div>
+              <div class="exec-kpi-label">${t('p3_kpi_total_team')}</div>
               <div class="exec-kpi-value">${equipo.length}</div>
-              <div class="exec-kpi-sub">personas asignadas</div>
+              <div class="exec-kpi-sub">${t('p3_kpi_total_team_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#22c55e">
-              <div class="exec-kpi-label">Utilización Media</div>
+              <div class="exec-kpi-label">${t('p3_kpi_avg_util')}</div>
               <div class="exec-kpi-value">${kpis.utilizacionMedia}%</div>
-              <div class="exec-kpi-sub">${kpis.utilizacionMedia >= 75 ? 'Óptima' : kpis.utilizacionMedia >= 50 ? 'Aceptable' : 'Baja'}</div>
+              <div class="exec-kpi-sub">${kpis.utilizacionMedia >= 75 ? t('p3_kpi_avg_util_optimal') : kpis.utilizacionMedia >= 50 ? t('p3_kpi_avg_util_ok') : t('p3_kpi_avg_util_low')}</div>
             </div>
             <div class="exec-kpi" style="--c:#ef4444">
-              <div class="exec-kpi-label">Sobrecargados</div>
+              <div class="exec-kpi-label">${t('p3_kpi_overloaded')}</div>
               <div class="exec-kpi-value">${kpis.sobrecargados}</div>
-              <div class="exec-kpi-sub">personas > 100%</div>
+              <div class="exec-kpi-sub">${t('p3_kpi_overloaded_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">En Bench</div>
+              <div class="exec-kpi-label">${t('p3_kpi_bench')}</div>
               <div class="exec-kpi-value">${kpis.enBench}</div>
-              <div class="exec-kpi-sub">sin asignación activa</div>
+              <div class="exec-kpi-sub">${t('p3_kpi_bench_sub')}</div>
             </div>
           </div>
 
           <!-- DISTRIBUCIÓN POR UTILIZACIÓN -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Distribución por Nivel de Carga</h3>
+            <h3 class="exec-card-title">${t('p3_distribution_title')}</h3>
             <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;">
               ${[
-                { label: 'Sobrecargados', rango: '> 100%', color: '#ef4444', icon: '🔴', filtro: m => m.utilizacion > 100 },
-                { label: 'Alta carga', rango: '75-100%', color: '#f59e0b', icon: '🟠', filtro: m => m.utilizacion > 75 && m.utilizacion <= 100 },
-                { label: 'Óptimos', rango: '50-75%', color: '#22c55e', icon: '🟢', filtro: m => m.utilizacion > 50 && m.utilizacion <= 75 },
-                { label: 'Disponibles', rango: '25-50%', color: '#67e8f9', icon: '🔵', filtro: m => m.utilizacion > 25 && m.utilizacion <= 50 },
-                { label: 'En bench', rango: '0-25%', color: '#a78bfa', icon: '🟣', filtro: m => m.utilizacion <= 25 }
+                { label: t('p3_load_overloaded'), rango: '> 100%', color: '#ef4444', icon: '🔴', filtro: m => m.utilizacion > 100 },
+                { label: t('p3_load_high'), rango: '75-100%', color: '#f59e0b', icon: '🟠', filtro: m => m.utilizacion > 75 && m.utilizacion <= 100 },
+                { label: t('p3_load_optimal'), rango: '50-75%', color: '#22c55e', icon: '🟢', filtro: m => m.utilizacion > 50 && m.utilizacion <= 75 },
+                { label: t('p3_load_available'), rango: '25-50%', color: '#67e8f9', icon: '🔵', filtro: m => m.utilizacion > 25 && m.utilizacion <= 50 },
+                { label: t('p3_load_bench'), rango: '0-25%', color: '#a78bfa', icon: '🟣', filtro: m => m.utilizacion <= 25 }
               ].map(s => {
                 const count = equipo.filter(s.filtro).length;
                 const pct = equipo.length > 0 ? (count / equipo.length) * 100 : 0;
@@ -1638,7 +1726,7 @@
           <!-- TOP CARGADOS + BENCH -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">🔥 Top Personas por Carga</h3>
+              <h3 class="exec-card-title">${t('p3_top_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 ${topCargados.map(m => {
                   const color = m.utilizacion > 100 ? '#ef4444' : m.utilizacion > 75 ? '#f59e0b' : m.utilizacion > 50 ? '#22c55e' : '#67e8f9';
@@ -1648,7 +1736,7 @@
                       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                         <div>
                           <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
-                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas} tareas activas · ${m.horasAsignadas}h asignadas</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas} ${t('p3_active_tasks')} · ${m.horasAsignadas}${t('p3_hours_assigned')}</div>
                         </div>
                         <div style="font-size:16px;font-weight:900;color:${color};">${m.utilizacion}%</div>
                       </div>
@@ -1660,10 +1748,10 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">💤 Personas en Bench / Disponibles</h3>
+              <h3 class="exec-card-title">${t('p3_bench_title')}</h3>
               ${bench.length === 0 && equipo.filter(m => m.utilizacion <= 25).length === 0 ? `
                 <div style="text-align:center;padding:30px;color:#22c55e;font-size:13px;">
-                  ✅ Todo el equipo está asignado a tareas activas
+                  ${t('p3_all_assigned')}
                 </div>
               ` : `
                 <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1672,10 +1760,10 @@
                       <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                           <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
-                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas === 0 ? 'Sin asignación activa' : `${m.tareasActivas} tareas · ${m.utilizacion}% carga`}</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.tareasActivas === 0 ? t('p3_no_active') : `${m.tareasActivas} ${t('p3_tasks_word')} · ${m.utilizacion}% ${t('p3_load_word')}`}</div>
                         </div>
                         <div style="font-size:11px;padding:4px 10px;border-radius:100px;background:${m.utilizacion <= 25 ? '#a78bfa22' : '#67e8f922'};color:${m.utilizacion <= 25 ? '#a78bfa' : '#67e8f9'};font-weight:800;letter-spacing:1px;">
-                          ${m.utilizacion <= 25 ? 'BENCH' : 'DISPONIBLE'}
+                          ${m.utilizacion <= 25 ? t('p3_badge_bench') : t('p3_badge_available')}
                         </div>
                       </div>
                     </div>
@@ -1687,18 +1775,18 @@
 
           <!-- CARGA POR PROYECTO -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Carga por Proyecto</h3>
+            <h3 class="exec-card-title">${t('p3_project_load_title')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
-                    <th class="num">Personas</th>
-                    <th class="num">Horas Asignadas</th>
-                    <th class="num">Horas Registradas</th>
-                    <th class="num">% Avance</th>
-                    <th class="num">Tareas Activas</th>
-                    <th>Carga</th>
+                    <th>${t('p3_col_project')}</th>
+                    <th class="num">${t('p3_col_people')}</th>
+                    <th class="num">${t('p3_col_hours_assigned')}</th>
+                    <th class="num">${t('p3_col_hours_logged')}</th>
+                    <th class="num">${t('p3_col_pct_progress')}</th>
+                    <th class="num">${t('p3_col_active_tasks')}</th>
+                    <th>${t('p3_col_load')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1730,13 +1818,13 @@
 
           <!-- FORECAST DE NECESIDADES -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Forecast de Necesidades (próximos 6 meses)</h3>
+            <h3 class="exec-card-title">${t('p3_forecast_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
               ${forecast.map(f => `
                 <div style="padding:16px;border-radius:12px;background:linear-gradient(160deg, ${f.color}15, rgba(12,6,30,0.7));border:1px solid ${f.color}44;">
                   <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">${f.mes}</div>
                   <div style="font-size:26px;font-weight:900;color:${f.color};line-height:1;">${f.personasNecesarias}</div>
-                  <div style="font-size:11px;color:#8b7cb8;margin-top:6px;">personas necesarias</div>
+                  <div style="font-size:11px;color:#8b7cb8;margin-top:6px;">${t('p3_forecast_people_needed')}</div>
                   <div style="font-size:11px;color:${f.color};margin-top:8px;font-weight:700;">${f.recomendacion}</div>
                 </div>
               `).join('')}
@@ -1750,6 +1838,10 @@
           });
         }, 100);
       },
+
+
+
+
 
       extraerEquipo(projects) {
         const personas = {};
@@ -1815,7 +1907,7 @@
         return { utilizacionMedia, sobrecargados, enBench, total: equipo.length };
       },
 
-      calcularForecast(equipo, projects) {
+            calcularForecast(equipo, projects) {
         const baseEquipo = equipo.length;
         const totalTareas = projects.reduce((s, p) => s + p.totalTasks, 0);
         const tareasRestantes = projects.reduce((s, p) => s + (p.totalTasks - p.completedTasks), 0);
@@ -1829,10 +1921,10 @@
           const personasNecesarias = Math.ceil(baseEquipo * factor);
           const delta = personasNecesarias - baseEquipo;
 
-          let recomendacion = 'Equipo suficiente';
-          if (delta > 3) recomendacion = `+${delta} contrataciones`;
-          else if (delta > 0) recomendacion = `+${delta} contratación`;
-          else recomendacion = 'Capacidad óptima';
+          let recomendacion = t('p3_forecast_sufficient');
+          if (delta > 3) recomendacion = tI('p3_forecast_hire_plural', { count: delta });
+          else if (delta > 0) recomendacion = t('p3_forecast_hire_singular');
+          else recomendacion = t('p3_forecast_optimal');
 
           return { mes, personasNecesarias, recomendacion, color: colores[i] };
         });
