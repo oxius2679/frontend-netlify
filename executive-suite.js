@@ -62,10 +62,51 @@
       sub_finance: 'Facturación y márgenes',
       sub_experience: 'Vista C-Suite',
 
-      // Topbar
+            // Topbar
       btn_refresh: '🔄 Actualizar',
       btn_export: '📄 Exportar',
-      btn_close: '✕ Cerrar'
+      btn_close: '✕ Cerrar',
+
+      // ═══════════ MÓDULO 1: PORTAFOLIO FINANCIERO ═══════════
+      p1_no_projects: 'No hay proyectos disponibles',
+      p1_word_projects: 'proyectos',
+      p1_word_consumed: 'consumido',
+      p1_word_of_budget: 'del presupuesto',
+      p1_kpi_bac: 'BAC Total',
+      p1_kpi_ac: 'Costo Real (AC)',
+      p1_kpi_ev: 'Valor Ganado (EV)',
+      p1_kpi_cpi: 'CPI Global',
+      p1_kpi_eac: 'EAC Proyectado',
+      p1_kpi_vac: 'VAC Proyectado',
+      p1_kpi_margin: 'Margen Proyectado',
+      p1_kpi_spi: 'SPI Global',
+      p1_status_efficient: 'Eficiente',
+      p1_status_tolerance: 'En tolerancia',
+      p1_status_overcost: 'Sobrecosto',
+      p1_status_ahead: 'Adelantado',
+      p1_status_ontime: 'En tiempo',
+      p1_status_delayed: 'Retrasado',
+      p1_eac_sub: 'Estimado al cierre',
+      p1_vac_saving: 'Ahorro',
+      p1_vac_overcost: 'Sobrecosto',
+      p1_margin_sub: 'del BAC',
+      p1_health_title: 'Distribución por Salud del Portafolio',
+      p1_health_saludable: 'Saludable',
+      p1_health_aceptable: 'Aceptable',
+      p1_health_riesgo: 'En riesgo',
+      p1_health_critico: 'Crítico',
+      p1_projects_detail: 'Detalle por Proyecto',
+      p1_col_project: 'Proyecto',
+      p1_col_margin: 'Margen',
+      p1_col_health: 'Salud',
+      p1_total_portfolio: 'TOTAL PORTAFOLIO',
+      p1_burn_title: 'Burn Rate & Runway',
+      p1_per_day: '/día',
+      p1_runway: 'Runway',
+      p1_days: 'días',
+      p1_top_margin: 'Top Proyectos por Margen',
+      p1_tasks_word: 'tareas',
+      p1_completed: 'completado'
     },
     en: {
       // Sidebar
@@ -91,10 +132,51 @@
       sub_finance: 'Billing and margins',
       sub_experience: 'C-Suite view',
 
-      // Topbar
+            // Topbar
       btn_refresh: '🔄 Refresh',
       btn_export: '📄 Export',
-      btn_close: '✕ Close'
+      btn_close: '✕ Close',
+
+      // ═══════════ MODULE 1: FINANCIAL PORTFOLIO ═══════════
+      p1_no_projects: 'No projects available',
+      p1_word_projects: 'projects',
+      p1_word_consumed: 'consumed',
+      p1_word_of_budget: 'of budget',
+      p1_kpi_bac: 'Total BAC',
+      p1_kpi_ac: 'Actual Cost (AC)',
+      p1_kpi_ev: 'Earned Value (EV)',
+      p1_kpi_cpi: 'Global CPI',
+      p1_kpi_eac: 'Projected EAC',
+      p1_kpi_vac: 'Projected VAC',
+      p1_kpi_margin: 'Projected Margin',
+      p1_kpi_spi: 'Global SPI',
+      p1_status_efficient: 'Efficient',
+      p1_status_tolerance: 'In tolerance',
+      p1_status_overcost: 'Overcost',
+      p1_status_ahead: 'Ahead',
+      p1_status_ontime: 'On time',
+      p1_status_delayed: 'Delayed',
+      p1_eac_sub: 'Estimated at completion',
+      p1_vac_saving: 'Savings',
+      p1_vac_overcost: 'Overcost',
+      p1_margin_sub: 'of BAC',
+      p1_health_title: 'Portfolio Health Distribution',
+      p1_health_saludable: 'Healthy',
+      p1_health_aceptable: 'Acceptable',
+      p1_health_riesgo: 'At risk',
+      p1_health_critico: 'Critical',
+      p1_projects_detail: 'Project Detail',
+      p1_col_project: 'Project',
+      p1_col_margin: 'Margin',
+      p1_col_health: 'Health',
+      p1_total_portfolio: 'TOTAL PORTFOLIO',
+      p1_burn_title: 'Burn Rate & Runway',
+      p1_per_day: '/day',
+      p1_runway: 'Runway',
+      p1_days: 'days',
+      p1_top_margin: 'Top Projects by Margin',
+      p1_tasks_word: 'tasks',
+      p1_completed: 'completed'
     }
   };
 
@@ -722,10 +804,10 @@
       subtitle: 'Consolidado de todos los proyectos',
       badge: 'CFO',
 
-      render(container) {
+            render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-empty">📭 No hay proyectos disponibles</div>`;
+          container.innerHTML = `<div class="exec-empty">📭 ${t('p1_no_projects')}</div>`;
           return;
         }
 
@@ -733,18 +815,18 @@
 
         // KPIs principales
         const kpis = [
-          { label: 'BAC Total', value: fmt.money(agg.BAC), sub: `${agg.count} proyectos`, color: '#fbbf24' },
-          { label: 'Costo Real (AC)', value: fmt.money(agg.AC), sub: `${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} consumido`, color: '#ef4444' },
-          { label: 'Valor Ganado (EV)', value: fmt.money(agg.EV), sub: `${fmt.pct(agg.progresoPct)} del presupuesto`, color: '#22c55e' },
-          { label: 'CPI Global', value: agg.CPI.toFixed(2), sub: agg.CPI >= 1 ? 'Eficiente' : agg.CPI >= 0.9 ? 'En tolerancia' : 'Sobrecosto', color: agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#fbbf24' : '#ef4444' }
+          { label: t('p1_kpi_bac'), value: fmt.money(agg.BAC), sub: `${agg.count} ${t('p1_word_projects')}`, color: '#fbbf24' },
+          { label: t('p1_kpi_ac'), value: fmt.money(agg.AC), sub: `${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} ${t('p1_word_consumed')}`, color: '#ef4444' },
+          { label: t('p1_kpi_ev'), value: fmt.money(agg.EV), sub: `${fmt.pct(agg.progresoPct)} ${t('p1_word_of_budget')}`, color: '#22c55e' },
+          { label: t('p1_kpi_cpi'), value: agg.CPI.toFixed(2), sub: agg.CPI >= 1 ? t('p1_status_efficient') : agg.CPI >= 0.9 ? t('p1_status_tolerance') : t('p1_status_overcost'), color: agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#fbbf24' : '#ef4444' }
         ];
 
         // Segunda fila de KPIs financieros
         const kpis2 = [
-          { label: 'EAC Proyectado', value: fmt.money(agg.EAC), sub: 'Estimado al cierre', color: '#a78bfa' },
-          { label: 'VAC Proyectado', value: (agg.VAC >= 0 ? '+' : '') + fmt.money(agg.VAC), sub: agg.VAC >= 0 ? 'Ahorro' : 'Sobrecosto', color: agg.VAC >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'Margen Proyectado', value: fmt.money(agg.margen), sub: `${fmt.pct(agg.margenPct)} del BAC`, color: agg.margen >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'SPI Global', value: agg.SPI.toFixed(2), sub: agg.SPI >= 1 ? 'Adelantado' : agg.SPI >= 0.9 ? 'En tiempo' : 'Retrasado', color: agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444' }
+          { label: t('p1_kpi_eac'), value: fmt.money(agg.EAC), sub: t('p1_eac_sub'), color: '#a78bfa' },
+          { label: t('p1_kpi_vac'), value: (agg.VAC >= 0 ? '+' : '') + fmt.money(agg.VAC), sub: agg.VAC >= 0 ? t('p1_vac_saving') : t('p1_vac_overcost'), color: agg.VAC >= 0 ? '#22c55e' : '#ef4444' },
+          { label: t('p1_kpi_margin'), value: fmt.money(agg.margen), sub: `${fmt.pct(agg.margenPct)} ${t('p1_margin_sub')}`, color: agg.margen >= 0 ? '#22c55e' : '#ef4444' },
+          { label: t('p1_kpi_spi'), value: agg.SPI.toFixed(2), sub: agg.SPI >= 1 ? t('p1_status_ahead') : agg.SPI >= 0.9 ? t('p1_status_ontime') : t('p1_status_delayed'), color: agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444' }
         ];
 
         // Distribución por salud
@@ -776,13 +858,13 @@
 
           <!-- Distribución por salud -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Distribución por Salud del Portafolio</h3>
+            <h3 class="exec-card-title">${t('p1_health_title')}</h3>
             <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;">
               ${[
-                { key: 'saludable', label: 'Saludable', color: '#22c55e', icon: '🟢' },
-                { key: 'aceptable', label: 'Aceptable', color: '#a78bfa', icon: '🟣' },
-                { key: 'riesgo', label: 'En riesgo', color: '#f59e0b', icon: '🟠' },
-                { key: 'critico', label: 'Crítico', color: '#ef4444', icon: '🔴' }
+                { key: 'saludable', label: t('p1_health_saludable'), color: '#22c55e', icon: '🟢' },
+                { key: 'aceptable', label: t('p1_health_aceptable'), color: '#a78bfa', icon: '🟣' },
+                { key: 'riesgo', label: t('p1_health_riesgo'), color: '#f59e0b', icon: '🟠' },
+                { key: 'critico', label: t('p1_health_critico'), color: '#ef4444', icon: '🔴' }
               ].map(s => {
                 const count = dist[s.key] || 0;
                 const pct = total > 0 ? (count / total) * 100 : 0;
@@ -801,12 +883,12 @@
 
           <!-- Tabla de proyectos -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Detalle por Proyecto</h3>
+            <h3 class="exec-card-title">${t('p1_projects_detail')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
+                    <th>${t('p1_col_project')}</th>
                     <th class="num">BAC</th>
                     <th class="num">EV</th>
                     <th class="num">AC</th>
@@ -814,8 +896,8 @@
                     <th class="num">VAC</th>
                     <th class="num">CPI</th>
                     <th class="num">SPI</th>
-                    <th class="num">Margen</th>
-                    <th>Salud</th>
+                    <th class="num">${t('p1_col_margin')}</th>
+                    <th>${t('p1_col_health')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -839,7 +921,7 @@
                 </tbody>
                 <tfoot>
                   <tr style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(139,92,246,0.1));">
-                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL PORTAFOLIO</td>
+                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">${t('p1_total_portfolio')}</td>
                     <td class="num" style="font-weight:900;color:#fbbf24;">${fmt.money(agg.BAC)}</td>
                     <td class="num" style="font-weight:900;color:#22c55e;">${fmt.money(agg.EV)}</td>
                     <td class="num" style="font-weight:900;color:#ef4444;">${fmt.money(agg.AC)}</td>
@@ -858,19 +940,19 @@
           <!-- Burn Rate / Runway -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">Burn Rate & Runway</h3>
+              <h3 class="exec-card-title">${t('p1_burn_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:14px;">
                 ${projects.slice(0, 5).map(p => `
                   <div>
                     <div style="display:flex;justify-content:space-between;font-size:12px;color:#ddd6fe;margin-bottom:4px;">
                       <span>${p.name.substring(0, 30)}</span>
-                      <span style="color:#fbbf24;font-weight:800;">${fmt.moneyCompact(p.burnRate)}/día</span>
+                      <span style="color:#fbbf24;font-weight:800;">${fmt.moneyCompact(p.burnRate)}${t('p1_per_day')}</span>
                     </div>
                     <div class="exec-bar">
                       <div class="exec-bar-fill" style="--c:#fbbf24;width:0" data-w="${Math.min(100, (p.burnRate / 5000) * 100)}%"></div>
                     </div>
                     <div style="font-size:10px;color:#8b7cb8;margin-top:2px;">
-                      Runway: <strong style="color:${p.runwayDias > 30 ? '#22c55e' : p.runwayDias > 15 ? '#fbbf24' : '#ef4444'};">${p.runwayDias} días</strong>
+                      ${t('p1_runway')}: <strong style="color:${p.runwayDias > 30 ? '#22c55e' : p.runwayDias > 15 ? '#fbbf24' : '#ef4444'};">${p.runwayDias} ${t('p1_days')}</strong>
                     </div>
                   </div>
                 `).join('')}
@@ -878,14 +960,14 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">Top Proyectos por Margen</h3>
+              <h3 class="exec-card-title">${t('p1_top_margin')}</h3>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${[...projects].sort((a, b) => b.margenProyectado - a.margenProyectado).slice(0, 5).map((p, i) => `
                   <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:rgba(10,5,25,0.5);border-left:3px solid ${p.margenProyectado >= 0 ? '#22c55e' : '#ef4444'};">
                     <div style="font-size:22px;font-weight:900;color:${p.margenProyectado >= 0 ? '#22c55e' : '#ef4444'};min-width:32px;">#${i + 1}</div>
                     <div style="flex:1;">
                       <div style="font-size:13px;font-weight:700;color:#fff;">${p.name.substring(0, 35)}</div>
-                      <div style="font-size:11px;color:#8b7cb8;">${p.totalTasks} tareas · ${fmt.pct(p.progresoPct)} completado</div>
+                      <div style="font-size:11px;color:#8b7cb8;">${p.totalTasks} ${t('p1_tasks_word')} · ${fmt.pct(p.progresoPct)} ${t('p1_completed')}</div>
                     </div>
                     <div style="text-align:right;">
                       <div style="font-size:15px;font-weight:900;color:${p.margenProyectado >= 0 ? '#22c55e' : '#ef4444'};">${p.margenProyectado >= 0 ? '+' : ''}${fmt.moneyCompact(p.margenProyectado)}</div>
