@@ -5134,7 +5134,7 @@ loadUserProjectsAndRefresh().then(success => {
                     <div style="background: rgba(30,41,59,0.7); border-radius: 16px; padding: 1.5rem; border: 2px solid rgba(245,158,11,0.3); position: relative;">
                         <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #f59e0b; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: #0a0a1a;">MÁS POPULAR</div>
                         <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 0.5rem;">Premium</h3>
-                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€40</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: #fff;">€79</div>
                         <div style="color: #94a3b8; font-size: 0.9rem;">/usuario · mes</div>
                         <ul style="list-style: none; padding: 0; margin: 1rem 0; text-align: left; color: #cbd5e1; font-size: 0.85rem;">
                             <li style="padding: 0.3rem 0;">🔥 Todo Professional</li>
@@ -27920,7 +27920,7 @@ function showLicensesView() {
   <div style="background: ${currentLicense === 'premium' ? '#252525' : '#1e1e1e'}; border: 2px solid ${currentLicense === 'premium' ? '#4CAF50' : '#444444'}; border-radius: 10px; padding: 20px; position: relative;">
     <div style="position: absolute; top: -10px; right: 20px; background: #FF9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;">EMPRESAS</div>
     <h3 style="margin: 0 0 15px 0; color: ${currentLicense === 'premium' ? '#4CAF50' : '#ffffff'};">PREMIUM</h3>
-    <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€40/mes</div>
+    <div style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #ffffff;">€79/mes</div>
     <ul style="list-style: none; padding: 0; margin: 0 0 20px 0; color: #cccccc;">
       <li style="margin: 5px 0;">✓ Todo lo de PROFESSIONAL</li>
       <li style="margin: 5px 0;">✓ Centro de Comando IA (vista inicio con agentes)</li>
@@ -29114,7 +29114,7 @@ canAccess(feature) {
                 🚀 PROFESSIONAL - €30/mes
               </button>
               <button onclick="window.selectPlan('premium')" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                💎 PREMIUM - €40/mes
+                💎 PREMIUM - €79/mes
               </button>
             </div>
             <p style="color:#64748b;font-size:12px;margin-top:20px;">
