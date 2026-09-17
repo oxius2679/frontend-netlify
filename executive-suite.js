@@ -3,7 +3,7 @@
  *  👑 EXECUTIVE SUITE — C-SUITE COMMAND CENTER v1.0
  * ============================================================
  *  8 módulos ejecutivos de nivel enterprise:
- *  1. Portfolio Financiero (CFO)
+ *  1. Portafolio Financiero (CFO)
  *  2. OKRs & Estrategia (CEO)
  *  3. Capacity Planning (COO)
  *  4. Business Intelligence
@@ -71,7 +71,7 @@
   };
 
   const State = {
-    module: 'portfolio',
+    module: 'Portafolio',
     clientFilter: 'all',
     periodFilter: 'all',
     projects: [],
@@ -604,11 +604,11 @@
      ========================================================== */
   const Modules = {
 
-    /* ---------- MÓDULO 1 · PORTFOLIO FINANCIERO (CFO) ---------- */
-    portfolio: {
-      id: 'portfolio',
+    /* ---------- MÓDULO 1 · Portafolio FINANCIERO (CFO) ---------- */
+    Portafolio: {
+      id: 'Portafolio',
       icon: '💰',
-      label: 'Portfolio Financiero',
+      label: 'Portafolio Financiero',
       subtitle: 'Consolidado de todos los proyectos',
       badge: 'CFO',
 
@@ -666,7 +666,7 @@
 
           <!-- Distribución por salud -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Distribución por Salud del Portfolio</h3>
+            <h3 class="exec-card-title">Distribución por Salud del Portafolio</h3>
             <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;">
               ${[
                 { key: 'saludable', label: 'Saludable', color: '#22c55e', icon: '🟢' },
@@ -729,7 +729,7 @@
                 </tbody>
                 <tfoot>
                   <tr style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(139,92,246,0.1));">
-                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL PORTFOLIO</td>
+                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL PORTAFOLIO</td>
                     <td class="num" style="font-weight:900;color:#fbbf24;">${fmt.money(agg.BAC)}</td>
                     <td class="num" style="font-weight:900;color:#22c55e;">${fmt.money(agg.EV)}</td>
                     <td class="num" style="font-weight:900;color:#ef4444;">${fmt.money(agg.AC)}</td>
@@ -1039,7 +1039,7 @@
 
                // Objetivo 3: Alcanzar margen positivo
         objetivos.push({
-          titulo: 'Alcanzar margen positivo del portfolio',
+          titulo: 'Alcanzar margen positivo del portafolio',
           descripcion: `Margen actual: ${fmt.money(agg.margen)} (${fmt.pct(agg.margenPct)}). Objetivo: reducir sobrecostos y proteger rentabilidad.`,
           progreso: agg.margen >= 0 ? 100 : Math.round(Math.max(0, Math.min(100, 50 + agg.margenPct))),
           estado: agg.margen >= 0 ? 'logrado' : agg.margenPct > -5 ? 'en-curso' : agg.margenPct > -15 ? 'riesgo' : 'critico',
@@ -1058,10 +1058,10 @@
           accion: pctRezago < 5 ? 'Mantener seguimiento' : 'Reasignación de recursos y revisión de dependencias'
         });
 
-        // Objetivo 5: Escalar portfolio
+        // Objetivo 5: Escalar portafolio
         const proyectosActivos = projects.filter(p => p.totalTasks > 0).length;
         objetivos.push({
-          titulo: 'Consolidar el portfolio activo',
+          titulo: 'Consolidar el portafolio activo',
           descripcion: `${proyectosActivos} proyectos activos. Objetivo: escalar a ${proyectosActivos + 2} proyectos con el mismo equipo.`,
           progreso: Math.round((proyectosActivos / (proyectosActivos + 2)) * 100),
           estado: 'en-curso',
@@ -1115,7 +1115,7 @@
 
         const trimestres = [
           { label: 'Q1 2027', ingresos: ingresosBase * 1.15, color: '#fbbf24', descripcion: 'Recuperación del margen actual' },
-          { label: 'Q2 2027', ingresos: ingresosBase * 1.35, color: '#a78bfa', descripcion: 'Consolidación del portfolio' },
+          { label: 'Q2 2027', ingresos: ingresosBase * 1.35, color: '#a78bfa', descripcion: 'Consolidación del portafolio' },
           { label: 'Q3 2027', ingresos: ingresosBase * 1.60, color: '#67e8f9', descripcion: 'Escalado del equipo' },
           { label: 'Q4 2027', ingresos: ingresosBase * 1.90, color: '#22c55e', descripcion: 'Nuevos mercados' }
         ];
@@ -1124,13 +1124,13 @@
           {
             titulo: agg.margen < 0 ? 'Auditoría financiera urgente' : 'Optimización del margen',
             detalle: agg.margen < 0
-              ? 'Sobrecosto detectado en el portfolio. Revisar estimaciones, horas facturables y alcance de los proyectos en riesgo.'
-              : 'El portfolio es rentable. Documentar prácticas exitosas para replicar.',
+              ? 'Sobrecosto detectado en el portafolio. Revisar estimaciones, horas facturables y alcance de los proyectos en riesgo.'
+              : 'El portafolio es rentable. Documentar prácticas exitosas para replicar.',
             color: agg.margen < 0 ? '#ef4444' : '#22c55e'
           },
           {
             titulo: 'Priorizar proyectos con mayor alineación',
-            detalle: 'Enfocar recursos en proyectos con CPI/SPI ≥ 0.95 para maximizar el retorno del portfolio.',
+            detalle: 'Enfocar recursos en proyectos con CPI/SPI ≥ 0.95 para maximizar el retorno del portafolio.',
             color: '#fbbf24'
           },
           {
@@ -1585,7 +1585,7 @@
 
           <!-- BENCHMARK VS MEDIA -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📊 Benchmark vs Media del Portfolio</h3>
+            <h3 class="exec-card-title">📊 Benchmark vs Media del Portafolio</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
@@ -1654,10 +1654,10 @@
         const deltaProgreso = 8.5;
 
         const resumen = agg.CPI >= 1 && agg.SPI >= 1
-          ? `El portfolio muestra tendencia positiva. El CPI ha mejorado ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.`
+          ? `El portafolio muestra tendencia positiva. El CPI ha mejorado ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.`
           : agg.CPI < 0.9 || agg.SPI < 0.9
-            ? `El portfolio muestra deterioro sostenido. El CPI cayó ${Math.abs(deltaCPI * 100).toFixed(1)}% y el SPI ${Math.abs(deltaSPI * 100).toFixed(1)}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.`
-            : `El portfolio se mantiene estable con ligeras variaciones. El CPI varió ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.`;
+            ? `El portafolio muestra deterioro sostenido. El CPI cayó ${Math.abs(deltaCPI * 100).toFixed(1)}% y el SPI ${Math.abs(deltaSPI * 100).toFixed(1)}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.`
+            : `El portafolio se mantiene estable con ligeras variaciones. El CPI varió ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.`;
 
         return {
           cpi: { actual: agg.CPI.toFixed(2), delta: deltaCPI },
@@ -1683,17 +1683,17 @@
         if (agg.CPI < 0.9 || agg.SPI < 0.9) {
           insights.push({
             icon: '🚨', tipo: 'Alerta', color: '#ef4444',
-            texto: `El portfolio tiene un CPI de ${agg.CPI.toFixed(2)} y SPI de ${agg.SPI.toFixed(2)}. Por debajo del umbral de tolerancia. Requiere plan de recuperación.`
+            texto: `El Portafolio tiene un CPI de ${agg.CPI.toFixed(2)} y SPI de ${agg.SPI.toFixed(2)}. Por debajo del umbral de tolerancia. Requiere plan de recuperación.`
           });
         } else if (agg.CPI >= 1 && agg.SPI >= 1) {
           insights.push({
             icon: '🏆', tipo: 'Excelencia', color: '#22c55e',
-            texto: `El portfolio es financieramente eficiente (CPI ${agg.CPI.toFixed(2)}) y puntual (SPI ${agg.SPI.toFixed(2)}). Oportunidad para escalar.`
+            texto: `El Portafolio es financieramente eficiente (CPI ${agg.CPI.toFixed(2)}) y puntual (SPI ${agg.SPI.toFixed(2)}). Oportunidad para escalar.`
           });
         } else {
           insights.push({
             icon: '⚖️', tipo: 'Equilibrio', color: '#fbbf24',
-            texto: `El portfolio está en zona de tolerancia. Pequeñas desviaciones corregibles con gestión proactiva.`
+            texto: `El Portafolio está en zona de tolerancia. Pequeñas desviaciones corregibles con gestión proactiva.`
           });
         }
 
@@ -2302,21 +2302,21 @@
           const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
           const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
 
-          contenidoHTML = portada('Reporte Ejecutivo', 'Análisis consolidado del portfolio y estado estratégico de los proyectos activos.') + `
+          contenidoHTML = portada('Reporte Ejecutivo', 'Análisis consolidado del Portafolio y estado estratégico de los proyectos activos.') + `
 
           <!-- PÁGINA 1: KPIs -->
           <div class="page">
             ${pageHeader('Resumen Ejecutivo', 'Dashboard Consolidado')}
 
             <div class="story">
-              El portfolio gestiona <strong>${activos.length} proyectos activos</strong> con un presupuesto total de <strong>${fmt.money(agg.BAC)}</strong>.
+              El Portafolio gestiona <strong>${activos.length} proyectos activos</strong> con un presupuesto total de <strong>${fmt.money(agg.BAC)}</strong>.
               El desempeño financiero global muestra un CPI de <strong>${agg.CPI.toFixed(2)}</strong> ${agg.CPI >= 1 ? 'por encima del objetivo' : agg.CPI >= 0.9 ? 'en zona de tolerancia' : 'requiriendo atención ejecutiva'},
               mientras que el cronograma presenta un SPI de <strong>${agg.SPI.toFixed(2)}</strong>.
               El margen proyectado al cierre es de <strong>${fmt.money(agg.margen)}</strong> (${fmt.pct(agg.margenPct)}).
             </div>
 
             <div class="section">
-              <div class="section-title">Indicadores Clave del Portfolio</div>
+              <div class="section-title">Indicadores Clave del Portafolio</div>
               <div class="kpi-grid">
                 <div class="kpi-card" style="--c:#fbbf24">
                   <div class="kpi-label">Presupuesto Total</div>
@@ -2342,7 +2342,7 @@
             </div>
 
             <div class="section">
-              <div class="section-title">Salud del Portfolio</div>
+              <div class="section-title">Salud del Portafolio</div>
               <div class="grid-2" style="align-items:center;">
                 <div style="display:flex;gap:26px;justify-content:space-around;">
                   ${gauge(agg.CPI * 100 / 1.5, cpiColor, 'CPI', agg.CPI.toFixed(2))}
@@ -2392,7 +2392,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td>PORTFOLIO CONSOLIDADO</td>
+                  <td>Portafolio CONSOLIDADO</td>
                   <td class="num">${fmt.money(agg.BAC)}</td>
                   <td class="num">${agg.CPI.toFixed(2)}</td>
                   <td class="num">${agg.SPI.toFixed(2)}</td>
@@ -2425,7 +2425,7 @@
         else if (tipo === 'financiero') {
           const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
 
-          contenidoHTML = portada('Reporte Financiero', 'Análisis exhaustivo de costes, márgenes y proyecciones financieras del portfolio.') + `
+          contenidoHTML = portada('Reporte Financiero', 'Análisis exhaustivo de costes, márgenes y proyecciones financieras del Portafolio.') + `
 
           <div class="page">
             ${pageHeader('Estado Financiero', 'Análisis Consolidado')}
@@ -2495,7 +2495,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td>PORTFOLIO CONSOLIDADO</td>
+                  <td>Portafolio CONSOLIDADO</td>
                   <td class="num">${fmt.money(agg.BAC)}</td>
                   <td class="num">${fmt.money(agg.AC)}</td>
                   <td class="num">${fmt.money(agg.EAC)}</td>
@@ -2509,7 +2509,7 @@
 
             <div class="section-title">Análisis Financiero</div>
             <div class="story">
-              El portfolio ha consumido <strong>${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)}</strong> del presupuesto con un avance del <strong>${fmt.pct(agg.progresoPct)}</strong>.
+              El Portafolio ha consumido <strong>${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)}</strong> del presupuesto con un avance del <strong>${fmt.pct(agg.progresoPct)}</strong>.
               El CPI de <strong>${agg.CPI.toFixed(2)}</strong> indica que ${agg.CPI >= 1 ? 'la eficiencia financiera supera el plan' : 'se está generando menos valor del esperado por cada euro invertido'}.
               ${agg.margen < 0 ? `El margen proyectado es negativo (<strong>${fmt.money(agg.margen)}</strong>), lo que requiere auditoría de costes inmediata.` : `El margen proyectado es positivo (<strong>${fmt.money(agg.margen)}</strong>).`}
             </div>
@@ -2524,7 +2524,7 @@
           const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
           const conRezagos = activos.filter(p => p.delayedTasks > 0);
 
-          contenidoHTML = portada('Reporte de Cronograma', 'Estado de cumplimiento temporal, hitos y análisis de desviaciones del portfolio.') + `
+          contenidoHTML = portada('Reporte de Cronograma', 'Estado de cumplimiento temporal, hitos y análisis de desviaciones del Portafolio.') + `
 
           <div class="page">
             ${pageHeader('Estado del Cronograma', 'Análisis Temporal')}
@@ -2540,7 +2540,7 @@
                 <div class="kpi-card" style="--c:#7c3aed">
                   <div class="kpi-label">Total Tareas</div>
                   <div class="kpi-value">${agg.tasks}</div>
-                  <div class="kpi-sub">portfolio</div>
+                  <div class="kpi-sub">Portafolio</div>
                 </div>
                 <div class="kpi-card" style="--c:#22c55e">
                   <div class="kpi-label">Completadas</div>
@@ -2633,7 +2633,7 @@
           const lista = Object.entries(personas).map(([n, d]) => ({ nombre: n, ...d, proyectos: Array.from(d.proyectos) }));
           const eficiencia = (agg.loggedHours / Math.max(1, agg.totalHours)) * 100;
 
-          contenidoHTML = portada('Reporte de Equipo', 'Distribución de carga, utilización y performance del equipo asignado al portfolio.') + `
+          contenidoHTML = portada('Reporte de Equipo', 'Distribución de carga, utilización y performance del equipo asignado al Portafolio.') + `
 
           <div class="page">
             ${pageHeader('Resumen del Equipo', 'Análisis de Recursos')}
@@ -2644,7 +2644,7 @@
                 <div class="kpi-card" style="--c:#7c3aed">
                   <div class="kpi-label">Personas Asignadas</div>
                   <div class="kpi-value">${lista.length}</div>
-                  <div class="kpi-sub">En el portfolio</div>
+                  <div class="kpi-sub">En el Portafolio</div>
                 </div>
                 <div class="kpi-card" style="--c:#fbbf24">
                   <div class="kpi-label">Horas Estimadas</div>
@@ -2707,15 +2707,15 @@
         // ============ 5. REPORTE DE RIESGOS ============
         else if (tipo === 'riesgos') {
           const riesgos = [];
-          if (agg.CPI < 0.9) riesgos.push({ nivel: 'CRÍTICO', color: '#ef4444', desc: 'Sobrecosto consolidado en el portfolio', exp: Math.abs(agg.VAC), accion: 'Auditoría inmediata de horas y renegociación de contratos' });
+          if (agg.CPI < 0.9) riesgos.push({ nivel: 'CRÍTICO', color: '#ef4444', desc: 'Sobrecosto consolidado en el Portafolio', exp: Math.abs(agg.VAC), accion: 'Auditoría inmediata de horas y renegociación de contratos' });
           if (agg.SPI < 0.9) riesgos.push({ nivel: 'ALTO', color: '#f97316', desc: 'Retraso significativo en el cronograma', exp: agg.BAC * 0.15, accion: 'Fast-tracking en ruta crítica y refuerzo de recursos' });
           if (agg.delayed > 0) riesgos.push({ nivel: agg.delayed > 5 ? 'MEDIO' : 'BAJO', color: agg.delayed > 5 ? '#f59e0b' : '#22c55e', desc: `${agg.delayed} tareas rezagadas identificadas`, exp: agg.delayed * 500, accion: 'Reasignación de recursos y revisión de dependencias' });
           const vacios = projects.filter(p => p.totalTasks === 0);
-          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', color: '#a78bfa', desc: `${vacios.length} proyectos sin alcance definido`, exp: 0, accion: 'Definir alcance o archivar para limpiar el portfolio' });
+          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', color: '#a78bfa', desc: `${vacios.length} proyectos sin alcance definido`, exp: 0, accion: 'Definir alcance o archivar para limpiar el Portafolio' });
 
           const exposicionTotal = riesgos.reduce((s, r) => s + r.exp, 0);
 
-          contenidoHTML = portada('Reporte de Riesgos', 'Identificación, evaluación y mitigación de riesgos del portfolio activo.') + `
+          contenidoHTML = portada('Reporte de Riesgos', 'Identificación, evaluación y mitigación de riesgos del Portafolio activo.') + `
 
           <div class="page">
             ${pageHeader('Matriz de Riesgos', 'Análisis de Exposición')}
@@ -2723,7 +2723,7 @@
             <div class="section">
               <div class="section-title">Exposición Total al Riesgo</div>
               <div class="highlight-card">
-                <div class="kpi-label">Exposición Agregada del Portfolio</div>
+                <div class="kpi-label">Exposición Agregada del Portafolio</div>
                 <div style="font-size:36pt;font-weight:900;color:#fbbf24;line-height:1;margin:12px 0;font-family:'Georgia',serif;">${fmt.money(exposicionTotal)}</div>
                 <div class="kpi-sub">Basado en ${riesgos.length} riesgos identificados · ${riesgos.filter(r => r.nivel === 'CRÍTICO' || r.nivel === 'ALTO').length} de nivel alto o crítico</div>
               </div>
@@ -2755,7 +2755,7 @@
           const ordenados = [...activos].sort((a, b) => (b.CPI + b.SPI) - (a.CPI + a.SPI));
           const maxScore = 200;
 
-          contenidoHTML = portada('Reporte Comparativo', 'Benchmarking interno del portfolio y ranking de desempeño ejecutivo.') + `
+          contenidoHTML = portada('Reporte Comparativo', 'Benchmarking interno del Portafolio y ranking de desempeño ejecutivo.') + `
 
           <div class="page">
             ${pageHeader('Ranking de Performance', 'Benchmark Interno')}
@@ -2806,9 +2806,9 @@
 
             <div class="section-title">Análisis Comparativo</div>
             <div class="story">
-              El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el portfolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100.
+              El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el Portafolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100.
               ${ordenados.length > 1 ? `El proyecto <strong>${ordenados[ordenados.length - 1].name}</strong> requiere mayor atención con un score de ${Math.round(((ordenados[ordenados.length - 1].CPI + ordenados[ordenados.length - 1].SPI) / 2) * 100)}/100.` : ''}
-              La media del portfolio se sitúa en CPI <strong>${agg.CPI.toFixed(2)}</strong> y SPI <strong>${agg.SPI.toFixed(2)}</strong>.
+              La media del Portafolio se sitúa en CPI <strong>${agg.CPI.toFixed(2)}</strong> y SPI <strong>${agg.SPI.toFixed(2)}</strong>.
             </div>
 
             ${pageFooter(1)}
@@ -2841,10 +2841,10 @@
         const deltaProgreso = 8.5;
 
         const resumen = agg.CPI >= 1 && agg.SPI >= 1
-          ? `El portfolio muestra tendencia positiva. El CPI ha mejorado ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.`
+          ? `El Portafolio muestra tendencia positiva. El CPI ha mejorado ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.`
           : agg.CPI < 0.9 || agg.SPI < 0.9
-            ? `El portfolio muestra deterioro sostenido. El CPI cayó ${Math.abs(deltaCPI * 100).toFixed(1)}% y el SPI ${Math.abs(deltaSPI * 100).toFixed(1)}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.`
-            : `El portfolio se mantiene estable con ligeras variaciones. El CPI varió ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.`;
+            ? `El Portafolio muestra deterioro sostenido. El CPI cayó ${Math.abs(deltaCPI * 100).toFixed(1)}% y el SPI ${Math.abs(deltaSPI * 100).toFixed(1)}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.`
+            : `El Portafolio se mantiene estable con ligeras variaciones. El CPI varió ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.`;
 
         return {
           cpi: { actual: agg.CPI.toFixed(2), delta: deltaCPI },
@@ -2899,7 +2899,7 @@
           });
         }
 
-        // Riesgo 4: Concentración del portfolio
+        // Riesgo 4: Concentración del Portafolio
         const activos = projects.filter(p => p.BAC > 0);
         if (activos.length > 0 && agg.BAC > 0) {
           const mayor = activos.reduce((max, p) => p.BAC > max.BAC ? p : max, activos[0]);
@@ -2911,7 +2911,7 @@
               impacto: 'Alto',
               severidad: concentracion > 70 ? 'crítico' : 'alto',
               exposicion: mayor.BAC,
-              mitigacion: 'Diversificación del portfolio + aseguramiento contractual'
+              mitigacion: 'Diversificación del Portafolio + aseguramiento contractual'
             });
           }
         }
@@ -3043,7 +3043,7 @@
           },
           {
             nombre: 'Snapshots históricos automáticos',
-            descripcion: 'KPIs del portfolio capturados cada día para análisis de tendencias.',
+            descripcion: 'KPIs del Portafolio capturados cada día para análisis de tendencias.',
             estado: 'activo'
           },
           {
@@ -3450,7 +3450,7 @@
                 </tbody>
                 <tfoot>
                   <tr style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(139,92,246,0.1));">
-                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL PORTFOLIO</td>
+                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL Portafolio</td>
                     <td class="num">—</td>
                     <td class="num">—</td>
                     <td class="num">—</td>
@@ -3637,14 +3637,14 @@
               <div class="exec-kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : agg.SPI >= 0.9 ? 'Tolerancia' : 'Retrasado'}</div>
             </div>
             <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">Portfolio</div>
+              <div class="exec-kpi-label">Portafolio</div>
               <div class="exec-kpi-value">${activos.length}</div>
               <div class="exec-kpi-sub">proyectos activos</div>
             </div>
             <div class="exec-kpi" style="--c:#67e8f9">
               <div class="exec-kpi-label">Valor Total</div>
               <div class="exec-kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
-              <div class="exec-kpi-sub">presupuesto portfolio</div>
+              <div class="exec-kpi-sub">presupuesto Portafolio</div>
             </div>
           </div>
 
@@ -3716,7 +3716,7 @@
               <h3 class="exec-card-title">🎯 Vista por Rol Ejecutivo</h3>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${[
-                  { rol: 'CEO', icon: '👔', color: '#fbbf24', mensaje: estadoGeneral.mensajeCEO || 'Estrategia global bajo control', accion: 'Revisar portfolio mensual' },
+                  { rol: 'CEO', icon: '👔', color: '#fbbf24', mensaje: estadoGeneral.mensajeCEO || 'Estrategia global bajo control', accion: 'Revisar Portafolio mensual' },
                   { rol: 'CFO', icon: '💰', color: '#22c55e', mensaje: `Margen total: ${fmt.pct(agg.margenPct)}`, accion: 'Auditoría de costes semanal' },
                   { rol: 'COO', icon: '⚙️', color: '#a78bfa', mensaje: `SPI: ${agg.SPI.toFixed(2)}`, accion: 'Optimizar asignación de recursos' },
                   { rol: 'PMO', icon: '🎯', color: '#67e8f9', mensaje: `${agg.delayed} tareas rezagadas`, accion: 'Revisar ruta crítica' }
@@ -3739,7 +3739,7 @@
             <h3 class="exec-card-title">📌 Resumen Ultra-Ejecutivo (15 segundos)</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
               ${[
-                { label: 'Dónde estamos', value: `${agg.progresoPct.toFixed(0)}%`, sub: 'avance del portfolio', color: '#fbbf24' },
+                { label: 'Dónde estamos', value: `${agg.progresoPct.toFixed(0)}%`, sub: 'avance del Portafolio', color: '#fbbf24' },
                 { label: 'Vamos bien?', value: agg.CPI >= 1 && agg.SPI >= 1 ? '✅ Sí' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '⚠️ Con cautela' : '🔴 No', sub: 'estado global', color: agg.CPI >= 1 && agg.SPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444' },
                 { label: 'Riesgo principal', value: agg.CPI < 0.9 ? 'Costes' : agg.SPI < 0.9 ? 'Cronograma' : 'Ninguno', sub: 'foco de atención', color: '#ef4444' },
                 { label: 'Acción hoy', value: decisionesDelDia[0]?.titulo?.split(' ').slice(0, 3).join(' ') || 'Mantener rumbo', sub: 'decisión clave', color: '#a78bfa' }
@@ -3765,7 +3765,7 @@
         if (agg.CPI >= 1 && agg.SPI >= 1 && agg.margenPct > 0) {
           return {
             titulo: '🏆 Excelencia Ejecutiva',
-            mensaje: 'El portfolio opera con rentabilidad positiva, eficiencia de costes y cumplimiento del cronograma. Oportunidad de escalar y consolidar.',
+            mensaje: 'El Portafolio opera con rentabilidad positiva, eficiencia de costes y cumplimiento del cronograma. Oportunidad de escalar y consolidar.',
             estado: 'óptimo'
           };
         }
@@ -3779,7 +3779,7 @@
         if (agg.CPI < 0.85 || agg.SPI < 0.85) {
           return {
             titulo: '🚨 Intervención Necesaria',
-            mensaje: 'El portfolio muestra desviaciones significativas. Se requiere plan de recuperación ejecutivo en los próximos 7 días.',
+            mensaje: 'El Portafolio muestra desviaciones significativas. Se requiere plan de recuperación ejecutivo en los próximos 7 días.',
             estado: 'crítico'
           };
         }
@@ -3811,7 +3811,7 @@
           alertas.push({
             nivel: 'alto', icon: '💰', color: '#f97316',
             titulo: `Sobrecosto proyectado de ${fmt.moneyCompact(exposicion)}`,
-            descripcion: `${sobrecosto.length} proyecto(s) con EAC superior al BAC. Si no se corrige, el portfolio cerrará por encima del presupuesto.`,
+            descripcion: `${sobrecosto.length} proyecto(s) con EAC superior al BAC. Si no se corrige, el Portafolio cerrará por encima del presupuesto.`,
             accion: 'Auditoría financiera + renegociación de alcance'
           });
         }
@@ -3833,7 +3833,7 @@
           alertas.push({
             nivel: 'bajo', icon: '📭', color: '#a78bfa',
             titulo: `${vacios.length} proyecto(s) sin datos`,
-            descripcion: 'Proyectos sin tareas definidas. Distorsionan las métricas del portfolio.',
+            descripcion: 'Proyectos sin tareas definidas. Distorsionan las métricas del Portafolio.',
             accion: 'Definir alcance o archivar'
           });
         }
@@ -3854,13 +3854,13 @@
         } else if (agg.SPI < 0.9) {
           decisiones.push({
             titulo: 'Recuperar cronograma',
-            detalle: 'Aprobar refuerzo del equipo en tareas críticas y fast-tracking en la ruta crítica del portfolio.',
+            detalle: 'Aprobar refuerzo del equipo en tareas críticas y fast-tracking en la ruta crítica del Portafolio.',
             color: '#f97316'
           });
         } else {
           decisiones.push({
             titulo: 'Acelerar el crecimiento',
-            detalle: 'Aprobar la expansión del portfolio con 2 proyectos adicionales usando el equipo actual.',
+            detalle: 'Aprobar la expansión del Portafolio con 2 proyectos adicionales usando el equipo actual.',
             color: '#22c55e'
           });
         }
@@ -3870,14 +3870,14 @@
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           decisiones.push({
-            titulo: 'Limpiar el portfolio',
+            titulo: 'Limpiar el Portafolio',
             detalle: `Decidir sobre ${vacios.length} proyecto(s) sin alcance: definir tareas o archivar para mantener métricas limpias.`,
             color: '#a78bfa'
           });
         } else {
           decisiones.push({
             titulo: 'Invertir en equipo',
-            detalle: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del portfolio.',
+            detalle: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del Portafolio.',
             color: '#a78bfa'
           });
         }
@@ -3968,7 +3968,7 @@
         <div class="exec-main">
           <div class="exec-topbar">
             <div>
-              <h1 class="exec-topbar-title" id="exec-module-title">Portfolio Financiero</h1>
+              <h1 class="exec-topbar-title" id="exec-module-title">Portafolio Financiero</h1>
               <div class="exec-topbar-sub" id="exec-module-subtitle">Consolidado de todos los proyectos</div>
             </div>
             <div class="exec-topbar-actions">
@@ -4122,7 +4122,7 @@
     <div class="portada-content">
       <div class="portada-brand">The Jacksons Solutions</div>
       <h1 class="portada-title">${modulo.label}</h1>
-      <div class="portada-subtitle">${modulo.subtitle || 'Análisis ejecutivo del portfolio'}</div>
+      <div class="portada-subtitle">${modulo.subtitle || 'Análisis ejecutivo del Portafolio'}</div>
       <div class="portada-meta">
         <div>
           <div class="portada-meta-label">Rol</div>
