@@ -412,7 +412,504 @@
       p4_r2_cpi_good: 'la eficiencia financiera supera el plan',
       p4_r2_cpi_bad: 'se está generando menos valor del esperado por cada euro invertido',
       p4_r2_margin_negative: 'El margen proyectado es negativo ({margen}), lo que requiere auditoría de costes inmediata.',
-      p4_r2_margin_positive: 'El margen proyectado es positivo ({margen}).'
+            p4_r2_margin_positive: 'El margen proyectado es positivo ({margen}).',
+
+      // ═══════════ REPORTE 3: CRONOGRAMA ═══════════
+      p4_r3_title: 'Reporte de Cronograma',
+      p4_r3_subtitle: 'Estado de cumplimiento temporal, hitos y análisis de desviaciones del portafolio.',
+      p4_r3_page1_title: 'Estado del Cronograma',
+      p4_r3_page1_meta: 'Análisis Temporal',
+      p4_r3_kpi_section: 'Indicadores de Cronograma',
+      p4_r3_kpi_spi: 'SPI Global',
+      p4_r3_spi_ontime: 'En tiempo',
+      p4_r3_spi_tolerance: 'Tolerancia',
+      p4_r3_spi_delayed: 'Retrasado',
+      p4_r3_kpi_total: 'Total Tareas',
+      p4_r3_kpi_total_sub: 'Portafolio',
+      p4_r3_kpi_completed: 'Completadas',
+      p4_r3_kpi_completed_sub: '{pct} del total',
+      p4_r3_kpi_delayed: 'Rezagadas',
+      p4_r3_kpi_delayed_sub: '{pct} del total',
+      p4_r3_dist_section: 'Distribución de Tareas',
+      p4_r3_gauge_progress: 'Progreso General',
+      p4_r3_bar_completed: 'Completadas',
+      p4_r3_bar_inprogress: 'En curso',
+      p4_r3_bar_delayed: 'Rezagadas',
+      p4_r3_bar_pending: 'Pendientes',
+      p4_r3_page2_title: 'Proyectos con Rezagos',
+      p4_r3_page2_meta: 'Análisis de Riesgos Temporales',
+      p4_r3_col_project: 'Proyecto',
+      p4_r3_col_delayed: 'Tareas Rezagadas',
+      p4_r3_col_progress: 'Progreso',
+      p4_r3_col_status: 'Estado',
+      p4_r3_rec_section: 'Recomendaciones Ejecutivas',
+      p4_r3_rec1_title: 'Fast-Tracking en Ruta Crítica',
+      p4_r3_rec1_text: 'Priorizar tareas bloqueantes y añadir recursos a actividades críticas para recuperar el cronograma.',
+      p4_r3_rec2_title: 'Revisión de Dependencias',
+            p4_r3_rec2_text: 'Auditar dependencias entre tareas y eliminar cuellos de botella que ralentizan el avance.',
+
+      // ═══════════ REPORTE 4: EQUIPO ═══════════
+      p4_r4_title: 'Reporte de Equipo',
+      p4_r4_subtitle: 'Distribución de carga, utilización y performance del equipo asignado al portafolio.',
+      p4_r4_page1_title: 'Resumen del Equipo',
+      p4_r4_page1_meta: 'Análisis de Recursos',
+      p4_r4_kpi_section: 'Indicadores Clave',
+      p4_r4_kpi_people: 'Personas Asignadas',
+      p4_r4_kpi_people_sub: 'En el portafolio',
+      p4_r4_kpi_hours_est: 'Horas Estimadas',
+      p4_r4_kpi_hours_est_sub: 'Planificadas',
+      p4_r4_kpi_hours_log: 'Horas Registradas',
+      p4_r4_kpi_hours_log_sub: 'Reales',
+      p4_r4_kpi_efficiency: 'Eficiencia',
+      p4_r4_kpi_efficiency_sub: 'Registro vs estimación',
+      p4_r4_detail_section: 'Detalle por Persona',
+      p4_r4_col_person: 'Persona',
+      p4_r4_col_tasks: 'Tareas',
+      p4_r4_col_completed: 'Completadas',
+      p4_r4_col_hours_est: 'Horas Est.',
+      p4_r4_col_projects: 'Proyectos',
+            p4_r4_footer_total: 'TOTAL EQUIPO',
+
+      // ═══════════ REPORTE 5: RIESGOS ═══════════
+      p4_r5_title: 'Reporte de Riesgos',
+      p4_r5_subtitle: 'Identificación, evaluación y mitigación de riesgos del portafolio activo.',
+      p4_r5_page1_title: 'Matriz de Riesgos',
+      p4_r5_page1_meta: 'Análisis de Exposición',
+      p4_r5_exposure_section: 'Exposición Total al Riesgo',
+      p4_r5_exposure_label: 'Exposición Agregada del Portafolio',
+      p4_r5_exposure_sub: 'Basado en {count} riesgos identificados · {high} de nivel alto o crítico',
+      p4_r5_risks_section: 'Riesgos Identificados',
+      p4_r5_exposure_word: 'Exposición:',
+      p4_r5_mitigation_word: 'Mitigación:',
+      p4_r5_level_critico: 'CRÍTICO',
+      p4_r5_level_alto: 'ALTO',
+      p4_r5_level_medio: 'MEDIO',
+      p4_r5_level_bajo: 'BAJO',
+      p4_r5_risk1_desc: 'Sobrecosto consolidado en el portafolio',
+      p4_r5_risk1_action: 'Auditoría inmediata de horas y renegociación de contratos',
+      p4_r5_risk2_desc: 'Retraso significativo en el cronograma',
+      p4_r5_risk2_action: 'Fast-tracking en ruta crítica y refuerzo de recursos',
+      p4_r5_risk3_desc: '{count} tareas rezagadas identificadas',
+      p4_r5_risk3_action: 'Reasignación de recursos y revisión de dependencias',
+      p4_r5_risk4_desc: '{count} proyectos sin alcance definido',
+            p4_r5_risk4_action: 'Definir alcance o archivar para limpiar el portafolio',
+
+      // ═══════════ REPORTE 6: COMPARATIVO ═══════════
+      p4_r6_title: 'Reporte Comparativo',
+      p4_r6_subtitle: 'Benchmarking interno del portafolio y ranking de desempeño ejecutivo.',
+      p4_r6_page1_title: 'Ranking de Performance',
+      p4_r6_page1_meta: 'Benchmark Interno',
+      p4_r6_score_section: 'Score Comparativo (CPI + SPI)',
+      p4_r6_table_section: 'Tabla Comparativa Detallada',
+      p4_r6_col_num: '#',
+      p4_r6_col_project: 'Proyecto',
+      p4_r6_col_progress: 'Progreso',
+      p4_r6_col_margin: 'Margen %',
+      p4_r6_col_score: 'Score',
+      p4_r6_analysis_section: 'Análisis Comparativo',
+      p4_r6_leader_text: 'El proyecto {name} lidera el portafolio con un score de {score}/100. ',
+      p4_r6_laggard_text: 'El proyecto {name} requiere mayor atención con un score de {score}/100. ',
+      p4_r6_avg_text: 'La media del portafolio se sitúa en CPI {cpi} y SPI {spi}.',
+
+      // Alertas finales del PDF
+           p4_pdf_allow_popups: 'Permite las ventanas emergentes para generar el reporte.',
+
+      // ═══════════ MÓDULO 5: GOVERNANCE & COMPLIANCE ═══════════
+      p5_no_data: 'No hay datos para auditar',
+      p5_kpi_compliance: 'Compliance Score',
+      p5_kpi_compliance_conform: 'Conforme',
+      p5_kpi_compliance_attention: 'Requiere atención',
+      p5_kpi_compliance_nonconform: 'No conforme',
+      p5_kpi_critical_risks: 'Riesgos Críticos',
+      p5_kpi_critical_sub: 'de {total} identificados',
+      p5_kpi_active_controls: 'Controles Activos',
+      p5_kpi_active_controls_sub: 'evaluados',
+      p5_kpi_total_exposure: 'Exposición Total',
+      p5_kpi_total_exposure_sub: 'valor en riesgo',
+      p5_compliance_section: 'Estado de Cumplimiento Normativo',
+      p5_risk_matrix_section: 'Matriz de Riesgos',
+      p5_col_risk: 'Riesgo',
+      p5_col_probability: 'Probabilidad',
+      p5_col_impact: 'Impacto',
+      p5_col_severity: 'Severidad',
+      p5_col_exposure: 'Exposición',
+      p5_col_mitigation: 'Mitigación',
+      p5_controls_section: 'Controles Internos',
+      p5_audit_section: 'Audit Trail Reciente',
+      p5_audit_empty: 'El registro de auditoría comenzará a acumular datos conforme los usuarios modifiquen proyectos y tareas.',
+      p5_exposure_section: 'Exposición al Riesgo por Proyecto',
+      p5_exposure_item: '{count} riesgos identificados · salud: {health}',
+            p5_recommendations_section: 'Recomendaciones de Governance',
+
+      // Severidad
+      p5_sev_critico: 'Crítico',
+      p5_sev_alto: 'Alto',
+      p5_sev_medio: 'Medio',
+      p5_sev_bajo: 'Bajo',
+
+      // Probabilidad
+      p5_prob_alta: 'Alta',
+      p5_prob_media: 'Media',
+      p5_prob_baja: 'Baja',
+
+      // Impacto
+      p5_imp_alto: 'Alto',
+      p5_imp_medio: 'Medio',
+      p5_imp_bajo: 'Bajo',
+
+      // Estados de controles
+      p5_ctrl_activo: 'Activo',
+      p5_ctrl_parcial: 'Parcial',
+            p5_ctrl_inactivo: 'Inactivo',
+
+      // Nombres de riesgos
+      p5_risk_name_overcost: 'Sobrecosto en {count} proyecto(s)',
+      p5_risk_name_delays: 'Retrasos en {count} proyecto(s)',
+      p5_risk_name_overdue: '{count} tarea(s) rezagadas',
+      p5_risk_name_concentration: 'Concentración: {name}',
+      p5_risk_name_no_scope: '{count} proyecto(s) sin alcance definido',
+      p5_risk_name_dependencies: 'Dependencias entre tareas críticas',
+
+      // Probabilidad
+      p5_prob_alta_risk: 'Alta',
+      p5_prob_media_risk: 'Media',
+
+      // Mitigaciones
+      p5_mit_hours_audit: 'Auditoría de horas + renegociación de contratos',
+      p5_mit_fasttrack: 'Fast-tracking en ruta crítica + refuerzo de recursos',
+      p5_mit_reassign: 'Reasignación de recursos + revisión de dependencias',
+      p5_mit_diversify: 'Diversificación del portafolio + aseguramiento contractual',
+      p5_mit_archive: 'Definir alcance o archivar',
+      p5_mit_contingency: 'Análisis de ruta crítica + plan de contingencia',
+
+      // Áreas de compliance
+      p5_area_traceability: 'Trazabilidad',
+      p5_area_traceability_desc: '{done}/{total} tareas con responsable asignado',
+      p5_area_data: 'Datos Completos',
+      p5_area_data_desc: '{done}/{total} tareas con deadline',
+      p5_area_fin: 'Control Financiero',
+      p5_area_fin_desc: 'CPI {cpi} · {status}',
+      p5_area_fin_ok: 'Bajo control',
+      p5_area_fin_ko: 'Requiere intervención',
+      p5_area_schedule: 'Gobernanza de Cronograma',
+      p5_area_schedule_desc: 'SPI {spi} · {status}',
+      p5_area_schedule_ok: 'Alineado',
+      p5_area_schedule_ko: 'Con desvíos',
+      p5_area_docs: 'Documentación',
+      p5_area_docs_desc: '{count}/4 áreas con controles adecuados',
+
+      // Recomendaciones de compliance
+      p5_rec_assignments: 'Completar asignaciones',
+      p5_rec_assignments_detail: '{count} tareas sin responsable. Obligatorio para trazabilidad completa.',
+      p5_rec_deadlines: 'Definir deadlines',
+      p5_rec_deadlines_detail: '{count} tareas sin fecha límite. Bloquea el análisis de cronograma.',
+      p5_rec_financial: 'Reforzar control financiero',
+      p5_rec_financial_detail: 'Implementar revisiones semanales de CPI y alertas automáticas de sobrecosto.',
+      p5_rec_schedule: 'Recuperar cronograma',
+      p5_rec_schedule_detail: 'Aplicar fast-tracking en ruta crítica y reasignar recursos a tareas bloqueantes.',
+      p5_rec_maintain: 'Mantener compliance actual',
+      p5_rec_maintain_detail: 'Todos los controles están dentro de rango. Continuar con monitoreo semanal.',
+
+      // Controles internos (nombres + descripciones)
+      p5_ctrl_audit_name: 'Registro de auditoría activo',
+      p5_ctrl_audit_desc: 'Los cambios en tareas y proyectos se registran con usuario, timestamp y valores.',
+      p5_ctrl_snapshots_name: 'Snapshots históricos automáticos',
+      p5_ctrl_snapshots_desc: 'KPIs del portafolio capturados cada día para análisis de tendencias.',
+      p5_ctrl_rbac_name: 'Control de acceso por roles',
+      p5_ctrl_rbac_desc: 'Verificación de permisos en todos los endpoints críticos del backend.',
+      p5_ctrl_https_name: 'Cifrado en tránsito (HTTPS)',
+      p5_ctrl_https_desc: 'Todas las comunicaciones cliente-servidor cifradas con TLS 1.3.',
+      p5_ctrl_backups_name: 'Backups automáticos',
+      p5_ctrl_backups_desc: 'Copias de seguridad diarias de la base de datos MongoDB.',
+      p5_ctrl_dr_name: 'Plan de recuperación ante desastres',
+      p5_ctrl_dr_desc: 'Documentar procedimientos y SLA de recuperación.',
+      p5_ctrl_soc2_name: 'Certificación SOC 2',
+      p5_ctrl_soc2_desc: 'Auditoría externa de seguridad y procesos.',
+      p5_ctrl_gdpr_name: 'Cumplimiento GDPR explícito',
+            p5_ctrl_gdpr_desc: 'Política de retención y consentimiento documentada.',
+
+      // ═══════════ MÓDULO 6: INTEGRACIONES ═══════════
+      p6_kpi_active: 'Integraciones Activas',
+      p6_kpi_active_sub: 'conectadas en producción',
+      p6_kpi_roadmap: 'En Roadmap',
+      p6_kpi_roadmap_sub: 'planificadas para 2027',
+      p6_kpi_endpoints: 'API Endpoints',
+      p6_kpi_endpoints_sub: 'REST documentados',
+      p6_kpi_webhooks: 'Webhooks',
+      p6_kpi_webhooks_sub: 'eventos en tiempo real',
+
+      // Badges
+      p6_badge_active: 'ACTIVO',
+      p6_badge_beta: 'BETA',
+      p6_badge_roadmap: 'ROADMAP',
+
+      // Categorías
+      p6_cat_identity: 'Identidad y Acceso',
+      p6_cat_collab: 'Colaboración',
+      p6_cat_projects: 'Proyectos',
+      p6_cat_erp: 'ERP & Finanzas',
+      p6_cat_crm: 'CRM & Ventas',
+      p6_cat_bi: 'Business Intelligence',
+
+      // API
+      p6_api_title: 'API REST Pública',
+      p6_api_desc: 'Todos los endpoints requieren autenticación mediante Bearer Token en el header {code}.',
+      p6_api_col_method: 'Método',
+      p6_api_col_endpoint: 'Endpoint',
+      p6_api_col_desc: 'Descripción',
+
+      // Webhooks
+      p6_wh_title: 'Webhooks Disponibles',
+      p6_wh_desc: 'Configura URLs de callback para recibir notificaciones en tiempo real cuando ocurran eventos en el sistema.',
+
+      // Seguridad
+      p6_sec_title: 'Seguridad Enterprise',
+      p6_sec_jwt: 'JWT Authentication',
+      p6_sec_jwt_desc: 'Tokens firmados con rotación automática',
+      p6_sec_rbac: 'RBAC',
+      p6_sec_rbac_desc: 'Control de acceso basado en roles',
+      p6_sec_https: 'HTTPS/TLS 1.3',
+      p6_sec_https_desc: 'Cifrado extremo a extremo',
+      p6_sec_rate: 'Rate Limiting',
+      p6_sec_rate_desc: 'Protección contra abuso y DDoS',
+      p6_sec_audit: 'Audit Logging',
+      p6_sec_audit_desc: 'Registro completo de operaciones',
+      p6_sec_backup: 'Backups Diarios',
+            p6_sec_backup_desc: 'RPO 24h · RTO 4h',
+
+      // Nombres y detalles de integraciones
+      p6_int_google_name: 'SSO con Google',
+      p6_int_google_detail: 'Login mediante Google Workspace',
+      p6_int_microsoft_name: 'SSO con Microsoft',
+      p6_int_microsoft_detail: 'Login Azure AD (SSO empresarial en desarrollo)',
+      p6_int_ad_name: 'Active Directory / LDAP',
+      p6_int_ad_detail: 'Sincronización con directorio corporativo',
+      p6_int_saml_name: 'SAML 2.0',
+      p6_int_saml_detail: 'Federación de identidad empresarial',
+      p6_int_slack_name: 'Slack',
+      p6_int_slack_detail: 'Notificaciones y comandos',
+      p6_int_teams_name: 'Microsoft Teams',
+      p6_int_teams_detail: 'Reuniones y transcripción automática',
+      p6_int_meet_name: 'Google Meet',
+      p6_int_meet_detail: 'Integración de reuniones',
+      p6_int_jira_name: 'Jira',
+      p6_int_jira_detail: 'Importación y sincronización bidireccional',
+      p6_int_clickup_name: 'ClickUp',
+      p6_int_clickup_detail: 'Sincronización de tareas',
+      p6_int_trello_name: 'Trello',
+      p6_int_trello_detail: 'Importación de tableros',
+      p6_int_asana_name: 'Asana',
+      p6_int_asana_detail: 'Integración de proyectos',
+      p6_int_monday_name: 'Monday.com',
+      p6_int_monday_detail: 'Sincronización de boards',
+      p6_int_sap_name: 'SAP',
+      p6_int_sap_detail: 'Integración con SAP ERP',
+      p6_int_netsuite_name: 'Oracle NetSuite',
+      p6_int_netsuite_detail: 'Sincronización contable',
+      p6_int_quickbooks_name: 'QuickBooks',
+      p6_int_quickbooks_detail: 'Facturación automática',
+      p6_int_stripe_name: 'Stripe',
+      p6_int_stripe_detail: 'Pagos y suscripciones',
+      p6_int_salesforce_name: 'Salesforce',
+      p6_int_salesforce_detail: 'Sincronización de clientes',
+      p6_int_hubspot_name: 'HubSpot',
+      p6_int_hubspot_detail: 'Gestión de leads',
+      p6_int_powerbi_name: 'Power BI',
+      p6_int_powerbi_detail: 'Streaming de datos',
+      p6_int_tableau_name: 'Tableau',
+      p6_int_tableau_detail: 'Exportación de datasets',
+      p6_int_looker_name: 'Looker Studio',
+      p6_int_looker_detail: 'Conectores nativos',
+
+      // Endpoints
+      p6_ep_projects_list: 'Lista todos los proyectos del cliente',
+      p6_ep_projects_upsert: 'Crea o actualiza proyectos',
+      p6_ep_history_kpis: 'Serie temporal de KPIs',
+      p6_ep_history_summary: 'Resumen agregado con tendencias',
+      p6_ep_ai_analyst: 'Consultas al asistente IA',
+      p6_ep_snapshots: 'Guarda snapshot de KPIs',
+      p6_ep_audit: 'Registra cambio en tarea',
+      p6_ep_transcribe: 'Transcribe audio con Whisper',
+      p6_ep_upload: 'Extrae texto de PDF/Excel/Word',
+
+      // Webhooks
+      p6_wh_created: 'Se dispara al crear una tarea',
+      p6_wh_updated: 'Al modificar una tarea existente',
+      p6_wh_overdue: 'Cuando una tarea vence sin completarse',
+      p6_wh_at_risk: 'Proyecto entra en zona de riesgo',
+      p6_wh_budget: 'Costo real supera el presupuestado',
+      p6_wh_milestone: 'Al alcanzar un hito',
+
+      // ═══════════ MÓDULO 7: FINANZAS AVANZADAS ═══════════
+      p7_no_data: 'No hay datos financieros disponibles',
+      p7_kpi_revenue: 'Ingresos Facturables',
+      p7_kpi_revenue_sub: '{h}h facturables',
+      p7_kpi_costs: 'Costes Totales',
+      p7_kpi_costs_sub: 'tarifas internas aplicadas',
+      p7_kpi_margin: 'Margen Bruto',
+      p7_kpi_margin_sub: '{pct} margen',
+      p7_kpi_pending: 'Facturación Pendiente',
+      p7_kpi_pending_sub: '35% por facturar',
+
+      p7_profit_title: '💰 Rentabilidad por Proyecto',
+      p7_col_project: 'Proyecto',
+      p7_col_client_rate: 'Tarifa Cliente',
+      p7_col_internal_rate: 'Tarifa Interna',
+      p7_col_margin_hour: 'Margen/h',
+      p7_col_billable_hours: 'Horas Facturables',
+      p7_col_revenue: 'Ingresos',
+      p7_col_costs: 'Costes',
+      p7_col_margin: 'Margen',
+      p7_col_margin_pct: '% Margen',
+      p7_total_portfolio: 'TOTAL PORTAFOLIO',
+
+      p7_multi_title: '💱 Multi-Moneda',
+      p7_multi_desc: 'Conversión automática para proyectos internacionales:',
+      p7_currency_eur: 'Euro',
+      p7_currency_usd: 'Dólar Americano',
+      p7_currency_gbp: 'Libra Esterlina',
+      p7_currency_mxn: 'Peso Mexicano',
+      p7_rate_word: 'tasa',
+      p7_equivalent_word: 'equivalente',
+
+      p7_costcenter_title: '🏢 Distribución por Centro de Coste',
+      p7_costcenter_desc: 'Asignación de costes por área funcional:',
+      p7_costcenter_ops: 'Operaciones',
+      p7_costcenter_dev: 'Desarrollo',
+      p7_costcenter_consulting: 'Consultoría',
+      p7_costcenter_admin: 'Administración',
+      p7_of_total: 'del total',
+
+      p7_analysis_title: '📊 Análisis de Margen y Rentabilidad',
+      p7_analysis_gross: 'Margen Bruto',
+      p7_analysis_margin_hour: 'Margen por Hora',
+      p7_analysis_per_hour: 'por hora facturable',
+      p7_analysis_avg_price: 'Precio Medio Hora',
+      p7_analysis_avg_price_sub: 'tarifa media cliente',
+      p7_analysis_avg_cost: 'Coste Medio Hora',
+      p7_analysis_avg_cost_sub: 'coste interno medio',
+
+      p7_forecast_title: '🔮 Proyección de Ingresos (próximos 6 meses)',
+      p7_forecast_insight: '💡 Insight financiero:',
+      p7_forecast_insight_text: 'Con la estructura actual y el pipeline proyectado, se espera alcanzar {target} en los próximos 6 meses, asumiendo una tasa de conversión conservadora del 8% mensual.',
+
+      p7_month_feb: 'Feb',
+      p7_month_mar: 'Mar',
+      p7_month_apr: 'Abr',
+      p7_month_may: 'May',
+      p7_month_jun: 'Jun',
+      p7_month_jul: 'Jul',
+
+      // ═══════════ MÓDULO 8: EXECUTIVE EXPERIENCE ═══════════
+      p8_no_data: 'No hay datos para mostrar',
+      p8_hero_score_label: 'Executive Score',
+      p8_hero_updated: 'ACTUALIZADO',
+      p8_hero_estado_optimo: 'óptimo',
+      p8_hero_estado_estable: 'estable',
+      p8_hero_estado_critico: 'crítico',
+      p8_hero_estado_atencion: 'atención',
+
+      // Estado general
+      p8_state_excellent_title: '🏆 Excelencia Ejecutiva',
+      p8_state_excellent_msg: 'El Portafolio opera con rentabilidad positiva, eficiencia de costes y cumplimiento del cronograma. Oportunidad de escalar y consolidar.',
+      p8_state_stable_title: '✅ Operación Estable',
+      p8_state_stable_msg: 'Todos los indicadores en zona de tolerancia. Continuar con monitoreo semanal para mantener el rumbo.',
+      p8_state_critical_title: '🚨 Intervención Necesaria',
+      p8_state_critical_msg: 'El Portafolio muestra desviaciones significativas. Se requiere plan de recuperación ejecutivo en los próximos 7 días.',
+      p8_state_attention_title: '⚠️ Requiere Atención',
+      p8_state_attention_msg: 'Algunos indicadores están fuera de rango óptimo. Recomendamos revisión cercana y acciones correctivas tempranas.',
+
+      // KPIs hero
+      p8_kpi_financial_status: 'Estado Financiero',
+      p8_kpi_financial_optimal: 'Óptimo',
+      p8_kpi_financial_tolerance: 'En tolerancia',
+      p8_kpi_financial_attention: 'Atención',
+      p8_kpi_schedule_status: 'Estado Cronograma',
+      p8_kpi_schedule_ontime: 'En tiempo',
+      p8_kpi_schedule_tolerance: 'Tolerancia',
+      p8_kpi_schedule_delayed: 'Retrasado',
+      p8_kpi_portfolio: 'Portafolio',
+      p8_kpi_portfolio_sub: 'proyectos activos',
+      p8_kpi_total_value: 'Valor Total',
+      p8_kpi_total_value_sub: 'presupuesto Portafolio',
+
+      // Títulos de tarjetas
+      p8_alerts_title: '🚨 Alertas Inteligentes Priorizadas',
+      p8_alerts_empty: '✅ No hay alertas críticas. Todos los indicadores en rango.',
+      p8_decisions_title: '⚡ Decisiones Ejecutivas de Hoy',
+      p8_decisions_sub: 'Las 3 decisiones más importantes que el C-Suite debería tomar hoy:',
+      p8_pulse_title: '💓 Pulso del Equipo',
+      p8_roles_title: '🎯 Vista por Rol Ejecutivo',
+      p8_summary_title: '📌 Resumen Ultra-Ejecutivo (15 segundos)',
+
+      // Niveles de alerta
+      p8_level_critico: 'crítico',
+      p8_level_alto: 'alto',
+      p8_level_medio: 'medio',
+      p8_level_bajo: 'bajo',
+
+      // Alertas
+      p8_alert_crit_title: '{count} proyecto(s) en estado crítico',
+      p8_alert_crit_desc: 'Proyectos con desviaciones severas en CPI y/o SPI: {names}',
+      p8_alert_crit_action: 'Reunión urgente con los PM + plan de recuperación en 48h',
+      p8_alert_overcost_title: 'Sobrecosto proyectado de {amount}',
+      p8_alert_overcost_desc: '{count} proyecto(s) con EAC superior al BAC. Si no se corrige, el Portafolio cerrará por encima del presupuesto.',
+      p8_alert_overcost_action: 'Auditoría financiera + renegociación de alcance',
+      p8_alert_overdue_title: '{count} tareas rezagadas',
+      p8_alert_overdue_desc: 'El volumen de rezagos puede impactar la entrega final y generar penalizaciones contractuales.',
+      p8_alert_overdue_action: 'Reasignación de recursos y revisión de dependencias',
+      p8_alert_empty_title: '{count} proyecto(s) sin datos',
+      p8_alert_empty_desc: 'Proyectos sin tareas definidas. Distorsionan las métricas del Portafolio.',
+      p8_alert_empty_action: 'Definir alcance o archivar',
+
+      // Decisiones
+      p8_dec_restructure_title: 'Reestructurar costes',
+      p8_dec_restructure_detail: 'Aprobar un plan de auditoría de horas y renegociación de contratos para los proyectos con mayor desviación de costes.',
+      p8_dec_recover_title: 'Recuperar cronograma',
+      p8_dec_recover_detail: 'Aprobar refuerzo del equipo en tareas críticas y fast-tracking en la ruta crítica del Portafolio.',
+      p8_dec_accelerate_title: 'Acelerar el crecimiento',
+      p8_dec_accelerate_detail: 'Aprobar la expansión del Portafolio con 2 proyectos adicionales usando el equipo actual.',
+      p8_dec_clean_title: 'Limpiar el Portafolio',
+      p8_dec_clean_detail: 'Decidir sobre {count} proyecto(s) sin alcance: definir tareas o archivar para mantener métricas limpias.',
+      p8_dec_invest_title: 'Invertir en equipo',
+      p8_dec_invest_detail: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del Portafolio.',
+      p8_dec_pricing_title: 'Revisar pricing',
+      p8_dec_pricing_detail: 'Solo {pct}% de proyectos son rentables. Revisar tarifas y costes para mejorar el margen global.',
+      p8_dec_consolidate_title: 'Consolidar contratos',
+      p8_dec_consolidate_detail: 'El {pct}% de los proyectos son rentables. Renegociar contratos con clientes clave para asegurar recurrencia.',
+
+      // Pulso del equipo
+      p8_pulse_productivity: 'Productividad',
+      p8_pulse_avg_load: 'Carga media',
+      p8_pulse_active_tasks: 'Tareas activas',
+      p8_pulse_delays: 'Rezagos',
+
+      // Roles
+      p8_role_ceo_msg: 'Estrategia global bajo control',
+      p8_role_ceo_action: 'Revisar Portafolio mensual',
+      p8_role_cfo_msg: 'Margen total: {pct}',
+      p8_role_cfo_action: 'Auditoría de costes semanal',
+      p8_role_coo_msg: 'SPI: {spi}',
+      p8_role_coo_action: 'Optimizar asignación de recursos',
+      p8_role_pmo_msg: '{count} tareas rezagadas',
+      p8_role_pmo_action: 'Revisar ruta crítica',
+
+      // Resumen ultra
+      p8_sum_where_label: 'Dónde estamos',
+      p8_sum_where_sub: 'avance del Portafolio',
+      p8_sum_ok_label: 'Vamos bien?',
+      p8_sum_ok_yes: '✅ Sí',
+      p8_sum_ok_caution: '⚠️ Con cautela',
+      p8_sum_ok_no: '🔴 No',
+      p8_sum_ok_sub: 'estado global',
+      p8_sum_risk_label: 'Riesgo principal',
+      p8_sum_risk_costs: 'Costes',
+      p8_sum_risk_schedule: 'Cronograma',
+      p8_sum_risk_none: 'Ninguno',
+      p8_sum_risk_sub: 'foco de atención',
+      p8_sum_action_label: 'Acción hoy',
+      p8_sum_action_default: 'Mantener rumbo',
+      p8_sum_action_sub: 'decisión clave'
     },
     en: {
       // Sidebar
@@ -788,7 +1285,504 @@
       p4_r2_cpi_good: 'financial efficiency exceeds the plan',
       p4_r2_cpi_bad: 'less value than expected is being generated for each euro invested',
       p4_r2_margin_negative: 'The projected margin is negative ({margen}), which requires immediate cost audit.',
-      p4_r2_margin_positive: 'The projected margin is positive ({margen}).'
+            p4_r2_margin_positive: 'The projected margin is positive ({margen}).',
+
+      // ═══════════ REPORT 3: SCHEDULE ═══════════
+      p4_r3_title: 'Schedule Report',
+      p4_r3_subtitle: 'Time compliance status, milestones and deviation analysis of the portfolio.',
+      p4_r3_page1_title: 'Schedule Status',
+      p4_r3_page1_meta: 'Time Analysis',
+      p4_r3_kpi_section: 'Schedule Indicators',
+      p4_r3_kpi_spi: 'Global SPI',
+      p4_r3_spi_ontime: 'On time',
+      p4_r3_spi_tolerance: 'Tolerance',
+      p4_r3_spi_delayed: 'Delayed',
+      p4_r3_kpi_total: 'Total Tasks',
+      p4_r3_kpi_total_sub: 'Portfolio',
+      p4_r3_kpi_completed: 'Completed',
+      p4_r3_kpi_completed_sub: '{pct} of total',
+      p4_r3_kpi_delayed: 'Overdue',
+      p4_r3_kpi_delayed_sub: '{pct} of total',
+      p4_r3_dist_section: 'Task Distribution',
+      p4_r3_gauge_progress: 'Overall Progress',
+      p4_r3_bar_completed: 'Completed',
+      p4_r3_bar_inprogress: 'In progress',
+      p4_r3_bar_delayed: 'Overdue',
+      p4_r3_bar_pending: 'Pending',
+      p4_r3_page2_title: 'Projects with Delays',
+      p4_r3_page2_meta: 'Temporal Risk Analysis',
+      p4_r3_col_project: 'Project',
+      p4_r3_col_delayed: 'Overdue Tasks',
+      p4_r3_col_progress: 'Progress',
+      p4_r3_col_status: 'Status',
+      p4_r3_rec_section: 'Executive Recommendations',
+      p4_r3_rec1_title: 'Fast-Tracking on Critical Path',
+      p4_r3_rec1_text: 'Prioritize blocking tasks and add resources to critical activities to recover the schedule.',
+      p4_r3_rec2_title: 'Dependency Review',
+            p4_r3_rec2_text: 'Audit dependencies between tasks and eliminate bottlenecks that slow down progress.',
+
+      // ═══════════ REPORT 4: TEAM ═══════════
+      p4_r4_title: 'Team Report',
+      p4_r4_subtitle: 'Workload distribution, utilization and performance of the team assigned to the portfolio.',
+      p4_r4_page1_title: 'Team Summary',
+      p4_r4_page1_meta: 'Resource Analysis',
+      p4_r4_kpi_section: 'Key Indicators',
+      p4_r4_kpi_people: 'Assigned People',
+      p4_r4_kpi_people_sub: 'In the portfolio',
+      p4_r4_kpi_hours_est: 'Estimated Hours',
+      p4_r4_kpi_hours_est_sub: 'Planned',
+      p4_r4_kpi_hours_log: 'Logged Hours',
+      p4_r4_kpi_hours_log_sub: 'Actual',
+      p4_r4_kpi_efficiency: 'Efficiency',
+      p4_r4_kpi_efficiency_sub: 'Logged vs estimated',
+      p4_r4_detail_section: 'Detail by Person',
+      p4_r4_col_person: 'Person',
+      p4_r4_col_tasks: 'Tasks',
+      p4_r4_col_completed: 'Completed',
+      p4_r4_col_hours_est: 'Est. Hours',
+      p4_r4_col_projects: 'Projects',
+            p4_r4_footer_total: 'TOTAL TEAM',
+
+      // ═══════════ REPORT 5: RISKS ═══════════
+      p4_r5_title: 'Risk Report',
+      p4_r5_subtitle: 'Identification, assessment and mitigation of risks in the active portfolio.',
+      p4_r5_page1_title: 'Risk Matrix',
+      p4_r5_page1_meta: 'Exposure Analysis',
+      p4_r5_exposure_section: 'Total Risk Exposure',
+      p4_r5_exposure_label: 'Aggregate Portfolio Exposure',
+      p4_r5_exposure_sub: 'Based on {count} identified risks · {high} of high or critical level',
+      p4_r5_risks_section: 'Identified Risks',
+      p4_r5_exposure_word: 'Exposure:',
+      p4_r5_mitigation_word: 'Mitigation:',
+      p4_r5_level_critico: 'CRITICAL',
+      p4_r5_level_alto: 'HIGH',
+      p4_r5_level_medio: 'MEDIUM',
+      p4_r5_level_bajo: 'LOW',
+      p4_r5_risk1_desc: 'Consolidated overcost in the portfolio',
+      p4_r5_risk1_action: 'Immediate hours audit and contract renegotiation',
+      p4_r5_risk2_desc: 'Significant schedule delay',
+      p4_r5_risk2_action: 'Fast-tracking on critical path and resource reinforcement',
+      p4_r5_risk3_desc: '{count} overdue tasks identified',
+      p4_r5_risk3_action: 'Resource reallocation and dependency review',
+      p4_r5_risk4_desc: '{count} projects without defined scope',
+            p4_r5_risk4_action: 'Define scope or archive to clean up the portfolio',
+
+      // ═══════════ REPORT 6: COMPARATIVE ═══════════
+      p4_r6_title: 'Comparative Report',
+      p4_r6_subtitle: 'Internal portfolio benchmarking and executive performance ranking.',
+      p4_r6_page1_title: 'Performance Ranking',
+      p4_r6_page1_meta: 'Internal Benchmark',
+      p4_r6_score_section: 'Comparative Score (CPI + SPI)',
+      p4_r6_table_section: 'Detailed Comparative Table',
+      p4_r6_col_num: '#',
+      p4_r6_col_project: 'Project',
+      p4_r6_col_progress: 'Progress',
+      p4_r6_col_margin: 'Margin %',
+      p4_r6_col_score: 'Score',
+      p4_r6_analysis_section: 'Comparative Analysis',
+      p4_r6_leader_text: 'Project {name} leads the portfolio with a score of {score}/100. ',
+      p4_r6_laggard_text: 'Project {name} requires greater attention with a score of {score}/100. ',
+      p4_r6_avg_text: 'The portfolio average stands at CPI {cpi} and SPI {spi}.',
+
+      // Final PDF alerts
+            p4_pdf_allow_popups: 'Allow pop-ups to generate the report.',
+
+      // ═══════════ MODULE 5: GOVERNANCE & COMPLIANCE ═══════════
+      p5_no_data: 'No data to audit',
+      p5_kpi_compliance: 'Compliance Score',
+      p5_kpi_compliance_conform: 'Compliant',
+      p5_kpi_compliance_attention: 'Requires attention',
+      p5_kpi_compliance_nonconform: 'Non-compliant',
+      p5_kpi_critical_risks: 'Critical Risks',
+      p5_kpi_critical_sub: 'of {total} identified',
+      p5_kpi_active_controls: 'Active Controls',
+      p5_kpi_active_controls_sub: 'evaluated',
+      p5_kpi_total_exposure: 'Total Exposure',
+      p5_kpi_total_exposure_sub: 'value at risk',
+      p5_compliance_section: 'Regulatory Compliance Status',
+      p5_risk_matrix_section: 'Risk Matrix',
+      p5_col_risk: 'Risk',
+      p5_col_probability: 'Probability',
+      p5_col_impact: 'Impact',
+      p5_col_severity: 'Severity',
+      p5_col_exposure: 'Exposure',
+      p5_col_mitigation: 'Mitigation',
+      p5_controls_section: 'Internal Controls',
+      p5_audit_section: 'Recent Audit Trail',
+      p5_audit_empty: 'The audit log will begin accumulating data as users modify projects and tasks.',
+      p5_exposure_section: 'Risk Exposure by Project',
+      p5_exposure_item: '{count} identified risks · health: {health}',
+            p5_recommendations_section: 'Governance Recommendations',
+
+      // Severity
+      p5_sev_critico: 'Critical',
+      p5_sev_alto: 'High',
+      p5_sev_medio: 'Medium',
+      p5_sev_bajo: 'Low',
+
+      // Probability
+      p5_prob_alta: 'High',
+      p5_prob_media: 'Medium',
+      p5_prob_baja: 'Low',
+
+      // Impact
+      p5_imp_alto: 'High',
+      p5_imp_medio: 'Medium',
+      p5_imp_bajo: 'Low',
+
+      // Control states
+      p5_ctrl_activo: 'Active',
+      p5_ctrl_parcial: 'Partial',
+            p5_ctrl_inactivo: 'Inactive',
+
+      // Risk names
+      p5_risk_name_overcost: 'Overcost in {count} project(s)',
+      p5_risk_name_delays: 'Delays in {count} project(s)',
+      p5_risk_name_overdue: '{count} overdue task(s)',
+      p5_risk_name_concentration: 'Concentration: {name}',
+      p5_risk_name_no_scope: '{count} project(s) without defined scope',
+      p5_risk_name_dependencies: 'Dependencies between critical tasks',
+
+      // Probability
+      p5_prob_alta_risk: 'High',
+      p5_prob_media_risk: 'Medium',
+
+      // Mitigations
+      p5_mit_hours_audit: 'Hours audit + contract renegotiation',
+      p5_mit_fasttrack: 'Fast-tracking on critical path + resource reinforcement',
+      p5_mit_reassign: 'Resource reallocation + dependency review',
+      p5_mit_diversify: 'Portfolio diversification + contractual assurance',
+      p5_mit_archive: 'Define scope or archive',
+      p5_mit_contingency: 'Critical path analysis + contingency plan',
+
+      // Compliance areas
+      p5_area_traceability: 'Traceability',
+      p5_area_traceability_desc: '{done}/{total} tasks with assigned owner',
+      p5_area_data: 'Complete Data',
+      p5_area_data_desc: '{done}/{total} tasks with deadline',
+      p5_area_fin: 'Financial Control',
+      p5_area_fin_desc: 'CPI {cpi} · {status}',
+      p5_area_fin_ok: 'Under control',
+      p5_area_fin_ko: 'Requires intervention',
+      p5_area_schedule: 'Schedule Governance',
+      p5_area_schedule_desc: 'SPI {spi} · {status}',
+      p5_area_schedule_ok: 'Aligned',
+      p5_area_schedule_ko: 'With deviations',
+      p5_area_docs: 'Documentation',
+      p5_area_docs_desc: '{count}/4 areas with adequate controls',
+
+      // Compliance recommendations
+      p5_rec_assignments: 'Complete assignments',
+      p5_rec_assignments_detail: '{count} tasks without owner. Required for full traceability.',
+      p5_rec_deadlines: 'Define deadlines',
+      p5_rec_deadlines_detail: '{count} tasks without deadline. Blocks schedule analysis.',
+      p5_rec_financial: 'Reinforce financial control',
+      p5_rec_financial_detail: 'Implement weekly CPI reviews and automatic overcost alerts.',
+      p5_rec_schedule: 'Recover schedule',
+      p5_rec_schedule_detail: 'Apply fast-tracking on critical path and reallocate resources to blocking tasks.',
+      p5_rec_maintain: 'Maintain current compliance',
+      p5_rec_maintain_detail: 'All controls are within range. Continue weekly monitoring.',
+
+      // Internal controls
+      p5_ctrl_audit_name: 'Active audit log',
+      p5_ctrl_audit_desc: 'Changes in tasks and projects are recorded with user, timestamp and values.',
+      p5_ctrl_snapshots_name: 'Automatic historical snapshots',
+      p5_ctrl_snapshots_desc: 'Portfolio KPIs captured daily for trend analysis.',
+      p5_ctrl_rbac_name: 'Role-based access control',
+      p5_ctrl_rbac_desc: 'Permission checks on all critical backend endpoints.',
+      p5_ctrl_https_name: 'Encryption in transit (HTTPS)',
+      p5_ctrl_https_desc: 'All client-server communications encrypted with TLS 1.3.',
+      p5_ctrl_backups_name: 'Automatic backups',
+      p5_ctrl_backups_desc: 'Daily backups of the MongoDB database.',
+      p5_ctrl_dr_name: 'Disaster recovery plan',
+      p5_ctrl_dr_desc: 'Document recovery procedures and SLA.',
+      p5_ctrl_soc2_name: 'SOC 2 certification',
+      p5_ctrl_soc2_desc: 'External security and process audit.',
+      p5_ctrl_gdpr_name: 'Explicit GDPR compliance',
+            p5_ctrl_gdpr_desc: 'Documented retention and consent policy.',
+
+      // ═══════════ MODULE 6: INTEGRATIONS ═══════════
+      p6_kpi_active: 'Active Integrations',
+      p6_kpi_active_sub: 'connected in production',
+      p6_kpi_roadmap: 'In Roadmap',
+      p6_kpi_roadmap_sub: 'planned for 2027',
+      p6_kpi_endpoints: 'API Endpoints',
+      p6_kpi_endpoints_sub: 'documented REST',
+      p6_kpi_webhooks: 'Webhooks',
+      p6_kpi_webhooks_sub: 'real-time events',
+
+      // Badges
+      p6_badge_active: 'ACTIVE',
+      p6_badge_beta: 'BETA',
+      p6_badge_roadmap: 'ROADMAP',
+
+      // Categories
+      p6_cat_identity: 'Identity & Access',
+      p6_cat_collab: 'Collaboration',
+      p6_cat_projects: 'Projects',
+      p6_cat_erp: 'ERP & Finance',
+      p6_cat_crm: 'CRM & Sales',
+      p6_cat_bi: 'Business Intelligence',
+
+      // API
+      p6_api_title: 'Public REST API',
+      p6_api_desc: 'All endpoints require authentication via Bearer Token in the {code} header.',
+      p6_api_col_method: 'Method',
+      p6_api_col_endpoint: 'Endpoint',
+      p6_api_col_desc: 'Description',
+
+      // Webhooks
+      p6_wh_title: 'Available Webhooks',
+      p6_wh_desc: 'Configure callback URLs to receive real-time notifications when events occur in the system.',
+
+      // Security
+      p6_sec_title: 'Enterprise Security',
+      p6_sec_jwt: 'JWT Authentication',
+      p6_sec_jwt_desc: 'Signed tokens with automatic rotation',
+      p6_sec_rbac: 'RBAC',
+      p6_sec_rbac_desc: 'Role-based access control',
+      p6_sec_https: 'HTTPS/TLS 1.3',
+      p6_sec_https_desc: 'End-to-end encryption',
+      p6_sec_rate: 'Rate Limiting',
+      p6_sec_rate_desc: 'Protection against abuse and DDoS',
+      p6_sec_audit: 'Audit Logging',
+      p6_sec_audit_desc: 'Complete operations log',
+      p6_sec_backup: 'Daily Backups',
+           p6_sec_backup_desc: 'RPO 24h · RTO 4h',
+
+      // Integration names and details
+      p6_int_google_name: 'SSO with Google',
+      p6_int_google_detail: 'Login via Google Workspace',
+      p6_int_microsoft_name: 'SSO with Microsoft',
+      p6_int_microsoft_detail: 'Azure AD login (enterprise SSO in development)',
+      p6_int_ad_name: 'Active Directory / LDAP',
+      p6_int_ad_detail: 'Corporate directory synchronization',
+      p6_int_saml_name: 'SAML 2.0',
+      p6_int_saml_detail: 'Enterprise identity federation',
+      p6_int_slack_name: 'Slack',
+      p6_int_slack_detail: 'Notifications and commands',
+      p6_int_teams_name: 'Microsoft Teams',
+      p6_int_teams_detail: 'Meetings and automatic transcription',
+      p6_int_meet_name: 'Google Meet',
+      p6_int_meet_detail: 'Meeting integration',
+      p6_int_jira_name: 'Jira',
+      p6_int_jira_detail: 'Import and bidirectional synchronization',
+      p6_int_clickup_name: 'ClickUp',
+      p6_int_clickup_detail: 'Task synchronization',
+      p6_int_trello_name: 'Trello',
+      p6_int_trello_detail: 'Board import',
+      p6_int_asana_name: 'Asana',
+      p6_int_asana_detail: 'Project integration',
+      p6_int_monday_name: 'Monday.com',
+      p6_int_monday_detail: 'Board synchronization',
+      p6_int_sap_name: 'SAP',
+      p6_int_sap_detail: 'SAP ERP integration',
+      p6_int_netsuite_name: 'Oracle NetSuite',
+      p6_int_netsuite_detail: 'Accounting synchronization',
+      p6_int_quickbooks_name: 'QuickBooks',
+      p6_int_quickbooks_detail: 'Automatic invoicing',
+      p6_int_stripe_name: 'Stripe',
+      p6_int_stripe_detail: 'Payments and subscriptions',
+      p6_int_salesforce_name: 'Salesforce',
+      p6_int_salesforce_detail: 'Customer synchronization',
+      p6_int_hubspot_name: 'HubSpot',
+      p6_int_hubspot_detail: 'Lead management',
+      p6_int_powerbi_name: 'Power BI',
+      p6_int_powerbi_detail: 'Data streaming',
+      p6_int_tableau_name: 'Tableau',
+      p6_int_tableau_detail: 'Dataset export',
+      p6_int_looker_name: 'Looker Studio',
+      p6_int_looker_detail: 'Native connectors',
+
+      // Endpoints
+      p6_ep_projects_list: 'List all client projects',
+      p6_ep_projects_upsert: 'Create or update projects',
+      p6_ep_history_kpis: 'KPI time series',
+      p6_ep_history_summary: 'Aggregated summary with trends',
+      p6_ep_ai_analyst: 'Queries to AI assistant',
+      p6_ep_snapshots: 'Save KPI snapshot',
+      p6_ep_audit: 'Log task change',
+      p6_ep_transcribe: 'Transcribe audio with Whisper',
+      p6_ep_upload: 'Extract text from PDF/Excel/Word',
+
+      // Webhooks
+      p6_wh_created: 'Triggered when a task is created',
+      p6_wh_updated: 'When an existing task is modified',
+      p6_wh_overdue: 'When a task becomes overdue without completion',
+      p6_wh_at_risk: 'Project enters at-risk zone',
+      p6_wh_budget: 'Actual cost exceeds budget',
+      p6_wh_milestone: 'When a milestone is reached',
+
+      // ═══════════ MODULE 7: ADVANCED FINANCE ═══════════
+      p7_no_data: 'No financial data available',
+      p7_kpi_revenue: 'Billable Revenue',
+      p7_kpi_revenue_sub: '{h}h billable',
+      p7_kpi_costs: 'Total Costs',
+      p7_kpi_costs_sub: 'internal rates applied',
+      p7_kpi_margin: 'Gross Margin',
+      p7_kpi_margin_sub: '{pct} margin',
+      p7_kpi_pending: 'Pending Invoicing',
+      p7_kpi_pending_sub: '35% to be invoiced',
+
+      p7_profit_title: '💰 Profitability by Project',
+      p7_col_project: 'Project',
+      p7_col_client_rate: 'Client Rate',
+      p7_col_internal_rate: 'Internal Rate',
+      p7_col_margin_hour: 'Margin/h',
+      p7_col_billable_hours: 'Billable Hours',
+      p7_col_revenue: 'Revenue',
+      p7_col_costs: 'Costs',
+      p7_col_margin: 'Margin',
+      p7_col_margin_pct: 'Margin %',
+      p7_total_portfolio: 'TOTAL PORTFOLIO',
+
+      p7_multi_title: '💱 Multi-Currency',
+      p7_multi_desc: 'Automatic conversion for international projects:',
+      p7_currency_eur: 'Euro',
+      p7_currency_usd: 'US Dollar',
+      p7_currency_gbp: 'British Pound',
+      p7_currency_mxn: 'Mexican Peso',
+      p7_rate_word: 'rate',
+      p7_equivalent_word: 'equivalent',
+
+      p7_costcenter_title: '🏢 Cost Center Distribution',
+      p7_costcenter_desc: 'Cost allocation by functional area:',
+      p7_costcenter_ops: 'Operations',
+      p7_costcenter_dev: 'Development',
+      p7_costcenter_consulting: 'Consulting',
+      p7_costcenter_admin: 'Administration',
+      p7_of_total: 'of total',
+
+      p7_analysis_title: '📊 Margin & Profitability Analysis',
+      p7_analysis_gross: 'Gross Margin',
+      p7_analysis_margin_hour: 'Margin per Hour',
+      p7_analysis_per_hour: 'per billable hour',
+      p7_analysis_avg_price: 'Average Hourly Price',
+      p7_analysis_avg_price_sub: 'average client rate',
+      p7_analysis_avg_cost: 'Average Hourly Cost',
+      p7_analysis_avg_cost_sub: 'average internal cost',
+
+      p7_forecast_title: '🔮 Revenue Forecast (next 6 months)',
+      p7_forecast_insight: '💡 Financial insight:',
+      p7_forecast_insight_text: 'With the current structure and projected pipeline, revenue is expected to reach {target} over the next 6 months, assuming a conservative 8% monthly conversion rate.',
+
+      p7_month_feb: 'Feb',
+      p7_month_mar: 'Mar',
+      p7_month_apr: 'Apr',
+      p7_month_may: 'May',
+      p7_month_jun: 'Jun',
+      p7_month_jul: 'Jul',
+
+      // ═══════════ MODULE 8: EXECUTIVE EXPERIENCE ═══════════
+      p8_no_data: 'No data to display',
+      p8_hero_score_label: 'Executive Score',
+      p8_hero_updated: 'UPDATED',
+      p8_hero_estado_optimo: 'optimal',
+      p8_hero_estado_estable: 'stable',
+      p8_hero_estado_critico: 'critical',
+      p8_hero_estado_atencion: 'attention',
+
+      // Overall state
+      p8_state_excellent_title: '🏆 Executive Excellence',
+      p8_state_excellent_msg: 'The portfolio operates with positive profitability, cost efficiency, and schedule compliance. Opportunity to scale and consolidate.',
+      p8_state_stable_title: '✅ Stable Operation',
+      p8_state_stable_msg: 'All indicators are within tolerance. Continue weekly monitoring to stay on course.',
+      p8_state_critical_title: '🚨 Intervention Required',
+      p8_state_critical_msg: 'The portfolio shows significant deviations. An executive recovery plan is required within the next 7 days.',
+      p8_state_attention_title: '⚠️ Requires Attention',
+      p8_state_attention_msg: 'Some indicators are outside the optimal range. We recommend close review and early corrective actions.',
+
+      // Hero KPIs
+      p8_kpi_financial_status: 'Financial Status',
+      p8_kpi_financial_optimal: 'Optimal',
+      p8_kpi_financial_tolerance: 'In tolerance',
+      p8_kpi_financial_attention: 'Attention',
+      p8_kpi_schedule_status: 'Schedule Status',
+      p8_kpi_schedule_ontime: 'On time',
+      p8_kpi_schedule_tolerance: 'Tolerance',
+      p8_kpi_schedule_delayed: 'Delayed',
+      p8_kpi_portfolio: 'Portfolio',
+      p8_kpi_portfolio_sub: 'active projects',
+      p8_kpi_total_value: 'Total Value',
+      p8_kpi_total_value_sub: 'portfolio budget',
+
+      // Card titles
+      p8_alerts_title: '🚨 Prioritized Smart Alerts',
+      p8_alerts_empty: '✅ No critical alerts. All indicators in range.',
+      p8_decisions_title: '⚡ Executive Decisions for Today',
+      p8_decisions_sub: 'The 3 most important decisions the C-Suite should make today:',
+      p8_pulse_title: '💓 Team Pulse',
+      p8_roles_title: '🎯 View by Executive Role',
+      p8_summary_title: '📌 Ultra-Executive Summary (15 seconds)',
+
+      // Alert levels
+      p8_level_critico: 'critical',
+      p8_level_alto: 'high',
+      p8_level_medio: 'medium',
+      p8_level_bajo: 'low',
+
+      // Alerts
+      p8_alert_crit_title: '{count} project(s) in critical state',
+      p8_alert_crit_desc: 'Projects with severe deviations in CPI and/or SPI: {names}',
+      p8_alert_crit_action: 'Urgent meeting with PMs + recovery plan within 48h',
+      p8_alert_overcost_title: 'Projected overcost of {amount}',
+      p8_alert_overcost_desc: '{count} project(s) with EAC above BAC. If not corrected, the portfolio will close over budget.',
+      p8_alert_overcost_action: 'Financial audit + scope renegotiation',
+      p8_alert_overdue_title: '{count} overdue tasks',
+      p8_alert_overdue_desc: 'The volume of overdue tasks may impact final delivery and generate contractual penalties.',
+      p8_alert_overdue_action: 'Resource reallocation and dependency review',
+      p8_alert_empty_title: '{count} project(s) without data',
+      p8_alert_empty_desc: 'Projects without defined tasks. They distort portfolio metrics.',
+      p8_alert_empty_action: 'Define scope or archive',
+
+      // Decisions
+      p8_dec_restructure_title: 'Restructure costs',
+      p8_dec_restructure_detail: 'Approve an hours audit and contract renegotiation plan for the projects with the highest cost deviation.',
+      p8_dec_recover_title: 'Recover schedule',
+      p8_dec_recover_detail: 'Approve team reinforcement on critical tasks and fast-tracking on the portfolio critical path.',
+      p8_dec_accelerate_title: 'Accelerate growth',
+      p8_dec_accelerate_detail: 'Approve portfolio expansion with 2 additional projects using the current team.',
+      p8_dec_clean_title: 'Clean up the portfolio',
+      p8_dec_clean_detail: 'Decide on {count} project(s) without scope: define tasks or archive to keep clean metrics.',
+      p8_dec_invest_title: 'Invest in the team',
+      p8_dec_invest_detail: 'Approve EVM and PMI training plan for PMs, raising portfolio maturity.',
+      p8_dec_pricing_title: 'Review pricing',
+      p8_dec_pricing_detail: 'Only {pct}% of projects are profitable. Review rates and costs to improve overall margin.',
+      p8_dec_consolidate_title: 'Consolidate contracts',
+      p8_dec_consolidate_detail: '{pct}% of projects are profitable. Renegotiate contracts with key clients to secure recurrence.',
+
+      // Team pulse
+      p8_pulse_productivity: 'Productivity',
+      p8_pulse_avg_load: 'Average load',
+      p8_pulse_active_tasks: 'Active tasks',
+      p8_pulse_delays: 'Overdue',
+
+      // Roles
+      p8_role_ceo_msg: 'Global strategy under control',
+      p8_role_ceo_action: 'Review monthly portfolio',
+      p8_role_cfo_msg: 'Total margin: {pct}',
+      p8_role_cfo_action: 'Weekly cost audit',
+      p8_role_coo_msg: 'SPI: {spi}',
+      p8_role_coo_action: 'Optimize resource allocation',
+      p8_role_pmo_msg: '{count} overdue tasks',
+      p8_role_pmo_action: 'Review critical path',
+
+      // Ultra summary
+      p8_sum_where_label: 'Where we are',
+      p8_sum_where_sub: 'portfolio progress',
+      p8_sum_ok_label: 'Are we on track?',
+      p8_sum_ok_yes: '✅ Yes',
+      p8_sum_ok_caution: '⚠️ With caution',
+      p8_sum_ok_no: '🔴 No',
+      p8_sum_ok_sub: 'global status',
+      p8_sum_risk_label: 'Main risk',
+      p8_sum_risk_costs: 'Costs',
+      p8_sum_risk_schedule: 'Schedule',
+      p8_sum_risk_none: 'None',
+      p8_sum_risk_sub: 'focus area',
+      p8_sum_action_label: 'Action today',
+      p8_sum_action_default: 'Stay on course',
+      p8_sum_action_sub: 'key decision'
     }
   };
 
@@ -2601,58 +3595,54 @@
 
        governance: {
       id: 'governance', icon: '🔐', label: 'Governance & Compliance', subtitle: 'Auditoría y riesgos', badge: 'GRC',
-      render(container) {
+            render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-empty">📭 No hay datos para auditar</div>`;
+          container.innerHTML = `<div class="exec-empty">📭 ${t('p5_no_data')}</div>`;
           return;
         }
 
         const agg = DataLayer.aggregate(projects);
-
-        // 1) Matriz de riesgos
         const riesgos = this.identificarRiesgos(projects, agg);
-
-        // 2) Compliance Score
         const compliance = this.calcularCompliance(projects, agg);
-
-        // 3) Audit Trail reciente (de localStorage de auditoría si existe)
         const auditTrail = this.obtenerAuditTrail();
-
-        // 4) Controles internos
         const controles = this.evaluarControles(projects, agg);
-
-        // 5) Exposición al riesgo
         const exposicion = this.calcularExposicion(projects, riesgos);
+
+        const complianceSub = compliance.score >= 80
+          ? t('p5_kpi_compliance_conform')
+          : compliance.score >= 60
+            ? t('p5_kpi_compliance_attention')
+            : t('p5_kpi_compliance_nonconform');
 
         container.innerHTML = `
           <!-- KPIs GOVERNANCE -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:${compliance.score >= 80 ? '#22c55e' : compliance.score >= 60 ? '#fbbf24' : '#ef4444'}">
-              <div class="exec-kpi-label">Compliance Score</div>
+              <div class="exec-kpi-label">${t('p5_kpi_compliance')}</div>
               <div class="exec-kpi-value">${compliance.score}%</div>
-              <div class="exec-kpi-sub">${compliance.score >= 80 ? 'Conforme' : compliance.score >= 60 ? 'Requiere atención' : 'No conforme'}</div>
+              <div class="exec-kpi-sub">${complianceSub}</div>
             </div>
             <div class="exec-kpi" style="--c:#ef4444">
-              <div class="exec-kpi-label">Riesgos Críticos</div>
-              <div class="exec-kpi-value">${riesgos.filter(r => r.severidad === 'crítico').length}</div>
-              <div class="exec-kpi-sub">de ${riesgos.length} identificados</div>
+              <div class="exec-kpi-label">${t('p5_kpi_critical_risks')}</div>
+              <div class="exec-kpi-value">${riesgos.filter(r => r.severidad === 'critico').length}</div>
+              <div class="exec-kpi-sub">${tI('p5_kpi_critical_sub', { total: riesgos.length })}</div>
             </div>
             <div class="exec-kpi" style="--c:#fbbf24">
-              <div class="exec-kpi-label">Controles Activos</div>
+              <div class="exec-kpi-label">${t('p5_kpi_active_controls')}</div>
               <div class="exec-kpi-value">${controles.filter(c => c.estado === 'activo').length}/${controles.length}</div>
-              <div class="exec-kpi-sub">evaluados</div>
+              <div class="exec-kpi-sub">${t('p5_kpi_active_controls_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">Exposición Total</div>
+              <div class="exec-kpi-label">${t('p5_kpi_total_exposure')}</div>
               <div class="exec-kpi-value">${fmt.moneyCompact(exposicion.total)}</div>
-              <div class="exec-kpi-sub">valor en riesgo</div>
+              <div class="exec-kpi-sub">${t('p5_kpi_total_exposure_sub')}</div>
             </div>
           </div>
 
           <!-- COMPLIANCE DASHBOARD -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🛡️ Estado de Cumplimiento Normativo</h3>
+            <h3 class="exec-card-title">🛡️ ${t('p5_compliance_section')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:12px;">
               ${compliance.areas.map(a => {
                 const color = a.score >= 80 ? '#22c55e' : a.score >= 60 ? '#fbbf24' : '#ef4444';
@@ -2674,29 +3664,32 @@
 
           <!-- MATRIZ DE RIESGOS -->
           <div class="exec-card">
-            <h3 class="exec-card-title">⚠️ Matriz de Riesgos</h3>
+            <h3 class="exec-card-title">⚠️ ${t('p5_risk_matrix_section')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Riesgo</th>
-                    <th class="num">Probabilidad</th>
-                    <th class="num">Impacto</th>
-                    <th class="num">Severidad</th>
-                    <th class="num">Exposición</th>
-                    <th>Mitigación</th>
+                    <th>${t('p5_col_risk')}</th>
+                    <th class="num">${t('p5_col_probability')}</th>
+                    <th class="num">${t('p5_col_impact')}</th>
+                    <th class="num">${t('p5_col_severity')}</th>
+                    <th class="num">${t('p5_col_exposure')}</th>
+                    <th>${t('p5_col_mitigation')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${riesgos.map(r => {
-                    const colors = { 'crítico': '#ef4444', 'alto': '#f97316', 'medio': '#fbbf24', 'bajo': '#22c55e' };
+                    const colors = { 'critico': '#ef4444', 'alto': '#f97316', 'medio': '#fbbf24', 'bajo': '#22c55e' };
                     const color = colors[r.severidad] || '#8b7cb8';
+                    const sevLabel = t('p5_sev_' + r.severidad) || r.severidad.toUpperCase();
+                    const probLabel = t('p5_prob_' + r.probabilidad) || r.probabilidad;
+                    const impLabel = t('p5_imp_' + r.impacto) || r.impacto;
                     return `
                       <tr style="--rowc:${color}">
                         <td>${r.nombre}</td>
-                        <td class="num" style="color:${color};">${r.probabilidad}</td>
-                        <td class="num" style="color:${color};">${r.impacto}</td>
-                        <td class="num"><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:900;background:${color}22;color:${color};letter-spacing:1px;">${r.severidad.toUpperCase()}</span></td>
+                        <td class="num" style="color:${color};">${probLabel}</td>
+                        <td class="num" style="color:${color};">${impLabel}</td>
+                        <td class="num"><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:900;background:${color}22;color:${color};letter-spacing:1px;">${sevLabel.toUpperCase()}</span></td>
                         <td class="num" style="font-weight:900;">${fmt.moneyCompact(r.exposicion)}</td>
                         <td style="font-size:12px;color:#b8a4e8;">${r.mitigacion}</td>
                       </tr>
@@ -2710,17 +3703,18 @@
           <!-- CONTROLES INTERNOS -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">🔒 Controles Internos</h3>
+              <h3 class="exec-card-title">🔒 ${t('p5_controls_section')}</h3>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 ${controles.map(c => {
                   const color = c.estado === 'activo' ? '#22c55e' : c.estado === 'parcial' ? '#fbbf24' : '#ef4444';
                   const icon = c.estado === 'activo' ? '✅' : c.estado === 'parcial' ? '⚠️' : '❌';
+                  const estLabel = t('p5_ctrl_' + c.estado) || c.estado.toUpperCase();
                   return `
                     <div style="padding:12px 14px;border-radius:10px;background:rgba(10,5,25,0.5);border-left:3px solid ${color};">
                       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
                         <span style="font-size:16px;">${icon}</span>
                         <span style="font-size:12.5px;font-weight:800;color:#fff;flex:1;">${c.nombre}</span>
-                        <span style="font-size:10px;padding:3px 8px;border-radius:100px;background:${color}22;color:${color};font-weight:800;letter-spacing:1px;">${c.estado.toUpperCase()}</span>
+                        <span style="font-size:10px;padding:3px 8px;border-radius:100px;background:${color}22;color:${color};font-weight:800;letter-spacing:1px;">${estLabel.toUpperCase()}</span>
                       </div>
                       <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${c.descripcion}</div>
                     </div>
@@ -2730,11 +3724,11 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">📜 Audit Trail Reciente</h3>
+              <h3 class="exec-card-title">📜 ${t('p5_audit_section')}</h3>
               ${auditTrail.length === 0 ? `
                 <div class="exec-empty" style="padding:30px;">
                   <div style="font-size:32px;margin-bottom:12px;">📝</div>
-                  <div style="font-size:12px;">El registro de auditoría comenzará a acumular datos conforme los usuarios modifiquen proyectos y tareas.</div>
+                  <div style="font-size:12px;">${t('p5_audit_empty')}</div>
                 </div>
               ` : `
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;">
@@ -2751,7 +3745,7 @@
 
           <!-- EXPOSICIÓN AL RIESGO -->
           <div class="exec-card">
-            <h3 class="exec-card-title">💰 Exposición al Riesgo por Proyecto</h3>
+            <h3 class="exec-card-title">💰 ${t('p5_exposure_section')}</h3>
             <div style="display:flex;flex-direction:column;gap:12px;">
               ${exposicion.porProyecto.map(e => {
                 const pct = (e.exposicion / Math.max(1, exposicion.maxProyecto)) * 100;
@@ -2761,7 +3755,7 @@
                     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                       <div>
                         <div style="font-size:13px;font-weight:800;color:#fff;">${e.nombre}</div>
-                        <div style="font-size:11px;color:#8b7cb8;">${e.riesgos} riesgos identificados · salud: ${e.health}</div>
+                        <div style="font-size:11px;color:#8b7cb8;">${tI('p5_exposure_item', { count: e.riesgos, health: e.health })}</div>
                       </div>
                       <div style="font-size:16px;font-weight:900;color:${color};">${fmt.moneyCompact(e.exposicion)}</div>
                     </div>
@@ -2774,7 +3768,7 @@
 
           <!-- RECOMENDACIONES GRC -->
           <div class="exec-card">
-            <h3 class="exec-card-title">💡 Recomendaciones de Governance</h3>
+            <h3 class="exec-card-title">💡 ${t('p5_recommendations_section')}</h3>
             <div style="display:flex;flex-direction:column;gap:10px;">
               ${compliance.recomendaciones.map(r => `
                 <div style="padding:12px 16px;border-radius:10px;background:linear-gradient(90deg, ${r.color}12, rgba(12,6,30,0.7));border-left:3px solid ${r.color};">
@@ -2786,11 +3780,20 @@
           </div>
         `;
 
-                setTimeout(() => {
+        setTimeout(() => {
           container.querySelectorAll('.exec-bar-fill').forEach(el => {
             el.style.width = el.dataset.w || '0%';
           });
         }, 100);
+      
+
+
+
+
+
+
+
+
 
                 // 📄 Wire de botones de reporte (solo efectos hover; el clic usa onclick inline)
                container.querySelectorAll('.exec-report-btn').forEach(btn => {
@@ -3392,51 +4395,53 @@
           `;
         }
 
-        // ============ 3. REPORTE DE CRONOGRAMA ============
+               // ============ 3. REPORTE DE CRONOGRAMA ============
         else if (tipo === 'cronograma') {
           const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
           const conRezagos = activos.filter(p => p.delayedTasks > 0);
 
-          contenidoHTML = portada('Reporte de Cronograma', 'Estado de cumplimiento temporal, hitos y análisis de desviaciones del Portafolio.') + `
+          const spiStatus = agg.SPI >= 1 ? t('p4_r3_spi_ontime') : agg.SPI >= 0.9 ? t('p4_r3_spi_tolerance') : t('p4_r3_spi_delayed');
+
+          contenidoHTML = portada(t('p4_r3_title'), t('p4_r3_subtitle')) + `
 
           <div class="page">
-            ${pageHeader('Estado del Cronograma', 'Análisis Temporal')}
+            ${pageHeader(t('p4_r3_page1_title'), t('p4_r3_page1_meta'))}
 
             <div class="section">
-              <div class="section-title">Indicadores de Cronograma</div>
+              <div class="section-title">${t('p4_r3_kpi_section')}</div>
               <div class="kpi-grid">
                 <div class="kpi-card" style="--c:${spiColor}">
-                  <div class="kpi-label">SPI Global</div>
+                  <div class="kpi-label">${t('p4_r3_kpi_spi')}</div>
                   <div class="kpi-value">${agg.SPI.toFixed(2)}</div>
-                  <div class="kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : agg.SPI >= 0.9 ? 'Tolerancia' : 'Retrasado'}</div>
+                  <div class="kpi-sub">${spiStatus}</div>
                 </div>
                 <div class="kpi-card" style="--c:#7c3aed">
-                  <div class="kpi-label">Total Tareas</div>
+                  <div class="kpi-label">${t('p4_r3_kpi_total')}</div>
                   <div class="kpi-value">${agg.tasks}</div>
-                  <div class="kpi-sub">Portafolio</div>
+                  <div class="kpi-sub">${t('p4_r3_kpi_total_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:#22c55e">
-                  <div class="kpi-label">Completadas</div>
+                  <div class="kpi-label">${t('p4_r3_kpi_completed')}</div>
                   <div class="kpi-value">${agg.completed}</div>
-                  <div class="kpi-sub">${fmt.pct((agg.completed / Math.max(1, agg.tasks)) * 100)} del total</div>
+                  <div class="kpi-sub">${tI('p4_r3_kpi_completed_sub', { pct: fmt.pct((agg.completed / Math.max(1, agg.tasks)) * 100) })}</div>
                 </div>
                 <div class="kpi-card" style="--c:#ef4444">
-                  <div class="kpi-label">Rezagadas</div>
+                  <div class="kpi-label">${t('p4_r3_kpi_delayed')}</div>
                   <div class="kpi-value">${agg.delayed}</div>
-                  <div class="kpi-sub">${fmt.pct((agg.delayed / Math.max(1, agg.tasks)) * 100)} del total</div>
+                  <div class="kpi-sub">${tI('p4_r3_kpi_delayed_sub', { pct: fmt.pct((agg.delayed / Math.max(1, agg.tasks)) * 100) })}</div>
                 </div>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">Distribución de Tareas</div>
+              <div class="section-title">${t('p4_r3_dist_section')}</div>
               <div style="text-align:center;margin:20px 0;">
-                ${gauge(agg.progresoPct, spiColor, 'Progreso General', agg.progresoPct.toFixed(0) + '%')}
+                ${gauge(agg.progresoPct, spiColor, t('p4_r3_gauge_progress'), agg.progresoPct.toFixed(0) + '%')}
               </div>
-              ${bar('Completadas', agg.completed, agg.tasks, '#22c55e')}
-              ${bar('En curso', activos.reduce((s, p) => s + p.inProgressTasks, 0), agg.tasks, '#f59e0b')}
-              ${bar('Rezagadas', agg.delayed, agg.tasks, '#ef4444')}
-              ${bar('Pendientes', activos.reduce((s, p) => s + p.pendingTasks, 0), agg.tasks, '#a78bfa')}
+              ${bar(t('p4_r3_bar_completed'),  agg.completed, agg.tasks, '#22c55e')}
+              ${bar(t('p4_r3_bar_inprogress'), activos.reduce((s, p) => s + p.inProgressTasks, 0), agg.tasks, '#f59e0b')}
+              ${bar(t('p4_r3_bar_delayed'),    agg.delayed, agg.tasks, '#ef4444')}
+              ${bar(t('p4_r3_bar_pending'),    activos.reduce((s, p) => s + p.pendingTasks, 0), agg.tasks, '#a78bfa')}
             </div>
 
             ${pageFooter(1)}
@@ -3444,16 +4449,16 @@
 
           ${conRezagos.length > 0 ? `
           <div class="page">
-            ${pageHeader('Proyectos con Rezagos', 'Análisis de Riesgos Temporales')}
+            ${pageHeader(t('p4_r3_page2_title'), t('p4_r3_page2_meta'))}
 
             <table class="premium">
               <thead>
                 <tr>
-                  <th>Proyecto</th>
-                  <th class="num">Tareas Rezagadas</th>
+                  <th>${t('p4_r3_col_project')}</th>
+                  <th class="num">${t('p4_r3_col_delayed')}</th>
                   <th class="num">SPI</th>
-                  <th class="num">Progreso</th>
-                  <th style="text-align:center;">Estado</th>
+                  <th class="num">${t('p4_r3_col_progress')}</th>
+                  <th style="text-align:center;">${t('p4_r3_col_status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3469,19 +4474,19 @@
               </tbody>
             </table>
 
-            <div class="section-title" style="margin-top:24px;">Recomendaciones Ejecutivas</div>
+            <div class="section-title" style="margin-top:24px;">${t('p4_r3_rec_section')}</div>
             <div class="insight" style="--ic:#f59e0b;">
               <div class="insight-icon">⚡</div>
               <div class="insight-content">
-                <div class="insight-title">Fast-Tracking en Ruta Crítica</div>
-                <div class="insight-text">Priorizar tareas bloqueantes y añadir recursos a actividades críticas para recuperar el cronograma.</div>
+                <div class="insight-title">${t('p4_r3_rec1_title')}</div>
+                <div class="insight-text">${t('p4_r3_rec1_text')}</div>
               </div>
             </div>
             <div class="insight" style="--ic:#7c3aed;">
               <div class="insight-icon">🎯</div>
               <div class="insight-content">
-                <div class="insight-title">Revisión de Dependencias</div>
-                <div class="insight-text">Auditar dependencias entre tareas y eliminar cuellos de botella que ralentizan el avance.</div>
+                <div class="insight-title">${t('p4_r3_rec2_title')}</div>
+                <div class="insight-text">${t('p4_r3_rec2_text')}</div>
               </div>
             </div>
 
@@ -3491,7 +4496,7 @@
           `;
         }
 
-        // ============ 4. REPORTE DE EQUIPO ============
+               // ============ 4. REPORTE DE EQUIPO ============
         else if (tipo === 'equipo') {
           const personas = {};
           activos.forEach(p => (p.tasks || []).forEach(t => {
@@ -3506,47 +4511,47 @@
           const lista = Object.entries(personas).map(([n, d]) => ({ nombre: n, ...d, proyectos: Array.from(d.proyectos) }));
           const eficiencia = (agg.loggedHours / Math.max(1, agg.totalHours)) * 100;
 
-          contenidoHTML = portada('Reporte de Equipo', 'Distribución de carga, utilización y performance del equipo asignado al Portafolio.') + `
+          contenidoHTML = portada(t('p4_r4_title'), t('p4_r4_subtitle')) + `
 
           <div class="page">
-            ${pageHeader('Resumen del Equipo', 'Análisis de Recursos')}
+            ${pageHeader(t('p4_r4_page1_title'), t('p4_r4_page1_meta'))}
 
             <div class="section">
-              <div class="section-title">Indicadores Clave</div>
+              <div class="section-title">${t('p4_r4_kpi_section')}</div>
               <div class="kpi-grid">
                 <div class="kpi-card" style="--c:#7c3aed">
-                  <div class="kpi-label">Personas Asignadas</div>
+                  <div class="kpi-label">${t('p4_r4_kpi_people')}</div>
                   <div class="kpi-value">${lista.length}</div>
-                  <div class="kpi-sub">En el Portafolio</div>
+                  <div class="kpi-sub">${t('p4_r4_kpi_people_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:#fbbf24">
-                  <div class="kpi-label">Horas Estimadas</div>
+                  <div class="kpi-label">${t('p4_r4_kpi_hours_est')}</div>
                   <div class="kpi-value">${agg.totalHours}h</div>
-                  <div class="kpi-sub">Planificadas</div>
+                  <div class="kpi-sub">${t('p4_r4_kpi_hours_est_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:#22c55e">
-                  <div class="kpi-label">Horas Registradas</div>
+                  <div class="kpi-label">${t('p4_r4_kpi_hours_log')}</div>
                   <div class="kpi-value">${agg.loggedHours}h</div>
-                  <div class="kpi-sub">Reales</div>
+                  <div class="kpi-sub">${t('p4_r4_kpi_hours_log_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:${eficiencia >= 90 ? '#22c55e' : eficiencia >= 70 ? '#f59e0b' : '#ef4444'}">
-                  <div class="kpi-label">Eficiencia</div>
+                  <div class="kpi-label">${t('p4_r4_kpi_efficiency')}</div>
                   <div class="kpi-value">${eficiencia.toFixed(1)}%</div>
-                  <div class="kpi-sub">Registro vs estimación</div>
+                  <div class="kpi-sub">${t('p4_r4_kpi_efficiency_sub')}</div>
                 </div>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">Detalle por Persona</div>
+              <div class="section-title">${t('p4_r4_detail_section')}</div>
               <table class="premium">
                 <thead>
                   <tr>
-                    <th>Persona</th>
-                    <th class="num">Tareas</th>
-                    <th class="num">Completadas</th>
-                    <th class="num">Horas Est.</th>
-                    <th class="num">Proyectos</th>
+                    <th>${t('p4_r4_col_person')}</th>
+                    <th class="num">${t('p4_r4_col_tasks')}</th>
+                    <th class="num">${t('p4_r4_col_completed')}</th>
+                    <th class="num">${t('p4_r4_col_hours_est')}</th>
+                    <th class="num">${t('p4_r4_col_projects')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3562,7 +4567,7 @@
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td>TOTAL EQUIPO</td>
+                    <td>${t('p4_r4_footer_total')}</td>
                     <td class="num">${lista.reduce((s, p) => s + p.tareas, 0)}</td>
                     <td class="num">${lista.reduce((s, p) => s + p.completadas, 0)}</td>
                     <td class="num">${lista.reduce((s, p) => s + p.horas, 0)}h</td>
@@ -3577,45 +4582,81 @@
           `;
         }
 
-        // ============ 5. REPORTE DE RIESGOS ============
+                // ============ 5. REPORTE DE RIESGOS ============
         else if (tipo === 'riesgos') {
           const riesgos = [];
-          if (agg.CPI < 0.9) riesgos.push({ nivel: 'CRÍTICO', color: '#ef4444', desc: 'Sobrecosto consolidado en el Portafolio', exp: Math.abs(agg.VAC), accion: 'Auditoría inmediata de horas y renegociación de contratos' });
-          if (agg.SPI < 0.9) riesgos.push({ nivel: 'ALTO', color: '#f97316', desc: 'Retraso significativo en el cronograma', exp: agg.BAC * 0.15, accion: 'Fast-tracking en ruta crítica y refuerzo de recursos' });
-          if (agg.delayed > 0) riesgos.push({ nivel: agg.delayed > 5 ? 'MEDIO' : 'BAJO', color: agg.delayed > 5 ? '#f59e0b' : '#22c55e', desc: `${agg.delayed} tareas rezagadas identificadas`, exp: agg.delayed * 500, accion: 'Reasignación de recursos y revisión de dependencias' });
+          if (agg.CPI < 0.9) {
+            riesgos.push({
+              nivel: 'critico', color: '#ef4444',
+              descKey: 'p4_r5_risk1_desc', actionKey: 'p4_r5_risk1_action',
+              exp: Math.abs(agg.VAC)
+            });
+          }
+          if (agg.SPI < 0.9) {
+            riesgos.push({
+              nivel: 'alto', color: '#f97316',
+              descKey: 'p4_r5_risk2_desc', actionKey: 'p4_r5_risk2_action',
+              exp: agg.BAC * 0.15
+            });
+          }
+          if (agg.delayed > 0) {
+            riesgos.push({
+              nivel: agg.delayed > 5 ? 'medio' : 'bajo',
+              color: agg.delayed > 5 ? '#f59e0b' : '#22c55e',
+              descKey: 'p4_r5_risk3_desc', descVars: { count: agg.delayed },
+              actionKey: 'p4_r5_risk3_action',
+              exp: agg.delayed * 500
+            });
+          }
           const vacios = projects.filter(p => p.totalTasks === 0);
-          if (vacios.length > 0) riesgos.push({ nivel: 'BAJO', color: '#a78bfa', desc: `${vacios.length} proyectos sin alcance definido`, exp: 0, accion: 'Definir alcance o archivar para limpiar el Portafolio' });
+          if (vacios.length > 0) {
+            riesgos.push({
+              nivel: 'bajo', color: '#a78bfa',
+              descKey: 'p4_r5_risk4_desc', descVars: { count: vacios.length },
+              actionKey: 'p4_r5_risk4_action',
+              exp: 0
+            });
+          }
 
           const exposicionTotal = riesgos.reduce((s, r) => s + r.exp, 0);
 
-          contenidoHTML = portada('Reporte de Riesgos', 'Identificación, evaluación y mitigación de riesgos del Portafolio activo.') + `
+          contenidoHTML = portada(t('p4_r5_title'), t('p4_r5_subtitle')) + `
 
           <div class="page">
-            ${pageHeader('Matriz de Riesgos', 'Análisis de Exposición')}
+            ${pageHeader(t('p4_r5_page1_title'), t('p4_r5_page1_meta'))}
 
             <div class="section">
-              <div class="section-title">Exposición Total al Riesgo</div>
+              <div class="section-title">${t('p4_r5_exposure_section')}</div>
               <div class="highlight-card">
-                <div class="kpi-label">Exposición Agregada del Portafolio</div>
+                <div class="kpi-label">${t('p4_r5_exposure_label')}</div>
                 <div style="font-size:36pt;font-weight:900;color:#fbbf24;line-height:1;margin:12px 0;font-family:'Georgia',serif;">${fmt.money(exposicionTotal)}</div>
-                <div class="kpi-sub">Basado en ${riesgos.length} riesgos identificados · ${riesgos.filter(r => r.nivel === 'CRÍTICO' || r.nivel === 'ALTO').length} de nivel alto o crítico</div>
+                <div class="kpi-sub">${tI('p4_r5_exposure_sub', {
+                  count: riesgos.length,
+                  high: riesgos.filter(r => r.nivel === 'critico' || r.nivel === 'alto').length
+                })}</div>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">Riesgos Identificados</div>
-              ${riesgos.map(r => `
-                <div class="insight" style="--ic:${r.color};">
-                  <div class="insight-icon">${r.nivel === 'CRÍTICO' ? '🚨' : r.nivel === 'ALTO' ? '⚠️' : r.nivel === 'MEDIO' ? '⚡' : 'ℹ️'}</div>
-                  <div class="insight-content">
-                    <div class="insight-title" style="color:${r.color};">[${r.nivel}] ${r.desc}</div>
-                    <div class="insight-text">
-                      <strong>Exposición:</strong> ${fmt.money(r.exp)}<br>
-                      <strong>Mitigación:</strong> ${r.accion}
+              <div class="section-title">${t('p4_r5_risks_section')}</div>
+              ${riesgos.map(r => {
+                const nivelLabel = t('p4_r5_level_' + r.nivel);
+                const desc = r.descVars ? tI(r.descKey, r.descVars) : t(r.descKey);
+                const action = t(r.actionKey);
+                const icon = r.nivel === 'critico' ? '🚨' : r.nivel === 'alto' ? '⚠️' : r.nivel === 'medio' ? '⚡' : 'ℹ️';
+                return `
+                  <div class="insight" style="--ic:${r.color};">
+                    <div class="insight-icon">${icon}</div>
+                    <div class="insight-content">
+                      <div class="insight-title" style="color:${r.color};">[${nivelLabel}] ${desc}</div>
+                      <div class="insight-text">
+                        <strong>${t('p4_r5_exposure_word')}</strong> ${fmt.money(r.exp)}<br>
+                        <strong>${t('p4_r5_mitigation_word')}</strong> ${action}
+                      </div>
                     </div>
                   </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
 
             ${pageFooter(1)}
@@ -3623,18 +4664,36 @@
           `;
         }
 
-        // ============ 6. REPORTE COMPARATIVO ============
+                // ============ 6. REPORTE COMPARATIVO ============
         else if (tipo === 'comparativo') {
           const ordenados = [...activos].sort((a, b) => (b.CPI + b.SPI) - (a.CPI + a.SPI));
           const maxScore = 200;
 
-          contenidoHTML = portada('Reporte Comparativo', 'Benchmarking interno del Portafolio y ranking de desempeño ejecutivo.') + `
+          const leader = ordenados[0];
+          const laggard = ordenados.length > 1 ? ordenados[ordenados.length - 1] : null;
+
+          const leaderText = leader ? tI('p4_r6_leader_text', {
+            name: leader.name,
+            score: Math.round(((leader.CPI + leader.SPI) / 2) * 100)
+          }) : '';
+
+          const laggardText = laggard ? tI('p4_r6_laggard_text', {
+            name: laggard.name,
+            score: Math.round(((laggard.CPI + laggard.SPI) / 2) * 100)
+          }) : '';
+
+          const avgText = tI('p4_r6_avg_text', {
+            cpi: agg.CPI.toFixed(2),
+            spi: agg.SPI.toFixed(2)
+          });
+
+          contenidoHTML = portada(t('p4_r6_title'), t('p4_r6_subtitle')) + `
 
           <div class="page">
-            ${pageHeader('Ranking de Performance', 'Benchmark Interno')}
+            ${pageHeader(t('p4_r6_page1_title'), t('p4_r6_page1_meta'))}
 
             <div class="section">
-              <div class="section-title">Score Comparativo (CPI + SPI)</div>
+              <div class="section-title">${t('p4_r6_score_section')}</div>
               ${ordenados.map((p, i) => {
                 const score = (p.CPI + p.SPI) * 100;
                 const color = score >= 180 ? '#22c55e' : score >= 140 ? '#fbbf24' : '#ef4444';
@@ -3644,17 +4703,17 @@
 
             <div class="divider"></div>
 
-            <div class="section-title">Tabla Comparativa Detallada</div>
+            <div class="section-title">${t('p4_r6_table_section')}</div>
             <table class="premium">
               <thead>
                 <tr>
-                  <th style="width:40px;">#</th>
-                  <th>Proyecto</th>
+                  <th style="width:40px;">${t('p4_r6_col_num')}</th>
+                  <th>${t('p4_r6_col_project')}</th>
                   <th class="num">CPI</th>
                   <th class="num">SPI</th>
-                  <th class="num">Progreso</th>
-                  <th class="num">Margen %</th>
-                  <th class="num">Score</th>
+                  <th class="num">${t('p4_r6_col_progress')}</th>
+                  <th class="num">${t('p4_r6_col_margin')}</th>
+                  <th class="num">${t('p4_r6_col_score')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3677,11 +4736,9 @@
 
             <div class="divider"></div>
 
-            <div class="section-title">Análisis Comparativo</div>
+            <div class="section-title">${t('p4_r6_analysis_section')}</div>
             <div class="story">
-              El proyecto <strong>${ordenados[0]?.name || 'N/A'}</strong> lidera el Portafolio con un score de <strong>${Math.round(((ordenados[0]?.CPI + ordenados[0]?.SPI) / 2) * 100) || 0}</strong>/100.
-              ${ordenados.length > 1 ? `El proyecto <strong>${ordenados[ordenados.length - 1].name}</strong> requiere mayor atención con un score de ${Math.round(((ordenados[ordenados.length - 1].CPI + ordenados[ordenados.length - 1].SPI) / 2) * 100)}/100.` : ''}
-              La media del Portafolio se sitúa en CPI <strong>${agg.CPI.toFixed(2)}</strong> y SPI <strong>${agg.SPI.toFixed(2)}</strong>.
+              ${leaderText}${laggardText}${avgText}
             </div>
 
             ${pageFooter(1)}
@@ -3692,11 +4749,12 @@
         // ============================================================
         // 🖨️ GENERAR Y ABRIR
         // ============================================================
-        const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Executive Report</title><style>${CSS}</style></head><body>${contenidoHTML}</body></html>`;
+                const htmlLang = getLang() === 'en' ? 'en' : 'es';
+        const html = `<!DOCTYPE html><html lang="${htmlLang}"><head><meta charset="utf-8"><title>Executive Report</title><style>${CSS}</style></head><body>${contenidoHTML}</body></html>`;
 
         const w = window.open('', '_blank');
         if (!w) {
-          alert('⚠️ Permite las ventanas emergentes para generar el reporte.');
+          alert('⚠️ ' + t('p4_pdf_allow_popups'));
           return;
         }
         w.document.write(html);
@@ -3728,7 +4786,15 @@
         };
       },
 
-            identificarRiesgos(projects, agg) {
+
+
+
+
+
+
+
+
+                  identificarRiesgos(projects, agg) {
         const riesgos = [];
 
         // Riesgo 1: Proyectos con CPI < 0.9
@@ -3736,12 +4802,12 @@
         if (bajoCPI.length > 0) {
           const exposicion = bajoCPI.reduce((s, p) => s + Math.abs(p.VAC), 0);
           riesgos.push({
-            nombre: `Sobrecosto en ${bajoCPI.length} proyecto(s)`,
-            probabilidad: 'Alta',
-            impacto: 'Alto',
-            severidad: bajoCPI.some(p => p.CPI < 0.85) ? 'crítico' : 'alto',
+            nombre: tI('p5_risk_name_overcost', { count: bajoCPI.length }),
+            probabilidad: 'alta',
+            impacto: 'alto',
+            severidad: bajoCPI.some(p => p.CPI < 0.85) ? 'critico' : 'alto',
             exposicion,
-            mitigacion: 'Auditoría de horas + renegociación de contratos'
+            mitigacion: t('p5_mit_hours_audit')
           });
         }
 
@@ -3750,12 +4816,12 @@
         if (bajoSPI.length > 0) {
           const exposicion = bajoSPI.reduce((s, p) => s + p.BAC * 0.15, 0);
           riesgos.push({
-            nombre: `Retrasos en ${bajoSPI.length} proyecto(s)`,
-            probabilidad: 'Alta',
-            impacto: 'Medio',
+            nombre: tI('p5_risk_name_delays', { count: bajoSPI.length }),
+            probabilidad: 'alta',
+            impacto: 'medio',
             severidad: bajoSPI.some(p => p.SPI < 0.8) ? 'alto' : 'medio',
             exposicion,
-            mitigacion: 'Fast-tracking en ruta crítica + refuerzo de recursos'
+            mitigacion: t('p5_mit_fasttrack')
           });
         }
 
@@ -3763,28 +4829,28 @@
         const totalRezagos = projects.reduce((s, p) => s + p.delayedTasks, 0);
         if (totalRezagos > 0) {
           riesgos.push({
-            nombre: `${totalRezagos} tarea(s) rezagadas`,
-            probabilidad: 'Media',
-            impacto: 'Medio',
+            nombre: tI('p5_risk_name_overdue', { count: totalRezagos }),
+            probabilidad: 'media',
+            impacto: 'medio',
             severidad: totalRezagos > 5 ? 'alto' : 'medio',
             exposicion: totalRezagos * 500,
-            mitigacion: 'Reasignación de recursos + revisión de dependencias'
+            mitigacion: t('p5_mit_reassign')
           });
         }
 
-        // Riesgo 4: Concentración del Portafolio
+        // Riesgo 4: Concentración
         const activos = projects.filter(p => p.BAC > 0);
         if (activos.length > 0 && agg.BAC > 0) {
           const mayor = activos.reduce((max, p) => p.BAC > max.BAC ? p : max, activos[0]);
           const concentracion = (mayor.BAC / agg.BAC) * 100;
           if (concentracion > 50) {
             riesgos.push({
-              nombre: `Concentración: ${mayor.name.substring(0, 25)}`,
-              probabilidad: 'Media',
-              impacto: 'Alto',
-              severidad: concentracion > 70 ? 'crítico' : 'alto',
+              nombre: tI('p5_risk_name_concentration', { name: mayor.name.substring(0, 25) }),
+              probabilidad: 'media',
+              impacto: 'alto',
+              severidad: concentracion > 70 ? 'critico' : 'alto',
               exposicion: mayor.BAC,
-              mitigacion: 'Diversificación del Portafolio + aseguramiento contractual'
+              mitigacion: t('p5_mit_diversify')
             });
           }
         }
@@ -3793,31 +4859,33 @@
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           riesgos.push({
-            nombre: `${vacios.length} proyecto(s) sin alcance definido`,
-            probabilidad: 'Alta',
-            impacto: 'Bajo',
+            nombre: tI('p5_risk_name_no_scope', { count: vacios.length }),
+            probabilidad: 'alta',
+            impacto: 'bajo',
             severidad: 'bajo',
             exposicion: 0,
-            mitigacion: 'Definir alcance o archivar'
+            mitigacion: t('p5_mit_archive')
           });
         }
 
         // Riesgo 6: Dependencias críticas
         riesgos.push({
-          nombre: 'Dependencias entre tareas críticas',
-          probabilidad: 'Media',
-          impacto: 'Medio',
+          nombre: t('p5_risk_name_dependencies'),
+          probabilidad: 'media',
+          impacto: 'medio',
           severidad: 'medio',
           exposicion: agg.BAC * 0.05,
-          mitigacion: 'Análisis de ruta crítica + plan de contingencia'
+          mitigacion: t('p5_mit_contingency')
         });
 
-        // Ordenar por severidad
-        const orden = { 'crítico': 0, 'alto': 1, 'medio': 2, 'bajo': 3 };
+        const orden = { 'critico': 0, 'alto': 1, 'medio': 2, 'bajo': 3 };
         return riesgos.sort((a, b) => orden[a.severidad] - orden[b.severidad]);
       },
 
-      calcularCompliance(projects, agg) {
+
+
+
+            calcularCompliance(projects, agg) {
         const areas = [];
 
         // Área 1: Trazabilidad
@@ -3825,8 +4893,8 @@
         const tareasConAsignado = projects.reduce((s, p) => s + p.tasks.filter(t => t.assignee && t.assignee !== 'Sin asignar').length, 0);
         const trazabilidadScore = totalTareas > 0 ? Math.round((tareasConAsignado / totalTareas) * 100) : 100;
         areas.push({
-          nombre: 'Trazabilidad',
-          descripcion: `${tareasConAsignado}/${totalTareas} tareas con responsable asignado`,
+          nombre: t('p5_area_traceability'),
+          descripcion: tI('p5_area_traceability_desc', { done: tareasConAsignado, total: totalTareas }),
           score: trazabilidadScore
         });
 
@@ -3834,33 +4902,39 @@
         const tareasConDeadline = projects.reduce((s, p) => s + p.tasks.filter(t => t.deadline).length, 0);
         const datosScore = totalTareas > 0 ? Math.round((tareasConDeadline / totalTareas) * 100) : 100;
         areas.push({
-          nombre: 'Datos Completos',
-          descripcion: `${tareasConDeadline}/${totalTareas} tareas con deadline`,
+          nombre: t('p5_area_data'),
+          descripcion: tI('p5_area_data_desc', { done: tareasConDeadline, total: totalTareas }),
           score: datosScore
         });
 
         // Área 3: Control financiero
         const controlFinScore = agg.CPI >= 1 ? 100 : agg.CPI >= 0.9 ? 75 : agg.CPI >= 0.8 ? 50 : 25;
         areas.push({
-          nombre: 'Control Financiero',
-          descripcion: `CPI ${agg.CPI.toFixed(2)} · ${controlFinScore >= 75 ? 'Bajo control' : 'Requiere intervención'}`,
+          nombre: t('p5_area_fin'),
+          descripcion: tI('p5_area_fin_desc', {
+            cpi: agg.CPI.toFixed(2),
+            status: controlFinScore >= 75 ? t('p5_area_fin_ok') : t('p5_area_fin_ko')
+          }),
           score: controlFinScore
         });
 
         // Área 4: Gobernanza de cronograma
         const controlCronoScore = agg.SPI >= 1 ? 100 : agg.SPI >= 0.9 ? 75 : agg.SPI >= 0.8 ? 50 : 25;
         areas.push({
-          nombre: 'Gobernanza de Cronograma',
-          descripcion: `SPI ${agg.SPI.toFixed(2)} · ${controlCronoScore >= 75 ? 'Alineado' : 'Con desvíos'}`,
+          nombre: t('p5_area_schedule'),
+          descripcion: tI('p5_area_schedule_desc', {
+            spi: agg.SPI.toFixed(2),
+            status: controlCronoScore >= 75 ? t('p5_area_schedule_ok') : t('p5_area_schedule_ko')
+          }),
           score: controlCronoScore
         });
 
-        // Área 5: Gestión documental
+        // Área 5: Documentación
         const areasCubiertas = [trazabilidadScore, datosScore, controlFinScore, controlCronoScore].filter(s => s >= 60).length;
         const docScore = Math.round((areasCubiertas / 4) * 100);
         areas.push({
-          nombre: 'Documentación',
-          descripcion: `${areasCubiertas}/4 áreas con controles adecuados`,
+          nombre: t('p5_area_docs'),
+          descripcion: tI('p5_area_docs_desc', { count: areasCubiertas }),
           score: docScore
         });
 
@@ -3870,36 +4944,36 @@
         const recomendaciones = [];
         if (trazabilidadScore < 80) {
           recomendaciones.push({
-            titulo: 'Completar asignaciones',
-            detalle: `${totalTareas - tareasConAsignado} tareas sin responsable. Obligatorio para trazabilidad completa.`,
+            titulo: t('p5_rec_assignments'),
+            detalle: tI('p5_rec_assignments_detail', { count: totalTareas - tareasConAsignado }),
             color: '#fbbf24'
           });
         }
         if (datosScore < 80) {
           recomendaciones.push({
-            titulo: 'Definir deadlines',
-            detalle: `${totalTareas - tareasConDeadline} tareas sin fecha límite. Bloquea el análisis de cronograma.`,
+            titulo: t('p5_rec_deadlines'),
+            detalle: tI('p5_rec_deadlines_detail', { count: totalTareas - tareasConDeadline }),
             color: '#fbbf24'
           });
         }
         if (controlFinScore < 75) {
           recomendaciones.push({
-            titulo: 'Reforzar control financiero',
-            detalle: `Implementar revisiones semanales de CPI y alertas automáticas de sobrecosto.`,
+            titulo: t('p5_rec_financial'),
+            detalle: t('p5_rec_financial_detail'),
             color: '#ef4444'
           });
         }
         if (controlCronoScore < 75) {
           recomendaciones.push({
-            titulo: 'Recuperar cronograma',
-            detalle: `Aplicar fast-tracking en ruta crítica y reasignar recursos a tareas bloqueantes.`,
+            titulo: t('p5_rec_schedule'),
+            detalle: t('p5_rec_schedule_detail'),
             color: '#ef4444'
           });
         }
         if (recomendaciones.length === 0) {
           recomendaciones.push({
-            titulo: 'Mantener compliance actual',
-            detalle: 'Todos los controles están dentro de rango. Continuar con monitoreo semanal.',
+            titulo: t('p5_rec_maintain'),
+            detalle: t('p5_rec_maintain_detail'),
             color: '#22c55e'
           });
         }
@@ -3907,48 +4981,16 @@
         return { score, areas, recomendaciones };
       },
 
-      evaluarControles(projects, agg) {
+            evaluarControles(projects, agg) {
         return [
-          {
-            nombre: 'Registro de auditoría activo',
-            descripcion: 'Los cambios en tareas y proyectos se registran con usuario, timestamp y valores.',
-            estado: 'activo'
-          },
-          {
-            nombre: 'Snapshots históricos automáticos',
-            descripcion: 'KPIs del Portafolio capturados cada día para análisis de tendencias.',
-            estado: 'activo'
-          },
-          {
-            nombre: 'Control de acceso por roles',
-            descripcion: 'Verificación de permisos en todos los endpoints críticos del backend.',
-            estado: 'activo'
-          },
-          {
-            nombre: 'Cifrado en tránsito (HTTPS)',
-            descripcion: 'Todas las comunicaciones cliente-servidor cifradas con TLS 1.3.',
-            estado: 'activo'
-          },
-          {
-            nombre: 'Backups automáticos',
-            descripcion: 'Copias de seguridad diarias de la base de datos MongoDB.',
-            estado: 'activo'
-          },
-          {
-            nombre: 'Plan de recuperación ante desastres',
-            descripcion: 'Documentar procedimientos y SLA de recuperación.',
-            estado: 'parcial'
-          },
-          {
-            nombre: 'Certificación SOC 2',
-            descripcion: 'Auditoría externa de seguridad y procesos.',
-            estado: 'parcial'
-          },
-          {
-            nombre: 'Cumplimiento GDPR explícito',
-            descripcion: 'Política de retención y consentimiento documentada.',
-            estado: 'parcial'
-          }
+          { nombre: t('p5_ctrl_audit_name'),     descripcion: t('p5_ctrl_audit_desc'),     estado: 'activo' },
+          { nombre: t('p5_ctrl_snapshots_name'), descripcion: t('p5_ctrl_snapshots_desc'), estado: 'activo' },
+          { nombre: t('p5_ctrl_rbac_name'),      descripcion: t('p5_ctrl_rbac_desc'),      estado: 'activo' },
+          { nombre: t('p5_ctrl_https_name'),     descripcion: t('p5_ctrl_https_desc'),     estado: 'activo' },
+          { nombre: t('p5_ctrl_backups_name'),   descripcion: t('p5_ctrl_backups_desc'),   estado: 'activo' },
+          { nombre: t('p5_ctrl_dr_name'),        descripcion: t('p5_ctrl_dr_desc'),        estado: 'parcial' },
+          { nombre: t('p5_ctrl_soc2_name'),      descripcion: t('p5_ctrl_soc2_desc'),      estado: 'parcial' },
+          { nombre: t('p5_ctrl_gdpr_name'),      descripcion: t('p5_ctrl_gdpr_desc'),      estado: 'parcial' }
         ];
       },
 
@@ -4005,94 +5047,99 @@
 
 
 
-        integrations: {
+                  integrations: {
       id: 'integrations', icon: '🔌', label: 'Integraciones', subtitle: 'SSO, API, Webhooks', badge: 'IT',
       render(container) {
-        // Estado de integraciones
+
+        // Categorías
+        const CAT = {
+          identity: t('p6_cat_identity'),
+          collab:   t('p6_cat_collab'),
+          projects: t('p6_cat_projects'),
+          erp:      t('p6_cat_erp'),
+          crm:      t('p6_cat_crm'),
+          bi:       t('p6_cat_bi')
+        };
+
+        // Estado de integraciones (nombres/detalles vía i18n)
         const integraciones = [
-          // SSO / Identidad
-          { cat: 'Identidad y Acceso', nombre: 'SSO con Google', icon: '🔐', estado: 'activo', detalle: 'Login mediante Google Workspace' },
-                   { cat: 'Identidad y Acceso', nombre: 'SSO con Microsoft', icon: '🔐', estado: 'beta', detalle: 'Login Azure AD (SSO empresarial en desarrollo)' },
-          { cat: 'Identidad y Acceso', nombre: 'Active Directory / LDAP', icon: '🏢', estado: 'roadmap', detalle: 'Sincronización con directorio corporativo' },
-          { cat: 'Identidad y Acceso', nombre: 'SAML 2.0', icon: '🛡️', estado: 'roadmap', detalle: 'Federación de identidad empresarial' },
+          { cat: CAT.identity, icon: '🔐', estado: 'activo',  nameKey: 'p6_int_google_name',     detailKey: 'p6_int_google_detail' },
+          { cat: CAT.identity, icon: '🔐', estado: 'beta',    nameKey: 'p6_int_microsoft_name',  detailKey: 'p6_int_microsoft_detail' },
+          { cat: CAT.identity, icon: '🏢', estado: 'roadmap', nameKey: 'p6_int_ad_name',         detailKey: 'p6_int_ad_detail' },
+          { cat: CAT.identity, icon: '🛡️', estado: 'roadmap', nameKey: 'p6_int_saml_name',       detailKey: 'p6_int_saml_detail' },
 
-          // Colaboración
-          { cat: 'Colaboración', nombre: 'Slack', icon: '💬', estado: 'activo', detalle: 'Notificaciones y comandos' },
-          { cat: 'Colaboración', nombre: 'Microsoft Teams', icon: '👥', estado: 'activo', detalle: 'Reuniones y transcripción automática' },
-          { cat: 'Colaboración', nombre: 'Google Meet', icon: '📹', estado: 'roadmap', detalle: 'Integración de reuniones' },
+          { cat: CAT.collab, icon: '💬', estado: 'activo',  nameKey: 'p6_int_slack_name',  detailKey: 'p6_int_slack_detail' },
+          { cat: CAT.collab, icon: '👥', estado: 'activo',  nameKey: 'p6_int_teams_name',  detailKey: 'p6_int_teams_detail' },
+          { cat: CAT.collab, icon: '📹', estado: 'roadmap', nameKey: 'p6_int_meet_name',   detailKey: 'p6_int_meet_detail' },
 
-          // Gestión de Proyectos
-          { cat: 'Proyectos', nombre: 'Jira', icon: '📋', estado: 'activo', detalle: 'Importación y sincronización bidireccional' },
-                    { cat: 'Proyectos', nombre: 'ClickUp', icon: '✅', estado: 'roadmap', detalle: 'Sincronización de tareas' },
-          { cat: 'Proyectos', nombre: 'Trello', icon: '📌', estado: 'roadmap', detalle: 'Importación de tableros' },
-          { cat: 'Proyectos', nombre: 'Asana', icon: '🎯', estado: 'roadmap', detalle: 'Integración de proyectos' },
-          { cat: 'Proyectos', nombre: 'Monday.com', icon: '📅', estado: 'roadmap', detalle: 'Sincronización de boards' },
+          { cat: CAT.projects, icon: '📋', estado: 'activo',  nameKey: 'p6_int_jira_name',      detailKey: 'p6_int_jira_detail' },
+          { cat: CAT.projects, icon: '✅', estado: 'roadmap', nameKey: 'p6_int_clickup_name',   detailKey: 'p6_int_clickup_detail' },
+          { cat: CAT.projects, icon: '📌', estado: 'roadmap', nameKey: 'p6_int_trello_name',    detailKey: 'p6_int_trello_detail' },
+          { cat: CAT.projects, icon: '🎯', estado: 'roadmap', nameKey: 'p6_int_asana_name',     detailKey: 'p6_int_asana_detail' },
+          { cat: CAT.projects, icon: '📅', estado: 'roadmap', nameKey: 'p6_int_monday_name',    detailKey: 'p6_int_monday_detail' },
 
-          // ERP / Finanzas
-          { cat: 'ERP & Finanzas', nombre: 'SAP', icon: '🏭', estado: 'roadmap', detalle: 'Integración con SAP ERP' },
-          { cat: 'ERP & Finanzas', nombre: 'Oracle NetSuite', icon: '💼', estado: 'roadmap', detalle: 'Sincronización contable' },
-          { cat: 'ERP & Finanzas', nombre: 'QuickBooks', icon: '📊', estado: 'roadmap', detalle: 'Facturación automática' },
-          { cat: 'ERP & Finanzas', nombre: 'Stripe', icon: '💳', estado: 'activo', detalle: 'Pagos y suscripciones' },
+          { cat: CAT.erp, icon: '🏭', estado: 'roadmap', nameKey: 'p6_int_sap_name',        detailKey: 'p6_int_sap_detail' },
+          { cat: CAT.erp, icon: '💼', estado: 'roadmap', nameKey: 'p6_int_netsuite_name',   detailKey: 'p6_int_netsuite_detail' },
+          { cat: CAT.erp, icon: '📊', estado: 'roadmap', nameKey: 'p6_int_quickbooks_name', detailKey: 'p6_int_quickbooks_detail' },
+          { cat: CAT.erp, icon: '💳', estado: 'activo',  nameKey: 'p6_int_stripe_name',     detailKey: 'p6_int_stripe_detail' },
 
-          // CRM
-          { cat: 'CRM & Ventas', nombre: 'Salesforce', icon: '☁️', estado: 'roadmap', detalle: 'Sincronización de clientes' },
-          { cat: 'CRM & Ventas', nombre: 'HubSpot', icon: '🧡', estado: 'roadmap', detalle: 'Gestión de leads' },
+          { cat: CAT.crm, icon: '☁️', estado: 'roadmap', nameKey: 'p6_int_salesforce_name', detailKey: 'p6_int_salesforce_detail' },
+          { cat: CAT.crm, icon: '🧡', estado: 'roadmap', nameKey: 'p6_int_hubspot_name',    detailKey: 'p6_int_hubspot_detail' },
 
-          // Business Intelligence
-          { cat: 'Business Intelligence', nombre: 'Power BI', icon: '📈', estado: 'activo', detalle: 'Streaming de datos' },
-          { cat: 'Business Intelligence', nombre: 'Tableau', icon: '📉', estado: 'roadmap', detalle: 'Exportación de datasets' },
-          { cat: 'Business Intelligence', nombre: 'Looker Studio', icon: '🔍', estado: 'roadmap', detalle: 'Conectores nativos' }
+          { cat: CAT.bi, icon: '📈', estado: 'activo',  nameKey: 'p6_int_powerbi_name',  detailKey: 'p6_int_powerbi_detail' },
+          { cat: CAT.bi, icon: '📉', estado: 'roadmap', nameKey: 'p6_int_tableau_name',  detailKey: 'p6_int_tableau_detail' },
+          { cat: CAT.bi, icon: '🔍', estado: 'roadmap', nameKey: 'p6_int_looker_name',   detailKey: 'p6_int_looker_detail' }
         ];
 
         const cats = [...new Set(integraciones.map(i => i.cat))];
-                const totalActivas = integraciones.filter(i => i.estado === 'activo').length;
+        const totalActivas = integraciones.filter(i => i.estado === 'activo').length;
         const totalRoadmap = integraciones.filter(i => i.estado === 'roadmap').length;
 
-        // Endpoints de la API pública
+        // Endpoints de la API pública (descripciones vía i18n)
         const endpoints = [
-          { met: 'GET', path: '/api/projects', desc: 'Lista todos los proyectos del cliente' },
-          { met: 'POST', path: '/api/projects', desc: 'Crea o actualiza proyectos' },
-          { met: 'GET', path: '/api/history/kpis/:projectId', desc: 'Serie temporal de KPIs' },
-          { met: 'GET', path: '/api/history/summary/:projectId', desc: 'Resumen agregado con tendencias' },
-          { met: 'POST', path: '/api/ai-analyst', desc: 'Consultas al asistente IA' },
-          { met: 'POST', path: '/api/snapshots/guardar', desc: 'Guarda snapshot de KPIs' },
-          { met: 'POST', path: '/api/audit/task-change', desc: 'Registra cambio en tarea' },
-          { met: 'POST', path: '/api/transcribe', desc: 'Transcribe audio con Whisper' },
-          { met: 'POST', path: '/api/upload-doc', desc: 'Extrae texto de PDF/Excel/Word' }
+          { met: 'GET',  path: '/api/projects',                    descKey: 'p6_ep_projects_list' },
+          { met: 'POST', path: '/api/projects',                    descKey: 'p6_ep_projects_upsert' },
+          { met: 'GET',  path: '/api/history/kpis/:projectId',     descKey: 'p6_ep_history_kpis' },
+          { met: 'GET',  path: '/api/history/summary/:projectId',  descKey: 'p6_ep_history_summary' },
+          { met: 'POST', path: '/api/ai-analyst',                  descKey: 'p6_ep_ai_analyst' },
+          { met: 'POST', path: '/api/snapshots/guardar',           descKey: 'p6_ep_snapshots' },
+          { met: 'POST', path: '/api/audit/task-change',           descKey: 'p6_ep_audit' },
+          { met: 'POST', path: '/api/transcribe',                  descKey: 'p6_ep_transcribe' },
+          { met: 'POST', path: '/api/upload-doc',                  descKey: 'p6_ep_upload' }
         ];
 
-        // Webhooks
+        // Webhooks (descripciones vía i18n)
         const webhooks = [
-          { evento: 'task.created', desc: 'Se dispara al crear una tarea' },
-          { evento: 'task.updated', desc: 'Al modificar una tarea existente' },
-          { evento: 'task.overdue', desc: 'Cuando una tarea vence sin completarse' },
-          { evento: 'project.at-risk', desc: 'Proyecto entra en zona de riesgo' },
-          { evento: 'budget.exceeded', desc: 'Costo real supera el presupuestado' },
-          { evento: 'milestone.reached', desc: 'Al alcanzar un hito' }
+          { evento: 'task.created',     descKey: 'p6_wh_created' },
+          { evento: 'task.updated',     descKey: 'p6_wh_updated' },
+          { evento: 'task.overdue',     descKey: 'p6_wh_overdue' },
+          { evento: 'project.at-risk',  descKey: 'p6_wh_at_risk' },
+          { evento: 'budget.exceeded',  descKey: 'p6_wh_budget' },
+          { evento: 'milestone.reached',descKey: 'p6_wh_milestone' }
         ];
 
         container.innerHTML = `
           <!-- KPIs INTEGRACIONES -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:#22c55e">
-              <div class="exec-kpi-label">Integraciones Activas</div>
+              <div class="exec-kpi-label">${t('p6_kpi_active')}</div>
               <div class="exec-kpi-value">${totalActivas}</div>
-              <div class="exec-kpi-sub">conectadas en producción</div>
+              <div class="exec-kpi-sub">${t('p6_kpi_active_sub')}</div>
             </div>
-                        <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">En Roadmap</div>
+            <div class="exec-kpi" style="--c:#a78bfa">
+              <div class="exec-kpi-label">${t('p6_kpi_roadmap')}</div>
               <div class="exec-kpi-value">${totalRoadmap}</div>
-              <div class="exec-kpi-sub">planificadas para 2027</div>
+              <div class="exec-kpi-sub">${t('p6_kpi_roadmap_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#fbbf24">
-              <div class="exec-kpi-label">API Endpoints</div>
+              <div class="exec-kpi-label">${t('p6_kpi_endpoints')}</div>
               <div class="exec-kpi-value">${endpoints.length}</div>
-              <div class="exec-kpi-sub">REST documentados</div>
+              <div class="exec-kpi-sub">${t('p6_kpi_endpoints_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#67e8f9">
-              <div class="exec-kpi-label">Webhooks</div>
+              <div class="exec-kpi-label">${t('p6_kpi_webhooks')}</div>
               <div class="exec-kpi-value">${webhooks.length}</div>
-              <div class="exec-kpi-sub">eventos en tiempo real</div>
+              <div class="exec-kpi-sub">${t('p6_kpi_webhooks_sub')}</div>
             </div>
           </div>
 
@@ -4103,17 +5150,17 @@
               <div class="exec-card">
                 <h3 class="exec-card-title">🔌 ${cat}</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px;">
-                                    ${items.map(i => {
+                  ${items.map(i => {
                     const color = i.estado === 'activo' ? '#22c55e' : i.estado === 'beta' ? '#fbbf24' : '#a78bfa';
-                    const badge = i.estado === 'activo' ? 'ACTIVO' : i.estado === 'beta' ? 'BETA' : 'ROADMAP';
+                    const badge = i.estado === 'activo' ? t('p6_badge_active') : i.estado === 'beta' ? t('p6_badge_beta') : t('p6_badge_roadmap');
                     return `
                       <div style="padding:14px 16px;border-radius:12px;background:linear-gradient(160deg, ${color}10, rgba(12,6,30,0.75));border:1px solid ${color}40;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                           <span style="font-size:22px;">${i.icon}</span>
                           <span style="font-size:9px;padding:3px 8px;border-radius:100px;background:${color}22;color:${color};font-weight:800;letter-spacing:1px;">${badge}</span>
                         </div>
-                        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${i.nombre}</div>
-                        <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${i.detalle}</div>
+                        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${t(i.nameKey)}</div>
+                        <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${t(i.detailKey)}</div>
                       </div>
                     `;
                   }).join('')}
@@ -4124,17 +5171,17 @@
 
           <!-- API PÚBLICA -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🚀 API REST Pública</h3>
+            <h3 class="exec-card-title">🚀 ${t('p6_api_title')}</h3>
             <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
-              Todos los endpoints requieren autenticación mediante Bearer Token en el header <code style="background:rgba(251,191,36,0.15);padding:2px 6px;border-radius:4px;color:#fbbf24;">Authorization</code>.
+              ${tI('p6_api_desc', { code: '<code style="background:rgba(251,191,36,0.15);padding:2px 6px;border-radius:4px;color:#fbbf24;">Authorization</code>' })}
             </div>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th style="width:80px;">Método</th>
-                    <th style="width:340px;">Endpoint</th>
-                    <th>Descripción</th>
+                    <th style="width:80px;">${t('p6_api_col_method')}</th>
+                    <th style="width:340px;">${t('p6_api_col_endpoint')}</th>
+                    <th>${t('p6_api_col_desc')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4144,7 +5191,7 @@
                       <tr style="--rowc:${metodoColor}">
                         <td><span style="padding:3px 10px;border-radius:6px;font-size:10px;font-weight:900;background:${metodoColor}22;color:${metodoColor};letter-spacing:1px;">${e.met}</span></td>
                         <td style="font-family:'Courier New',monospace;color:#fbbf24;font-weight:800;">${e.path}</td>
-                        <td style="color:#b8a4e8;">${e.desc}</td>
+                        <td style="color:#b8a4e8;">${t(e.descKey)}</td>
                       </tr>
                     `;
                   }).join('')}
@@ -4155,15 +5202,15 @@
 
           <!-- WEBHOOKS -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📡 Webhooks Disponibles</h3>
+            <h3 class="exec-card-title">📡 ${t('p6_wh_title')}</h3>
             <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
-              Configura URLs de callback para recibir notificaciones en tiempo real cuando ocurran eventos en el sistema.
+              ${t('p6_wh_desc')}
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
               ${webhooks.map(w => `
                 <div style="padding:14px 16px;border-radius:12px;background:rgba(10,5,25,0.5);border-left:3px solid #67e8f9;">
                   <div style="font-family:'Courier New',monospace;font-size:12px;font-weight:900;color:#67e8f9;margin-bottom:6px;">${w.evento}</div>
-                  <div style="font-size:11.5px;color:#b8a4e8;line-height:1.5;">${w.desc}</div>
+                  <div style="font-size:11.5px;color:#b8a4e8;line-height:1.5;">${t(w.descKey)}</div>
                 </div>
               `).join('')}
             </div>
@@ -4171,15 +5218,15 @@
 
           <!-- SEGURIDAD ENTERPRISE -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🛡️ Seguridad Enterprise</h3>
+            <h3 class="exec-card-title">🛡️ ${t('p6_sec_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
               ${[
-                { icon: '🔐', titulo: 'JWT Authentication', desc: 'Tokens firmados con rotación automática' },
-                { icon: '🛡️', titulo: 'RBAC', desc: 'Control de acceso basado en roles' },
-                { icon: '🔒', titulo: 'HTTPS/TLS 1.3', desc: 'Cifrado extremo a extremo' },
-                { icon: '🚦', titulo: 'Rate Limiting', desc: 'Protección contra abuso y DDoS' },
-                { icon: '🔍', titulo: 'Audit Logging', desc: 'Registro completo de operaciones' },
-                { icon: '💾', titulo: 'Backups Diarios', desc: 'RPO 24h · RTO 4h' }
+                { icon: '🔐', titulo: t('p6_sec_jwt'),    desc: t('p6_sec_jwt_desc') },
+                { icon: '🛡️', titulo: t('p6_sec_rbac'),   desc: t('p6_sec_rbac_desc') },
+                { icon: '🔒', titulo: t('p6_sec_https'),  desc: t('p6_sec_https_desc') },
+                { icon: '🚦', titulo: t('p6_sec_rate'),   desc: t('p6_sec_rate_desc') },
+                { icon: '🔍', titulo: t('p6_sec_audit'),  desc: t('p6_sec_audit_desc') },
+                { icon: '💾', titulo: t('p6_sec_backup'), desc: t('p6_sec_backup_desc') }
               ].map(s => `
                 <div style="padding:14px;border-radius:12px;background:linear-gradient(160deg, rgba(34,197,94,0.08), rgba(12,6,30,0.75));border:1px solid rgba(34,197,94,0.3);">
                   <div style="font-size:24px;margin-bottom:8px;">${s.icon}</div>
@@ -4196,12 +5243,12 @@
 
 
 
-        finance: {
+           finance: {
       id: 'finance', icon: '💎', label: 'Finanzas Avanzadas', subtitle: 'Facturación y márgenes', badge: 'FIN',
       render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-empty">📭 No hay datos financieros disponibles</div>`;
+          container.innerHTML = `<div class="exec-empty">📭 ${t('p7_no_data')}</div>`;
           return;
         }
 
@@ -4246,61 +5293,61 @@
 
         // Multi-moneda (demo)
         const monedas = [
-          { code: 'EUR', symbol: '€', rate: 1, nombre: 'Euro' },
-          { code: 'USD', symbol: '$', rate: 1.08, nombre: 'Dólar Americano' },
-          { code: 'GBP', symbol: '£', rate: 0.85, nombre: 'Libra Esterlina' },
-          { code: 'MXN', symbol: '$', rate: 20.5, nombre: 'Peso Mexicano' }
+          { code: 'EUR', symbol: '€', rate: 1,    nombre: t('p7_currency_eur') },
+          { code: 'USD', symbol: '$', rate: 1.08, nombre: t('p7_currency_usd') },
+          { code: 'GBP', symbol: '£', rate: 0.85, nombre: t('p7_currency_gbp') },
+          { code: 'MXN', symbol: '$', rate: 20.5, nombre: t('p7_currency_mxn') }
         ];
 
         // Centros de coste (demo)
         const centrosCoste = [
-          { nombre: 'Operaciones', pct: 45, color: '#fbbf24' },
-          { nombre: 'Desarrollo', pct: 30, color: '#22c55e' },
-          { nombre: 'Consultoría', pct: 15, color: '#a78bfa' },
-          { nombre: 'Administración', pct: 10, color: '#67e8f9' }
+          { nombre: t('p7_costcenter_ops'),        pct: 45, color: '#fbbf24' },
+          { nombre: t('p7_costcenter_dev'),        pct: 30, color: '#22c55e' },
+          { nombre: t('p7_costcenter_consulting'), pct: 15, color: '#a78bfa' },
+          { nombre: t('p7_costcenter_admin'),      pct: 10, color: '#67e8f9' }
         ];
 
         container.innerHTML = `
           <!-- KPIs FINANCIEROS AVANZADOS -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:#22c55e">
-              <div class="exec-kpi-label">Ingresos Facturables</div>
+              <div class="exec-kpi-label">${t('p7_kpi_revenue')}</div>
               <div class="exec-kpi-value">${fmt.money(ingresosTotales)}</div>
-              <div class="exec-kpi-sub">${fmt.num(horasTotales)}h facturables</div>
+              <div class="exec-kpi-sub">${tI('p7_kpi_revenue_sub', { h: fmt.num(horasTotales) })}</div>
             </div>
             <div class="exec-kpi" style="--c:#ef4444">
-              <div class="exec-kpi-label">Costes Totales</div>
+              <div class="exec-kpi-label">${t('p7_kpi_costs')}</div>
               <div class="exec-kpi-value">${fmt.money(costesTotales)}</div>
-              <div class="exec-kpi-sub">tarifas internas aplicadas</div>
+              <div class="exec-kpi-sub">${t('p7_kpi_costs_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:${margenTotal >= 0 ? '#22c55e' : '#ef4444'}">
-              <div class="exec-kpi-label">Margen Bruto</div>
+              <div class="exec-kpi-label">${t('p7_kpi_margin')}</div>
               <div class="exec-kpi-value">${margenTotal >= 0 ? '+' : ''}${fmt.money(margenTotal)}</div>
-              <div class="exec-kpi-sub">${fmt.pct(margenTotalPct)} margen</div>
+              <div class="exec-kpi-sub">${tI('p7_kpi_margin_sub', { pct: fmt.pct(margenTotalPct) })}</div>
             </div>
             <div class="exec-kpi" style="--c:#fbbf24">
-              <div class="exec-kpi-label">Facturación Pendiente</div>
+              <div class="exec-kpi-label">${t('p7_kpi_pending')}</div>
               <div class="exec-kpi-value">${fmt.money(facturacionPendiente)}</div>
-              <div class="exec-kpi-sub">35% por facturar</div>
+              <div class="exec-kpi-sub">${t('p7_kpi_pending_sub')}</div>
             </div>
           </div>
 
           <!-- FACTURACIÓN POR PROYECTO -->
           <div class="exec-card">
-            <h3 class="exec-card-title">💰 Rentabilidad por Proyecto</h3>
+            <h3 class="exec-card-title">${t('p7_profit_title')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
-                    <th class="num">Tarifa Cliente</th>
-                    <th class="num">Tarifa Interna</th>
-                    <th class="num">Margen/h</th>
-                    <th class="num">Horas Facturables</th>
-                    <th class="num">Ingresos</th>
-                    <th class="num">Costes</th>
-                    <th class="num">Margen</th>
-                    <th class="num">% Margen</th>
+                    <th>${t('p7_col_project')}</th>
+                    <th class="num">${t('p7_col_client_rate')}</th>
+                    <th class="num">${t('p7_col_internal_rate')}</th>
+                    <th class="num">${t('p7_col_margin_hour')}</th>
+                    <th class="num">${t('p7_col_billable_hours')}</th>
+                    <th class="num">${t('p7_col_revenue')}</th>
+                    <th class="num">${t('p7_col_costs')}</th>
+                    <th class="num">${t('p7_col_margin')}</th>
+                    <th class="num">${t('p7_col_margin_pct')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4323,7 +5370,7 @@
                 </tbody>
                 <tfoot>
                   <tr style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(139,92,246,0.1));">
-                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">TOTAL Portafolio</td>
+                    <td style="font-weight:900;color:#fbbf24;border-left:3px solid #fbbf24;">${t('p7_total_portfolio')}</td>
                     <td class="num">—</td>
                     <td class="num">—</td>
                     <td class="num">—</td>
@@ -4341,9 +5388,9 @@
           <!-- MULTI-MONEDA + CENTROS DE COSTE -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">💱 Multi-Moneda</h3>
+              <h3 class="exec-card-title">${t('p7_multi_title')}</h3>
               <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
-                Conversión automática para proyectos internacionales:
+                ${t('p7_multi_desc')}
               </div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 ${monedas.map(m => {
@@ -4353,11 +5400,11 @@
                       <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
                           <div style="font-size:13px;font-weight:800;color:#fff;">${m.nombre}</div>
-                          <div style="font-size:11px;color:#8b7cb8;">${m.code} · tasa ${m.rate}</div>
+                          <div style="font-size:11px;color:#8b7cb8;">${m.code} · ${t('p7_rate_word')} ${m.rate}</div>
                         </div>
                         <div style="text-align:right;">
-                          <div style="font-size:16px;font-weight:900;color:#67e8f9;">${m.symbol}${Math.round(valorConvertido).toLocaleString('es-ES')}</div>
-                          <div style="font-size:10px;color:#8b7cb8;">equivalente</div>
+                          <div style="font-size:16px;font-weight:900;color:#67e8f9;">${m.symbol}${Math.round(valorConvertido).toLocaleString(getLang() === 'en' ? 'en-US' : 'es-ES')}</div>
+                          <div style="font-size:10px;color:#8b7cb8;">${t('p7_equivalent_word')}</div>
                         </div>
                       </div>
                     </div>
@@ -4367,9 +5414,9 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">🏢 Distribución por Centro de Coste</h3>
+              <h3 class="exec-card-title">${t('p7_costcenter_title')}</h3>
               <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
-                Asignación de costes por área funcional:
+                ${t('p7_costcenter_desc')}
               </div>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${centrosCoste.map(c => {
@@ -4381,7 +5428,7 @@
                         <span style="font-size:13px;font-weight:900;color:${c.color};">${fmt.money(valor)}</span>
                       </div>
                       <div class="exec-bar"><div class="exec-bar-fill" style="--c:${c.color};width:0" data-w="${c.pct}%"></div></div>
-                      <div style="font-size:10px;color:#8b7cb8;margin-top:2px;">${c.pct}% del total</div>
+                      <div style="font-size:10px;color:#8b7cb8;margin-top:2px;">${c.pct}% ${t('p7_of_total')}</div>
                     </div>
                   `;
                 }).join('')}
@@ -4391,13 +5438,13 @@
 
           <!-- ANÁLISIS DE MARGEN -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📊 Análisis de Margen y Rentabilidad</h3>
+            <h3 class="exec-card-title">${t('p7_analysis_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
               ${[
-                { label: 'Margen Bruto', valor: fmt.money(margenTotal), sub: fmt.pct(margenTotalPct), color: margenTotal >= 0 ? '#22c55e' : '#ef4444', icon: '💵' },
-                { label: 'Margen por Hora', valor: fmt.money(horasTotales > 0 ? margenTotal / horasTotales : 0), sub: 'por hora facturable', color: '#fbbf24', icon: '⏱️' },
-                { label: 'Precio Medio Hora', valor: fmt.money(horasTotales > 0 ? ingresosTotales / horasTotales : 0), sub: 'tarifa media cliente', color: '#a78bfa', icon: '📈' },
-                { label: 'Coste Medio Hora', valor: fmt.money(horasTotales > 0 ? costesTotales / horasTotales : 0), sub: 'coste interno medio', color: '#67e8f9', icon: '📉' }
+                { label: t('p7_analysis_gross'),        valor: fmt.money(margenTotal),                                          sub: fmt.pct(margenTotalPct),                       color: margenTotal >= 0 ? '#22c55e' : '#ef4444', icon: '💵' },
+                { label: t('p7_analysis_margin_hour'),  valor: fmt.money(horasTotales > 0 ? margenTotal / horasTotales : 0),       sub: t('p7_analysis_per_hour'),                     color: '#fbbf24', icon: '⏱️' },
+                { label: t('p7_analysis_avg_price'),    valor: fmt.money(horasTotales > 0 ? ingresosTotales / horasTotales : 0),   sub: t('p7_analysis_avg_price_sub'),                color: '#a78bfa', icon: '📈' },
+                { label: t('p7_analysis_avg_cost'),     valor: fmt.money(horasTotales > 0 ? costesTotales / horasTotales : 0),     sub: t('p7_analysis_avg_cost_sub'),                 color: '#67e8f9', icon: '📉' }
               ].map(k => `
                 <div style="padding:16px;border-radius:12px;background:linear-gradient(160deg, ${k.color}12, rgba(12,6,30,0.7));border:1px solid ${k.color}40;">
                   <div style="font-size:22px;margin-bottom:8px;">${k.icon}</div>
@@ -4411,24 +5458,30 @@
 
           <!-- PROYECCIONES -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🔮 Proyección de Ingresos (próximos 6 meses)</h3>
+            <h3 class="exec-card-title">${t('p7_forecast_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
-              ${['Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'].map((mes, i) => {
-                const factor = 1 + (i * 0.08);
-                const proyeccion = ingresosTotales * factor;
+              ${[
+                { key: 'p7_month_feb', factor: 1.00 },
+                { key: 'p7_month_mar', factor: 1.08 },
+                { key: 'p7_month_apr', factor: 1.16 },
+                { key: 'p7_month_may', factor: 1.24 },
+                { key: 'p7_month_jun', factor: 1.32 },
+                { key: 'p7_month_jul', factor: 1.40 }
+              ].map((m, i) => {
+                const proyeccion = ingresosTotales * m.factor;
                 const color = i < 3 ? '#22c55e' : i < 5 ? '#fbbf24' : '#a78bfa';
                 return `
                   <div style="padding:14px;border-radius:12px;background:linear-gradient(160deg, ${color}12, rgba(12,6,30,0.7));border:1px solid ${color}40;text-align:center;">
-                    <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${mes}</div>
+                    <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${t(m.key)}</div>
                     <div style="font-size:18px;font-weight:900;color:${color};">${fmt.moneyCompact(proyeccion)}</div>
-                    <div style="font-size:10px;color:#8b7cb8;margin-top:6px;">+${((factor - 1) * 100).toFixed(0)}%</div>
+                    <div style="font-size:10px;color:#8b7cb8;margin-top:6px;">+${((m.factor - 1) * 100).toFixed(0)}%</div>
                   </div>
                 `;
               }).join('')}
             </div>
             <div style="margin-top:16px;padding:14px;border-radius:10px;background:rgba(10,5,25,0.5);font-size:12px;color:#b8a4e8;line-height:1.6;">
-              <strong style="color:#fbbf24;">💡 Insight financiero:</strong>
-              Con la estructura actual y el pipeline proyectado, se espera alcanzar <strong style="color:#22c55e;">${fmt.moneyCompact(ingresosTotales * 1.4)}</strong> en los próximos 6 meses, asumiendo una tasa de conversión conservadora del 8% mensual.
+              <strong style="color:#fbbf24;">${t('p7_forecast_insight')}</strong>
+              ${tI('p7_forecast_insight_text', { target: `<strong style="color:#22c55e;">${fmt.moneyCompact(ingresosTotales * 1.4)}</strong>` })}
             </div>
           </div>
         `;
@@ -4442,25 +5495,23 @@
     },
 
 
-       experience: {
+             experience: {
       id: 'experience', icon: '📱', label: 'Executive Experience', subtitle: 'Vista C-Suite', badge: 'VIP',
       render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-empty">📭 No hay datos para mostrar</div>`;
+          container.innerHTML = `<div class="exec-empty">📭 ${t('p8_no_data')}</div>`;
           return;
         }
 
         const agg = DataLayer.aggregate(projects);
         const activos = projects.filter(p => p.totalTasks > 0);
 
-        // Estado general para el CEO (interpretación ejecutiva)
         const estadoGeneral = this.interpretarEstado(agg);
         const alertas = this.generarAlertas(projects, agg);
         const decisionesDelDia = this.generarDecisiones(projects, agg);
         const pulsoEquipo = this.calcularPulsoEquipo(projects);
 
-        // Score general ejecutivo (0-100)
         const scoreGeneral = Math.round(
           (Math.min(1.5, agg.CPI) / 1.5 * 30) +
           (Math.min(1.5, agg.SPI) / 1.5 * 30) +
@@ -4469,6 +5520,9 @@
         );
 
         const scoreColor = scoreGeneral >= 80 ? '#22c55e' : scoreGeneral >= 60 ? '#fbbf24' : scoreGeneral >= 40 ? '#f97316' : '#ef4444';
+
+        const locale = getLang() === 'en' ? 'en-US' : 'es-ES';
+        const horaActual = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
         container.innerHTML = `
           <!-- HERO EJECUTIVO -->
@@ -4479,7 +5533,7 @@
                   ${scoreGeneral}
                 </div>
                 <div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">
-                  Executive Score
+                  ${t('p8_hero_score_label')}
                 </div>
               </div>
               <div style="flex:1;min-width:280px;">
@@ -4490,7 +5544,7 @@
                     ${estadoGeneral.estado.toUpperCase()}
                   </span>
                   <span style="padding:6px 14px;border-radius:100px;background:rgba(251,191,36,0.15);color:#fbbf24;font-size:11px;font-weight:800;letter-spacing:1px;">
-                    ACTUALIZADO ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    ${t('p8_hero_updated')} ${horaActual}
                   </span>
                 </div>
               </div>
@@ -4500,33 +5554,33 @@
           <!-- KPIs EJECUTIVOS -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:${agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#fbbf24' : '#ef4444'}">
-              <div class="exec-kpi-label">Estado Financiero</div>
+              <div class="exec-kpi-label">${t('p8_kpi_financial_status')}</div>
               <div class="exec-kpi-value">${agg.CPI.toFixed(2)}</div>
-              <div class="exec-kpi-sub">${agg.CPI >= 1 ? 'Óptimo' : agg.CPI >= 0.9 ? 'En tolerancia' : 'Atención'}</div>
+              <div class="exec-kpi-sub">${agg.CPI >= 1 ? t('p8_kpi_financial_optimal') : agg.CPI >= 0.9 ? t('p8_kpi_financial_tolerance') : t('p8_kpi_financial_attention')}</div>
             </div>
             <div class="exec-kpi" style="--c:${agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444'}">
-              <div class="exec-kpi-label">Estado Cronograma</div>
+              <div class="exec-kpi-label">${t('p8_kpi_schedule_status')}</div>
               <div class="exec-kpi-value">${agg.SPI.toFixed(2)}</div>
-              <div class="exec-kpi-sub">${agg.SPI >= 1 ? 'En tiempo' : agg.SPI >= 0.9 ? 'Tolerancia' : 'Retrasado'}</div>
+              <div class="exec-kpi-sub">${agg.SPI >= 1 ? t('p8_kpi_schedule_ontime') : agg.SPI >= 0.9 ? t('p8_kpi_schedule_tolerance') : t('p8_kpi_schedule_delayed')}</div>
             </div>
             <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">Portafolio</div>
+              <div class="exec-kpi-label">${t('p8_kpi_portfolio')}</div>
               <div class="exec-kpi-value">${activos.length}</div>
-              <div class="exec-kpi-sub">proyectos activos</div>
+              <div class="exec-kpi-sub">${t('p8_kpi_portfolio_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#67e8f9">
-              <div class="exec-kpi-label">Valor Total</div>
+              <div class="exec-kpi-label">${t('p8_kpi_total_value')}</div>
               <div class="exec-kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
-              <div class="exec-kpi-sub">presupuesto Portafolio</div>
+              <div class="exec-kpi-sub">${t('p8_kpi_total_value_sub')}</div>
             </div>
           </div>
 
           <!-- ALERTAS INTELIGENTES -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🚨 Alertas Inteligentes Priorizadas</h3>
+            <h3 class="exec-card-title">${t('p8_alerts_title')}</h3>
             ${alertas.length === 0 ? `
               <div style="text-align:center;padding:30px;color:#22c55e;font-size:13px;">
-                ✅ No hay alertas críticas. Todos los indicadores en rango.
+                ${t('p8_alerts_empty')}
               </div>
             ` : `
               <div style="display:flex;flex-direction:column;gap:12px;">
@@ -4551,9 +5605,9 @@
 
           <!-- DECISIONES DEL DÍA -->
           <div class="exec-card">
-            <h3 class="exec-card-title">⚡ Decisiones Ejecutivas de Hoy</h3>
+            <h3 class="exec-card-title">${t('p8_decisions_title')}</h3>
             <div style="font-size:12px;color:#8b7cb8;margin-bottom:16px;">
-              Las 3 decisiones más importantes que el C-Suite debería tomar hoy:
+              ${t('p8_decisions_sub')}
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
               ${decisionesDelDia.map((d, i) => `
@@ -4571,7 +5625,7 @@
           <!-- PULSO DEL EQUIPO + VISTA POR ROL -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">💓 Pulso del Equipo</h3>
+              <h3 class="exec-card-title">${t('p8_pulse_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:14px;">
                 ${pulsoEquipo.map(p => `
                   <div>
@@ -4586,13 +5640,13 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">🎯 Vista por Rol Ejecutivo</h3>
+              <h3 class="exec-card-title">${t('p8_roles_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${[
-                  { rol: 'CEO', icon: '👔', color: '#fbbf24', mensaje: estadoGeneral.mensajeCEO || 'Estrategia global bajo control', accion: 'Revisar Portafolio mensual' },
-                  { rol: 'CFO', icon: '💰', color: '#22c55e', mensaje: `Margen total: ${fmt.pct(agg.margenPct)}`, accion: 'Auditoría de costes semanal' },
-                  { rol: 'COO', icon: '⚙️', color: '#a78bfa', mensaje: `SPI: ${agg.SPI.toFixed(2)}`, accion: 'Optimizar asignación de recursos' },
-                  { rol: 'PMO', icon: '🎯', color: '#67e8f9', mensaje: `${agg.delayed} tareas rezagadas`, accion: 'Revisar ruta crítica' }
+                  { rol: 'CEO', icon: '👔', color: '#fbbf24', mensaje: t('p8_role_ceo_msg'), accion: t('p8_role_ceo_action') },
+                  { rol: 'CFO', icon: '💰', color: '#22c55e', mensaje: tI('p8_role_cfo_msg', { pct: fmt.pct(agg.margenPct) }), accion: t('p8_role_cfo_action') },
+                  { rol: 'COO', icon: '⚙️', color: '#a78bfa', mensaje: tI('p8_role_coo_msg', { spi: agg.SPI.toFixed(2) }), accion: t('p8_role_coo_action') },
+                  { rol: 'PMO', icon: '🎯', color: '#67e8f9', mensaje: tI('p8_role_pmo_msg', { count: agg.delayed }), accion: t('p8_role_pmo_action') }
                 ].map(r => `
                   <div style="padding:12px 14px;border-radius:10px;background:linear-gradient(90deg, ${r.color}12, rgba(12,6,30,0.7));border-left:3px solid ${r.color};">
                     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -4607,15 +5661,30 @@
             </div>
           </div>
 
-          <!-- RESUMEN ULTRA-LIMPIO PARA CEO -->
+          <!-- RESUMEN ULTRA-LIMPIO -->
           <div class="exec-card" style="background:linear-gradient(135deg, rgba(20,10,50,0.95), rgba(6,4,24,1));">
-            <h3 class="exec-card-title">📌 Resumen Ultra-Ejecutivo (15 segundos)</h3>
+            <h3 class="exec-card-title">${t('p8_summary_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
               ${[
-                { label: 'Dónde estamos', value: `${agg.progresoPct.toFixed(0)}%`, sub: 'avance del Portafolio', color: '#fbbf24' },
-                { label: 'Vamos bien?', value: agg.CPI >= 1 && agg.SPI >= 1 ? '✅ Sí' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '⚠️ Con cautela' : '🔴 No', sub: 'estado global', color: agg.CPI >= 1 && agg.SPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 || agg.SPI >= 0.9 ? '#fbbf24' : '#ef4444' },
-                { label: 'Riesgo principal', value: agg.CPI < 0.9 ? 'Costes' : agg.SPI < 0.9 ? 'Cronograma' : 'Ninguno', sub: 'foco de atención', color: '#ef4444' },
-                { label: 'Acción hoy', value: decisionesDelDia[0]?.titulo?.split(' ').slice(0, 3).join(' ') || 'Mantener rumbo', sub: 'decisión clave', color: '#a78bfa' }
+                { label: t('p8_sum_where_label'), value: `${agg.progresoPct.toFixed(0)}%`, sub: t('p8_sum_where_sub'), color: '#fbbf24' },
+                {
+                  label: t('p8_sum_ok_label'),
+                  value: (agg.CPI >= 1 && agg.SPI >= 1) ? t('p8_sum_ok_yes') : (agg.CPI >= 0.9 || agg.SPI >= 0.9) ? t('p8_sum_ok_caution') : t('p8_sum_ok_no'),
+                  sub: t('p8_sum_ok_sub'),
+                  color: (agg.CPI >= 1 && agg.SPI >= 1) ? '#22c55e' : (agg.CPI >= 0.9 || agg.SPI >= 0.9) ? '#fbbf24' : '#ef4444'
+                },
+                {
+                  label: t('p8_sum_risk_label'),
+                  value: agg.CPI < 0.9 ? t('p8_sum_risk_costs') : agg.SPI < 0.9 ? t('p8_sum_risk_schedule') : t('p8_sum_risk_none'),
+                  sub: t('p8_sum_risk_sub'),
+                  color: '#ef4444'
+                },
+                {
+                  label: t('p8_sum_action_label'),
+                  value: decisionesDelDia[0]?.titulo?.split(' ').slice(0, 3).join(' ') || t('p8_sum_action_default'),
+                  sub: t('p8_sum_action_sub'),
+                  color: '#a78bfa'
+                }
               ].map(k => `
                 <div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(10,5,25,0.5);">
                   <div style="font-size:10px;color:#8b7cb8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">${k.label}</div>
@@ -4637,77 +5706,73 @@
       interpretarEstado(agg) {
         if (agg.CPI >= 1 && agg.SPI >= 1 && agg.margenPct > 0) {
           return {
-            titulo: '🏆 Excelencia Ejecutiva',
-            mensaje: 'El Portafolio opera con rentabilidad positiva, eficiencia de costes y cumplimiento del cronograma. Oportunidad de escalar y consolidar.',
-            estado: 'óptimo'
+            titulo: t('p8_state_excellent_title'),
+            mensaje: t('p8_state_excellent_msg'),
+            estado: t('p8_hero_estado_optimo')
           };
         }
         if (agg.CPI >= 0.95 && agg.SPI >= 0.95) {
           return {
-            titulo: '✅ Operación Estable',
-            mensaje: 'Todos los indicadores en zona de tolerancia. Continuar con monitoreo semanal para mantener el rumbo.',
-            estado: 'estable'
+            titulo: t('p8_state_stable_title'),
+            mensaje: t('p8_state_stable_msg'),
+            estado: t('p8_hero_estado_estable')
           };
         }
         if (agg.CPI < 0.85 || agg.SPI < 0.85) {
           return {
-            titulo: '🚨 Intervención Necesaria',
-            mensaje: 'El Portafolio muestra desviaciones significativas. Se requiere plan de recuperación ejecutivo en los próximos 7 días.',
-            estado: 'crítico'
+            titulo: t('p8_state_critical_title'),
+            mensaje: t('p8_state_critical_msg'),
+            estado: t('p8_hero_estado_critico')
           };
         }
         return {
-          titulo: '⚠️ Requiere Atención',
-          mensaje: 'Algunos indicadores están fuera de rango óptimo. Recomendamos revisión cercana y acciones correctivas tempranas.',
-          estado: 'atención'
+          titulo: t('p8_state_attention_title'),
+          mensaje: t('p8_state_attention_msg'),
+          estado: t('p8_hero_estado_atencion')
         };
       },
 
       generarAlertas(projects, agg) {
         const alertas = [];
 
-        // Alerta 1: Proyectos críticos
         const criticos = projects.filter(p => p.totalTasks > 0 && p.health === 'critico');
         if (criticos.length > 0) {
           alertas.push({
-            nivel: 'crítico', icon: '🚨', color: '#ef4444',
-            titulo: `${criticos.length} proyecto(s) en estado crítico`,
-            descripcion: `Proyectos con desviaciones severas en CPI y/o SPI: ${criticos.map(p => p.name.substring(0, 25)).join(', ')}`,
-            accion: 'Reunión urgente con los PM + plan de recuperación en 48h'
+            nivel: t('p8_level_critico'), icon: '🚨', color: '#ef4444',
+            titulo: tI('p8_alert_crit_title', { count: criticos.length }),
+            descripcion: tI('p8_alert_crit_desc', { names: criticos.map(p => p.name.substring(0, 25)).join(', ') }),
+            accion: t('p8_alert_crit_action')
           });
         }
 
-        // Alerta 2: Sobrecostos
         const sobrecosto = projects.filter(p => p.totalTasks > 0 && p.VAC < 0);
         if (sobrecosto.length > 0) {
           const exposicion = Math.abs(sobrecosto.reduce((s, p) => s + p.VAC, 0));
           alertas.push({
-            nivel: 'alto', icon: '💰', color: '#f97316',
-            titulo: `Sobrecosto proyectado de ${fmt.moneyCompact(exposicion)}`,
-            descripcion: `${sobrecosto.length} proyecto(s) con EAC superior al BAC. Si no se corrige, el Portafolio cerrará por encima del presupuesto.`,
-            accion: 'Auditoría financiera + renegociación de alcance'
+            nivel: t('p8_level_alto'), icon: '💰', color: '#f97316',
+            titulo: tI('p8_alert_overcost_title', { amount: fmt.moneyCompact(exposicion) }),
+            descripcion: tI('p8_alert_overcost_desc', { count: sobrecosto.length }),
+            accion: t('p8_alert_overcost_action')
           });
         }
 
-        // Alerta 3: Tareas rezagadas
         const totalRezagos = agg.delayed;
         if (totalRezagos > 3) {
           alertas.push({
-            nivel: 'medio', icon: '⏰', color: '#fbbf24',
-            titulo: `${totalRezagos} tareas rezagadas`,
-            descripcion: 'El volumen de rezagos puede impactar la entrega final y generar penalizaciones contractuales.',
-            accion: 'Reasignación de recursos y revisión de dependencias'
+            nivel: t('p8_level_medio'), icon: '⏰', color: '#fbbf24',
+            titulo: tI('p8_alert_overdue_title', { count: totalRezagos }),
+            descripcion: t('p8_alert_overdue_desc'),
+            accion: t('p8_alert_overdue_action')
           });
         }
 
-        // Alerta 4: Proyectos sin datos
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           alertas.push({
-            nivel: 'bajo', icon: '📭', color: '#a78bfa',
-            titulo: `${vacios.length} proyecto(s) sin datos`,
-            descripcion: 'Proyectos sin tareas definidas. Distorsionan las métricas del Portafolio.',
-            accion: 'Definir alcance o archivar'
+            nivel: t('p8_level_bajo'), icon: '📭', color: '#a78bfa',
+            titulo: tI('p8_alert_empty_title', { count: vacios.length }),
+            descripcion: t('p8_alert_empty_desc'),
+            accion: t('p8_alert_empty_action')
           });
         }
 
@@ -4717,57 +5782,54 @@
       generarDecisiones(projects, agg) {
         const decisiones = [];
 
-        // Decisión 1
         if (agg.CPI < 0.9) {
           decisiones.push({
-            titulo: 'Reestructurar costes',
-            detalle: 'Aprobar un plan de auditoría de horas y renegociación de contratos para los proyectos con mayor desviación de costes.',
+            titulo: t('p8_dec_restructure_title'),
+            detalle: t('p8_dec_restructure_detail'),
             color: '#ef4444'
           });
         } else if (agg.SPI < 0.9) {
           decisiones.push({
-            titulo: 'Recuperar cronograma',
-            detalle: 'Aprobar refuerzo del equipo en tareas críticas y fast-tracking en la ruta crítica del Portafolio.',
+            titulo: t('p8_dec_recover_title'),
+            detalle: t('p8_dec_recover_detail'),
             color: '#f97316'
           });
         } else {
           decisiones.push({
-            titulo: 'Acelerar el crecimiento',
-            detalle: 'Aprobar la expansión del Portafolio con 2 proyectos adicionales usando el equipo actual.',
+            titulo: t('p8_dec_accelerate_title'),
+            detalle: t('p8_dec_accelerate_detail'),
             color: '#22c55e'
           });
         }
 
-        // Decisión 2
         const activos = projects.filter(p => p.totalTasks > 0);
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           decisiones.push({
-            titulo: 'Limpiar el Portafolio',
-            detalle: `Decidir sobre ${vacios.length} proyecto(s) sin alcance: definir tareas o archivar para mantener métricas limpias.`,
+            titulo: t('p8_dec_clean_title'),
+            detalle: tI('p8_dec_clean_detail', { count: vacios.length }),
             color: '#a78bfa'
           });
         } else {
           decisiones.push({
-            titulo: 'Invertir en equipo',
-            detalle: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del Portafolio.',
+            titulo: t('p8_dec_invest_title'),
+            detalle: t('p8_dec_invest_detail'),
             color: '#a78bfa'
           });
         }
 
-        // Decisión 3
         const conMargenPositivo = activos.filter(p => p.margenProyectado >= 0);
         const pctRentables = activos.length > 0 ? (conMargenPositivo.length / activos.length) * 100 : 0;
         if (pctRentables < 50) {
           decisiones.push({
-            titulo: 'Revisar pricing',
-            detalle: `Solo ${pctRentables.toFixed(0)}% de proyectos son rentables. Revisar tarifas y costes para mejorar el margen global.`,
+            titulo: t('p8_dec_pricing_title'),
+            detalle: tI('p8_dec_pricing_detail', { pct: pctRentables.toFixed(0) }),
             color: '#ef4444'
           });
         } else {
           decisiones.push({
-            titulo: 'Consolidar contratos',
-            detalle: `El ${pctRentables.toFixed(0)}% de los proyectos son rentables. Renegociar contratos con clientes clave para asegurar recurrencia.`,
+            titulo: t('p8_dec_consolidate_title'),
+            detalle: tI('p8_dec_consolidate_detail', { pct: pctRentables.toFixed(0) }),
             color: '#22c55e'
           });
         }
@@ -4784,14 +5846,13 @@
         const rezagadas = activos.reduce((s, p) => s + p.delayedTasks, 0);
         const enCurso = activos.reduce((s, p) => s + p.inProgressTasks, 0);
 
-        // Carga media
         const cargaMedia = activos.reduce((s, p) => s + (p.totalEstimated > 0 ? (p.totalLogged / p.totalEstimated) * 100 : 0), 0) / activos.length;
 
         return [
-          { label: 'Productividad', valor: `${((completadas / Math.max(1, totalTareas)) * 100).toFixed(0)}%`, pct: (completadas / Math.max(1, totalTareas)) * 100, color: '#22c55e' },
-          { label: 'Carga media', valor: `${cargaMedia.toFixed(0)}%`, pct: Math.min(100, cargaMedia), color: cargaMedia > 100 ? '#ef4444' : cargaMedia > 80 ? '#fbbf24' : '#22c55e' },
-          { label: 'Tareas activas', valor: `${enCurso}`, pct: (enCurso / Math.max(1, totalTareas)) * 100, color: '#a78bfa' },
-          { label: 'Rezagos', valor: `${rezagadas}`, pct: (rezagadas / Math.max(1, totalTareas)) * 100, color: rezagadas > 3 ? '#ef4444' : '#fbbf24' }
+          { label: t('p8_pulse_productivity'), valor: `${((completadas / Math.max(1, totalTareas)) * 100).toFixed(0)}%`, pct: (completadas / Math.max(1, totalTareas)) * 100, color: '#22c55e' },
+          { label: t('p8_pulse_avg_load'), valor: `${cargaMedia.toFixed(0)}%`, pct: Math.min(100, cargaMedia), color: cargaMedia > 100 ? '#ef4444' : cargaMedia > 80 ? '#fbbf24' : '#22c55e' },
+          { label: t('p8_pulse_active_tasks'), valor: `${enCurso}`, pct: (enCurso / Math.max(1, totalTareas)) * 100, color: '#a78bfa' },
+          { label: t('p8_pulse_delays'), valor: `${rezagadas}`, pct: (rezagadas / Math.max(1, totalTareas)) * 100, color: rezagadas > 3 ? '#ef4444' : '#fbbf24' }
         ];
       }
     }
