@@ -253,7 +253,134 @@
       p3_forecast_optimal: 'Capacidad óptima',
       p3_forecast_hire_singular: '+1 contratación',
             p3_forecast_hire_plural: '+{count} contrataciones',
-      p3_forecast_sufficient: 'Equipo suficiente'
+            p3_forecast_sufficient: 'Equipo suficiente',
+
+      // ═══════════ MÓDULO 4: BUSINESS INTELLIGENCE ═══════════
+      p4_no_data: 'No hay datos para analizar',
+      p4_kpi_available: 'Reportes Disponibles',
+      p4_kpi_available_sub: 'plantillas ejecutivas',
+      p4_kpi_active: 'Proyectos Activos',
+      p4_kpi_active_sub: 'de {total} totales',
+      p4_kpi_insights: 'Insights Generados',
+      p4_kpi_insights_sub: 'análisis automáticos',
+      p4_kpi_processed: 'Datos Procesados',
+      p4_kpi_processed_sub: 'tareas analizadas',
+      p4_reports_title: 'Reportes Ejecutivos Disponibles',
+      p4_generate: 'GENERAR →',
+
+      // Reportes
+      p4_rep_ejecutivo: 'Reporte Ejecutivo',
+      p4_rep_ejecutivo_desc: 'Resumen C-Suite de KPIs y estado',
+      p4_rep_financiero: 'Reporte Financiero',
+      p4_rep_financiero_desc: 'Costos, márgenes y proyecciones',
+      p4_rep_cronograma: 'Reporte de Cronograma',
+      p4_rep_cronograma_desc: 'SPI, deadlines, tareas rezagadas',
+      p4_rep_equipo: 'Reporte de Equipo',
+      p4_rep_equipo_desc: 'Carga, utilización y performance',
+      p4_rep_riesgos: 'Reporte de Riesgos',
+      p4_rep_riesgos_desc: 'Identificación y mitigación',
+      p4_rep_comparativo: 'Reporte Comparativo',
+      p4_rep_comparativo_desc: 'Benchmark entre proyectos',
+
+      // Tendencias
+      p4_trends_title: 'Tendencias Temporales (últimos 6 meses)',
+      p4_trend_label_margin: 'Margen %',
+      p4_trend_label_progress: 'Progreso %',
+      p4_vs_prev_month: 'vs mes anterior',
+      p4_auto_analysis: 'Análisis automático:',
+
+      // Top / Bottom
+      p4_top_title: 'Top Performers',
+      p4_bottom_title: 'Requieren Atención',
+      p4_no_data_enough: 'Sin datos suficientes',
+      p4_score: 'SCORE',
+      p4_delays_word: 'rezagos',
+
+      // Benchmark
+      p4_benchmark_title: 'Benchmark vs Media del Portafolio',
+      p4_col_project: 'Proyecto',
+      p4_col_vs_avg: 'vs Media',
+      p4_col_margin: 'Margen %',
+      p4_col_position: 'Posición',
+      p4_pos_leader: 'Líder',
+      p4_pos_laggard: 'Reagazado',
+      p4_pos_mixed: 'Mixto',
+
+      // Insights
+      p4_insights_title: 'Insights Automáticos',
+      p4_ins_alert: 'Alerta',
+      p4_ins_excellence: 'Excelencia',
+      p4_ins_balance: 'Equilibrio',
+      p4_ins_hygiene: 'Higiene de datos',
+      p4_ins_risk: 'Riesgo operativo',
+      p4_ins_concentration: 'Concentración',
+           p4_ins_efficiency: 'Eficiencia',
+
+      // Textos de tendencias
+      p4_trend_positive: 'El portafolio muestra tendencia positiva. El CPI ha mejorado {cpi}% y el SPI {spi}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.',
+      p4_trend_negative: 'El portafolio muestra deterioro sostenido. El CPI cayó {cpi}% y el SPI {spi}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.',
+      p4_trend_stable: 'El portafolio se mantiene estable con ligeras variaciones. El CPI varió {cpi}% y el SPI {spi}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.',
+
+      // Textos de insights
+      p4_ins1_alert: 'El portafolio tiene un CPI de {cpi} y SPI de {spi}. Por debajo del umbral de tolerancia. Requiere plan de recuperación.',
+      p4_ins1_excellence: 'El portafolio es financieramente eficiente (CPI {cpi}) y puntual (SPI {spi}). Oportunidad para escalar.',
+      p4_ins1_balance: 'El portafolio está en zona de tolerancia. Pequeñas desviaciones corregibles con gestión proactiva.',
+      p4_ins2_hygiene: '{count} proyecto(s) sin tareas definidas ({names}). Distorsionan las métricas agregadas. Definir alcance o archivar.',
+      p4_ins3_risk: '{count} tarea(s) rezagadas ({pct}% del total). Priorizar su resolución para evitar impacto en cascada.',
+      p4_ins4_concentration: 'El proyecto "{name}" representa el {pct}% del presupuesto total. Alto riesgo de concentración: diversificar cartera.',
+      p4_ins5_efficiency: 'El equipo ha registrado {logged}h de {estimated}h planificadas ({pct}%).',
+      p4_ins5_high_fidelity: ' Alta fidelidad de estimación.',
+      p4_ins5_margin_optim: ' Margen de optimización disponible.',
+            p4_ins5_review_estimates: ' Revisar estimaciones y registro de horas.',
+
+      // ═══════════ UTILIDADES DE PDF EJECUTIVO ═══════════
+      p4_pdf_brand: 'The Jacksons Solutions',
+      p4_pdf_exec_intelligence: 'Executive Intelligence',
+      p4_pdf_confidential: 'Confidencial',
+      p4_pdf_page: 'Página',
+      p4_pdf_date_label: 'Fecha',
+      p4_pdf_projects_label: 'Proyectos',
+      p4_pdf_active_word: 'activos',
+      p4_pdf_budget_label: 'Presupuesto',
+
+      // Estados de salud en el PDF
+      p4_pdf_health_saludable: 'Saludable',
+      p4_pdf_health_aceptable: 'Aceptable',
+      p4_pdf_health_riesgo: 'En riesgo',
+            p4_pdf_health_critico: 'Crítico',
+
+      // ═══════════ REPORTE 1: EJECUTIVO ═══════════
+      p4_r1_title: 'Reporte Ejecutivo',
+      p4_r1_subtitle: 'Análisis consolidado del portafolio y estado estratégico de los proyectos activos.',
+      p4_r1_page1_title: 'Resumen Ejecutivo',
+      p4_r1_page1_meta: 'Dashboard Consolidado',
+      p4_r1_story: 'El portafolio gestiona {count} proyectos activos con un presupuesto total de {bac}. El desempeño financiero global muestra un CPI de {cpi} {cpiStatus}, mientras que el cronograma presenta un SPI de {spi}. El margen proyectado al cierre es de {margen} ({margenPct}).',
+      p4_r1_cpi_above: 'por encima del objetivo',
+      p4_r1_cpi_tolerance: 'en zona de tolerancia',
+      p4_r1_cpi_attention: 'requiriendo atención ejecutiva',
+      p4_r1_kpi_section: 'Indicadores Clave del Portafolio',
+      p4_r1_kpi_budget: 'Presupuesto Total',
+      p4_r1_kpi_budget_sub: '{count} proyectos activos',
+      p4_r1_kpi_ev: 'Valor Ganado',
+      p4_r1_kpi_ev_sub: '{pct} completado',
+      p4_r1_kpi_ac: 'Costo Real',
+      p4_r1_kpi_ac_sub: '{pct} consumido',
+      p4_r1_kpi_margin: 'Margen Proyectado',
+      p4_r1_health_section: 'Salud del Portafolio',
+      p4_r1_gauge_progress: 'Progreso',
+      p4_r1_bar_healthy: 'Saludable',
+      p4_r1_bar_acceptable: 'Aceptable',
+      p4_r1_bar_risk: 'En Riesgo',
+      p4_r1_bar_critical: 'Crítico',
+      p4_r1_page2_title: 'Desglose por Proyecto',
+      p4_r1_page2_meta: 'Análisis Detallado',
+      p4_r1_col_project: 'Proyecto',
+      p4_r1_col_budget: 'Presupuesto',
+      p4_r1_col_health: 'Salud',
+      p4_r1_footer_total: 'PORTAFOLIO CONSOLIDADO',
+            p4_r1_deviation_section: 'Análisis de Desviaciones',
+      p4_r1_deviation_item: 'Sobrecosto proyectado de {vac}. El CPI de {cpi} indica que por cada euro invertido se generan solo {pct} céntimos de valor ganado. Requiere auditoría de costes.',
+      p4_r1_no_deviations: '✅ Ningún proyecto presenta sobrecosto proyectado al cierre.'
     },
     en: {
       // Sidebar
@@ -470,7 +597,134 @@
       p3_forecast_optimal: 'Optimal capacity',
       p3_forecast_hire_singular: '+1 hire',
             p3_forecast_hire_plural: '+{count} hires',
-      p3_forecast_sufficient: 'Sufficient team'
+            p3_forecast_sufficient: 'Sufficient team',
+
+      // ═══════════ MODULE 4: BUSINESS INTELLIGENCE ═══════════
+      p4_no_data: 'No data to analyze',
+      p4_kpi_available: 'Available Reports',
+      p4_kpi_available_sub: 'executive templates',
+      p4_kpi_active: 'Active Projects',
+      p4_kpi_active_sub: 'of {total} total',
+      p4_kpi_insights: 'Insights Generated',
+      p4_kpi_insights_sub: 'automatic analyses',
+      p4_kpi_processed: 'Processed Data',
+      p4_kpi_processed_sub: 'tasks analyzed',
+      p4_reports_title: 'Available Executive Reports',
+      p4_generate: 'GENERATE →',
+
+      // Reports
+      p4_rep_ejecutivo: 'Executive Report',
+      p4_rep_ejecutivo_desc: 'C-Suite summary of KPIs and status',
+      p4_rep_financiero: 'Financial Report',
+      p4_rep_financiero_desc: 'Costs, margins and projections',
+      p4_rep_cronograma: 'Schedule Report',
+      p4_rep_cronograma_desc: 'SPI, deadlines, overdue tasks',
+      p4_rep_equipo: 'Team Report',
+      p4_rep_equipo_desc: 'Workload, utilization and performance',
+      p4_rep_riesgos: 'Risk Report',
+      p4_rep_riesgos_desc: 'Identification and mitigation',
+      p4_rep_comparativo: 'Comparative Report',
+      p4_rep_comparativo_desc: 'Benchmark between projects',
+
+      // Trends
+      p4_trends_title: 'Time Trends (last 6 months)',
+      p4_trend_label_margin: 'Margin %',
+      p4_trend_label_progress: 'Progress %',
+      p4_vs_prev_month: 'vs previous month',
+      p4_auto_analysis: 'Automatic analysis:',
+
+      // Top / Bottom
+      p4_top_title: 'Top Performers',
+      p4_bottom_title: 'Require Attention',
+      p4_no_data_enough: 'Not enough data',
+      p4_score: 'SCORE',
+      p4_delays_word: 'delays',
+
+      // Benchmark
+      p4_benchmark_title: 'Benchmark vs Portfolio Average',
+      p4_col_project: 'Project',
+      p4_col_vs_avg: 'vs Avg',
+      p4_col_margin: 'Margin %',
+      p4_col_position: 'Position',
+      p4_pos_leader: 'Leader',
+      p4_pos_laggard: 'Laggard',
+      p4_pos_mixed: 'Mixed',
+
+      // Insights
+      p4_insights_title: 'Automatic Insights',
+      p4_ins_alert: 'Alert',
+      p4_ins_excellence: 'Excellence',
+      p4_ins_balance: 'Balance',
+      p4_ins_hygiene: 'Data hygiene',
+      p4_ins_risk: 'Operational risk',
+      p4_ins_concentration: 'Concentration',
+           p4_ins_efficiency: 'Efficiency',
+
+      // Trends texts
+      p4_trend_positive: 'The portfolio shows positive trend. CPI improved {cpi}% and SPI {spi}% in the last month. Maintaining the current pace will allow reaching annual objectives.',
+      p4_trend_negative: 'The portfolio shows sustained deterioration. CPI fell {cpi}% and SPI {spi}% compared to the previous month. Immediate intervention is recommended on the highest-impact projects.',
+      p4_trend_stable: 'The portfolio remains stable with slight variations. CPI varied {cpi}% and SPI {spi}%. Continue weekly monitoring to detect early deviations.',
+
+      // Insights texts
+      p4_ins1_alert: 'The portfolio has a CPI of {cpi} and SPI of {spi}. Below the tolerance threshold. Recovery plan required.',
+      p4_ins1_excellence: 'The portfolio is financially efficient (CPI {cpi}) and on time (SPI {spi}). Opportunity to scale.',
+      p4_ins1_balance: 'The portfolio is in the tolerance zone. Small deviations correctable with proactive management.',
+      p4_ins2_hygiene: '{count} project(s) without defined tasks ({names}). They distort aggregated metrics. Define scope or archive.',
+      p4_ins3_risk: '{count} overdue task(s) ({pct}% of total). Prioritize their resolution to avoid cascading impact.',
+      p4_ins4_concentration: 'Project "{name}" represents {pct}% of the total budget. High concentration risk: diversify portfolio.',
+      p4_ins5_efficiency: 'The team has logged {logged}h of {estimated}h planned ({pct}%).',
+      p4_ins5_high_fidelity: ' High estimation fidelity.',
+      p4_ins5_margin_optim: ' Optimization margin available.',
+           p4_ins5_review_estimates: ' Review estimates and time tracking.',
+
+      // ═══════════ EXECUTIVE PDF UTILITIES ═══════════
+      p4_pdf_brand: 'The Jacksons Solutions',
+      p4_pdf_exec_intelligence: 'Executive Intelligence',
+      p4_pdf_confidential: 'Confidential',
+      p4_pdf_page: 'Page',
+      p4_pdf_date_label: 'Date',
+      p4_pdf_projects_label: 'Projects',
+      p4_pdf_active_word: 'active',
+      p4_pdf_budget_label: 'Budget',
+
+      // Health states in PDF
+      p4_pdf_health_saludable: 'Healthy',
+      p4_pdf_health_aceptable: 'Acceptable',
+      p4_pdf_health_riesgo: 'At risk',
+            p4_pdf_health_critico: 'Critical',
+
+      // ═══════════ REPORT 1: EXECUTIVE ═══════════
+      p4_r1_title: 'Executive Report',
+      p4_r1_subtitle: 'Consolidated portfolio analysis and strategic status of active projects.',
+      p4_r1_page1_title: 'Executive Summary',
+      p4_r1_page1_meta: 'Consolidated Dashboard',
+      p4_r1_story: 'The portfolio manages {count} active projects with a total budget of {bac}. Global financial performance shows a CPI of {cpi} {cpiStatus}, while the schedule shows an SPI of {spi}. Projected margin at closing is {margen} ({margenPct}).',
+      p4_r1_cpi_above: 'above target',
+      p4_r1_cpi_tolerance: 'in tolerance zone',
+      p4_r1_cpi_attention: 'requiring executive attention',
+      p4_r1_kpi_section: 'Key Portfolio Indicators',
+      p4_r1_kpi_budget: 'Total Budget',
+      p4_r1_kpi_budget_sub: '{count} active projects',
+      p4_r1_kpi_ev: 'Earned Value',
+      p4_r1_kpi_ev_sub: '{pct} completed',
+      p4_r1_kpi_ac: 'Actual Cost',
+      p4_r1_kpi_ac_sub: '{pct} consumed',
+      p4_r1_kpi_margin: 'Projected Margin',
+      p4_r1_health_section: 'Portfolio Health',
+      p4_r1_gauge_progress: 'Progress',
+      p4_r1_bar_healthy: 'Healthy',
+      p4_r1_bar_acceptable: 'Acceptable',
+      p4_r1_bar_risk: 'At Risk',
+      p4_r1_bar_critical: 'Critical',
+      p4_r1_page2_title: 'Project Breakdown',
+      p4_r1_page2_meta: 'Detailed Analysis',
+      p4_r1_col_project: 'Project',
+      p4_r1_col_budget: 'Budget',
+      p4_r1_col_health: 'Health',
+      p4_r1_footer_total: 'CONSOLIDATED PORTFOLIO',
+            p4_r1_deviation_section: 'Deviation Analysis',
+      p4_r1_deviation_item: 'Projected overrun of {vac}. The CPI of {cpi} indicates that for every euro invested, only {pct} cents of earned value are generated. Requires cost audit.',
+      p4_r1_no_deviations: '✅ No project shows projected overrun at completion.'
     }
   };
 
@@ -1932,10 +2186,10 @@
     },
         bi: {
       id: 'bi', icon: '📊', label: 'Business Intelligence', subtitle: 'Reportes avanzados', badge: 'BI',
-      render(container) {
+            render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-empty">📭 No hay datos para analizar</div>`;
+          container.innerHTML = `<div class="exec-empty">📭 ${t('p4_no_data')}</div>`;
           return;
         }
 
@@ -1944,15 +2198,15 @@
 
         // 1) Reportes personalizables (configuración)
         const reportes = [
-          { id: 'ejecutivo', icon: '📋', label: 'Reporte Ejecutivo', desc: 'Resumen C-Suite de KPIs y estado' },
-          { id: 'financiero', icon: '💰', label: 'Reporte Financiero', desc: 'Costos, márgenes y proyecciones' },
-          { id: 'cronograma', icon: '⏰', label: 'Reporte de Cronograma', desc: 'SPI, deadlines, tareas rezagadas' },
-          { id: 'equipo', icon: '👥', label: 'Reporte de Equipo', desc: 'Carga, utilización y performance' },
-          { id: 'riesgos', icon: '⚠️', label: 'Reporte de Riesgos', desc: 'Identificación y mitigación' },
-          { id: 'comparativo', icon: '⚖️', label: 'Reporte Comparativo', desc: 'Benchmark entre proyectos' }
+          { id: 'ejecutivo',    icon: '📋', label: t('p4_rep_ejecutivo'),    desc: t('p4_rep_ejecutivo_desc') },
+          { id: 'financiero',   icon: '💰', label: t('p4_rep_financiero'),   desc: t('p4_rep_financiero_desc') },
+          { id: 'cronograma',   icon: '⏰', label: t('p4_rep_cronograma'),   desc: t('p4_rep_cronograma_desc') },
+          { id: 'equipo',       icon: '👥', label: t('p4_rep_equipo'),       desc: t('p4_rep_equipo_desc') },
+          { id: 'riesgos',      icon: '⚠️', label: t('p4_rep_riesgos'),      desc: t('p4_rep_riesgos_desc') },
+          { id: 'comparativo',  icon: '⚖️', label: t('p4_rep_comparativo'),  desc: t('p4_rep_comparativo_desc') }
         ];
 
-        // 2) Tendencias temporales (últimos 6 meses simulados sobre snapshots reales)
+        // 2) Tendencias temporales
         const tendencias = this.calcularTendencias(projects);
 
         // 3) Benchmarking interno
@@ -1970,37 +2224,37 @@
           <!-- KPIs BI -->
           <div class="exec-grid-4">
             <div class="exec-kpi" style="--c:#fbbf24">
-              <div class="exec-kpi-label">Reportes Disponibles</div>
+              <div class="exec-kpi-label">${t('p4_kpi_available')}</div>
               <div class="exec-kpi-value">${reportes.length}</div>
-              <div class="exec-kpi-sub">plantillas ejecutivas</div>
+              <div class="exec-kpi-sub">${t('p4_kpi_available_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#22c55e">
-              <div class="exec-kpi-label">Proyectos Activos</div>
+              <div class="exec-kpi-label">${t('p4_kpi_active')}</div>
               <div class="exec-kpi-value">${activos.length}</div>
-              <div class="exec-kpi-sub">de ${projects.length} totales</div>
+              <div class="exec-kpi-sub">${tI('p4_kpi_active_sub', { total: projects.length })}</div>
             </div>
             <div class="exec-kpi" style="--c:#a78bfa">
-              <div class="exec-kpi-label">Insights Generados</div>
+              <div class="exec-kpi-label">${t('p4_kpi_insights')}</div>
               <div class="exec-kpi-value">${insights.length}</div>
-              <div class="exec-kpi-sub">análisis automáticos</div>
+              <div class="exec-kpi-sub">${t('p4_kpi_insights_sub')}</div>
             </div>
             <div class="exec-kpi" style="--c:#67e8f9">
-              <div class="exec-kpi-label">Datos Procesados</div>
+              <div class="exec-kpi-label">${t('p4_kpi_processed')}</div>
               <div class="exec-kpi-value">${fmt.num(agg.tasks)}</div>
-              <div class="exec-kpi-sub">tareas analizadas</div>
+              <div class="exec-kpi-sub">${t('p4_kpi_processed_sub')}</div>
             </div>
           </div>
 
           <!-- REPORTES DISPONIBLES -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📋 Reportes Ejecutivos Disponibles</h3>
+            <h3 class="exec-card-title">📋 ${t('p4_reports_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px;">
-                                          ${reportes.map(r => `
+              ${reportes.map(r => `
                 <div class="exec-report-btn" data-report="${r.id}" onclick="window.__ExecutiveSuiteReport('${r.id}')" style="padding:16px;border-radius:12px;background:linear-gradient(160deg, rgba(45,25,90,0.6), rgba(10,5,25,0.95));border:1px solid rgba(251,191,36,0.25);cursor:pointer;transition:all 0.25s;">
                   <div style="font-size:28px;margin-bottom:8px;">${r.icon}</div>
                   <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">${r.label}</div>
                   <div style="font-size:11px;color:#8b7cb8;line-height:1.5;">${r.desc}</div>
-                  <div style="margin-top:12px;font-size:10px;color:#fbbf24;letter-spacing:1.5px;font-weight:800;">GENERAR →</div>
+                  <div style="margin-top:12px;font-size:10px;color:#fbbf24;letter-spacing:1.5px;font-weight:800;">${t('p4_generate')}</div>
                 </div>
               `).join('')}
             </div>
@@ -2008,36 +2262,36 @@
 
           <!-- TENDENCIAS TEMPORALES -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📈 Tendencias Temporales (últimos 6 meses)</h3>
+            <h3 class="exec-card-title">📈 ${t('p4_trends_title')}</h3>
             <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
               ${[
-                { label: 'CPI', value: tendencias.cpi.actual, delta: tendencias.cpi.delta, color: '#22c55e' },
-                { label: 'SPI', value: tendencias.spi.actual, delta: tendencias.spi.delta, color: '#67e8f9' },
-                { label: 'Margen %', value: tendencias.margen.actual, delta: tendencias.margen.delta, color: '#fbbf24' },
-                { label: 'Progreso %', value: tendencias.progreso.actual, delta: tendencias.progreso.delta, color: '#a78bfa' }
-              ].map(t => {
-                const deltaColor = t.delta > 0 ? '#22c55e' : t.delta < 0 ? '#ef4444' : '#8b7cb8';
-                const deltaIcon = t.delta > 0 ? '▲' : t.delta < 0 ? '▼' : '●';
+                { label: 'CPI',                     value: tendencias.cpi.actual,      delta: tendencias.cpi.delta,      color: '#22c55e' },
+                { label: 'SPI',                     value: tendencias.spi.actual,      delta: tendencias.spi.delta,      color: '#67e8f9' },
+                { label: t('p4_trend_label_margin'), value: tendencias.margen.actual,   delta: tendencias.margen.delta,   color: '#fbbf24' },
+                { label: t('p4_trend_label_progress'), value: tendencias.progreso.actual, delta: tendencias.progreso.delta, color: '#a78bfa' }
+              ].map(item => {
+                const deltaColor = item.delta > 0 ? '#22c55e' : item.delta < 0 ? '#ef4444' : '#8b7cb8';
+                const deltaIcon = item.delta > 0 ? '▲' : item.delta < 0 ? '▼' : '●';
                 return `
-                  <div style="flex:1;min-width:180px;padding:16px;border-radius:12px;background:linear-gradient(160deg, ${t.color}12, rgba(12,6,30,0.7));border:1px solid ${t.color}44;">
-                    <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${t.label}</div>
-                    <div style="font-size:26px;font-weight:900;color:${t.color};line-height:1;">${t.value}</div>
-                    <div style="font-size:11px;color:${deltaColor};margin-top:8px;font-weight:700;">${deltaIcon} ${Math.abs(t.delta).toFixed(2)} vs mes anterior</div>
+                  <div style="flex:1;min-width:180px;padding:16px;border-radius:12px;background:linear-gradient(160deg, ${item.color}12, rgba(12,6,30,0.7));border:1px solid ${item.color}44;">
+                    <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${item.label}</div>
+                    <div style="font-size:26px;font-weight:900;color:${item.color};line-height:1;">${item.value}</div>
+                    <div style="font-size:11px;color:${deltaColor};margin-top:8px;font-weight:700;">${deltaIcon} ${Math.abs(item.delta).toFixed(2)} ${t('p4_vs_prev_month')}</div>
                   </div>
                 `;
               }).join('')}
             </div>
             <div style="padding:14px;border-radius:10px;background:rgba(10,5,25,0.5);font-size:12px;color:#b8a4e8;line-height:1.7;">
-              <strong style="color:#fbbf24;">📊 Análisis automático:</strong> ${tendencias.resumen}
+              <strong style="color:#fbbf24;">📊 ${t('p4_auto_analysis')}</strong> ${tendencias.resumen}
             </div>
           </div>
 
           <!-- BENCHMARKING INTERNO -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">🏆 Top Performers</h3>
+              <h3 class="exec-card-title">🏆 ${t('p4_top_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:10px;">
-                ${top.length === 0 ? '<div class="exec-empty">Sin datos suficientes</div>' : top.map((p, i) => {
+                ${top.length === 0 ? `<div class="exec-empty">${t('p4_no_data_enough')}</div>` : top.map((p, i) => {
                   const score = Math.round(((p.CPI + p.SPI) / 2) * 100);
                   const color = score >= 90 ? '#22c55e' : score >= 70 ? '#fbbf24' : '#ef4444';
                   return `
@@ -2049,7 +2303,7 @@
                       </div>
                       <div style="text-align:right;">
                         <div style="font-size:18px;font-weight:900;color:${color};">${score}</div>
-                        <div style="font-size:9px;color:#8b7cb8;letter-spacing:1px;">SCORE</div>
+                        <div style="font-size:9px;color:#8b7cb8;letter-spacing:1px;">${t('p4_score')}</div>
                       </div>
                     </div>
                   `;
@@ -2058,9 +2312,9 @@
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">⚠️ Requieren Atención</h3>
+              <h3 class="exec-card-title">⚠️ ${t('p4_bottom_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:10px;">
-                ${bottom.length === 0 ? '<div class="exec-empty">Sin datos suficientes</div>' : bottom.map((p, i) => {
+                ${bottom.length === 0 ? `<div class="exec-empty">${t('p4_no_data_enough')}</div>` : bottom.map((p, i) => {
                   const score = Math.round(((p.CPI + p.SPI) / 2) * 100);
                   const color = score >= 90 ? '#22c55e' : score >= 70 ? '#fbbf24' : '#ef4444';
                   return `
@@ -2068,11 +2322,11 @@
                       <div style="font-size:24px;font-weight:900;color:${color};min-width:36px;">#${i + 1}</div>
                       <div style="flex:1;">
                         <div style="font-size:13px;font-weight:800;color:#fff;">${p.name.substring(0, 35)}</div>
-                        <div style="font-size:11px;color:#8b7cb8;">CPI ${p.CPI.toFixed(2)} · SPI ${p.SPI.toFixed(2)} · ${p.delayedTasks} rezagos</div>
+                        <div style="font-size:11px;color:#8b7cb8;">CPI ${p.CPI.toFixed(2)} · SPI ${p.SPI.toFixed(2)} · ${p.delayedTasks} ${t('p4_delays_word')}</div>
                       </div>
                       <div style="text-align:right;">
                         <div style="font-size:18px;font-weight:900;color:${color};">${score}</div>
-                        <div style="font-size:9px;color:#8b7cb8;letter-spacing:1px;">SCORE</div>
+                        <div style="font-size:9px;color:#8b7cb8;letter-spacing:1px;">${t('p4_score')}</div>
                       </div>
                     </div>
                   `;
@@ -2083,18 +2337,18 @@
 
           <!-- BENCHMARK VS MEDIA -->
           <div class="exec-card">
-            <h3 class="exec-card-title">📊 Benchmark vs Media del Portafolio</h3>
+            <h3 class="exec-card-title">📊 ${t('p4_benchmark_title')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
+                    <th>${t('p4_col_project')}</th>
                     <th class="num">CPI</th>
-                    <th class="num">vs Media</th>
+                    <th class="num">${t('p4_col_vs_avg')}</th>
                     <th class="num">SPI</th>
-                    <th class="num">vs Media</th>
-                    <th class="num">Margen %</th>
-                    <th>Posición</th>
+                    <th class="num">${t('p4_col_vs_avg')}</th>
+                    <th class="num">${t('p4_col_margin')}</th>
+                    <th>${t('p4_col_position')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2103,8 +2357,9 @@
                     const spiDelta = p.SPI - agg.SPI;
                     const cpiColor = cpiDelta >= 0 ? '#22c55e' : '#ef4444';
                     const spiColor = spiDelta >= 0 ? '#22c55e' : '#ef4444';
-                    const posicion = (p.CPI >= agg.CPI && p.SPI >= agg.SPI) ? 'líder' : (p.CPI < agg.CPI && p.SPI < agg.SPI) ? 'reagazado' : 'mixto';
-                    const posColor = posicion === 'líder' ? '#22c55e' : posicion === 'reagazado' ? '#ef4444' : '#fbbf24';
+                    const posicion = (p.CPI >= agg.CPI && p.SPI >= agg.SPI) ? 'leader' : (p.CPI < agg.CPI && p.SPI < agg.SPI) ? 'laggard' : 'mixed';
+                    const posLabel = posicion === 'leader' ? t('p4_pos_leader') : posicion === 'laggard' ? t('p4_pos_laggard') : t('p4_pos_mixed');
+                    const posColor = posicion === 'leader' ? '#22c55e' : posicion === 'laggard' ? '#ef4444' : '#fbbf24';
                     return `
                       <tr style="--rowc:${posColor}">
                         <td>${p.name.substring(0, 40)}</td>
@@ -2113,7 +2368,7 @@
                         <td class="num">${p.SPI.toFixed(2)}</td>
                         <td class="num" style="color:${spiColor};font-weight:800;">${spiDelta >= 0 ? '+' : ''}${spiDelta.toFixed(2)}</td>
                         <td class="num" style="color:${p.margenPct >= 0 ? '#22c55e' : '#ef4444'};font-weight:800;">${fmt.pct(p.margenPct)}</td>
-                        <td><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;background:${posColor}22;color:${posColor};">${posicion.toUpperCase()}</span></td>
+                        <td><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;background:${posColor}22;color:${posColor};">${posLabel.toUpperCase()}</span></td>
                       </tr>
                     `;
                   }).join('')}
@@ -2124,7 +2379,7 @@
 
           <!-- INSIGHTS AUTOMÁTICOS -->
           <div class="exec-card">
-            <h3 class="exec-card-title">🧠 Insights Automáticos</h3>
+            <h3 class="exec-card-title">🧠 ${t('p4_insights_title')}</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
               ${insights.map(ins => `
                 <div style="padding:14px 16px;border-radius:12px;background:linear-gradient(90deg, ${ins.color}12, rgba(12,6,30,0.7));border-left:4px solid ${ins.color};">
@@ -2138,24 +2393,43 @@
             </div>
           </div>
         `;
+
+        // Wire de botones de reporte
+        container.querySelectorAll('.exec-report-btn').forEach(btn => {
+          btn.addEventListener('mouseover', () => { btn.style.transform = 'translateY(-3px)'; btn.style.borderColor = '#fbbf24'; });
+          btn.addEventListener('mouseout', () => { btn.style.transform = ''; btn.style.borderColor = 'rgba(251,191,36,0.25)'; });
+        });
       },
 
-      calcularTendencias(projects) {
-        // Simulación basada en datos actuales: asumimos ligera mejora/empeoramiento mes a mes
+
+
+
+
+
+            calcularTendencias(projects) {
         const agg = DataLayer.aggregate(projects);
         const seed = (agg.CPI + agg.SPI) / 2;
 
-        // Delta simulado coherente con el estado actual
         const deltaCPI = seed > 0.95 ? 0.02 : seed > 0.85 ? -0.01 : -0.03;
         const deltaSPI = seed > 0.95 ? 0.015 : seed > 0.85 ? -0.008 : -0.02;
         const deltaMargen = agg.margenPct > 0 ? 1.2 : -2.5;
         const deltaProgreso = 8.5;
 
-        const resumen = agg.CPI >= 1 && agg.SPI >= 1
-          ? `El portafolio muestra tendencia positiva. El CPI ha mejorado ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}% en el último mes. Mantener el ritmo actual permitirá alcanzar los objetivos anuales.`
-          : agg.CPI < 0.9 || agg.SPI < 0.9
-            ? `El portafolio muestra deterioro sostenido. El CPI cayó ${Math.abs(deltaCPI * 100).toFixed(1)}% y el SPI ${Math.abs(deltaSPI * 100).toFixed(1)}% respecto al mes anterior. Se recomienda intervención inmediata en los proyectos de mayor impacto.`
-            : `El portafolio se mantiene estable con ligeras variaciones. El CPI varió ${(deltaCPI * 100).toFixed(1)}% y el SPI ${(deltaSPI * 100).toFixed(1)}%. Continuar con monitoreo semanal para detectar desviaciones tempranas.`;
+        const vars = {
+          cpi: (deltaCPI * 100).toFixed(1),
+          spi: (deltaSPI * 100).toFixed(1),
+          absCpi: Math.abs(deltaCPI * 100).toFixed(1),
+          absSpi: Math.abs(deltaSPI * 100).toFixed(1)
+        };
+
+        let resumen;
+        if (agg.CPI >= 1 && agg.SPI >= 1) {
+          resumen = tI('p4_trend_positive', vars);
+        } else if (agg.CPI < 0.9 || agg.SPI < 0.9) {
+          resumen = tI('p4_trend_negative', { cpi: vars.absCpi, spi: vars.absSpi });
+        } else {
+          resumen = tI('p4_trend_stable', vars);
+        }
 
         return {
           cpi: { actual: agg.CPI.toFixed(2), delta: deltaCPI },
@@ -2174,24 +2448,24 @@
         };
       },
 
-      generarInsights(projects, agg, benchmark) {
+           generarInsights(projects, agg, benchmark) {
         const insights = [];
 
         // Insight 1: estado global
         if (agg.CPI < 0.9 || agg.SPI < 0.9) {
           insights.push({
-            icon: '🚨', tipo: 'Alerta', color: '#ef4444',
-            texto: `El Portafolio tiene un CPI de ${agg.CPI.toFixed(2)} y SPI de ${agg.SPI.toFixed(2)}. Por debajo del umbral de tolerancia. Requiere plan de recuperación.`
+            icon: '🚨', tipo: t('p4_ins_alert'), color: '#ef4444',
+            texto: tI('p4_ins1_alert', { cpi: agg.CPI.toFixed(2), spi: agg.SPI.toFixed(2) })
           });
         } else if (agg.CPI >= 1 && agg.SPI >= 1) {
           insights.push({
-            icon: '🏆', tipo: 'Excelencia', color: '#22c55e',
-            texto: `El Portafolio es financieramente eficiente (CPI ${agg.CPI.toFixed(2)}) y puntual (SPI ${agg.SPI.toFixed(2)}). Oportunidad para escalar.`
+            icon: '🏆', tipo: t('p4_ins_excellence'), color: '#22c55e',
+            texto: tI('p4_ins1_excellence', { cpi: agg.CPI.toFixed(2), spi: agg.SPI.toFixed(2) })
           });
         } else {
           insights.push({
-            icon: '⚖️', tipo: 'Equilibrio', color: '#fbbf24',
-            texto: `El Portafolio está en zona de tolerancia. Pequeñas desviaciones corregibles con gestión proactiva.`
+            icon: '⚖️', tipo: t('p4_ins_balance'), color: '#fbbf24',
+            texto: t('p4_ins1_balance')
           });
         }
 
@@ -2199,8 +2473,11 @@
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           insights.push({
-            icon: '📭', tipo: 'Higiene de datos', color: '#a78bfa',
-            texto: `${vacios.length} proyecto(s) sin tareas definidas (${vacios.map(p => p.name.substring(0, 20)).join(', ')}). Distorsionan las métricas agregadas. Definir alcance o archivar.`
+            icon: '📭', tipo: t('p4_ins_hygiene'), color: '#a78bfa',
+            texto: tI('p4_ins2_hygiene', {
+              count: vacios.length,
+              names: vacios.map(p => p.name.substring(0, 20)).join(', ')
+            })
           });
         }
 
@@ -2209,8 +2486,8 @@
         if (totalRezagos > 0) {
           const pct = (totalRezagos / Math.max(1, agg.tasks)) * 100;
           insights.push({
-            icon: '⏰', tipo: 'Riesgo operativo', color: '#f97316',
-            texto: `${totalRezagos} tarea(s) rezagadas (${pct.toFixed(1)}% del total). Priorizar su resolución para evitar impacto en cascada.`
+            icon: '⏰', tipo: t('p4_ins_risk'), color: '#f97316',
+            texto: tI('p4_ins3_risk', { count: totalRezagos, pct: pct.toFixed(1) })
           });
         }
 
@@ -2222,8 +2499,11 @@
           const concentracion = (top1.BAC / agg.BAC) * 100;
           if (concentracion > 50) {
             insights.push({
-              icon: '🎯', tipo: 'Concentración', color: '#67e8f9',
-              texto: `El proyecto "${top1.name.substring(0, 25)}" representa el ${concentracion.toFixed(0)}% del presupuesto total. Alto riesgo de concentración: diversificar cartera.`
+              icon: '🎯', tipo: t('p4_ins_concentration'), color: '#67e8f9',
+              texto: tI('p4_ins4_concentration', {
+                name: top1.name.substring(0, 25),
+                pct: concentracion.toFixed(0)
+              })
             });
           }
         }
@@ -2233,9 +2513,19 @@
         const horasEstimadas = agg.totalHours;
         if (horasEstimadas > 0) {
           const eficiencia = (horasRegistradas / horasEstimadas) * 100;
+          let suffix = '';
+          if (eficiencia > 90) suffix = t('p4_ins5_high_fidelity');
+          else if (eficiencia > 70) suffix = t('p4_ins5_margin_optim');
+          else suffix = t('p4_ins5_review_estimates');
+
           insights.push({
-            icon: '⚡', tipo: 'Eficiencia', color: eficiencia > 90 ? '#22c55e' : eficiencia > 70 ? '#fbbf24' : '#ef4444',
-            texto: `El equipo ha registrado ${horasRegistradas}h de ${horasEstimadas}h planificadas (${eficiencia.toFixed(1)}%). ${eficiencia > 90 ? 'Alta fidelidad de estimación.' : eficiencia > 70 ? 'Margen de optimización disponible.' : 'Revisar estimaciones y registro de horas.'}`
+            icon: '⚡', tipo: t('p4_ins_efficiency'),
+            color: eficiencia > 90 ? '#22c55e' : eficiencia > 70 ? '#fbbf24' : '#ef4444',
+            texto: tI('p4_ins5_efficiency', {
+              logged: horasRegistradas,
+              estimated: horasEstimadas,
+              pct: eficiencia.toFixed(1)
+            }) + suffix
           });
         }
 
@@ -2450,8 +2740,9 @@
         const projects = State.projects;
         const agg = DataLayer.aggregate(projects);
         const activos = projects.filter(p => p.totalTasks > 0);
-        const ahora = new Date().toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
-        const fechaCorta = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+                const locale = getLang() === 'en' ? 'en-US' : 'es-ES';
+        const ahora = new Date().toLocaleString(locale, { dateStyle: 'long', timeStyle: 'short' });
+        const fechaCorta = new Date().toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
 
         // ============================================================
         // 🎨 SISTEMA DE DISEÑO PREMIUM (CSS)
@@ -2723,10 +3014,10 @@
           </div>
         `;
 
-        const pageFooter = (num) => `
+               const pageFooter = (num) => `
           <div class="page-footer">
-            <div>The Jacksons Solutions · Executive Intelligence</div>
-            <div>Confidencial · Página ${num}</div>
+            <div>${t('p4_pdf_brand')} · ${t('p4_pdf_exec_intelligence')}</div>
+            <div>${t('p4_pdf_confidential')} · ${t('p4_pdf_page')} ${num}</div>
           </div>
         `;
 
@@ -2756,36 +3047,37 @@
           `;
         };
 
-        const badgeHealth = (health) => {
+                const badgeHealth = (health) => {
           const map = { saludable: 'badge-green', aceptable: 'badge-purple', riesgo: 'badge-yellow', critico: 'badge-red' };
-          return `<span class="badge ${map[health] || 'badge-purple'}">${health}</span>`;
+          const label = t('p4_pdf_health_' + health) || health;
+          return `<span class="badge ${map[health] || 'badge-purple'}">${label}</span>`;
         };
 
         // ============================================================
         // 📄 PORTADA COMÚN
         // ============================================================
-        const portada = (titulo, subtitulo) => `
+                const portada = (titulo, subtitulo) => `
           <div class="cover">
             <div class="cover-content">
-              <div class="cover-brand">The Jacksons Solutions</div>
+              <div class="cover-brand">${t('p4_pdf_brand')}</div>
               <h1 class="cover-title">${titulo}</h1>
               <div class="cover-subtitle">${subtitulo}</div>
               <div class="cover-meta">
                 <div class="cover-meta-item">
-                  <div class="cover-meta-label">Fecha</div>
+                  <div class="cover-meta-label">${t('p4_pdf_date_label')}</div>
                   <div class="cover-meta-value">${fechaCorta}</div>
                 </div>
                 <div class="cover-meta-item">
-                  <div class="cover-meta-label">Proyectos</div>
-                  <div class="cover-meta-value">${activos.length} activos</div>
+                  <div class="cover-meta-label">${t('p4_pdf_projects_label')}</div>
+                  <div class="cover-meta-value">${activos.length} ${t('p4_pdf_active_word')}</div>
                 </div>
                 <div class="cover-meta-item">
-                  <div class="cover-meta-label">Presupuesto</div>
+                  <div class="cover-meta-label">${t('p4_pdf_budget_label')}</div>
                   <div class="cover-meta-value">${fmt.moneyCompact(agg.BAC)}</div>
                 </div>
               </div>
             </div>
-            <div class="cover-badge">Confidencial</div>
+            <div class="cover-badge">${t('p4_pdf_confidential')}</div>
           </div>
         `;
 
@@ -2794,45 +3086,52 @@
         // ============================================================
         let contenidoHTML = '';
 
-        // ============ 1. REPORTE EJECUTIVO ============
+               // ============ 1. REPORTE EJECUTIVO ============
         if (tipo === 'ejecutivo') {
           const cpiColor = agg.CPI >= 1 ? '#22c55e' : agg.CPI >= 0.9 ? '#f59e0b' : '#ef4444';
           const spiColor = agg.SPI >= 1 ? '#22c55e' : agg.SPI >= 0.9 ? '#f59e0b' : '#ef4444';
           const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
 
-          contenidoHTML = portada('Reporte Ejecutivo', 'Análisis consolidado del Portafolio y estado estratégico de los proyectos activos.') + `
+          const cpiStatus = agg.CPI >= 1 ? t('p4_r1_cpi_above') : agg.CPI >= 0.9 ? t('p4_r1_cpi_tolerance') : t('p4_r1_cpi_attention');
+
+          contenidoHTML = portada(t('p4_r1_title'), t('p4_r1_subtitle')) + `
 
           <!-- PÁGINA 1: KPIs -->
           <div class="page">
-            ${pageHeader('Resumen Ejecutivo', 'Dashboard Consolidado')}
+            ${pageHeader(t('p4_r1_page1_title'), t('p4_r1_page1_meta'))}
 
             <div class="story">
-              El Portafolio gestiona <strong>${activos.length} proyectos activos</strong> con un presupuesto total de <strong>${fmt.money(agg.BAC)}</strong>.
-              El desempeño financiero global muestra un CPI de <strong>${agg.CPI.toFixed(2)}</strong> ${agg.CPI >= 1 ? 'por encima del objetivo' : agg.CPI >= 0.9 ? 'en zona de tolerancia' : 'requiriendo atención ejecutiva'},
-              mientras que el cronograma presenta un SPI de <strong>${agg.SPI.toFixed(2)}</strong>.
-              El margen proyectado al cierre es de <strong>${fmt.money(agg.margen)}</strong> (${fmt.pct(agg.margenPct)}).
+              ${tI('p4_r1_story', {
+                count: activos.length,
+                bac: fmt.money(agg.BAC),
+                cpi: agg.CPI.toFixed(2),
+                cpiStatus: cpiStatus,
+                spi: agg.SPI.toFixed(2),
+                margen: fmt.money(agg.margen),
+                margenPct: fmt.pct(agg.margenPct)
+              })}
             </div>
 
             <div class="section">
-              <div class="section-title">Indicadores Clave del Portafolio</div>
+              <div class="section-title">${t('p4_r1_kpi_section')}</div>
               <div class="kpi-grid">
                 <div class="kpi-card" style="--c:#fbbf24">
-                  <div class="kpi-label">Presupuesto Total</div>
+                  <div class="kpi-label">${t('p4_r1_kpi_budget')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
-                  <div class="kpi-sub">${activos.length} proyectos activos</div>
+                  <div class="kpi-sub">${tI('p4_r1_kpi_budget_sub', { count: activos.length })}</div>
                 </div>
                 <div class="kpi-card" style="--c:#22c55e">
-                  <div class="kpi-label">Valor Ganado</div>
+                  <div class="kpi-label">${t('p4_r1_kpi_ev')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.EV)}</div>
-                  <div class="kpi-sub">${fmt.pct(agg.progresoPct)} completado</div>
+                  <div class="kpi-sub">${tI('p4_r1_kpi_ev_sub', { pct: fmt.pct(agg.progresoPct) })}</div>
                 </div>
                 <div class="kpi-card" style="--c:#ef4444">
-                  <div class="kpi-label">Costo Real</div>
+                  <div class="kpi-label">${t('p4_r1_kpi_ac')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.AC)}</div>
-                  <div class="kpi-sub">${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} consumido</div>
+                  <div class="kpi-sub">${tI('p4_r1_kpi_ac_sub', { pct: fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0) })}</div>
                 </div>
                 <div class="kpi-card" style="--c:${margenColor}">
-                  <div class="kpi-label">Margen Proyectado</div>
+                  <div class="kpi-label">${t('p4_r1_kpi_margin')}</div>
                   <div class="kpi-value">${agg.margen >= 0 ? '+' : ''}${fmt.moneyCompact(agg.margen)}</div>
                   <div class="kpi-sub">${fmt.pct(agg.margenPct)}</div>
                 </div>
@@ -2840,18 +3139,18 @@
             </div>
 
             <div class="section">
-              <div class="section-title">Salud del Portafolio</div>
+              <div class="section-title">${t('p4_r1_health_section')}</div>
               <div class="grid-2" style="align-items:center;">
                 <div style="display:flex;gap:26px;justify-content:space-around;">
                   ${gauge(agg.CPI * 100 / 1.5, cpiColor, 'CPI', agg.CPI.toFixed(2))}
                   ${gauge(agg.SPI * 100 / 1.5, spiColor, 'SPI', agg.SPI.toFixed(2))}
-                  ${gauge(agg.progresoPct, '#7c3aed', 'Progreso', agg.progresoPct.toFixed(0) + '%')}
+                  ${gauge(agg.progresoPct, '#7c3aed', t('p4_r1_gauge_progress'), agg.progresoPct.toFixed(0) + '%')}
                 </div>
                 <div>
-                  ${bar('Saludable', agg.distribucion.saludable, activos.length, '#22c55e')}
-                  ${bar('Aceptable', agg.distribucion.aceptable, activos.length, '#a78bfa')}
-                  ${bar('En Riesgo', agg.distribucion.riesgo, activos.length, '#f59e0b')}
-                  ${bar('Crítico', agg.distribucion.critico, activos.length, '#ef4444')}
+                  ${bar(t('p4_r1_bar_healthy'),    agg.distribucion.saludable, activos.length, '#22c55e')}
+                  ${bar(t('p4_r1_bar_acceptable'), agg.distribucion.aceptable, activos.length, '#a78bfa')}
+                  ${bar(t('p4_r1_bar_risk'),       agg.distribucion.riesgo,     activos.length, '#f59e0b')}
+                  ${bar(t('p4_r1_bar_critical'),   agg.distribucion.critico,    activos.length, '#ef4444')}
                 </div>
               </div>
             </div>
@@ -2861,18 +3160,18 @@
 
           <!-- PÁGINA 2: DETALLE POR PROYECTO -->
           <div class="page">
-            ${pageHeader('Desglose por Proyecto', 'Análisis Detallado')}
+            ${pageHeader(t('p4_r1_page2_title'), t('p4_r1_page2_meta'))}
 
             <table class="premium">
               <thead>
                 <tr>
-                  <th>Proyecto</th>
-                  <th class="num">Presupuesto</th>
+                  <th>${t('p4_r1_col_project')}</th>
+                  <th class="num">${t('p4_r1_col_budget')}</th>
                   <th class="num">CPI</th>
                   <th class="num">SPI</th>
                   <th class="num">EAC</th>
                   <th class="num">VAC</th>
-                  <th style="text-align:center;">Salud</th>
+                  <th style="text-align:center;">${t('p4_r1_col_health')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2890,7 +3189,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td>Portafolio CONSOLIDADO</td>
+                  <td>${t('p4_r1_footer_total')}</td>
                   <td class="num">${fmt.money(agg.BAC)}</td>
                   <td class="num">${agg.CPI.toFixed(2)}</td>
                   <td class="num">${agg.SPI.toFixed(2)}</td>
@@ -2903,16 +3202,20 @@
 
             <div class="divider"></div>
 
-            <div class="section-title">Análisis de Desviaciones</div>
+            <div class="section-title">${t('p4_r1_deviation_section')}</div>
             ${activos.filter(p => p.VAC < 0).length > 0 ? activos.filter(p => p.VAC < 0).map(p => `
               <div class="insight" style="--ic:#ef4444;">
                 <div class="insight-icon">⚠️</div>
                 <div class="insight-content">
                   <div class="insight-title">${p.name}</div>
-                  <div class="insight-text">Sobrecosto proyectado de <strong>${fmt.money(Math.abs(p.VAC))}</strong>. El CPI de ${p.CPI.toFixed(2)} indica que por cada euro invertido se generan solo ${(p.CPI * 100).toFixed(1)} céntimos de valor ganado. Requiere auditoría de costes.</div>
+                  <div class="insight-text">${tI('p4_r1_deviation_item', {
+                    vac: fmt.money(Math.abs(p.VAC)),
+                    cpi: p.CPI.toFixed(2),
+                    pct: (p.CPI * 100).toFixed(1)
+                  })}</div>
                 </div>
               </div>
-            `).join('') : '<div class="story">✅ Ningún proyecto presenta sobrecosto proyectado al cierre.</div>'}
+            `).join('') : `<div class="story">${t('p4_r1_no_deviations')}</div>`}
 
             ${pageFooter(2)}
           </div>
