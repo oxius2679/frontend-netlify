@@ -380,7 +380,39 @@
       p4_r1_footer_total: 'PORTAFOLIO CONSOLIDADO',
             p4_r1_deviation_section: 'Análisis de Desviaciones',
       p4_r1_deviation_item: 'Sobrecosto proyectado de {vac}. El CPI de {cpi} indica que por cada euro invertido se generan solo {pct} céntimos de valor ganado. Requiere auditoría de costes.',
-      p4_r1_no_deviations: '✅ Ningún proyecto presenta sobrecosto proyectado al cierre.'
+            p4_r1_no_deviations: '✅ Ningún proyecto presenta sobrecosto proyectado al cierre.',
+
+      // ═══════════ REPORTE 2: FINANCIERO ═══════════
+      p4_r2_title: 'Reporte Financiero',
+      p4_r2_subtitle: 'Análisis exhaustivo de costes, márgenes y proyecciones financieras del portafolio.',
+      p4_r2_page1_title: 'Estado Financiero',
+      p4_r2_page1_meta: 'Análisis Consolidado',
+      p4_r2_kpi_section: 'Resumen Financiero',
+      p4_r2_kpi_budget: 'Presupuesto Total',
+      p4_r2_kpi_budget_sub: 'Autorizado',
+      p4_r2_kpi_ac: 'Costo Real',
+      p4_r2_kpi_ac_sub: '{pct} consumido',
+      p4_r2_kpi_eac: 'EAC Proyectado',
+      p4_r2_kpi_eac_sub: 'Estimado al cierre',
+      p4_r2_kpi_vac: 'VAC',
+      p4_r2_kpi_vac_saving: 'Ahorro',
+      p4_r2_kpi_vac_overcost: 'Sobrecosto',
+      p4_r2_consumption_section: 'Consumo vs Presupuesto',
+      p4_r2_bar_bac: 'Presupuesto (BAC)',
+      p4_r2_bar_ac: 'Costo Real (AC)',
+      p4_r2_bar_ev: 'Valor Ganado (EV)',
+      p4_r2_bar_eac: 'Proyección Final (EAC)',
+      p4_r2_page2_title: 'Desglose por Proyecto',
+      p4_r2_page2_meta: 'Análisis Individual',
+      p4_r2_col_project: 'Proyecto',
+      p4_r2_col_margin: 'Margen %',
+      p4_r2_footer_total: 'PORTAFOLIO CONSOLIDADO',
+      p4_r2_analysis_section: 'Análisis Financiero',
+      p4_r2_story_consumed: 'El portafolio ha consumido {pctConsumed} del presupuesto con un avance del {pctProgress}. El CPI de {cpi} indica que {cpiEval}. ',
+      p4_r2_cpi_good: 'la eficiencia financiera supera el plan',
+      p4_r2_cpi_bad: 'se está generando menos valor del esperado por cada euro invertido',
+      p4_r2_margin_negative: 'El margen proyectado es negativo ({margen}), lo que requiere auditoría de costes inmediata.',
+      p4_r2_margin_positive: 'El margen proyectado es positivo ({margen}).'
     },
     en: {
       // Sidebar
@@ -724,7 +756,39 @@
       p4_r1_footer_total: 'CONSOLIDATED PORTFOLIO',
             p4_r1_deviation_section: 'Deviation Analysis',
       p4_r1_deviation_item: 'Projected overrun of {vac}. The CPI of {cpi} indicates that for every euro invested, only {pct} cents of earned value are generated. Requires cost audit.',
-      p4_r1_no_deviations: '✅ No project shows projected overrun at completion.'
+           p4_r1_no_deviations: '✅ No project shows projected overrun at completion.',
+
+      // ═══════════ REPORT 2: FINANCIAL ═══════════
+      p4_r2_title: 'Financial Report',
+      p4_r2_subtitle: 'Comprehensive analysis of costs, margins and financial projections of the portfolio.',
+      p4_r2_page1_title: 'Financial Status',
+      p4_r2_page1_meta: 'Consolidated Analysis',
+      p4_r2_kpi_section: 'Financial Summary',
+      p4_r2_kpi_budget: 'Total Budget',
+      p4_r2_kpi_budget_sub: 'Authorized',
+      p4_r2_kpi_ac: 'Actual Cost',
+      p4_r2_kpi_ac_sub: '{pct} consumed',
+      p4_r2_kpi_eac: 'Projected EAC',
+      p4_r2_kpi_eac_sub: 'Estimated at completion',
+      p4_r2_kpi_vac: 'VAC',
+      p4_r2_kpi_vac_saving: 'Savings',
+      p4_r2_kpi_vac_overcost: 'Overcost',
+      p4_r2_consumption_section: 'Consumption vs Budget',
+      p4_r2_bar_bac: 'Budget (BAC)',
+      p4_r2_bar_ac: 'Actual Cost (AC)',
+      p4_r2_bar_ev: 'Earned Value (EV)',
+      p4_r2_bar_eac: 'Final Projection (EAC)',
+      p4_r2_page2_title: 'Project Breakdown',
+      p4_r2_page2_meta: 'Individual Analysis',
+      p4_r2_col_project: 'Project',
+      p4_r2_col_margin: 'Margin %',
+      p4_r2_footer_total: 'CONSOLIDATED PORTFOLIO',
+      p4_r2_analysis_section: 'Financial Analysis',
+      p4_r2_story_consumed: 'The portfolio has consumed {pctConsumed} of the budget with progress of {pctProgress}. The CPI of {cpi} indicates that {cpiEval}. ',
+      p4_r2_cpi_good: 'financial efficiency exceeds the plan',
+      p4_r2_cpi_bad: 'less value than expected is being generated for each euro invested',
+      p4_r2_margin_negative: 'The projected margin is negative ({margen}), which requires immediate cost audit.',
+      p4_r2_margin_positive: 'The projected margin is positive ({margen}).'
     }
   };
 
@@ -3222,64 +3286,69 @@
           `;
         }
 
-        // ============ 2. REPORTE FINANCIERO ============
+               // ============ 2. REPORTE FINANCIERO ============
         else if (tipo === 'financiero') {
           const margenColor = agg.margen >= 0 ? '#22c55e' : '#ef4444';
 
-          contenidoHTML = portada('Reporte Financiero', 'Análisis exhaustivo de costes, márgenes y proyecciones financieras del Portafolio.') + `
+          const cpiEval = agg.CPI >= 1 ? t('p4_r2_cpi_good') : t('p4_r2_cpi_bad');
+          const marginStory = agg.margen < 0
+            ? tI('p4_r2_margin_negative', { margen: fmt.money(agg.margen) })
+            : tI('p4_r2_margin_positive', { margen: fmt.money(agg.margen) });
+
+          contenidoHTML = portada(t('p4_r2_title'), t('p4_r2_subtitle')) + `
 
           <div class="page">
-            ${pageHeader('Estado Financiero', 'Análisis Consolidado')}
+            ${pageHeader(t('p4_r2_page1_title'), t('p4_r2_page1_meta'))}
 
             <div class="section">
-              <div class="section-title">Resumen Financiero</div>
+              <div class="section-title">${t('p4_r2_kpi_section')}</div>
               <div class="kpi-grid">
                 <div class="kpi-card" style="--c:#fbbf24">
-                  <div class="kpi-label">Presupuesto Total</div>
+                  <div class="kpi-label">${t('p4_r2_kpi_budget')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.BAC)}</div>
-                  <div class="kpi-sub">Autorizado</div>
+                  <div class="kpi-sub">${t('p4_r2_kpi_budget_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:#ef4444">
-                  <div class="kpi-label">Costo Real</div>
+                  <div class="kpi-label">${t('p4_r2_kpi_ac')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.AC)}</div>
-                  <div class="kpi-sub">${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)} consumido</div>
+                  <div class="kpi-sub">${tI('p4_r2_kpi_ac_sub', { pct: fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0) })}</div>
                 </div>
                 <div class="kpi-card" style="--c:#7c3aed">
-                  <div class="kpi-label">EAC Proyectado</div>
+                  <div class="kpi-label">${t('p4_r2_kpi_eac')}</div>
                   <div class="kpi-value">${fmt.moneyCompact(agg.EAC)}</div>
-                  <div class="kpi-sub">Estimado al cierre</div>
+                  <div class="kpi-sub">${t('p4_r2_kpi_eac_sub')}</div>
                 </div>
                 <div class="kpi-card" style="--c:${margenColor}">
-                  <div class="kpi-label">VAC</div>
+                  <div class="kpi-label">${t('p4_r2_kpi_vac')}</div>
                   <div class="kpi-value">${agg.VAC >= 0 ? '+' : ''}${fmt.moneyCompact(agg.VAC)}</div>
-                  <div class="kpi-sub">${agg.VAC >= 0 ? 'Ahorro' : 'Sobrecosto'}</div>
+                  <div class="kpi-sub">${agg.VAC >= 0 ? t('p4_r2_kpi_vac_saving') : t('p4_r2_kpi_vac_overcost')}</div>
                 </div>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">Consumo vs Presupuesto</div>
-              ${bar('Presupuesto (BAC)', agg.BAC, agg.BAC, '#fbbf24', ' €')}
-              ${bar('Costo Real (AC)', agg.AC, agg.BAC, '#ef4444', ' €')}
-              ${bar('Valor Ganado (EV)', agg.EV, agg.BAC, '#22c55e', ' €')}
-              ${bar('Proyección Final (EAC)', agg.EAC, Math.max(agg.BAC, agg.EAC), '#7c3aed', ' €')}
+              <div class="section-title">${t('p4_r2_consumption_section')}</div>
+              ${bar(t('p4_r2_bar_bac'), agg.BAC, agg.BAC, '#fbbf24', ' €')}
+              ${bar(t('p4_r2_bar_ac'),  agg.AC,  agg.BAC, '#ef4444', ' €')}
+              ${bar(t('p4_r2_bar_ev'),  agg.EV,  agg.BAC, '#22c55e', ' €')}
+              ${bar(t('p4_r2_bar_eac'), agg.EAC, Math.max(agg.BAC, agg.EAC), '#7c3aed', ' €')}
             </div>
 
             ${pageFooter(1)}
           </div>
 
           <div class="page">
-            ${pageHeader('Desglose por Proyecto', 'Análisis Individual')}
+            ${pageHeader(t('p4_r2_page2_title'), t('p4_r2_page2_meta'))}
 
             <table class="premium">
               <thead>
                 <tr>
-                  <th>Proyecto</th>
+                  <th>${t('p4_r2_col_project')}</th>
                   <th class="num">BAC</th>
                   <th class="num">AC</th>
                   <th class="num">EAC</th>
                   <th class="num">VAC</th>
-                  <th class="num">Margen %</th>
+                  <th class="num">${t('p4_r2_col_margin')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3296,7 +3365,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td>Portafolio CONSOLIDADO</td>
+                  <td>${t('p4_r2_footer_total')}</td>
                   <td class="num">${fmt.money(agg.BAC)}</td>
                   <td class="num">${fmt.money(agg.AC)}</td>
                   <td class="num">${fmt.money(agg.EAC)}</td>
@@ -3308,11 +3377,14 @@
 
             <div class="divider"></div>
 
-            <div class="section-title">Análisis Financiero</div>
+            <div class="section-title">${t('p4_r2_analysis_section')}</div>
             <div class="story">
-              El Portafolio ha consumido <strong>${fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0)}</strong> del presupuesto con un avance del <strong>${fmt.pct(agg.progresoPct)}</strong>.
-              El CPI de <strong>${agg.CPI.toFixed(2)}</strong> indica que ${agg.CPI >= 1 ? 'la eficiencia financiera supera el plan' : 'se está generando menos valor del esperado por cada euro invertido'}.
-              ${agg.margen < 0 ? `El margen proyectado es negativo (<strong>${fmt.money(agg.margen)}</strong>), lo que requiere auditoría de costes inmediata.` : `El margen proyectado es positivo (<strong>${fmt.money(agg.margen)}</strong>).`}
+              ${tI('p4_r2_story_consumed', {
+                pctConsumed: fmt.pct(agg.BAC > 0 ? (agg.AC / agg.BAC) * 100 : 0),
+                pctProgress: fmt.pct(agg.progresoPct),
+                cpi: agg.CPI.toFixed(2),
+                cpiEval: cpiEval
+              })}${marginStory}
             </div>
 
             ${pageFooter(2)}
