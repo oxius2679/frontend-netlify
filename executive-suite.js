@@ -105,8 +105,111 @@
       p1_runway: 'Runway',
       p1_days: 'días',
       p1_top_margin: 'Top Proyectos por Margen',
-      p1_tasks_word: 'tareas',
-      p1_completed: 'completado'
+            p1_tasks_word: 'tareas',
+      p1_completed: 'completado',
+
+      // ═══════════ MÓDULO 2: OKRs Y ESTRATEGIA ═══════════
+      p2_no_projects: 'No hay proyectos disponibles',
+      p2_scorecard_title: 'Cuadro de Mando Integral · Salud Estratégica Global',
+      p2_score_label: 'Puntuación Estratégica / 100',
+      p2_score_excellent: '🟢 Excelente',
+      p2_score_stable: '🟡 Estable',
+      p2_score_needs_action: '🔴 Requiere acción',
+      p2_persp_financiera: 'Perspectiva Financiera',
+      p2_persp_cliente: 'Perspectiva Cliente',
+      p2_persp_procesos: 'Procesos Internos',
+      p2_persp_aprendizaje: 'Aprendizaje y Crecimiento',
+      p2_objectives_title: 'Objetivos Estratégicos Derivados',
+      p2_progress_word: 'Progreso',
+      p2_alignment_title: 'Matriz de Alineación Estratégica',
+      p2_col_project: 'Proyecto',
+      p2_col_alignment: 'Alineación',
+      p2_col_impact: 'Impacto Estratégico',
+      p2_col_priority: 'Prioridad',
+      p2_col_recommendation: 'Recomendación',
+      p2_forecast_title: 'Previsión Estratégica 12 meses',
+      p2_decisions_title: 'Decisiones Estratégicas Recomendadas',
+
+      // Insights scorecard
+      p2_ins_fin_estable: 'Situación estable',
+      p2_ins_fin_solidas: 'Finanzas sólidas',
+      p2_ins_fin_ajustado: 'Margen ajustado',
+      p2_ins_fin_intervencion: 'Requiere intervención',
+      p2_ins_cli_moderada: 'Satisfacción moderada',
+      p2_ins_cli_satisfechos: 'Clientes satisfechos',
+      p2_ins_cli_atencion: 'Atención requerida',
+      p2_ins_cli_riesgo: 'Riesgo de insatisfacción',
+      p2_ins_pro_funcionales: 'Procesos funcionales',
+      p2_ins_pro_excelencia: 'Excelencia operativa',
+      p2_ins_pro_oportunidades: 'Oportunidades de mejora',
+      p2_ins_pro_reingenieria: 'Reingeniería necesaria',
+      p2_ins_apr_productivo: 'Equipo productivo',
+      p2_ins_apr_alto: 'Alto desempeño',
+      p2_ins_apr_continuo: 'Aprendizaje continuo',
+      p2_ins_apr_formacion: 'Requiere formación',
+
+      // Objetivos (títulos, descripciones y acciones)
+      p2_obj1_title: 'Optimizar eficiencia de costos (CPI ≥ 1.00)',
+      p2_obj1_desc: 'Actualmente el CPI global es {cpi}. Objetivo: recuperar el margen y alcanzar eficiencia financiera sostenible.',
+      p2_obj1_action_ok: 'Mantener el control actual',
+      p2_obj1_action_ko: 'Auditoría de horas y revisión de alcance',
+      p2_obj2_title: 'Alinear el cronograma (SPI ≥ 1.00)',
+      p2_obj2_desc: 'SPI global: {spi}. Objetivo: ejecutar al ritmo planificado y recuperar retrasos acumulados.',
+      p2_obj2_action_ok: 'Mantener velocidad',
+      p2_obj2_action_ko: 'Fast-tracking en ruta crítica',
+      p2_obj3_title: 'Alcanzar margen positivo del portafolio',
+      p2_obj3_desc: 'Margen actual: {margen} ({margenPct}). Objetivo: reducir sobrecostos y proteger rentabilidad.',
+      p2_obj3_action_ok: 'Documentar prácticas exitosas',
+      p2_obj3_action_ko: 'Renegociar contratos y revisar estimaciones',
+      p2_obj4_title: 'Reducir tareas rezagadas a < 5%',
+      p2_obj4_desc: 'Actualmente {rezagadas} de {total} tareas están rezagadas ({pct}). Objetivo: cero rezagos críticos.',
+      p2_obj4_action_ok: 'Mantener seguimiento',
+      p2_obj4_action_ko: 'Reasignación de recursos y revisión de dependencias',
+      p2_obj5_title: 'Consolidar el portafolio activo',
+      p2_obj5_desc: '{activos} proyectos activos. Objetivo: escalar a {target} proyectos con el mismo equipo.',
+            p2_obj5_action: 'Estandarizar procesos y automatizar reportes',
+
+      // Estados de objetivos
+      p2_estado_logrado: 'Logrado',
+      p2_estado_en_curso: 'En curso',
+      p2_estado_riesgo: 'Riesgo',
+      p2_estado_critico: 'Crítico',
+
+      // Prioridades (alineación)
+      p2_priority_critica: 'Crítica',
+      p2_priority_alta: 'Alta',
+      p2_priority_media: 'Media',
+      p2_priority_baja: 'Baja',
+
+      // Impacto estratégico
+      p2_impact_nulo: 'Nulo',
+      p2_impact_bajo: 'Bajo',
+      p2_impact_medio: 'Medio',
+      p2_impact_alto: 'Alto',
+
+      // Recomendaciones de alineación
+      p2_rec_define_scope: 'Definir alcance o archivar',
+      p2_rec_maintain: 'Mantener monitoreo',
+      p2_rec_immediate: 'Intervención ejecutiva inmediata',
+      p2_rec_recovery: 'Plan de recuperación en 7 días',
+
+      // Forecast trimestres
+      p2_q1_desc: 'Recuperación del margen actual',
+      p2_q2_desc: 'Consolidación del portafolio',
+      p2_q3_desc: 'Escalado del equipo',
+      p2_q4_desc: 'Nuevos mercados',
+
+      // Decisiones del forecast
+      p2_dec1_title_urgent: 'Auditoría financiera urgente',
+      p2_dec1_title_optimize: 'Optimización del margen',
+      p2_dec1_detail_urgent: 'Sobrecosto detectado en el portafolio. Revisar estimaciones, horas facturables y alcance de los proyectos en riesgo.',
+      p2_dec1_detail_optimize: 'El portafolio es rentable. Documentar prácticas exitosas para replicar.',
+      p2_dec2_title: 'Priorizar proyectos con mayor alineación',
+      p2_dec2_detail: 'Enfocar recursos en proyectos con CPI/SPI ≥ 0.95 para maximizar el retorno del portafolio.',
+      p2_dec3_title_clean: 'Decidir sobre proyectos sin alcance',
+      p2_dec3_title_scale: 'Revisar oportunidades de escalado',
+      p2_dec3_detail_clean: 'Hay {count} proyectos sin tareas. Definir alcance o archivar para no distorsionar métricas.',
+            p2_dec3_detail_scale: 'La estructura actual permite añadir 2 proyectos más con el equipo existente.'
     },
     en: {
       // Sidebar
@@ -175,14 +278,128 @@
       p1_runway: 'Runway',
       p1_days: 'days',
       p1_top_margin: 'Top Projects by Margin',
-      p1_tasks_word: 'tasks',
-      p1_completed: 'completed'
+            p1_tasks_word: 'tasks',
+      p1_completed: 'completed',
+
+      // ═══════════ MODULE 2: OKRs & STRATEGY ═══════════
+      p2_no_projects: 'No projects available',
+      p2_scorecard_title: 'Balanced Scorecard · Global Strategic Health',
+      p2_score_label: 'Strategic Score / 100',
+      p2_score_excellent: '🟢 Excellent',
+      p2_score_stable: '🟡 Stable',
+      p2_score_needs_action: '🔴 Action required',
+      p2_persp_financiera: 'Financial Perspective',
+      p2_persp_cliente: 'Customer Perspective',
+      p2_persp_procesos: 'Internal Processes',
+      p2_persp_aprendizaje: 'Learning & Growth',
+      p2_objectives_title: 'Derived Strategic Objectives',
+      p2_progress_word: 'Progress',
+      p2_alignment_title: 'Strategic Alignment Matrix',
+      p2_col_project: 'Project',
+      p2_col_alignment: 'Alignment',
+      p2_col_impact: 'Strategic Impact',
+      p2_col_priority: 'Priority',
+      p2_col_recommendation: 'Recommendation',
+      p2_forecast_title: 'Strategic Forecast 12 months',
+      p2_decisions_title: 'Recommended Strategic Decisions',
+
+      // Scorecard insights
+      p2_ins_fin_estable: 'Stable situation',
+      p2_ins_fin_solidas: 'Strong finances',
+      p2_ins_fin_ajustado: 'Tight margin',
+      p2_ins_fin_intervencion: 'Intervention required',
+      p2_ins_cli_moderada: 'Moderate satisfaction',
+      p2_ins_cli_satisfechos: 'Satisfied clients',
+      p2_ins_cli_atencion: 'Attention required',
+      p2_ins_cli_riesgo: 'Risk of dissatisfaction',
+      p2_ins_pro_funcionales: 'Functional processes',
+      p2_ins_pro_excelencia: 'Operational excellence',
+      p2_ins_pro_oportunidades: 'Improvement opportunities',
+      p2_ins_pro_reingenieria: 'Reengineering required',
+      p2_ins_apr_productivo: 'Productive team',
+      p2_ins_apr_alto: 'High performance',
+      p2_ins_apr_continuo: 'Continuous learning',
+      p2_ins_apr_formacion: 'Training required',
+
+      // Objectives (titles, descriptions and actions)
+      p2_obj1_title: 'Optimize cost efficiency (CPI ≥ 1.00)',
+      p2_obj1_desc: 'Global CPI is currently {cpi}. Objective: recover margin and achieve sustainable financial efficiency.',
+      p2_obj1_action_ok: 'Maintain current control',
+      p2_obj1_action_ko: 'Hours audit and scope review',
+      p2_obj2_title: 'Align the schedule (SPI ≥ 1.00)',
+      p2_obj2_desc: 'Global SPI: {spi}. Objective: execute at planned pace and recover accumulated delays.',
+      p2_obj2_action_ok: 'Maintain velocity',
+      p2_obj2_action_ko: 'Fast-tracking on critical path',
+      p2_obj3_title: 'Achieve positive portfolio margin',
+      p2_obj3_desc: 'Current margin: {margen} ({margenPct}). Objective: reduce overruns and protect profitability.',
+      p2_obj3_action_ok: 'Document successful practices',
+      p2_obj3_action_ko: 'Renegotiate contracts and review estimates',
+      p2_obj4_title: 'Reduce overdue tasks to < 5%',
+      p2_obj4_desc: 'Currently {rezagadas} of {total} tasks are overdue ({pct}). Objective: zero critical delays.',
+      p2_obj4_action_ok: 'Maintain monitoring',
+      p2_obj4_action_ko: 'Resource reallocation and dependency review',
+      p2_obj5_title: 'Consolidate the active portfolio',
+      p2_obj5_desc: '{activos} active projects. Objective: scale to {target} projects with the same team.',
+           p2_obj5_action: 'Standardize processes and automate reports',
+
+      // Objective states
+      p2_estado_logrado: 'Achieved',
+      p2_estado_en_curso: 'In progress',
+      p2_estado_riesgo: 'At risk',
+      p2_estado_critico: 'Critical',
+
+      // Priorities (alignment)
+      p2_priority_critica: 'Critical',
+      p2_priority_alta: 'High',
+      p2_priority_media: 'Medium',
+      p2_priority_baja: 'Low',
+
+      // Strategic impact
+      p2_impact_nulo: 'None',
+      p2_impact_bajo: 'Low',
+      p2_impact_medio: 'Medium',
+      p2_impact_alto: 'High',
+
+      // Alignment recommendations
+      p2_rec_define_scope: 'Define scope or archive',
+      p2_rec_maintain: 'Maintain monitoring',
+      p2_rec_immediate: 'Immediate executive intervention',
+      p2_rec_recovery: '7-day recovery plan',
+
+      // Forecast quarters
+      p2_q1_desc: 'Current margin recovery',
+      p2_q2_desc: 'Portfolio consolidation',
+      p2_q3_desc: 'Team scaling',
+      p2_q4_desc: 'New markets',
+
+      // Forecast decisions
+      p2_dec1_title_urgent: 'Urgent financial audit',
+      p2_dec1_title_optimize: 'Margin optimization',
+      p2_dec1_detail_urgent: 'Overcost detected in the portfolio. Review estimates, billable hours, and scope of projects at risk.',
+      p2_dec1_detail_optimize: 'The portfolio is profitable. Document successful practices to replicate.',
+      p2_dec2_title: 'Prioritize projects with highest alignment',
+      p2_dec2_detail: 'Focus resources on projects with CPI/SPI ≥ 0.95 to maximize portfolio return.',
+      p2_dec3_title_clean: 'Decide on projects without scope',
+      p2_dec3_title_scale: 'Review scaling opportunities',
+      p2_dec3_detail_clean: 'There are {count} projects without tasks. Define scope or archive to avoid distorting metrics.',
+      p2_dec3_detail_scale: 'The current structure allows adding 2 more projects with the existing team.'
     }
   };
 
   function t(key) {
     const lang = getLang();
     return (I18N[lang] && I18N[lang][key]) || I18N.es[key] || key;
+  }
+
+
+  // Traduce + interpola {variables} en el texto
+  function tI(key, vars) {
+    let str = t(key);
+    if (!vars) return str;
+    Object.keys(vars).forEach(k => {
+      str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+    });
+    return str;
   }
 
 
@@ -992,10 +1209,10 @@
     /* ---------- MÓDULOS PENDIENTES (placeholders hasta próxima entrega) ---------- */
         okrs: {
       id: 'okrs', icon: '🎯', label: 'OKRs & Estrategia', subtitle: 'Alineación estratégica', badge: 'CEO',
-      render(container) {
+            render(container) {
         const projects = State.projects;
         if (!projects.length) {
-          container.innerHTML = `<div class="exec-loading">📭 No hay proyectos disponibles</div>`;
+          container.innerHTML = `<div class="exec-loading">📭 ${t('p2_no_projects')}</div>`;
           return;
         }
 
@@ -1023,25 +1240,25 @@
         container.innerHTML = `
           <!-- SCORECARD BALANCEADO -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Balanced Scorecard · Salud Estratégica Global</h3>
+            <h3 class="exec-card-title">${t('p2_scorecard_title')}</h3>
             <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
               <div style="text-align:center;min-width:180px;">
                 <div style="font-size:72px;font-weight:900;background:linear-gradient(135deg,#22c55e,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">
                   ${totalScorecard}
                 </div>
                 <div style="font-size:11px;color:#fbbf24;letter-spacing:3px;text-transform:uppercase;margin-top:8px;font-weight:800;">
-                  Score Estratégico / 100
+                  ${t('p2_score_label')}
                 </div>
                 <div style="font-size:11px;color:#8b7cb8;margin-top:6px;">
-                  ${totalScorecard >= 75 ? '🟢 Excelente' : totalScorecard >= 50 ? '🟡 Estable' : '🔴 Requiere acción'}
+                  ${totalScorecard >= 75 ? t('p2_score_excellent') : totalScorecard >= 50 ? t('p2_score_stable') : t('p2_score_needs_action')}
                 </div>
               </div>
               <div style="flex:1;min-width:280px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 ${[
-                  { key: 'financiera', icon: '💰', label: 'Perspectiva Financiera', color: '#22c55e' },
-                  { key: 'cliente', icon: '🎯', label: 'Perspectiva Cliente', color: '#a78bfa' },
-                  { key: 'procesos', icon: '⚙️', label: 'Procesos Internos', color: '#fbbf24' },
-                  { key: 'aprendizaje', icon: '🧠', label: 'Aprendizaje & Crecimiento', color: '#67e8f9' }
+                  { key: 'financiera', icon: '💰', label: t('p2_persp_financiera'), color: '#22c55e' },
+                  { key: 'cliente', icon: '🎯', label: t('p2_persp_cliente'), color: '#a78bfa' },
+                  { key: 'procesos', icon: '⚙️', label: t('p2_persp_procesos'), color: '#fbbf24' },
+                  { key: 'aprendizaje', icon: '🧠', label: t('p2_persp_aprendizaje'), color: '#67e8f9' }
                 ].map(p => {
                   const persp = scorecard[p.key];
                   return `
@@ -1062,7 +1279,7 @@
 
           <!-- OBJETIVOS ESTRATÉGICOS -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Objetivos Estratégicos Derivados</h3>
+            <h3 class="exec-card-title">${t('p2_objectives_title')}</h3>
             <div style="display:flex;flex-direction:column;gap:14px;">
               ${objetivos.map(obj => {
                 const color = obj.estado === 'logrado' ? '#22c55e' : obj.estado === 'en-curso' ? '#fbbf24' : obj.estado === 'riesgo' ? '#f97316' : '#ef4444';
@@ -1074,13 +1291,13 @@
                         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                           <span style="font-size:20px;">${icon}</span>
                           <span style="font-size:15px;font-weight:900;color:#fff;">${obj.titulo}</span>
-                          <span style="padding:2px 10px;border-radius:100px;font-size:10px;font-weight:800;letter-spacing:1px;background:${color}22;color:${color};">${obj.estado.toUpperCase()}</span>
+                                                    <span style="padding:2px 10px;border-radius:100px;font-size:10px;font-weight:800;letter-spacing:1px;background:${color}22;color:${color};">${t('p2_estado_' + obj.estado.replace('-', '_')).toUpperCase()}</span>
                         </div>
                         <div style="font-size:12px;color:#b8a4e8;line-height:1.6;">${obj.descripcion}</div>
                       </div>
                       <div style="text-align:right;min-width:120px;">
                         <div style="font-size:26px;font-weight:900;color:${color};">${obj.progreso}%</div>
-                        <div style="font-size:10px;color:#8b7cb8;letter-spacing:1.5px;text-transform:uppercase;">Progreso</div>
+                        <div style="font-size:10px;color:#8b7cb8;letter-spacing:1.5px;text-transform:uppercase;">${t('p2_progress_word')}</div>
                       </div>
                     </div>
                     <div class="exec-bar" style="margin-top:12px;"><div class="exec-bar-fill" style="--c:${color};width:0" data-w="${obj.progreso}%"></div></div>
@@ -1093,16 +1310,16 @@
 
           <!-- ALINEACIÓN PROYECTOS-ESTRATEGIA -->
           <div class="exec-card">
-            <h3 class="exec-card-title">Matriz de Alineación Estratégica</h3>
+            <h3 class="exec-card-title">${t('p2_alignment_title')}</h3>
             <div style="overflow-x:auto;">
               <table class="exec-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
-                    <th class="num">Alineación</th>
-                    <th class="num">Impacto Estratégico</th>
-                    <th class="num">Prioridad</th>
-                    <th>Recomendación</th>
+                    <th>${t('p2_col_project')}</th>
+                    <th class="num">${t('p2_col_alignment')}</th>
+                    <th class="num">${t('p2_col_impact')}</th>
+                    <th class="num">${t('p2_col_priority')}</th>
+                    <th>${t('p2_col_recommendation')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1112,8 +1329,8 @@
                       <tr style="--rowc:${prioridadColor}">
                         <td>${a.proyecto.substring(0, 40)}</td>
                         <td class="num" style="color:${a.alineacion >= 70 ? '#22c55e' : a.alineacion >= 40 ? '#fbbf24' : '#ef4444'};font-weight:900;">${a.alineacion}%</td>
-                        <td class="num">${a.impacto}</td>
-                        <td class="num"><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;background:${prioridadColor}22;color:${prioridadColor};">${a.prioridad.toUpperCase()}</span></td>
+                                             <td class="num">${t('p2_impact_' + a.impacto.toLowerCase())}</td>
+                                                <td class="num"><span style="padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800;background:${prioridadColor}22;color:${prioridadColor};">${t('p2_priority_' + a.prioridad).toUpperCase()}</span></td>
                         <td style="font-size:12px;color:#b8a4e8;">${a.recomendacion}</td>
                       </tr>
                     `;
@@ -1126,22 +1343,22 @@
           <!-- FORECAST ESTRATÉGICO -->
           <div class="exec-grid-2">
             <div class="exec-card">
-              <h3 class="exec-card-title">Forecast Estratégico 12 meses</h3>
+              <h3 class="exec-card-title">${t('p2_forecast_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:14px;">
-                ${forecast.trimestres.map(t => `
-                  <div style="padding:14px 16px;border-radius:12px;background:rgba(10,5,25,0.5);border-left:3px solid ${t.color};">
+                ${forecast.trimestres.map(tq => `
+                  <div style="padding:14px 16px;border-radius:12px;background:rgba(10,5,25,0.5);border-left:3px solid ${tq.color};">
                     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                      <span style="font-size:13px;font-weight:800;color:#fff;">${t.label}</span>
-                      <span style="font-size:14px;font-weight:900;color:${t.color};">${fmt.moneyCompact(t.ingresos)}</span>
+                      <span style="font-size:13px;font-weight:800;color:#fff;">${tq.label}</span>
+                      <span style="font-size:14px;font-weight:900;color:${tq.color};">${fmt.moneyCompact(tq.ingresos)}</span>
                     </div>
-                    <div style="font-size:11px;color:#8b7cb8;">${t.descripcion}</div>
+                    <div style="font-size:11px;color:#8b7cb8;">${tq.descripcion}</div>
                   </div>
                 `).join('')}
               </div>
             </div>
 
             <div class="exec-card">
-              <h3 class="exec-card-title">Decisiones Estratégicas Recomendadas</h3>
+              <h3 class="exec-card-title">${t('p2_decisions_title')}</h3>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 ${forecast.decisiones.map((d, i) => `
                   <div style="padding:12px 14px;border-radius:10px;background:linear-gradient(90deg, rgba(45,25,90,0.5), rgba(12,6,30,0.35));border-left:3px solid ${d.color};">
@@ -1164,78 +1381,80 @@
         }, 100);
       },
 
-      calcularFinanciera(agg) {
+
+
+           calcularFinanciera(agg) {
         const score = Math.round(
           Math.min(100, Math.max(0, (agg.CPI * 40) + (agg.margenPct > 0 ? 30 : 10) + (agg.VAC >= 0 ? 30 : 5)))
         );
-        let insight = 'Situación estable';
-        if (score >= 75) insight = 'Finanzas sólidas';
-        else if (score >= 50) insight = 'Margen ajustado';
-        else insight = 'Requiere intervención';
+        let insight = t('p2_ins_fin_estable');
+        if (score >= 75) insight = t('p2_ins_fin_solidas');
+        else if (score >= 50) insight = t('p2_ins_fin_ajustado');
+        else insight = t('p2_ins_fin_intervencion');
         return { score: Math.min(100, Math.max(0, score)), insight };
       },
 
-      calcularCliente(projects) {
+            calcularCliente(projects) {
         const avgProgress = projects.reduce((s, p) => s + p.progresoPct, 0) / Math.max(1, projects.length);
         const healthyRatio = projects.filter(p => p.health === 'saludable' || p.health === 'aceptable').length / Math.max(1, projects.length);
         const score = Math.round(avgProgress * 0.5 + healthyRatio * 100 * 0.5);
-        let insight = 'Satisfacción moderada';
-        if (score >= 75) insight = 'Clientes satisfechos';
-        else if (score >= 50) insight = 'Atención requerida';
-        else insight = 'Riesgo de insatisfacción';
+        let insight = t('p2_ins_cli_moderada');
+        if (score >= 75) insight = t('p2_ins_cli_satisfechos');
+        else if (score >= 50) insight = t('p2_ins_cli_atencion');
+        else insight = t('p2_ins_cli_riesgo');
         return { score: Math.min(100, Math.max(0, score)), insight };
       },
 
-      calcularProcesos(agg) {
+            calcularProcesos(agg) {
         const score = Math.round(Math.min(100, Math.max(0, agg.SPI * 60 + (agg.tasks > 0 ? (agg.completed / agg.tasks) * 40 : 40))));
-        let insight = 'Procesos funcionales';
-        if (score >= 75) insight = 'Excelencia operativa';
-        else if (score >= 50) insight = 'Oportunidades de mejora';
-        else insight = 'Reingeniería necesaria';
+        let insight = t('p2_ins_pro_funcionales');
+        if (score >= 75) insight = t('p2_ins_pro_excelencia');
+        else if (score >= 50) insight = t('p2_ins_pro_oportunidades');
+        else insight = t('p2_ins_pro_reingenieria');
         return { score: Math.min(100, Math.max(0, score)), insight };
       },
 
-      calcularAprendizaje(projects) {
+            calcularAprendizaje(projects) {
         const conTareas = projects.filter(p => p.totalTasks > 0);
         const ratioCompletado = conTareas.length > 0
           ? conTareas.reduce((s, p) => s + (p.completedTasks / p.totalTasks), 0) / conTareas.length
           : 0;
         const score = Math.round(ratioCompletado * 100);
-        let insight = 'Equipo productivo';
-        if (score >= 75) insight = 'Alto desempeño';
-        else if (score >= 40) insight = 'Aprendizaje continuo';
-        else insight = 'Requiere formación';
+        let insight = t('p2_ins_apr_productivo');
+        if (score >= 75) insight = t('p2_ins_apr_alto');
+        else if (score >= 40) insight = t('p2_ins_apr_continuo');
+        else insight = t('p2_ins_apr_formacion');
         return { score: Math.min(100, Math.max(0, score)), insight };
       },
 
-      derivarObjetivos(projects, agg, scorecard) {
+            derivarObjetivos(projects, agg, scorecard) {
         const objetivos = [];
 
         // Objetivo 1: Mejorar CPI global
         objetivos.push({
-          titulo: 'Optimizar eficiencia de costos (CPI ≥ 1.00)',
-          descripcion: `Actualmente el CPI global es ${agg.CPI.toFixed(2)}. Objetivo: recuperar el margen y alcanzar eficiencia financiera sostenible.`,
+          titulo: t('p2_obj1_title'),
+          descripcion: tI('p2_obj1_desc', { cpi: agg.CPI.toFixed(2) }),
           progreso: Math.min(100, Math.round(agg.CPI * 100)),
           estado: agg.CPI >= 1 ? 'logrado' : agg.CPI >= 0.95 ? 'en-curso' : agg.CPI >= 0.85 ? 'riesgo' : 'critico',
-          accion: agg.CPI >= 1 ? 'Mantener el control actual' : 'Auditoría de horas y revisión de alcance'
+          accion: agg.CPI >= 1 ? t('p2_obj1_action_ok') : t('p2_obj1_action_ko')
         });
 
         // Objetivo 2: Cumplir cronograma
         objetivos.push({
-          titulo: 'Alinear el cronograma (SPI ≥ 1.00)',
-          descripcion: `SPI global: ${agg.SPI.toFixed(2)}. Objetivo: ejecutar al ritmo planificado y recuperar retrasos acumulados.`,
+          titulo: t('p2_obj2_title'),
+          descripcion: tI('p2_obj2_desc', { spi: agg.SPI.toFixed(2) }),
           progreso: Math.min(100, Math.round(agg.SPI * 100)),
           estado: agg.SPI >= 1 ? 'logrado' : agg.SPI >= 0.95 ? 'en-curso' : agg.SPI >= 0.85 ? 'riesgo' : 'critico',
-          accion: agg.SPI >= 1 ? 'Mantener velocidad' : 'Fast-tracking en ruta crítica'
+          accion: agg.SPI >= 1 ? t('p2_obj2_action_ok') : t('p2_obj2_action_ko')
         });
 
-               // Objetivo 3: Alcanzar margen positivo
+        // Objetivo 3: Alcanzar margen positivo
         objetivos.push({
-          titulo: 'Alcanzar margen positivo del portafolio',
-          descripcion: `Margen actual: ${fmt.money(agg.margen)} (${fmt.pct(agg.margenPct)}). Objetivo: reducir sobrecostos y proteger rentabilidad.`,
+          titulo: t('p2_obj3_title'),
+          descripcion: tI('p2_obj3_desc', { margen: fmt.money(agg.margen), margenPct: fmt.pct(agg.margenPct) }),
           progreso: agg.margen >= 0 ? 100 : Math.round(Math.max(0, Math.min(100, 50 + agg.margenPct))),
           estado: agg.margen >= 0 ? 'logrado' : agg.margenPct > -5 ? 'en-curso' : agg.margenPct > -15 ? 'riesgo' : 'critico',
-          accion: agg.margen >= 0 ? 'Documentar prácticas exitosas' : 'Renegociar contratos y revisar estimaciones'
+          accion: agg.margen >= 0 ? t('p2_obj3_action_ok') : t('p2_obj3_action_ko')
         });
 
         // Objetivo 4: Reducir tareas rezagadas
@@ -1243,36 +1462,36 @@
         const tareasRezagadas = projects.reduce((s, p) => s + p.delayedTasks, 0);
         const pctRezago = totalTareas > 0 ? (tareasRezagadas / totalTareas) * 100 : 0;
         objetivos.push({
-          titulo: 'Reducir tareas rezagadas a < 5%',
-          descripcion: `Actualmente ${tareasRezagadas} de ${totalTareas} tareas están rezagadas (${fmt.pct(pctRezago)}). Objetivo: cero rezagos críticos.`,
+          titulo: t('p2_obj4_title'),
+          descripcion: tI('p2_obj4_desc', { rezagadas: tareasRezagadas, total: totalTareas, pct: fmt.pct(pctRezago) }),
           progreso: Math.max(0, Math.min(100, 100 - pctRezago * 5)),
           estado: pctRezago < 5 ? 'logrado' : pctRezago < 15 ? 'en-curso' : pctRezago < 30 ? 'riesgo' : 'critico',
-          accion: pctRezago < 5 ? 'Mantener seguimiento' : 'Reasignación de recursos y revisión de dependencias'
+          accion: pctRezago < 5 ? t('p2_obj4_action_ok') : t('p2_obj4_action_ko')
         });
 
         // Objetivo 5: Escalar portafolio
         const proyectosActivos = projects.filter(p => p.totalTasks > 0).length;
         objetivos.push({
-          titulo: 'Consolidar el portafolio activo',
-          descripcion: `${proyectosActivos} proyectos activos. Objetivo: escalar a ${proyectosActivos + 2} proyectos con el mismo equipo.`,
+          titulo: t('p2_obj5_title'),
+          descripcion: tI('p2_obj5_desc', { activos: proyectosActivos, target: proyectosActivos + 2 }),
           progreso: Math.round((proyectosActivos / (proyectosActivos + 2)) * 100),
           estado: 'en-curso',
-          accion: 'Estandarizar procesos y automatizar reportes'
+          accion: t('p2_obj5_action')
         });
 
         return objetivos;
       },
 
-      calcularAlineacion(projects, objetivos) {
+            calcularAlineacion(projects, objetivos) {
         return projects.map(p => {
           // Proyectos sin tareas: alineación baja (no aportan valor)
           if (p.totalTasks === 0) {
             return {
               proyecto: p.name,
               alineacion: 10,
-              impacto: 'Nulo',
+              impacto: 'nulo',
               prioridad: 'baja',
-              recomendacion: 'Definir alcance o archivar'
+              recomendacion: t('p2_rec_define_scope')
             };
           }
 
@@ -1284,54 +1503,49 @@
           );
 
           let prioridad = 'baja';
-          if (p.health === 'critico') prioridad = 'crítica';
+          if (p.health === 'critico') prioridad = 'critica';
           else if (p.health === 'riesgo') prioridad = 'alta';
           else if (p.health === 'aceptable') prioridad = 'media';
 
-          let impacto = 'Bajo';
-          if (p.BAC > 5000) impacto = 'Alto';
-          else if (p.BAC > 2000) impacto = 'Medio';
+          let impacto = 'bajo';
+          if (p.BAC > 5000) impacto = 'alto';
+          else if (p.BAC > 2000) impacto = 'medio';
 
-          let recomendacion = 'Mantener monitoreo';
-          if (p.health === 'critico') recomendacion = 'Intervención ejecutiva inmediata';
-          else if (p.health === 'riesgo') recomendacion = 'Plan de recuperación en 7 días';
-          else if (p.totalTasks === 0) recomendacion = 'Definir alcance o archivar';
+          let recomendacion = t('p2_rec_maintain');
+          if (p.health === 'critico') recomendacion = t('p2_rec_immediate');
+          else if (p.health === 'riesgo') recomendacion = t('p2_rec_recovery');
 
           return { proyecto: p.name, alineacion, impacto, prioridad, recomendacion };
         }).sort((a, b) => b.alineacion - a.alineacion);
       },
 
-      calcularForecast(projects, agg) {
+            calcularForecast(projects, agg) {
         const ingresosBase = agg.EV;
         const margenActual = agg.margenPct / 100;
 
         const trimestres = [
-          { label: 'Q1 2027', ingresos: ingresosBase * 1.15, color: '#fbbf24', descripcion: 'Recuperación del margen actual' },
-          { label: 'Q2 2027', ingresos: ingresosBase * 1.35, color: '#a78bfa', descripcion: 'Consolidación del portafolio' },
-          { label: 'Q3 2027', ingresos: ingresosBase * 1.60, color: '#67e8f9', descripcion: 'Escalado del equipo' },
-          { label: 'Q4 2027', ingresos: ingresosBase * 1.90, color: '#22c55e', descripcion: 'Nuevos mercados' }
+          { label: 'Q1 2027', ingresos: ingresosBase * 1.15, color: '#fbbf24', descripcion: t('p2_q1_desc') },
+          { label: 'Q2 2027', ingresos: ingresosBase * 1.35, color: '#a78bfa', descripcion: t('p2_q2_desc') },
+          { label: 'Q3 2027', ingresos: ingresosBase * 1.60, color: '#67e8f9', descripcion: t('p2_q3_desc') },
+          { label: 'Q4 2027', ingresos: ingresosBase * 1.90, color: '#22c55e', descripcion: t('p2_q4_desc') }
         ];
+
+        const sinAlcance = projects.filter(p => p.totalTasks === 0).length;
 
         const decisiones = [
           {
-            titulo: agg.margen < 0 ? 'Auditoría financiera urgente' : 'Optimización del margen',
-            detalle: agg.margen < 0
-              ? 'Sobrecosto detectado en el portafolio. Revisar estimaciones, horas facturables y alcance de los proyectos en riesgo.'
-              : 'El portafolio es rentable. Documentar prácticas exitosas para replicar.',
+            titulo: agg.margen < 0 ? t('p2_dec1_title_urgent') : t('p2_dec1_title_optimize'),
+            detalle: agg.margen < 0 ? t('p2_dec1_detail_urgent') : t('p2_dec1_detail_optimize'),
             color: agg.margen < 0 ? '#ef4444' : '#22c55e'
           },
           {
-            titulo: 'Priorizar proyectos con mayor alineación',
-            detalle: 'Enfocar recursos en proyectos con CPI/SPI ≥ 0.95 para maximizar el retorno del portafolio.',
+            titulo: t('p2_dec2_title'),
+            detalle: t('p2_dec2_detail'),
             color: '#fbbf24'
           },
           {
-            titulo: projects.filter(p => p.totalTasks === 0).length > 0
-              ? 'Decidir sobre proyectos sin alcance'
-              : 'Revisar oportunidades de escalado',
-            detalle: projects.filter(p => p.totalTasks === 0).length > 0
-              ? `Hay ${projects.filter(p => p.totalTasks === 0).length} proyectos sin tareas. Definir alcance o archivar para no distorsionar métricas.`
-              : 'La estructura actual permite añadir 2 proyectos más con el equipo existente.',
+            titulo: sinAlcance > 0 ? t('p2_dec3_title_clean') : t('p2_dec3_title_scale'),
+            detalle: sinAlcance > 0 ? tI('p2_dec3_detail_clean', { count: sinAlcance }) : t('p2_dec3_detail_scale'),
             color: '#a78bfa'
           }
         ];
