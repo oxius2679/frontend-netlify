@@ -100,7 +100,7 @@
       p1_col_margin: 'Margen',
       p1_col_health: 'Salud',
       p1_total_portfolio: 'TOTAL PORTAFOLIO',
-      p1_burn_title: 'Burn Rate & Runway',
+      p1_burn_title: 'Tasa de Consumo y Autonomía',
       p1_per_day: '/día',
       p1_runway: 'Runway',
       p1_days: 'días',
@@ -290,11 +290,11 @@
       p4_auto_analysis: 'Análisis automático:',
 
       // Top / Bottom
-      p4_top_title: 'Top Performers',
+      p4_top_title: 'Mejores Desempeños',
       p4_bottom_title: 'Requieren Atención',
       p4_no_data_enough: 'Sin datos suficientes',
       p4_score: 'SCORE',
-      p4_delays_word: 'rezagos',
+      p4_delays_word: 'rezagos', 
 
       // Benchmark
       p4_benchmark_title: 'Benchmark vs Media del Portafolio',
@@ -535,11 +535,11 @@
       p5_col_exposure: 'Exposición',
       p5_col_mitigation: 'Mitigación',
       p5_controls_section: 'Controles Internos',
-      p5_audit_section: 'Audit Trail Reciente',
+      p5_audit_section: 'Registro de Auditoría Reciente',
       p5_audit_empty: 'El registro de auditoría comenzará a acumular datos conforme los usuarios modifiquen proyectos y tareas.',
       p5_exposure_section: 'Exposición al Riesgo por Proyecto',
       p5_exposure_item: '{count} riesgos identificados · salud: {health}',
-            p5_recommendations_section: 'Recomendaciones de Governance',
+                p5_recommendations_section: 'Recomendaciones de Gobernanza',
 
       // Severidad
       p5_sev_critico: 'Crítico',
@@ -563,12 +563,17 @@
             p5_ctrl_inactivo: 'Inactivo',
 
       // Nombres de riesgos
-      p5_risk_name_overcost: 'Sobrecosto en {count} proyecto(s)',
-      p5_risk_name_delays: 'Retrasos en {count} proyecto(s)',
-      p5_risk_name_overdue: '{count} tarea(s) rezagadas',
-      p5_risk_name_concentration: 'Concentración: {name}',
-      p5_risk_name_no_scope: '{count} proyecto(s) sin alcance definido',
+               p5_risk_name_overcost: 'Sobrecosto en {count} proyectos',
+      p5_risk_name_overcost_singular: 'Sobrecosto en 1 proyecto',
+      p5_risk_name_delays: 'Retrasos en {count} proyectos',
+      p5_risk_name_delays_singular: 'Retrasos en 1 proyecto',
+      p5_risk_name_overdue: '{count} tareas rezagadas',
+      p5_risk_name_overdue_singular: '1 tarea rezagada',
+          p5_risk_name_no_scope: '{count} proyectos sin alcance definido',
+      p5_risk_name_no_scope_singular: '1 proyecto sin alcance definido',
       p5_risk_name_dependencies: 'Dependencias entre tareas críticas',
+      p5_risk_name_concentration: 'Concentración: {name}',
+
 
       // Probabilidad
       p5_prob_alta_risk: 'Alta',
@@ -633,7 +638,7 @@
       p6_kpi_active_sub: 'conectadas en producción',
       p6_kpi_roadmap: 'En Roadmap',
       p6_kpi_roadmap_sub: 'planificadas para 2027',
-      p6_kpi_endpoints: 'API Endpoints',
+      p6_kpi_endpoints: 'Endpoints API',
       p6_kpi_endpoints_sub: 'REST documentados',
       p6_kpi_webhooks: 'Webhooks',
       p6_kpi_webhooks_sub: 'eventos en tiempo real',
@@ -649,7 +654,7 @@
       p6_cat_projects: 'Proyectos',
       p6_cat_erp: 'ERP & Finanzas',
       p6_cat_crm: 'CRM & Ventas',
-      p6_cat_bi: 'Business Intelligence',
+      p6_cat_bi: 'Inteligencia de Negocio',
 
       // API
       p6_api_title: 'API REST Pública',
@@ -663,7 +668,7 @@
       p6_wh_desc: 'Configura URLs de callback para recibir notificaciones en tiempo real cuando ocurran eventos en el sistema.',
 
       // Seguridad
-      p6_sec_title: 'Seguridad Enterprise',
+      p6_sec_title: 'Seguridad Empresarial',
       p6_sec_jwt: 'JWT Authentication',
       p6_sec_jwt_desc: 'Tokens firmados con rotación automática',
       p6_sec_rbac: 'RBAC',
@@ -802,7 +807,7 @@
 
       // ═══════════ MÓDULO 8: EXECUTIVE EXPERIENCE ═══════════
       p8_no_data: 'No hay datos para mostrar',
-      p8_hero_score_label: 'Executive Score',
+          p8_hero_score_label: 'Puntuación Ejecutiva',
       p8_hero_updated: 'ACTUALIZADO',
       p8_hero_estado_optimo: 'óptimo',
       p8_hero_estado_estable: 'estable',
@@ -853,12 +858,12 @@
       p8_alert_crit_desc: 'Proyectos con desviaciones severas en CPI y/o SPI: {names}',
       p8_alert_crit_action: 'Reunión urgente con los PM + plan de recuperación en 48h',
       p8_alert_overcost_title: 'Sobrecosto proyectado de {amount}',
-      p8_alert_overcost_desc: '{count} proyecto(s) con EAC superior al BAC. Si no se corrige, el Portafolio cerrará por encima del presupuesto.',
+       p8_alert_overcost_desc: '{count} proyectos con EAC superior al BAC. Si no se corrige, el Portafolio cerrará por encima del presupuesto.',
       p8_alert_overcost_action: 'Auditoría financiera + renegociación de alcance',
       p8_alert_overdue_title: '{count} tareas rezagadas',
       p8_alert_overdue_desc: 'El volumen de rezagos puede impactar la entrega final y generar penalizaciones contractuales.',
       p8_alert_overdue_action: 'Reasignación de recursos y revisión de dependencias',
-      p8_alert_empty_title: '{count} proyecto(s) sin datos',
+       p8_alert_empty_title: '{count} proyectos sin datos',
       p8_alert_empty_desc: 'Proyectos sin tareas definidas. Distorsionan las métricas del Portafolio.',
       p8_alert_empty_action: 'Definir alcance o archivar',
 
@@ -870,10 +875,10 @@
       p8_dec_accelerate_title: 'Acelerar el crecimiento',
       p8_dec_accelerate_detail: 'Aprobar la expansión del Portafolio con 2 proyectos adicionales usando el equipo actual.',
       p8_dec_clean_title: 'Limpiar el Portafolio',
-      p8_dec_clean_detail: 'Decidir sobre {count} proyecto(s) sin alcance: definir tareas o archivar para mantener métricas limpias.',
+      p8_dec_clean_detail: 'Decidir sobre {count} proyectos sin alcance: definir tareas o archivar para mantener métricas limpias.',
       p8_dec_invest_title: 'Invertir en equipo',
       p8_dec_invest_detail: 'Aprobar plan de capacitación en EVM y PMI para los PMs, elevando la madurez del Portafolio.',
-      p8_dec_pricing_title: 'Revisar pricing',
+      p8_dec_pricing_title: 'Revisar precios',
       p8_dec_pricing_detail: 'Solo {pct}% de proyectos son rentables. Revisar tarifas y costes para mejorar el margen global.',
       p8_dec_consolidate_title: 'Consolidar contratos',
       p8_dec_consolidate_detail: 'El {pct}% de los proyectos son rentables. Renegociar contratos con clientes clave para asegurar recurrencia.',
@@ -897,7 +902,7 @@
       // Resumen ultra
       p8_sum_where_label: 'Dónde estamos',
       p8_sum_where_sub: 'avance del Portafolio',
-      p8_sum_ok_label: 'Vamos bien?',
+      p8_sum_ok_label: '¿Vamos bien?',
       p8_sum_ok_yes: '✅ Sí',
       p8_sum_ok_caution: '⚠️ Con cautela',
       p8_sum_ok_no: '🔴 No',
@@ -1164,7 +1169,7 @@
 
       // Top / Bottom
       p4_top_title: 'Top Performers',
-      p4_bottom_title: 'Require Attention',
+      p4_bottom_title: 'Requires Attention',
       p4_no_data_enough: 'Not enough data',
       p4_score: 'SCORE',
       p4_delays_word: 'delays',
@@ -1389,7 +1394,7 @@
 
       // ═══════════ MODULE 5: GOVERNANCE & COMPLIANCE ═══════════
       p5_no_data: 'No data to audit',
-      p5_kpi_compliance: 'Compliance Score',
+           p5_kpi_compliance: 'Compliance Score',
       p5_kpi_compliance_conform: 'Compliant',
       p5_kpi_compliance_attention: 'Requires attention',
       p5_kpi_compliance_nonconform: 'Non-compliant',
@@ -1436,12 +1441,16 @@
             p5_ctrl_inactivo: 'Inactive',
 
       // Risk names
-      p5_risk_name_overcost: 'Overcost in {count} project(s)',
-      p5_risk_name_delays: 'Delays in {count} project(s)',
-      p5_risk_name_overdue: '{count} overdue task(s)',
-      p5_risk_name_concentration: 'Concentration: {name}',
-      p5_risk_name_no_scope: '{count} project(s) without defined scope',
+             p5_risk_name_overcost: 'Overcost in {count} projects',
+      p5_risk_name_overcost_singular: 'Overcost in 1 project',
+         p5_risk_name_delays: 'Delays in {count} projects',
+      p5_risk_name_delays_singular: 'Delays in 1 project',
+     p5_risk_name_overdue: '{count} overdue tasks',
+      p5_risk_name_overdue_singular: '1 overdue task',
+      p5_risk_name_no_scope: '{count} projects without defined scope',
+      p5_risk_name_no_scope_singular: '1 project without defined scope',
       p5_risk_name_dependencies: 'Dependencies between critical tasks',
+      p5_risk_name_concentration: 'Concentration: {name}',
 
       // Probability
       p5_prob_alta_risk: 'High',
@@ -1726,12 +1735,12 @@
       p8_alert_crit_desc: 'Projects with severe deviations in CPI and/or SPI: {names}',
       p8_alert_crit_action: 'Urgent meeting with PMs + recovery plan within 48h',
       p8_alert_overcost_title: 'Projected overcost of {amount}',
-      p8_alert_overcost_desc: '{count} project(s) with EAC above BAC. If not corrected, the portfolio will close over budget.',
+       p8_alert_overcost_desc: '{count} projects with EAC above BAC. If not corrected, the portfolio will close over budget.',
       p8_alert_overcost_action: 'Financial audit + scope renegotiation',
       p8_alert_overdue_title: '{count} overdue tasks',
       p8_alert_overdue_desc: 'The volume of overdue tasks may impact final delivery and generate contractual penalties.',
       p8_alert_overdue_action: 'Resource reallocation and dependency review',
-      p8_alert_empty_title: '{count} project(s) without data',
+      p8_alert_empty_title: '{count} projects without data',
       p8_alert_empty_desc: 'Projects without defined tasks. They distort portfolio metrics.',
       p8_alert_empty_action: 'Define scope or archive',
 
@@ -1743,7 +1752,7 @@
       p8_dec_accelerate_title: 'Accelerate growth',
       p8_dec_accelerate_detail: 'Approve portfolio expansion with 2 additional projects using the current team.',
       p8_dec_clean_title: 'Clean up the portfolio',
-      p8_dec_clean_detail: 'Decide on {count} project(s) without scope: define tasks or archive to keep clean metrics.',
+      p8_dec_clean_detail: 'Decide on {count} projects without scope: define tasks or archive to keep clean metrics.',
       p8_dec_invest_title: 'Invest in the team',
       p8_dec_invest_detail: 'Approve EVM and PMI training plan for PMs, raising portfolio maturity.',
       p8_dec_pricing_title: 'Review pricing',
@@ -2016,6 +2025,132 @@
       return { ...totales, CPI, SPI, progresoPct, margenPct, distribucion, count: projects.length };
     }
   };
+
+
+
+  
+  
+    /* ==========================================================
+     SECCIÓN 1.5 · TASAS DE CAMBIO (multi-API + caché + manual)
+     ========================================================== */
+  const FXCache = {
+    KEY: 'execSuite_fxRates',
+    TTL_MS: 24 * 60 * 60 * 1000, // 24h
+
+    DEFAULTS: { EUR: 1, USD: 1.08, GBP: 0.85, MXN: 20.5 },
+
+    // Tres fuentes gratuitas, se intentan en orden
+        APIS: [
+      {
+        name: 'backend',
+        url: (window.API_URL || 'https://mi-sistema-proyectos-backend-4.onrender.com') + '/api/fx-rates',
+        parse: (d) => ({ USD: d.USD, GBP: d.GBP, MXN: d.MXN })
+      },
+      {
+        name: 'er-api',
+        url: 'https://open.er-api.com/v6/latest/EUR',
+        parse: (d) => ({ USD: d.rates.USD, GBP: d.rates.GBP, MXN: d.rates.MXN })
+      }
+    ],
+
+    getLocal() {
+      try {
+        const raw = localStorage.getItem(this.KEY);
+        if (!raw) return { ...this.DEFAULTS, ts: 0, source: 'default' };
+        const parsed = JSON.parse(raw);
+        return {
+          EUR: 1,
+          USD: parsed.USD ?? this.DEFAULTS.USD,
+          GBP: parsed.GBP ?? this.DEFAULTS.GBP,
+          MXN: parsed.MXN ?? this.DEFAULTS.MXN,
+          ts: parsed.ts || 0,
+          source: parsed.source || 'manual'
+        };
+      } catch (e) {
+        return { ...this.DEFAULTS, ts: 0, source: 'default' };
+      }
+    },
+
+    setLocal(rates, source = 'manual') {
+      const current = this.getLocal();
+      const merged = {
+        EUR: 1,
+        USD: rates.USD ?? current.USD,
+        GBP: rates.GBP ?? current.GBP,
+        MXN: rates.MXN ?? current.MXN,
+        ts: Date.now(),
+        source
+      };
+      localStorage.setItem(this.KEY, JSON.stringify(merged));
+      console.log('✅ Tasas FX guardadas:', merged);
+      return merged;
+    },
+
+    async getRates() {
+      const local = this.getLocal();
+
+      // Cache fresco (< 24h) → usar tal cual
+      if (local.ts && (Date.now() - local.ts) < this.TTL_MS) {
+        console.log('💱 FX desde caché local (' + Math.round((Date.now() - local.ts) / 3600000) + 'h de antigüedad)');
+        return local;
+      }
+
+      // Cache vencido → probar las 3 APIs en orden
+      for (const api of this.APIS) {
+        try {
+          console.log('💱 Probando API: ' + api.name);
+          const data = await this._request(api.url);
+          const rates = api.parse(data);
+
+          if (!rates.USD || !rates.GBP || !rates.MXN) {
+            throw new Error('respuesta incompleta');
+          }
+
+          const saved = this.setLocal(rates, 'live:' + api.name);
+          console.log('✅ FX actualizado desde ' + api.name, saved);
+          return saved;
+        } catch (e) {
+          console.warn('⚠️ ' + api.name + ' falló: ' + e.message);
+        }
+      }
+
+      // Todas las APIs fallaron → usar la última guardada
+      console.warn('⚠️ Todas las APIs fallaron. Manteniendo últimas tasas guardadas.');
+      return local;
+    },
+
+    _request(url) {
+      // Primero intenta XHR (evita interceptores de fetch)
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 8000;
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch (e) { reject(new Error('JSON inválido')); }
+          } else {
+            reject(new Error('HTTP ' + xhr.status));
+          }
+        };
+        xhr.onerror = () => reject(new Error('error de red'));
+        xhr.ontimeout = () => reject(new Error('timeout'));
+        xhr.send();
+      });
+    }
+  };
+
+  // Helpers globales para uso manual desde consola
+  window.setFxRates = (rates) => FXCache.setLocal(rates, 'manual');
+  window.getFxRates = () => FXCache.getLocal();
+  window.refreshFxRates = async () => {
+    localStorage.removeItem(FXCache.KEY); // fuerza refresh
+    return await FXCache.getRates();
+  };
+
+
+
+
 
   /* ==========================================================
      SECCIÓN 2 · ESTILOS VIP
@@ -2531,7 +2666,7 @@
                         <td class="num" style="color:${p.CPI >= 1 ? '#22c55e' : p.CPI >= 0.9 ? '#fbbf24' : '#ef4444'};font-weight:900;">${p.CPI.toFixed(2)}</td>
                         <td class="num" style="color:${p.SPI >= 1 ? '#22c55e' : p.SPI >= 0.9 ? '#fbbf24' : '#ef4444'};font-weight:900;">${p.SPI.toFixed(2)}</td>
                         <td class="num" style="color:${p.margenProyectado >= 0 ? '#22c55e' : '#ef4444'};">${p.margenProyectado >= 0 ? '+' : ''}${fmt.moneyCompact(p.margenProyectado)}</td>
-                        <td><span class="exec-health ${p.health}">${p.health}</span></td>
+                        <td><span class="exec-health ${p.health}">${t('p1_health_' + p.health)}</span></td>
                       </tr>
                     `;
                   }).join('')}
@@ -2562,7 +2697,7 @@
                 ${projects.slice(0, 5).map(p => `
                   <div>
                     <div style="display:flex;justify-content:space-between;font-size:12px;color:#ddd6fe;margin-bottom:4px;">
-                      <span>${p.name.substring(0, 30)}</span>
+                      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</span>
                       <span style="color:#fbbf24;font-weight:800;">${fmt.moneyCompact(p.burnRate)}${t('p1_per_day')}</span>
                     </div>
                     <div class="exec-bar">
@@ -3224,7 +3359,14 @@
         const totalTareas = projects.reduce((s, p) => s + p.totalTasks, 0);
         const tareasRestantes = projects.reduce((s, p) => s + (p.totalTasks - p.completedTasks), 0);
 
-        const meses = ['Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'];
+                const meses = [
+          t('p7_month_feb'),
+          t('p7_month_mar'),
+          t('p7_month_apr'),
+          t('p7_month_may'),
+          t('p7_month_jun'),
+          t('p7_month_jul')
+        ];
         const colores = ['#22c55e', '#22c55e', '#fbbf24', '#fbbf24', '#f97316', '#a78bfa'];
 
         return meses.map((mes, i) => {
@@ -3558,8 +3700,8 @@
           if (concentracion > 50) {
             insights.push({
               icon: '🎯', tipo: t('p4_ins_concentration'), color: '#67e8f9',
-              texto: tI('p4_ins4_concentration', {
-                name: top1.name.substring(0, 25),
+                            texto: tI('p4_ins4_concentration', {
+                name: top1.name,
                 pct: concentracion.toFixed(0)
               })
             });
@@ -3755,7 +3897,7 @@
                     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                       <div>
                         <div style="font-size:13px;font-weight:800;color:#fff;">${e.nombre}</div>
-                        <div style="font-size:11px;color:#8b7cb8;">${tI('p5_exposure_item', { count: e.riesgos, health: e.health })}</div>
+                                                <div style="font-size:11px;color:#8b7cb8;">${tI('p5_exposure_item', { count: e.riesgos, health: t('p4_pdf_health_' + e.health) })}</div>
                       </div>
                       <div style="font-size:16px;font-weight:900;color:${color};">${fmt.moneyCompact(e.exposicion)}</div>
                     </div>
@@ -4802,7 +4944,7 @@
         if (bajoCPI.length > 0) {
           const exposicion = bajoCPI.reduce((s, p) => s + Math.abs(p.VAC), 0);
           riesgos.push({
-            nombre: tI('p5_risk_name_overcost', { count: bajoCPI.length }),
+                      nombre: bajoCPI.length === 1 ? t('p5_risk_name_overcost_singular') : tI('p5_risk_name_overcost', { count: bajoCPI.length }),
             probabilidad: 'alta',
             impacto: 'alto',
             severidad: bajoCPI.some(p => p.CPI < 0.85) ? 'critico' : 'alto',
@@ -4816,7 +4958,7 @@
         if (bajoSPI.length > 0) {
           const exposicion = bajoSPI.reduce((s, p) => s + p.BAC * 0.15, 0);
           riesgos.push({
-            nombre: tI('p5_risk_name_delays', { count: bajoSPI.length }),
+                        nombre: bajoSPI.length === 1 ? t('p5_risk_name_delays_singular') : tI('p5_risk_name_delays', { count: bajoSPI.length }),
             probabilidad: 'alta',
             impacto: 'medio',
             severidad: bajoSPI.some(p => p.SPI < 0.8) ? 'alto' : 'medio',
@@ -4829,7 +4971,7 @@
         const totalRezagos = projects.reduce((s, p) => s + p.delayedTasks, 0);
         if (totalRezagos > 0) {
           riesgos.push({
-            nombre: tI('p5_risk_name_overdue', { count: totalRezagos }),
+            nombre: totalRezagos === 1 ? t('p5_risk_name_overdue_singular') : tI('p5_risk_name_overdue', { count: totalRezagos }),
             probabilidad: 'media',
             impacto: 'medio',
             severidad: totalRezagos > 5 ? 'alto' : 'medio',
@@ -4845,7 +4987,7 @@
           const concentracion = (mayor.BAC / agg.BAC) * 100;
           if (concentracion > 50) {
             riesgos.push({
-              nombre: tI('p5_risk_name_concentration', { name: mayor.name.substring(0, 25) }),
+              nombre: tI('p5_risk_name_concentration', { name: mayor.name }),
               probabilidad: 'media',
               impacto: 'alto',
               severidad: concentracion > 70 ? 'critico' : 'alto',
@@ -4859,7 +5001,7 @@
         const vacios = projects.filter(p => p.totalTasks === 0);
         if (vacios.length > 0) {
           riesgos.push({
-            nombre: tI('p5_risk_name_no_scope', { count: vacios.length }),
+                      nombre: vacios.length === 1 ? t('p5_risk_name_no_scope_singular') : tI('p5_risk_name_no_scope', { count: vacios.length }),
             probabilidad: 'alta',
             impacto: 'bajo',
             severidad: 'bajo',
@@ -5291,13 +5433,29 @@
         // Facturación pendiente (simulada para demo)
         const facturacionPendiente = ingresosTotales * 0.35;
 
-        // Multi-moneda (demo)
+                        // Multi-moneda (tasas locales + intento en vivo)
+        const fx = FXCache.getLocal();
+
+        const fxUpdated = fx.ts
+          ? new Date(fx.ts).toLocaleString(getLang() === 'en' ? 'en-US' : 'es-ES', { dateStyle: 'short', timeStyle: 'short' })
+          : (getLang() === 'en' ? 'default values' : 'valores por defecto');
+
+
+        FXCache.getRates('EUR').then(rates => {
+          if (rates.ts !== fx.ts && State.module === 'finance') {
+            const c = document.getElementById('exec-content');
+            if (c) { c.innerHTML = ''; this.render(c); }
+          }
+        });
         const monedas = [
-          { code: 'EUR', symbol: '€', rate: 1,    nombre: t('p7_currency_eur') },
-          { code: 'USD', symbol: '$', rate: 1.08, nombre: t('p7_currency_usd') },
-          { code: 'GBP', symbol: '£', rate: 0.85, nombre: t('p7_currency_gbp') },
-          { code: 'MXN', symbol: '$', rate: 20.5, nombre: t('p7_currency_mxn') }
+          { code: 'EUR', symbol: '€', rate: fx.EUR || 1,     nombre: t('p7_currency_eur') },
+          { code: 'USD', symbol: '$', rate: fx.USD || 1.08,  nombre: t('p7_currency_usd') },
+          { code: 'GBP', symbol: '£', rate: fx.GBP || 0.85,  nombre: t('p7_currency_gbp') },
+          { code: 'MXN', symbol: '$', rate: fx.MXN || 20.5,  nombre: t('p7_currency_mxn') }
         ];
+
+
+
 
         // Centros de coste (demo)
         const centrosCoste = [
@@ -5355,7 +5513,7 @@
                     const color = p.margenReal >= 0 ? '#22c55e' : '#ef4444';
                     return `
                       <tr style="--rowc:${color}">
-                        <td>${p.name.substring(0, 30)}</td>
+                        <td>${p.name}</td>
                         <td class="num">${fmt.money(p.tarifaCliente)}</td>
                         <td class="num">${fmt.money(p.tarifaInterna)}</td>
                         <td class="num" style="color:${color};font-weight:900;">${fmt.money(p.margenHora)}</td>
@@ -5392,6 +5550,12 @@
               <div style="font-size:12px;color:#8b7cb8;margin-bottom:14px;">
                 ${t('p7_multi_desc')}
               </div>
+
+                                          <div style="font-size:10px;color:#8b7cb8;margin-bottom:10px;font-style:italic;">
+                ${getLang() === 'en' ? `Rates updated: ${fxUpdated}` : `Tasas actualizadas: ${fxUpdated}`}
+              </div>
+
+
               <div style="display:flex;flex-direction:column;gap:10px;">
                 ${monedas.map(m => {
                   const valorConvertido = ingresosTotales * m.rate;
