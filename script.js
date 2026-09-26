@@ -1,4 +1,125 @@
+// ============================================================================
+// 🔗 CONEXIÓN DE FUNCIONES DE GUARDADO (PEGAR ESTO AL FINAL DE script.js)
+// ============================================================================
 
+// 1. CONEXIÓN PARA GUARDAR COSTOS EVM (Versión a prueba de fallos con .closest)
+document.addEventListener('click', function(e) {
+    // .closest busca el botón incluso si hiciste clic en un ícono o texto dentro de él
+    const btn = e.target.closest('#saveConfigBtn');
+    
+    if (btn) {
+        const currentProject = (typeof projects !== 'undefined' && typeof currentProjectIndex !== 'undefined') 
+            ? projects[currentProjectIndex] 
+            : null;
+            
+        if (!currentProject) {
+            console.warn('⚠️ No hay proyecto seleccionado para guardar costos');
+            return;
+        }
+        
+        const costSlider = document.getElementById('costPerHourSlider');
+        const costPerHour = costSlider ? parseFloat(costSlider.value) : 50;
+        const presupuesto = 0; 
+        
+        console.log('💾 Guardando costos EVM para proyecto:', currentProject.name, 'Costo/h:', costPerHour);
+        
+        if (typeof guardarCostosEVMSeguro === 'function') {
+            guardarCostosEVMSeguro(currentProjectIndex, costPerHour, presupuesto);
+        } else {
+            console.error('❌ La función guardarCostosEVMSeguro no se encontró.');
+        }
+    }
+});
+
+// 2. CONEXIÓN PARA CONFIGURAR SLACK
+window.configurarSlackUI = function() {
+    const webhookUrl = prompt("🔗 Ingresa la URL del Webhook de Slack (ej: https://hooks.slack.com/...):");
+    if (webhookUrl && webhookUrl.trim() !== "") {
+        if (typeof guardarSlackWebhookSeguro === 'function') {
+            console.log('💾 Guardando Webhook de Slack de forma segura...');
+            guardarSlackWebhookSeguro(webhookUrl.trim());
+        } else {
+            console.error('❌ La función guardarSlackWebhookSeguro no se encontró.');
+        }
+    }
+};
+
+console.log('✅ Conexiones de guardado (Costos y Slack) instaladas correctamente.');
+console.log('💡 TIP: Para configurar Slack, abre la consola (F12) y escribe: configurarSlackUI()');
+
+
+// ============================================================
+// 🔒 FUNCIONES DE GUARDADO SEGURO (CONECTADAS AL BACKEND CIFRADO)
+// ============================================================
+
+// 1. Guardar Webhook de Slack de forma segura
+async function guardarSlackWebhookSeguro(webhookUrl) {
+    try {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/configs/slack-webhook', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ webhookUrl: webhookUrl })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Webhook de Slack guardado y cifrado en el servidor.');
+            alert('✅ Configuración de Slack guardada de forma segura.');
+            return true;
+        } else {
+            console.error('❌ Error al guardar Slack:', data.error);
+            alert('❌ Error: ' + data.error);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error de red al guardar Slack:', error);
+        alert('Error de conexión con el servidor.');
+        return false;
+    }
+}
+
+// 2. Guardar Configuración de Costos (EVM) de forma segura
+async function guardarCostosEVMSeguro(projectId, costPerHour, budget = null) {
+    try {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        
+        const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/configs/evm-costs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+                projectId: projectId, 
+                costPerHour: parseFloat(costPerHour),
+                budget: budget ? parseFloat(budget) : null
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log('✅ Configuración de costos guardada y cifrada en el servidor.');
+            alert('✅ Costos del proyecto guardados de forma segura.');
+            return true;
+        } else {
+            console.error('❌ Error al guardar costos:', data.error);
+            alert('❌ Error: ' + data.error);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error de red al guardar costos:', error);
+        alert('Error de conexión con el servidor.');
+        return false;
+    }
+}
+// ============================================================
 
 
 
