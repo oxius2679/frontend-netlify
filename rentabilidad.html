@@ -31,7 +31,7 @@
             padding: 20px;
         }
         header {
-            background-color: var(--primary);
+           background: linear-gradient(135deg, #1a3a52 0%, #2980b9 60%, #16a085 100%);;
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -63,6 +63,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
         .upload-btn {
             background-color: var(--secondary);
@@ -651,7 +652,6 @@
             if (e.key === 'preferredLanguage' || e.key === 'lang') {
                 console.log('🔁 Idioma cambiado a:', e.newValue);
                 updateTranslations();
-                // Si hay datos cargados, refrescar las tablas (para traducir contenido dinámico)
                 if (projectData.length > 0) {
                     updateDashboard();
                 }
@@ -668,7 +668,7 @@
         });
 
         // ================================================================
-        // 2. LÓGICA DE NEGOCIO ORIGINAL (sin cambios)
+        // 2. LÓGICA DE NEGOCIO ORIGINAL
         // ================================================================
 
         let projectData = [];
@@ -708,7 +708,6 @@
             document.getElementById('upload-btn').addEventListener('click', triggerFileUpload);
             document.getElementById('file-input').addEventListener('change', handleFileUpload);
             setupTabs();
-            // Traducir al cargar
             updateTranslations();
         });
 
@@ -947,7 +946,6 @@
                 } else if (normalizedStatus === 'en progreso') {
                     statusClass = 'status-pending';
                 }
-                // Traducir el estado si es necesario
                 const statusDisplay = t(normalizedStatus) || normalizedStatus;
                 row.innerHTML = `
                     <td>${item.proyecto}</td>
@@ -1206,7 +1204,6 @@
                     projectSelect.appendChild(option);
                 });
                 updateDashboard();
-                // Traducir el mensaje de éxito
                 alert(t('fileLoaded') + newProjectData.length + t('activitiesMsg'));
             } catch (error) {
                 console.error('Error procesando el archivo:', error);
@@ -1230,6 +1227,346 @@
             };
             reader.readAsArrayBuffer(file);
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🧩 MÓDULO: ENTRADA MANUAL DE ACTIVIDADES
+        //     (se ejecuta dentro del mismo HTML, integrado con la app)
+        // ═══════════════════════════════════════════════════════════════
+        (function installManualEntryInsideHTML() {
+            if (window.__manualEntryInstalled) return;
+            window.__manualEntryInstalled = true;
+
+            // ─── 1. PERSISTENCIA ────────────────────────────────────────
+            const STORAGE_KEY = 'profitabilityData_v1';
+
+            function saveToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData));
+                } catch (e) { console.warn('No se pudo guardar:', e); }
+            }
+
+            function loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return false;
+                    const arr = JSON.parse(raw);
+                    if (!Array.isArray(arr) || arr.length === 0) return false;
+                    projectData.length = 0;
+                    arr.forEach(x => projectData.push(x));
+                    return true;
+                } catch (e) { return false; }
+            }
+
+            // ─── 2. BOTONES JUNTO A "Cargar Nuevo Excel" ────────────────
+            const uploadSection = document.querySelector('.upload-section');
+            if (!uploadSection) { console.error('❌ .upload-section no encontrado'); return; }
+
+            const btnAdd = document.createElement('button');
+            btnAdd.id = 'manualEntryBtn';
+            btnAdd.className = 'upload-btn';
+            btnAdd.type = 'button';
+            btnAdd.innerHTML = '➕ Añadir Actividad';
+            btnAdd.style.background = '#27ae60';
+            btnAdd.addEventListener('click', () => openEntryModal(null));
+            uploadSection.appendChild(btnAdd);
+
+            const btnClear = document.createElement('button');
+            btnClear.id = 'clearAllDataBtn';
+            btnClear.className = 'upload-btn';
+            btnClear.type = 'button';
+            btnClear.innerHTML = '🗑️ Limpiar Todo';
+            btnClear.style.background = '#e74c3c';
+            btnClear.addEventListener('click', () => {
+                if (!confirm('¿Eliminar TODAS las actividades?')) return;
+                projectData.length = 0;
+                localStorage.removeItem(STORAGE_KEY);
+                refreshProjectSelect();
+                updateDashboard();
+            });
+            uploadSection.appendChild(btnClear);
+
+            // ─── 3. DEFINICIÓN DE CAMPOS ────────────────────────────────
+            const FIELDS = [
+                { key:'numero',           label:'N°',                type:'number' },
+                { key:'proyecto',         label:'Proyecto',          type:'text', required:true },
+                { key:'accion',           label:'Acción',            type:'text' },
+                { key:'actividad',        label:'Actividad',         type:'text', required:true },
+                { key:'coordinador',      label:'Coordinador',       type:'text' },
+                { key:'funcion',          label:'Función',           type:'text' },
+                { key:'inicio',           label:'Inicio',            type:'date' },
+                { key:'fin',              label:'Fin',               type:'date' },
+                { key:'dias',             label:'Días',              type:'number' },
+                { key:'diasCompletados',  label:'Días Completados',  type:'number' },
+                { key:'horasProgramadas', label:'Horas Programadas', type:'number' },
+                { key:'horasUsadas',      label:'Horas Usadas',      type:'number' },
+                { key:'horasRestantes',   label:'Horas Restantes',   type:'number' },
+                { key:'status',           label:'Status',            type:'select',
+                  options:['en progreso','completado','retrasado'] },
+                { key:'presupuesto',      label:'Presupuesto ($)',   type:'number', step:'0.01' },
+                { key:'gasto',            label:'Gasto ($)',         type:'number', step:'0.01' },
+                { key:'realInicio',       label:'Real Inicio',       type:'date' },
+                { key:'realFin',          label:'Real Fin',          type:'date' },
+                { key:'projectManager',   label:'Project Manager',   type:'text' },
+                { key:'pmImage',          label:'PM Image (URL)',    type:'text' },
+                { key:'equipo',           label:'Equipo',            type:'text' },
+                { key:'comentarios',      label:'Comentarios',       type:'textarea', full:true }
+            ];
+
+            const baseStyle = `width:100%;background:#f8fafc;border:1px solid #cbd5e1;
+                color:#1e293b;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;
+                box-sizing:border-box;font-family:inherit;`;
+
+            const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, m =>
+                ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+
+            function renderField(f, data) {
+                const id = 'fld_' + f.key;
+                const val = data[f.key] != null ? data[f.key] : '';
+                const req = f.required ? 'required' : '';
+                const span = f.full ? 'grid-column: span 2;' : '';
+                let input;
+
+                if (f.type === 'select') {
+                    input = `<select id="${id}" data-key="${f.key}" style="${baseStyle}">
+                        ${f.options.map(o => `<option value="${esc(o)}" ${val === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+                    </select>`;
+                } else if (f.type === 'textarea') {
+                    input = `<textarea id="${id}" data-key="${f.key}" rows="3" style="${baseStyle};resize:vertical;">${esc(val)}</textarea>`;
+                } else {
+                    const step = f.step ? `step="${f.step}"` : '';
+                    input = `<input type="${f.type}" id="${id}" data-key="${f.key}" value="${esc(val)}" ${step} style="${baseStyle}" ${req}>`;
+                }
+
+                return `<div style="display:flex;flex-direction:column;gap:6px;${span}">
+                    <label for="${id}" style="color:#475569;font-size:11px;font-weight:700;
+                        text-transform:uppercase;letter-spacing:.5px;">
+                        ${esc(f.label)}${f.required ? ' *' : ''}
+                    </label>${input}</div>`;
+            }
+
+            // ─── 4. MODAL ───────────────────────────────────────────────
+            function openEntryModal(existingIndex) {
+                let data = {};
+                if (existingIndex !== null && existingIndex >= 0 && existingIndex < projectData.length) {
+                    data = JSON.parse(JSON.stringify(projectData[existingIndex]));
+                } else {
+                    const maxN = projectData.reduce((m, i) => Math.max(m, parseInt(i.numero) || 0), 0);
+                    data.numero = maxN + 1;
+                    const curProj = document.getElementById('project-select')?.value;
+                    if (curProj) data.proyecto = curProj;
+                    data.status = 'en progreso';
+                }
+
+                const old = document.getElementById('manualEntryModal');
+                if (old) old.remove();
+
+                const overlay = document.createElement('div');
+                overlay.id = 'manualEntryModal';
+                overlay.style.cssText = `position:fixed;inset:0;background:rgba(15,23,42,.85);
+                    backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;
+                    justify-content:center;padding:20px;font-family:'Segoe UI',sans-serif;`;
+
+                const modal = document.createElement('div');
+                modal.style.cssText = `background:#fff;border-radius:16px;width:100%;max-width:900px;
+                    max-height:92vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.4);`;
+
+                modal.innerHTML = `
+                    <div style="position:sticky;top:0;background:linear-gradient(135deg,#2c3e50,#34495e);
+                        color:#fff;padding:20px 28px;border-radius:16px 16px 0 0;display:flex;
+                        justify-content:space-between;align-items:center;z-index:2;">
+                        <h2 style="margin:0;font-size:20px;">
+                            ${existingIndex !== null ? '✏️ Editar Actividad' : '➕ Nueva Actividad'}
+                        </h2>
+                        <button id="closeEntryModal" type="button" style="background:#e74c3c;border:none;
+                            color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;">✕</button>
+                    </div>
+                    <div style="padding:24px 28px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                            ${FIELDS.map(f => renderField(f, data)).join('')}
+                        </div>
+                    </div>
+                    <div style="position:sticky;bottom:0;background:#f8fafc;border-top:1px solid #e2e8f0;
+                        padding:16px 28px;border-radius:0 0 16px 16px;display:flex;gap:12px;
+                        justify-content:flex-end;">
+                        <button id="cancelEntry" type="button" style="background:#94a3b8;border:none;
+                            color:#fff;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;">Cancelar</button>
+                        <button id="saveEntry" type="button" style="background:#27ae60;border:none;
+                            color:#fff;padding:12px 30px;border-radius:8px;cursor:pointer;font-weight:700;
+                            font-size:15px;">💾 Guardar</button>
+                    </div>`;
+
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+
+                document.getElementById('closeEntryModal').addEventListener('click', () => overlay.remove());
+                document.getElementById('cancelEntry').addEventListener('click', () => overlay.remove());
+                document.getElementById('saveEntry').addEventListener('click', () => saveEntry(existingIndex, overlay, modal));
+                overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+                setTimeout(() => {
+                    const el = modal.querySelector('input,select,textarea');
+                    if (el) el.focus();
+                }, 80);
+            }
+
+            // ─── 5. GUARDAR ─────────────────────────────────────────────
+            function saveEntry(existingIndex, overlayEl, modalEl) {
+                const entry = {};
+                modalEl.querySelectorAll('[data-key]').forEach(el => {
+                    const key = el.getAttribute('data-key');
+                    const fieldDef = FIELDS.find(f => f.key === key);
+                    let v = el.value;
+                    if (fieldDef && fieldDef.type === 'number') {
+                        const n = parseFloat(v);
+                        v = isNaN(n) ? 0 : n;
+                    }
+                    entry[key] = v;
+                });
+
+                if (!String(entry.actividad || '').trim()) { alert('❌ El campo "Actividad" es obligatorio'); return; }
+                if (!String(entry.proyecto  || '').trim()) { alert('❌ El campo "Proyecto" es obligatorio');  return; }
+
+                if (typeof normalizeStatus === 'function') entry.status = normalizeStatus(entry.status);
+                if (typeof calculateRemainingHours === 'function') entry.horasRestantes = calculateRemainingHours(entry);
+
+                if (existingIndex !== null && existingIndex >= 0) {
+                    projectData[existingIndex] = entry;
+                } else {
+                    projectData.push(entry);
+                }
+
+                saveToStorage();
+                refreshProjectSelect();
+                updateDashboard();
+                overlayEl.remove();
+
+                if (confirm('✅ Guardado correctamente.\n\n¿Añadir otra actividad?')) {
+                    openEntryModal(null);
+                }
+            }
+
+            // ─── 6. REFRESCAR SELECTOR DE PROYECTOS ─────────────────────
+            function refreshProjectSelect() {
+                const sel = document.getElementById('project-select');
+                if (!sel) return;
+                const cur = sel.value;
+                const projs = [...new Set(projectData.map(i => i.proyecto).filter(Boolean))].sort();
+                sel.innerHTML = '<option value="">Todos los proyectos</option>';
+                projs.forEach(p => {
+                    const o = document.createElement('option');
+                    o.value = p; o.textContent = p;
+                    sel.appendChild(o);
+                });
+                if (cur && projs.includes(cur)) sel.value = cur;
+            }
+
+            // ─── 7. BOTONES EDITAR/ELIMINAR EN CADA FILA ────────────────
+            const thead = document.querySelector('#activities-table thead tr');
+            if (thead && !thead.querySelector('.th-actions')) {
+                const th = document.createElement('th');
+                th.className = 'th-actions';
+                th.textContent = 'Acciones';
+                thead.appendChild(th);
+            }
+
+            if (!window.__updateActivitiesTableWrapped && typeof updateActivitiesTable === 'function') {
+                const _orig = updateActivitiesTable;
+                window.updateActivitiesTable = function(data) {
+                    _orig.call(this, data);
+                    const tbody = document.querySelector('#activities-table tbody');
+                    if (!tbody) return;
+                    tbody.querySelectorAll('tr').forEach((row, idx) => {
+                        const item = data[idx];
+                        if (!item) return;
+                        const realIdx = projectData.indexOf(item);
+                        if (realIdx === -1) return;
+                        const td = document.createElement('td');
+                        td.style.whiteSpace = 'nowrap';
+                        td.innerHTML = `
+                            <button type="button" data-edit="${realIdx}"
+                                style="background:#3498db;border:none;color:#fff;padding:5px 10px;
+                                       border-radius:5px;cursor:pointer;font-size:12px;margin-right:4px;">✏️</button>
+                            <button type="button" data-del="${realIdx}"
+                                style="background:#e74c3c;border:none;color:#fff;padding:5px 10px;
+                                       border-radius:5px;cursor:pointer;font-size:12px;">🗑️</button>`;
+                        row.appendChild(td);
+                    });
+                };
+                window.__updateActivitiesTableWrapped = true;
+            }
+
+            // Delegación para editar/eliminar
+            document.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('[data-edit]');
+                if (editBtn) {
+                    e.preventDefault(); e.stopPropagation();
+                    openEntryModal(parseInt(editBtn.dataset.edit, 10));
+                    return;
+                }
+                const delBtn = e.target.closest('[data-del]');
+                if (delBtn) {
+                    e.preventDefault(); e.stopPropagation();
+                    const i = parseInt(delBtn.dataset.del, 10);
+                    if (i < 0 || i >= projectData.length) return;
+                    if (!confirm('¿Eliminar esta actividad?')) return;
+                    projectData.splice(i, 1);
+                    saveToStorage();
+                    refreshProjectSelect();
+                    updateDashboard();
+                }
+            });
+
+            // ─── 8. HOOK AL PROCESO EXCEL PARA PERSISTIR ────────────────
+            if (typeof processExcelData === 'function') {
+                const _origProcess = processExcelData;
+                window.processExcelData = function(wb) {
+                    _origProcess.call(this, wb);
+                    saveToStorage();
+                };
+            }
+
+            // ─── 9. API PÚBLICA ─────────────────────────────────────────
+            window.manualProfitability = {
+                addRow:   () => openEntryModal(null),
+                editRow:  (i) => openEntryModal(i),
+                clearAll: () => { projectData.length = 0; localStorage.removeItem(STORAGE_KEY); refreshProjectSelect(); updateDashboard(); },
+                getData:  () => projectData,
+                save:     () => saveToStorage(),
+                loadDemo: () => {
+                    const demo = [
+                        { numero:1,  proyecto:'Consultoria Pegasus', accion:'Operaciones',              actividad:'Workshop de Diseño',                              coordinador:'Javier Garcia-Manuel Diaz', funcion:'Preventa',                     inicio:'2024-07-04', fin:'2024-07-05', dias:6,  diasCompletados:6,  horasProgramadas:6,  horasUsadas:2,  horasRestantes:0, status:'completado', presupuesto:390,  gasto:130  },
+                        { numero:2,  proyecto:'Consultoria Pegasus', accion:'Instalación fisica',      actividad:'Minor Electrical works',                          coordinador:'Carlos Fernandez',          funcion:'Instalación fisica y cableados', inicio:'2024-07-22', fin:'2024-07-19', dias:5,  diasCompletados:5,  horasProgramadas:5,  horasUsadas:5,  horasRestantes:0, status:'completado', presupuesto:200,  gasto:200  },
+                        { numero:3,  proyecto:'Consultoria Pegasus', accion:'Instalación fisica',      actividad:'Logistics',                                       coordinador:'Carlos Fernandez',          funcion:'Instalación fisica y cableados', inicio:'2024-07-22', fin:'2024-07-19', dias:5,  diasCompletados:5,  horasProgramadas:5,  horasUsadas:5,  horasRestantes:0, status:'completado', presupuesto:150,  gasto:150  },
+                        { numero:4,  proyecto:'Consultoria Pegasus', accion:'Instalación fisica',      actividad:'Switches Installation and cabling',               coordinador:'Carlos Fernandez',          funcion:'Instalación fisica y cableados', inicio:'2024-07-22', fin:'2024-07-26', dias:5,  diasCompletados:5,  horasProgramadas:5,  horasUsadas:5,  horasRestantes:0, status:'completado', presupuesto:600,  gasto:600  },
+                        { numero:5,  proyecto:'Consultoria Pegasus', accion:'Instalación fisica',      actividad:'Access point installation',                       coordinador:'Carlos Fernandez',          funcion:'Instalación fisica y cableados', inicio:'2024-07-29', fin:'2024-08-02', dias:5,  diasCompletados:5,  horasProgramadas:5,  horasUsadas:5,  horasRestantes:0, status:'completado', presupuesto:1575, gasto:1575 },
+                        { numero:6,  proyecto:'Consultoria Pegasus', accion:'Instalación fisica',      actividad:'Camera installation',                             coordinador:'Carlos Fernandez',          funcion:'Instalación fisica y cableados', inicio:'2024-07-29', fin:'2024-08-02', dias:5,  diasCompletados:5,  horasProgramadas:5,  horasUsadas:5,  horasRestantes:0, status:'completado', presupuesto:1125, gasto:1125 },
+                        { numero:7,  proyecto:'Consultoria Pegasus', accion:'Configuración',           actividad:'Configuracion AP',                                coordinador:'JavierGarcia',              funcion:'Networking',                    inicio:'2024-08-05', fin:'2024-08-16', dias:16, diasCompletados:10, horasProgramadas:16, horasUsadas:10, horasRestantes:0, status:'completado', presupuesto:1040, gasto:1040 },
+                        { numero:8,  proyecto:'Consultoria Pegasus', accion:'Configuración',           actividad:'Configuración Switch',                            coordinador:'JavierGarcia',              funcion:'Networking',                    inicio:'2024-07-30', fin:'2024-08-14', dias:10, diasCompletados:10, horasProgramadas:10, horasUsadas:10, horasRestantes:0, status:'completado', presupuesto:650,  gasto:650  },
+                        { numero:9,  proyecto:'Consultoria Pegasus', accion:'Configuración',           actividad:'Configuración Camaras',                           coordinador:'JavierGarcia',              funcion:'Networking',                    inicio:'2024-07-30', fin:'2024-08-01', dias:8,  diasCompletados:8,  horasProgramadas:8,  horasUsadas:8,  horasRestantes:0, status:'completado', presupuesto:520,  gasto:390  },
+                        { numero:10, proyecto:'Consultoria Pegasus', accion:'Project Management',      actividad:'Gestión de proyecto',                             coordinador:'Angel Jackson',             funcion:'Proyectos',                     inicio:'2024-07-06', fin:'2024-08-16', dias:30, diasCompletados:30, horasProgramadas:30, horasUsadas:30, horasRestantes:0, status:'completado', presupuesto:1275, gasto:935  },
+                        { numero:11, proyecto:'Consultoria Pegasus', accion:'Ventanas de configuración', actividad:'Prueba de desempeño previo al pase a producción', coordinador:'JavierGarcia',             funcion:'Networking',                    inicio:'2024-08-30', fin:'2024-08-30', dias:4,  diasCompletados:4,  horasProgramadas:4,  horasUsadas:4,  horasRestantes:0, status:'completado', presupuesto:400,  gasto:0    }
+                    ];
+                    projectData.length = 0;
+                    demo.forEach(x => projectData.push(x));
+                    saveToStorage();
+                    refreshProjectSelect();
+                    updateDashboard();
+                    console.log('✅ 11 actividades demo cargadas');
+                }
+            };
+
+            // ─── 10. CARGAR DATOS AL INICIAR ────────────────────────────
+            if (loadFromStorage()) {
+                refreshProjectSelect();
+                updateDashboard();
+                console.log('📂 Datos cargados desde localStorage:', projectData.length, 'actividades');
+            }
+
+            console.log('%c✅ Módulo de entrada manual instalado', 'color:#22c55e;font-weight:bold;font-size:13px');
+            console.log('   • Botones "➕ Añadir Actividad" y "🗑️ Limpiar Todo" agregados');
+            console.log('   • Botón "Cargar Nuevo Excel" SIGUE FUNCIONANDO');
+            console.log('   • Los datos persisten en localStorage');
+            console.log('   • Comandos: manualProfitability.addRow(), .clearAll(), .loadDemo()');
+        })();
     </script>
 </body>
 </html>
