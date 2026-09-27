@@ -1,3 +1,477 @@
+
+
+
+
+
+// ============================================================
+// 🧪 SISTEMA DE DIAGNÓSTICO COMPLETO DE PLANES
+// Uso: testAllPlans()
+// ============================================================
+window.testAllPlans = function() {
+    console.log('%c═══════════════════════════════════════════════════════', 'color: #8b5cf6; font-weight: bold;');
+    console.log('%c🧪 DIAGNÓSTICO COMPLETO DE PLANES', 'color: #8b5cf6; font-size: 16px; font-weight: bold;');
+    console.log('%c═══════════════════════════════════════════════════════', 'color: #8b5cf6; font-weight: bold;');
+
+    // 1. Verificar que existan las dependencias necesarias
+    if (typeof PLANES_CONFIG === 'undefined') {
+        console.error('❌ ERROR: PLANES_CONFIG no está definido. No se puede ejecutar el test.');
+        return;
+    }
+    if (typeof window.licenseManager === 'undefined') {
+        console.error('❌ ERROR: licenseManager no está inicializado. No se puede ejecutar el test.');
+        return;
+    }
+
+    // 2. Guardar estado actual para restaurar después
+    const planOriginal = localStorage.getItem('userPlan');
+    const trialStartOriginal = localStorage.getItem('freeTrialStart');
+    const licenseOriginal = window.licenseManager.license;
+    const trialExpiredOriginal = window.licenseManager.trialExpired;
+
+    // 3. Definir lista de features a probar
+    const features = [
+        'kanban', 'lista', 'calendario', 'asignacionHoras', 'reports',
+        'plantillas', 'ganttBasico', 'rentabilidad',
+        'dashboard', 'dashboardBasico', 'dashboard4D',
+        'pmVirtual', 'ganttEjecutivo', 'reportesEjecutivos',
+        'gestionCambios', 'recursosHumanos', 'rrhh', 'automatizacion',
+        'storytelling', 'centroComandoIA', 'inicio', 'agentesIA',
+        'colaboracionTiempoReal', 'soporteVIP', 'appMovil',
+        'iaAnalytics', 'panelEjecutivo', 'informesPDF',
+        'evolucionKPIs', 'asesoriaMensual', 'onboarding'
+    ];
+
+    // 4. Definir planes a probar
+    const planesAProbar = ['free', 'elite', 'professional', 'premium'];
+    const resultados = {};
+
+    // 5. Ejecutar prueba para cada plan
+    planesAProbar.forEach(plan => {
+        console.log(`\n%c📦 PROBANDO PLAN: ${plan.toUpperCase()}`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+
+        // Configurar el plan
+        localStorage.setItem('userPlan', plan);
+        window.licenseManager.license = plan;
+
+        // Simular estado de trial según el plan
+        if (plan === 'free') {
+            // Simular trial ACTIVO
+            window.licenseManager.trialExpired = false;
+        } else {
+            window.licenseManager.trialExpired = false;
+        }
+
+// 👇 👇 👇 AGREGA ESTAS 6 LÍNEAS AQUÍ 👇 👇 👇
+        const proyectosBackup = localStorage.getItem('projects');
+        if (plan === 'free') {
+            localStorage.setItem('projects', JSON.stringify([]));
+        }
+        // 👆 👆 👆 HASTA AQUÍ 👆 👆 👆
+
+
+
+
+        const featuresAccesibles = [];
+        const featuresBloqueadas = [];
+
+        features.forEach(feature => {
+            const tieneAcceso = window.licenseManager.canAccess(feature);
+            if (tieneAcceso) {
+                featuresAccesibles.push(feature);
+            } else {
+                featuresBloqueadas.push(feature);
+            }
+        });
+
+        resultados[plan] = {
+            accesibles: featuresAccesibles,
+            bloqueadas: featuresBloqueadas,
+            totalAccesibles: featuresAccesibles.length,
+            totalBloqueadas: featuresBloqueadas.length,
+            puedeCrearProyecto: window.licenseManager.canCreateProject()
+        };
+
+
+  // 👇 👇 👇 AGREGA ESTAS 3 LÍNEAS AQUÍ 👇 👇 👇
+        if (proyectosBackup) {
+            localStorage.setItem('projects', proyectosBackup);
+        }
+        // 👆 👆 👆 HASTA AQUÍ 👆 👆 👆
+
+
+        console.log(`   ✅ Accesibles: ${featuresAccesibles.length} features`);
+        console.log(`   ❌ Bloqueadas: ${featuresBloqueadas.length} features`);
+        console.log(`   📁 Puede crear proyecto: ${resultados[plan].puedeCrearProyecto ? 'SÍ' : 'NO'}`);
+    });
+
+    // 6. Probar caso especial: FREE con trial EXPIRADO
+    console.log(`\n%c📦 PROBANDO: FREE con TRIAL EXPIRADO`, 'color: #ef4444; font-weight: bold; font-size: 14px;');
+    localStorage.setItem('userPlan', 'free');
+    window.licenseManager.license = 'free';
+    window.licenseManager.trialExpired = true;
+
+    const freeExpiradoAccesibles = [];
+    const freeExpiradoBloqueadas = [];
+    features.forEach(feature => {
+        if (window.licenseManager.canAccess(feature)) {
+            freeExpiradoAccesibles.push(feature);
+        } else {
+            freeExpiradoBloqueadas.push(feature);
+        }
+    });
+
+    resultados['free_expirado'] = {
+        accesibles: freeExpiradoAccesibles,
+        bloqueadas: freeExpiradoBloqueadas,
+        totalAccesibles: freeExpiradoAccesibles.length,
+        totalBloqueadas: freeExpiradoBloqueadas.length,
+        puedeCrearProyecto: window.licenseManager.canCreateProject()
+    };
+
+    console.log(`   ✅ Accesibles: ${freeExpiradoAccesibles.length} features (debería ser 0)`);
+    console.log(`   ❌ Bloqueadas: ${freeExpiradoBloqueadas.length} features`);
+    console.log(`   📁 Puede crear proyecto: ${resultados['free_expirado'].puedeCrearProyecto ? 'SÍ ⚠️' : 'NO ✅'}`);
+
+    // 7. Restaurar estado original
+    if (planOriginal) {
+        localStorage.setItem('userPlan', planOriginal);
+    } else {
+        localStorage.removeItem('userPlan');
+    }
+    if (trialStartOriginal) {
+        localStorage.setItem('freeTrialStart', trialStartOriginal);
+    }
+    window.licenseManager.license = licenseOriginal;
+    window.licenseManager.trialExpired = trialExpiredOriginal;
+
+    console.log(`\n%c✅ Estado original restaurado: ${licenseOriginal}`, 'color: #10b981; font-weight: bold;');
+
+    // 8. Mostrar tabla resumen en consola
+    console.log('\n%c═══════════════════════════════════════════════════════', 'color: #8b5cf6; font-weight: bold;');
+    console.log('%c📊 TABLA RESUMEN', 'color: #8b5cf6; font-size: 14px; font-weight: bold;');
+    console.log('%c═══════════════════════════════════════════════════════', 'color: #8b5cf6; font-weight: bold;');
+
+    const resumen = {};
+    Object.keys(resultados).forEach(plan => {
+        resumen[plan.toUpperCase()] = {
+            'Features ✅': resultados[plan].totalAccesibles,
+            'Features ❌': resultados[plan].totalBloqueadas,
+            'Crear Proyecto': resultados[plan].puedeCrearProyecto ? '✅' : '❌'
+        };
+    });
+    console.table(resumen);
+
+    // 9. Mostrar modal visual con resultados
+    mostrarModalResultados(resultados, features);
+};
+
+// ============================================================
+// 📊 MODAL VISUAL DE RESULTADOS
+// ============================================================
+function mostrarModalResultados(resultados, features) {
+    // Eliminar modal anterior si existe
+    const oldModal = document.getElementById('testPlansModal');
+    if (oldModal) oldModal.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'testPlansModal';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(10px);
+        z-index: 10000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    `;
+
+    const planesColores = {
+        'free': '#95a5a6',
+        'free_expirado': '#ef4444',
+        'elite': '#facc15',
+        'professional': '#3b82f6',
+        'premium': '#8b5cf6'
+    };
+
+    const planesNombres = {
+        'free': '🆓 FREE (Trial Activo)',
+        'free_expirado': '⛔ FREE (Trial Expirado)',
+        'elite': '⭐ ELITE',
+        'professional': '🚀 PROFESSIONAL',
+        'premium': '💎 PREMIUM'
+    };
+
+    let planesHTML = '';
+    Object.keys(resultados).forEach(plan => {
+        const data = resultados[plan];
+        const color = planesColores[plan] || '#888';
+        const nombre = planesNombres[plan] || plan;
+
+        planesHTML += `
+            <div style="
+                background: linear-gradient(135deg, #0a0a1a, #121230);
+                border: 2px solid ${color};
+                border-radius: 16px;
+                padding: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 0 30px ${color}40;
+            ">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="color: ${color}; margin: 0; font-size: 18px;">${nombre}</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            ✅ ${data.totalAccesibles} accesibles
+                        </span>
+                        <span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            ❌ ${data.totalBloqueadas} bloqueadas
+                        </span>
+                        <span style="background: ${data.puedeCrearProyecto ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${data.puedeCrearProyecto ? '#10b981' : '#ef4444'}; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            📁 Crear Proyecto: ${data.puedeCrearProyecto ? 'SÍ' : 'NO'}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <div style="color: #10b981; font-size: 12px; font-weight: bold; margin-bottom: 8px;">✅ PERMITIDO</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; max-height: 150px; overflow-y: auto;">
+                            ${data.accesibles.length > 0 ? 
+                                data.accesibles.map(f => `
+                                    <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 3px 8px; border-radius: 10px; font-size: 10px;">${f}</span>
+                                `).join('') : 
+                                '<span style="color: #666; font-style: italic; font-size: 12px;">Ninguna</span>'
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: #ef4444; font-size: 12px; font-weight: bold; margin-bottom: 8px;">❌ BLOQUEADO</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px; max-height: 150px; overflow-y: auto;">
+                            ${data.bloqueadas.length > 0 ? 
+                                data.bloqueadas.map(f => `
+                                    <span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 3px 8px; border-radius: 10px; font-size: 10px;">${f}</span>
+                                `).join('') : 
+                                '<span style="color: #10b981; font-style: italic; font-size: 12px;">Ninguna (acceso total)</span>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    overlay.innerHTML = `
+        <div style="
+            width: 95vw;
+            max-width: 1100px;
+            max-height: 90vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 24px;
+            border: 2px solid #8b5cf6;
+            padding: 30px;
+            overflow-y: auto;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+        ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <h2 style="color: white; margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">
+                        🧪 Diagnóstico de Planes
+                    </h2>
+                    <p style="color: #94a3b8; margin: 0; font-size: 14px;">
+                        Verificación de permisos y bloqueos • ${new Date().toLocaleString()}
+                    </p>
+                </div>
+                <button onclick="document.getElementById('testPlansModal').remove()" style="
+                    background: rgba(239, 68, 68, 0.2);
+                    border: 1px solid #ef4444;
+                    color: #ef4444;
+                    padding: 12px 24px;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    font-size: 14px;
+                ">
+                    ✕ Cerrar
+                </button>
+            </div>
+
+            <!-- KPIs rápidos -->
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px;">
+                ${Object.keys(resultados).map(plan => {
+                    const data = resultados[plan];
+                    const color = planesColores[plan] || '#888';
+                    return `
+                        <div style="
+                            background: rgba(255,255,255,0.05);
+                            border: 2px solid ${color}40;
+                            border-radius: 12px;
+                            padding: 15px;
+                            text-align: center;
+                        ">
+                            <div style="color: ${color}; font-size: 11px; font-weight: bold; margin-bottom: 8px;">
+                                ${planesNombres[plan]?.split(' ')[0] || plan.toUpperCase()}
+                            </div>
+                            <div style="color: white; font-size: 24px; font-weight: bold;">
+                                ${data.totalAccesibles}
+                            </div>
+                            <div style="color: #64748b; font-size: 10px;">
+                                ${data.totalAccesibles}/${data.totalAccesibles + data.totalBloqueadas} features
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- Detalle por plan -->
+            ${planesHTML}
+
+            <!-- Footer con acciones -->
+            <div style="
+                margin-top: 25px;
+                padding: 15px;
+                background: rgba(255,255,255,0.03);
+                border-radius: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            ">
+                <span style="color: #94a3b8; font-size: 12px;">
+                    💡 Los cambios en el estado de la prueba no se guardan permanentemente
+                </span>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="exportarDiagnosticoPlanes()" style="
+                        background: rgba(59, 130, 246, 0.2);
+                        border: 1px solid #3b82f6;
+                        color: #60a5fa;
+                        padding: 8px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: bold;
+                    ">
+                        📥 Exportar JSON
+                    </button>
+                    <button onclick="document.getElementById('testPlansModal').remove()" style="
+                        background: rgba(139, 92, 246, 0.2);
+                        border: 1px solid #8b5cf6;
+                        color: #a78bfa;
+                        padding: 8px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        font-weight: bold;
+                    ">
+                        ✅ Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Guardar resultados globalmente para exportar
+    window._ultimoDiagnosticoPlanes = resultados;
+}
+
+// ============================================================
+// 📥 EXPORTAR DIAGNÓSTICO A JSON
+// ============================================================
+window.exportarDiagnosticoPlanes = function() {
+    if (!window._ultimoDiagnosticoPlanes) {
+        alert('❌ No hay diagnóstico para exportar. Ejecuta testAllPlans() primero.');
+        return;
+    }
+
+    const data = {
+        timestamp: new Date().toISOString(),
+        planActual: localStorage.getItem('userPlan'),
+        resultados: window._ultimoDiagnosticoPlanes
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `diagnostico_planes_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    console.log('✅ Diagnóstico exportado correctamente');
+};
+
+// ============================================================
+// 🎯 VERIFICAR MAPEO DE VISTAS A FEATURES
+// ============================================================
+window.testViewMapping = function() {
+    console.log('%c═══════════════════════════════════════════════════════', 'color: #f59e0b; font-weight: bold;');
+    console.log('%c🗺️  VERIFICACIÓN DE MAPEO DE VISTAS', 'color: #f59e0b; font-size: 14px; font-weight: bold;');
+    console.log('%c═══════════════════════════════════════════════════════', 'color: #f59e0b; font-weight: bold;');
+
+    if (typeof VISTA_FEATURE_MAP === 'undefined') {
+        console.error('❌ VISTA_FEATURE_MAP no está definido');
+        return;
+    }
+
+    console.log('📋 Mapeo actual:');
+    console.table(VISTA_FEATURE_MAP);
+
+    // Verificar que cada feature mapeada exista en PLANES_CONFIG
+    const featuresEnConfig = new Set();
+    if (typeof PLANES_CONFIG !== 'undefined') {
+        Object.keys(PLANES_CONFIG).forEach(plan => {
+            if (PLANES_CONFIG[plan].caracteristicas) {
+                Object.keys(PLANES_CONFIG[plan].caracteristicas).forEach(f => featuresEnConfig.add(f));
+            }
+        });
+    }
+
+    const vistasHuerfanas = [];
+    Object.keys(VISTA_FEATURE_MAP).forEach(vista => {
+        const feature = VISTA_FEATURE_MAP[vista];
+        if (!featuresEnConfig.has(feature)) {
+            vistasHuerfanas.push({ vista, feature });
+        }
+    });
+
+    if (vistasHuerfanas.length > 0) {
+        console.warn('⚠️ Vistas mapeadas a features que NO existen en PLANES_CONFIG:');
+        console.table(vistasHuerfanas);
+    } else {
+        console.log('%c✅ Todas las vistas están correctamente mapeadas', 'color: #10b981; font-weight: bold;');
+    }
+};
+
+// ============================================================
+// 🚀 COMANDO RÁPIDO PARA EJECUTAR TODO
+// ============================================================
+window.runFullTest = function() {
+    console.clear();
+    window.testViewMapping();
+    console.log('\n');
+    window.testAllPlans();
+};
+
+console.log('%c🧪 Sistema de diagnóstico cargado', 'color: #22c55e; font-weight: bold; font-size: 14px;');
+console.log('%c💡 Comandos disponibles:', 'color: #3b82f6; font-weight: bold;');
+console.log('   → testAllPlans()       - Prueba todos los planes y muestra modal');
+console.log('   → testViewMapping()    - Verifica el mapeo de vistas a features');
+console.log('   → runFullTest()        - Ejecuta todo el diagnóstico completo');
+console.log('   → exportarDiagnosticoPlanes() - Exporta resultados a JSON');
+
+
+
+
+
+
+
+
 // ============================================================================
 // 🔗 CONEXIÓN DE FUNCIONES DE GUARDADO (PEGAR ESTO AL FINAL DE script.js)
 // ============================================================================
@@ -1421,7 +1895,7 @@ window.addEventListener('load', function () {
         console.warn('⚠️ Función original de Burndown no encontrada');
     };
 
-    // 6. Sobrescribir canAccess para que sea más permisivo
+       // 6. Sobrescribir canAccess SOLO para Premium (acceso total legítimo)
     window.addEventListener('load', () => {
         setTimeout(() => {
             sincronizarLicense();
@@ -1431,9 +1905,23 @@ window.addEventListener('load', function () {
                 window.licenseManager.canAccess = function(feature) {
                     const plan = localStorage.getItem('userPlan') || 'free';
                     
-                    // Si es premium o professional → acceso total
-                    if (plan === 'premium' || plan === 'professional') {
+                    // ✅ SOLO Premium tiene acceso total garantizado
+                    if (plan === 'premium') {
                         return true;
+                    }
+                    
+                    // ✅ Professional respeta su configuración de PLANES_CONFIG
+                    if (plan === 'professional') {
+                        if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG.professional) {
+                            return PLANES_CONFIG.professional.caracteristicas[feature] === true;
+                        }
+                    }
+                    
+                    // ✅ Elite respeta su configuración
+                    if (plan === 'elite') {
+                        if (typeof PLANES_CONFIG !== 'undefined' && PLANES_CONFIG.elite) {
+                            return PLANES_CONFIG.elite.caracteristicas[feature] === true;
+                        }
                     }
                     
                     // Si no, delegar al original
@@ -1443,7 +1931,7 @@ window.addEventListener('load', function () {
                     
                     return false;
                 };
-                console.log('✅ canAccess sobrescrito para permitir premium/professional');
+                console.log('✅ canAccess sobrescrito correctamente (Professional ya respeta su plan)');
             }
         }, 1000);
     });
@@ -29002,254 +29490,266 @@ window.methodologyManager = new MethodologyManager();
 // 🎯 NUEVO SISTEMA DE PLANES - 4 NIVELES
 // ============================================
 
+// ============================================
+// 🎯 CONFIGURACIÓN DEFINITIVA DE PLANES
+// ============================================
 const PLANES_CONFIG = {
-  free: {
-    nombre: 'FREE TRIAL',
-    duracionDias: 7,
-    precio: 0,
-    limiteProyectos: 1,
-    caracteristicas: {
-      centroComandoIA: false,   // ❌ BLOQUEADO
-      // ... otras características
+    free: {
+        nombre: 'FREE TRIAL',
+        duracionDias: 7,
+        precio: 0,
+        limiteProyectos: 1,
+        caracteristicas: {
+            kanban: true, lista: true, calendario: true, asignacionHoras: true, reports: true,
+            plantillas: false, ganttBasico: false, rentabilidad: false, 
+            dashboard: false, dashboardBasico: false, dashboard4D: false, 
+            pmVirtual: false, ganttEjecutivo: false, reportesEjecutivos: false, 
+            gestionCambios: false, recursosHumanos: false, rrhh: false, automatizacion: false, 
+            storytelling: false, centroComandoIA: false, inicio: false, agentesIA: false, 
+            colaboracionTiempoReal: false, soporteVIP: false, appMovil: false, iaAnalytics: false, 
+            panelEjecutivo: false, informesPDF: false, evolucionKPIs: false, asesoriaMensual: false, onboarding: false
+        }
+    },
+    elite: {
+        nombre: 'ELITE',
+        precio: 9,
+        limiteProyectos: 10,
+        caracteristicas: {
+            kanban: true, lista: true, calendario: true, asignacionHoras: true, reports: true,
+            plantillas: true, ganttBasico: true, 
+            dashboard: true,          // ✅ DESBLOQUEADO PARA ELITE
+            dashboardBasico: true,    // ✅ DESBLOQUEADO PARA ELITE
+            dashboard4D: false, pmVirtual: true, ganttEjecutivo: false, reportesEjecutivos: false, 
+            gestionCambios: false, recursosHumanos: false, rrhh: false, automatizacion: false, 
+            storytelling: false, centroComandoIA: false, inicio: false, agentesIA: false, 
+            colaboracionTiempoReal: false, soporteVIP: false, appMovil: false, iaAnalytics: false, 
+            panelEjecutivo: false, informesPDF: false, evolucionKPIs: false, asesoriaMensual: false, onboarding: false
+        }
+    },
+    professional: {
+        nombre: 'PROFESSIONAL',
+        precio: 30,
+        limiteProyectos: Infinity,
+        caracteristicas: {
+            kanban: true, lista: true, calendario: true, asignacionHoras: true, reports: true,
+            plantillas: true, ganttBasico: true, rentabilidad: true, 
+            dashboard: true, dashboardBasico: true, dashboard4D: true, 
+            pmVirtual: true,         // ✅ DESBLOQUEADO PARA PROFESSIONAL
+            ganttEjecutivo: true, reportesEjecutivos: true, gestionCambios: true, 
+            recursosHumanos: true, rrhh: true, automatizacion: true, storytelling: true, 
+            centroComandoIA: false, 
+            inicio: false,           // ✅ BLOQUEADO PARA PROFESSIONAL
+            agentesIA: false, colaboracionTiempoReal: false, soporteVIP: false, appMovil: false, 
+            iaAnalytics: false, panelEjecutivo: false, informesPDF: false, evolucionKPIs: false, asesoriaMensual: false, onboarding: false
+        }
+    },
+    premium: {
+        nombre: 'PREMIUM',
+        precio: 79,
+        limiteProyectos: Infinity,
+        caracteristicas: {
+            kanban: true, lista: true, calendario: true, asignacionHoras: true, reports: true,
+            plantillas: true, ganttBasico: true, rentabilidad: true, 
+            dashboard: true, dashboardBasico: true, dashboard4D: true, 
+            pmVirtual: true, ganttEjecutivo: true, reportesEjecutivos: true, gestionCambios: true, 
+            recursosHumanos: true, rrhh: true, automatizacion: true, storytelling: true, 
+            centroComandoIA: true, 
+            inicio: true,            // ✅ DESBLOQUEADO PARA PREMIUM
+            agentesIA: true, colaboracionTiempoReal: true, soporteVIP: true, appMovil: true, 
+            iaAnalytics: true, panelEjecutivo: true, informesPDF: true, evolucionKPIs: true, asesoriaMensual: true, onboarding: true
+        }
     }
-  },
-
-  elite: {
-  nombre: 'ELITE',
-  precio: 9,
-  limiteProyectos: 10,
-  caracteristicas: {
-    // ✅ PERMITIDOS EN ELITE:
-    kanban: true,
-    lista: true,
-    calendario: true,
-    asignacionHoras: true,
-    plantillas: true,
-    ganttBasico: true,
-    reports: true,              // ⭐ ESTO FALTABA: Desbloquea "Status del Proyecto"
-    
-    // ❌ BLOQUEADOS EN ELITE:
-    rentabilidad: false,
-    dashboard: false,           // ⭐ Agregado explícitamente para bloquear Dashboard
-    dashboardBasico: false,
-    dashboard4D: false,
-    pmVirtual: false,
-    ganttEjecutivo: false,
-    reportesEjecutivos: false,  // 🔒 Centro de Reportes
-    gestionCambios: false,
-    recursosHumanos: false,     // 🔒 Control de RRHH
-  rrhh:false,            // 🔒 Control de RRHH
-    automatizacion: false,      // 🔒 Automatización Premium
-    centroComandoIA: false,     // 🔒 Centro de Comando 4D IA
-    agentesIA: false,           // 🔒 Agentes IA
-    integraciones: false,       // 🔒 Integraciones
-    storytelling: false,        // 🔒 Storytelling
-    centroControlPM: false,     // 🔒 Centro de Control PM
-    colaboracionTiempoReal: false,
-    soporteVIP: false,
-    appMovil: false
-  }
-},
-  professional: {
-    nombre: 'PROFESSIONAL',
-    precio: 30,
-    limiteProyectos: Infinity,
-    caracteristicas: {
-      kanban: true,
-      lista: true,
-      calendario: true,
-      asignacionHoras: true,
-      plantillas: true,
-      ganttBasico: true,
-      rentabilidad: true,
-      dashboardBasico: true,
-      pmVirtual: true,
-      ganttEjecutivo: true,
-      dashboard4D: true,
-      reportesEjecutivos: true,
-      gestionCambios: true,
-      recursosHumanos: true,
-      automatizacion: true,
-      centroComandoIA: false,
-      agentesIA: false,
-      colaboracionTiempoReal: false,
-      soporteVIP: false,
-      appMovil: false
-    }
-  },
-  premium: {
-    nombre: 'PREMIUM',
-    precio: 40,
-    limiteProyectos: Infinity,
-    caracteristicas: {
-      kanban: true,
-      lista: true,
-      calendario: true,
-      asignacionHoras: true,
-      plantillas: true,
-      ganttBasico: true,
-      rentabilidad: true,
-      dashboardBasico: true,
-      pmVirtual: true,
-      ganttEjecutivo: true,
-      dashboard4D: true,
-      reportesEjecutivos: true,
-      gestionCambios: true,
-      recursosHumanos: true,
-      automatizacion: true,
-      centroComandoIA: true,
-      agentesIA: true,
-      colaboracionTiempoReal: true,
-      soporteVIP: true,
-      appMovil: true
-    }
-  }
 };
 // ============================================
-// 🔒 LICENSE MANAGER ACTUALIZADO
+// 🔒 LICENSE MANAGER CORREGIDO
 // ============================================
-
-// ============================================
-// 🔒 LICENSE MANAGER CORREGIDO (COPIA Y PEGA ESTO)
-// ============================================
-// ✅ NUEVA CLASE DE LICENCIA REALISTA Y SEGURA
 class LicenseManager {
-  constructor() {
-    this.license = localStorage.getItem('userPlan') || 'free';
-    this.trialExpired = false;
-    this.verifyTrialExpiration();
-  }
+    constructor() {
+        this.license = localStorage.getItem('userPlan') || 'free';
+        this.trialExpired = false;
+        this.verifyTrialExpiration();
+    }
 
-  verifyTrialExpiration() {
-    if (this.license === 'free') {
-      let trialStart = localStorage.getItem('freeTrialStart');
-      if (!trialStart) {
-        localStorage.setItem('freeTrialStart', new Date().toISOString());
-        trialStart = localStorage.getItem('freeTrialStart');
-      }
-      const start = new Date(trialStart);
-      const now = new Date();
-      const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-      if (daysDiff >= 7) {
-        this.trialExpired = true;
-        console.warn('⛔ El trial de 7 días ha expirado. Sistema BLOQUEADO.');
-      } else {
-        console.log(`⏳ Días restantes de prueba: ${7 - daysDiff}`);
-      }
+    verifyTrialExpiration() {
+        if (this.license === 'free') {
+            let trialStart = localStorage.getItem('freeTrialStart');
+            
+            // 🆕 SI ES USUARIO NUEVO, INICIAMOS LA PRUEBA HOY
+            if (!trialStart) {
+                localStorage.setItem('freeTrialStart', new Date().toISOString());
+                trialStart = localStorage.getItem('freeTrialStart');
+            }
+            
+            const start = new Date(trialStart);
+            const now = new Date();
+            const daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff >= 7) {
+                this.trialExpired = true;
+                console.warn('⛔ Trial de 7 días expirado.');
+            } else {
+                this.trialExpired = false;
+                console.log(`⏳ Trial activo. Días restantes: ${7 - daysDiff}`);
+            }
+        }
     }
-  }
 
-canAccess(feature) {
-  // 🔥 1. FREE con trial activo → ACCESO TOTAL
-  if (this.license === 'free' && !this.trialExpired) {
-    return true;
-  }
-  // 🚫 2. FREE con trial expirado → BLOQUEADO COMPLETO
-  if (this.license === 'free' && this.trialExpired) {
-    return false;
-  }
-  // ⭐⭐⭐ EXCEPCIONES PARA PLAN ELITE ⭐⭐⭐
-  if (this.license === 'elite') {
-    // ✅ Status del Proyecto SIEMPRE permitido en Elite
-    if (feature === 'reports' || feature === 'reportes' || feature === 'status') {
-      return true;
-    }
-    // 🔒 Estas features SIEMPRE bloqueadas en Elite
-    const bloqueadasElite = ['recursosHumanos', 'rrhh', 'dashboard', 'dashboard4D', 'rentabilidad', 'automatizacion', 'storytelling', 'integraciones', 'centroComandoIA', 'centroControlPM', 'reportesEjecutivos', 'agentesIA'];
-    if (bloqueadasElite.includes(feature)) {
-      return false;
-    }
-  }
-  // 3. Planes de pago → según configuración
-  if (PLANES_CONFIG[this.license]) {
-    return PLANES_CONFIG[this.license].caracteristicas[feature] === true;
-  }
-  return false;
-}
-  canCreateProject() {
-    // Si es free y expiró, no puede crear proyectos
+   canAccess(feature) {
+    console.log(`🔍 Verificando acceso a: ${feature} para plan: ${this.license}`);
+    
+    // 1. FREE con trial expirado → BLOQUEADO COMPLETO
     if (this.license === 'free' && this.trialExpired) {
-      return false;
+        console.log('❌ FREE con trial expirado: BLOQUEADO');
+        return false;
     }
-    // Si es free con trial activo, solo 1 proyecto
+
+    // 2. FREE con trial activo → SOLO CARACTERÍSTICAS BÁSICAS
     if (this.license === 'free' && !this.trialExpired) {
-      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
-      return proyectosActuales < 1;
+        const freeFeatures = ['kanban', 'lista', 'calendario', 'asignacionHoras', 'reports'];
+        const allowed = freeFeatures.includes(feature);
+        console.log(`📋 FREE trial activo - ${feature}: ${allowed ? '✅ PERMITIDO' : '❌ BLOQUEADO'}`);
+        return allowed;
     }
-    // Planes de pago
+
+    // 3. Planes de pago → según configuración
     if (PLANES_CONFIG[this.license]) {
-      const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
-      return proyectosActuales < PLANES_CONFIG[this.license].limiteProyectos;
+        const allowed = PLANES_CONFIG[this.license].caracteristicas[feature] === true;
+        console.log(`💎 Plan ${this.license} - ${feature}: ${allowed ? '✅ PERMITIDO' : '❌ BLOQUEADO'}`);
+        return allowed;
     }
-    return true;
-  }
 
- upgradePlan(newPlan) {
-  if (!PLANES_CONFIG[newPlan]) return false;
-  this.license = newPlan;
-  this.trialExpired = false;
-  localStorage.setItem('userPlan', newPlan);
-  localStorage.removeItem('freeTrialStart');
-  
-  // 🔥 Eliminar cualquier modal de bloqueo
-  const modal = document.getElementById('modalExpiracion');
-  if (modal) modal.remove();
-  
-  // 🔥 También eliminar el banner rojo si existe
-  const banner = document.getElementById('bloqueoPruebaMsg');
-  if (banner) banner.remove();
-  document.body.style.paddingTop = '0';
-  
-  // Restaurar localStorage y fetch (si fueron interceptados)
-  if (window._originalSetItem) {
-    localStorage.setItem = window._originalSetItem;
-    window._originalSetItem = null;
-  }
-  if (window._originalFetch) {
-    window.fetch = window._originalFetch;
-    window._originalFetch = null;
-  }
-  
-  return true;
+    console.log('⚠️ Plan no reconocido:', this.license);
+    return false;
 }
 
-  bloquearSistema() {
-    // Muestra el modal de bloqueo total
-    if (!document.getElementById('modalExpiracion')) {
-      const modal = document.createElement('div');
-      modal.id = 'modalExpiracion';
-      modal.innerHTML = `
+    canCreateProject() {
+        if (this.license === 'free' && this.trialExpired) return false;
+        
+        if (this.license === 'free' && !this.trialExpired) {
+            const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
+            return proyectosActuales < 1;
+        }
+        
+        if (PLANES_CONFIG[this.license]) {
+            const proyectosActuales = JSON.parse(localStorage.getItem('projects') || '[]').length;
+            return proyectosActuales < PLANES_CONFIG[this.license].limiteProyectos;
+        }
+        return true;
+    }
+
+    upgradePlan(newPlan) {
+        if (!PLANES_CONFIG[newPlan]) return false;
+        this.license = newPlan;
+        this.trialExpired = false;
+        localStorage.setItem('userPlan', newPlan);
+        localStorage.removeItem('freeTrialStart');
+        
+        const modal = document.getElementById('modalExpiracion');
+        if (modal) modal.remove();
+        
+        return true;
+    }
+
+    bloquearSistema() {
+        if (document.getElementById('modalExpiracion')) return;
+        const modal = document.createElement('div');
+        modal.id = 'modalExpiracion';
+        modal.innerHTML = `
         <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-          <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:45px;border-radius:24px;max-width:500px;width:90%;text-align:center;border:2px solid #ef4444;box-shadow:0 0 60px rgba(239,68,68,0.3);">
-            <div style="font-size:64px;margin-bottom:15px;">⛔</div>
-            <h2 style="color:#ef4444;font-size:28px;margin-bottom:10px;">Acceso Bloqueado</h2>
-            <p style="color:#94a3b8;font-size:16px;margin-bottom:25px;line-height:1.6;">
-              Tu período de prueba de 7 días ha terminado.<br>
-              <strong style="color:#fca5a5;">Selecciona un plan de pago</strong> para continuar usando el sistema.
-            </p>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <button onclick="window.selectPlan('elite')" style="background:linear-gradient(135deg,#facc15,#eab308);color:#0f172a;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                ⭐ ELITE - €9/mes
-              </button>
-              <button onclick="window.selectPlan('professional')" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                🚀 PROFESSIONAL - €30/mes
-              </button>
-              <button onclick="window.selectPlan('premium')" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                💎 PREMIUM - €79/mes
-              </button>
+            <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:45px;border-radius:24px;max-width:500px;width:90%;text-align:center;border:2px solid #ef4444;box-shadow:0 0 60px rgba(239,68,68,0.3);">
+                <div style="font-size:64px;margin-bottom:15px;">⛔</div>
+                <h2 style="color:#ef4444;font-size:28px;margin-bottom:10px;">Acceso Bloqueado</h2>
+                <p style="color:#94a3b8;font-size:16px;margin-bottom:25px;line-height:1.6;">
+                    Tu período de prueba de 7 días ha terminado.<br>
+                    <strong style="color:#fca5a5;">Selecciona un plan de pago</strong> para continuar.
+                </p>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <button onclick="window.licenseManager.upgradePlan('elite')" style="background:linear-gradient(135deg,#facc15,#eab308);color:#0f172a;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;">⭐ ELITE - €9/mes</button>
+                    <button onclick="window.licenseManager.upgradePlan('professional')" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;">🚀 PROFESSIONAL - €30/mes</button>
+                    <button onclick="window.licenseManager.upgradePlan('premium')" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;padding:14px;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer;">💎 PREMIUM - €79/mes</button>
+                </div>
             </div>
-            <p style="color:#64748b;font-size:12px;margin-top:20px;">
-              ¿Ya pagaste? <a href="#" onclick="alert('Contacta a soporte: ajackson2672@gmail.com')" style="color:#a78bfa;">Contacta a soporte</a>
-            </p>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
+        </div>`;
+        document.body.appendChild(modal);
     }
-  }
+}
+window.licenseManager = new LicenseManager();
+
+// ============================================
+// 🛡️ SISTEMA DE PROTECCIÓN CENTRALIZADO
+// ============================================
+
+// Mapeo de vistas a features requeridas
+const VISTA_FEATURE_MAP = {
+    'board': 'kanban',
+    'list': 'lista',
+    'calendar': 'calendario',
+    'timeAllocation': 'asignacionHoras',
+    'reports': 'reports',
+    'dashboard': 'dashboardBasico',
+    'dashboard4d': 'dashboard4D',
+    'profitability': 'rentabilidad',
+    'ganttPro': 'ganttEjecutivo',
+    'pmVirtual': 'pmVirtual',
+    'reportesEjecutivos': 'reportesEjecutivos',
+    'automatizacion': 'automatizacion',
+    'storytelling': 'storytelling',
+    'centroControlPM': 'centroControlPM',
+    'recursosHumanos': 'recursosHumanos',
+    'rrhh': 'rrhh',
+    'centroComandoIA': 'centroComandoIA',
+    'agentesIA': 'agentesIA',
+    'colaboracionTiempoReal': 'colaboracionTiempoReal',
+    'soporteVIP': 'soporteVIP',
+    'appMovil': 'appMovil',
+    'iaAnalytics': 'iaAnalytics',
+    'panelEjecutivo': 'panelEjecutivo',
+    'informesPDF': 'informesPDF',
+    'evolucionKPIs': 'evolucionKPIs',
+    'asesoriaMensual': 'asesoriaMensual',
+    'onboarding': 'onboarding'
+};
+
+// Función central de validación
+function checkPlanAccess(viewName) {
+    const feature = VISTA_FEATURE_MAP[viewName];
+    
+    if (!feature) {
+        console.warn('⚠️ Vista no mapeada:', viewName);
+        return true; // Permitir si no está mapeada
+    }
+    
+    const hasAccess = window.licenseManager.canAccess(feature);
+    
+    if (!hasAccess) {
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const msg = lang === 'es'
+            ? `🔒 Esta función requiere un plan superior. Actualiza tu plan para acceder.`
+            : `🔒 This feature requires a higher plan. Upgrade to access.`;
+        
+        if (typeof showNotification === 'function') {
+            showNotification(msg, 'error');
+        } else {
+            alert(msg);
+        }
+        
+        // Si es free con trial expirado, bloquear sistema
+        if (window.licenseManager.license === 'free' && window.licenseManager.trialExpired) {
+            setTimeout(() => {
+                window.licenseManager.bloquearSistema();
+            }, 500);
+        }
+        
+        return false;
+    }
+    
+    return true;
 }
 
-window.licenseManager = new LicenseManager();
+// Hacer global
+window.checkPlanAccess = checkPlanAccess;
+
+
 
 // ============================================
 // 💳 FUNCIÓN GLOBAL PARA SELECCIONAR PLAN
@@ -29309,9 +29809,10 @@ function obtenerUserId() {
 
 
 
-// ========== UTILIDAD PARA PROTEGER FUNCIONES PREMIUM ==========
+// ============================================
+// 🔒 FUNCIÓN UNIFICADA PARA PROTEGER VISTAS
+// ============================================
 function requirePremiumAccess(featureName, callback) {
-    // Si el usuario tiene acceso, ejecutar el callback
     if (window.licenseManager.canAccess(featureName)) {
         if (typeof callback === 'function') {
             callback();
@@ -29319,17 +29820,25 @@ function requirePremiumAccess(featureName, callback) {
         return;
     }
 
-    // Si NO tiene acceso, mostrar mensaje y NO ejecutar callback
+    // Si NO tiene acceso
     if (window.licenseManager.license === 'free' && window.licenseManager.trialExpired) {
         window.licenseManager.bloquearSistema();
         return;
     }
 
     const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const planRequerido = getPlanRequerido(featureName);
     const msg = lang === 'es'
-        ? `🔒 ${featureName} requiere el plan Profesional o Premium.`
-        : `🔒 ${featureName} requires Professional or Premium plan.`;
+        ? ` ${featureName} requiere el plan ${planRequerido}.`
+        : `🔒 ${featureName} requires ${planRequerido} plan.`;
     showNotification(msg, 'error');
+}
+
+
+function getPlanRequerido(featureName) {
+    if (PLANES_CONFIG.professional.caracteristicas[featureName]) return 'Professional';
+    if (PLANES_CONFIG.premium.caracteristicas[featureName]) return 'Premium';
+    return 'Elite';
 }
 
 
@@ -43983,105 +44492,144 @@ document.addEventListener('click', function(e) {
 
 
 
-
 function renderListTasks(tasks = null) {
-    console.log('🎨 Renderizando lista con traducción de prioridades...');
-
+    console.log(' Renderizando lista CORREGIDA (con traducción)...');
+    
     const taskTableBody = document.getElementById('taskTableBody');
-    if (!taskTableBody) return;
-
-    // Contador de resultados
-    let counter = document.querySelector('.results-counter');
-    if (!counter) {
-        counter = document.createElement('span');
-        counter.className = 'results-counter';
-        const titleElement = document.querySelector('.list-view-header h2');
-        if (titleElement) titleElement.appendChild(counter);
+    if (!taskTableBody) {
+        console.error(' No se encontró taskTableBody');
+        return;
     }
-
+    
     const tasksToRender = tasks || getFilteredTasks('list');
-
-    if (counter) {
-        counter.textContent = `📊 ${tasksToRender.length} tareas`;
-    }
-
+    
+    // Limpiar tabla
     taskTableBody.innerHTML = '';
-
+    
     if (tasksToRender.length === 0) {
-        const emptyRow = document.createElement('tr');
-        emptyRow.className = 'empty-row';
-        emptyRow.innerHTML = `
-            <td colspan="6" class="empty-cell" style="text-align:center; padding:50px; color:#95a5a6; animation:fadeIn 0.5s;">
-                <i class="fas fa-tasks" style="font-size:48px; opacity:0.5; margin-bottom:15px; display:block;"></i>
-                No se encontraron tareas con los filtros aplicados
-            </td>
+        taskTableBody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:50px; color:#95a5a6;">
+                    No hay tareas para mostrar
+                </td>
+            </tr>
         `;
-        taskTableBody.appendChild(emptyRow);
         return;
     }
 
+    // ========== NUEVO: DEFINIR IDIOMA Y TRADUCCIONES ==========
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const L = {
+        es: {
+            pending: 'Pendiente',
+            inProgress: 'En Progreso',
+            completed: 'Completado',
+            overdue: 'Rezagado',
+            low: 'Baja',
+            medium: 'Media',
+            high: 'Alta'
+        },
+        en: {
+            pending: 'Pending',
+            inProgress: 'In Progress',
+            completed: 'Completed',
+            overdue: 'Overdue',
+            low: 'Low',
+            medium: 'Medium',
+            high: 'High'
+        }
+    };
+    const labels = L[lang] || L.es;
+    // ========================================================
+
     tasksToRender.forEach((task, index) => {
+        // Crear fila
         const row = document.createElement('tr');
-        row.className = `task-data-row ${index % 2 === 0 ? 'even-row' : 'odd-row'}`;
-        row.style.animationDelay = `${index * 0.05}s`;
-
-        // 🔥 USAR getPriorityText para traducción
-        const estadoText = getStatusText(task.status);
-        const priorityText = getPriorityText(task.priority);
-
-        const startDate = task.startDate ? formatDate(task.startDate) : '--/--/----';
-        const deadline = task.deadline ? formatDate(task.deadline) : '--/--/----';
-
-        row.innerHTML = `
-            <td class="data-cell task-name-cell" title="${task.name || '-'}">
-                <div class="task-name-content">${task.name || '-'}</div>
-            </td>
-            <td class="data-cell date-cell">${startDate}</td>
-            <td class="data-cell date-cell">${deadline}</td>
-            <td class="data-cell status-cell">
-                <div class="status-pill status-${task.status}">${estadoText}</div>
-            </td>
-            <td class="data-cell assignee-cell" title="${task.assignee || '-'}">
-                <div class="assignee-content">${task.assignee || '-'}</div>
-            </td>
-            <td class="data-cell priority-cell">
-                <div class="priority-pill priority-${task.priority}">${priorityText}</div>
-            </td>
-        `;
-
-        row.addEventListener('click', (e) => {
-            row.style.transform = 'scale(0.98)';
-            row.style.transition = 'transform 0.1s';
-            setTimeout(() => {
-                row.style.transform = '';
-                if (typeof showTaskDetails === 'function') {
-                    showTaskDetails(task);
-                }
-            }, 100);
+        row.className = index % 2 === 0 ? 'even-row' : 'odd-row';
+        row.style.cursor = 'pointer';
+        
+        // Formatear fechas
+        const startDate = task.startDate ? new Date(task.startDate).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES') : '--/--/----';
+        const deadline = task.deadline ? new Date(task.deadline).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES') : '--/--/----';
+        
+        // ========== CORREGIDO: USAR TRADUCCIONES ==========
+        // Estado con color
+        let statusText = labels.pending;
+        let statusColor = '#f1c40f';
+        if (task.status === 'completed') {
+            statusText = labels.completed;
+            statusColor = '#2ecc71';
+        } else if (task.status === 'inProgress') {
+            statusText = labels.inProgress;
+            statusColor = '#008090';
+        } else if (task.status === 'overdue' || task.status === 'rezagado') {
+            statusText = labels.overdue;
+            statusColor = '#e74c3c';
+        }
+        
+        // Prioridad con color
+        let priorityText = labels.medium;
+        let priorityColor = '#f39c12';
+        if (task.priority === 'alta' || task.priority === 'high') {
+            priorityText = labels.high;
+            priorityColor = '#e74c3c';
+        } else if (task.priority === 'baja' || task.priority === 'low') {
+            priorityText = labels.low;
+            priorityColor = '#2ecc71';
+        }
+        // ====================================================
+        
+        // Crear 6 celdas SEPARADAS
+        const td1 = document.createElement('td');
+        td1.style.padding = '12px';
+        td1.style.borderBottom = '1px solid #e2e8f0';
+        td1.innerHTML = `<strong>${task.name || '-'}</strong>`;
+        
+        const td2 = document.createElement('td');
+        td2.style.padding = '12px';
+        td2.style.borderBottom = '1px solid #e2e8f0';
+        td2.textContent = startDate;
+        
+        const td3 = document.createElement('td');
+        td3.style.padding = '12px';
+        td3.style.borderBottom = '1px solid #e2e8f0';
+        td3.textContent = deadline;
+        
+        const td4 = document.createElement('td');
+        td4.style.padding = '12px';
+        td4.style.borderBottom = '1px solid #e2e8f0';
+        td4.innerHTML = `<span style="background:${statusColor}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${statusText}</span>`;
+        
+        const td5 = document.createElement('td');
+        td5.style.padding = '12px';
+        td5.style.borderBottom = '1px solid #e2e8f0';
+        td5.textContent = task.assignee || (lang === 'en' ? 'Unassigned' : 'Sin asignar');
+        
+        const td6 = document.createElement('td');
+        td6.style.padding = '12px';
+        td6.style.borderBottom = '1px solid #e2e8f0';
+        td6.innerHTML = `<span style="background:${priorityColor}; color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${priorityText}</span>`;
+        
+        // Agregar celdas a la fila
+        row.appendChild(td1);
+        row.appendChild(td2);
+        row.appendChild(td3);
+        row.appendChild(td4);
+        row.appendChild(td5);
+        row.appendChild(td6);
+        
+        // Evento click
+        row.addEventListener('click', () => {
+            if (typeof showTaskDetails === 'function') {
+                showTaskDetails(task);
+            }
         });
-
+        
         taskTableBody.appendChild(row);
     });
-
-    // Título con degradado
-    const listHeader = document.querySelector('.list-view-header h2');
-    if (listHeader) {
-        listHeader.style.background = "linear-gradient(135deg, #FFFFFF, #3B82F6, #06B6D4)";
-        listHeader.style.backgroundSize = "200% auto";
-        listHeader.style.webkitBackgroundClip = "text";
-        listHeader.style.backgroundClip = "text";
-        listHeader.style.color = "transparent";
-        listHeader.style.webkitTextFillColor = "transparent";
-        listHeader.style.textShadow = "0 2px 10px rgba(59, 130, 246, 0.3)";
-        listHeader.style.display = "inline-block";
-        listHeader.style.width = "auto";
-    }
-
-    console.log('✅ renderListTasks completada con prioridades traducidas');
+    
+    console.log(`✅ ${tasksToRender.length} tareas renderizadas correctamente`);
 }
-
-
-
 
 
 
@@ -52127,18 +52675,20 @@ function initializeTimeAllocationView() {
 
 // Función para cargar y mostrar los datos
 function loadTimeAllocationData() {
-    console.log("📊 Cargando datos para el reporte de Asignación de Horas...");
+    console.log(" Cargando datos para el reporte de Asignación de Horas...");
+    
     const filters = getCurrentTimeAllocationFilters();
-    console.log("🔍 Filtros aplicados:", filters);
-
+    console.log(" Filtros aplicados:", filters);
+    
     let allTimeEntries = [];
+    
     if (!projects || !Array.isArray(projects)) {
         console.warn("⚠️ Datos de proyectos no disponibles.");
         renderTimeAllocationTable([]);
         renderTimeAllocationChart([]);
         return;
     }
-
+    
     projects.forEach(project => {
         const projectName = project.name;
         if (project.tasks && Array.isArray(project.tasks)) {
@@ -52148,11 +52698,9 @@ function loadTimeAllocationData() {
                 if (task.timeLoggedEntries && Array.isArray(task.timeLoggedEntries)) {
                     task.timeLoggedEntries.forEach(entry => {
                         if (entry.hours > 0) {
-                            // ✅ Validar fecha
                             let date = entry.date ? new Date(entry.date) : null;
                             if (!date || isNaN(date.getTime())) {
                                 date = new Date();
-                                console.warn('⚠️ Fecha inválida, usando fecha actual:', date);
                             }
                             allTimeEntries.push({
                                 projectName: projectName,
@@ -52166,7 +52714,6 @@ function loadTimeAllocationData() {
                     let fallbackDate = new Date(task.startDate || task.deadline || Date.now());
                     if (isNaN(fallbackDate.getTime())) {
                         fallbackDate = new Date();
-                        console.warn('⚠️ Fecha inválida en fallback, usando fecha actual:', fallbackDate);
                     }
                     allTimeEntries.push({
                         projectName: projectName,
@@ -52178,9 +52725,7 @@ function loadTimeAllocationData() {
             });
         }
     });
-
-    console.log("📥 Entradas de tiempo recopiladas:", allTimeEntries);
-
+    
     // Filtrar datos
     const filteredData = allTimeEntries.filter(entry => {
         if (filters.year !== 'all' && entry.date.getFullYear() != filters.year) return false;
@@ -52189,96 +52734,117 @@ function loadTimeAllocationData() {
         if (filters.assignee !== 'all' && entry.assignee !== filters.assignee) return false;
         return true;
     });
-
-    console.log("📊 Datos filtrados:", filteredData);
-
-    // Agrupar datos (SIN monthName)
+    
+    // ✅ AGRUPAR DATOS CORRECTAMENTE (cada fila separada)
     const groupedData = {};
     filteredData.forEach(entry => {
         const monthKey = `${entry.date.getFullYear()}-${String(entry.date.getMonth() + 1).padStart(2, '0')}`;
         const key = `${entry.assignee}|${entry.projectName}|${monthKey}`;
-
+        
         if (!groupedData[key]) {
             groupedData[key] = {
                 assignee: entry.assignee,
                 projectName: entry.projectName,
-                month: monthKey, // YYYY-MM
-                // ✅ ELIMINADO: monthName
+                month: monthKey,
                 totalHours: 0
             };
         }
         groupedData[key].totalHours += entry.hours;
     });
-
+    
     const finalData = Object.values(groupedData);
-    console.log("🧮 Datos agrupados y sumados:", finalData);
-
-    window.__lastTimeAllocationData = groupedData;
-    console.log('🧪 groupedData:', groupedData);
-
+    
     // Renderizar
     renderTimeAllocationTable(finalData);
     renderTimeAllocationChart(finalData);
-
-
-
-
-
+    
     // Guardar para debug
     window.__lastTimeAllocationData = groupedData;
-    console.log('🧪 groupedData:', groupedData);
+    console.log('🧪 Datos agrupados:', groupedData);
 }
 
+
+
+
+
 function renderTimeAllocationTable(data) {
-  const tbody = document.getElementById('timeAllocationTableBody');
-  if (!tbody) {
-    console.error("❌ Elemento 'timeAllocationTableBody' no encontrado.");
-    return;
-  }
-
-  if (!Array.isArray(data) || data.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center;">
-          No hay datos para mostrar
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  // ✅ Obtener idioma actual
-  const lang = localStorage.getItem('preferredLanguage') || 'es';
-  const isEn = lang === 'en';
-
-  tbody.innerHTML = data.map(item => {
-    // 🔥 Calcular mes con el idioma actual
-    let monthDisplay = '-';
-    if (item.month) {
-      const parts = item.month.split('-');
-      if (parts.length === 2) {
-        const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
-        if (!isNaN(dateObj)) {
-          const options = { month: 'long', year: 'numeric' };
-          monthDisplay = dateObj.toLocaleString(isEn ? 'en-US' : 'es-ES', options);
+    console.log('🕒 Renderizando tabla de asignación de horas CORREGIDA...');
+    
+    const tbody = document.getElementById('timeAllocationTableBody');
+    if (!tbody) {
+        console.error('❌ No se encontró timeAllocationTableBody');
+        return;
+    }
+    
+    // Limpiar tabla
+    tbody.innerHTML = '';
+    
+    if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align:center; padding:40px; color:#94a3b8;">
+                    No hay datos para mostrar
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    const lang = localStorage.getItem('preferredLanguage') || 'es';
+    const isEn = lang === 'en';
+    
+    data.forEach(item => {
+        // Crear fila
+        const row = document.createElement('tr');
+        
+        // Formatear mes
+        let monthDisplay = '-';
+        if (item.month) {
+            const parts = item.month.split('-');
+            if (parts.length === 2) {
+                const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+                if (!isNaN(dateObj)) {
+                    const options = { month: 'long', year: 'numeric' };
+                    monthDisplay = dateObj.toLocaleString(isEn ? 'en-US' : 'es-ES', options);
+                }
+            }
         }
-      }
-    }
-    if (monthDisplay === '-') {
-      monthDisplay = item.month || '-';
-    }
-
-    return `
-      <tr>
-        <td>${item.assignee ?? '-'}</td>
-        <td>${item.projectName ?? item.project ?? '-'}</td>
-        <td>${monthDisplay}</td>
-        <td>${(item.totalHours ?? item.hours ?? 0).toFixed(2)}</td>
-      </tr>
-    `;
-  }).join('');
-
-  console.log("✅ Tabla de Asignación de Horas actualizada con idioma", lang);
+        
+        // Crear 4 celdas SEPARADAS
+        const td1 = document.createElement('td');
+        td1.style.padding = '12px';
+        td1.style.borderBottom = '1px solid #e2e8f0';
+        td1.textContent = item.assignee || '-';
+        
+        const td2 = document.createElement('td');
+        td2.style.padding = '12px';
+        td2.style.borderBottom = '1px solid #e2e8f0';
+        td2.textContent = item.projectName || item.project || '-';
+        
+        const td3 = document.createElement('td');
+        td3.style.padding = '12px';
+        td3.style.borderBottom = '1px solid #e2e8f0';
+        td3.style.textTransform = 'capitalize';
+        td3.textContent = monthDisplay;
+        
+        const td4 = document.createElement('td');
+        td4.style.padding = '12px';
+        td4.style.borderBottom = '1px solid #e2e8f0';
+        td4.style.textAlign = 'right';
+        td4.style.fontWeight = 'bold';
+        td4.style.color = '#60a5fa';
+        td4.textContent = (item.totalHours || item.hours || 0).toFixed(2);
+        
+        // Agregar celdas a la fila
+        row.appendChild(td1);
+        row.appendChild(td2);
+        row.appendChild(td3);
+        row.appendChild(td4);
+        
+        tbody.appendChild(row);
+    });
+    
+    console.log(`✅ ${data.length} registros renderizados correctamente`);
 }
 function renderTimeAllocationChart(data) {
     const canvas = document.getElementById('timeAllocationChart');
@@ -68928,194 +69494,214 @@ window.createCompleteGanttForCurrentProject = function() {
 
 
 /*******************************
- * FUNCIONES DE CONTROL DE VISTAS
+ * FUNCIONES DE CONTROL DE VISTAS (CORREGIDA Y COMPLETA)
  *******************************/
 function showView(view) {
-
-  console.log("🧭 Navegando a vista:", view);
-
-// Dentro de showView(), antes de cambiar la vista:
-const vistasBloqueadasElite = {
-  'reportes': 'reportesEjecutivos',
-  'dashboard4d': 'dashboard4D',
-  'profitability': 'rentabilidad',
-  'habilidades': 'recursosHumanos',
-  'desempeno': 'recursosHumanos',
-  'reconocimientos': 'recursosHumanos',
-  'integraciones': 'integraciones',
-  'storytelling': 'storytelling',
-  'centroIA': 'centroComandoIA',
-  'controlPM': 'centroControlPM'
-};
-
-if (localStorage.getItem('userPlan') === 'elite') {
-  const feature = vistasBloqueadasElite[view];
-  if (feature) {
-    showNotification('🔒 Esta vista requiere plan Profesional o Premium.', 'error');
-    return;
-  }
-}
-
-
-
-  // ============================================
-  // 🔒 PROTECCIÓN POR LICENCIA - VISTAS PREMIUM
-  // ============================================
-  const premiumViewsMap = {
-    'reports': 'reportesEjecutivos',
-    'profitability': 'rentabilidad',
-    'dashboard4d': 'dashboard4D',
-    'ganttPro': 'ganttEjecutivo'
-  };
-
-  if (premiumViewsMap[view]) {
-    const feature = premiumViewsMap[view];
-    if (!window.licenseManager?.canAccess(feature)) {
-      const lang = localStorage.getItem('preferredLanguage') || 'es';
-      const msg = lang === 'es'
-        ? `🔒 Esta vista requiere el plan Profesional o Premium.`
-        : `🔒 This view requires Professional or Premium plan.`;
-      showNotification(msg, 'error');
-
-      if (window.licenseManager?.license === 'free' && window.licenseManager?.trialExpired) {
-        window.licenseManager.bloquearSistema();
-      }
-      return; // ⛔ NO CAMBIA DE VISTA
+    console.log("🧭 Navegando a vista:", view);
+    
+    // ============================================
+    // 🔒 VERIFICACIÓN POR CARACTERÍSTICA (PREMIUM VIEWS MAP)
+    // ============================================
+    const premiumViewsMap = {
+        'reports': 'reportesEjecutivos',
+        'profitability': 'rentabilidad',
+        'dashboard4d': 'dashboard4D',
+        'ganttPro': 'ganttEjecutivo',
+        'inicio': 'centroComandoIA',      // ← Bloquea la vista 'inicio' en Professional
+        'pmVirtual': 'pmVirtual'          // ← Evalúa pmVirtual correctamente
+    };
+    
+    if (premiumViewsMap[view]) {
+        const feature = premiumViewsMap[view];
+        if (typeof window.licenseManager !== 'undefined' && !window.licenseManager.canAccess(feature)) {
+            const lang = localStorage.getItem('preferredLanguage') || 'es';
+            const msg = lang === 'es'
+                ? `🔒 La vista "${view}" requiere un plan superior.`
+                : `🔒 This view requires a higher plan.`;
+            
+            showNotification(msg, 'error');
+            
+            if (window.licenseManager.license === 'free' && window.licenseManager.trialExpired) {
+                window.licenseManager.bloquearSistema();
+            }
+            return; // ⛔ DETIENE LA NAVEGACIÓN
+        }
     }
-  }
 
-  // ============================================
-  // 🧭 PROTECCIÓN POR MODO DE TRABAJO
-  // ============================================
-  const currentMode = window.methodologyManager?.getCurrentMode();
- const userPlan = localStorage.getItem('userPlan') || 'free';
-const allowedViews = {
-  agile: ["inicio", "board", "calendar", "list", "dashboard", "timeAllocation"],
-  traditional: ["inicio", "list", "reports", "dashboard", "profitability", "timeAllocation"],
-  hybrid: ["inicio", "board", "calendar", "list", "reports", "dashboard", "profitability", "timeAllocation", "dashboard4d"]
-};
-
-
-  if (currentMode && !allowedViews[currentMode]?.includes(view)) {
-    showNotification(`💡 En modo ${currentMode} esta vista no está recomendada.`);
-    return;
-  }
-
-  // ============================================
-  // 🔥 LIMPIEZA GLOBAL
-  // ============================================
-  document.body.classList.remove(
-    'loading',
-    'overlay-active',
-    'debug-mode',
-    'view-transition',
-    'dark-overlay',
-    'modal-open'
-  );
-
-  // ============================================
-  // 🟣 GANTT PRO (AISLADO)
-  // ============================================
-  if (view === "ganttPro") {
-    // La verificación de licencia ya se hizo arriba
-    document.querySelectorAll('.view-content')
-      .forEach(v => v.classList.remove('active'));
-
+    // ============================================
+    // 🔒 MAPA COMPLETO DE VISTAS POR PLAN
+    // ============================================
+    const vistasPorPlan = {
+        // FREE: Solo lo básico
+        free: [
+            'board',        // Kanban
+            'list',         // Lista
+            'calendar',     // Calendario
+            'timeAllocation' // Asignación de Horas
+        ],
+        // ELITE: Free + Status + Dashboard Básico
+        elite: [
+            'board', 
+            'list', 
+            'calendar', 
+            'timeAllocation',
+            'reports',      // Status del Proyecto
+            'dashboard'     // ✅ Dashboard Básico (PERMITIDO EN ELITE)
+        ],
+        // PROFESSIONAL: Elite + vistas avanzadas
+        professional: [
+            'board', 'list', 'calendar', 'timeAllocation',
+            'reports', 'dashboard',
+            'dashboard4d',          // Dashboard 4D
+            'profitability',        // Rentabilidad
+            'ganttPro',             // Gantt Ejecutivo
+            'cambios',              // Gestión de Cambios
+            'hitos',                // Seguimiento de Hitos
+            'recursos',             // Control de RRHH
+            'costos',               // Línea Base de Costos
+            'control',              // Centro de Control PM
+            'reuniones',            // Gestión de Reuniones
+            'storytelling',         // Storytelling
+            'automatizacion'        // Automatización
+            // ❌ 'inicio' NO está aquí (bloqueado en Professional)
+        ],
+        // PREMIUM: Todo incluido
+        premium: [
+            'board', 'list', 'calendar', 'timeAllocation',
+            'reports', 'dashboard', 'dashboard4d', 'profitability',
+            'ganttPro', 'cambios', 'hitos', 'recursos', 'costos',
+            'control', 'reuniones', 'storytelling', 'automatizacion',
+            'archivo', 'transferencia', 'checklist', 'portal',
+            'encuestas', 'calidad', 'acciones', 'riesgosMatriz',
+            'desempeno', 'habilidades', 'reconocimientos', 'scrum',
+            'inicio'                // ✅ Centro de Comando 4D IA (SOLO PREMIUM)
+        ]
+    };
+    
+    // Obtener plan actual
+    const userPlan = localStorage.getItem('userPlan') || 'free';
+    const vistasPermitidas = vistasPorPlan[userPlan] || vistasPorPlan.free;
+    
+    // ============================================
+    // 🚫 VERIFICAR ACCESO POR LISTA DE VISTAS
+    // ============================================
+    if (!vistasPermitidas.includes(view)) {
+        // Determinar qué plan necesita
+        let planRequerido = 'PREMIUM';
+        for (const [plan, vistas] of Object.entries(vistasPorPlan)) {
+            if (vistas.includes(view)) {
+                planRequerido = plan.toUpperCase();
+                break;
+            }
+        }
+        
+        const lang = localStorage.getItem('preferredLanguage') || 'es';
+        const msg = lang === 'es'
+            ? `🔒 La vista "${view}" requiere el plan ${planRequerido}. Actualiza tu plan para acceder.`
+            : `🔒 The view "${view}" requires ${planRequerido} plan. Upgrade to access.`;
+        
+        showNotification(msg, 'error');
+        
+        // Si es free o elite y la vista es premium, mostrar modal de upgrade
+        if (userPlan === 'free' || userPlan === 'elite') {
+            setTimeout(() => {
+                if (typeof window.licenseManager !== 'undefined' && 
+                    typeof window.licenseManager.bloquearSistema === 'function') {
+                    window.licenseManager.bloquearSistema();
+                }
+            }, 1000);
+        }
+        
+        return; // ⛔ DETENER NAVEGACIÓN
+    }
+    
+    // ============================================
+    // ✅ PERMITIR ACCESO - LÓGICA NORMAL
+    // ============================================
     const ganttProView = document.getElementById('ganttProView');
-    if (!ganttProView) return;
+    if (ganttProView) ganttProView.style.display = 'none';
 
-    ganttProView.style.display = 'block';
-    renderGanttPro?.();
+    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+
+    const targetView = document.getElementById(view + 'View');
+    if (!targetView) {
+        console.warn('❌ Vista no encontrada:', view + 'View');
+        return;
+    }
+
+    targetView.classList.add('active');
 
     Object.entries(viewButtons || {}).forEach(([key, btn]) => {
-      if (btn) btn.classList.toggle("active", key === view);
+        if (btn) btn.classList.toggle("active", key === view);
     });
 
-    return;
-  }
+    // ============================================
+    // 🔧 LÓGICA POR VISTA
+    // ============================================
+    switch (view) {
+        case "inicio":
+            console.log('🏠 Navegando a vista de inicio (Centro de Comando 4D IA)');
+            if (typeof renderCentroComandoIA === 'function') {
+                renderCentroComandoIA();
+            } else {
+                if (typeof syncProjectsToWindow === 'function') syncProjectsToWindow();
+                if (typeof loadProjects === 'function') loadProjects();
+                if (typeof loadStatistics === 'function') loadStatistics();
+                if (typeof loadRecentActivity === 'function') loadRecentActivity();
+                if (typeof loadRecentReports === 'function') loadRecentReports();
+            }
+            break;
 
-  // ============================================
-  // 🔵 VISTAS NORMALES
-  // ============================================
-  const ganttProView = document.getElementById('ganttProView');
-  if (ganttProView) ganttProView.style.display = 'none';
+        case "list":
+            if (typeof renderListTasks === 'function') renderListTasks();
+            break;
 
-  document.querySelectorAll('.view-content')
-    .forEach(v => v.classList.remove('active'));
+        case "calendar":
+            console.log('📅 Activando vista calendario...');
+            if (typeof addCalendarStyles === 'function') addCalendarStyles();
+            setTimeout(() => {
+                if (typeof renderCalendar === 'function') renderCalendar();
+                if (typeof addCalendarHoverEffects === 'function') addCalendarHoverEffects();
+            }, 100);
+            break;
 
-  const targetView = document.getElementById(view + 'View');
-  if (!targetView) {
-    console.warn('❌ Vista no encontrada:', view + 'View');
-    return;
-  }
+        case "reports":
+            setTimeout(() => {
+                if (typeof generateReports === 'function') generateReports();
+                if (typeof generatePieChart === 'function' && typeof getStats === 'function') generatePieChart(getStats());
+            }, 50);
+            break;
 
-  targetView.classList.add('active');
+        case "profitability":
+            if (typeof renderProfitabilityView === 'function') renderProfitabilityView();
+            break;
 
-  Object.entries(viewButtons || {}).forEach(([key, btn]) => {
-    if (btn) btn.classList.toggle("active", key === view);
-  });
+        case "dashboard":
+            if (typeof renderDashboard === 'function') renderDashboard();
+            break;
 
-  // ============================================
-  // 🔧 LÓGICA POR VISTA
-  // ============================================
-  switch (view) {
+        case "timeAllocation":
+            if (typeof renderTimeAllocationView === 'function') renderTimeAllocationView();
+            break;
 
-    case "inicio":
-      console.log('🏠 Navegando a vista de inicio');
-      syncProjectsToWindow();
-      loadProjects();
-      loadStatistics();
-      loadRecentActivity();
-      loadRecentReports();
-      break;
-
-    case "list":
-      renderListTasks?.();
-      break;
-
-    case "calendar":
-      console.log('📅 Activando vista calendario...');
-      addCalendarStyles();
-      setTimeout(() => {
-        renderCalendar();
-        addCalendarHoverEffects();
-      }, 100);
-      break;
-
-    case "reports":
-      setTimeout(() => {
-        generateReports?.();
-        generatePieChart?.(getStats?.());
-      }, 50);
-      break;
-
-    case "profitability":
-      renderProfitabilityView?.();
-      break;
-
-    case "dashboard":
-      renderDashboard?.();
-      break;
-
-    case "timeAllocation":
-      renderTimeAllocationView?.();
-      break;
-
-    case "dashboard4d":
-      console.log("✅ Dashboard 4D como vista fija");
-      // ✅ Ahora sí llama a la función que abre el Dashboard 4D
-      if (typeof window.showDashboard4DView === 'function') {
-        window.showDashboard4DView();
-      }
-      break;
-  }
+        case "dashboard4d":
+            console.log("✅ Dashboard 4D como vista fija");
+            if (typeof window.showDashboard4DView === 'function') {
+                window.showDashboard4DView();
+            }
+            break;
+            
+        case "ganttPro":
+            console.log("✅ Abriendo Gantt Ejecutivo");
+            if (typeof window.createCompleteGanttForCurrentProject === 'function') {
+                window.createCompleteGanttForCurrentProject();
+            }
+            break;
+    }
 }
 
 // Exponer globalmente
-window.showView = showView;
-
-
-// ===== SOBRESCRITURA FINAL =====
+window.showView = showView;// ===== SOBRESCRITURA FINAL =====
 // Esto se ejecuta al final y sobrescribe cualquier función vieja
 
 // 1. Asegurar API_URL correcta
@@ -79389,64 +79975,45 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
 // 🚨 INTERCEPTOR NUCLEAR DEFINITIVO (Pegar al final de script.js)
 // ============================================
 (function() {
-  console.log('🛡️ Instalando Interceptor Nuclear de Gantt...');
-  
-  // Guardamos la función original real que estaba definida antes
-  const _realOriginalGantt = window.createCompleteGanttForCurrentProject;
-  
-  // Redefinimos la función globalmente con prioridad absoluta
-  window.createCompleteGanttForCurrentProject = function() {
-    const userPlan = localStorage.getItem('userPlan') || 'free';
-    console.log('🔍 [INTERCEPTOR NUCLEAR] Plan detectado:', userPlan);
+    console.log('🛡️ Instalando Interceptor de Gantt...');
+    // Guardamos la función original real que estaba definida antes
+    const _realOriginalGantt = window.createCompleteGanttForCurrentProject;
     
-    // 1. Si es ELITE, forzar Gantt Básico y DETENER aquí
-    if (userPlan === 'elite') {
-      console.log('🎯 [INTERCEPTOR NUCLEAR] Plan Elite -> Abriendo Gantt Básico');
-      if (typeof window.showBasicGantt === 'function') {
-        return window.showBasicGantt();
-      } else {
-        alert('Error: La función showBasicGantt no está cargada.');
-        return;
-      }
-    }
-    
-    // 2. Si es FREE y expiró, bloquear
-    if (userPlan === 'free') {
-      const trialStart = localStorage.getItem('freeTrialStart');
-      if (trialStart) {
-        const daysDiff = Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff >= 14) {
-          console.log('🔒 [INTERCEPTOR NUCLEAR] Prueba Free expirada');
-          if (typeof window.licenseManager !== 'undefined' && typeof window.licenseManager.bloquearSistema === 'function') {
-            window.licenseManager.bloquearSistema();
-          } else {
-            alert('Tu prueba gratuita ha expirado.');
-          }
-          return;
+    // Redefinimos la función globalmente
+    window.createCompleteGanttForCurrentProject = function() {
+        const userPlan = localStorage.getItem('userPlan') || 'free';
+        console.log('🔍 [INTERCEPTOR] Plan detectado:', userPlan);
+        
+        // 1. Si es ELITE, forzar Gantt Básico y DETENER aquí
+        if (userPlan === 'elite') {
+            console.log('🎯 [INTERCEPTOR] Plan Elite -> Abriendo Gantt Básico');
+            if (typeof window.showBasicGantt === 'function') {
+                return window.showBasicGantt();
+            }
         }
-      }
-    }
-    
-    // 3. Para Professional, Premium y Free activo, ejecutar el Gantt Ejecutivo original
-    console.log('✅ [INTERCEPTOR NUCLEAR] Acceso autorizado al Gantt Ejecutivo');
-    if (typeof _realOriginalGantt === 'function') {
-      return _realOriginalGantt.apply(this, arguments);
-    }
-  };
-  
-  console.log('✅ Interceptor Nuclear instalado correctamente.');
+        
+        // 2. Si es FREE y expiró, bloquear
+        if (userPlan === 'free') {
+            const trialStart = localStorage.getItem('freeTrialStart');
+            if (trialStart) {
+                const daysDiff = Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24));
+                if (daysDiff >= 7) {
+                    if (typeof window.licenseManager !== 'undefined' && typeof window.licenseManager.bloquearSistema === 'function') {
+                        window.licenseManager.bloquearSistema();
+                    }
+                    return;
+                }
+            }
+        }
+        
+        // 3. Para Professional, Premium y Free activo, ejecutar el Gantt Ejecutivo original
+        console.log('✅ [INTERCEPTOR] Acceso autorizado al Gantt Ejecutivo para:', userPlan);
+        if (typeof _realOriginalGantt === 'function') {
+            return _realOriginalGantt.apply(this, arguments);
+        }
+    };
+    console.log('✅ Interceptor de Gantt instalado correctamente.');
 })();
-
-
-
-
-
-
-
-
-
-
-
 
 
 
