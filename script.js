@@ -36092,7 +36092,7 @@ function createCompleteGanttForCurrentProject() {
           display: flex;
           background: rgba(255, 255, 255, 0.05);
           border-radius: 12px 12px 0 0;
-          padding: 18px 0 18px 320px;
+         padding: 18px 0 18px 480px;
           position: relative;
           overflow-x: auto;
           overflow-y: hidden;
@@ -36101,7 +36101,7 @@ function createCompleteGanttForCurrentProject() {
         ">
           <!-- COLUMNA FIJA DE TÍTULO -->
           <div style="
-            width: 320px;
+            width: 480px;
             padding: 10px 20px;
             color: white;
             font-weight: bold;
@@ -36177,7 +36177,7 @@ const padding = '10px 4px';
                 display: flex;
                 align-items: center;
                 margin-bottom: 20px;
-                padding: 20px 0 20px 320px;
+                padding: 20px 0 20px 480px;
 
                 background: ${task.critical ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 255, 255, 0.03)'};
                 border-radius: 12px;
@@ -36192,48 +36192,108 @@ const padding = '10px 4px';
               " onclick="showPremiumTaskDetails('${task.id}')">
                 
                 <!-- COLUMNA FIJA CON INFORMACIÓN DE TAREA -->
-                <div style="
-                  width: 320px;
-                  padding: 0 20px;
-                  position: absolute;
-                  left: 0;
-                  top: 0;
-                  bottom: 0;
-                  display: flex;
-                  align-items: center;
-                  background: ${task.critical ? 'rgba(231, 76, 60, 0.05)' : 'transparent'};
-                  border-radius: 12px 0 0 12px;
-                ">
-                  <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                    <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: ${task.color};
-                      border-radius: 10px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      color: white;
-                      font-weight: bold;
-                      box-shadow: 0 5px 15px ${task.color}40;
-                      flex-shrink: 0;
-                    ">
-                      ${index + 1}
-                    </div>
+<div style="
+width: 480px;
+  padding: 0 16px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  background: ${task.critical ? 'rgba(231, 76, 60, 0.05)' : 'transparent'};
+  border-radius: 12px 0 0 12px;
+">
+  <div style="display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0;">
+    <!-- NÚMERO -->
+    <div style="
+      width: 36px;
+      height: 36px;
+      background: ${task.color};
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      box-shadow: 0 5px 15px ${task.color}40;
+      flex-shrink: 0;
+    ">
+      ${index + 1}
+    </div>
 
-                    <div style="flex: 1; min-width: 0;">
-                      <div style="color: white; font-weight: bold; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis;">
-                        ${task.name}
-                        ${task.critical ? '<span style="color: #e74c3c; font-size: 12px; background: rgba(231, 76, 60, 0.2); padding: 2px 8px; border-radius: 10px; flex-shrink: 0;">CRÍTICA</span>' : ''}
-                      </div>
-                      <div style="color: #95a5a6; font-size: 12px; display: flex; gap: 15px; overflow: hidden;">
-                        <span style="flex-shrink: 0;">👤 ${task.team[0]}</span>
-                        <span style="flex-shrink: 0;">⏱️ ${task.budget}</span>
-                        ${task.dependencies.length > 0 ? `<span style="flex-shrink: 0;">🔗 ${task.dependencies.length} dep</span>` : ''}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+    <!-- INFO -->
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+
+      <!-- FILA 1: Nombre + badge -->
+      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+        <div
+          title="${task.name}"
+          style="
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
+            line-height: 1.2;
+          ">
+          ${task.name}
+        </div>
+        ${task.critical ? `
+          <span style="
+            color: #ff6b6b;
+            font-size: 9.5px;
+            font-weight: 700;
+            background: rgba(231, 76, 60, 0.18);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            white-space: nowrap;
+            text-transform: uppercase;
+          ">CRÍTICA</span>
+        ` : ''}
+      </div>
+
+      <!-- FILA 2: Asignado · Horas · Deps -->
+      <div style="
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        line-height: 1.2;
+      ">
+        <span style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <span style="opacity: 0.65;">👤</span>
+          <span style="color: #cbd5e1;">${task.team[0]}</span>
+        </span>
+        <span style="color: #475569; opacity: 0.6;">·</span>
+        <span style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+          <span style="opacity: 0.65;">⏱️</span>
+          <span style="color: #cbd5e1;">${task.budget}</span>
+        </span>
+        ${task.dependencies.length > 0 ? `
+          <span style="color: #475569; opacity: 0.6;">·</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
+            <span style="opacity: 0.65;">🔗</span>
+            <span style="color: #cbd5e1;">${task.dependencies.length}</span>
+          </span>
+        ` : ''}
+      </div>
+
+    </div>
+  </div>
+</div>
                 
                 <!-- ÁREA DE BARRAS GANTT CON SCROLL HORIZONTAL -->
                 <div style="
@@ -36347,7 +36407,7 @@ const padding = '10px 4px';
             <div id="dependencyLayer" style="
               position: absolute;
               top: 0;
-              left: 320px;
+             left: 480px;
               right: 80px;
               bottom: 0;
               pointer-events: none;
@@ -36462,7 +36522,7 @@ const padding = '10px 4px';
   // 📅 Caja del título TIMELINE
   const timelineTitle = Array.from(gantt.querySelectorAll('div')).find(el =>
     el.innerText?.includes('TIMELINE') &&
-    el.style.width === '320px'
+    el.style.width === '480px'
   );
 
   // 📋 Columnas izquierdas (descripción de tareas)
