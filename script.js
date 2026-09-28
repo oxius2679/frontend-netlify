@@ -1,4 +1,94 @@
+// ═══════════════════════════════════════════════════════════════
+// 💬 TOOLTIP LIMPIO DEL GANTT (event delegation, sobrevive al polling)
+// ═══════════════════════════════════════════════════════════════
+(function tooltipGanttLimpio() {
+  if (window.__tooltipGanttLimpio) return;
+  window.__tooltipGanttLimpio = true;
 
+  // 🔑 Crear el tooltip UNA sola vez
+  let tooltip = document.getElementById('premium-tooltip');
+  if (tooltip) tooltip.remove();   // borrar el viejo si existe
+
+  tooltip = document.createElement('div');
+  tooltip.id = 'premium-tooltip';
+  tooltip.style.cssText = `
+    position: fixed;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 999999;
+    opacity: 0;
+    transition: opacity .15s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6);
+    line-height: 1.6;
+    max-width: 320px;
+  `;
+  document.body.appendChild(tooltip);
+
+  // 🛑 Bloquear enableTaskTooltips original (evita duplicados)
+  window.enableTaskTooltips = function() {
+    // Bypass silencioso — el sistema puede llamarlo sin efectos
+  };
+
+  // 🔑 Event delegation: UN listener en document, no en cada tarea
+  // (sobrevive a los re-renders del polling porque no depende de los nodos)
+  document.addEventListener('mouseover', function(e) {
+    const taskEl = e.target.closest && e.target.closest('.premium-task');
+    if (!taskEl) return;
+
+    const id = taskEl.getAttribute('data-task-id');
+    const tasks = window.__premiumTasks || [];
+    const task = tasks.find(function(t) { return String(t.id) === String(id); });
+
+    if (!task) {
+      tooltip.style.opacity = '0';
+      return;
+    }
+
+    const depsCount = (task.dependencies || []).length;
+    const assignee = (task.team && task.team[0]) || task.assignee || 'Sin asignar';
+    const estimated = task.estimatedTime || 0;
+    const logged = task.timeLogged || 0;
+    const status = task.status || 'pending';
+
+    tooltip.innerHTML = `
+      <div style="font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:6px;">${task.name}</div>
+      <div style="color:#94a3b8;">👤 ${assignee}</div>
+      <div style="color:#94a3b8;">⏱️ Estimado: ${estimated}h · Registrado: ${logged}h</div>
+      <div style="color:#94a3b8;">📌 Estado: ${status}</div>
+      ${depsCount > 0 ? `<div style="color:#c084fc;margin-top:4px;">🔗 ${depsCount} dependencia${depsCount !== 1 ? 's' : ''}</div>` : ''}
+    `;
+    tooltip.style.opacity = '1';
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (tooltip.style.opacity !== '1') return;
+    // Ajustar posición para que no se salga de la pantalla
+    let left = e.clientX + 15;
+    let top = e.clientY + 15;
+    const tw = tooltip.offsetWidth || 300;
+    const th = tooltip.offsetHeight || 100;
+    if (left + tw > window.innerWidth - 10) left = e.clientX - tw - 15;
+    if (top + th > window.innerHeight - 10) top = e.clientY - th - 15;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top  = top + 'px';
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    const taskEl = e.target.closest && e.target.closest('.premium-task');
+    if (!taskEl) return;
+    // Solo ocultar si salimos a un elemento fuera del .premium-task
+    const related = e.relatedTarget;
+    if (related && taskEl.contains(related)) return;
+    tooltip.style.opacity = '0';
+  });
+
+  console.log('%c💬 Tooltip limpio del Gantt activo (event delegation)', 'color:#c084fc;font-weight:bold');
+})();
 
 
 
