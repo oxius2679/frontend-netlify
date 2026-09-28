@@ -36527,7 +36527,7 @@ width: 480px;
 
   // 📋 Columnas izquierdas (descripción de tareas)
   const taskLeftColumns = () =>
-    document.querySelectorAll('[data-task-id] > div[style*="width: 320px"]');
+    document.querySelectorAll('[data-task-id] > div[style*="width: 480px"]');
 
   let lastX = 0;
 
@@ -36570,7 +36570,6 @@ width: 480px;
 
   console.log('🏆 FIX DEFINITIVO GANTT aplicado (estilo Jira)');
 })();
-
 
 
   setTimeout(() => {
