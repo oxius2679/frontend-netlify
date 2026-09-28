@@ -1,7 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
+<script>
+(function(){
+  const OrigMO = window.MutationObserver;
+  const tracker = new WeakMap();
+  let blocked = 0;
+  window.MutationObserver = function(cb){
+    const wrapped = function(muts, obs){
+      const now = Date.now();
+      let rec = tracker.get(obs);
+      if(!rec || now-rec.win > 500) rec = {cnt:0, win:now};
+      rec.cnt++;
+      tracker.set(obs, rec);
+      if(rec.cnt > 20){
+        blocked++;
+        if(blocked % 100 === 0) console.warn('🧯 Throttle: '+blocked+' bloqueados');
+        return;
+      }
+      try { return cb.call(this, muts, obs); }
+      catch(e) { console.error('[MO]', e); }
+    };
+    const o = new OrigMO(wrapped);
+    o.__orig = cb;
+    return o;
+  };
+  Object.setPrototypeOf(window.MutationObserver, OrigMO);
+  window.MutationObserver.prototype = OrigMO.prototype;
+})();
+</script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

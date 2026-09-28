@@ -1,3 +1,823 @@
+// ═══════════════════════════════════════════════════════════════
+// 🎨 ESTILO PERSONALIZADO PARA "← Volver al Tablero" (Rojo Rubí)
+// ═══════════════════════════════════════════════════════════════
+(function estilizarVolverAlTablero() {
+  if (window.__volverAlTableroEstilizado) return;
+  window.__volverAlTableroEstilizado = true;
+
+  // 🎨 PALETA — Rojo Rubí bonito
+  const BG_NORMAL   = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+  const BG_HOVER    = 'linear-gradient(135deg, #dc2626, #991b1b)';
+  const BORDER      = '1px solid rgba(248, 113, 113, 0.4)';
+  const COLOR       = '#ffffff';
+  const GLOW_NORMAL = '0 4px 12px rgba(239, 68, 68, 0.4)';
+  const GLOW_HOVER  = '0 8px 20px rgba(239, 68, 68, 0.65)';
+
+  let intentos = 0;
+  const interval = setInterval(() => {
+    intentos++;
+
+    const btn = document.querySelector('button[onclick*="goBackToDashboard"]');
+    if (!btn) {
+      if (intentos > 240) clearInterval(interval);
+      return;
+    }
+
+    // ── Aplicar estilos inline con !important ──
+    btn.style.setProperty('background',    BG_NORMAL, 'important');
+    btn.style.setProperty('border',        BORDER, 'important');
+    btn.style.setProperty('color',         COLOR, 'important');
+    btn.style.setProperty('padding',       '12px 20px', 'important');
+    btn.style.setProperty('border-radius', '8px', 'important');
+    btn.style.setProperty('font-weight',   '600', 'important');
+    btn.style.setProperty('cursor',        'pointer', 'important');
+    btn.style.setProperty('transition',    'all 0.3s', 'important');
+    btn.style.setProperty('font-size',     '14px', 'important');
+    btn.style.setProperty('box-shadow',    GLOW_NORMAL, 'important');
+    btn.style.setProperty('font-family',   "'Inter', system-ui, sans-serif", 'important');
+    btn.style.setProperty('text-shadow',   '0 1px 2px rgba(127, 29, 29, 0.4)', 'important');
+    btn.style.setProperty('outline',       'none', 'important');
+
+    // ── Hover ──
+    if (!btn.__hoverInstalled) {
+      btn.__hoverInstalled = true;
+      btn.addEventListener('mouseenter', () => {
+        btn.style.setProperty('background', BG_HOVER, 'important');
+        btn.style.setProperty('transform',  'translateY(-2px)', 'important');
+        btn.style.setProperty('box-shadow', GLOW_HOVER, 'important');
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.setProperty('background', BG_NORMAL, 'important');
+        btn.style.setProperty('transform',  'translateY(0)', 'important');
+        btn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
+      });
+    }
+
+    console.log('✅ [V1] Botón "Volver al Tablero" estilizado (rojo rubí)');
+    clearInterval(interval);
+  }, 500);
+})();
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// 📉 BURNDOWN EN VENTANA NUEVA — Versión COMPLETA (VIP FINAL)
+// ═══════════════════════════════════════════════════════════════
+window.abrirBurndownVentana = function() {
+  if (typeof projects === 'undefined' || !projects[currentProjectIndex]) {
+    alert('❌ No hay proyecto activo');
+    return;
+  }
+  const project = projects[currentProjectIndex];
+  const tasks = project.tasks || [];
+
+  // ═══════════════════════════════════════════
+  // 1) CÁLCULO DE MÉTRICAS (BASADO EN TAREAS)
+  // ═══════════════════════════════════════════
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => t.status === 'completed').length;
+  const remainingTasks = Math.max(0, totalTasks - completedTasks);
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const weeksElapsed = 4;
+  const velocity = completedTasks > 0 ? (completedTasks / weeksElapsed) : 0;
+  const velocityPerWeek = velocity.toFixed(1);
+
+  // ═══════════════════════════════════════════
+  // 2) PROYECCIONES
+  // ═══════════════════════════════════════════
+  const semanasBase = ['Inicio', 'S1', 'S2', 'S3', 'Actual'];
+  const ideal = [totalTasks, totalTasks*0.75, totalTasks*0.5, totalTasks*0.25, 0];
+
+  const real = [
+    totalTasks,
+    Math.max(0, totalTasks - completedTasks * 0.25),
+    Math.max(0, totalTasks - completedTasks * 0.5),
+    Math.max(0, totalTasks - completedTasks * 0.75),
+    remainingTasks
+  ];
+
+  const labels = [...semanasBase];
+  const proyeccion = [null, null, null, null, remainingTasks];
+  const optimista = [null, null, null, null, remainingTasks];
+  const pesimista = [null, null, null, null, remainingTasks];
+  const bandaSup =  [null, null, null, null, remainingTasks];
+  const bandaInf =  [null, null, null, null, remainingTasks];
+
+  if (velocity > 0 && remainingTasks > 0) {
+    let c = remainingTasks, step = 1;
+    const vBase = velocity;
+    while (c > 0 && step <= 200) {
+      c = Math.max(0, c - vBase);
+      proyeccion.push(Number(c.toFixed(2)));
+      labels.push('+' + step);
+      step++;
+    }
+
+    let co = remainingTasks, so = 1;
+    const vOpt = velocity * 1.25;
+    while (co > 0 && so <= 200) {
+      co = Math.max(0, co - vOpt);
+      optimista.push(Number(co.toFixed(2)));
+      so++;
+    }
+
+    let cp = remainingTasks, sp2 = 1;
+    const vPes = velocity * 0.75;
+    while (cp > 0 && sp2 <= 200) {
+      cp = Math.max(0, cp - vPes);
+      pesimista.push(Number(cp.toFixed(2)));
+      sp2++;
+    }
+  }
+
+  const maxLen = Math.max(proyeccion.length, optimista.length, pesimista.length, labels.length);
+  while (labels.length < maxLen) labels.push('+' + labels.length);
+  while (proyeccion.length < maxLen) proyeccion.push(null);
+  while (optimista.length < maxLen) optimista.push(null);
+  while (pesimista.length < maxLen) pesimista.push(null);
+  while (bandaSup.length < maxLen) bandaSup.push(null);
+  while (bandaInf.length < maxLen) bandaInf.push(null);
+  for (let i = 5; i < maxLen; i++) {
+    bandaSup[i] = optimista[i];
+    bandaInf[i] = pesimista[i];
+  }
+
+  // ═══════════════════════════════════════════
+  // 3) EVALUACIÓN DE ESTADO
+  // ═══════════════════════════════════════════
+  let estadoStatus = 'success';
+  let estadoIcon = '🎉';
+  let estadoMsg = 'Proyecto completado';
+  if (remainingTasks > 0 && velocity > 0) {
+    const weeksNormal = remainingTasks / velocity;
+    const weeksOpt = remainingTasks / (velocity * 1.25);
+    if (weeksNormal <= 1.2) {
+      estadoStatus = 'ok'; estadoIcon = '✅'; estadoMsg = 'Proyecto en rango saludable';
+    }
+    else if (weeksOpt <= 1) {
+      estadoStatus = 'warning'; estadoIcon = '⚠️'; estadoMsg = 'Riesgo moderado de retraso';
+    }
+    else {
+      estadoStatus = 'danger'; estadoIcon = '❌'; estadoMsg = 'Alta probabilidad de no cumplir el proyecto';
+    }
+  } else if (remainingTasks > 0) {
+    estadoStatus = 'danger'; estadoIcon = '❌'; estadoMsg = 'Sin progreso detectado';
+  }
+  const estadoColors = {
+    success: { bg: '#10b981', color: '#fff' },
+    ok:      { bg: '#10b981', color: '#fff' },
+    warning: { bg: '#f59e0b', color: '#fff' },
+    danger:  { bg: '#ef4444', color: '#fff' },
+  };
+  const est = estadoColors[estadoStatus];
+
+  let forecastText = 'Sin datos suficientes para proyectar';
+  if (remainingTasks === 0) forecastText = '🏁 Proyecto completado';
+  else if (velocity > 0) {
+    const w = (remainingTasks / velocity).toFixed(1);
+    forecastText = `⏳ Con la velocidad actual, el proyecto tardará ~${w} semanas`;
+  }
+
+  // ═══════════════════════════════════════════
+  // 4) ANÁLISIS DEL PROYECTO
+  // ═══════════════════════════════════════════
+  const criticalTasks = tasks.filter(t => t.priority === 'alta' || t.critical).length;
+  const overdueTasks = tasks.filter(t => t.status === 'overdue' || t.status === 'rezagado').length;
+
+  let analysisHTML = '<ul style="margin:0;padding-left:20px;line-height:1.8;">';
+  analysisHTML += `<li>📊 <strong>Progreso:</strong> ${progress}% completado</li>`;
+  analysisHTML += `<li>🎯 <strong>Tareas críticas:</strong> ${criticalTasks} ${criticalTasks === 0 ? '✅' : '⚠️'}</li>`;
+  analysisHTML += `<li>⏰ <strong>Tareas atrasadas:</strong> ${overdueTasks} ${overdueTasks === 0 ? '✅' : '⚠️'}</li>`;
+  analysisHTML += `<li>⚡ <strong>Velocidad:</strong> ${velocityPerWeek} tareas/semana</li>`;
+  analysisHTML += '</ul>';
+
+  // ═══════════════════════════════════════════
+  // 5) AUDITORÍA (timeHistory → horas registradas)
+  // ═══════════════════════════════════════════
+  // Parser para fecha en formato español: "17/8/2026, 2:37:11" o "17/8/2026, 02:37:11"
+  function parseSpanishDate(str) {
+    if (!str) return null;
+    try {
+      // Formato esperado: D/M/YYYY, H:MM:SS  o  D/M/YYYY, HH:MM:SS
+      const m = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})/);
+      if (!m) return new Date(str); // fallback por si acaso
+      const [, d, mo, y, h, mi, s] = m;
+      return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+    } catch (e) { return null; }
+  }
+
+  const timelineEvents = [];
+  tasks.forEach(t => {
+    const entries = t.timeHistory || t.timeLoggedEntries || [];
+    entries.forEach(h => {
+      const rawDate = h.date || h.fecha || h.timestamp;
+      const parsed = parseSpanishDate(rawDate);
+      timelineEvents.push({
+        dateRaw:   rawDate,
+        dateObj:   parsed,
+        task:      t.name,
+        hours:     Number(h.hours || h.horas || 0),
+        comment:   h.comment || h.comentario || 'Sin comentario'
+      });
+    });
+  });
+
+  // Ordenar por fecha descendente (usa dateObj si existe, si no el string)
+  timelineEvents.sort((a, b) => {
+    const ta = a.dateObj ? a.dateObj.getTime() : 0;
+    const tb = b.dateObj ? b.dateObj.getTime() : 0;
+    return tb - ta;
+  });
+  const recentTimeline = timelineEvents.slice(0, 15);
+
+  const timelineHTML = recentTimeline.length > 0
+    ? recentTimeline.map(e => {
+        const fecha = e.dateObj
+          ? e.dateObj.toLocaleString('es-ES')
+          : e.dateRaw;
+        const commentColor = e.comment === 'Sin comentario' ? '#64748b' : '#94a3b8';
+        return `
+        <div style="padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:6px;border-left:3px solid #8b5cf6;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:11px;color:#94a3b8;">📅 ${fecha}</div>
+            <div style="font-size:12px;color:#f59e0b;font-weight:bold;">⏱️ ${e.hours.toFixed(2)}h</div>
+          </div>
+          <div style="font-size:13px;color:#e2e8f0;margin:5px 0 3px;">${e.task}</div>
+          <div style="font-size:11px;color:${commentColor};">💬 ${e.comment}</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:#94a3b8;font-style:italic;padding:10px;">Sin actividad registrada</div>';
+
+  // ═══════════════════════════════════════════
+  // 6) HTML DE LA VENTANA
+  // ═══════════════════════════════════════════
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Burndown · ${project.name}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a0a1a, #121230);
+    color: white;
+    min-height: 100vh;
+    padding: 25px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px; flex-wrap: wrap; gap: 15px;
+  }
+  .header h1 { font-size: 24px; }
+  .header p { color: #95a5a6; font-size: 12px; margin-top: 4px; }
+  .btn-close {
+    background: #ef4444; border: none; color: white;
+    padding: 12px 24px; border-radius: 8px;
+    font-weight: bold; cursor: pointer; font-size: 14px;
+  }
+  .btn-close:hover { background: #dc2626; }
+
+  .kpis {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 15px; margin-bottom: 22px;
+  }
+  .kpi {
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px; padding: 18px; text-align: center;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .kpi .lbl { font-size: 10px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi .val { font-size: 26px; font-weight: bold; }
+  .kpi .sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+  .status-toggle-container {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 30px;
+    padding: 8px 14px 8px 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 380px;
+    overflow: hidden;
+  }
+  .status-badge:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .status-badge .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+  .status-badge .status-text {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-badge .status-toggle-icon {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .status-badge.collapsed {
+    max-width: 44px;
+    padding: 8px 12px;
+  }
+  .status-badge.collapsed .status-text { display: none; }
+  .status-badge.collapsed .status-toggle-icon { transform: rotate(180deg); }
+
+  .banner {
+    padding: 14px 20px; border-radius: 12px; text-align: center;
+    font-weight: bold; font-size: 15px; margin-bottom: 12px;
+  }
+  .forecast {
+    padding: 10px 16px; border-radius: 10px; text-align: center;
+    background: rgba(59,130,246,0.15); color: #93c5fd; font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .chart-box {
+    background: rgba(0,0,0,0.3);
+    border-radius: 16px; padding: 20px;
+    margin-bottom: 22px;
+  }
+  .chart-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-bottom: 15px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .chart-toggles label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #cbd5e1;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  .chart-toggles label:hover { color: #fff; }
+  .chart-toggles input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border: 1.5px solid #64748b;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .chart-toggles input[type="checkbox"]:checked {
+    background: #3b82f6;
+    border-color: #3b82f6;
+  }
+  .chart-toggles input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .chart-canvas-wrap {
+    position: relative;
+    height: 400px;
+  }
+  .chart-toggles .toggle-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .section {
+    background: rgba(20,25,45,0.7);
+    border-radius: 14px; padding: 20px; margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .section h3 {
+    margin: 0 0 15px; font-size: 16px; color: #e2e8f0;
+    padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .footer {
+    text-align: center; font-size: 11px; color: #64748b;
+    padding: 15px; margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>📉 Burndown Chart · ${project.name}</h1>
+        <p>${totalTasks} tareas · Actualizado: ${new Date().toLocaleString()}</p>
+      </div>
+      <button class="btn-close" onclick="window.close()">✕ Cerrar ventana</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="lbl">Tareas Totales</div>
+        <div class="val">${totalTasks}</div>
+        <div class="sub">En el backlog</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Completadas</div>
+        <div class="val" style="color:#10b981;">${completedTasks} (${progress}%)</div>
+        <div class="sub">% completado</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Velocidad</div>
+        <div class="val" style="color:#f59e0b;">${velocityPerWeek}</div>
+        <div class="sub">tareas/semana</div>
+      </div>
+    </div>
+
+    <div class="status-toggle-container">
+      <div class="status-badge" id="statusBadge" onclick="toggleStatusBadge()">
+        <span class="status-dot" style="background:${est.bg};"></span>
+        <span class="status-text" style="color:${est.bg};">${estadoIcon} ${estadoMsg}</span>
+        <span class="status-toggle-icon">◀</span>
+      </div>
+    </div>
+
+    <div class="banner" id="statusBanner" style="background:${est.bg};color:${est.color};">
+      ${estadoIcon} ${estadoMsg}
+    </div>
+    <div class="forecast">${forecastText}</div>
+
+    <div class="chart-box">
+      <div class="chart-title">📈 GRÁFICO DE BURNDOWN</div>
+      <div class="chart-toggles">
+        <label><input type="checkbox" data-dataset="0" checked><span class="toggle-color" style="background:#10b981;"></span>Línea Ideal</label>
+        <label><input type="checkbox" data-dataset="1" checked><span class="toggle-color" style="background:#f59e0b;"></span>Progreso Real</label>
+        <label><input type="checkbox" data-dataset="2" checked><span class="toggle-color" style="background:#e67e22;"></span>Proyección</label>
+        <label><input type="checkbox" data-dataset="3" checked><span class="toggle-color" style="background:#2ecc71;"></span>Optimista</label>
+        <label><input type="checkbox" data-dataset="4" checked><span class="toggle-color" style="background:#e74c3c;"></span>Pesimista</label>
+        <label><input type="checkbox" data-dataset="5" checked><span class="toggle-color" style="background:#3498db;"></span>Banda Superior</label>
+        <label><input type="checkbox" data-dataset="6" checked><span class="toggle-color" style="background:#3498db;"></span>Banda Inferior</label>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="c"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>📊 Análisis del Proyecto</h3>
+      ${analysisHTML}
+    </div>
+
+    <div class="section">
+      <h3>🕒 Auditoría del Proyecto <span style="font-size:11px;color:#64748b;font-weight:normal;">(${recentTimeline.length} registros de tiempo)</span></h3>
+      ${timelineHTML}
+    </div>
+
+    <div class="footer">
+      📊 Sistema Burndown VIP · Métricas en tiempo real · ${new Date().toLocaleString()}
+    </div>
+  </div>
+
+<script>
+function toggleStatusBadge() {
+  const badge = document.getElementById('statusBadge');
+  badge.classList.toggle('collapsed');
+}
+
+let burndownChart = null;
+
+window.addEventListener('load', function() {
+  const ctx = document.getElementById('c').getContext('2d');
+  burndownChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ${JSON.stringify(labels)},
+      datasets: [
+        {
+          label: 'Línea Ideal',
+          data: ${JSON.stringify(ideal.concat(new Array(maxLen - ideal.length).fill(null)))},
+          borderColor: '#10b981',
+          borderWidth: 2,
+          borderDash: [6,6],
+          fill: false,
+          pointRadius: 0,
+          tension: 0
+        },
+        {
+          label: 'Progreso Real',
+          data: ${JSON.stringify(real.concat(new Array(maxLen - real.length).fill(null)))},
+          borderColor: '#f59e0b',
+          borderWidth: 3,
+          backgroundColor: 'rgba(245,158,11,0.08)',
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: '#f59e0b',
+          tension: 0.2
+        },
+        {
+          label: 'Proyección',
+          data: ${JSON.stringify(proyeccion)},
+          borderColor: '#e67e22',
+          borderWidth: 3,
+          borderDash: [6,6],
+          fill: false,
+          pointRadius: 4,
+          spanGaps: true,
+          tension: 0
+        },
+        {
+          label: 'Optimista',
+          data: ${JSON.stringify(optimista)},
+          borderColor: '#2ecc71',
+          borderWidth: 2,
+          borderDash: [4,4],
+          fill: false,
+          pointRadius: 3,
+          spanGaps: true,
+          tension: 0
+        },
+        {
+          label: 'Pesimista',
+          data: ${JSON.stringify(pesimista)},
+          borderColor: '#e74c3c',
+          borderWidth: 2,
+          borderDash: [4,4],
+          fill: false,
+          pointRadius: 3,
+          spanGaps: true,
+          tension: 0
+        },
+        {
+          label: 'Banda Superior',
+          data: ${JSON.stringify(bandaSup)},
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(52,152,219,0.12)',
+          fill: false,
+          pointRadius: 0,
+          spanGaps: true
+        },
+        {
+          label: 'Banda Inferior',
+          data: ${JSON.stringify(bandaInf)},
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(52,152,219,0.12)',
+          fill: '-1',
+          pointRadius: 0,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,23,42,0.95)',
+          titleColor: '#8b5cf6',
+          bodyColor: '#e2e8f0'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#cbd5e1' },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          title: { display: true, text: 'Tareas restantes', color: '#94a3b8', font: { size: 11 } }
+        },
+        x: {
+          ticks: { color: '#cbd5e1' },
+          grid: { display: false },
+          title: { display: true, text: 'Semanas', color: '#94a3b8', font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  document.querySelectorAll('.chart-toggles input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const idx = parseInt(this.getAttribute('data-dataset'), 10);
+      if (burndownChart && burndownChart.data.datasets[idx]) {
+        burndownChart.setDatasetVisibility(idx, this.checked);
+        burndownChart.update();
+      }
+    });
+  });
+});
+<\/script>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=1400,height=900,scrollbars=yes,resizable=yes');
+  if (!w) { alert('⚠️ Permite las ventanas emergentes'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  console.log('✅ Burndown VIP abierto en ventana nueva');
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// 🔘 INYECTAR BOTÓN "Burndown Chart" EN EL GANTT (Premium · V5)
+// 🎨 Paleta: Ámbar → Naranja → Rojo (Fuego)
+// ═══════════════════════════════════════════════════════════════
+(function inyectarBotonVentana() {
+  if (window.__botonBurndownVentanaInstalado) return;
+  window.__botonBurndownVentanaInstalado = true;
+
+  // 🎨 PALETA ÁMBAR-FUEGO (única, no choca con el resto del header)
+  const COLOR_GRAD_A  = '#f59e0b';   // Ámbar
+  const COLOR_GRAD_B  = '#f97316';   // Naranja
+  const COLOR_GRAD_C  = '#ef4444';   // Rojo
+  const COLOR_HOVER_A = '#d97706';   // Ámbar oscuro
+  const COLOR_HOVER_B = '#ea580c';   // Naranja oscuro
+  const COLOR_HOVER_C = '#dc2626';   // Rojo oscuro
+
+  // Glow ámbar
+  const GLOW_NORMAL = '0 4px 14px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+  const GLOW_HOVER  = '0 8px 24px rgba(245, 158, 11, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
+
+  let intentos = 0;
+  const interval = setInterval(() => {
+    intentos++;
+
+    const gantt = document.getElementById('premiumExecutiveGantt');
+    if (!gantt) {
+      if (intentos > 240) { clearInterval(interval); }
+      return;
+    }
+
+    if (document.getElementById('burndownVentanaBtn')) {
+      clearInterval(interval);
+      return;
+    }
+
+    let btnReferencia = null;
+    gantt.querySelectorAll('button').forEach(b => {
+      if (b.textContent && b.textContent.includes('Volver al Tablero')) {
+        btnReferencia = b;
+      }
+    });
+
+    if (!btnReferencia) {
+      const candidatos = gantt.querySelectorAll('button');
+      if (candidatos.length > 0) {
+        btnReferencia = candidatos[candidatos.length - 1];
+      }
+    }
+
+    if (!btnReferencia || !btnReferencia.parentNode) {
+      if (intentos > 240) clearInterval(interval);
+      return;
+    }
+
+    // ── Crear botón ──
+    const newBtn = document.createElement('button');
+    newBtn.id = 'burndownVentanaBtn';
+    newBtn.innerHTML = '📉 Burndown Chart';
+    newBtn.title = 'Abrir el Burndown Chart en una ventana nueva';
+
+    // ── Aplicar estilos INLINE con !important (gana a TODO) ──
+    const estilos = {
+      'position':         'relative',
+      'background':       `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`,
+      'border':           'none',
+      'color':            '#ffffff',
+      'padding':          '12px 22px',
+      'border-radius':    '10px',
+      'font-weight':      '600',
+      'font-size':        '14px',
+      'font-family':      "'Inter', system-ui, sans-serif",
+      'cursor':           'pointer',
+      'margin-left':      '8px',
+      'letter-spacing':   '0.3px',
+      'box-shadow':       GLOW_NORMAL,
+      'transition':       'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+      'overflow':         'hidden',
+      'display':          'inline-flex',
+      'align-items':      'center',
+      'gap':              '8px',
+      'text-shadow':      'none',
+      'outline':          'none',
+    };
+    for (const prop in estilos) {
+      newBtn.style.setProperty(prop, estilos[prop], 'important');
+    }
+
+    // ── Efecto hover (JS porque inline no soporta pseudo-clases) ──
+    newBtn.addEventListener('mouseenter', () => {
+      newBtn.style.setProperty('transform', 'translateY(-2px)', 'important');
+      newBtn.style.setProperty('box-shadow', GLOW_HOVER, 'important');
+      newBtn.style.setProperty(
+        'background',
+        `linear-gradient(135deg, ${COLOR_HOVER_A} 0%, ${COLOR_HOVER_B} 50%, ${COLOR_HOVER_C} 100%)`,
+        'important'
+      );
+    });
+    newBtn.addEventListener('mouseleave', () => {
+      newBtn.style.setProperty('transform', 'translateY(0)', 'important');
+      newBtn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
+      newBtn.style.setProperty(
+        'background',
+        `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`,
+        'important'
+      );
+    });
+    newBtn.addEventListener('mousedown', () => {
+      newBtn.style.setProperty('transform', 'translateY(0) scale(0.98)', 'important');
+    });
+    newBtn.addEventListener('mouseup', () => {
+      newBtn.style.setProperty('transform', 'translateY(-2px)', 'important');
+    });
+
+    // ── Animación de brillo (barrido) ──
+    const shine = document.createElement('span');
+    shine.style.setProperty('position', 'absolute', 'important');
+    shine.style.setProperty('top', '0', 'important');
+    shine.style.setProperty('left', '-100%', 'important');
+    shine.style.setProperty('width', '100%', 'important');
+    shine.style.setProperty('height', '100%', 'important');
+    shine.style.setProperty(
+      'background',
+      'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+      'important'
+    );
+    shine.style.setProperty('transition', 'left 0.6s ease', 'important');
+    shine.style.setProperty('pointer-events', 'none', 'important');
+    newBtn.appendChild(shine);
+
+    newBtn.addEventListener('mouseenter', () => {
+      shine.style.setProperty('left', '100%', 'important');
+      setTimeout(() => shine.style.setProperty('left', '-100%', 'important'), 600);
+    });
+
+    // ── Click ──
+    newBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window.abrirBurndownVentana === 'function') {
+        window.abrirBurndownVentana();
+      } else {
+        alert('❌ Función abrirBurndownVentana no encontrada');
+      }
+    };
+
+    btnReferencia.parentNode.insertBefore(newBtn, btnReferencia);
+    console.log('✅ [V5] Botón "Burndown Chart" inyectado (paleta ámbar-fuego)');
+    clearInterval(interval);
+  }, 500);
+
+  console.log('%c🔘 Instalador del botón "Burndown Chart" activo', 'color:#f59e0b;font-weight:bold');
+})();
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -34869,43 +35689,25 @@ function createCompleteGanttForCurrentProject() {
           📱 Mobile
         </button>
         
-        <!-- GRUPO BURNDOWN + VALOR GANADO JUNTOS -->
-        <div style="display: flex; gap: 0; align-items: center;">
-          <button onclick="showBurnDownChartPremium()" class="premium-btn active-btn" style="
-            background: linear-gradient(45deg, #f39c12, #d35400);
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px 0 0 8px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            font-size: 14px;
-            border-right: 1px solid rgba(255,255,255,0.2);
-          ">
-            📉 Burndown
-          </button>
-          
-          <button button onclick="openEVMDashboard()" class="premium-btn active-btn" style="
-            background: linear-gradient(45deg, #8b5cf6, #6d28d9);
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 0 8px 8px 0;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            font-size: 14px;
-          ">
-            📈 Valor Ganado
-          </button>
-        </div>
+        <!-- GRUPO VALOR GANADO -->
+<div style="display: flex; gap: 0; align-items: center;">
+  <button onclick="openEVMDashboard()" class="premium-btn active-btn" style="
+    background: linear-gradient(45deg, #8b5cf6, #6d28d9);
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    font-size: 14px;
+  ">
+    📈 Valor Ganado
+  </button>
+</div>
 
         <!-- NUEVO: Botón de Configuración de Costos -->
         <button onclick="showCostConfigurationPanel()" class="premium-btn active-btn" style="
@@ -67070,14 +67872,50 @@ ganttObserver.observe(document.body, { childList: true, subtree: true });
 
 
 // Observer para botón del Gantt
-const buttonObserver = new MutationObserver(function() {
-    if (document.getElementById('premiumExecutiveGantt')) {
-        setTimeout(updateGanttCloseButton, 300);
-    }
+// Observer para botón del Gantt — VERSIÓN ANTI-REENTRADA
+let __ganttBtnTimer = null;
+const buttonObserver = new MutationObserver(function(mutations) {
+    // 🛑 Early exit: sin Gantt en el DOM → nada que hacer
+    if (!document.getElementById('premiumExecutiveGantt')) return;
+    
+    // 🛑 Early exit: ya hay un timer pendiente → no apilar
+    if (__ganttBtnTimer) return;
+    
+    // 🛑 Solo reaccionar si alguna mutación involucra al Gantt
+    const relevante = mutations.some(m => {
+        const nodos = [
+            ...(m.addedNodes   || []),
+            ...(m.removedNodes || [])
+        ];
+        return nodos.some(n => 
+            n.nodeType === 1 && (
+                n.id === 'premiumExecutiveGantt' ||
+                n.id === 'ganttCloseBtn' ||
+                n.querySelector?.('#premiumExecutiveGantt, #ganttCloseBtn') ||
+                n.closest?.('#premiumExecutiveGantt')
+            )
+        );
+    });
+    if (!relevante) return;
+    
+    __ganttBtnTimer = setTimeout(() => {
+        __ganttBtnTimer = null;
+        try {
+            if (typeof updateGanttCloseButton === 'function') {
+                updateGanttCloseButton();
+            }
+        } catch (e) {
+            console.warn('updateGanttCloseButton falló:', e);
+        }
+    }, 300);
 });
-
-buttonObserver.observe(document.body, { childList: true, subtree: true });
-
+// 🎯 Observar SOLO el contenedor de vistas, no todo el body
+const __ganttHost = 
+    document.getElementById('mainAppContainer') ||
+    document.querySelector('#appViews') ||
+    document.querySelector('main') ||
+    document.body;
+buttonObserver.observe(__ganttHost, { childList: true, subtree: true });
 console.log('🎯 SISTEMA GANTT-VISTA COMPLETA CARGADO (VERSIÓN FUNCIONAL)');
 console.log('📌 Usa: showView("gantt") para abrir');
 console.log('📌 Usa: showView("board") para volver');
@@ -67198,7 +68036,7 @@ function calcularEVMOperativo(tasksArray){
 }
 
 // ============================================
-// 🚀 BOTÓN
+// 🚀 BOTÓN VISTA PREMIUM (Dorado Premium · con !important)
 // ============================================
 function addPremiumFullscreenButton(){
     var gantt=document.getElementById('premiumExecutiveGantt');
@@ -67210,9 +68048,43 @@ function addPremiumFullscreenButton(){
     var btn=document.createElement('button');
     btn.id='premiumFullscreenBtn';
     btn.innerHTML='🚀 Vista Premium';
-    btn.style.cssText='background:linear-gradient(45deg,#8b5cf6,#6d28d9);border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;transition:all 0.3s;margin-left:10px;box-shadow:0 4px 12px rgba(139,92,246,0.3);';
-    btn.onmouseover=function(){this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(139,92,246,0.4)';};
-    btn.onmouseout=function(){this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(139,92,246,0.3)';};
+
+    // ── Aplicar estilos INLINE con !important (gana a TODO) ──
+    var estilos = {
+      'background':    'linear-gradient(45deg, #fbbf24, #d97706)',
+      'border':        'none',
+      'color':         '#ffffff',
+      'padding':       '10px 20px',
+      'border-radius': '8px',
+      'cursor':        'pointer',
+      'font-size':     '13px',
+      'font-weight':   '600',
+      'display':       'flex',
+      'align-items':   'center',
+      'gap':           '8px',
+      'transition':    'all 0.3s',
+      'margin-left':   '10px',
+      'box-shadow':    '0 4px 12px rgba(251, 191, 36, 0.35)',
+      'text-shadow':   '0 1px 2px rgba(120, 53, 15, 0.4)',
+      'font-family':   "'Inter', system-ui, sans-serif"
+    };
+    for (var prop in estilos) {
+      btn.style.setProperty(prop, estilos[prop], 'important');
+    }
+
+    // ── Hover ──
+    btn.onmouseover=function(){
+      this.style.setProperty('transform', 'translateY(-2px)', 'important');
+      this.style.setProperty('box-shadow', '0 8px 20px rgba(251, 191, 36, 0.55)', 'important');
+      this.style.setProperty('background', 'linear-gradient(45deg, #f59e0b, #b45309)', 'important');
+    };
+    btn.onmouseout=function(){
+      this.style.setProperty('transform', 'translateY(0)', 'important');
+      this.style.setProperty('box-shadow', '0 4px 12px rgba(251, 191, 36, 0.35)', 'important');
+      this.style.setProperty('background', 'linear-gradient(45deg, #fbbf24, #d97706)', 'important');
+    };
+
+    // ── Click ──
     btn.onclick=function(e){
         e.stopPropagation();
         var projectName=gantt.dataset.projectName||'Proyecto';
@@ -67232,11 +68104,11 @@ function addPremiumFullscreenButton(){
         var percA=totalDist>0?Math.round((taskDistribution.atrasadas/totalDist)*100):0;
         abrirVentanaFinal(projectName,tasks,burndownData,evmData,evmOperativo,taskDistribution,kpis,recommendations,percC,percP,percD,percA);
     };
+
     var closeBtn=Array.from(headerButtons.children).find(function(b){return b.textContent.indexOf('Cerrar')!==-1||b.textContent.indexOf('×')!==-1;});
     if(closeBtn)headerButtons.insertBefore(btn,closeBtn); else headerButtons.appendChild(btn);
     return true;
 }
-
 // ============================================
 // 📄 CREAR VENTANA
 // ============================================
@@ -80014,6 +80886,13 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
     };
     console.log('✅ Interceptor de Gantt instalado correctamente.');
 })();
+
+
+
+
+
+
+
 
 
 
