@@ -55,13 +55,62 @@
     const logged = task.timeLogged || 0;
     const status = task.status || 'pending';
 
-    tooltip.innerHTML = `
-      <div style="font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:6px;">${task.name}</div>
-      <div style="color:#94a3b8;">👤 ${assignee}</div>
-      <div style="color:#94a3b8;">⏱️ Estimado: ${estimated}h · Registrado: ${logged}h</div>
-      <div style="color:#94a3b8;">📌 Estado: ${status}</div>
-      ${depsCount > 0 ? `<div style="color:#c084fc;margin-top:4px;">🔗 ${depsCount} dependencia${depsCount !== 1 ? 's' : ''}</div>` : ''}
-    `;
+    // 📅 Leer deadline desde donde esté (task.deadline o task.originalTask.deadline)
+const deadlineRaw = task.deadline || (task.originalTask && task.originalTask.deadline);
+let deadlineHTML = '';
+
+if (deadlineRaw) {
+  try {
+    const dl = new Date(deadlineRaw);
+    if (!isNaN(dl.getTime())) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const diffDias = Math.ceil((dl - hoy) / (1000 * 60 * 60 * 24));
+
+      const fechaFormateada = dl.toLocaleDateString('es-ES', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+
+      let colorFecha = '#94a3b8';   // gris por defecto
+      let iconoFecha = '📅';
+      let textoDias = '';
+
+      if (task.status === 'completed') {
+        colorFecha = '#10b981';
+        iconoFecha = '✅';
+      } else if (task.status === 'overdue' || diffDias < 0) {
+        colorFecha = '#ef4444';
+        iconoFecha = '🚨';
+        textoDias = ` <span style="opacity:0.75;font-size:10px;">(${Math.abs(diffDias)}d vencida)</span>`;
+      } else if (diffDias === 0) {
+        colorFecha = '#f59e0b';
+        iconoFecha = '⚠️';
+        textoDias = ` <span style="opacity:0.75;font-size:10px;">(hoy)</span>`;
+      } else if (diffDias <= 3) {
+        colorFecha = '#f59e0b';
+        iconoFecha = '⏰';
+        textoDias = ` <span style="opacity:0.75;font-size:10px;">(en ${diffDias}d)</span>`;
+      } else if (diffDias <= 7) {
+        colorFecha = '#f59e0b';
+        iconoFecha = '📅';
+        textoDias = ` <span style="opacity:0.75;font-size:10px;">(en ${diffDias}d)</span>`;
+      }
+
+      deadlineHTML = `<div style="color:${colorFecha};">${iconoFecha} Límite: ${fechaFormateada}${textoDias}</div>`;
+    }
+  } catch (e) {
+    deadlineHTML = '';
+  }
+}
+
+tooltip.innerHTML = `
+  <div style="font-weight:700;font-size:13px;color:#e2e8f0;margin-bottom:6px;">${task.name}</div>
+  <div style="color:#94a3b8;">👤 ${assignee}</div>
+  <div style="color:#94a3b8;">⏱️ Estimado: ${estimated}h · Registrado: ${logged}h</div>
+  <div style="color:#94a3b8;">📌 Estado: ${status}</div>
+  ${deadlineHTML}
+  ${depsCount > 0 ? `<div style="color:#c084fc;margin-top:4px;">🔗 ${depsCount} dependencia${depsCount !== 1 ? 's' : ''}</div>` : ''}
+`;
     tooltip.style.opacity = '1';
   });
 
@@ -820,40 +869,85 @@ window.addEventListener('load', function() {
 
 
 // ═══════════════════════════════════════════════════════════════
-// 🔘 INYECTAR BOTÓN "Burndown Chart" EN EL GANTT (Premium · V5)
-// 🎨 Paleta: Ámbar → Naranja → Rojo (Fuego)
+// 🔘 BOTÓN "Burndown Chart" — auto-reinyección permanente
 // ═══════════════════════════════════════════════════════════════
 (function inyectarBotonVentana() {
   if (window.__botonBurndownVentanaInstalado) return;
   window.__botonBurndownVentanaInstalado = true;
 
-  // 🎨 PALETA ÁMBAR-FUEGO (única, no choca con el resto del header)
-  const COLOR_GRAD_A  = '#f59e0b';   // Ámbar
-  const COLOR_GRAD_B  = '#f97316';   // Naranja
-  const COLOR_GRAD_C  = '#ef4444';   // Rojo
-  const COLOR_HOVER_A = '#d97706';   // Ámbar oscuro
-  const COLOR_HOVER_B = '#ea580c';   // Naranja oscuro
-  const COLOR_HOVER_C = '#dc2626';   // Rojo oscuro
+  function crearBoton() {
+    // Sincronizar colores con la paleta ámbar-fuego
+    const COLOR_GRAD_A  = '#f59e0b';
+    const COLOR_GRAD_B  = '#f97316';
+    const COLOR_GRAD_C  = '#ef4444';
+    const COLOR_HOVER_A = '#d97706';
+    const COLOR_HOVER_B = '#ea580c';
+    const COLOR_HOVER_C = '#dc2626';
+    const GLOW_NORMAL = '0 4px 14px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+    const GLOW_HOVER  = '0 8px 24px rgba(245, 158, 11, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
 
-  // Glow ámbar
-  const GLOW_NORMAL = '0 4px 14px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
-  const GLOW_HOVER  = '0 8px 24px rgba(245, 158, 11, 0.6), 0 0 0 1px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
+    const btn = document.createElement('button');
+    btn.id = 'burndownVentanaBtn';
+    btn.innerHTML = '📉 Burndown Chart';
+    btn.title = 'Abrir el Burndown Chart en una ventana nueva';
 
-  let intentos = 0;
-  const interval = setInterval(() => {
-    intentos++;
+    const estilos = {
+      'position':       'relative',
+      'background':     `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`,
+      'border':         'none',
+      'color':          '#ffffff',
+      'padding':        '12px 22px',
+      'border-radius':  '10px',
+      'font-weight':    '600',
+      'font-size':      '14px',
+      'font-family':    "'Inter', system-ui, sans-serif",
+      'cursor':         'pointer',
+      'margin-left':    '8px',
+      'letter-spacing': '0.3px',
+      'box-shadow':     GLOW_NORMAL,
+      'transition':     'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+      'overflow':       'hidden',
+      'display':        'inline-flex',
+      'align-items':    'center',
+      'gap':            '8px',
+      'text-shadow':    'none',
+      'outline':        'none',
+    };
+    for (const prop in estilos) {
+      btn.style.setProperty(prop, estilos[prop], 'important');
+    }
 
+    btn.addEventListener('mouseenter', () => {
+      btn.style.setProperty('transform', 'translateY(-2px)', 'important');
+      btn.style.setProperty('box-shadow', GLOW_HOVER, 'important');
+      btn.style.setProperty('background', `linear-gradient(135deg, ${COLOR_HOVER_A} 0%, ${COLOR_HOVER_B} 50%, ${COLOR_HOVER_C} 100%)`, 'important');
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.setProperty('transform', 'translateY(0)', 'important');
+      btn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
+      btn.style.setProperty('background', `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`, 'important');
+    });
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window.abrirBurndownVentana === 'function') {
+        window.abrirBurndownVentana();
+      } else {
+        alert('❌ Función abrirBurndownVentana no encontrada');
+      }
+    });
+
+    return btn;
+  }
+
+  function intentarInyectar() {
     const gantt = document.getElementById('premiumExecutiveGantt');
-    if (!gantt) {
-      if (intentos > 240) { clearInterval(interval); }
-      return;
-    }
+    if (!gantt) return;
 
-    if (document.getElementById('burndownVentanaBtn')) {
-      clearInterval(interval);
-      return;
-    }
+    // Ya existe el botón? no hacer nada
+    if (document.getElementById('burndownVentanaBtn')) return;
 
+    // Buscar dónde insertarlo
     let btnReferencia = null;
     gantt.querySelectorAll('button').forEach(b => {
       if (b.textContent && b.textContent.includes('Volver al Tablero')) {
@@ -868,111 +962,20 @@ window.addEventListener('load', function() {
       }
     }
 
-    if (!btnReferencia || !btnReferencia.parentNode) {
-      if (intentos > 240) clearInterval(interval);
-      return;
-    }
+    if (!btnReferencia || !btnReferencia.parentNode) return;
 
-    // ── Crear botón ──
-    const newBtn = document.createElement('button');
-    newBtn.id = 'burndownVentanaBtn';
-    newBtn.innerHTML = '📉 Burndown Chart';
-    newBtn.title = 'Abrir el Burndown Chart en una ventana nueva';
+    // ✅ Inyectar el botón nuevo antes del de referencia
+    const btn = crearBoton();
+    btnReferencia.parentNode.insertBefore(btn, btnReferencia);
+    console.log('✅ Botón "Burndown Chart" inyectado');
+  }
 
-    // ── Aplicar estilos INLINE con !important (gana a TODO) ──
-    const estilos = {
-      'position':         'relative',
-      'background':       `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`,
-      'border':           'none',
-      'color':            '#ffffff',
-      'padding':          '12px 22px',
-      'border-radius':    '10px',
-      'font-weight':      '600',
-      'font-size':        '14px',
-      'font-family':      "'Inter', system-ui, sans-serif",
-      'cursor':           'pointer',
-      'margin-left':      '8px',
-      'letter-spacing':   '0.3px',
-      'box-shadow':       GLOW_NORMAL,
-      'transition':       'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-      'overflow':         'hidden',
-      'display':          'inline-flex',
-      'align-items':      'center',
-      'gap':              '8px',
-      'text-shadow':      'none',
-      'outline':          'none',
-    };
-    for (const prop in estilos) {
-      newBtn.style.setProperty(prop, estilos[prop], 'important');
-    }
+  // 🔑 Ciclo PERMANENTE — revisa cada 800ms si el botón existe
+  setInterval(intentarInyectar, 800);
+  intentarInyectar();   // primer intento inmediato
 
-    // ── Efecto hover (JS porque inline no soporta pseudo-clases) ──
-    newBtn.addEventListener('mouseenter', () => {
-      newBtn.style.setProperty('transform', 'translateY(-2px)', 'important');
-      newBtn.style.setProperty('box-shadow', GLOW_HOVER, 'important');
-      newBtn.style.setProperty(
-        'background',
-        `linear-gradient(135deg, ${COLOR_HOVER_A} 0%, ${COLOR_HOVER_B} 50%, ${COLOR_HOVER_C} 100%)`,
-        'important'
-      );
-    });
-    newBtn.addEventListener('mouseleave', () => {
-      newBtn.style.setProperty('transform', 'translateY(0)', 'important');
-      newBtn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
-      newBtn.style.setProperty(
-        'background',
-        `linear-gradient(135deg, ${COLOR_GRAD_A} 0%, ${COLOR_GRAD_B} 50%, ${COLOR_GRAD_C} 100%)`,
-        'important'
-      );
-    });
-    newBtn.addEventListener('mousedown', () => {
-      newBtn.style.setProperty('transform', 'translateY(0) scale(0.98)', 'important');
-    });
-    newBtn.addEventListener('mouseup', () => {
-      newBtn.style.setProperty('transform', 'translateY(-2px)', 'important');
-    });
-
-    // ── Animación de brillo (barrido) ──
-    const shine = document.createElement('span');
-    shine.style.setProperty('position', 'absolute', 'important');
-    shine.style.setProperty('top', '0', 'important');
-    shine.style.setProperty('left', '-100%', 'important');
-    shine.style.setProperty('width', '100%', 'important');
-    shine.style.setProperty('height', '100%', 'important');
-    shine.style.setProperty(
-      'background',
-      'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
-      'important'
-    );
-    shine.style.setProperty('transition', 'left 0.6s ease', 'important');
-    shine.style.setProperty('pointer-events', 'none', 'important');
-    newBtn.appendChild(shine);
-
-    newBtn.addEventListener('mouseenter', () => {
-      shine.style.setProperty('left', '100%', 'important');
-      setTimeout(() => shine.style.setProperty('left', '-100%', 'important'), 600);
-    });
-
-    // ── Click ──
-    newBtn.onclick = function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (typeof window.abrirBurndownVentana === 'function') {
-        window.abrirBurndownVentana();
-      } else {
-        alert('❌ Función abrirBurndownVentana no encontrada');
-      }
-    };
-
-    btnReferencia.parentNode.insertBefore(newBtn, btnReferencia);
-    console.log('✅ [V5] Botón "Burndown Chart" inyectado (paleta ámbar-fuego)');
-    clearInterval(interval);
-  }, 500);
-
-  console.log('%c🔘 Instalador del botón "Burndown Chart" activo', 'color:#f59e0b;font-weight:bold');
+  console.log('%c🔘 Instalador del botón "Burndown Chart" (permanente) activo', 'color:#f59e0b;font-weight:bold');
 })();
-
-
 
 
 
