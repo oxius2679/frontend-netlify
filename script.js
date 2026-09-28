@@ -36404,16 +36404,17 @@ width: 480px;
             `).join('')}
 
             <!-- LAYER PARA DEPENDENCIAS -->
-            <div id="dependencyLayer" style="
-              position: absolute;
-              top: 0;
-             left: 480px;
-              right: 80px;
-              bottom: 0;
-              pointer-events: none;
-              overflow: visible;
-              z-index: 5;
-            "></div>
+<div id="dependencyLayer" style="
+  position: absolute;
+  top: 0;
+  left: 480px;
+  right: 80px;
+  bottom: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 9999;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.6));
+"></div>
           </div>
         </div>
       </div>
@@ -36581,40 +36582,45 @@ width: 480px;
 
 
 
-  // ========== PINTAR TAREAS CRÍTICAS ==========
-  setTimeout(() => {
-    const criticalTaskIds = yourTasks
-      .filter(t => t.critical === true || t.priority === 'alta')
-      .map(t => String(t.id));
-    
-    document.querySelectorAll('.premium-task').forEach(row => {
-      const taskId = row.getAttribute('data-task-id');
-      if (criticalTaskIds.includes(taskId)) {
-        row.style.backgroundColor = '#ff0000';
-        row.style.border = '3px solid #ff0000';
-        row.style.position = 'relative';
-        
-        if (!row.querySelector('.critica-badge-permanente')) {
-          const badge = document.createElement('div');
-          badge.className = 'critica-badge-permanente';
-          badge.textContent = '🔥 CRÍTICA';
-          badge.style.cssText = `
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            background: black;
-            color: red;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 9999;
-          `;
-          row.appendChild(badge);
-        }
+  // ========== PINTAR TAREAS CRÍTICAS (rojo glass, deja ver flechas) ==========
+setTimeout(() => {
+  const criticalTaskIds = yourTasks
+    .filter(t => t.critical === true || t.priority === 'alta')
+    .map(t => String(t.id));
+
+  document.querySelectorAll('.premium-task').forEach(row => {
+    const taskId = row.getAttribute('data-task-id');
+    if (criticalTaskIds.includes(taskId)) {
+      // 🔴 Rojo glass: translúcido + gradiente para look premium
+      row.style.background = 'linear-gradient(90deg, rgba(231, 76, 60, 0.22) 0%, rgba(231, 76, 60, 0.12) 50%, rgba(231, 76, 60, 0.05) 100%)';
+      row.style.border = '1px solid rgba(231, 76, 60, 0.55)';
+      row.style.boxShadow = 'inset 0 0 30px rgba(231, 76, 60, 0.15), 0 0 15px rgba(231, 76, 60, 0.1)';
+      row.style.position = 'relative';
+      // ⚠️ NO definimos z-index en la fila para que las flechas (z-index: 9999) sigan encima
+
+      if (!row.querySelector('.critica-badge-permanente')) {
+        const badge = document.createElement('div');
+        badge.className = 'critica-badge-permanente';
+        badge.textContent = '🔥 CRÍTICA';
+        badge.style.cssText = `
+          position: absolute;
+          top: 8px;
+          right: 12px;
+          background: linear-gradient(135deg, #ef4444, #b91c1c);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          z-index: 10000;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        `;
+        row.appendChild(badge);
       }
-    });
-  }, 300);
+    }
+  });
+}, 300);
 
 
 
