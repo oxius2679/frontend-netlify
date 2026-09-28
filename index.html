@@ -34584,26 +34584,50 @@ console.log('📌 MutationObserver como respaldo');
 })();
 </script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// ✨ OVERLAY FIJO DE DEPENDENCIAS (no toca el DOM del Gantt)
-// ═══════════════════════════════════════════════════════════════
-(function overlayDeps() {
-  if (window.__overlayDeps) return;
-  window.__overlayDeps = true;
 
-  // Crear contenedor fixed encima de todo
-  const overlay = document.createElement('div');
-  overlay.id = 'deps-overlay-fijo';
-  overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:999999; overflow:hidden;';
-  document.body.appendChild(overlay);
+// ═══════════════════════════════════════════════════════════════
+// ✨ OVERLAY DE DEPENDENCIAS v2 — Dentro del Gantt (auto-oculta con modales)
+// ═══════════════════════════════════════════════════════════════
+(function overlayDepsV2() {
+  if (window.__overlayDepsV2) return;
+  window.__overlayDepsV2 = true;
+
+  // 🔑 Eliminar cualquier overlay viejo en el body
+  document.querySelectorAll('#deps-overlay-fijo').forEach(o => o.remove());
 
   let ultimoHash = '';
 
+  function asegurarOverlay() {
+    const gantt = document.getElementById('premiumExecutiveGantt');
+    if (!gantt) return null;
+
+    // Buscar dentro del gantt
+    let ov = gantt.querySelector(':scope > #deps-overlay-fijo');
+    if (!ov) {
+      // Borrar si estaba en otro lado
+      document.querySelectorAll('#deps-overlay-fijo').forEach(o => o.remove());
+      
+      ov = document.createElement('div');
+      ov.id = 'deps-overlay-fijo';
+      // 🔑 absoluto DENTRO del gantt (que ya es fixed)
+      ov.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:99999; overflow:visible;';
+      gantt.appendChild(ov);
+    }
+    return ov;
+  }
+
   function dibujar() {
-    // Salir si no estamos en la vista del Gantt
-    if (!document.getElementById('premiumTasksContainer')) { 
+    const gantt = document.getElementById('premiumExecutiveGantt');
+    if (!gantt) return;
+
+    const overlay = asegurarOverlay();
+    if (!overlay) return;
+
+    const ganttRect = gantt.getBoundingClientRect();
+    if (ganttRect.width === 0 || ganttRect.height === 0) {
       if (overlay.innerHTML) overlay.innerHTML = '';
-      return; 
+      ultimoHash = '';
+      return;
     }
 
     const tasks = window.__premiumTasks || [];
@@ -34627,14 +34651,11 @@ console.log('📌 MutationObserver como respaldo');
         const rectA = barA.getBoundingClientRect();
         const rectB = barB.getBoundingClientRect();
 
-        // Coordenadas en VIEWPORT (el overlay es fixed, así que coincide)
-        const sx = rectA.right - 45;
-        const sy = rectA.top + rectA.height / 2;
-        const ex = rectB.left + 45;
-        const ey = rectB.top + rectB.height / 2;
-
-        // Ignorar si están fuera de viewport
-        if (ex < -500 || sx > window.innerWidth + 500) return;
+        // 🔑 Coordenadas relativas al GANTT (que es el padre del overlay)
+        const sx = rectA.right - ganttRect.left - 45;
+        const sy = rectA.top + rectA.height / 2 - ganttRect.top;
+        const ex = rectB.left - ganttRect.left + 45;
+        const ey = rectB.top + rectB.height / 2 - ganttRect.top;
 
         hash += Math.round(sx) + ',' + Math.round(sy) + ';' + Math.round(ex) + ',' + Math.round(ey) + '|';
 
@@ -34653,28 +34674,27 @@ console.log('📌 MutationObserver como respaldo');
       });
     });
 
-    // Solo redibujar si las coords cambiaron (evita repintados innecesarios)
     if (hash === ultimoHash) return;
     ultimoHash = hash;
 
-    overlay.innerHTML = '<svg width="100%" height="100%" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;">' + svg + '</svg>';
+    if (svg) {
+      overlay.innerHTML = '<svg width="100%" height="100%" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;">' + svg + '</svg>';
+    } else {
+      overlay.innerHTML = '';
+    }
   }
 
-  // rAF ligero — solo recalcula cuando el scroll o resize lo piden
   function loop() {
     dibujar();
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
 
-  // Redibujar también al scrollear contenedores
   document.addEventListener('scroll', dibujar, true);
   window.addEventListener('resize', dibujar);
-  window.addEventListener('wheel', dibujar, { passive: true });
 
-  console.log('%c✨ Overlay de dependencias activo (fixed, sin layer)', 'color:#c084fc;font-weight:bold');
-})();
-</script>
+  console.log('%c✨ Overlay de dependencias v2 (dentro del Gantt)', 'color:#c084fc;font-weight:bold');
+})();</script>
 <style>
   #dependencyLayer {
     display: none !important;

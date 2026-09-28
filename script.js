@@ -1,4 +1,67 @@
 // ═══════════════════════════════════════════════════════════════
+// 🔴 RE-APLICAR color rojo al botón "Volver al Tablero"
+// (sobrevive a los re-renders del polling)
+// ═══════════════════════════════════════════════════════════════
+(function reAplicarBotonVolver() {
+  if (window.__reAplicarBotonVolver) return;
+  window.__reAplicarBotonVolver = true;
+
+  const BG_NORMAL   = 'linear-gradient(135deg, #ef4444, #b91c1c)';
+  const BG_HOVER    = 'linear-gradient(135deg, #dc2626, #991b1b)';
+  const BORDER      = '1px solid rgba(248, 113, 113, 0.4)';
+  const COLOR       = '#ffffff';
+  const GLOW_NORMAL = '0 4px 12px rgba(239, 68, 68, 0.4)';
+  const GLOW_HOVER  = '0 8px 20px rgba(239, 68, 68, 0.65)';
+
+  function aplicarEstilo() {
+    const btn = document.querySelector('button[onclick*="goBackToDashboard"]');
+    if (!btn) return;
+
+    // Si ya tiene el estilo aplicado, no repetir
+    if (btn.dataset.colorAplicado === 'si') return;
+
+    btn.style.setProperty('background', BG_NORMAL, 'important');
+    btn.style.setProperty('border', BORDER, 'important');
+    btn.style.setProperty('color', COLOR, 'important');
+    btn.style.setProperty('padding', '12px 20px', 'important');
+    btn.style.setProperty('border-radius', '8px', 'important');
+    btn.style.setProperty('font-weight', '600', 'important');
+    btn.style.setProperty('cursor', 'pointer', 'important');
+    btn.style.setProperty('transition', 'all 0.3s', 'important');
+    btn.style.setProperty('font-size', '14px', 'important');
+    btn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
+    btn.style.setProperty('text-shadow', '0 1px 2px rgba(127, 29, 29, 0.4)', 'important');
+
+    // Hover dinámico
+    btn.addEventListener('mouseenter', function() {
+      btn.style.setProperty('background', BG_HOVER, 'important');
+      btn.style.setProperty('transform', 'translateY(-2px)', 'important');
+      btn.style.setProperty('box-shadow', GLOW_HOVER, 'important');
+    });
+    btn.addEventListener('mouseleave', function() {
+      btn.style.setProperty('background', BG_NORMAL, 'important');
+      btn.style.setProperty('transform', 'translateY(0)', 'important');
+      btn.style.setProperty('box-shadow', GLOW_NORMAL, 'important');
+    });
+
+    btn.dataset.colorAplicado = 'si';
+    console.log('🔴 Color rojo re-aplicado al botón "Volver al Tablero"');
+  }
+
+  // Ciclo permanente (detecta re-renders del polling)
+  setInterval(aplicarEstilo, 1000);
+  aplicarEstilo();
+
+  console.log('%c🔴 Re-aplicador del botón "Volver al Tablero" activo', 'color:#ef4444;font-weight:bold');
+})();
+
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════════════
 // 💬 TOOLTIP LIMPIO DEL GANTT (event delegation, sobrevive al polling)
 // ═══════════════════════════════════════════════════════════════
 (function tooltipGanttLimpio() {
@@ -976,7 +1039,6 @@ window.addEventListener('load', function() {
 
   console.log('%c🔘 Instalador del botón "Burndown Chart" (permanente) activo', 'color:#f59e0b;font-weight:bold');
 })();
-
 
 
 
