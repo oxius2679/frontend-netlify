@@ -34583,6 +34583,103 @@ console.log('📌 MutationObserver como respaldo');
     console.log('📌 Deberías ver SOLO el reporte del Gantt (con dependencias y ruta crítica).');
 })();
 </script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ✨ OVERLAY FIJO DE DEPENDENCIAS (no toca el DOM del Gantt)
+// ═══════════════════════════════════════════════════════════════
+(function overlayDeps() {
+  if (window.__overlayDeps) return;
+  window.__overlayDeps = true;
+
+  // Crear contenedor fixed encima de todo
+  const overlay = document.createElement('div');
+  overlay.id = 'deps-overlay-fijo';
+  overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:999999; overflow:hidden;';
+  document.body.appendChild(overlay);
+
+  let ultimoHash = '';
+
+  function dibujar() {
+    // Salir si no estamos en la vista del Gantt
+    if (!document.getElementById('premiumTasksContainer')) { 
+      if (overlay.innerHTML) overlay.innerHTML = '';
+      return; 
+    }
+
+    const tasks = window.__premiumTasks || [];
+    if (!tasks.length) { overlay.innerHTML = ''; return; }
+
+    let svg = '';
+    let n = 0;
+    let hash = '';
+
+    tasks.forEach(function(task) {
+      if (!task.dependencies || !task.dependencies.length) return;
+      task.dependencies.forEach(function(depId) {
+        const fromTask = document.querySelector('.premium-task[data-task-id="' + depId + '"]');
+        const toTask   = document.querySelector('.premium-task[data-task-id="' + task.id + '"]');
+        if (!fromTask || !toTask) return;
+
+        const barA = fromTask.children[1] && fromTask.children[1].children[1];
+        const barB = toTask.children[1]   && toTask.children[1].children[1];
+        if (!barA || !barB) return;
+
+        const rectA = barA.getBoundingClientRect();
+        const rectB = barB.getBoundingClientRect();
+
+        // Coordenadas en VIEWPORT (el overlay es fixed, así que coincide)
+        const sx = rectA.right - 45;
+        const sy = rectA.top + rectA.height / 2;
+        const ex = rectB.left + 45;
+        const ey = rectB.top + rectB.height / 2;
+
+        // Ignorar si están fuera de viewport
+        if (ex < -500 || sx > window.innerWidth + 500) return;
+
+        hash += Math.round(sx) + ',' + Math.round(sy) + ';' + Math.round(ex) + ',' + Math.round(ey) + '|';
+
+        const cx = (sx + ex) / 2;
+        const d = 'M ' + sx + ' ' + sy + ' C ' + cx + ' ' + sy + ', ' + cx + ' ' + ey + ', ' + ex + ' ' + ey;
+
+        svg += '<path d="' + d + '" stroke="#000" stroke-opacity="0.75" stroke-width="11" fill="none" stroke-linecap="round"/>';
+        svg += '<path d="' + d + '" stroke="#c084fc" stroke-width="4.5" fill="none" stroke-linecap="round"/>';
+        svg += '<path d="' + d + '" stroke="#fff" stroke-opacity="0.9" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+        svg += '<circle cx="' + ex + '" cy="' + ey + '" r="8" fill="#000" opacity="0.75"/>';
+        svg += '<circle cx="' + ex + '" cy="' + ey + '" r="6" fill="#c084fc"/>';
+        svg += '<circle cx="' + ex + '" cy="' + ey + '" r="2.5" fill="#fff"/>';
+        svg += '<circle cx="' + sx + '" cy="' + sy + '" r="7" fill="#000" opacity="0.75"/>';
+        svg += '<circle cx="' + sx + '" cy="' + sy + '" r="5" fill="#a855f7"/>';
+        n++;
+      });
+    });
+
+    // Solo redibujar si las coords cambiaron (evita repintados innecesarios)
+    if (hash === ultimoHash) return;
+    ultimoHash = hash;
+
+    overlay.innerHTML = '<svg width="100%" height="100%" style="position:absolute;top:0;left:0;overflow:visible;pointer-events:none;">' + svg + '</svg>';
+  }
+
+  // rAF ligero — solo recalcula cuando el scroll o resize lo piden
+  function loop() {
+    dibujar();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Redibujar también al scrollear contenedores
+  document.addEventListener('scroll', dibujar, true);
+  window.addEventListener('resize', dibujar);
+  window.addEventListener('wheel', dibujar, { passive: true });
+
+  console.log('%c✨ Overlay de dependencias activo (fixed, sin layer)', 'color:#c084fc;font-weight:bold');
+})();
+</script>
+<style>
+  #dependencyLayer {
+    display: none !important;
+  }
+</style>
 </body>
 </html>
  

@@ -1,64 +1,7 @@
-// ═══════════════════════════════════════════════════════════════
-// 🔒 OVERRIDE FINAL: drawPremiumDependenciesComplete (VERSIÓN CORREGIDA)
-// Debe ir al FINAL del archivo para ganar a cualquier definición previa
-// ═══════════════════════════════════════════════════════════════
-window.drawPremiumDependenciesComplete = function(tasks) {
-  const layer = document.getElementById("dependencyLayer");
-  if (!layer) return;
 
-  const scrollContainer = document.getElementById("premiumTasksContainer");
-  const innerWrapper = scrollContainer?.querySelector('div[style*="min-width: max-content"]');
-  const innerWidth  = innerWrapper?.scrollWidth  || innerWrapper?.offsetWidth  || 4000;
-  const innerHeight = innerWrapper?.scrollHeight || innerWrapper?.offsetHeight || 800;
 
-  layer.style.setProperty('position', 'absolute', 'important');
-  layer.style.setProperty('top', '0', 'important');
-  layer.style.setProperty('left', '0', 'important');
-  layer.style.setProperty('right', 'auto', 'important');
-  layer.style.setProperty('bottom', 'auto', 'important');
-  layer.style.setProperty('width',  innerWidth  + 'px', 'important');
-  layer.style.setProperty('height', innerHeight + 'px', 'important');
-  layer.style.setProperty('pointer-events', 'none', 'important');
-  layer.style.setProperty('z-index', '99999', 'important');
-  layer.style.setProperty('overflow', 'visible', 'important');
 
-  layer.innerHTML = "";
 
-  const layerRect = layer.getBoundingClientRect();
-  let pathsSVG = "";
-  let contador = 0;
-
-  tasks.forEach(task => {
-    if (!task.dependencies || task.dependencies.length === 0) return;
-    task.dependencies.forEach(depId => {
-      const fromTask = document.querySelector(`.premium-task[data-task-id="${depId}"]`);
-      const toTask   = document.querySelector(`.premium-task[data-task-id="${task.id}"]`);
-      if (!fromTask || !toTask) return;
-
-      const barA = fromTask.children[1]?.children[1]?.getBoundingClientRect();
-      const barB = toTask.children[1]?.children[1]?.getBoundingClientRect();
-      if (!barA || !barB) return;
-
-      const sx = barA.right - layerRect.left - 45;
-      const sy = barA.top + barA.height / 2 - layerRect.top;
-      const ex = barB.left - layerRect.left + 45;
-      const ey = barB.top + barB.height / 2 - layerRect.top;
-      const cx = (sx + ex) / 2;
-      const d = `M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ey}, ${ex} ${ey}`;
-
-      pathsSVG += `<path d="${d}" stroke="#c084fc" stroke-width="4" fill="none" stroke-linecap="round" />`;
-      pathsSVG += `<circle cx="${ex}" cy="${ey}" r="6" fill="#c084fc" />`;
-      pathsSVG += `<circle cx="${sx}" cy="${sy}" r="5" fill="#a855f7" />`;
-      contador++;
-    });
-  });
-
-  if (pathsSVG) {
-    layer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${innerWidth}" height="${innerHeight}" viewBox="0 0 ${innerWidth} ${innerHeight}" preserveAspectRatio="none" style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none;">${pathsSVG}</svg>`;
-    console.log(`🎨 Dependencias: ${contador} líneas · canvas ${innerWidth}×${innerHeight}px`);
-  }
-};
-console.log('%c🔒 Override de drawPremiumDependenciesComplete instalado', 'color:#a855f7;font-weight:bold');
 
 
 
@@ -81150,10 +81093,6 @@ console.log('📌 Los proyectos se filtran por clienteId para evitar que usuario
     };
     console.log('✅ Interceptor de Gantt instalado correctamente.');
 })();
-
-
-
-
 
 
 
