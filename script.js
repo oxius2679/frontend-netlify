@@ -1,4 +1,136 @@
 // ═══════════════════════════════════════════════════════════════
+// 🔒 OVERRIDE FINAL: drawPremiumDependenciesComplete (VERSIÓN CORREGIDA)
+// Debe ir al FINAL del archivo para ganar a cualquier definición previa
+// ═══════════════════════════════════════════════════════════════
+window.drawPremiumDependenciesComplete = function(tasks) {
+  const layer = document.getElementById("dependencyLayer");
+  if (!layer) return;
+
+  const scrollContainer = document.getElementById("premiumTasksContainer");
+  const innerWrapper = scrollContainer?.querySelector('div[style*="min-width: max-content"]');
+  const innerWidth  = innerWrapper?.scrollWidth  || innerWrapper?.offsetWidth  || 4000;
+  const innerHeight = innerWrapper?.scrollHeight || innerWrapper?.offsetHeight || 800;
+
+  layer.style.setProperty('position', 'absolute', 'important');
+  layer.style.setProperty('top', '0', 'important');
+  layer.style.setProperty('left', '0', 'important');
+  layer.style.setProperty('right', 'auto', 'important');
+  layer.style.setProperty('bottom', 'auto', 'important');
+  layer.style.setProperty('width',  innerWidth  + 'px', 'important');
+  layer.style.setProperty('height', innerHeight + 'px', 'important');
+  layer.style.setProperty('pointer-events', 'none', 'important');
+  layer.style.setProperty('z-index', '99999', 'important');
+  layer.style.setProperty('overflow', 'visible', 'important');
+
+  layer.innerHTML = "";
+
+  const layerRect = layer.getBoundingClientRect();
+  let pathsSVG = "";
+  let contador = 0;
+
+  tasks.forEach(task => {
+    if (!task.dependencies || task.dependencies.length === 0) return;
+    task.dependencies.forEach(depId => {
+      const fromTask = document.querySelector(`.premium-task[data-task-id="${depId}"]`);
+      const toTask   = document.querySelector(`.premium-task[data-task-id="${task.id}"]`);
+      if (!fromTask || !toTask) return;
+
+      const barA = fromTask.children[1]?.children[1]?.getBoundingClientRect();
+      const barB = toTask.children[1]?.children[1]?.getBoundingClientRect();
+      if (!barA || !barB) return;
+
+      const sx = barA.right - layerRect.left - 45;
+      const sy = barA.top + barA.height / 2 - layerRect.top;
+      const ex = barB.left - layerRect.left + 45;
+      const ey = barB.top + barB.height / 2 - layerRect.top;
+      const cx = (sx + ex) / 2;
+      const d = `M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ey}, ${ex} ${ey}`;
+
+      pathsSVG += `<path d="${d}" stroke="#c084fc" stroke-width="4" fill="none" stroke-linecap="round" />`;
+      pathsSVG += `<circle cx="${ex}" cy="${ey}" r="6" fill="#c084fc" />`;
+      pathsSVG += `<circle cx="${sx}" cy="${sy}" r="5" fill="#a855f7" />`;
+      contador++;
+    });
+  });
+
+  if (pathsSVG) {
+    layer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${innerWidth}" height="${innerHeight}" viewBox="0 0 ${innerWidth} ${innerHeight}" preserveAspectRatio="none" style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none;">${pathsSVG}</svg>`;
+    console.log(`🎨 Dependencias: ${contador} líneas · canvas ${innerWidth}×${innerHeight}px`);
+  }
+};
+console.log('%c🔒 Override de drawPremiumDependenciesComplete instalado', 'color:#a855f7;font-weight:bold');
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// 🛡️ PROTECTOR AUTOMÁTICO DEL GANTT
+// Restaura el padding correcto y redibuja las dependencias
+// cuando otro script (hermes-x-completo.js) las destruye.
+// ═══════════════════════════════════════════════════════════════
+(function protegerGantt() {
+  if (window.__ganttProtectorActivo) return;
+  window.__ganttProtectorActivo = true;
+
+  // 🎯 Valores correctos
+  const PADDING_CORRECTO = '14px 0 14px 480px';  // Ajusta el "14px" si tu diseño original usa "20px"
+  const PADDING_LEFT     = '480px';
+
+  let ultimoDibujo = 0;
+  let logPausado = false;
+
+  setInterval(() => {
+    const layer = document.getElementById('dependencyLayer');
+    const container = document.getElementById('premiumTasksContainer');
+
+    if (!layer || !container) return;
+
+    // ─────────────────────────────────────────────
+    // 1. FORZAR PADDING CORRECTO EN CADA FILA
+    // ─────────────────────────────────────────────
+    const rows = document.querySelectorAll('.premium-task');
+    let paddingCorregido = 0;
+    rows.forEach(row => {
+      const actual = row.style.paddingLeft || '';
+      // Si NO es 480px, corregir
+      if (actual !== PADDING_LEFT) {
+        row.style.setProperty('padding', PADDING_CORRECTO, 'important');
+        paddingCorregido++;
+      }
+    });
+    if (paddingCorregido > 0 && !logPausado) {
+      console.log(`🛡️ Padding corregido en ${paddingCorregido} filas (forzado a 480px)`);
+    }
+
+    // ─────────────────────────────────────────────
+    // 2. REDIBUJAR DEPENDENCIAS SI EL LAYER ESTÁ VACÍO
+    // ─────────────────────────────────────────────
+    if (layer.children.length === 0 && rows.length > 0) {
+      const ahora = Date.now();
+      // No redibujar más de 1 vez cada 2 segundos (evita loops)
+      if (ahora - ultimoDibujo > 2000) {
+        try {
+          if (typeof drawPremiumDependenciesComplete === 'function' && window.__premiumTasks) {
+            drawPremiumDependenciesComplete(window.__premiumTasks);
+            ultimoDibujo = ahora;
+            if (!logPausado) {
+              console.log('🛡️ Dependencias redibujadas automáticamente');
+            }
+          }
+        } catch (e) {
+          if (!logPausado) {
+            console.warn('⚠️ Protector Gantt: error redibujando →', e.message);
+          }
+        }
+      }
+    }
+  }, 800);   // cada 800ms
+
+  console.log('%c🛡️ Protector del Gantt activo (padding + dependencias)', 'color:#a855f7;font-weight:bold');
+})();
+
+
+
+// ═══════════════════════════════════════════════════════════════
 // 🎨 ESTILO PERSONALIZADO PARA "← Volver al Tablero" (Rojo Rubí)
 // ═══════════════════════════════════════════════════════════════
 (function estilizarVolverAlTablero() {
@@ -30809,10 +30941,77 @@ function generateTeamDistribution(tasks) {
 function drawPremiumDependenciesComplete(tasks) {
   const layer = document.getElementById("dependencyLayer");
   if (!layer) return;
-  layer.innerHTML = "";
-  console.log("✅ Layer de dependencias limpiado");
-}
 
+  // 📐 Dimensiones REALES del contenedor interior
+  const scrollContainer = document.getElementById("premiumTasksContainer");
+  const innerWrapper = scrollContainer?.querySelector('div[style*="min-width: max-content"]');
+  const innerWidth  = innerWrapper?.scrollWidth  || innerWrapper?.offsetWidth  || 4000;
+  const innerHeight = innerWrapper?.scrollHeight || innerWrapper?.offsetHeight || 800;
+
+  // 📐 Forzar el layer a tener dimensiones reales en píxeles
+  layer.style.setProperty('position', 'absolute', 'important');
+  layer.style.setProperty('top', '0', 'important');
+  layer.style.setProperty('left', '0', 'important');
+  layer.style.setProperty('right', 'auto', 'important');
+  layer.style.setProperty('bottom', 'auto', 'important');
+  layer.style.setProperty('width',  innerWidth  + 'px', 'important');
+  layer.style.setProperty('height', innerHeight + 'px', 'important');
+  layer.style.setProperty('pointer-events', 'none', 'important');
+  layer.style.setProperty('z-index', '99999', 'important');
+  layer.style.setProperty('overflow', 'visible', 'important');
+
+  layer.innerHTML = "";
+
+  const layerRect = layer.getBoundingClientRect();
+  let pathsSVG = "";
+
+  tasks.forEach(task => {
+    if (!task.dependencies || task.dependencies.length === 0) return;
+
+    task.dependencies.forEach(depId => {
+      const fromTask = document.querySelector(`.premium-task[data-task-id="${depId}"]`);
+      const toTask   = document.querySelector(`.premium-task[data-task-id="${task.id}"]`);
+
+      if (!fromTask || !toTask) return;
+
+      const barA = fromTask.children[1]?.children[1]?.getBoundingClientRect();
+      const barB = toTask.children[1]?.children[1]?.getBoundingClientRect();
+
+      if (!barA || !barB) return;
+
+      const sx = barA.right - layerRect.left - 45;
+      const sy = barA.top + barA.height / 2 - layerRect.top;
+
+      const ex = barB.left - layerRect.left + 45;
+      const ey = barB.top + barB.height / 2 - layerRect.top;
+
+      const cx = (sx + ex) / 2;
+
+      const d = `M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ey}, ${ex} ${ey}`;
+
+      // 🔥 Línea con glow
+      pathsSVG += `<path d="${d}" stroke="#c084fc" stroke-width="3" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 4px rgba(168,85,247,0.9));" />`;
+      // 🎯 Punto en destino
+      pathsSVG += `<circle cx="${ex}" cy="${ey}" r="5" fill="#c084fc" style="filter:drop-shadow(0 0 4px rgba(168,85,247,0.9));" />`;
+      // 🎯 Punto en origen
+      pathsSVG += `<circle cx="${sx}" cy="${sy}" r="4" fill="#a855f7" />`;
+    });
+  });
+
+  // 🎨 Insertar UN SOLO SVG con todas las líneas dentro
+  if (pathsSVG) {
+    layer.innerHTML = `
+      <svg width="${innerWidth}" height="${innerHeight}"
+           viewBox="0 0 ${innerWidth} ${innerHeight}"
+           preserveAspectRatio="none"
+           style="position:absolute; top:0; left:0; overflow:visible; pointer-events:none;">
+        ${pathsSVG}
+      </svg>`;
+    console.log(`🎨 Dependencias dibujadas: ${innerWidth}×${innerHeight}px`);
+  } else {
+    console.log('ℹ️ Sin dependencias para dibujar');
+  }
+}
 // 9. Tooltips (VERSIÓN SIMPLIFICADA)
 function enableTaskTooltips() {
   let tooltip = document.getElementById("premium-tooltip");
