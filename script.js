@@ -1,3 +1,7 @@
+
+
+
+
 // ═══════════════════════════════════════════════════════════════
 // 🔴 RE-APLICAR color rojo al botón "Volver al Tablero"
 // (sobrevive a los re-renders del polling)
@@ -30442,54 +30446,53 @@ function filtrarProyectosPorUsuario() {
 
 // Función para forzar refresco desde backend
 async function forceRefreshFromBackend() {
-    console.log('🔄 [FORCE REFRESH] Iniciando...');
+    console.log('🔄 [POLLING] Refrescando desde /api/user/projects...');
     
     try {
         const token = localStorage.getItem('authToken');
-        const clienteId = localStorage.getItem('clienteId');
+        if (!token) return;
         
-        if (!token) {
-            console.warn('⚠️ No hay token');
-            return;
-        }
-        
-        const response = await fetch(`${API_URL}/api/projects?clienteId=${clienteId || ''}`, {
+        // ✅ ENDPOINT CORRECTO
+        const response = await fetch(`${API_URL}/api/user/projects`, {
             headers: { 
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
         
-        if (response.ok) {
-            const data = await response.json();
-            const backendProjects = data.projects || [];
-            
-            console.log(`📦 [BACKEND] ${backendProjects.length} proyectos recibidos`);
-            
-            // 🔥 CONDICIÓN DE SEGURIDAD: Solo actualizar si el backend tiene datos
-            if (backendProjects.length > 0) {
-                // Verificar que los proyectos locales no sean más recientes
-                const localProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-                
-                if (localProjects.length > backendProjects.length) {
-                    console.warn('⚠️ Local tiene más proyectos que backend. NO se sobrescribirá.');
-                    return;
-                }
-                
-                // Solo actualizar si el backend tiene más proyectos (caso colaboración)
-                window.projects = backendProjects;
-                localStorage.setItem('projects', JSON.stringify(backendProjects));
-                if (typeof refreshCurrentView === 'function') refreshCurrentView();
-                console.log('✅ Proyectos actualizados desde backend');
-            } else {
-                console.log('ℹ️ Backend vacío, manteniendo datos locales');
-            }
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        if (!data.success) return;
+        
+        const owned = data.ownedProjects || [];
+        const collab = data.collaboratedProjects || [];
+        const collabIds = new Set(collab.map(p => p.id));
+        
+        const nuevos = [...owned, ...collab].map(p => ({
+            ...p,
+            isCollaborative: collabIds.has(p.id)
+        }));
+        
+        const huboCambios = JSON.stringify(nuevos) !== JSON.stringify(projects);
+        projects = nuevos;
+        
+        if (currentProjectIndex >= projects.length) {
+            currentProjectIndex = 0;
         }
-    } catch (error) {
-        console.error('❌ Error en forceRefreshFromBackend:', error);
+        
+        localStorage.setItem('projects', JSON.stringify(projects));
+        
+        if (huboCambios) {
+            console.log(`🔄 [POLLING] Cambios detectados: ${owned.length} propios + ${collab.length} colaborativos`);
+            if (typeof renderProjects === 'function') renderProjects();
+            if (typeof refreshCurrentView === 'function') refreshCurrentView();
+        }
+    } catch(e) {
+        // Silencioso — no rompemos el polling si falla
     }
 }
-
 
 
 
