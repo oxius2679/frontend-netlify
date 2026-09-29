@@ -245,15 +245,14 @@
             throw new Error(data.error);
         }
         
-        if (data.clienteId) {
-            localStorage.setItem('clienteId', data.clienteId);
-            localStorage.setItem('userPlan', 'free');
-        }
+        // ⚠️ NO sobrescribir clienteId. El invitado mantiene el suyo
+// y verá el proyecto compartido a través de la lista de colaboradores.
+localStorage.setItem('userPlan', 'free');
         
         showSuccess(`✅ ¡Invitación aceptada! Redirigiendo al dashboard...`);
         
         setTimeout(() => {
-            window.location.href = '/?forceClienteId=' + data.clienteId;
+            window.location.href = '/';
         }, 2000);
         
     } catch (error) {
@@ -262,11 +261,11 @@
         showError('Error al aceptar la invitación: ' + error.message);
     }
 }
-        function rejectInvitation() {
+                function rejectInvitation() {
             if (confirm('¿Estás seguro de rechazar esta invitación?')) {
                 showSuccess('Invitación rechazada. Serás redirigido...');
                 setTimeout(() => {
-                    window.location.href = '/?forceClienteId=' + data.clienteId;
+                    window.location.href = '/';
                 }, 2000);
             }
         }
