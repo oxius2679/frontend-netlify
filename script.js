@@ -44209,21 +44209,36 @@ function initWebSocket() {
             }
         });
         
-        socket.on('task-moved', (data) => {
-            console.log('📢 Evento recibido: task-moved', data);
-            if (data.projectId != currentProjectIndex) return;
-            const project = projects[currentProjectIndex];
-            if (!project) return;
-            const task = project.tasks.find(t => t.id === data.taskId);
-            if (task && task.status !== data.newStatus) {
-                task.status = data.newStatus;
-                updateLocalStorage();
-                refreshCurrentView();
-                if (typeof showNotification === 'function') {
-                    showNotification(`📡 Tarea "${task.name}" movida a ${data.newStatus}`, 'info');
-                }
-            }
-        });
+       socket.on('task-moved', (data) => {
+    console.log('📢 Evento recibido: task-moved', data);
+
+    // 🔥 Buscar por projectDbId (ID único real), no por índice local
+    let project = null;
+
+    if (data.projectDbId) {
+        project = projects.find(p => String(p.id) === String(data.projectDbId));
+    }
+
+    // Fallback: si no hay projectDbId, usar el índice como antes
+    if (!project && data.projectId == currentProjectIndex) {
+        project = projects[currentProjectIndex];
+    }
+
+    if (!project) {
+        console.warn('⚠️ No se encontró el proyecto para task-moved');
+        return;
+    }
+
+    const task = project.tasks.find(t => String(t.id) === String(data.taskId));
+    if (task && task.status !== data.newStatus) {
+        task.status = data.newStatus;
+        updateLocalStorage();
+        refreshCurrentView();
+        if (typeof showNotification === 'function') {
+            showNotification(`📡 Tarea "${task.name}" movida a ${data.newStatus}`, 'info');
+        }
+    }
+});
         
         socket.on('user-joined', function(data) {
             console.log('👤 Usuario unido:', data);
@@ -44310,6 +44325,7 @@ function initWebSocket() {
             const project = projects[currentProjectIndex];
             if (!project) return;
             const task = project.tasks.find(t => t.id === data.taskId);
+console.log('🔎 ¿Encontró la tarea?', !!task, '| Buscando id:', data.taskId, typeof data.taskId, '| IDs en el proyecto:', project.tasks.map(t => `${t.id} (${typeof t.id})`));
             if (task && task.status !== data.newStatus) {
                 task.status = data.newStatus;
                 updateLocalStorage();

@@ -1,38 +1,116 @@
 // ═══════════════════════════════════════════════════════════════
-// 🔄 COLABORACIÓN EN TIEMPO REAL v3 — CROSS-MACHINE
+// 🏛️ COLABORACIÓN EN TIEMPO REAL v5 — DEFINITIVA
+// Reemplaza TODOS los sistemas anteriores de colaboración
 // ═══════════════════════════════════════════════════════════════
-(function colaboracionTiempoRealV3() {
+(function ColaboracionTiempoRealV5() {
   'use strict';
-  if (window.__COLAB_V3) return;
-  window.__COLAB_V3 = true;
+  
+  if (window.__COLAB_V5_FINAL) {
+    console.log('⚠️ Colab v5 ya está activa.');
+    return;
+  }
+  window.__COLAB_V5_FINAL = true;
 
-  console.log('%c🔄 Colab v3 cargada', 'color:#10b981;font-weight:bold;background:#000;padding:4px 8px');
+  console.log('%c🏛️ Colab v5 DEFINITIVA Iniciada', 'color:#10b981;font-weight:bold;background:#000;padding:6px 12px;font-size:14px;');
 
   // ─────────────────────────────────────────────
-  // HELPERS
+  // 1. HELPERS
   // ─────────────────────────────────────────────
-  const userEmail   = () => localStorage.getItem('userEmail') || 'Usuario';
-  const clienteId   = () => localStorage.getItem('clienteId') || 'default';
-  const getProject  = () => window.projects?.[window.currentProjectIndex];
-  const getSock     = () => window.tiempoRealSocket;
-  const getProjKey  = () => {
-    const p = getProject();
-    return p?.id ? `p_${p.id}` : `idx_${window.currentProjectIndex}`;
+  const getClientId   = () => localStorage.getItem('clienteId') || 'default';
+  const getUserEmail  = () => localStorage.getItem('userEmail') || 'Usuario';
+  const getSocket     = () => window.tiempoRealSocket;
+  
+  const getCanonicalProjectId = () => {
+    const p = window.projects?.[window.currentProjectIndex];
+    return p?.id ? String(p.id) : null;
   };
-  const cloneDeep   = o => JSON.parse(JSON.stringify(o));
 
+  const getProject = () => window.projects?.[window.currentProjectIndex];
+  const cloneDeep  = o => JSON.parse(JSON.stringify(o));
+
+  // ─────────────────────────────────────────────
+  // 2. DESACTIVAR SISTEMAS CONFLICTIVOS (La clave del éxito)
+  // ─────────────────────────────────────────────
+  const disableConflictingSystems = () => {
+    // 2.1. Bloquear safeSave para proyectos colaborativos
+    const origSafeSave = window.safeSave;
+    window.safeSave = async function(clienteId) {
+      const currentClienteId = localStorage.getItem('clienteId');
+      const proj = getProject();
+      
+      // Si el proyecto NO es mío (es colaborativo), NO guardar en backend
+      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
+        console.log('🛡️ [v5] safeSave bloqueado: proyecto colaborativo, solo Socket.IO');
+        // Solo guardar en localStorage, NO en backend
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        return true;
+      }
+      
+      // Si es mi proyecto, usar la función original
+      return origSafeSave?.apply(this, arguments);
+    };
+
+    // 2.2. Bloquear forceRefreshFromBackend para proyectos colaborativos
+    const origForceRefresh = window.forceRefreshFromBackend;
+    window.forceRefreshFromBackend = async function() {
+      const currentClienteId = localStorage.getItem('clienteId');
+      const proj = getProject();
+      
+      // Si el proyecto NO es mío, NO consultar al backend
+      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
+        console.log('🛡️ [v5] forceRefreshFromBackend bloqueado: proyecto colaborativo');
+        // Solo refrescar la vista local
+        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
+        if (typeof window.renderProjects === 'function') window.renderProjects();
+        return;
+      }
+      
+      // Si es mi proyecto, usar la función original
+      return origForceRefresh?.apply(this, arguments);
+    };
+
+    // 2.3. Bloquear updateLocalStorage para proyectos colaborativos
+    const origUpdateLS = window.updateLocalStorage;
+    window.updateLocalStorage = function() {
+      const currentClienteId = localStorage.getItem('clienteId');
+      const proj = getProject();
+      
+      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
+        console.log('🛡️ [v5] updateLocalStorage bloqueado: proyecto colaborativo');
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        return;
+      }
+      
+      return origUpdateLS?.apply(this, arguments);
+    };
+
+    console.log('✅ [v5] Sistemas conflictivos desactivados para proyectos colaborativos');
+  };
+
+  disableConflictingSystems();
+
+  // ─────────────────────────────────────────────
+  // 3. EMISOR SEGURO (Sanitiza y fuerza el ID canónico)
+  // ─────────────────────────────────────────────
   const emitSafe = (event, data) => {
-    const s = getSock();
+    const s = getSocket();
     if (!s) return;
+
+    const canonicalId = getCanonicalProjectId();
+    if (!canonicalId) {
+      console.warn('🚫 [v5] No hay ID canónico del proyecto.');
+      return;
+    }
+
     const payload = {
       ...data,
-      // 🔑 SIEMPRE incluir AMBOS identificadores + clienteId
-      projectId: window.currentProjectIndex,
-      projectDbId: getProject()?.id,
-      clienteId: clienteId(),
-      userName: userEmail(),
+      projectId: canonicalId,      
+      projectDbId: canonicalId,    
+      clienteId: getClientId(),
+      userName: getUserEmail(),
       timestamp: new Date().toISOString()
     };
+
     if (s.connected) {
       s.emit(event, payload);
     } else {
@@ -40,252 +118,250 @@
     }
   };
 
-  const broadcastLocal = (reason) => {
-    try {
-      window.__colabBC?.postMessage({
-        type: 'STATE',
-        payload: {
-          projects: cloneDeep(window.projects || []),
-          currentProjectIndex: window.currentProjectIndex
-        },
-        reason
-      });
-    } catch (e) {}
-  };
-
   // ─────────────────────────────────────────────
-  // 1) JOIN AL ROOM CORRECTO (por índice Y por DB ID)
+  // 4. GESTIÓN DE SALAS
   // ─────────────────────────────────────────────
-  const joinRoom = () => {
-    const s = getSock();
+  const joinCanonicalRoom = () => {
+    const s = getSocket();
     if (!s || !s.connected) return;
-    const idx = window.currentProjectIndex;
-    const dbId = getProject()?.id;
-    const cId = clienteId();
+    
+    const canonicalId = getCanonicalProjectId();
+    if (!canonicalId) return;
 
-    // Emitir TODOS los joins posibles (el servidor usará el que reconozca)
-    s.emit('join-project', idx);
-    if (dbId) s.emit('join-project', dbId);
-    if (dbId) s.emit('join-project', `p_${dbId}`);
-    s.emit('join-cliente', cId);
-    console.log(`🚪 [v3] join → idx=${idx}, dbId=${dbId}, cliente=${cId}`);
+    s.emit('join-project', canonicalId);
+    console.log(`🚪 [v5] Unido a sala: project-${canonicalId}`);
   };
 
-  const s = getSock();
+  const s = getSocket();
   if (s) {
-    // Cada vez que conecta, unirse al room
     s.on('connect', () => {
-      console.log('🔗 [v3] socket conectado, haciendo join...');
-      setTimeout(joinRoom, 200);
+      setTimeout(joinCanonicalRoom, 300);
     });
-    // Join inicial si ya está conectado
-    if (s.connected) joinRoom();
-    // Reintentar cada 5s (por si el proyecto cambia)
-    setInterval(joinRoom, 5000);
+    
+    if (s.connected) joinCanonicalRoom();
+    setInterval(joinCanonicalRoom, 5000);
   }
 
-  // También emitir join cuando cambia el proyecto (interceptando selectProject)
-  const _selProj = window.selectProject;
-  if (typeof _selProj === 'function') {
+  const _origSelectProject = window.selectProject;
+  if (typeof _origSelectProject === 'function') {
     window.selectProject = function(idx) {
-      const r = _selProj.apply(this, arguments);
-      setTimeout(joinRoom, 300);
+      const r = _origSelectProject.apply(this, arguments);
+      setTimeout(joinCanonicalRoom, 400);
       return r;
     };
   }
 
   // ─────────────────────────────────────────────
-  // 2) LISTENERS DE RECEPCIÓN (aplican cambios)
+  // 5. FILTRO DE RECEPCIÓN
   // ─────────────────────────────────────────────
-  const sameProject = (data) => {
-    // 🔑 Aceptar si coincide índice, DB ID, o cliente
-    const idx = window.currentProjectIndex;
-    const dbId = getProject()?.id;
-    if (data.projectId != null && Number(data.projectId) === Number(idx)) return true;
-    if (data.projectDbId != null && dbId != null && String(data.projectDbId) === String(dbId)) return true;
-    if (data.clienteId && data.clienteId === clienteId()) return true;
-    return false;
+  const isSameProject = (data) => {
+    const currentId = getCanonicalProjectId();
+    if (!currentId) return false;
+    const receivedId = String(data.projectDbId || data.projectId);
+    return receivedId === currentId;
   };
 
-  const reloadFromMemory = () => {
+  const reloadUI = () => {
     if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
     if (typeof window.renderProjects === 'function') window.renderProjects();
     if (typeof window.updateStatistics === 'function') window.updateStatistics();
   };
 
+  // ─────────────────────────────────────────────
+  // 6. LISTENERS DE EVENTOS
+  // ─────────────────────────────────────────────
   if (s) {
-    // task-created
+    // ELIMINAR listeners antiguos para evitar duplicados
+    s.off('task-created');
+    s.off('task-updated');
+    s.off('task-moved');
+    s.off('task-deleted');
+    s.off('project-created');
+    s.off('project-updated');
+
     s.on('task-created', (data) => {
-      console.log('📥 [v3] task-created', data);
-      if (!sameProject(data) || !data.task) return;
+      if (!isSameProject(data) || !data.task) return;
       const proj = getProject();
       if (!proj) return;
       if (proj.tasks.some(t => String(t.id) === String(data.task.id))) return;
+      
       proj.tasks.push(data.task);
       localStorage.setItem('projects', JSON.stringify(window.projects));
-      reloadFromMemory();
+      reloadUI();
+      console.log(`✅ [v5] Tarea creada remotamente: ${data.task.name}`);
     });
 
-    // task-updated
     s.on('task-updated', (data) => {
-      console.log('📥 [v3] task-updated', data);
-      if (!sameProject(data)) return;
+      if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
-      const taskId = data.taskId ?? data.task?.id;
-      const idx = proj.tasks.findIndex(t => String(t.id) === String(taskId));
-      if (idx !== -1 && data.task) {
-        proj.tasks[idx] = data.task;
-      } else if (idx !== -1) {
-        // Merge parcial
-        Object.assign(proj.tasks[idx], data.changes || data);
+      
+      const taskId = String(data.taskId || data.task?.id);
+      const idx = proj.tasks.findIndex(t => String(t.id) === taskId);
+      
+      if (idx !== -1) {
+        if (data.task) proj.tasks[idx] = data.task;
+        else if (data.changes) Object.assign(proj.tasks[idx], data.changes);
+        
+        localStorage.setItem('projects', JSON.stringify(window.projects));
+        reloadUI();
+        console.log(`✅ [v5] Tarea actualizada remotamente: ID ${taskId}`);
       }
-      localStorage.setItem('projects', JSON.stringify(window.projects));
-      reloadFromMemory();
     });
 
-    // task-moved
     s.on('task-moved', (data) => {
-      console.log('📥 [v3] task-moved', data);
-      if (!sameProject(data)) return;
+      if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
+      
       const task = proj.tasks.find(t => String(t.id) === String(data.taskId));
       if (task && task.status !== data.newStatus) {
         task.status = data.newStatus;
         if (data.newStatus === 'completed') task.progress = 100;
         else if (data.newStatus === 'pending') task.progress = 0;
+        
         localStorage.setItem('projects', JSON.stringify(window.projects));
-        reloadFromMemory();
+        reloadUI();
+        console.log(`✅ [v5] Tarea movida remotamente: ${data.taskId} -> ${data.newStatus}`);
       }
     });
 
-    // task-deleted
     s.on('task-deleted', (data) => {
-      console.log('📥 [v3] task-deleted', data);
-      if (!sameProject(data)) return;
+      if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
+      
       const idx = proj.tasks.findIndex(t => String(t.id) === String(data.taskId));
       if (idx !== -1) {
         proj.tasks.splice(idx, 1);
         localStorage.setItem('projects', JSON.stringify(window.projects));
-        reloadFromMemory();
+        reloadUI();
+        console.log(`✅ [v5] Tarea eliminada remotamente`);
       }
     });
 
-    // project-created
     s.on('project-created', (data) => {
-      console.log('📥 [v3] project-created', data);
       if (!data.project) return;
-      // Si es de otro cliente, ignorar
-      if (data.clienteId && data.clienteId !== clienteId()) return;
+      if (data.clienteId && data.clienteId !== getClientId()) return;
       if (window.projects.some(p => String(p.id) === String(data.project.id))) return;
+      
       window.projects.push(data.project);
       localStorage.setItem('projects', JSON.stringify(window.projects));
       if (typeof window.renderProjects === 'function') window.renderProjects();
-      console.log('✅ [v3] Proyecto añadido:', data.project.name);
     });
 
-    // project-updated
     s.on('project-updated', (data) => {
-      console.log('📥 [v3] project-updated', data);
       if (!data.project) return;
-      if (data.clienteId && data.clienteId !== clienteId()) return;
+      if (data.clienteId && data.clienteId !== getClientId()) return;
+      
       const idx = window.projects.findIndex(p => String(p.id) === String(data.project.id));
       if (idx !== -1) {
         window.projects[idx] = data.project;
         localStorage.setItem('projects', JSON.stringify(window.projects));
-        reloadFromMemory();
+        reloadUI();
       }
     });
   }
 
   // ─────────────────────────────────────────────
-  // 3) PATHS DE EMISIÓN (drag&drop, guardar, borrar, crear)
+  // 7. INTERCEPTORES DE ACCIONES LOCALES
   // ─────────────────────────────────────────────
+  
+  // 7.1. Drag & Drop (Kanban)
   window.handleDrop = function (e) {
     e.preventDefault();
     e.currentTarget.style.backgroundColor = '';
+
     const taskId = e.dataTransfer.getData('taskId') || e.dataTransfer.getData('text/plain');
-    const map = { pendingList:'pending', inProgressList:'inProgress', completedList:'completed', overdueList:'overdue' };
+    const map = { pendingList: 'pending', inProgressList: 'inProgress', completedList: 'completed', overdueList: 'overdue' };
     const newStatus = map[e.currentTarget.id];
-    const proj = getProject(); if (!proj || !newStatus) return;
-    const task = proj.tasks.find(t => String(t.id) === String(taskId)); if (!task) return;
-    const oldStatus = task.status; if (oldStatus === newStatus) return;
+    const proj = getProject();
+    
+    if (!proj || !newStatus) return;
+
+    const task = proj.tasks.find(t => String(t.id) === String(taskId));
+    if (!task) return;
+
+    const oldStatus = task.status;
+    if (oldStatus === newStatus) return;
+
+    // Actualización local
     task.status = newStatus;
     task.history = task.history || [];
     task.history.push({ from: oldStatus, to: newStatus, date: new Date().toISOString() });
     if (newStatus === 'completed') task.progress = 100;
     else if (newStatus === 'pending') task.progress = 0;
+
     localStorage.setItem('projects', JSON.stringify(window.projects));
-    if (typeof updateLocalStorage === 'function') updateLocalStorage();
-    if (typeof safeSave === 'function') safeSave();
-    if (typeof renderKanbanTasks === 'function') renderKanbanTasks();
-    emitSafe('task-moved', { taskId: task.id, taskName: task.name, oldStatus, newStatus });
-    emitSafe('task-updated', { taskId: task.id, task: cloneDeep(task), taskName: task.name });
-    broadcastLocal('handleDrop');
-  };
-  const regDrop = () => document.querySelectorAll('#pendingList,#inProgressList,#completedList,#overdueList')
-    .forEach(c => { if (!c.__reg) { c.__reg = true; c.addEventListener('drop', window.handleDrop, true); } });
-  regDrop(); setInterval(regDrop, 1500);
+    if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
 
-  const patch = (name, emitFn) => {
-    const orig = window[name];
-    if (typeof orig !== 'function' || orig.__v3) return;
-    window[name] = function () {
-      const r = orig.apply(this, arguments);
-      setTimeout(() => emitFn.apply(this, arguments), 400);
-      return r;
+    // Emisión a la red
+    emitSafe('task-moved', {
+        taskId: task.id,
+        taskName: task.name,
+        oldStatus,
+        newStatus,
+        targetStatus: newStatus
+    });
+
+    emitSafe('task-updated', {
+        taskId: task.id,
+        task: cloneDeep(task),
+        taskName: task.name
+    });
+  };
+
+  const registerDropZones = () => {
+    document.querySelectorAll('#pendingList, #inProgressList, #completedList, #overdueList').forEach(col => {
+      if (!col.__dropRegistered) {
+        col.__dropRegistered = true;
+        col.addEventListener('drop', window.handleDrop, true);
+      }
+    });
+  };
+  registerDropZones();
+  setInterval(registerDropZones, 2000);
+
+  // 7.2. Parcheo de funciones globales
+  const patchGlobalFunction = (funcName, emitEvent, payloadBuilder) => {
+    const orig = window[funcName];
+    if (typeof orig !== 'function' || orig.__patchedV5) return;
+    
+    window[funcName] = function (...args) {
+      const result = orig.apply(this, args);
+      setTimeout(() => {
+        const payload = payloadBuilder ? payloadBuilder(args) : {};
+        emitSafe(emitEvent, payload);
+      }, 300);
+      return result;
     };
-    window[name].__v3 = true;
+    window[funcName].__patchedV5 = true;
   };
 
-  patch('deleteTaskById', function (taskId) {
-    emitSafe('task-deleted', { taskId, taskName: getProject()?.tasks?.find(t=>String(t.id)===String(taskId))?.name || '' });
-    broadcastLocal('deleteTask');
-  });
-
-  patch('saveTaskChanges', function (taskId) {
-    const t = getProject()?.tasks?.find(x => String(x.id) === String(taskId));
-    if (!t) return;
-    emitSafe('task-updated', { taskId: t.id, task: cloneDeep(t), taskName: t.name });
-    broadcastLocal('saveTaskChanges');
-  });
-
-  patch('createNewTask', function () {
+  patchGlobalFunction('deleteTaskById', 'task-deleted', (args) => {
+    const taskId = args[0];
     const proj = getProject();
-    const t = proj?.tasks?.[proj.tasks.length - 1];
-    if (!t) return;
-    emitSafe('task-created', { task: cloneDeep(t), projectName: proj.name });
-    broadcastLocal('createNewTask');
+    const task = proj?.tasks?.find(t => String(t.id) === String(taskId));
+    return { taskId, taskName: task?.name || 'Desconocida' };
   });
 
-  patch('createNewProject', function () {
-    const p = window.projects?.[window.projects.length - 1];
-    if (!p) return;
-    emitSafe('project-created', { project: cloneDeep(p), projectName: p.name });
-    broadcastLocal('createNewProject');
+  patchGlobalFunction('saveTaskChanges', 'task-updated', (args) => {
+    const taskId = args[0];
+    const proj = getProject();
+    const task = proj?.tasks?.find(t => String(t.id) === String(taskId));
+    return task ? { taskId: task.id, task: cloneDeep(task), taskName: task.name } : {};
   });
 
-  setInterval(() => {
-    patch('deleteTaskById', window.deleteTaskById?.__v3 ? null : function(taskId){
-      emitSafe('task-deleted', { taskId });
-    });
-    patch('saveTaskChanges', function(taskId){
-      const t = getProject()?.tasks?.find(x => String(x.id) === String(taskId));
-      if (t) emitSafe('task-updated', { taskId: t.id, task: cloneDeep(t), taskName: t.name });
-    });
-    patch('createNewTask', function(){
-      const proj = getProject();
-      const t = proj?.tasks?.[proj.tasks.length - 1];
-      if (t) emitSafe('task-created', { task: cloneDeep(t), projectName: proj.name });
-    });
-    patch('createNewProject', function(){
-      const p = window.projects?.[window.projects.length - 1];
-      if (p) emitSafe('project-created', { project: cloneDeep(p), projectName: p.name });
-    });
-  }, 2000);
+  patchGlobalFunction('createNewTask', 'task-created', () => {
+    const proj = getProject();
+    const task = proj?.tasks?.[proj.tasks.length - 1];
+    return task ? { task: cloneDeep(task), projectName: proj.name } : {};
+  });
 
-  console.log('%c✅ Colab v3 ACTIVA — cross-machine habilitado', 'color:#10b981;font-weight:bold;font-size:14px;background:#000;padding:4px 10px');
+  patchGlobalFunction('createNewProject', 'project-created', () => {
+    const proj = window.projects?.[window.projects.length - 1];
+    return proj ? { project: cloneDeep(proj), projectName: proj.name } : {};
+  });
+
+  console.log('%c✅ COLABORACIÓN v5 DEFINITIVA ACTIVA', 'color:#10b981;font-weight:bold;font-size:14px;background:#000;padding:6px 12px;');
 })();
