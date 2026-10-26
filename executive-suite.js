@@ -6393,139 +6393,321 @@
   };
 
   /* ==========================================================
-     SECCIÓN 5 · BOOT
-     ========================================================== */
-  function injectFloatButton() {
-    if (document.getElementById('exec-float-btn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'exec-float-btn';
-    btn.id = 'exec-float-btn';
-    btn.innerHTML = `<span class="exec-float-btn-icon">👑</span> Executive Suite`;
-    btn.onclick = () => UI.open();
-    document.body.appendChild(btn);
-    console.log('👑 [Executive Suite] Botón flotante inyectado');
+   SECCIÓN 5 · BOOT — BOTÓN AZUL EN EL SIDEBAR
+   - Siempre visible (debajo de "CENTRO DE CONTROL PM")
+   - PREMIUM     → azul completo, flecha →, abre el panel
+   - NO PREMIUM  → apagado + 🔒, clic → mensaje de upgrade
+   ========================================================== */
+
+/* 🔐 Helper: ¿El usuario tiene plan premium? */
+function isPremiumUser() {
+  if (window.licenseManager && window.licenseManager.license) {
+    return window.licenseManager.license === 'premium';
   }
+  return (localStorage.getItem('userPlan') || 'free') === 'premium';
+}
 
-  function watchForLogin() {
-    // Mostrar el botón siempre (el usuario ya está logueado cuando entra al sistema)
-    const tryInject = () => {
-      if (!document.getElementById('exec-float-btn')) {
-        // Verificar que no estamos en la landing
-        const isLanding = !document.querySelector('#dashboard, .sidebar, .project-item, [data-project-id]');
-        if (!isLanding) {
-          injectFloatButton();
-          return true;
-        }
-      }
-      return false;
-    };
-
-    if (tryInject()) return;
-
-    // Esperar a que aparezca el dashboard
-    const obs = new MutationObserver(() => {
-      if (tryInject()) obs.disconnect();
-    });
-    obs.observe(document.body, { childList: true, subtree: true });
-
-    // Timeout de seguridad
-    setTimeout(() => {
-      if (!document.getElementById('exec-float-btn')) injectFloatButton();
-    }, 5000);
-  }
-
-   // API pública
-  window.ExecutiveSuite = {
-    open: () => UI.open(),
-    close: () => UI.close(),
-    version: CFG.version,
-    modules: () => Object.keys(Modules)
-  };
-
-    // 🎯 Fix: buscar generarReporte donde sea que esté anidado
-  window.__ExecutiveSuiteReport = (tipo) => {
-    try {
-      let fn = null;
-      let ctx = null;
-
-      // Búsqueda recursiva en todos los módulos
-      const searchIn = (obj, depth = 0) => {
-        if (depth > 3 || !obj || typeof obj !== 'object') return;
-        for (const key in obj) {
-          const val = obj[key];
-          if (typeof val === 'function' && key === 'generarReporte') {
-            fn = val;
-            ctx = obj;
-            return;
-          }
-          if (val && typeof val === 'object') {
-            searchIn(val, depth + 1);
-            if (fn) return;
-          }
-        }
-      };
-
-      searchIn(Modules);
-
-      if (!fn) {
-        throw new Error('generarReporte no encontrado en ningún módulo');
-      }
-
-      console.log('🎯 Ejecutando generarReporte encontrado en:', Object.keys(ctx).slice(0, 3).join(', ') + '...');
-      fn.call(ctx, tipo);
-
-    } catch (e) {
-      console.error('❌ Error generando reporte:', e.message);
-      alert('⚠️ Error generando reporte: ' + e.message);
-    }
-  };
-
-  // Arranque
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      injectStyles();
-      watchForLogin();
-    });
+/* 🔔 Mensaje cuando intentan abrir sin plan */
+function showPremiumRequiredMessage() {
+  const msg = '👑 Executive Suite requiere el plan PREMIUM. Actualiza tu plan para acceder.';
+  if (typeof showNotification === 'function') {
+    showNotification(msg, 'error');
   } else {
-    injectStyles();
-    watchForLogin();
+    alert(msg);
   }
+}
 
+/* 🏗️ Crea el DOM del botón (una sola vez) */
+function crearBotonSidebar() {
+  const btnContainer = document.createElement('div');
+  btnContainer.id = 'exec-sidebar-btn';
+  btnContainer.style.cssText = 'padding: 0 12px; margin: 10px 0; transition: opacity 0.25s ease, filter 0.25s ease;';
 
-  // 🔄 Re-renderizar al cambiar idioma en la landing
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.lang-btn')) {
-      setTimeout(() => {
-        const overlay = document.getElementById('exec-suite-overlay');
-        if (!overlay) return;
+  btnContainer.innerHTML = `
+    <div class="exec-sb-inner" style="
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+      border-radius: 12px;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(59,130,246,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      border: 1px solid rgba(96,165,250,0.5);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    ">
+      <span style="
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient(circle, rgba(255,255,255,0.25), transparent 60%);
+        pointer-events: none;
+      "></span>
 
-        // Actualizar sidebar
-        overlay.querySelectorAll('.exec-nav-item').forEach(el => {
-          const labelEl = el.querySelector('.exec-nav-label');
-          if (labelEl) labelEl.textContent = t('nav_' + el.dataset.module);
-        });
+      <span style="
+        font-size: 22px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        flex-shrink: 0;
+      ">👑</span>
 
-        // Actualizar section header
-        const sectionEl = overlay.querySelector('.exec-nav-section');
-        if (sectionEl) sectionEl.textContent = t('nav_section_title');
+      <div style="flex: 1; min-width: 0; position: relative; z-index: 1;">
+        <div style="
+          text-transform: uppercase;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+        ">
+          Executive Suite
+        </div>
+        <div class="exec-sb-sub" style="
+          font-size: 9px;
+          opacity: 0.9;
+          font-weight: 600;
+          letter-spacing: 1.2px;
+          margin-top: 2px;
+        ">
+          C-SUITE COMMAND
+        </div>
+      </div>
 
-        // Actualizar topbar buttons
-        const refreshBtn = document.getElementById('exec-btn-refresh');
-        const exportBtn = document.getElementById('exec-btn-export');
-        const closeBtn = document.getElementById('exec-btn-close');
-        if (refreshBtn) refreshBtn.textContent = t('btn_refresh');
-        if (exportBtn) exportBtn.textContent = t('btn_export');
-        if (closeBtn) closeBtn.textContent = t('btn_close');
+      <span class="exec-sb-icon-end" style="
+        font-size: 14px;
+        opacity: 0.85;
+        transition: transform 0.25s ease;
+        flex-shrink: 0;
+      ">→</span>
+    </div>
+  `;
 
-        // Re-renderizar el módulo activo (por si acaso)
-        if (typeof UI !== 'undefined' && UI.renderModule) {
-          UI.renderModule(State.module);
-        }
-      }, 150);
+  const btn = btnContainer.querySelector('.exec-sb-inner');
+
+  // 🖱️ Click handler (doble verificación dentro)
+  btn.onclick = () => {
+    if (!isPremiumUser()) {
+      showPremiumRequiredMessage();
+      return;
     }
+    UI.open();
+  };
+
+  // ✨ Hover (solo si es premium)
+  btn.addEventListener('mouseenter', () => {
+    if (!isPremiumUser()) return;
+    btn.style.transform = 'translateY(-2px)';
+    btn.style.boxShadow = '0 10px 24px rgba(59,130,246,0.65), inset 0 1px 0 rgba(255,255,255,0.3)';
+    const arrow = btn.querySelector('.exec-sb-icon-end');
+    if (arrow) arrow.style.transform = 'translateX(3px)';
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.transform = '';
+    btn.style.boxShadow = '0 4px 14px rgba(59,130,246,0.45), inset 0 1px 0 rgba(255,255,255,0.25)';
+    const arrow = btn.querySelector('.exec-sb-icon-end');
+    if (arrow) arrow.style.transform = '';
   });
 
+  return btnContainer;
+}
 
+/* 🎨 Aplica el estado visual (premium vs bloqueado) */
+function aplicarEstadoBotonSidebar(btnContainer, premium) {
+  const btn    = btnContainer.querySelector('.exec-sb-inner');
+  const icon   = btnContainer.querySelector('.exec-sb-icon-end');
+  const sub    = btnContainer.querySelector('.exec-sb-sub');
+  if (!btn) return;
 
-  console.log(`✅ Executive Suite v${CFG.version} cargado — 8 módulos C-Suite disponibles`);
+  if (premium) {
+    // ✅ PREMIUM → azul brillante + flecha →
+    btnContainer.style.opacity = '1';
+    btnContainer.style.filter  = 'none';
+    btn.style.cursor = 'pointer';
+    if (icon) icon.textContent = '→';
+    if (sub)  sub.textContent  = 'C-SUITE COMMAND';
+    btnContainer.dataset.locked = 'false';
+  } else {
+    // 🔒 NO PREMIUM → apagado + candado 🔒
+    btnContainer.style.opacity = '0.7';
+    btnContainer.style.filter  = 'grayscale(0.35)';
+    btn.style.cursor = 'not-allowed';
+    if (icon) icon.textContent = '🔒';
+    if (sub)  sub.textContent  = 'SOLO PREMIUM';
+    btnContainer.dataset.locked = 'true';
+  }
+}
+
+/* 💉 Inyección + reposicionamiento (idempotente) */
+function injectSidebarButton() {
+  const sidebar = document.querySelector('aside, #sidebar, .sidebar');
+  if (!sidebar) return false;
+
+  const premium = isPremiumUser();
+
+  // 1) Crear el botón si no existe
+  let btnContainer = document.getElementById('exec-sidebar-btn');
+  if (!btnContainer) {
+    btnContainer = crearBotonSidebar();
+    console.log('👑 [Executive Suite] Botón creado (' + (premium ? 'PREMIUM' : 'bloqueado') + ')');
+  }
+
+  // 2) Refrescar el estado visual
+  aplicarEstadoBotonSidebar(btnContainer, premium);
+
+  // 3) Reposicionar debajo de "CENTRO DE CONTROL PM"
+  const quantumBtn = sidebar.querySelector('#quantumV10Btn');
+  if (quantumBtn && quantumBtn.parentNode === sidebar) {
+    if (quantumBtn.nextSibling !== btnContainer) {
+      sidebar.insertBefore(btnContainer, quantumBtn.nextSibling);
+      console.log('👑 [Executive Suite] Botón posicionado debajo de CENTRO DE CONTROL PM');
+    }
+    return true;
+  }
+
+  // Fallback: al final del sidebar mientras aparece #quantumV10Btn
+  if (!btnContainer.parentNode) {
+    sidebar.appendChild(btnContainer);
+    console.log('⏳ [Executive Suite] Botón en espera de #quantumV10Btn');
+  }
+
+  return true;
+}
+
+/* 🛡️ Envolver UI.open para bloqueo adicional */
+const _originalUIOpen = UI.open.bind(UI);
+UI.open = function () {
+  if (!isPremiumUser()) {
+    showPremiumRequiredMessage();
+    return;
+  }
+  return _originalUIOpen();
+};
+
+/* 🎧 Escuchar cambios de plan (entre pestañas) */
+window.addEventListener('storage', (e) => {
+  if (e.key === 'userPlan' || e.key === 'userLicense') {
+    console.log('🔄 [Executive Suite] Plan cambió, re-evaluando...');
+    if (window.licenseManager) {
+      window.licenseManager.license = localStorage.getItem('userPlan') || 'free';
+    }
+    injectSidebarButton();
+  }
+});
+
+/* 🚀 Watcher: crea / reposiciona / actualiza estado */
+function watchForLogin() {
+  // 1) Intento inmediato
+  injectSidebarButton();
+
+  // 2) Observer: reacciona a cambios en el DOM
+  const obs = new MutationObserver(() => {
+    injectSidebarButton();
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+
+  // 3) Timeout de seguridad
+  setTimeout(() => injectSidebarButton(), 5000);
+
+  // 4) 🔁 Verificación periódica (reposiciona + actualiza estado según plan)
+  setInterval(() => injectSidebarButton(), 1500);
+}
+
+/* ==========================================================
+   API PÚBLICA
+   ========================================================== */
+window.ExecutiveSuite = {
+  open: () => UI.open(), // ya protegido por el wrapper de arriba
+  close: () => UI.close(),
+  version: CFG.version,
+  modules: () => Object.keys(Modules)
+};
+
+/* ==========================================================
+   🎯 Fix: buscar generarReporte donde sea que esté anidado
+   ========================================================== */
+window.__ExecutiveSuiteReport = (tipo) => {
+  try {
+    let fn = null;
+    let ctx = null;
+
+    const searchIn = (obj, depth = 0) => {
+      if (depth > 3 || !obj || typeof obj !== 'object') return;
+      for (const key in obj) {
+        const val = obj[key];
+        if (typeof val === 'function' && key === 'generarReporte') {
+          fn = val;
+          ctx = obj;
+          return;
+        }
+        if (val && typeof val === 'object') {
+          searchIn(val, depth + 1);
+          if (fn) return;
+        }
+      }
+    };
+
+    searchIn(Modules);
+
+    if (!fn) throw new Error('generarReporte no encontrado en ningún módulo');
+
+    console.log('🎯 Ejecutando generarReporte encontrado en:', Object.keys(ctx).slice(0, 3).join(', ') + '...');
+    fn.call(ctx, tipo);
+  } catch (e) {
+    console.error('❌ Error generando reporte:', e.message);
+    alert('⚠️ Error generando reporte: ' + e.message);
+  }
+};
+
+/* ==========================================================
+   ARRANQUE
+   ========================================================== */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    injectStyles();
+    watchForLogin();
+  });
+} else {
+  injectStyles();
+  watchForLogin();
+}
+
+/* ==========================================================
+   🔄 Re-renderizar al cambiar idioma
+   ========================================================== */
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.lang-btn')) {
+    setTimeout(() => {
+      const overlay = document.getElementById('exec-suite-overlay');
+      if (!overlay) return;
+
+      overlay.querySelectorAll('.exec-nav-item').forEach(el => {
+        const labelEl = el.querySelector('.exec-nav-label');
+        if (labelEl) labelEl.textContent = t('nav_' + el.dataset.module);
+      });
+
+      const sectionEl = overlay.querySelector('.exec-nav-section');
+      if (sectionEl) sectionEl.textContent = t('nav_section_title');
+
+      const refreshBtn = document.getElementById('exec-btn-refresh');
+      const exportBtn  = document.getElementById('exec-btn-export');
+      const closeBtn   = document.getElementById('exec-btn-close');
+      if (refreshBtn) refreshBtn.textContent = t('btn_refresh');
+      if (exportBtn)  exportBtn.textContent  = t('btn_export');
+      if (closeBtn)   closeBtn.textContent   = t('btn_close');
+
+      if (typeof UI !== 'undefined' && UI.renderModule) {
+        UI.renderModule(State.module);
+      }
+    }, 150);
+  }
+});
+
+console.log(`✅ Executive Suite v${CFG.version} cargado — 8 módulos C-Suite disponibles (solo PREMIUM abre el panel)`);
 })();
