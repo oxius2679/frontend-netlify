@@ -1,4 +1,107 @@
 
+// ============================================================================
+// 🔥 FIX PERMANENTE: DRAG & DROP KANBAN ROBUSTO (Versión Producción)
+// ============================================================================
+(function() {
+    console.log('%c🔧 Instalando FIX PERMANENTE de Drag & Drop Kanban...', 'color: #10b981; font-weight: bold;');
+
+    // 1. Forzar preventDefault en dragover a nivel global (fase de captura)
+    // Esto garantiza que el navegador permita el 'drop' sin importar qué otro script lo bloquee.
+    document.addEventListener('dragover', function(e) {
+        if (e.target.closest('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList, .task-card, [id$="List"]')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+    }, true); // true = fase de captura (se ejecuta ANTES que cualquier otro listener)
+
+    // 2. Interceptador robusto del evento DROP (fase de captura)
+    document.addEventListener('drop', function(e) {
+        const target = e.target.closest('.kanban-column, #pendingList, #inProgressList, #completedList, #overdueList, [id$="List"]');
+        if (!target) return; 
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Obtener el ID de la tarea de múltiples formas por compatibilidad con tu sistema
+        const taskId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text') || e.dataTransfer.getData('TaskId');
+        
+        if (!taskId) {
+            console.warn('⚠️ No se recibió ningún ID de tarea en el evento drop.');
+            return;
+        }
+
+        // Determinar nuevo estado basado en el ID de la columna destino
+        let newStatus = 'pending';
+        const colId = target.id.toLowerCase();
+        if (colId.includes('progress') || colId.includes('progreso')) newStatus = 'inProgress';
+        else if (colId.includes('complete') || colId.includes('complet') || colId === 'done') newStatus = 'completed';
+        else if (colId.includes('overdue') || colId.includes('reza') || colId.includes('atras')) newStatus = 'overdue';
+        else if (colId.includes('pending') || colId.includes('pendiente') || colId === 'todo') newStatus = 'pending';
+        else if (target.dataset.status) newStatus = target.dataset.status;
+
+        // 3. Actualizar el modelo de datos en memoria
+        if (typeof projects !== 'undefined' && typeof currentProjectIndex !== 'undefined') {
+            const project = projects[currentProjectIndex];
+            if (project && Array.isArray(project.tasks)) {
+                const task = project.tasks.find(t => String(t.id) === String(taskId) || String(t.taskId) === String(taskId));
+                
+                if (task) {
+                    const oldStatus = task.status;
+                    if (oldStatus === newStatus) return; // Evitar trabajo innecesario si no cambió
+
+                    task.status = newStatus;
+                    console.log(`✅ Tarea "${task.name}" movida de '${oldStatus}' a '${newStatus}'`);
+
+                    // 4. Guardar cambios (priorizando las funciones nativas de tu sistema)
+                    try {
+                        if (typeof updateLocalStorage === 'function') {
+                            updateLocalStorage();
+                        } else if (typeof saveProjects === 'function') {
+                            saveProjects();
+                        } else {
+                            localStorage.setItem('projects', JSON.stringify(projects));
+                        }
+                    } catch (err) {
+                        console.error('❌ Error al guardar:', err);
+                    }
+
+                    // 5. Re-renderizar y notificar
+                    setTimeout(() => {
+                        if (typeof renderKanbanTasks === 'function') {
+                            renderKanbanTasks();
+                        }
+                        if (typeof showNotification === 'function') {
+                            showNotification(`✅ Tarea movida a: ${newStatus}`, 'success');
+                        }
+                        // Disparar evento personalizado para que otros módulos (Slack, WebSockets) se enteren
+                        document.dispatchEvent(new CustomEvent('taskMoved', { detail: { taskId, oldStatus, newStatus } }));
+                    }, 150);
+                }
+            }
+        }
+    }, true); // true = fase de captura
+
+    // 6. Observer para asegurar que el atributo draggable="true" NUNCA se pierda tras un re-render
+    const observer = new MutationObserver(() => {
+        const tareas = document.querySelectorAll('.task-card, .kanban-task, .task-item, [data-task-id]');
+        tareas.forEach(t => {
+            if (!t.hasAttribute('draggable') || t.getAttribute('draggable') === 'false') {
+                t.setAttribute('draggable', 'true');
+                t.style.cursor = 'grab';
+            }
+            if (!t.dataset.taskId && t.id) {
+                t.dataset.taskId = t.id;
+            }
+        });
+    });
+    
+    const board = document.getElementById('boardView') || document.querySelector('.kanban-board') || document.body;
+    observer.observe(board, { childList: true, subtree: true });
+
+    console.log('%c✅ FIX PERMANENTE DE DRAG & DROP INSTALADO Y ACTIVO', 'color: #10b981; font-weight: bold; background: #064e3b; padding: 8px; border-radius: 4px;');
+})();
+
+
 
 
 
@@ -5444,6 +5547,7 @@ window.addEventListener('storage', function(e) {
 
 
 function renderKanbanTasks(tasks = null) {
+
 // ═══════════════════════════════════════════════════
     // FIX: Throttle para evitar re-renders excesivos
     // ═══════════════════════════════════════════════════
