@@ -2117,7 +2117,7 @@
     <script src="slack-notifier.js"></script>
     <script src="evm-dashboard-fix.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-   
+  <script src="security-hardening.js"></script>
     <script src="script.js"></script>
     <script src="colaboracion-tiempo-real.js"></script>
     <script src="traducciones-completas.js"></script>
@@ -2134,7 +2134,7 @@
 
 
     <script src="evm.js"></script>
-    <script src="automations.js"></script>
+  <script src="automations.js"></script>
     <script src="reportes-ejecutivos.js"></script>
 
     <script src="hermes-x-completo.js"></script>
@@ -34699,7 +34699,353 @@ console.log('📌 MutationObserver como respaldo');
     display: none !important;
   }
 </style>
-
 </body>
+<!-- ✅ FIX LIMPIO — Solo bloquea re-renders redundantes. NO toca datos. -->
+<script>
+(function fixLimpioParpadeo() {
+    'use strict';
+    if (window.__fixLimpio) return;
+    window.__fixLimpio = true;
+
+    console.log('🎯 [FIX LIMPIO] Instalando (sin tocar sync ni idioma)...');
+
+    // ═══════════════════════════════════════════════════════
+    // 1. injectSidebarButton → si el botón ya existe, skip
+    // ═══════════════════════════════════════════════════════
+    function protectInject() {
+        if (typeof window.injectSidebarButton !== 'function') return;
+        if (window.injectSidebarButton.__clean) return;
+
+        const orig = window.injectSidebarButton;
+        window.injectSidebarButton = function() {
+            const sb = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
+            if (!sb) return null;
+
+            // 🔑 Si el botón YA está en el sidebar → NO reinsertar
+            const existing = sb.querySelector(
+                '#nexusRealSidebarBtn, [data-nexus-injected="true"]'
+            );
+            if (existing) return existing;
+
+            const result = orig.apply(this, arguments);
+
+            // Taggear el botón recién insertado para futuras detecciones
+            setTimeout(() => {
+                const btns = sb.querySelectorAll('button:not([data-nexus-injected])');
+                if (btns.length) btns[btns.length - 1].dataset.nexusInjected = 'true';
+            }, 30);
+
+            return result;
+        };
+        window.injectSidebarButton.__clean = true;
+    }
+    protectInject();
+    setInterval(protectInject, 400);
+
+    // ═══════════════════════════════════════════════════════
+    // 2. agregarContadoresColumnas → skip si el conteo no cambió
+    //    (contar hijos es gratis, no necesita hash complejo)
+    // ═══════════════════════════════════════════════════════
+    function protectCounters() {
+        if (typeof window.agregarContadoresColumnas !== 'function') return;
+        if (window.agregarContadoresColumnas.__clean) return;
+
+        const orig = window.agregarContadoresColumnas;
+        let lastCounts = '';
+
+        window.agregarContadoresColumnas = function() {
+            const counts = ['pendingList', 'inProgressList', 'completedList', 'overdueList']
+                .map(id => {
+                    const el = document.getElementById(id);
+                    return el ? el.children.length : -1;
+                })
+                .join(',');
+
+            // Si el conteo no cambió → el header dice lo mismo → skip
+            if (counts === lastCounts) return null;
+
+            lastCounts = counts;
+            return orig.apply(this, arguments);
+        };
+        window.agregarContadoresColumnas.__clean = true;
+    }
+    protectCounters();
+    setInterval(protectCounters, 400);
+
+    // ═══════════════════════════════════════════════════════
+    // 3. renderProjectList → skip si proyectos + IDIOMA sin cambios
+    //    ⚠️ El idioma ES parte de la firma. Esto es lo que arregla V7.
+    // ═══════════════════════════════════════════════════════
+    function protectRenderProjectList() {
+        if (typeof window.renderProjectList !== 'function') return;
+        if (window.renderProjectList.__clean) return;
+
+        const orig = window.renderProjectList;
+        let lastSig = '';
+
+        window.renderProjectList = function() {
+            const lang = localStorage.getItem('preferredLanguage') || 'es';
+            const projects = window.projects || [];
+            const activeIdx = (typeof window.currentProjectIndex === 'number')
+                ? window.currentProjectIndex : -1;
+
+            // Firma: idioma + proyecto activo + proyectos (id, nombre, # tareas)
+            // Si CUALQUIERA cambia → re-render. Si TODO igual → skip.
+            const sig = [
+                lang,
+                activeIdx,
+                projects.length,
+                projects.map(p => `${p.id||''}:${p.name||''}:${(p.tasks||[]).length}`).join('§')
+            ].join('|');
+
+            if (sig === lastSig) return null;
+            lastSig = sig;
+            return orig.apply(this, arguments);
+        };
+        window.renderProjectList.__clean = true;
+    }
+    protectRenderProjectList();
+    setInterval(protectRenderProjectList, 400);
+
+    // ═══════════════════════════════════════════════════════
+    // 4. Monitor
+    // ═══════════════════════════════════════════════════════
+    setInterval(() => {
+        console.log(
+            `%c📊 [FIX LIMPIO] ` +
+            `inject:${window.injectSidebarButton?.__clean?'✅':'❌'} ` +
+            `counters:${window.agregarContadoresColumnas?.__clean?'✅':'❌'} ` +
+            `list:${window.renderProjectList?.__clean?'✅':'❌'}`,
+            'color:#10b981;font-weight:bold'
+        );
+    }, 15000);
+
+    console.log('✅ [FIX LIMPIO] Instalado:');
+    console.log('   ✅ Parpadeo del sidebar: atacado (3 focos cubiertos)');
+    console.log('   ✅ Sync entre máquinas: INTACTO (no toqué updateLocalStorage)');
+    console.log('   ✅ Refresh: INTACTO (no toqué refreshAllViews)');
+    console.log('   ✅ Idioma: INTACTO (incluido en la firma de renderProjectList)');
+    console.log('   ✅ Crear/eliminar: INTACTO (firma cambia con proyectos)');
+})();
+</script>
+<!-- 🎯 FIX DEFINITIVO — Desconecta observers + blinda errores + idempotencia real -->
+<script>
+(function fixDefinitivoReal() {
+    'use strict';
+    if (window.__fixDefinitivoReal) return;
+    window.__fixDefinitivoReal = true;
+
+    console.log('🎯 [FIX DEFINITIVO] Instalando...');
+
+    // ══════════════════════════════════════════════════════════
+    // 1. REGISTRY DE OBSERVERS — capturar todos para poder matarlos
+    // ══════════════════════════════════════════════════════════
+    if (!window.__observerRegistry) {
+        window.__observerRegistry = [];
+        const OrigMO = window.MutationObserver;
+        const registry = window.__observerRegistry;
+
+        window.MutationObserver = function(cb) {
+            const inst = new OrigMO(cb);
+            registry.push({ inst, cb, killed: false, created: Date.now() });
+            return inst;
+        };
+        Object.setPrototypeOf(window.MutationObserver, OrigMO);
+        window.MutationObserver.prototype = OrigMO.prototype;
+        console.log('  ✅ Registry de observers activo');
+    }
+    const registry = window.__observerRegistry;
+
+    // ══════════════════════════════════════════════════════════
+    // 2. MATAR OBSERVERS que mencionan injectSidebarButton
+    //    ⚠️ Este es el fix clave: el observer de executive-suite.js:6619
+    //       se desconecta de una vez por todas.
+    // ══════════════════════════════════════════════════════════
+    function killBadObservers() {
+        let killed = 0;
+        registry.forEach(entry => {
+            if (entry.killed) return;
+            try {
+                const src = (entry.cb.toString() || '');
+                const isBad = src.includes('injectSidebarButton') ||
+                              src.includes('aplicarEstadoBotonSidebar');
+                if (isBad) {
+                    entry.inst.disconnect();
+                    entry.killed = true;
+                    killed++;
+                }
+            } catch(e) {}
+        });
+        if (killed > 0) {
+            console.log(`🔌 [FIX] ${killed} observer(s) problemático(s) DESCONECTADO(S)`);
+        }
+        return killed;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 3. injectSidebarButton → idempotente
+    // ══════════════════════════════════════════════════════════
+    function protectInject() {
+        if (typeof window.injectSidebarButton !== 'function') return;
+        if (window.injectSidebarButton.__fixDef) return;
+
+        const orig = window.injectSidebarButton;
+        window.injectSidebarButton = function() {
+            const sb = document.querySelector('aside, #sidebar, .sidebar, .side-menu');
+            if (!sb) return null;
+            const existing = sb.querySelector(
+                '#nexusRealSidebarBtn, [data-nexus-injected="true"], #sCurveSidebarBtn, [data-elite-locked]'
+            );
+            if (existing) return existing;
+            const result = orig.apply(this, arguments);
+            setTimeout(() => {
+                const btns = sb.querySelectorAll('button:not([data-nexus-injected])');
+                if (btns.length) btns[btns.length - 1].dataset.nexusInjected = 'true';
+            }, 30);
+            return result;
+        };
+        window.injectSidebarButton.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 4. aplicarEstadoBotonSidebar → SOLO MUTA si cambió
+    //    ⚠️ Esto rompe el loop silencioso: si no hay cambio real,
+    //       no hay mutación → no dispara observer → no más loop.
+    // ══════════════════════════════════════════════════════════
+    function protectAplicarEstado() {
+        if (typeof window.aplicarEstadoBotonSidebar !== 'function') return;
+        if (window.aplicarEstadoBotonSidebar.__fixDef) return;
+
+        const orig = window.aplicarEstadoBotonSidebar;
+        const lastSig = new WeakMap();
+
+        window.aplicarEstadoBotonSidebar = function(btn) {
+            if (!btn) return null;
+            const sig = (btn.innerHTML || '') + '|' + (btn.style.cssText || '') + '|' + (btn.className || '');
+            if (lastSig.get(btn) === sig) return null;   // ⏭️ no mutar
+            const result = orig.apply(this, arguments);
+            lastSig.set(btn, (btn.innerHTML || '') + '|' + (btn.style.cssText || '') + '|' + (btn.className || ''));
+            return result;
+        };
+        window.aplicarEstadoBotonSidebar.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 5. replaceMenuButtonCode → 1 vez por sesión
+    // ══════════════════════════════════════════════════════════
+    function protectReplaceMenu() {
+        if (typeof window.replaceMenuButtonCode !== 'function') return;
+        if (window.replaceMenuButtonCode.__fixDef) return;
+        const orig = window.replaceMenuButtonCode;
+        let done = false;
+        window.replaceMenuButtonCode = function() {
+            if (done) return null;
+            done = true;
+            return orig.apply(this, arguments);
+        };
+        window.replaceMenuButtonCode.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 6. loadRisksFromLocalStorage → blindar contra null
+    //    (el error Uncaught TypeError de tu log)
+    // ══════════════════════════════════════════════════════════
+    function protectLoadRisks() {
+        if (typeof window.loadRisksFromLocalStorage !== 'function') return;
+        if (window.loadRisksFromLocalStorage.__fixDef) return;
+        const orig = window.loadRisksFromLocalStorage;
+        window.loadRisksFromLocalStorage = function() {
+            if (!document.getElementById('risksContainer')) return null;
+            try { return orig.apply(this, arguments); }
+            catch(e) { console.warn('[FIX] loadRisks:', e.message); return null; }
+        };
+        window.loadRisksFromLocalStorage.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 7. agregarContadoresColumnas → solo si el conteo cambió
+    // ══════════════════════════════════════════════════════════
+    function protectCounters() {
+        if (typeof window.agregarContadoresColumnas !== 'function') return;
+        if (window.agregarContadoresColumnas.__fixDef) return;
+        const orig = window.agregarContadoresColumnas;
+        let lastCounts = '';
+        window.agregarContadoresColumnas = function() {
+            const counts = ['pendingList','inProgressList','completedList','overdueList']
+                .map(id => { const el = document.getElementById(id); return el ? el.children.length : -1; })
+                .join(',');
+            if (counts === lastCounts) return null;
+            lastCounts = counts;
+            return orig.apply(this, arguments);
+        };
+        window.agregarContadoresColumnas.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 8. renderProjectList → firma CON idioma (bug de v7 corregido)
+    // ══════════════════════════════════════════════════════════
+    function protectRenderList() {
+        if (typeof window.renderProjectList !== 'function') return;
+        if (window.renderProjectList.__fixDef) return;
+        const orig = window.renderProjectList;
+        let lastSig = '';
+        window.renderProjectList = function() {
+            const lang = localStorage.getItem('preferredLanguage') || 'es';
+            const projects = window.projects || [];
+            const activeIdx = typeof window.currentProjectIndex === 'number' ? window.currentProjectIndex : -1;
+            const sig = [
+                lang, activeIdx, projects.length,
+                projects.map(p => `${p.id||''}:${p.name||''}:${(p.tasks||[]).length}`).join('§')
+            ].join('|');
+            if (sig === lastSig) return null;
+            lastSig = sig;
+            return orig.apply(this, arguments);
+        };
+        window.renderProjectList.__fixDef = true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // 9. Aplicar todo + re-aplicar cada 500ms
+    // ══════════════════════════════════════════════════════════
+    function applyAll() {
+        protectInject();
+        protectAplicarEstado();
+        protectReplaceMenu();
+        protectLoadRisks();
+        protectCounters();
+        protectRenderList();
+        killBadObservers();
+    }
+    applyAll();
+    setInterval(applyAll, 500);
+
+    // Primer kill agresivo (por si ya estaba el loop corriendo)
+    setTimeout(killBadObservers, 500);
+    setTimeout(killBadObservers, 1500);
+    setTimeout(killBadObservers, 3000);
+    setTimeout(killBadObservers, 6000);
+
+    // ══════════════════════════════════════════════════════════
+    // 10. Monitor de observers
+    // ══════════════════════════════════════════════════════════
+    setInterval(() => {
+        const alive = registry.filter(o => !o.killed).length;
+        const dead = registry.filter(o => o.killed).length;
+        console.log(
+            `%c📊 [FIX DEF] Observers: ${alive} activos / ${dead} desconectados (total: ${registry.length})`,
+            'color:#10b981;font-weight:bold'
+        );
+    }, 15000);
+
+    console.log('✅ [FIX DEFINITIVO] Listo:');
+    console.log('   ✅ Observers problemáticos: SE DESCONECTAN en el 1er segundo');
+    console.log('   ✅ aplicarEstadoBotonSidebar: solo muta si hay cambio');
+    console.log('   ✅ loadRisksFromLocalStorage: blindado (no más Uncaught)');
+    console.log('   ✅ Sync entre máquinas: INTACTO');
+    console.log('   ✅ Botón de idioma: INTACTO (idioma en firma)');
+    console.log('   📌 Si sigue bloqueando: window.KILL_LOOP() → recarga');
+})();
+</script>
+
 </html>
  
