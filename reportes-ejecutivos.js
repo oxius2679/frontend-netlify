@@ -1,17 +1,17 @@
 // ============================================
-// 🌟 20 REPORTES EJECUTIVOS - TRADUCCIÓN COMPLETA ES/EN
+// 🌟 22 REPORTES EJECUTIVOS - TRADUCCIÓN COMPLETA ES/EN
 // ============================================
 (function() {
 'use strict';
-console.log('🚀 20 Reportes Ejecutivos cargados - CON TRADUCCIÓN COMPLETA ES/EN');
+console.log('🚀 22 Reportes Ejecutivos cargados - CON TRADUCCIÓN COMPLETA ES/EN');
 // ============================================
 // 🌐 DICCIONARIO DE TRADUCCIONES COMPLETO
 // ============================================
 const REPORTES_I18N = {
 es: {
 modal_titulo: 'Centro de Reportes Ejecutivos',
-modal_subtitulo: '20 reportes profesionales • TODOS ACTIVOS',
-modal_footer1: '🎯 20 reportes ejecutivos - TODOS ACTIVOS',
+modal_subtitulo: '22 reportes profesionales • TODOS ACTIVOS',
+modal_footer1: '🎯 22 reportes ejecutivos - TODOS ACTIVOS',
 modal_footer2: '⚡ Todos con gráficos, tablas y recomendaciones',
 btn_centro_reportes: 'CENTRO DE REPORTES',
 btn_exportar_pdf: '📄 Exportar PDF',
@@ -3212,24 +3212,26 @@ window.generarReporteFasesStatus = function() {
                             <div class="panel-title">Health Score</div>
                             <div class="panel-badge" id="health-badge">COMPOSITE</div>
                         </div>
-                        <div class="health-gauge-wrap">
-                            <svg class="gauge-svg" viewBox="0 0 200 110">
-                                <defs>
-                                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="#ff3b30"/>
-                                        <stop offset="50%" stop-color="#ffb800"/>
-                                        <stop offset="100%" stop-color="#00d964"/>
-                                    </linearGradient>
-                                </defs>
-                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f1f1f" stroke-width="14" stroke-linecap="round"/>
-                                <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
-                            </svg>
-                            <div class="gauge-center">
-                                <div class="gauge-value" id="health-value">0</div>
-                                <div class="gauge-label">HEALTH SCORE</div>
-                            </div>
-                            <div class="gauge-rating" id="health-rating">—</div>
-                        </div>
+                       <div class="health-gauge-wrap">
+    <div style="position: relative; width: 200px; height: 110px;">
+        <svg class="gauge-svg" viewBox="0 0 200 110" style="width: 100%; height: 100%;">
+            <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ff3b30"/>
+                    <stop offset="50%" stop-color="#ffb800"/>
+                    <stop offset="100%" stop-color="#00d964"/>
+                </linearGradient>
+            </defs>
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f1f1f" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+        </svg>
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding-bottom: 0px;">
+            <div class="gauge-value" id="health-value" style="font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -1.5px; line-height: 1; color: #fff; margin-bottom: 0;">0</div>
+        </div>
+    </div>
+    <div class="gauge-label" style="font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-weight: 700;">HEALTH SCORE</div>
+    <div class="gauge-rating" id="health-rating" style="margin-top: 12px; padding: 4px 12px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">—</div>
+</div>
                     </div>
 
                     <div class="panel">
