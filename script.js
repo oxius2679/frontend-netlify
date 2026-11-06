@@ -19806,7 +19806,7 @@ alert('📋 Reporte:\n\n' + reporte);
 
 
 
-// ========== GANTT CHART - ULTRA PREMIUM EXECUTIVE VERSION ==========
+// ========== GANTT CHART - ULTRA PREMIUM EXECUTIVE VERSION (CORREGIDO) ==========
 function renderGantt(container) {
     const obtenerProyectoActual = window.obtenerProyectoActual || function() {
         if (typeof projects !== 'undefined' && typeof currentProjectIndex !== 'undefined') {
@@ -19827,13 +19827,13 @@ function renderGantt(container) {
 
     const proyecto = obtenerProyectoActual();
     if (!proyecto) {
-        container.innerHTML = '<div style="text-align:center; padding:60px;">No hay proyecto seleccionado</div>';
+        container.innerHTML = '<div style="text-align:center; padding:60px; font-family: sans-serif; color: #64748b;">No hay proyecto seleccionado</div>';
         return;
     }
 
     const tasks = proyecto.tasks || [];
     if (tasks.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:60px;">No hay tareas para mostrar</div>';
+        container.innerHTML = '<div style="text-align:center; padding:60px; font-family: sans-serif; color: #64748b;">No hay tareas para mostrar</div>';
         return;
     }
 
@@ -19918,8 +19918,8 @@ function renderGantt(container) {
         const date = new Date(start);
         date.setDate(date.getDate() + i);
         const leftPercent = (i / totalDays) * 100;
-        timelineDatesHtml += '<div style="position: absolute; left: ' + leftPercent + '%; border-left: 1px solid #334155; height: 40px; bottom: 0;">';
-        timelineDatesHtml += '<span style="position: absolute; bottom: -30px; left: -20px; font-size: 10px; color: #94a3b8; white-space: nowrap;">' + date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + '</span>';
+        timelineDatesHtml += '<div style="position: absolute; left: ' + leftPercent + '%; border-left: 1px solid #e2e8f0; height: 40px; bottom: 0;">';
+        timelineDatesHtml += '<span style="position: absolute; bottom: -25px; left: -15px; font-size: 10px; color: #64748b; white-space: nowrap;">' + date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + '</span>';
         timelineDatesHtml += '</div>';
     }
     
@@ -19949,18 +19949,18 @@ function renderGantt(container) {
         const isMilestone = t.isMilestone || (t.startDate && t.deadline && new Date(t.startDate).getTime() === new Date(t.deadline).getTime()) || duration <= 1;
         
         let priorityBadge = '';
-        if (t.priority === 'high') priorityBadge = '<span style="background:#dc2626; color:white; padding:2px 8px; border-radius:20px; font-size:9px;">🔴 Alta</span>';
-        else if (t.priority === 'medium') priorityBadge = '<span style="background:#f59e0b; color:white; padding:2px 8px; border-radius:20px; font-size:9px;">🟡 Media</span>';
-        else priorityBadge = '<span style="background:#10b981; color:white; padding:2px 8px; border-radius:20px; font-size:9px;">🟢 Baja</span>';
+        if (t.priority === 'high') priorityBadge = '<span style="background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:600;">ALTA</span>';
+        else if (t.priority === 'medium') priorityBadge = '<span style="background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:600;">MEDIA</span>';
+        else priorityBadge = '<span style="background:#d1fae5; color:#059669; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:600;">BAJA</span>';
         
-        const statusText = t.status === 'completed' ? '✅ Completada' : (t.status === 'inProgress' ? '🔄 En Progreso' : '⏳ Pendiente');
+        const statusText = t.status === 'completed' ? 'Completada' : (t.status === 'inProgress' ? 'En Progreso' : 'Pendiente');
         const isOverdue = t.deadline && new Date(t.deadline) < hoy && t.status !== 'completed';
-        const overdueBadge = isOverdue ? '<span style="background:#ef4444; color:white; padding:2px 6px; border-radius:20px; font-size:8px; margin-left:6px;">ATRASADA</span>' : '';
+        const overdueBadge = isOverdue ? '<span style="background:#dc2626; color:white; padding:2px 6px; border-radius:20px; font-size:8px; font-weight:700; margin-left:6px;">ATRASADA</span>' : '';
         
         ganttRowsHtml += '<div class="gantt-row" data-task="' + escapeHtml(t.name) + '" data-start="' + (t.startDate || 'N/A') + '" data-end="' + (t.deadline || 'N/A') + '" data-assignee="' + (t.assignee || 'No asignado') + '" data-status="' + t.status + '">';
         ganttRowsHtml += '<div class="gantt-task-col">';
-        ganttRowsHtml += '<div style="font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">' + escapeHtml(t.name) + ' ' + priorityBadge + overdueBadge + '</div>';
-        ganttRowsHtml += '<div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">' + (t.assignee || 'Sin asignar') + ' • ' + statusText + '</div>';
+        ganttRowsHtml += '<div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: #0f172a;">' + escapeHtml(t.name) + ' ' + priorityBadge + overdueBadge + '</div>';
+        ganttRowsHtml += '<div style="font-size: 11px; color: #64748b; margin-top: 4px;">' + (t.assignee || 'Sin asignar') + ' • ' + statusText + '</div>';
         ganttRowsHtml += '</div>';
         ganttRowsHtml += '<div class="gantt-bar-container">';
         
@@ -19983,27 +19983,24 @@ function renderGantt(container) {
         const t = tasksSorted[i];
         const statusColor = t.status === 'completed' ? '#10b981' : (t.status === 'inProgress' ? '#3b82f6' : '#f59e0b');
         const isOverdue = t.deadline && new Date(t.deadline) < hoy && t.status !== 'completed';
-        tasksTableHtml += '<tr style="border-bottom: 1px solid #e2e8f0;">';
-        tasksTableHtml += '<td style="padding: 12px;"><strong>' + escapeHtml(t.name) + '</strong></td>';
-        tasksTableHtml += '<td style="padding: 12px;">' + (t.assignee || 'N/A') + '</td>';
-        tasksTableHtml += '<td style="padding: 12px;"><span style="background: ' + statusColor + '20; color: ' + statusColor + '; padding: 4px 12px; border-radius: 20px; font-size: 11px;">' + (t.status === 'completed' ? '✅ Completada' : (t.status === 'inProgress' ? '🔄 En Progreso' : '⏳ Pendiente')) + '</span>' + (isOverdue ? ' <span style="background:#ef4444; color:white; padding:2px 8px; border-radius:12px; font-size:9px;">ATRASADA</span>' : '') + '</td>';
-        tasksTableHtml += '<td style="padding: 12px;">' + (t.priority === 'high' ? '🔴 Alta' : (t.priority === 'medium' ? '🟡 Media' : '🟢 Baja')) + '</td>';
-        tasksTableHtml += '<td style="padding: 12px;">' + (t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D') + '</td>';
-        tasksTableHtml += '<td style="padding: 12px;">' + (t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D') + '</td>';
+        tasksTableHtml += '<tr style="border-bottom: 1px solid #f1f5f9;">';
+        tasksTableHtml += '<td style="padding: 10px;"><strong style="color:#0f172a;">' + escapeHtml(t.name) + '</strong></td>';
+        tasksTableHtml += '<td style="padding: 10px; color:#475569;">' + (t.assignee || 'N/A') + '</td>';
+        tasksTableHtml += '<td style="padding: 10px;"><span style="background: ' + statusColor + '15; color: ' + statusColor + '; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight:600;">' + (t.status === 'completed' ? 'Completada' : (t.status === 'inProgress' ? 'En Progreso' : 'Pendiente')) + '</span>' + (isOverdue ? ' <span style="background:#dc2626; color:white; padding:2px 6px; border-radius:12px; font-size:9px; font-weight:700;">ATRASADA</span>' : '') + '</td>';
+        tasksTableHtml += '<td style="padding: 10px;">' + (t.priority === 'high' ? '🔴 Alta' : (t.priority === 'medium' ? '🟡 Media' : '🟢 Baja')) + '</td>';
+        tasksTableHtml += '<td style="padding: 10px; color:#475569;">' + (t.startDate ? new Date(t.startDate).toLocaleDateString('es-ES') : 'N/D') + '</td>';
+        tasksTableHtml += '<td style="padding: 10px; color:#475569;">' + (t.deadline ? new Date(t.deadline).toLocaleDateString('es-ES') : 'N/D') + '</td>';
         tasksTableHtml += '</tr>';
     }
     
     // Generar recomendaciones inteligentes
     let recommendationsHtml = '';
-    
     if (rezagadas > 0) {
         recommendationsHtml += '<div class="recommendation-item urgent"><div class="rec-icon">🚨</div><div><strong>Acción Inmediata Requerida</strong><br>' + rezagadas + ' tareas se encuentran fuera de plazo. Se recomienda:<br>• Reasignar recursos a tareas críticas<br>• Revisar causas raíz del retraso<br>• Notificar a stakeholders afectados</div></div>';
     }
-    
     if (criticas > 0 && rezagadas === 0) {
         recommendationsHtml += '<div class="recommendation-item warning"><div class="rec-icon">⚠️</div><div><strong>Monitoreo Intensivo</strong><br>' + criticas + ' tareas críticas en progreso. Recomendaciones:<br>• Seguimiento diario de avance<br>• Identificar posibles bloqueos tempranos<br>• Mantener comunicación con el equipo asignado</div></div>';
     }
-    
     if (spiValue < 0.85) {
         recommendationsHtml += '<div class="recommendation-item urgent"><div class="rec-icon">📉</div><div><strong>Retraso Significativo en Cronograma</strong><br>SPI = ' + spiValue + '. Se estiman ' + diasRetrasoEstimados + ' días de retraso. Acciones sugeridas:<br>• Evaluar recursos adicionales<br>• Revisar dependencias críticas<br>• Considerar fast-tracking o crashing</div></div>';
     } else if (spiValue < 0.95) {
@@ -20011,41 +20008,43 @@ function renderGantt(container) {
     } else {
         recommendationsHtml += '<div class="recommendation-item success"><div class="rec-icon">✅</div><div><strong>Cronograma Saludable</strong><br>SPI = ' + spiValue + '. El proyecto avanza según lo planeado. Recomendaciones:<br>• Mantener prácticas actuales<br>• Documentar lecciones aprendidas<br>• Celebrar hitos alcanzados</div></div>';
     }
-    
     if (riesgoNivel === 'CRÍTICO' || riesgoNivel === 'ALTO') {
         recommendationsHtml += '<div class="recommendation-item urgent"><div class="rec-icon">🎯</div><div><strong>Plan de Mitigación de Riesgos</strong><br>Nivel de riesgo: ' + riesgoNivel + '. Acciones inmediatas:<br>• Activar plan de contingencia<br>• Reunión extraordinaria del comité<br>• Evaluar impacto en alcance y presupuesto</div></div>';
     }
-    
     if (rutaCritica.length > 0) {
         recommendationsHtml += '<div class="recommendation-item warning"><div class="rec-icon">🔗</div><div><strong>Ruta Crítica - Atención Prioritaria</strong><br>' + rutaCritica.length + ' tareas en ruta crítica requieren seguimiento especial:<br>• ' + rutaCritica.slice(0, 3).map(t => escapeHtml(t.name)).join('<br>• ') + (rutaCritica.length > 3 ? '<br>• +' + (rutaCritica.length - 3) + ' más' : '') + '</div></div>';
     }
-    
     if (recommendationsHtml === '') {
         recommendationsHtml = '<div class="recommendation-item info"><div class="rec-icon">ℹ️</div><div><strong>Estado Normal</strong><br>El proyecto se encuentra dentro de parámetros esperados. Continuar con el seguimiento habitual y mantener comunicación con el equipo.</div></div>';
     }
     
     // Matriz de priorización
+    const critCount = criticas > 0 ? criticas : 0;
+    const impNotUrgCount = Math.max(0, rutaCritica.length - criticas);
+    const urgNotImpCount = Math.max(0, rezagadas - criticas);
+    const neitherCount = Math.max(0, pendientes - urgNotImpCount);
+
     const priorizacionHtml = `
         <div class="priority-matrix">
-            <div class="priority-cell urgent-important" style="background: linear-gradient(135deg, #dc2626, #b91c1c);">
+            <div class="priority-cell urgent-important">
                 <div class="priority-title">URGENTE + IMPORTANTE</div>
-                <div class="priority-count">${criticas > 0 ? criticas : 0} tareas</div>
-                <div class="priority-action">Atender inmediatamente</div>
+                <div class="priority-count">${critCount}</div>
+                <div class="priority-action">tareas - Atender inmediatamente</div>
             </div>
-            <div class="priority-cell important-not-urgent" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <div class="priority-cell important-not-urgent">
                 <div class="priority-title">IMPORTANTE + NO URGENTE</div>
-                <div class="priority-count">${rutaCritica.length - criticas > 0 ? rutaCritica.length - criticas : 0} tareas</div>
-                <div class="priority-action">Planificar ejecución</div>
+                <div class="priority-count">${impNotUrgCount}</div>
+                <div class="priority-action">tareas - Planificar ejecución</div>
             </div>
-            <div class="priority-cell urgent-not-important" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            <div class="priority-cell urgent-not-important">
                 <div class="priority-title">URGENTE + NO IMPORTANTE</div>
-                <div class="priority-count">${rezagadas - criticas > 0 ? rezagadas - criticas : 0} tareas</div>
-                <div class="priority-action">Delegar o automatizar</div>
+                <div class="priority-count">${urgNotImpCount}</div>
+                <div class="priority-action">tareas - Delegar o automatizar</div>
             </div>
-            <div class="priority-cell neither" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="priority-cell neither">
                 <div class="priority-title">NO URGENTE + NO IMPORTANTE</div>
-                <div class="priority-count">${pendientes - (rezagadas - criticas) > 0 ? pendientes - (rezagadas - criticas) : 0} tareas</div>
-                <div class="priority-action">Calendarizar o eliminar</div>
+                <div class="priority-count">${neitherCount}</div>
+                <div class="priority-action">tareas - Calendarizar o eliminar</div>
             </div>
         </div>
     `;
@@ -20063,232 +20062,225 @@ function renderGantt(container) {
     <html>
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Executive Gantt Chart | ${escapeHtml(proyecto.name)}</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
-                padding: 40px;
-                color: #1e293b;
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                padding: 20px;
+                color: #0f172a;
+                line-height: 1.5;
             }
-            .report-container { max-width: 1600px; margin: 0 auto; }
+            @media (min-width: 1200px) {
+                body { padding: 40px; }
+            }
+            .report-container { max-width: 1400px; margin: 0 auto; }
             
             /* Botones */
-            .btn-group { display: flex; gap: 16px; justify-content: flex-end; margin-bottom: 24px; }
+            .btn-group { display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 20px; }
             .btn-pdf, .btn-print {
-                border: none; padding: 12px 28px; border-radius: 40px;
+                border: none; padding: 10px 24px; border-radius: 8px;
                 color: white; font-weight: 600; font-size: 13px;
-                cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
-                transition: all 0.2s;
+                cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+                transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             .btn-pdf { background: linear-gradient(135deg, #dc2626, #b91c1c); }
             .btn-print { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-            .btn-pdf:hover, .btn-print:hover { transform: translateY(-2px); }
+            .btn-pdf:hover, .btn-print:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
             
             /* Header Premium */
             .corporate-header {
-                background: linear-gradient(135deg, #0a0f2a 0%, #0f172a 40%, #1e1b4b 100%);
-                border-radius: 32px;
-                padding: 48px;
-                margin-bottom: 32px;
+                background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+                border-radius: 24px;
+                padding: 32px;
+                margin-bottom: 24px;
                 position: relative;
                 overflow: hidden;
-                box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+                box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.3);
             }
             .corporate-header::before {
                 content: '';
                 position: absolute;
-                top: -30%;
-                right: -10%;
-                width: 400px;
-                height: 400px;
-                background: radial-gradient(circle, rgba(139,92,246,0.15), transparent);
+                top: -20%;
+                right: -5%;
+                width: 300px;
+                height: 300px;
+                background: radial-gradient(circle, rgba(139,92,246,0.2), transparent);
                 border-radius: 50%;
             }
             
-            /* KPI Cards */
+            /* KPI Cards - RESPONSIVE GRID */
             .kpi-grid {
                 display: grid;
-                grid-template-columns: repeat(8, 1fr);
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
                 gap: 16px;
-                margin-bottom: 32px;
+                margin-bottom: 24px;
             }
             .kpi-card {
                 background: white;
-                border-radius: 20px;
-                padding: 20px;
+                border-radius: 16px;
+                padding: 16px;
                 text-align: center;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                 border: 1px solid #e2e8f0;
                 transition: all 0.2s;
             }
-            .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15); }
-            .kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; margin: 8px 0 4px; }
-            .kpi-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+            .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1); }
+            .kpi-value { font-size: 26px; font-weight: 800; line-height: 1.2; margin: 8px 0 4px; }
+            .kpi-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
             
-            /* Grids */
+            /* KPI 3D Card (CORREGIDO) */
+            .kpi-card-3d {
+                background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+                border-radius: 16px;
+                padding: 16px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+                transition: all 0.2s;
+            }
+            .kpi-card-3d:hover { transform: translateY(-3px); box-shadow: 0 8px 16px -4px rgba(139,92,246,0.4); }
+            .kpi-value-3d { font-size: 26px; font-weight: 800; line-height: 1.2; margin: 8px 0 4px; color: white !important; }
+            .kpi-label-3d { font-size: 10px; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+            
+            /* Grids Responsivos */
             .two-columns {
                 display: grid;
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
                 gap: 24px;
-                margin-bottom: 32px;
+                margin-bottom: 24px;
             }
             .card {
                 background: white;
-                border-radius: 24px;
+                border-radius: 20px;
                 padding: 24px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                 border: 1px solid #e2e8f0;
             }
             .card-title {
-                font-size: 16px;
-                font-weight: 600;
-                margin-bottom: 20px;
+                font-size: 15px;
+                font-weight: 700;
+                margin-bottom: 16px;
                 padding-bottom: 12px;
                 border-bottom: 2px solid #f1f5f9;
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                color: #0f172a;
             }
             
             /* Gantt Container */
             .gantt-container {
                 background: white;
-                border-radius: 24px;
+                border-radius: 20px;
                 padding: 24px;
-                margin-bottom: 32px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+                margin-bottom: 24px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                 border: 1px solid #e2e8f0;
-                overflow-x: auto;
+                overflow: hidden;
             }
-            .gantt-wrapper { min-width: 1000px; position: relative; }
+            .gantt-wrapper { 
+                min-width: 800px; 
+                position: relative; 
+                overflow-x: auto;
+                padding-bottom: 30px; /* Espacio para las fechas del timeline */
+            }
             .gantt-header {
                 display: flex;
                 border-bottom: 2px solid #e2e8f0;
-                padding-bottom: 16px;
-                margin-bottom: 16px;
-                font-weight: 600;
+                padding-bottom: 12px;
+                margin-bottom: 12px;
+                font-weight: 700;
                 color: #475569;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
-            .gantt-task-header { width: 280px; min-width: 280px; }
-            .gantt-timeline-header { flex: 1; position: relative; height: 60px; }
+            .gantt-task-header { width: 250px; min-width: 250px; }
+            .gantt-timeline-header { flex: 1; position: relative; height: 50px; }
             .gantt-row {
                 display: flex;
                 align-items: center;
-                margin-bottom: 12px;
+                margin-bottom: 8px;
                 padding: 8px 0;
-                border-bottom: 1px solid #f1f5f9;
+                border-bottom: 1px solid #f8fafc;
                 transition: background 0.2s;
                 cursor: pointer;
             }
-            .gantt-row:hover { background: #f8fafc; border-radius: 12px; }
-            .gantt-task-col { width: 280px; min-width: 280px; padding-right: 16px; }
-            .gantt-bar-container { flex: 1; position: relative; height: 36px; }
+            .gantt-row:hover { background: #f8fafc; border-radius: 8px; }
+            .gantt-task-col { width: 250px; min-width: 250px; padding-right: 16px; }
+            .gantt-bar-container { flex: 1; position: relative; height: 32px; }
             .gantt-bar {
                 position: absolute;
-                height: 28px;
-                border-radius: 14px;
+                height: 24px;
+                border-radius: 12px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
                 font-size: 10px;
-                font-weight: 600;
+                font-weight: 700;
                 cursor: pointer;
                 transition: all 0.2s;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .gantt-bar:hover { transform: scaleY(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+            .gantt-bar:hover { transform: scaleY(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
             .gantt-bar-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
             .gantt-milestone {
                 position: absolute;
-                width: 28px;
-                height: 28px;
+                width: 24px;
+                height: 24px;
                 background: #f59e0b;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 12px;
                 top: 4px;
-                box-shadow: 0 2px 8px rgba(245,158,11,0.4);
+                box-shadow: 0 2px 6px rgba(245,158,11,0.4);
                 cursor: pointer;
             }
-            .gantt-end-col { width: 80px; text-align: right; font-size: 11px; color: #64748b; }
-            
-            /* Today Line */
-            .today-line-container {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                width: 2px;
-                background: #f59e0b;
-                z-index: 20;
-                pointer-events: none;
-            }
-            .today-line-container::before {
-                content: '📅 HOY';
-                position: absolute;
-                top: -28px;
-                left: -28px;
-                background: #f59e0b;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 20px;
-                font-size: 10px;
-                font-weight: 700;
-                white-space: nowrap;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-                z-index: 25;
-            }
-            .today-line-container::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                width: 2px;
-                background: #f59e0b;
-                box-shadow: 0 0 8px rgba(245,158,11,0.5);
-            }
+            .gantt-end-col { width: 70px; text-align: right; font-size: 11px; color: #64748b; font-weight: 600; }
             
             /* Legend */
             .legend {
                 display: flex;
-                gap: 24px;
-                margin-top: 24px;
-                padding-top: 20px;
+                gap: 20px;
+                margin-top: 20px;
+                padding-top: 16px;
                 border-top: 1px solid #e2e8f0;
                 flex-wrap: wrap;
             }
-            .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; }
-            .legend-color { width: 16px; height: 16px; border-radius: 4px; }
-            .legend-circle { width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; }
+            .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #475569; font-weight: 500; }
+            .legend-color { width: 14px; height: 14px; border-radius: 4px; }
+            .legend-circle { width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; }
             
             /* Recommendations */
             .recommendations-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                gap: 20px;
-                margin-bottom: 32px;
+                gap: 16px;
+                margin-bottom: 24px;
             }
             .recommendation-item {
                 background: white;
-                border-radius: 20px;
-                padding: 20px;
+                border-radius: 16px;
+                padding: 16px;
                 display: flex;
-                gap: 16px;
+                gap: 12px;
                 align-items: flex-start;
                 border-left: 4px solid;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             .recommendation-item.urgent { border-left-color: #dc2626; background: linear-gradient(135deg, #fff, #fef2f2); }
             .recommendation-item.warning { border-left-color: #f59e0b; background: linear-gradient(135deg, #fff, #fffbeb); }
             .recommendation-item.success { border-left-color: #10b981; background: linear-gradient(135deg, #fff, #ecfdf5); }
             .recommendation-item.info { border-left-color: #3b82f6; background: linear-gradient(135deg, #fff, #eff6ff); }
-            .rec-icon { font-size: 32px; }
+            .rec-icon { font-size: 24px; line-height: 1; }
+            .recommendation-item strong { display: block; margin-bottom: 4px; color: #0f172a; }
+            .recommendation-item div div { color: #475569; font-size: 12px; line-height: 1.5; }
             
             /* Priority Matrix */
             .priority-matrix {
@@ -20298,16 +20290,20 @@ function renderGantt(container) {
                 background: #e2e8f0;
                 border-radius: 16px;
                 overflow: hidden;
-                margin-bottom: 24px;
             }
             .priority-cell {
-                padding: 20px;
+                padding: 16px;
                 color: white;
                 text-align: center;
             }
-            .priority-title { font-size: 12px; font-weight: 600; margin-bottom: 12px; opacity: 0.9; }
-            .priority-count { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
-            .priority-action { font-size: 10px; opacity: 0.8; }
+            .priority-cell.urgent-important { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+            .priority-cell.important-not-urgent { background: linear-gradient(135deg, #f59e0b, #d97706); }
+            .priority-cell.urgent-not-important { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+            .priority-cell.neither { background: linear-gradient(135deg, #10b981, #059669); }
+            
+            .priority-title { font-size: 10px; font-weight: 700; margin-bottom: 6px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
+            .priority-count { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+            .priority-action { font-size: 10px; opacity: 0.9; }
             
             /* Tabla */
             .tasks-table {
@@ -20317,72 +20313,76 @@ function renderGantt(container) {
             }
             .tasks-table th {
                 text-align: left;
-                padding: 12px;
+                padding: 10px;
                 background: #f8fafc;
-                font-weight: 600;
+                font-weight: 700;
+                color: #475569;
                 border-bottom: 2px solid #e2e8f0;
+                white-space: nowrap;
             }
             .tasks-table td {
-                padding: 10px 12px;
-                border-bottom: 1px solid #e2e8f0;
+                padding: 10px;
+                border-bottom: 1px solid #f1f5f9;
+                color: #334155;
             }
             
             /* Footer */
             .footer {
                 background: white;
-                border-radius: 20px;
-                padding: 24px;
+                border-radius: 16px;
+                padding: 20px;
                 text-align: center;
                 border: 1px solid #e2e8f0;
-                margin-top: 32px;
+                margin-top: 24px;
             }
             
             @media print {
-                body { padding: 20px; background: white; }
+                body { padding: 10px; background: white; }
                 .no-print { display: none !important; }
                 .gantt-row { break-inside: avoid; }
                 .corporate-header { break-inside: avoid; }
+                .two-columns, .kpi-grid, .recommendations-grid { grid-template-columns: 1fr !important; }
             }
         </style>
     </head>
     <body>
         <div class="report-container">
             <div class="btn-group no-print">
-                <button class="btn-pdf" id="btnExportPDF">📄 Exportar como PDF</button>
-                <button class="btn-print" id="btnPrint">🖨️ Imprimir Reporte</button>
+                <button class="btn-pdf" id="btnExportPDF">📄 Exportar PDF</button>
+                <button class="btn-print" id="btnPrint">🖨️ Imprimir</button>
             </div>
 
             <!-- HEADER CORPORATIVO -->
             <div class="corporate-header">
                 <div style="position: relative; z-index: 2;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
                         <div>
-                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-                                <div style="background: linear-gradient(135deg, #8b5cf6, #3b82f6); width: 60px; height: 60px; border-radius: 20px; display: flex; align-items: center; justify-content: center;">
-                                    <span style="font-size: 32px;">📊</span>
+                            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                <div style="background: linear-gradient(135deg, #8b5cf6, #3b82f6); width: 50px; height: 50px; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(139,92,246,0.3);">
+                                    <span style="font-size: 24px;">📊</span>
                                 </div>
                                 <div>
-                                    <h1 style="margin: 0; font-size: 32px; font-weight: 700; color: white;">Executive Gantt Chart</h1>
-                                    <p style="margin: 8px 0 0 0; color: #94a3b8;">Programmatic Timeline · Critical Path Analysis · Executive Dashboard</p>
+                                    <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: white; letter-spacing: -0.5px;">Executive Gantt Chart</h1>
+                                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Programmatic Timeline · Critical Path Analysis</p>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); padding: 6px 20px; border-radius: 40px;">
-                                    <span style="color: #cbd5e1;">🎯 ${escapeHtml(proyecto.name)}</span>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                                    <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">🎯 ${escapeHtml(proyecto.name)}</span>
                                 </div>
-                                <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); padding: 6px 20px; border-radius: 40px;">
-                                    <span style="color: #cbd5e1;">📅 ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                                    <span style="color: #e2e8f0; font-size: 13px; font-weight: 500;">📅 ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                 </div>
-                                <div style="background: rgba(239,68,68,0.2); backdrop-filter: blur(10px); padding: 6px 20px; border-radius: 40px;">
-                                    <span style="color: #f87171;">⚠️ Nivel de Riesgo: ${riesgoNivel}</span>
+                                <div style="background: rgba(239,68,68,0.2); backdrop-filter: blur(10px); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(239,68,68,0.3);">
+                                    <span style="color: #fca5a5; font-size: 13px; font-weight: 700;">⚠️ Riesgo: ${riesgoNivel}</span>
                                 </div>
                             </div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 28px; padding: 20px 32px; text-align: center;">
-                            <div style="font-size: 11px; color: #94a3b8; letter-spacing: 1px;">PROJECT PROGRESS</div>
-                            <div style="font-size: 48px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #60a5fa); -webkit-background-clip: text; background-clip: text; color: transparent;">${porcentajeAvance}%</div>
-                            <div style="background: #334155; height: 6px; border-radius: 10px; width: 150px; margin-top: 8px; overflow: hidden;">
-                                <div style="width: ${porcentajeAvance}%; height: 100%; background: ${porcentajeAvance >= 80 ? '#10b981' : (porcentajeAvance >= 50 ? '#f59e0b' : '#ef4444')}; border-radius: 10px;"></div>
+                        <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 20px; padding: 16px 24px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #94a3b8; letter-spacing: 1px; font-weight: 700;">PROJECT PROGRESS</div>
+                            <div style="font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #60a5fa); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.1; margin: 4px 0;">${porcentajeAvance}%</div>
+                            <div style="background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; width: 140px; margin: 8px auto 0; overflow: hidden;">
+                                <div style="width: ${porcentajeAvance}%; height: 100%; background: ${porcentajeAvance >= 80 ? '#10b981' : (porcentajeAvance >= 50 ? '#f59e0b' : '#ef4444')}; border-radius: 10px; transition: width 1s ease;"></div>
                             </div>
                         </div>
                     </div>
@@ -20398,76 +20398,90 @@ function renderGantt(container) {
                 <div class="kpi-card"><div class="kpi-value" style="color:#ef4444;">${rezagadas}</div><div class="kpi-label">🔴 Rezagadas</div></div>
                 <div class="kpi-card"><div class="kpi-value" style="color:#f97316;">${criticas}</div><div class="kpi-label">⚠️ Críticas</div></div>
                 <div class="kpi-card"><div class="kpi-value" style="color:#f59e0b;">${hitos.length}</div><div class="kpi-label">⭐ Hitos</div></div>
-                <div class="kpi-card-3d" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas del proyecto. No mide cumplimiento de calendario PMI."><div class="kpi-value-3d" style="color:#8b5cf6;">${spi}</div><div class="kpi-label-3d" style="cursor:help;">📈 SPI Operativo</div></div>
+                <div class="kpi-card-3d" title="SPI Operativo: mide la conversión de esfuerzo real (EV) frente a las horas planificadas."><div class="kpi-value-3d">${spi}</div><div class="kpi-label-3d">📈 SPI Operativo</div></div>
+            </div> <!-- CIERRE CORREGIDO DEL KPI GRID -->
 
             <!-- GRÁFICOS Y ANÁLISIS -->
             <div class="two-columns">
                 <div class="card">
                     <div class="card-title"><span>📊</span> Distribución de Tareas por Estado</div>
-                    <canvas id="statusChart" style="height: 240px;"></canvas>
+                    <canvas id="statusChart" style="max-height: 240px;"></canvas>
                 </div>
                 <div class="card">
                     <div class="card-title"><span>📈</span> Análisis de Rendimiento</div>
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>SPI (Schedule Performance Index)</span><span style="font-weight:700; color:${spiValue >= 1 ? '#10b981' : '#ef4444'};">${spi}</span></div><div style="background:#e2e8f0; height: 8px; border-radius: 10px; overflow:hidden;"><div style="width: ${Math.min(100, spiValue * 100)}%; height:100%; background: ${spiValue >= 1 ? '#10b981' : '#ef4444'}; border-radius:10px;"></div></div></div>
-                        <div><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Progreso vs Plan</span><span style="font-weight:700;">${porcentajeAvance}%</span></div><div style="background:#e2e8f0; height: 8px; border-radius: 10px; overflow:hidden;"><div style="width: ${porcentajeAvance}%; height:100%; background: #3b82f6; border-radius:10px;"></div></div></div>
-                        <div><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Distribución por Prioridad</span></div><div style="display: flex; gap: 8px; margin-top: 8px;"><div style="flex:${prioridadAlta}; background:#dc2626; height: 8px; border-radius: 4px;"></div><div style="flex:${prioridadMedia}; background:#f59e0b; height: 8px; border-radius: 4px;"></div><div style="flex:${prioridadBaja}; background:#10b981; height: 8px; border-radius: 4px;"></div></div><div style="display: flex; justify-content: space-between; margin-top: 8px;"><span style="font-size:10px;">🔴 Alta: ${prioridadAlta}</span><span style="font-size:10px;">🟡 Media: ${prioridadMedia}</span><span style="font-size:10px;">🟢 Baja: ${prioridadBaja}</span></div></div>
-                        ${diasRetrasoEstimados > 0 ? '<div style="background:#fef2f2; padding: 12px; border-radius: 12px; margin-top: 8px;"><span style="color:#dc2626;">⚠️ Retraso estimado: ' + diasRetrasoEstimados + ' días al ritmo actual</span></div>' : ''}
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;"><span>SPI (Schedule Performance Index)</span><span style="font-weight:700; color:${spiValue >= 1 ? '#10b981' : '#ef4444'};">${spi}</span></div>
+                            <div style="background:#f1f5f9; height: 8px; border-radius: 10px; overflow:hidden;"><div style="width: ${Math.min(100, spiValue * 100)}%; height:100%; background: ${spiValue >= 1 ? '#10b981' : '#ef4444'}; border-radius:10px;"></div></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;"><span>Progreso vs Plan</span><span style="font-weight:700;">${porcentajeAvance}%</span></div>
+                            <div style="background:#f1f5f9; height: 8px; border-radius: 10px; overflow:hidden;"><div style="width: ${porcentajeAvance}%; height:100%; background: #3b82f6; border-radius:10px;"></div></div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;"><span>Distribución por Prioridad</span></div>
+                            <div style="display: flex; gap: 4px; margin-top: 8px; height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="flex:${prioridadAlta || 1}; background:#dc2626;"></div>
+                                <div style="flex:${prioridadMedia || 1}; background:#f59e0b;"></div>
+                                <div style="flex:${prioridadBaja || 1}; background:#10b981;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: #64748b;">
+                                <span>🔴 Alta: ${prioridadAlta}</span><span>🟡 Media: ${prioridadMedia}</span><span>🟢 Baja: ${prioridadBaja}</span>
+                            </div>
+                        </div>
+                        ${diasRetrasoEstimados > 0 ? '<div style="background:#fef2f2; padding: 10px; border-radius: 10px; border: 1px solid #fecaca;"><span style="color:#dc2626; font-size: 12px; font-weight: 600;">⚠️ Retraso estimado: ' + diasRetrasoEstimados + ' días al ritmo actual</span></div>' : ''}
                     </div>
                 </div>
             </div>
 
             <!-- MATRIZ DE PRIORIZACIÓN -->
-            <div class="card" style="margin-bottom: 32px;">
+            <div class="card" style="margin-bottom: 24px;">
                 <div class="card-title"><span>🎯</span> Matriz de Priorización (Urgente vs Importante)</div>
                 ${priorizacionHtml}
             </div>
 
-          <!-- GANTT CHART SIN LÍNEA DE HOY -->
-<div class="gantt-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div><h3 style="margin:0;">📈 Programmatic Timeline</h3><p style="margin:4px 0 0; font-size:12px; color:#64748b;">Cronograma detallado con ruta crítica</p></div>
-        <div class="no-print">
-            <select id="filterStatusGantt" style="padding:8px 16px; border-radius:40px; border:1px solid #e2e8f0; background:white;">
-                <option value="all">📌 Todos los estados</option>
-                <option value="completed">✅ Completadas</option>
-                <option value="inProgress">🔄 En Progreso</option>
-                <option value="pending">⏳ Pendientes</option>
-            </select>
-            <button id="resetFiltersGantt" style="padding:8px 16px; border-radius:40px; border:1px solid #e2e8f0; background:white; margin-left:8px; cursor:pointer;">🗑️ Limpiar</button>
-        </div>
-    </div>
-    
-    <div class="gantt-wrapper" id="ganttWrapper">
-        <div class="gantt-header">
-            <div class="gantt-task-header">TAREA</div>
-            <div class="gantt-timeline-header" id="timelineHeader">${timelineDatesHtml}</div>
-            <div style="width:80px; text-align:right;">FECHA FIN</div>
-        </div>
-        <div id="ganttRowsContainer" style="position: relative;">
-            ${ganttRowsHtml}
-            <!-- Línea de HOY ELIMINADA - Comentada -->
-            <!-- <div id="todayLine" class="today-line-container" style="left: ${todayPercent}%;"></div> -->
-        </div>
-    </div>
-    
-    <div class="legend">
-        <div class="legend-item"><div class="legend-color" style="background:#10b981;"></div><span>Completada</span></div>
-        <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div><span>En Progreso</span></div>
-        <div class="legend-item"><div class="legend-color" style="background:#f59e0b;"></div><span>Pendiente</span></div>
-        <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div><span>Rezagada / Crítica</span></div>
-        <div class="legend-item"><div class="legend-circle"></div><span>Hito</span></div>
-        <!-- <div class="legend-item"><div style="width:2px; height:16px; background:#f59e0b;"></div><span>Fecha Actual (HOY)</span></div> -->
-    </div>
-</div>
+            <!-- GANTT CHART -->
+            <div class="gantt-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div><h3 style="margin:0; font-size: 16px;">📈 Programmatic Timeline</h3><p style="margin:4px 0 0; font-size:12px; color:#64748b;">Cronograma detallado con ruta crítica</p></div>
+                    <div class="no-print" style="display: flex; gap: 8px;">
+                        <select id="filterStatusGantt" style="padding:8px 16px; border-radius:8px; border:1px solid #e2e8f0; background:white; font-size: 12px; color: #475569; cursor: pointer;">
+                            <option value="all">📌 Todos los estados</option>
+                            <option value="completed">✅ Completadas</option>
+                            <option value="inProgress">🔄 En Progreso</option>
+                            <option value="pending">⏳ Pendientes</option>
+                        </select>
+                        <button id="resetFiltersGantt" style="padding:8px 16px; border-radius:8px; border:1px solid #e2e8f0; background:white; cursor:pointer; font-size: 12px; color: #475569; font-weight: 600;">🗑️ Limpiar</button>
+                    </div>
+                </div>
+                
+                <div class="gantt-wrapper" id="ganttWrapper">
+                    <div class="gantt-header">
+                        <div class="gantt-task-header">TAREA</div>
+                        <div class="gantt-timeline-header" id="timelineHeader">${timelineDatesHtml}</div>
+                        <div style="width:70px; text-align:right;">FIN</div>
+                    </div>
+                    <div id="ganttRowsContainer" style="position: relative;">
+                        ${ganttRowsHtml}
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color" style="background:#10b981;"></div><span>Completada</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div><span>En Progreso</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f59e0b;"></div><span>Pendiente</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div><span>Rezagada / Crítica</span></div>
+                    <div class="legend-item"><div class="legend-circle"></div><span>Hito</span></div>
+                </div>
+            </div>
 
             <!-- TABLA EJECUTIVA DE TAREAS -->
-            <div class="card" style="margin-bottom: 32px;">
-                <div class="card-title"><span>📋</span> Detalle Ejecutivo de Tareas</div>
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-title"><span>📋</span> Detalle Ejecutivo de Tareas (Top 15)</div>
                 <div style="overflow-x: auto;">
                     <table class="tasks-table">
                         <thead>
-                            <tr><th>Tarea</th><th>Asignado a</th><th>Estado</th><th>Prioridad</th><th>Fecha Inicio</th><th>Fecha Fin</th></tr>
+                            <tr><th>Tarea</th><th>Asignado a</th><th>Estado</th><th>Prioridad</th><th>Inicio</th><th>Fin</th></tr>
                         </thead>
                         <tbody>
                             ${tasksTableHtml}
@@ -20477,28 +20491,31 @@ function renderGantt(container) {
             </div>
 
             <!-- RECOMENDACIONES EJECUTIVAS -->
-            <div class="recommendations-grid">
-                ${recommendationsHtml}
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-title"><span>💡</span> Recomendaciones Ejecutivas</div>
+                <div class="recommendations-grid">
+                    ${recommendationsHtml}
+                </div>
             </div>
 
             <!-- PROYECCIÓN FINANCIERA -->
             <div class="two-columns">
                 <div class="card">
                     <div class="card-title"><span>💰</span> Proyección Financiera</div>
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <div style="display: flex; justify-content: space-between;"><span>Costo Estimado Total</span><span style="font-weight:700;">€${costoEstimado.toLocaleString()} EUR</span></div>
-<div style="display: flex; justify-content: space-between;"><span>Costo Real Actual</span><span style="font-weight:700; color:${variacionCosto <= 0 ? '#10b981' : '#ef4444'};">€${costoReal.toLocaleString()} EUR</span></div>
-<div style="display: flex; justify-content: space-between;"><span>Variación</span><span style="font-weight:700; color:${variacionCosto <= 0 ? '#10b981' : '#ef4444'};">${variacionCosto <= 0 ? '+' : '-'}€${Math.abs(variacionCosto).toLocaleString()} EUR</span></div>
-                        <div style="background:#f8fafc; padding: 12px; border-radius: 12px; margin-top: 8px;">
-                            <span style="font-size: 11px; color: #64748b;">${variacionCosto <= 0 ? '✅ El proyecto se encuentra dentro del presupuesto estimado' : '⚠️ El proyecto presenta sobrecosto. Se recomienda revisar estimaciones.'}</span>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Costo Estimado Total</span><span style="font-weight:700; color: #0f172a;">€${costoEstimado.toLocaleString()}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Costo Real Actual</span><span style="font-weight:700; color:${variacionCosto <= 0 ? '#10b981' : '#ef4444'};">€${costoReal.toLocaleString()}</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; padding-top: 8px; border-top: 1px solid #f1f5f9;"><span>Variación</span><span style="font-weight:700; color:${variacionCosto <= 0 ? '#10b981' : '#ef4444'};">${variacionCosto <= 0 ? '+' : '-'}€${Math.abs(variacionCosto).toLocaleString()}</span></div>
+                        <div style="background:#f8fafc; padding: 12px; border-radius: 10px; margin-top: 4px; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 12px; color: #475569;">${variacionCosto <= 0 ? '✅ El proyecto se encuentra dentro del presupuesto estimado.' : '⚠️ El proyecto presenta sobrecosto. Se recomienda revisar estimaciones.'}</span>
                         </div>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-title"><span>🎯</span> Recomendación Estratégica</div>
                     <div style="background: linear-gradient(135deg, ${riesgoColor}10, ${riesgoColor}05); border-radius: 16px; padding: 20px; border-left: 4px solid ${riesgoColor};">
-                        <p style="font-size: 14px; margin-bottom: 16px;">Basado en el análisis cuantitativo de métricas SPI (${spi}), tareas rezagadas (${rezagadas}) y nivel de riesgo (${riesgoNivel}), se recomienda:</p>
-                        <ul style="margin-left: 20px; color: #475569; font-size: 13px; line-height: 1.6;">
+                        <p style="font-size: 13px; margin-bottom: 12px; color: #334155;">Basado en el análisis cuantitativo de métricas SPI (${spi}), tareas rezagadas (${rezagadas}) y nivel de riesgo (${riesgoNivel}), se recomienda:</p>
+                        <ul style="margin-left: 20px; color: #475569; font-size: 12px; line-height: 1.6;">
                             ${rezagadas > 0 ? '<li>🔴 Priorizar la recuperación de tareas rezagadas mediante reasignación de recursos</li>' : ''}
                             ${criticas > 0 ? '<li>⚠️ Establecer seguimiento diario a tareas críticas de ruta crítica</li>' : ''}
                             ${spiValue < 0.9 ? '<li>📉 Implementar plan de aceleración (fast-tracking/crashing) para recuperar cronograma</li>' : ''}
@@ -20511,35 +20528,38 @@ function renderGantt(container) {
 
             <!-- FOOTER -->
             <div class="footer">
-                <p style="color: #64748b; font-size: 11px;">
+                <p style="color: #64748b; font-size: 11px; line-height: 1.6;">
                     <strong>🔒 CONFIDENCIAL</strong> - For executive use only<br>
                     Methodology: Critical Path Method (CPM) · Schedule Performance Index (SPI) · Earned Value Management (EVM)<br>
-                    Generated: ${new Date().toLocaleString('es-ES')} | Source: PM Virtual Executive Platform
+                    Generated: ${new Date().toLocaleString('es-ES')} | Source: Zacky Gantt Executive Pro
                 </p>
             </div>
         </div>
 
         <script>
             // Gráfico de estado
-            new Chart(document.getElementById('statusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ${JSON.stringify(chartLabelsStatus)},
-                    datasets: [{
-                        data: ${JSON.stringify(chartDataStatus)},
-                        backgroundColor: ${JSON.stringify(chartColorsStatus)},
-                        borderWidth: 0,
-                        cutout: '65%'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 10 } } }
+            const ctx = document.getElementById('statusChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ${JSON.stringify(chartLabelsStatus)},
+                        datasets: [{
+                            data: ${JSON.stringify(chartDataStatus)},
+                            backgroundColor: ${JSON.stringify(chartColorsStatus)},
+                            borderWidth: 0,
+                            cutout: '65%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15 } }
+                        }
                     }
-                }
-            });
+                });
+            }
 
             // Tooltip en filas del Gantt
             const rows = document.querySelectorAll('.gantt-row');
@@ -20560,6 +20580,7 @@ function renderGantt(container) {
             document.getElementById('resetFiltersGantt')?.addEventListener('click', () => {
                 const select = document.getElementById('filterStatusGantt');
                 if (select) select.value = 'all';
+                // Recargar solo si hay lógica de filtro, o simplemente recargar la vista
                 location.reload();
             });
         <\/script>
@@ -20567,11 +20588,14 @@ function renderGantt(container) {
     </html>`;
 
     const ventana = window.open('', '_blank');
-    ventana.document.write(fullHtml);
-    ventana.document.close();
+    if (ventana) {
+        ventana.document.write(fullHtml);
+        ventana.document.close();
+    } else {
+        console.error("No se pudo abrir la ventana del reporte. Verifica que el navegador no esté bloqueando las ventanas emergentes (pop-ups).");
+        container.innerHTML = fullHtml; // Fallback: renderizar en el contenedor si el pop-up es bloqueado
+    }
 }
-
-
 
 
 // ========== INFORME EJECUTIVO DE RECURSOS - NIVEL DIRECTORIO ==========
