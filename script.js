@@ -25967,10 +25967,10 @@ abrirVentanaDocumento(html, `Transferencia_${proyecto.name}`);
 
 
 /**
- * VPI PLATINUM MASTER v21.0 - FINAL EXECUTIVE (CORREGIDO CON ESTILOS INLINE)
+ * VPI PLATINUM MASTER v21.0 - FINAL EXECUTIVE (VERSIÓN FINAL CORREGIDA)
  */
 function renderScrum(container) {
-  container.setAttribute('style', `background:#020617!important; color:#f8fafc!important; font-family:'Inter',sans-serif!important; width:100%!important; min-height:100%!important; overflow-x:hidden!important; padding:0!important; margin:0!important; display:block!important; position:relative!important;`);
+  container.setAttribute('style', `background:#020617!important; color:#f8fafc!important; font-family:'Inter',sans-serif!important; width:100%!important; min-height:100%!important; overflow:visible!important; padding:0!important; margin:0!important; display:block!important; position:relative!important;`);
 
   const storageKey = 'vpi_master_v21_final';
   let scrumData = JSON.parse(localStorage.getItem(storageKey)) || { requirements: [], sprintsHistory: [] };
@@ -26035,9 +26035,7 @@ function renderScrum(container) {
     scrumData.requirements.forEach(r => { if(r.status === 'done') teamData[r.responsible] = (teamData[r.responsible] || 0) + r.storyPoints; });
 
     container.innerHTML = `
-  <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto !important; overflow-x: hidden !important; z-index: 9999; background: #020617; padding: 20px;">
-    <button onclick="window.closeScrumModal && window.closeScrumModal()" style="position: fixed; top: 15px; right: 20px; z-index: 10001; background: #ef4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">✕</button>
-    <div style="display: block; width: 100%; max-width: 1400px; margin: 0 auto; padding: 40px 20px; background: #020617; box-sizing: border-box;">
+      <div style="display: block; width: 100%; max-width: 1400px; margin: 0 auto; padding: 40px 20px; padding-bottom: 80px; background: #020617; box-sizing: border-box;">
         
         <!-- NAVBAR -->
         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; padding: 25px 40px; border-radius: 20px; margin-bottom: 40px; flex-wrap: wrap; gap: 15px;">
@@ -26049,7 +26047,7 @@ function renderScrum(container) {
           </div>
         </div>
 
-        <!-- KPIs - USANDO FLEX EN LUGAR DE GRID -->
+        <!-- KPIs -->
         <div style="display: flex; gap: 20px; margin-bottom: 40px; flex-wrap: wrap; justify-content: space-between;">
           <div style="flex: 1; min-width: 200px; background: #0f172a; border: 1px solid #1e293b; padding: 30px 20px; border-radius: 20px; text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
             <span style="color:#64748b; font-size:12px; text-transform: uppercase; letter-spacing: 0.5px;">PUNTOS TOTALES</span>
@@ -26069,7 +26067,7 @@ function renderScrum(container) {
           </div>
         </div>
 
-        <!-- KANBAN - USANDO FLEX EN LUGAR DE GRID -->
+        <!-- KANBAN -->
         <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 40px; margin-bottom: 40px;">
           <h3 style="margin:0 0 25px 0; font-size: 20px; color: #f8fafc;">Tablero Kanban</h3>
           <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -26090,7 +26088,7 @@ function renderScrum(container) {
           </div>
         </div>
 
-        <!-- GRÁFICAS CON DESCRIPCIÓN - USANDO FLEX -->
+        <!-- GRÁFICAS -->
         <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 40px; margin-bottom: 40px; display: flex; gap: 50px; align-items: center; flex-wrap: wrap;">
           <div style="flex: 1.3; min-width: 400px; height:400px; position: relative;"><canvas id="chartHealth"></canvas></div>
           <div style="flex: 0.7; min-width: 300px; border-left:4px solid #3b82f6; padding-left:35px;">
@@ -26192,13 +26190,26 @@ function renderScrum(container) {
           </div>
         </div>
 
-            </div>
-    </div>
+      </div>
     `;
 
     setTimeout(() => {
       initCharts(totalSP, doneSP, sprintStats, teamData);
       initSortable();
+      
+      // SOLUCIÓN PARA EL SCROLL: buscar el contenedor padre con overflow:hidden y permitir scroll
+      let parent = container.parentElement;
+      let attempts = 0;
+      while (parent && attempts < 10) {
+        const style = window.getComputedStyle(parent);
+        if (style.overflow === 'hidden' || style.overflowY === 'hidden' || style.overflow === 'auto') {
+          parent.style.overflowY = 'auto';
+          parent.style.overflowX = 'hidden';
+          break;
+        }
+        parent = parent.parentElement;
+        attempts++;
+      }
     }, 100);
   }
 
@@ -26256,21 +26267,8 @@ function renderScrum(container) {
     alert("Función de PDF - Implementa tu lógica existente aquí");
   };
 
-    // Función para cerrar la modal
-  window.closeScrumModal = () => {
-    container.innerHTML = '';
-    container.setAttribute('style', 'display:none!important;');
-    // Si hay una función global de cierre, la llamamos
-    if (typeof window.cerrarModal === 'function') {
-      window.cerrarModal();
-    }
-  };
-
   render();
 }
-
-
-
 
 
 
