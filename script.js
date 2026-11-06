@@ -52188,29 +52188,45 @@ function generateReports(tasks = null) {
         </div>
       </div>
 
-      <!-- FILA 6: SATURACIÓN DE EMPLEADOS -->
+           <!-- FILA 6: PROGRESO DE EMPLEADOS -->
       ${Object.keys(asignacionesEmpleados).length > 0 ? `
       <div style="background: #1a1a3a; border-radius: 20px; padding: 25px; margin-bottom: 35px;">
         <h4 style="margin: 0 0 20px 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
-          <span style="color: #10b981;">👥</span> Saturación del Equipo
+          <span style="color: #10b981;">👥</span> Progreso del Equipo
         </h4>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
           ${Object.entries(asignacionesEmpleados).map(([nombre, datos]) => {
-            const saturacion = (datos.enProgreso + datos.pendientes) / (datos.total || 1) * 100;
-            const colorSaturacion = saturacion > 70 ? '#ef4444' : saturacion > 40 ? '#f59e0b' : '#10b981';
+            
+            // 🟢 OPCIÓN A: El porcentaje ahora mide las tareas COMPLETADAS
+            const progreso = (datos.completadas / (datos.total || 1)) * 100;
+            
+            // Colores basados en el progreso (Verde si completó >70%, Amarillo >40%, Rojo <40%)
+            const colorProgreso = progreso >= 70 ? '#10b981' : progreso >= 40 ? '#f59e0b' : '#ef4444';
+            
             return `
-              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 18px;">
+              <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 18px; border: 1px solid rgba(255,255,255,0.05);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                   <span style="font-weight: 600; font-size: 16px;">${nombre}</span>
-                  <span style="background: ${colorSaturacion}20; color: ${colorSaturacion}; padding: 5px 12px; border-radius: 20px; font-size: 13px;">${saturacion.toFixed(0)}%</span>
+                  
+                  <!-- EXTRA: Badge con el % de Completadas -->
+                  <span style="background: ${colorProgreso}20; color: ${colorProgreso}; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                    ${progreso.toFixed(0)}%
+                  </span>
                 </div>
+                
+                <!-- Barra de progreso basada en tareas COMPLETADAS -->
                 <div style="height: 6px; background: #2d2d5f; border-radius: 3px; overflow: hidden; margin-bottom: 12px;">
-                  <div style="width: ${saturacion}%; height: 100%; background: ${colorSaturacion}; border-radius: 3px;"></div>
+                  <div style="width: ${progreso}%; height: 100%; background: ${colorProgreso}; border-radius: 3px; transition: width 0.4s ease;"></div>
                 </div>
-                <div style="display: flex; gap: 15px; color: #94a3b8; font-size: 12px;">
-                  <span>✅ ${datos.completadas}</span>
-                  <span>🔄 ${datos.enProgreso}</span>
-                  <span>⏳ ${datos.pendientes}</span>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 12px;">
+                  <div style="display: flex; gap: 15px;">
+                    <span title="Completadas">✅ ${datos.completadas}</span>
+                    <span title="En Progreso">🔄 ${datos.enProgreso}</span>
+                    <span title="Pendientes">⏳ ${datos.pendientes}</span>
+                  </div>
+                  <!-- EXTRA: Texto que aclara que es el progreso -->
+                  <span style="font-size: 11px; opacity: 0.7;">Progreso: ${progreso.toFixed(0)}%</span>
                 </div>
               </div>
             `;
