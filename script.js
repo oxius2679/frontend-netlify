@@ -26263,8 +26263,304 @@ function renderScrum(container) {
     });
   }
 
-  window.exportExecutivePDF = async () => {
-    alert("Función de PDF - Implementa tu lógica existente aquí");
+    window.exportExecutivePDF = async () => {
+    if (typeof window.jspdf === 'undefined') {
+      alert('jsPDF no está cargado. Verifica que la librería esté incluida.');
+      return;
+    }
+
+    const btn = document.querySelector('button[onclick*="exportExecutivePDF"]');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+      btn.innerHTML = '⏳ Generando...';
+      btn.disabled = true;
+    }
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+
+      const c = {
+        primary: [59, 130, 246],
+        darkBg: [2, 6, 23],
+        cardBg: [15, 23, 42],
+        textLight: [248, 250, 252],
+        textMuted: [148, 163, 184],
+        success: [16, 185, 129],
+        danger: [239, 68, 68],
+        warning: [253, 224, 71],
+        info: [59, 130, 246],
+        accent: [253, 224, 71]
+      };
+
+      function drawText(text, x, y, size, style = 'normal', color = c.textLight, align = 'left') {
+        doc.setFont('helvetica', style);
+        doc.setFontSize(size);
+        doc.setTextColor(color[0], color[1], color[2]);
+        if (align === 'center') doc.text(text, x, y, { align: 'center' });
+        else if (align === 'right') doc.text(text, x, y, { align: 'right' });
+        else doc.text(text, x, y);
+      }
+
+      function drawBox(x, y, w, h, bgColor) {
+        doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+        doc.roundedRect(x, y, w, h, 3, 3, 'F');
+      }
+
+      // Función para capturar canvas como imagen
+      async function captureCanvas(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return null;
+        try {
+          // Usar toDataURL directamente (más confiable que html2canvas)
+          return canvas.toDataURL('image/png');
+        } catch (e) {
+          console.error('Error capturando canvas:', e);
+          return null;
+        }
+      }
+
+      // ===== DATOS =====
+      const totalSP = scrumData.requirements.reduce((a, r) => a + r.storyPoints, 0);
+      const doneSP = scrumData.requirements.filter(r => r.status === 'done').reduce((a, r) => a + r.storyPoints, 0);
+      const pendingSP = totalSP - doneSP;
+      const efficiency = totalSP ? Math.round((doneSP / totalSP) * 100) : 0;
+
+      const statusCounts = {
+        todo: scrumData.requirements.filter(r => r.status === 'todo').length,
+        doing: scrumData.requirements.filter(r => r.status === 'doing').length,
+        done: scrumData.requirements.filter(r => r.status === 'done').length,
+        overdue: scrumData.requirements.filter(r => r.status === 'overdue').length
+      };
+
+      const sprintStats = scrumData.sprintsHistory.map(s => {
+        const completed = scrumData.requirements.filter(r => r.sprint === s.name && r.status === 'done').reduce((a, r) => a + r.storyPoints, 0);
+        return { name: s.name, planned: s.planned, completed, efficiency: s.planned ? Math.round((completed / s.planned) * 100) : 0 };
+      });
+
+      const teamData = {};
+      scrumData.requirements.forEach(r => {
+        if (r.status === 'done') teamData[r.responsible] = (teamData[r.responsible] || 0) + r.storyPoints;
+      });
+      const teamEntries = Object.entries(teamData).sort((a, b) => b[1] - a[1]);
+
+      // ===== PÁGINA 1: PORTADA =====
+      doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      doc.setDrawColor(c.primary[0], c.primary[1], c.primary[2]);
+      doc.setLineWidth(2);
+      doc.line(margin, 60, pageWidth - margin, 60);
+      doc.line(margin, 140, pageWidth - margin, 140);
+      drawText("VPI PLATINUM MASTER", pageWidth / 2, 85, 28, 'bold', c.textLight, 'center');
+      drawText("REPORTE EJECUTIVO SCRUM", pageWidth / 2, 100, 18, 'bold', c.accent, 'center');
+      drawText(`Generado: ${new Date().toLocaleString()}`, pageWidth / 2, 120, 11, 'normal', c.textMuted, 'center');
+      drawText("Métricas Scrum · Análisis de Velocidad · Rendimiento del Equipo", pageWidth / 2, 130, 11, 'normal', c.textMuted, 'center');
+
+      // ===== PÁGINA 2: KPIs =====
+      doc.addPage();
+      doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      let yOffset = margin + 10;
+      drawText("DASHBOARD EJECUTIVO", margin, yOffset, 14, 'bold', c.primary);
+      yOffset += 15;
+
+      const kpiWidth = (pageWidth - margin * 2 - 15) / 4;
+      const kpis = [
+        { label: 'PUNTOS TOTALES', value: totalSP, color: c.textLight },
+        { label: 'PUNTOS DONE', value: doneSP, color: c.success },
+        { label: 'PENDIENTES', value: pendingSP, color: c.warning },
+        { label: 'EFICIENCIA', value: efficiency + '%', color: c.info }
+      ];
+      
+      kpis.forEach((k, i) => {
+        const x = margin + i * (kpiWidth + 5);
+        drawBox(x, yOffset, kpiWidth, 30, c.cardBg);
+        drawText(k.label, x + kpiWidth / 2, yOffset + 10, 7, 'bold', c.textMuted, 'center');
+        drawText(String(k.value), x + kpiWidth / 2, yOffset + 23, 14, 'bold', k.color, 'center');
+      });
+      yOffset += 45;
+
+      // ===== CAPTURAR GRÁFICOS Y AGREGARLOS AL PDF =====
+      const chartHealthImg = await captureCanvas('chartHealth');
+      const chartVelocityImg = await captureCanvas('chartVelocity');
+      const chartTeamImg = await captureCanvas('chartTeam');
+      const chartBurndownImg = await captureCanvas('chartBurndown');
+
+      // Gráfico 1: Salud del Backlog
+      if (chartHealthImg) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        drawText("SALUD DEL BACKLOG", margin, margin + 10, 14, 'bold', c.primary);
+        doc.addImage(chartHealthImg, 'PNG', margin, margin + 20, 140, 80);
+        drawText("Representación porcentual de la madurez del proyecto.", margin + 150, margin + 30, 9, 'normal', c.textMuted);
+        drawText("Analiza cuántos requerimientos se encuentran estancados", margin + 150, margin + 38, 9, 'normal', c.textMuted);
+        drawText("frente a los completados. Permite identificar cuellos", margin + 150, margin + 46, 9, 'normal', c.textMuted);
+        drawText("de botella preventivos.", margin + 150, margin + 54, 9, 'normal', c.textMuted);
+      }
+
+      // Gráfico 2: Velocidad por Sprint
+      if (chartVelocityImg && sprintStats.length > 0) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        drawText("VELOCIDAD POR SPRINT", margin, margin + 10, 14, 'bold', c.primary);
+        doc.addImage(chartVelocityImg, 'PNG', margin, margin + 20, 140, 80);
+        drawText("Métrica de rendimiento histórico.", margin + 150, margin + 30, 9, 'normal', c.textMuted);
+        drawText("Evalúa la capacidad real de entrega del equipo", margin + 150, margin + 38, 9, 'normal', c.textMuted);
+        drawText("en cada iteración basándose en evidencia empírica.", margin + 150, margin + 46, 9, 'normal', c.textMuted);
+      }
+
+      // Gráfico 3: Desempeño por Equipos
+      if (chartTeamImg && teamEntries.length > 0) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        drawText("DESEMPEÑO POR EQUIPOS", margin, margin + 10, 14, 'bold', c.primary);
+        doc.addImage(chartTeamImg, 'PNG', margin, margin + 20, 140, 80);
+        drawText("Auditoría de productividad por responsable.", margin + 150, margin + 30, 9, 'normal', c.textMuted);
+        drawText("Identifica la carga de trabajo y el cumplimiento", margin + 150, margin + 38, 9, 'normal', c.textMuted);
+        drawText("de cada célula técnica.", margin + 150, margin + 46, 9, 'normal', c.textMuted);
+      }
+
+      // Gráfico 4: Burndown
+      if (chartBurndownImg) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        drawText("GRÁFICO DE BURNDOWN", margin, margin + 10, 14, 'bold', c.primary);
+        doc.addImage(chartBurndownImg, 'PNG', margin, margin + 20, 140, 80);
+        drawText("Control predictivo diario.", margin + 150, margin + 30, 9, 'normal', c.textMuted);
+        drawText("Compara la trayectoria ideal de trabajo restante", margin + 150, margin + 38, 9, 'normal', c.textMuted);
+        drawText("contra la ejecución real del sprint actual.", margin + 150, margin + 46, 9, 'normal', c.textMuted);
+      }
+
+      // ===== PÁGINA: GESTIÓN DE SPRINTS =====
+      if (sprintStats.length > 0) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        yOffset = margin + 10;
+        drawText("GESTIÓN DE SPRINTS", margin, yOffset, 14, 'bold', c.primary);
+        yOffset += 8;
+        
+        const headerH = 9;
+        const rowH = 7;
+        const colWidths = [45, 30, 30, 35, 40];
+        
+        doc.setFillColor(c.primary[0], c.primary[1], c.primary[2]);
+        doc.rect(margin, yOffset, pageWidth - margin * 2, headerH, 'F');
+        const headers = ["Sprint", "Plan", "Real", "Eficiencia", "Velocidad"];
+        let x = margin;
+        headers.forEach((h, i) => {
+          drawText(h, x + 3, yOffset + 6, 8, 'bold', c.textLight);
+          x += colWidths[i];
+        });
+        yOffset += headerH;
+        
+        sprintStats.forEach((s, i) => {
+          const bg = i % 2 === 0 ? [20, 35, 60] : [15, 30, 55];
+          doc.setFillColor(bg[0], bg[1], bg[2]);
+          doc.rect(margin, yOffset, pageWidth - margin * 2, rowH, 'F');
+          x = margin;
+          const row = [s.name, s.planned, s.completed, `${s.efficiency}%`, (s.completed / 5).toFixed(1)];
+          row.forEach((txt, j) => {
+            let t = String(txt || '');
+            if (t.length > 20) t = t.slice(0, 17) + '...';
+            drawText(t, x + 3, yOffset + 5, 7, 'normal', c.textLight);
+            x += colWidths[j];
+          });
+          yOffset += rowH;
+        });
+      }
+
+      // ===== PÁGINA: MATRIZ DE REQUERIMIENTOS =====
+      if (scrumData.requirements.length > 0) {
+        doc.addPage();
+        doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        yOffset = margin + 10;
+        drawText("MATRIZ DE CONTROL DE REQUERIMIENTOS", margin, yOffset, 14, 'bold', c.primary);
+        yOffset += 8;
+        
+        const reqHeaders = ["ID", "Título", "Estado", "SP", "Responsable", "Sprint", "Fecha Fin"];
+        const reqColWidths = [25, 55, 25, 15, 35, 35, 30];
+        const headerH = 9;
+        const rowH = 7;
+        
+        doc.setFillColor(c.primary[0], c.primary[1], c.primary[2]);
+        doc.rect(margin, yOffset, pageWidth - margin * 2, headerH, 'F');
+        let x = margin;
+        reqHeaders.forEach((h, i) => {
+          drawText(h, x + 3, yOffset + 6, 8, 'bold', c.textLight);
+          x += reqColWidths[i];
+        });
+        yOffset += headerH;
+        
+        scrumData.requirements.forEach((r, i) => {
+          const bg = i % 2 === 0 ? [20, 35, 60] : [15, 30, 55];
+          doc.setFillColor(bg[0], bg[1], bg[2]);
+          doc.rect(margin, yOffset, pageWidth - margin * 2, rowH, 'F');
+          x = margin;
+          const row = [
+            r.id,
+            r.title.length > 25 ? r.title.slice(0, 22) + "..." : r.title,
+            r.status.toUpperCase(),
+            r.storyPoints,
+            r.responsible,
+            r.sprint,
+            r.endDate
+          ];
+          row.forEach((txt, j) => {
+            let t = String(txt || '');
+            if (t.length > 20) t = t.slice(0, 17) + '...';
+            drawText(t, x + 3, yOffset + 5, 7, 'normal', c.textLight);
+            x += reqColWidths[j];
+          });
+          yOffset += rowH;
+          
+          if (yOffset > pageHeight - 20) {
+            doc.addPage();
+            doc.setFillColor(c.darkBg[0], c.darkBg[1], c.darkBg[2]);
+            doc.rect(0, 0, pageWidth, pageHeight, 'F');
+            yOffset = margin;
+            doc.setFillColor(c.primary[0], c.primary[1], c.primary[2]);
+            doc.rect(margin, yOffset, pageWidth - margin * 2, headerH, 'F');
+            x = margin;
+            reqHeaders.forEach((h, i) => {
+              drawText(h, x + 3, yOffset + 6, 8, 'bold', c.textLight);
+              x += reqColWidths[i];
+            });
+            yOffset += headerH;
+          }
+        });
+      }
+
+      // ===== PIE DE PÁGINA EN TODAS LAS PÁGINAS =====
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(40, 40, 60);
+        doc.line(margin, pageHeight - 8, pageWidth - margin, pageHeight - 8);
+        drawText("VPI PLATINUM MASTER · CONFIDENCIAL", margin, pageHeight - 4, 6, 'normal', c.textMuted);
+        drawText(`Página ${i} de ${totalPages}`, pageWidth - margin - 15, pageHeight - 4, 6, 'normal', c.textMuted, 'right');
+      }
+
+      doc.save(`VPI_Scrum_Reporte_${Date.now()}.pdf`);
+
+    } catch (err) {
+      console.error("Error al generar PDF:", err);
+      alert("Error al generar el reporte: " + err.message);
+    } finally {
+      if (btn) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
   };
 
   render();
