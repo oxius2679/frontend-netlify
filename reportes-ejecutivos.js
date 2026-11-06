@@ -3019,7 +3019,7 @@ window.generarReporteFasesStatus = function() {
 
     var nombreProyecto = proyecto.name || proyecto.nombre || 'Proyecto sin nombre';
 
-    // 1. MAPEO DE TAREAS (incluye timeHistory para las horas)
+    // 1. MAPEO DE TAREAS (con cálculo inteligente de progreso)
     var tareasMapeadas = (proyecto.tasks || []).map(function(t) {
         var getVal = function(obj, keys, def) {
             for (var i = 0; i < keys.length; i++) {
@@ -3027,7 +3027,8 @@ window.generarReporteFasesStatus = function() {
             }
             return def;
         };
-        
+
+        // 1️⃣ Obtener horas reales (incluyendo timeHistory)
         var horasReales = Number(getVal(t, ['timeLogged', 'loggedTime', 'horasReales'], 0));
         if (horasReales === 0) {
             var historialHoras = t.timeHistory || t.timeLogs || t.historialHoras || [];
@@ -3038,12 +3039,24 @@ window.generarReporteFasesStatus = function() {
             }
         }
 
+        var horasEstimadas = Number(getVal(t, ['estimatedTime', 'tiempoEstimado', 'horasEstimadas'], 0));
+        var status = t.status || 'pending';
+        var progresoReal = Number(getVal(t, ['progress', 'progreso'], 0));
+
+        // 🔥 CÁLCULO INTELIGENTE DE PROGRESO
+        // Si no está completada y tiene horas registradas, inferir el progreso.
+        if (status !== 'completed' && progresoReal < 100 && horasEstimadas > 0 && horasReales > 0) {
+            var progresoInferido = Math.round((horasReales / horasEstimadas) * 100);
+            // Tomamos el mayor entre el progreso guardado y el inferido por horas
+            progresoReal = Math.max(progresoReal, Math.min(99, progresoInferido));
+        }
+
         return {
             id: t.id,
             name: t.name || t.nombre || 'Sin nombre',
-            status: t.status || 'pending',
-            progress: Number(getVal(t, ['progress', 'progreso'], 0)),
-            estimatedTime: Number(getVal(t, ['estimatedTime', 'tiempoEstimado'], 0)),
+            status: status,
+            progress: progresoReal, // ← Ahora el progreso es el correcto
+            estimatedTime: horasEstimadas,
             timeLogged: horasReales,
             deadline: t.deadline,
             assignee: t.assignee,
@@ -3377,16 +3390,24 @@ window.generarReporteFasesStatus = function() {
 
             function getMetricas() {
                 const total = TAREAS.length;
+                
+                // ✅ FIX: Usar la suma de progresos reales para el porcentaje global
+                const sumProg = TAREAS.reduce((sum, t) => sum + (Number(t.progress) || 0), 0);
+                const prog = total > 0 ? Math.round(sumProg / total) : 0;
+                
+                // ✅ FIX: El SPI ahora se calcula basado en el progreso real
+                const spi = prog / 100;
+                
                 const comp = TAREAS.filter(t => t.status === 'completed' || t.progress === 100).length;
                 const inProg = TAREAS.filter(t => t.status === 'inProgress' && t.progress !== 100).length;
                 const pend = TAREAS.filter(t => t.status === 'pending').length;
                 const atras = TAREAS.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
-                const prog = total > 0 ? Math.round((comp/total)*100) : 0;
+                
                 const hE = TAREAS.reduce((s,t) => s + (Number(t.estimatedTime) || 0), 0);
                 const hR = TAREAS.reduce((s,t) => s + (Number(t.timeLogged) || 0), 0);
                 const cpi = hR > 0 ? (hE / hR) : 1;
-                const spi = total > 0 ? (comp/total) : 0;
                 const horasDesv = hR - hE;
+                
                 return { total, comp, inProg, pend, atras, prog, hE, hR, cpi, spi, horasDesv };
             }
 
@@ -3414,7 +3435,6 @@ window.generarReporteFasesStatus = function() {
                     const ids = fasesData[f];
                     const tf = TAREAS.filter(t => ids.includes(t.id));
                     
-                    // ✅ FIX: Promedio de progreso en lugar de conteo binario
                     const sumProg = tf.reduce((sum, t) => sum + (Number(t.progress) || 0), 0);
                     const p = tf.length > 0 ? Math.round(sumProg / tf.length) : 0;
 
@@ -3467,7 +3487,6 @@ window.generarReporteFasesStatus = function() {
                 const fases = Object.keys(fasesData);
                 const labels = fases.map(f => f.length > 12 ? f.substring(0, 12) + '…' : f);
                 
-                // ✅ FIX: Promedio de progreso en lugar de conteo binario
                 const data = fases.map(f => {
                     const ids = fasesData[f];
                     const tf = TAREAS.filter(t => ids.includes(t.id));
@@ -3557,7 +3576,6 @@ window.generarReporteFasesStatus = function() {
     overlay.appendChild(iframe);
     document.body.appendChild(overlay);
 };
-
 
 
 
