@@ -646,9 +646,11 @@ strategy_rec_2: '📊 Invertir en capacitación del equipo',
 strategy_rec_3: '🎯 Establecer OKRs trimestrales por proyecto',
 strategy_rec_4: '✅ Celebrar hitos importantes públicamente',
 strategy_labels: ['Eficiencia','Productividad','Calidad','Satisfacción','Cumplimiento'],
-strategy_current_score: 'Score Actual'
-,rep_mapa3d: '🌍 Mapa Satelital EVM'
-,rep_mapa3d_desc: 'Mapa mundial con métricas EVM y gestión de ubicaciones'
+strategy_current_score: 'Score Actual',
+rep_mapa3d: '🌍 Mapa Satelital EVM',
+rep_mapa3d_desc: 'Mapa mundial con métricas EVM y gestión de ubicaciones',
+rep_fases: '📊 Terminal de Fases y Status',
+rep_fases_desc: 'Dashboard ejecutivo con health score y alertas',
 },
 en: {
 modal_titulo: 'Executive Reports Center',
@@ -1288,9 +1290,11 @@ strategy_rec_2: '📊 Invest in team training',
 strategy_rec_3: '🎯 Set quarterly OKRs per project',
 strategy_rec_4: '✅ Publicly celebrate important milestones',
 strategy_labels: ['Efficiency','Productivity','Quality','Satisfaction','Compliance'],
-strategy_current_score: 'Current Score'
-,rep_mapa3d: '🌍 3D Satellite EVM Map'
-,rep_mapa3d_desc: 'World map with EVM metrics and location management'
+strategy_current_score: 'Current Score',
+rep_mapa3d: '🌍 3D Satellite EVM Map',
+rep_mapa3d_desc: 'World map with EVM metrics and location management',
+rep_fases: '📊 Phases & Status Terminal',
+rep_fases_desc: 'Executive dashboard with health score and alerts',
 }
 };
 // ============================================
@@ -1605,7 +1609,8 @@ const reportes = [
 { id: 'capacidad', nombre: _t('rep_capacidad'), desc: _t('rep_capacidad_desc'), color: '#3b82f6' },
 { id: 'impactoEjecutivo', nombre: _t('rep_impacto'), desc: _t('rep_impacto_desc'), color: '#8b5cf6' },
 { id: 'estrategia', nombre: _t('rep_estrategia'), desc: _t('rep_estrategia_desc'), color: '#8b5cf6' },
-{ id: 'mapa3d', nombre: _t('rep_mapa3d'), desc: _t('rep_mapa3d_desc'), color: '#fbbf24' }
+{ id: 'mapa3d', nombre: _t('rep_mapa3d'), desc: _t('rep_mapa3d_desc'), color: '#fbbf24' },
+{ id: 'fasesStatus', nombre: _t('rep_fases'), desc: _t('rep_fases_desc'), color: '#00d964' } // 👈 AÑADIR
 ];
 const modal = document.createElement('div');
 modal.id = 'modalReportesEjecutivos';
@@ -3000,6 +3005,523 @@ window.generarReporteMapa3D = function() {
 };
 
 
+
+// ============================================
+// REPORTE 22: TERMINAL DE FASES Y STATUS (VIP)
+// ============================================
+window.generarReporteFasesStatus = function() {
+    const proyecto = obtenerProyectoActual();
+    if (!proyecto) { alert(_t('no_project')); return; }
+
+    var nombreProyecto = proyecto.name || proyecto.nombre;
+    if(!nombreProyecto || nombreProyecto === 'sin proyectos') nombreProyecto = 'PROYECTO ESTRATÉGICO ZACKY';
+
+    var listaProyectos = obtenerTodosProyectos();
+    var idxActual = 0;
+    for(var i=0; i<listaProyectos.length; i++){
+        if((listaProyectos[i].name || listaProyectos[i].nombre) === (proyecto.name || proyecto.nombre)) { idxActual = i; break; }
+    }
+
+    var opcionesProyectos = listaProyectos.map(function(p, i) {
+        var n = p.name || p.nombre || ('Proyecto ' + (i+1));
+        return '<option value="' + i + '" ' + (i === idxActual ? 'selected' : '') + '>' + n.toUpperCase() + '</option>';
+    }).join('');
+
+    var old = document.getElementById('vip-fases-overlay'); if(old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'vip-fases-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:2147483647;';
+
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
+    
+    // Inyectar el HTML del reporte en el iframe
+    iframe.srcdoc = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+        <style>
+            :root {
+                --bg: #000000; --panel: #0a0a0a; --panel-2: #111111; --border: #1f1f1f; --border-bright: #2a2a2a;
+                --text: #e8e8e8; --text-dim: #6e6e6e; --text-mid: #a0a0a0;
+                --green: #00d964; --green-bg: rgba(0, 217, 100, 0.08);
+                --red: #ff3b30; --red-bg: rgba(255, 59, 48, 0.08);
+                --amber: #ffb800; --amber-bg: rgba(255, 184, 0, 0.08);
+                --blue: #00a8ff; --blue-bg: rgba(0, 168, 255, 0.08);
+            }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh; font-family: 'Inter', sans-serif; font-size: 12px; -webkit-font-smoothing: antialiased; position: relative; }
+            body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px); opacity: 0.3; }
+            .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+            
+            .ticker-bar { height: 32px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; gap: 24px; overflow: hidden; }
+            .ticker-item { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+            .ticker-symbol { color: var(--text-mid); font-weight: 700; letter-spacing: 0.5px; }
+            .ticker-value { color: var(--text); font-weight: 500; }
+            .ticker-change.up { color: var(--green); }
+            
+            .main-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+            .header-left { display: flex; align-items: baseline; gap: 16px; }
+            .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+            .header-subtitle { color: var(--text-dim); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+            .header-controls { display: flex; gap: 8px; align-items: center; }
+            
+            .select-proj { background: var(--panel-2); border: 1px solid var(--border-bright); color: var(--text); padding: 6px 12px; border-radius: 4px; font-size: 11px; outline: none; cursor: pointer; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px; }
+            .btn-close { background: transparent; border: 1px solid var(--border-bright); color: var(--text-dim); width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+            .btn-close:hover { border-color: var(--red); color: var(--red); }
+            
+            .layout { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+            
+            .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+            .kpi-cell { padding: 14px 18px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; position: relative; }
+            .kpi-cell:last-child { border-right: none; }
+            .kpi-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+            .kpi-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: -1px; line-height: 1; }
+            .kpi-value.green { color: var(--green); } .kpi-value.red { color: var(--red); } .kpi-value.amber { color: var(--amber); } .kpi-value.blue { color: var(--blue); } .kpi-value.neutral { color: var(--text); }
+            .kpi-foot { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+            
+            .main-grid { display: grid; grid-template-columns: 1fr 400px; gap: 16px; }
+            .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; }
+            .panel-head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--panel-2); }
+            .panel-title { font-size: 10px; color: var(--text-mid); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+            .panel-badge { font-size: 9px; padding: 2px 8px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 0.5px; }
+            .panel-badge.alert { background: var(--red-bg); color: var(--red); } .panel-badge.ok { background: var(--green-bg); color: var(--green); }
+            
+            .chart-area { position: relative; height: 300px; padding: 16px; }
+            
+            .watchlist { max-height: 320px; overflow-y: auto; }
+            .watchlist::-webkit-scrollbar { width: 4px; } .watchlist::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+            .watch-row { display: grid; grid-template-columns: 1fr auto auto; padding: 10px 14px; border-bottom: 1px solid var(--border); align-items: center; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: background 0.15s; }
+            .watch-row:hover { background: var(--panel-2); } .watch-row:last-child { border-bottom: none; }
+            .watch-symbol { color: var(--text); font-weight: 600; letter-spacing: 0.3px; }
+            .watch-progress { display: flex; align-items: center; gap: 6px; }
+            .watch-bar { width: 60px; height: 3px; background: var(--border-bright); border-radius: 2px; overflow: hidden; }
+            .watch-bar-fill { height: 100%; border-radius: 2px; }
+            .watch-change { font-size: 11px; font-weight: 700; text-align: right; min-width: 50px; }
+            .watch-change.up { color: var(--green); } .watch-change.down { color: var(--red); } .watch-change.flat { color: var(--amber); }
+            .watch-del { background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; opacity: 0; transition: opacity 0.15s; padding: 0 4px; }
+            .watch-row:hover .watch-del { opacity: 1; } .watch-del:hover { color: var(--red); }
+            
+            .phase-input-row { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; background: var(--panel-2); }
+            .phase-input { flex: 1; background: var(--bg); border: 1px solid var(--border-bright); color: var(--text); padding: 6px 10px; border-radius: 4px; font-size: 11px; outline: none; font-family: 'JetBrains Mono', monospace; }
+            .phase-input:focus { border-color: var(--blue); } .phase-input::placeholder { color: var(--text-dim); }
+            .btn-add { background: var(--blue); color: #000; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 10px; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+            
+            .health-gauge-wrap { padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
+            .gauge-svg { position: relative; width: 200px; height: 110px; }
+            .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 4px; }
+            .gauge-value { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -1.5px; line-height: 1; }
+            .gauge-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-weight: 700; }
+            .gauge-rating { margin-top: 12px; padding: 4px 12px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+            
+            .alerts-list { max-height: 220px; overflow-y: auto; }
+            .alerts-list::-webkit-scrollbar { width: 4px; } .alerts-list::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+            .alert-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+            .alert-item:last-child { border-bottom: none; }
+            .alert-icon { width: 20px; height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+            .alert-icon.critical { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,59,48,0.3); }
+            .alert-icon.warning { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,184,0,0.3); }
+            .alert-icon.ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,217,100,0.3); }
+            .alert-msg { color: var(--text); } .alert-msg small { display: block; color: var(--text-dim); font-size: 9px; margin-top: 2px; }
+            .alert-value { color: var(--text-mid); font-size: 10px; }
+            
+            .data-grid { max-height: 380px; overflow-y: auto; }
+            .data-grid::-webkit-scrollbar { width: 4px; } .data-grid::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+            .grid-row { display: grid; grid-template-columns: 60px 1fr 100px 100px 140px 120px; padding: 8px 14px; border-bottom: 1px solid var(--border); align-items: center; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+            .grid-row:hover { background: var(--panel-2); }
+            .grid-header { background: var(--panel-2); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; padding: 8px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+            .grid-id { color: var(--text-dim); font-size: 10px; }
+            .grid-name { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+            .status-badge.completed { background: var(--green-bg); color: var(--green); }
+            .status-badge.inprogress { background: var(--blue-bg); color: var(--blue); }
+            .status-badge.pending { background: rgba(255,255,255,0.03); color: var(--text-dim); }
+            .status-badge.overdue { background: var(--red-bg); color: var(--red); }
+            .status-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+            
+            .progress-mini { display: flex; align-items: center; gap: 6px; }
+            .progress-bar-mini { width: 50px; height: 3px; background: var(--border-bright); border-radius: 2px; overflow: hidden; }
+            .progress-bar-mini > div { height: 100%; background: var(--blue); }
+            
+            .hours-cell { color: var(--text-mid); font-size: 10px; } .hours-cell .diff { color: var(--red); } .hours-cell .ok { color: var(--green); }
+            .phase-select { background: var(--bg); border: 1px solid var(--border-bright); color: var(--text); padding: 4px 8px; border-radius: 3px; font-size: 10px; outline: none; cursor: pointer; font-family: 'JetBrains Mono', monospace; width: 100%; text-transform: uppercase; letter-spacing: 0.3px; }
+            
+            .research { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; font-size: 12px; line-height: 1.7; color: var(--text-mid); }
+            .research-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+            .research-title { font-size: 10px; color: var(--text-mid); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+            .research-meta { font-size: 10px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+            .research-body strong { color: var(--text); font-weight: 600; } .research-body .up { color: var(--green); } .research-body .down { color: var(--red); } .research-body .warn { color: var(--amber); }
+            
+            .bottom-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+            .mini-stat { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+            .mini-stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+            .mini-stat-value { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        </style>
+    </head>
+    <body>
+        <div class="ticker-bar" id="ticker-bar">
+            <div class="ticker-item"><span class="ticker-symbol">STATUS</span><span class="ticker-value">●</span><span class="ticker-change up">OPERACIONAL</span></div>
+            <div class="ticker-item"><span class="ticker-symbol">MODO</span><span class="ticker-value">TERMINAL PMO</span></div>
+            <div class="ticker-item"><span class="ticker-symbol">FECHA</span><span class="ticker-value" id="tick-fecha"></span></div>
+            <div class="ticker-item"><span class="ticker-symbol">HORA</span><span class="ticker-value" id="tick-hora"></span></div>
+        </div>
+
+        <div class="main-header">
+            <div class="header-left">
+                <div class="header-title">PM OPERATIONS TERMINAL</div>
+                <div class="header-subtitle">▶ ${nombreProyecto.toUpperCase()} · ZACKY CAPITAL</div>
+            </div>
+            <div class="header-controls">
+                <select class="select-proj" id="proj-select">${opcionesProyectos}</select>
+                <button class="btn-close" onclick="parent.document.getElementById('vip-fases-overlay').remove()">✕</button>
+            </div>
+        </div>
+
+        <div class="layout">
+            <div class="kpi-strip" id="kpi-strip"></div>
+
+            <div class="main-grid">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Phase Completion · Live</div>
+                            <div class="panel-badge ok" id="chart-badge">● LIVE</div>
+                        </div>
+                        <div class="chart-area"><canvas id="chart-main"></canvas></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Task Positions · Order Book</div>
+                            <div class="panel-badge" id="grid-count">0</div>
+                        </div>
+                        <div class="grid-row grid-header">
+                            <div>ID</div><div>DESCRIPTION</div><div>STATUS</div><div>PROGRESS</div><div>HOURS R / E</div><div>PHASE</div>
+                        </div>
+                        <div class="data-grid" id="data-grid"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Health Score</div>
+                            <div class="panel-badge" id="health-badge">COMPOSITE</div>
+                        </div>
+                        <div class="health-gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 200 110">
+                                <defs>
+                                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#ff3b30"/>
+                                        <stop offset="50%" stop-color="#ffb800"/>
+                                        <stop offset="100%" stop-color="#00d964"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f1f1f" stroke-width="14" stroke-linecap="round"/>
+                                <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+                            </svg>
+                            <div class="gauge-center">
+                                <div class="gauge-value" id="health-value">0</div>
+                                <div class="gauge-label">HEALTH SCORE</div>
+                            </div>
+                            <div class="gauge-rating" id="health-rating">—</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Market Alerts</div>
+                            <div class="panel-badge alert" id="alerts-badge">0</div>
+                        </div>
+                        <div class="alerts-list" id="alerts-list"></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title">Phases Watchlist</div>
+                            <div class="panel-badge" id="phases-count">0</div>
+                        </div>
+                        <div class="watchlist" id="watchlist"></div>
+                        <div class="phase-input-row">
+                            <input type="text" class="phase-input" id="new-fase-input" placeholder="NEW PHASE...">
+                            <button class="btn-add" id="add-fase-btn">ADD</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar" id="bottom-bar"></div>
+
+            <div class="research">
+                <div class="research-head">
+                    <div class="research-title">▶ Executive Research Note</div>
+                    <div class="research-meta" id="research-meta"></div>
+                </div>
+                <div class="research-body" id="research-body"></div>
+            </div>
+        </div>
+
+        <script>
+            const PROYECTO_NOMBRE = ${JSON.stringify(nombreProyecto)};
+            const TAREAS = ${JSON.stringify(proyecto.tasks || [])};
+            const STORAGE_KEY = 'terminal_v6_' + PROYECTO_NOMBRE;
+            
+            let fasesData = {};
+            try { fasesData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+            if(!Object.keys(fasesData).length){ fasesData = { 'GENERAL': TAREAS.map(t => t.id) }; }
+
+            const asignadas = new Set(Object.values(fasesData).flat());
+            const sueltas = TAREAS.filter(t => !asignadas.has(t.id));
+            if(sueltas.length > 0){
+                if(!fasesData['SIN ASIGNAR']) fasesData['SIN ASIGNAR'] = [];
+                fasesData['SIN ASIGNAR'] = fasesData['SIN ASIGNAR'].concat(sueltas.map(t => t.id));
+            }
+            if(fasesData['SIN ASIGNAR'] && fasesData['SIN ASIGNAR'].length === 0) delete fasesData['SIN ASIGNAR'];
+
+            function updateClock(){
+                const now = new Date();
+                document.getElementById('tick-fecha').textContent = now.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'2-digit'}).toUpperCase();
+                document.getElementById('tick-hora').textContent = now.toLocaleTimeString('en-US', {hour12:false});
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            window.initTerminal = function() {
+                renderAll();
+                document.getElementById('add-fase-btn').onclick = addFase;
+                document.getElementById('new-fase-input').addEventListener('keypress', function(e){ if(e.key === 'Enter') addFase(); });
+                document.getElementById('proj-select').onchange = function() {
+                    localStorage.setItem('selectedProjectIndex', this.value);
+                    if(window.parent.cambiarProyecto) window.parent.cambiarProyecto(parseInt(this.value));
+                    window.parent.generarReporteFasesStatus();
+                };
+            };
+
+            function renderAll() {
+                guardar();
+                renderKPIs();
+                renderWatchlist();
+                renderTable();
+                renderChart();
+                renderHealthScore();
+                renderAlerts();
+                renderBottomStats();
+                renderResearch();
+            }
+
+            function guardar() { localStorage.setItem(STORAGE_KEY, JSON.stringify(fasesData)); }
+
+            function addFase() {
+                const input = document.getElementById('new-fase-input');
+                const nombre = input.value.trim().toUpperCase();
+                if(!nombre) return;
+                if(fasesData[nombre]) { alert('Phase already exists'); return; }
+                fasesData[nombre] = [];
+                input.value = '';
+                renderAll();
+            }
+
+            window.delFase = function(nombre) {
+                if(nombre === 'GENERAL') { alert('Cannot delete GENERAL phase'); return; }
+                if(!confirm('Delete phase "' + nombre + '"?')) return;
+                if(!fasesData['SIN ASIGNAR']) fasesData['SIN ASIGNAR'] = [];
+                fasesData['SIN ASIGNAR'] = fasesData['SIN ASIGNAR'].concat(fasesData[nombre] || []);
+                delete fasesData[nombre];
+                renderAll();
+            };
+
+            window.cambiarFase = function(tareaId, nuevaFase) {
+                Object.keys(fasesData).forEach(f => {
+                    fasesData[f] = fasesData[f].filter(id => id !== tareaId);
+                });
+                if(!fasesData[nuevaFase]) fasesData[nuevaFase] = [];
+                fasesData[nuevaFase].push(tareaId);
+                renderAll();
+            };
+
+            function getMetricas() {
+                const total = TAREAS.length;
+                const comp = TAREAS.filter(t => t.status === 'completed' || t.progress === 100).length;
+                const inProg = TAREAS.filter(t => t.status === 'inProgress' && t.progress !== 100).length;
+                const pend = TAREAS.filter(t => t.status === 'pending').length;
+                const atras = TAREAS.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+                const prog = total > 0 ? Math.round((comp/total)*100) : 0;
+                const hE = TAREAS.reduce((s,t) => s + (Number(t.estimatedTime) || 0), 0);
+                const hR = TAREAS.reduce((s,t) => s + (Number(t.timeLogged) || 0), 0);
+                const cpi = hR > 0 ? (hE / hR) : 1;
+                const spi = total > 0 ? (comp/total) : 0;
+                const horasDesv = hR - hE;
+                return { total, comp, inProg, pend, atras, prog, hE, hR, cpi, spi, horasDesv };
+            }
+
+            function renderKPIs() {
+                const m = getMetricas();
+                const cpiClass = m.cpi >= 1 ? 'green' : 'red';
+                const spiClass = m.spi >= 0.95 ? 'green' : (m.spi >= 0.8 ? 'amber' : 'red');
+                const desvClass = m.horasDesv > 0 ? 'red' : (m.horasDesv < 0 ? 'green' : 'neutral');
+                const atrasClass = m.atras > 0 ? 'red' : 'green';
+                
+                document.getElementById('kpi-strip').innerHTML = \`
+                    <div class="kpi-cell"><div class="kpi-label">Progress</div><div class="kpi-value \${m.prog >= 70 ? 'green' : m.prog >= 40 ? 'amber' : 'red'}">\${m.prog}<span style="font-size:14px">%</span></div><div class="kpi-foot">\${m.comp}/\${m.total} done</div></div>
+                    <div class="kpi-cell"><div class="kpi-label">CPI · Cost Perf.</div><div class="kpi-value \${cpiClass}">\${m.cpi.toFixed(2)}</div><div class="kpi-foot">\${m.cpi >= 1 ? '✓ ON BUDGET' : '⚠ OVERRUN'}</div></div>
+                    <div class="kpi-cell"><div class="kpi-label">SPI · Schedule Perf.</div><div class="kpi-value \${spiClass}">\${(m.spi*100).toFixed(0)}<span style="font-size:14px">%</span></div><div class="kpi-foot">\${m.spi >= 0.95 ? '✓ ON TRACK' : '⚠ DELAY'}</div></div>
+                    <div class="kpi-cell"><div class="kpi-label">Hours Deviation</div><div class="kpi-value \${desvClass}">\${m.horasDesv > 0 ? '+' : ''}\${m.horasDesv.toFixed(0)}<span style="font-size:14px">h</span></div><div class="kpi-foot">R:\${m.hR.toFixed(0)} E:\${m.hE.toFixed(0)}</div></div>
+                    <div class="kpi-cell"><div class="kpi-label">Overdue Tasks</div><div class="kpi-value \${atrasClass}">\${m.atras}</div><div class="kpi-foot">\${m.atras > 0 ? '⚠ CRITICAL' : '✓ CLEAR'}</div></div>
+                    <div class="kpi-cell"><div class="kpi-label">Active Phases</div><div class="kpi-value blue">\${Object.keys(fasesData).length}</div><div class="kpi-foot">\${m.inProg} in progress</div></div>
+                \`;
+            }
+
+            function renderWatchlist() {
+                const list = document.getElementById('watchlist');
+                document.getElementById('phases-count').textContent = Object.keys(fasesData).length;
+                list.innerHTML = Object.keys(fasesData).map(f => {
+                    const ids = fasesData[f];
+                    const tf = TAREAS.filter(t => ids.includes(t.id));
+                    const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length;
+                    const p = tf.length > 0 ? Math.round((comp/tf.length)*100) : 0;
+                    const changeClass = p >= 80 ? 'up' : p >= 40 ? 'flat' : 'down';
+                    const changeSign = p >= 80 ? '▲' : p >= 40 ? '▬' : '▼';
+                    const barColor = p >= 80 ? 'var(--green)' : p >= 40 ? 'var(--amber)' : 'var(--red)';
+                    const delBtn = f === 'GENERAL' ? '' : \`<button class="watch-del" onclick="event.stopPropagation(); delFase('\${f}')">✕</button>\`;
+                    return \`
+                        <div class="watch-row">
+                            <div><div class="watch-symbol">\${f}</div><div style="font-size:9px; color:var(--text-dim); margin-top:2px;">\${tf.length} POSITIONS</div></div>
+                            <div class="watch-progress"><div class="watch-bar"><div class="watch-bar-fill" style="width:\${p}%; background:\${barColor}"></div></div></div>
+                            <div class="watch-change \${changeClass}">\${changeSign} \${p}%</div>
+                            \${delBtn}
+                        </div>
+                    \`;
+                }).join('');
+            }
+
+            function renderTable() {
+                const grid = document.getElementById('data-grid');
+                document.getElementById('grid-count').textContent = TAREAS.length + ' POS';
+                grid.innerHTML = TAREAS.map((t, i) => {
+                    const faseActual = Object.keys(fasesData).find(f => fasesData[f].includes(t.id)) || 'SIN ASIGNAR';
+                    const opciones = Object.keys(fasesData).map(f => \`<option value="\${f}" \${f === faseActual ? 'selected' : ''}>\${f}</option>\`).join('');
+                    let statusClass = 'pending', statusTxt = 'PENDING';
+                    if(t.status === 'completed' || t.progress === 100) { statusClass = 'completed'; statusTxt = 'DONE'; }
+                    else if(t.status === 'inProgress') { statusClass = 'inprogress'; statusTxt = 'IN PROG'; }
+                    else if(t.status === 'overdue' || (t.deadline && new Date(t.deadline) < new Date())) { statusClass = 'overdue'; statusTxt = 'OVERDUE'; }
+                    const hR = Number(t.timeLogged) || 0, hE = Number(t.estimatedTime) || 0, diff = hR - hE;
+                    const diffClass = diff > 0 ? 'diff' : 'ok';
+                    const prog = t.progress || 0;
+                    const progBarColor = prog >= 80 ? 'var(--green)' : prog >= 40 ? 'var(--blue)' : 'var(--red)';
+                    return \`
+                        <div class="grid-row">
+                            <div class="grid-id">#\${String(i+1).padStart(3, '0')}</div>
+                            <div class="grid-name" title="\${t.name}">\${t.name || 'UNTITLED'}</div>
+                            <div><span class="status-badge \${statusClass}"><div class="status-dot"></div>\${statusTxt}</span></div>
+                            <div class="progress-mini"><div class="progress-bar-mini"><div style="width:\${prog}%; background:\${progBarColor}"></div></div><span style="font-size:10px; color:var(--text-mid)">\${prog}%</span></div>
+                            <div class="hours-cell">\${hR}h / \${hE}h <span class="\${diffClass}">(\${diff > 0 ? '+' : ''}\${diff}h)</span></div>
+                            <div><select class="phase-select" onchange="cambiarFase(\${t.id}, this.value)">\${opciones}</select></div>
+                        </div>
+                    \`;
+                }).join('');
+            }
+
+            function renderChart() {
+                if(window.chartMain) window.chartMain.destroy();
+                const ctx = document.getElementById('chart-main').getContext('2d');
+                const fases = Object.keys(fasesData);
+                const labels = fases.map(f => f.length > 12 ? f.substring(0, 12) + '…' : f);
+                const data = fases.map(f => {
+                    const ids = fasesData[f];
+                    const tf = TAREAS.filter(t => ids.includes(t.id));
+                    const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length;
+                    return tf.length > 0 ? Math.round((comp/tf.length)*100) : 0;
+                });
+
+                window.chartMain = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: [{ data: data, backgroundColor: data.map(v => v >= 80 ? '#00d964' : v >= 40 ? '#ffb800' : '#ff3b30'), borderColor: data.map(v => v >= 80 ? '#00d964' : v >= 40 ? '#ffb800' : '#ff3b30'), borderWidth: 1, borderRadius: 4, barPercentage: 0.65 }] },
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#a0a0a0', bodyColor: '#00d964', padding: 10, displayColors: false, titleFont: { family: 'JetBrains Mono', size: 10 }, bodyFont: { family: 'JetBrains Mono', size: 12, weight: '700' }, callbacks: { label: function(c){ const fase = Object.keys(fasesData)[c.dataIndex]; const tf = TAREAS.filter(t => fasesData[fase].includes(t.id)); const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length; return c.raw + '% (' + comp + '/' + tf.length + ' tasks)'; } } } }, scales: { x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6e6e6e', font: { family: 'JetBrains Mono', size: 9 }, callback: v => v + '%' } }, y: { grid: { display: false, drawBorder: false }, ticks: { color: '#a0a0a0', font: { family: 'JetBrains Mono', size: 10, weight: '700' } } } } }
+                });
+            }
+
+            function renderHealthScore() {
+                const m = getMetricas();
+                const progScore = m.prog, cpiScore = Math.min(100, m.cpi * 100), spiScore = m.spi * 100;
+                const penalizacion = m.atras * 5;
+                const score = Math.max(0, Math.min(100, Math.round((progScore * 0.4) + (cpiScore * 0.3) + (spiScore * 0.3) - penalizacion)));
+                document.getElementById('health-value').textContent = score;
+                document.getElementById('health-value').style.color = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--amber)' : 'var(--red)';
+                const arc = document.getElementById('gauge-arc');
+                const circumference = 251;
+                arc.style.strokeDashoffset = circumference - (score / 100 * circumference);
+                arc.style.transition = 'stroke-dashoffset 1s ease-out';
+                const rating = document.getElementById('health-rating');
+                if(score >= 85) { rating.textContent = '● EXCELLENT'; rating.style.background = 'var(--green-bg)'; rating.style.color = 'var(--green)'; }
+                else if(score >= 70) { rating.textContent = '● GOOD'; rating.style.background = 'var(--green-bg)'; rating.style.color = 'var(--green)'; }
+                else if(score >= 50) { rating.textContent = '● STABLE'; rating.style.background = 'var(--amber-bg)'; rating.style.color = 'var(--amber)'; }
+                else if(score >= 30) { rating.textContent = '● AT RISK'; rating.style.background = 'var(--amber-bg)'; rating.style.color = 'var(--amber)'; }
+                else { rating.textContent = '● CRITICAL'; rating.style.background = 'var(--red-bg)'; rating.style.color = 'var(--red)'; }
+            }
+
+            function renderAlerts() {
+                const m = getMetricas();
+                const alertas = [];
+                if(m.atras > 0) alertas.push({ tipo: 'critical', icon: '⚠', titulo: m.atras + ' OVERDUE TASKS', desc: 'Posiciones fuera de plazo' });
+                if(m.cpi < 0.9) alertas.push({ tipo: 'critical', icon: '$', titulo: 'COST OVERRUN', desc: ((1-m.cpi)*100).toFixed(1) + '% sobre presupuesto' });
+                else if(m.cpi < 1) alertas.push({ tipo: 'warning', icon: '$', titulo: 'BUDGET WATCH', desc: 'CPI ' + m.cpi.toFixed(2) + ' · Ligero desvío' });
+                if(m.spi < 0.9) alertas.push({ tipo: 'critical', icon: '⏱', titulo: 'SCHEDULE DELAY', desc: ((1-m.spi)*100).toFixed(1) + '% retraso vs plan' });
+                else if(m.spi < 0.95) alertas.push({ tipo: 'warning', icon: '⏱', titulo: 'SCHEDULE WATCH', desc: 'SPI ' + (m.spi*100).toFixed(0) + '%' });
+                if(m.horasDesv > m.hE * 0.2) alertas.push({ tipo: 'warning', icon: '⏳', titulo: 'HOURS DEVIATION', desc: '+' + m.horasDesv.toFixed(0) + 'h sobre estimación' });
+                if(alertas.length === 0) alertas.push({ tipo: 'ok', icon: '✓', titulo: 'ALL SYSTEMS NOMINAL', desc: 'Sin alertas críticas detectadas' });
+                document.getElementById('alerts-badge').textContent = alertas.filter(a => a.tipo !== 'ok').length;
+                if(alertas.filter(a => a.tipo !== 'ok').length === 0) { document.getElementById('alerts-badge').classList.remove('alert'); document.getElementById('alerts-badge').classList.add('ok'); }
+                document.getElementById('alerts-list').innerHTML = alertas.map(a => \`<div class="alert-item"><div class="alert-icon \${a.tipo}">\${a.icon}</div><div class="alert-msg">\${a.titulo}<small>\${a.desc}</small></div><div class="alert-value">\${a.tipo === 'ok' ? '✓' : '!'}</div></div>\`).join('');
+            }
+
+            function renderBottomStats() {
+                const m = getMetricas();
+                const alertas = []; if(m.atras > 0) alertas.push(1); if(m.cpi < 1) alertas.push(1); if(m.spi < 0.9) alertas.push(1);
+                document.getElementById('bottom-bar').innerHTML = \`
+                    <div class="mini-stat"><div><div class="mini-stat-label">Total Positions</div><div class="mini-stat-value">\${m.total}</div></div><div style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 10px;">\${m.comp} DONE</div></div>
+                    <div class="mini-stat"><div><div class="mini-stat-label">Active Workload</div><div class="mini-stat-value" style="color: var(--blue)">\${m.inProg + m.pend}</div></div><div style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 10px;">\${m.inProg} IN PROG</div></div>
+                    <div class="mini-stat"><div><div class="mini-stat-label">Critical Alerts</div><div class="mini-stat-value" style="color: \${alertas.length > 0 ? 'var(--red)' : 'var(--green)'}">\${alertas.length}</div></div><div style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 10px;">\${alertas.length > 0 ? 'REQUIRES ATTN' : 'ALL CLEAR'}</div></div>
+                \`;
+            }
+
+            function renderResearch() {
+                const m = getMetricas();
+                const now = new Date();
+                document.getElementById('research-meta').textContent = now.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'2-digit'}).toUpperCase() + ' · ' + now.toLocaleTimeString('en-US', {hour12:false});
+                let texto = '';
+                texto += '<div style="margin-bottom: 12px;"><strong>OVERVIEW.</strong> El portafolio <strong>' + PROYECTO_NOMBRE + '</strong> presenta un avance consolidado del <strong class="' + (m.prog >= 70 ? 'up' : m.prog >= 40 ? 'warn' : 'down') + '">' + m.prog + '%</strong> sobre un universo de <strong>' + m.total + ' posiciones activas</strong>, distribuidas en <strong>' + Object.keys(fasesData).length + ' fases operativas</strong>. </div>';
+                texto += '<div style="margin-bottom: 12px;"><strong>COST PERFORMANCE.</strong> El índice CPI se sitúa en <strong class="' + (m.cpi >= 1 ? 'up' : 'down') + '">' + m.cpi.toFixed(2) + '</strong> ';
+                if(m.cpi >= 1) texto += 'indicando una eficiencia presupuestaria del <strong class="up">' + ((m.cpi-1)*100).toFixed(1) + '% por encima de lo planificado</strong>. La desviación de horas es de ' + (m.horasDesv > 0 ? '+' : '') + m.horasDesv.toFixed(0) + 'h respecto al baseline. ';
+                else texto += 'reflejando un <strong class="down">sobrecosto del ' + ((1-m.cpi)*100).toFixed(1) + '%</strong> sobre el presupuesto asignado. La desviación de horas es de <strong class="down">+' + m.horasDesv.toFixed(0) + 'h</strong> respecto al baseline. ';
+                texto += '</div>';
+                texto += '<div style="margin-bottom: 12px;"><strong>SCHEDULE PERFORMANCE.</strong> El índice SPI de <strong class="' + (m.spi >= 0.95 ? 'up' : 'warn') + '">' + (m.spi*100).toFixed(0) + '%</strong> ';
+                if(m.spi >= 0.95) texto += 'confirma el cumplimiento del cronograma establecido. ';
+                else texto += 'sugiere un retraso relativo del <strong class="warn">' + ((1-m.spi)*100).toFixed(1) + '%</strong> frente al plan original. ';
+                if(m.atras > 0) texto += 'Se identifican <strong class="down">' + m.atras + ' posiciones fuera de plazo</strong> que requieren intervención inmediata del equipo directivo. ';
+                else texto += '<strong class="up">No se detectan desviaciones críticas en el cronograma.</strong> ';
+                texto += '</div>';
+                texto += '<div><strong>RECOMMENDATION.</strong> ';
+                if(m.prog >= 70 && m.cpi >= 1 && m.atras === 0) texto += '<strong class="up">MANTENER</strong> la estrategia actual. El portafolio se encuentra en trayectoria óptima de cierre.';
+                else if(m.prog >= 40) texto += '<strong class="warn">MONITORIZAR</strong> las fases de menor rendimiento y reforzar recursos en las posiciones críticas identificadas.';
+                else texto += '<strong class="down">ESCALAR</strong> a nivel ejecutivo. Se recomienda replanificación integral y reasignación de recursos prioritarios.';
+                texto += '</div>';
+                document.getElementById('research-body').innerHTML = texto;
+            }
+            window.addEventListener('load', window.initTerminal);
+        <\/script>
+    </body>
+    </html>`;
+    
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+};
+
+
+
 // ============================================
 // MAPEO DE REPORTES
 // ============================================
@@ -3025,6 +3547,7 @@ capacidad: window.generarReporteCapacidad,
 impactoEjecutivo: window.generarReporteImpactoEjecutivo,
 estrategia: window.generarReporteEstrategia,
 mapa3d: window.generarReporteMapa3D,
+fasesStatus: window.generarReporteFasesStatus  // 👈 AÑADIR
 };
 
 // ✅ CAMBIO 6: recordar qué reporte se abrió (para el selector dentro de los reportes)
