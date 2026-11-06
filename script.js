@@ -26036,6 +26036,7 @@ function renderScrum(container) {
 
     container.innerHTML = `
   <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow-y: auto !important; overflow-x: hidden !important; z-index: 9999; background: #020617; padding: 20px;">
+    <button onclick="window.closeScrumModal && window.closeScrumModal()" style="position: fixed; top: 15px; right: 20px; z-index: 10001; background: #ef4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">✕</button>
     <div style="display: block; width: 100%; max-width: 1400px; margin: 0 auto; padding: 40px 20px; background: #020617; box-sizing: border-box;">
         
         <!-- NAVBAR -->
@@ -26253,6 +26254,16 @@ function renderScrum(container) {
 
   window.exportExecutivePDF = async () => {
     alert("Función de PDF - Implementa tu lógica existente aquí");
+  };
+
+    // Función para cerrar la modal
+  window.closeScrumModal = () => {
+    container.innerHTML = '';
+    container.setAttribute('style', 'display:none!important;');
+    // Si hay una función global de cierre, la llamamos
+    if (typeof window.cerrarModal === 'function') {
+      window.cerrarModal();
+    }
   };
 
   render();
