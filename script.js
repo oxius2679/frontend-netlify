@@ -20337,12 +20337,39 @@ function renderGantt(container) {
             }
             
             @media print {
-                body { padding: 10px; background: white; }
-                .no-print { display: none !important; }
-                .gantt-row { break-inside: avoid; }
-                .corporate-header { break-inside: avoid; }
-                .two-columns, .kpi-grid, .recommendations-grid { grid-template-columns: 1fr !important; }
-            }
+                @media print {
+    body { 
+        padding: 10px; 
+        background: white; 
+    }
+    .no-print { 
+        display: none !important; 
+    }
+    .gantt-row { 
+        break-inside: avoid; 
+    }
+    .corporate-header { 
+        break-inside: avoid; 
+    }
+    /* Solo estas dos secciones van en 1 columna al imprimir */
+    .two-columns, .recommendations-grid { 
+        grid-template-columns: 1fr !important; 
+    }
+    /* KPIs en 4 columnas para que se vean en horizontal */
+    .kpi-grid { 
+        grid-template-columns: repeat(4, 1fr) !important; 
+        gap: 8px !important;
+    }
+    .kpi-card, .kpi-card-3d {
+        padding: 10px !important;
+    }
+    .kpi-value, .kpi-value-3d { 
+        font-size: 20px !important; 
+    }
+    .kpi-label, .kpi-label-3d { 
+        font-size: 9px !important; 
+    }
+}
         </style>
     </head>
     <body>
