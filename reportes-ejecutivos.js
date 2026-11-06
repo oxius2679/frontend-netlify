@@ -3010,21 +3010,50 @@ window.generarReporteMapa3D = function() {
 // REPORTE 22: TERMINAL DE FASES Y STATUS (VIP)
 // ============================================
 window.generarReporteFasesStatus = function() {
-    const proyecto = obtenerProyectoActual();
-    if (!proyecto) { alert(_t('no_project')); return; }
+    var proyectos = obtenerTodosProyectos();
+    if (!proyectos || proyectos.length === 0) { alert(_t('no_project')); return; }
 
-    var nombreProyecto = proyecto.name || proyecto.nombre;
-    if(!nombreProyecto || nombreProyecto === 'sin proyectos') nombreProyecto = 'PROYECTO ESTRATÉGICO ZACKY';
+    var idx = parseInt(localStorage.getItem('selectedProjectIndex') || '0', 10);
+    if (isNaN(idx) || idx < 0 || idx >= proyectos.length) idx = 0;
+    var proyecto = proyectos[idx];
 
-    var listaProyectos = obtenerTodosProyectos();
-    var idxActual = 0;
-    for(var i=0; i<listaProyectos.length; i++){
-        if((listaProyectos[i].name || listaProyectos[i].nombre) === (proyecto.name || proyecto.nombre)) { idxActual = i; break; }
-    }
+    var nombreProyecto = proyecto.name || proyecto.nombre || 'Proyecto sin nombre';
 
-    var opcionesProyectos = listaProyectos.map(function(p, i) {
+    // 1. MAPEO DE TAREAS (incluye timeHistory para las horas)
+    var tareasMapeadas = (proyecto.tasks || []).map(function(t) {
+        var getVal = function(obj, keys, def) {
+            for (var i = 0; i < keys.length; i++) {
+                if (obj[keys[i]] !== undefined && obj[keys[i]] !== null) return obj[keys[i]];
+            }
+            return def;
+        };
+        
+        var horasReales = Number(getVal(t, ['timeLogged', 'loggedTime', 'horasReales'], 0));
+        if (horasReales === 0) {
+            var historialHoras = t.timeHistory || t.timeLogs || t.historialHoras || [];
+            if (Array.isArray(historialHoras) && historialHoras.length > 0) {
+                horasReales = historialHoras.reduce(function(sum, r) {
+                    return sum + Number(r.hours || r.horas || r.time || r.amount || 0);
+                }, 0);
+            }
+        }
+
+        return {
+            id: t.id,
+            name: t.name || t.nombre || 'Sin nombre',
+            status: t.status || 'pending',
+            progress: Number(getVal(t, ['progress', 'progreso'], 0)),
+            estimatedTime: Number(getVal(t, ['estimatedTime', 'tiempoEstimado'], 0)),
+            timeLogged: horasReales,
+            deadline: t.deadline,
+            assignee: t.assignee,
+            priority: t.priority
+        };
+    });
+
+    var opcionesProyectos = proyectos.map(function(p, i) {
         var n = p.name || p.nombre || ('Proyecto ' + (i+1));
-        return '<option value="' + i + '" ' + (i === idxActual ? 'selected' : '') + '>' + n.toUpperCase() + '</option>';
+        return '<option value="' + i + '" ' + (i === idx ? 'selected' : '') + '>' + n.toUpperCase() + '</option>';
     }).join('');
 
     var old = document.getElementById('vip-fases-overlay'); if(old) old.remove();
@@ -3036,7 +3065,6 @@ window.generarReporteFasesStatus = function() {
     var iframe = document.createElement('iframe');
     iframe.style.cssText = 'width:100%;height:100%;border:none;background:#000;';
     
-    // Inyectar el HTML del reporte en el iframe
     iframe.srcdoc = `
     <!DOCTYPE html>
     <html lang="es">
@@ -3056,7 +3084,6 @@ window.generarReporteFasesStatus = function() {
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { background: var(--bg); color: var(--text); padding: 0; min-height: 100vh; font-family: 'Inter', sans-serif; font-size: 12px; -webkit-font-smoothing: antialiased; position: relative; }
             body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px); opacity: 0.3; }
-            .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
             
             .ticker-bar { height: 32px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; gap: 24px; overflow: hidden; }
             .ticker-item { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
@@ -3073,6 +3100,8 @@ window.generarReporteFasesStatus = function() {
             .select-proj { background: var(--panel-2); border: 1px solid var(--border-bright); color: var(--text); padding: 6px 12px; border-radius: 4px; font-size: 11px; outline: none; cursor: pointer; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px; }
             .btn-close { background: transparent; border: 1px solid var(--border-bright); color: var(--text-dim); width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
             .btn-close:hover { border-color: var(--red); color: var(--red); }
+            .btn-refresh { background: rgba(0,168,255,0.1); border: 1px solid var(--blue); color: var(--blue); padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; }
+            .btn-refresh:hover { background: rgba(0,168,255,0.2); }
             
             .layout { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
             
@@ -3176,6 +3205,7 @@ window.generarReporteFasesStatus = function() {
                 <div class="header-subtitle">▶ ${nombreProyecto.toUpperCase()} · ZACKY CAPITAL</div>
             </div>
             <div class="header-controls">
+                <button class="btn-refresh" onclick="parent.generarReporteFasesStatus()">🔄 REFRESCAR</button>
                 <select class="select-proj" id="proj-select">${opcionesProyectos}</select>
                 <button class="btn-close" onclick="parent.document.getElementById('vip-fases-overlay').remove()">✕</button>
             </div>
@@ -3212,26 +3242,26 @@ window.generarReporteFasesStatus = function() {
                             <div class="panel-title">Health Score</div>
                             <div class="panel-badge" id="health-badge">COMPOSITE</div>
                         </div>
-                       <div class="health-gauge-wrap">
-    <div style="position: relative; width: 200px; height: 110px;">
-        <svg class="gauge-svg" viewBox="0 0 200 110" style="width: 100%; height: 100%;">
-            <defs>
-                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#ff3b30"/>
-                    <stop offset="50%" stop-color="#ffb800"/>
-                    <stop offset="100%" stop-color="#00d964"/>
-                </linearGradient>
-            </defs>
-            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f1f1f" stroke-width="14" stroke-linecap="round"/>
-            <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
-        </svg>
-        <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding-bottom: 0px;">
-            <div class="gauge-value" id="health-value" style="font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -1.5px; line-height: 1; color: #fff; margin-bottom: 0;">0</div>
-        </div>
-    </div>
-    <div class="gauge-label" style="font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-weight: 700;">HEALTH SCORE</div>
-    <div class="gauge-rating" id="health-rating" style="margin-top: 12px; padding: 4px 12px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">—</div>
-</div>
+                        <div class="health-gauge-wrap">
+                            <div style="position: relative; width: 200px; height: 110px;">
+                                <svg class="gauge-svg" viewBox="0 0 200 110" style="width: 100%; height: 100%;">
+                                    <defs>
+                                        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#ff3b30"/>
+                                            <stop offset="50%" stop-color="#ffb800"/>
+                                            <stop offset="100%" stop-color="#00d964"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f1f1f" stroke-width="14" stroke-linecap="round"/>
+                                    <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+                                </svg>
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding-bottom: 0px;">
+                                    <div class="gauge-value" id="health-value" style="font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: -1.5px; line-height: 1; color: #fff; margin-bottom: 0;">0</div>
+                                </div>
+                            </div>
+                            <div class="gauge-label" style="font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-weight: 700;">HEALTH SCORE</div>
+                            <div class="gauge-rating" id="health-rating" style="margin-top: 12px; padding: 4px 12px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">—</div>
+                        </div>
                     </div>
 
                     <div class="panel">
@@ -3269,9 +3299,9 @@ window.generarReporteFasesStatus = function() {
 
         <script>
             const PROYECTO_NOMBRE = ${JSON.stringify(nombreProyecto)};
-            const TAREAS = ${JSON.stringify(proyecto.tasks || [])};
+            const TAREAS = ${JSON.stringify(tareasMapeadas)};
             const STORAGE_KEY = 'terminal_v6_' + PROYECTO_NOMBRE;
-            
+
             let fasesData = {};
             try { fasesData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
             if(!Object.keys(fasesData).length){ fasesData = { 'GENERAL': TAREAS.map(t => t.id) }; }
@@ -3383,12 +3413,16 @@ window.generarReporteFasesStatus = function() {
                 list.innerHTML = Object.keys(fasesData).map(f => {
                     const ids = fasesData[f];
                     const tf = TAREAS.filter(t => ids.includes(t.id));
-                    const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length;
-                    const p = tf.length > 0 ? Math.round((comp/tf.length)*100) : 0;
+                    
+                    // ✅ FIX: Promedio de progreso en lugar de conteo binario
+                    const sumProg = tf.reduce((sum, t) => sum + (Number(t.progress) || 0), 0);
+                    const p = tf.length > 0 ? Math.round(sumProg / tf.length) : 0;
+
                     const changeClass = p >= 80 ? 'up' : p >= 40 ? 'flat' : 'down';
                     const changeSign = p >= 80 ? '▲' : p >= 40 ? '▬' : '▼';
                     const barColor = p >= 80 ? 'var(--green)' : p >= 40 ? 'var(--amber)' : 'var(--red)';
                     const delBtn = f === 'GENERAL' ? '' : \`<button class="watch-del" onclick="event.stopPropagation(); delFase('\${f}')">✕</button>\`;
+                    
                     return \`
                         <div class="watch-row">
                             <div><div class="watch-symbol">\${f}</div><div style="font-size:9px; color:var(--text-dim); margin-top:2px;">\${tf.length} POSITIONS</div></div>
@@ -3432,17 +3466,19 @@ window.generarReporteFasesStatus = function() {
                 const ctx = document.getElementById('chart-main').getContext('2d');
                 const fases = Object.keys(fasesData);
                 const labels = fases.map(f => f.length > 12 ? f.substring(0, 12) + '…' : f);
+                
+                // ✅ FIX: Promedio de progreso en lugar de conteo binario
                 const data = fases.map(f => {
                     const ids = fasesData[f];
                     const tf = TAREAS.filter(t => ids.includes(t.id));
-                    const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length;
-                    return tf.length > 0 ? Math.round((comp/tf.length)*100) : 0;
+                    const sumProg = tf.reduce((sum, t) => sum + (Number(t.progress) || 0), 0);
+                    return tf.length > 0 ? Math.round(sumProg / tf.length) : 0;
                 });
 
                 window.chartMain = new Chart(ctx, {
                     type: 'bar',
                     data: { labels: labels, datasets: [{ data: data, backgroundColor: data.map(v => v >= 80 ? '#00d964' : v >= 40 ? '#ffb800' : '#ff3b30'), borderColor: data.map(v => v >= 80 ? '#00d964' : v >= 40 ? '#ffb800' : '#ff3b30'), borderWidth: 1, borderRadius: 4, barPercentage: 0.65 }] },
-                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#a0a0a0', bodyColor: '#00d964', padding: 10, displayColors: false, titleFont: { family: 'JetBrains Mono', size: 10 }, bodyFont: { family: 'JetBrains Mono', size: 12, weight: '700' }, callbacks: { label: function(c){ const fase = Object.keys(fasesData)[c.dataIndex]; const tf = TAREAS.filter(t => fasesData[fase].includes(t.id)); const comp = tf.filter(t => t.status === 'completed' || t.progress === 100).length; return c.raw + '% (' + comp + '/' + tf.length + ' tasks)'; } } } }, scales: { x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6e6e6e', font: { family: 'JetBrains Mono', size: 9 }, callback: v => v + '%' } }, y: { grid: { display: false, drawBorder: false }, ticks: { color: '#a0a0a0', font: { family: 'JetBrains Mono', size: 10, weight: '700' } } } } }
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#a0a0a0', bodyColor: '#00d964', padding: 10, displayColors: false, titleFont: { family: 'JetBrains Mono', size: 10 }, bodyFont: { family: 'JetBrains Mono', size: 12, weight: '700' }, callbacks: { label: function(c){ const fase = Object.keys(fasesData)[c.dataIndex]; const tf = TAREAS.filter(t => fasesData[fase].includes(t.id)); return c.raw + '% avg progress'; } } } }, scales: { x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6e6e6e', font: { family: 'JetBrains Mono', size: 9 }, callback: v => v + '%' } }, y: { grid: { display: false, drawBorder: false }, ticks: { color: '#a0a0a0', font: { family: 'JetBrains Mono', size: 10, weight: '700' } } } } }
                 });
             }
 
@@ -3521,6 +3557,8 @@ window.generarReporteFasesStatus = function() {
     overlay.appendChild(iframe);
     document.body.appendChild(overlay);
 };
+
+
 
 
 
