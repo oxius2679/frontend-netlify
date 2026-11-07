@@ -1267,6 +1267,214 @@
 ============================================================ -->
 
 
+<!-- ============================================================
+     CAPA 2: INYECCIÓN DE DATOS REALES + SELECTOR DE PROYECTO
+============================================================ -->
+<script>
+(function() {
+  'use strict';
+  if (window.__ZACKY_EXECUTIVE_DATA_V2__) return;
+  window.__ZACKY_EXECUTIVE_DATA_V2__ = true;
+
+  const API_BASE = 'https://mi-sistema-proyectos-backend-4.onrender.com';
+  let realProjects = [];
+  let activeProjectIndex = 0;
+
+  // 1. Mapeo robusto de tareas (maneja ambos tipos de tareas)
+  function mapTask(task, index) {
+    return {
+      name: task.name || task.description || `Tarea ${index + 1}`,
+      estimatedTime: Number(task.estimatedTime) || 0,
+      timeLogged: Number(task.timeLogged) || 0,
+      status: task.status || 'pending',
+      progress: Number(task.progress) || 0,
+      deadline: task.deadline || null,
+      assignee: task.assignee || 'Sin asignar',
+      priority: task.priority || 'medium',
+      description: task.description || ''
+    };
+  }
+
+  // 2. Calcular EVM en HORAS (Para la pestaña COO)
+  function calculateEVMHours(tasks) {
+    const PV = tasks.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
+    const AC = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+    const EV = tasks.reduce((sum, t) => {
+      if (t.status === 'completed') return sum + (Number(t.estimatedTime) || 0);
+      if (t.status === 'inProgress') return sum + ((Number(t.estimatedTime) || 0) * (Number(t.progress) || 0) / 100);
+      return sum;
+    }, 0);
+    const CPI = AC > 0 ? EV / AC : 1;
+    const SPI = PV > 0 ? EV / PV : 1;
+    return { 
+      PV, EV, AC, CPI, SPI, 
+      EAC: CPI > 0 ? PV / CPI : PV, 
+      VAC: PV - (CPI > 0 ? PV / CPI : PV) 
+    };
+  }
+
+  // 3. Calcular EVM en EUROS (Para la pestaña CFO)
+  function calculateEVMCosts(tasks, costConfig) {
+    const costPerHour = costConfig?.costPerHour || 50;
+    const overhead = costConfig?.overheadPercentage || 0;
+    // Maneja tanto 'amount' como 'monto' por si acaso
+    const fixedCosts = (costConfig?.fixedCosts || []).reduce((sum, c) => sum + (Number(c.amount) || Number(c.monto) || 0), 0);
+    
+    const totalEstimatedHours = tasks.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
+    const totalLoggedHours = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
+    const earnedHours = tasks.reduce((sum, t) => {
+      if (t.status === 'completed') return sum + (Number(t.estimatedTime) || 0);
+      if (t.status === 'inProgress') return sum + ((Number(t.estimatedTime) || 0) * (Number(t.progress) || 0) / 100);
+      return sum;
+    }, 0);
+
+    const variableCosts = totalEstimatedHours * costPerHour;
+    const BAC = variableCosts + fixedCosts + (variableCosts * overhead / 100);
+    const AC = totalLoggedHours * costPerHour;
+    const EV = earnedHours * costPerHour;
+    const CPI = AC > 0 ? EV / AC : 1;
+    const SPI = BAC > 0 ? EV / BAC : 1;
+
+    return { 
+      BAC, PV: variableCosts, EV, AC, CPI, SPI, 
+      EAC: CPI > 0 ? BAC / CPI : BAC, 
+      ETC: (CPI > 0 ? BAC / CPI : BAC) - AC, 
+      VAC: BAC - (CPI > 0 ? BAC / CPI : BAC) 
+    };
+  }
+
+  // 4. Cargar y reemplazar datos
+  async function loadAndInjectData() {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (!token) {
+      console.warn('⚠️ Modo demo: no hay token, se mantienen los datos hardcodeados.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/user/projects`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Error fetching projects');
+      const data = await res.json();
+      const backendProjects = data.projects || [];
+
+      if (backendProjects.length === 0) {
+        console.warn('⚠️ No hay proyectos en el backend.');
+        return;
+      }
+
+      // Mapear proyectos al formato del demo
+      realProjects = backendProjects.map((p, idx) => {
+        const tasks = (p.tasks || []).map((t, tIdx) => mapTask(t, tIdx));
+        
+        // Leer config de costos de localStorage
+        let costConfig = null;
+        try {
+          const saved = localStorage.getItem(`evmCostConfig_p_${p.id}`);
+          if (saved) costConfig = JSON.parse(saved);
+        } catch(e) {}
+
+        const evmHours = calculateEVMHours(tasks);
+        const evmCosts = calculateEVMCosts(tasks, costConfig);
+
+        return {
+          id: p.id,
+          name: p.name || `Proyecto ${idx + 1}`,
+          client: 'Cliente',
+          budget: evmCosts.BAC,
+          actualCost: evmCosts.AC,
+          earnedValue: evmCosts.EV,
+          plannedValue: evmCosts.PV,
+          margin: evmCosts.CPI >= 1 ? 25 : 15,
+          roi: evmCosts.CPI >= 1 ? 30 : 10,
+          health: evmHours.CPI >= 0.9 ? 'saludable' : evmHours.CPI >= 0.8 ? 'aceptable' : 'critico',
+          opStatus: evmHours.CPI >= 0.9 && evmHours.SPI >= 0.9 ? 'activo' : (evmHours.CPI < 0.8 || evmHours.SPI < 0.8) ? 'bloqueado' : 'pausa',
+          phase: 'Ejecución',
+          phaseProgress: Math.round(evmHours.SPI * 100),
+          operHealth: evmHours.CPI >= 0.9 ? 'saludable' : 'aceptable',
+          startDate: p.createdAt || new Date().toISOString(),
+          endDate: null,
+          milestones: [],
+          blockers: [],
+          team: [],
+          tasks: tasks,
+          evmHours: evmHours,
+          evmCosts: evmCosts
+        };
+      });
+
+      // Reemplazar variable global del demo
+      if (typeof window.PROJECTS !== 'undefined') {
+        window.PROJECTS = realProjects;
+      }
+      
+      // Recalcular TOTALS si existe
+      if (typeof window.calculateTotals === 'function') {
+        window.calculateTotals();
+      } else if (typeof window.TOTALS !== 'undefined') {
+        window.TOTALS = {
+          budget: realProjects.reduce((s, p) => s + p.budget, 0),
+          actualCost: realProjects.reduce((s, p) => s + p.actualCost, 0),
+          earnedValue: realProjects.reduce((s, p) => s + p.earnedValue, 0),
+          plannedValue: realProjects.reduce((s, p) => s + p.plannedValue, 0)
+        };
+      }
+
+      console.log(`✅ ${realProjects.length} proyectos reales inyectados en el demo.`);
+      injectProjectSelector();
+      renderActiveProject();
+
+    } catch (error) {
+      console.error('❌ Error inyectando datos reales:', error);
+    }
+  }
+
+  // 5. Inyectar Selector Visual al lado del título
+  function injectProjectSelector() {
+    const titleElement = document.querySelector('.zep-title') || document.querySelector('h1');
+    if (!titleElement) return;
+
+    const selectorHTML = `
+      <select id="zepProjectSelector" style="
+        margin-left: 20px; padding: 8px 16px; border-radius: 8px; 
+        background: rgba(15,23,42,0.8); color: #fde68a; border: 1px solid rgba(212,175,55,0.4);
+        font-weight: bold; font-size: 14px; cursor: pointer; outline: none;
+      ">
+        ${realProjects.map((p, i) => `<option value="${i}">${p.name}</option>`).join('')}
+      </select>
+    `;
+    
+    titleElement.insertAdjacentHTML('afterend', selectorHTML);
+
+    document.getElementById('zepProjectSelector').addEventListener('change', (e) => {
+      activeProjectIndex = parseInt(e.target.value);
+      renderActiveProject();
+    });
+  }
+
+  // 6. Renderizar proyecto activo
+  function renderActiveProject() {
+    console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
+    if (typeof window.renderCFO === 'function') window.renderCFO();
+    if (typeof window.renderCOO === 'function') window.renderCOO();
+  }
+
+  // Ejecutar cuando el demo esté listo
+  window.addEventListener('zackyExecutiveReady', loadAndInjectData);
+  if (document.readyState === 'complete') {
+    setTimeout(loadAndInjectData, 1000);
+  } else {
+    window.addEventListener('load', () => setTimeout(loadAndInjectData, 1000));
+  }
+
+})();
+</script>
+<!-- ============================================================
+     FIN CAPA 2
+============================================================ -->
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
