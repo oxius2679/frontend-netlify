@@ -1704,7 +1704,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* GANTT */
 .gantt-wrapper{background:rgba(0,0,0,0.3);border-radius:14px;padding:16px;overflow-x:auto}
-.gantt-chart{min-width:800px}
+.gantt-chart{min-width:800px; padding-top: 25px;}
 .gantt-header{display:flex;border-bottom:2px solid rgba(139,92,246,0.3);margin-bottom:8px;padding-bottom:8px}
 .gantt-label-col{width:200px;min-width:200px;flex-shrink:0;font-size:10px;font-weight:900;color:var(--violet-l);text-transform:uppercase;letter-spacing:1px}
 .gantt-timeline{flex:1;display:flex;position:relative}
@@ -1717,8 +1717,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .gantt-bar:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.5)}
 .gantt-milestone{position:absolute;top:50%;transform:translate(-50%,-50%) rotate(45deg);width:10px;height:10px;border:2px solid #fff;box-shadow:0 0 10px currentColor}
 .gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#fbbf24,#ef4444);z-index:5;box-shadow:0 0 12px #fbbf24}
-.gantt-today-label{position:absolute;top:-22px;transform:translateX(-50%);background:linear-gradient(135deg,#fbbf24,#ef4444);color:#0b0e17;font-size:9px;font-weight:900;padding:2px 8px;border-radius:10px;letter-spacing:0.5px}
-.gantt-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:10px}
+.gantt-today-label{position:absolute;top:-22px;transform:translateX(-50%);background:linear-gradient(135deg,#fbbf24,#ef4444);color:#0b0e17;font-size:9px;font-weight:900;padding:2px 8px;border-radius:10px;letter-spacing:0.5px;z-index:10;}.gantt-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:10px}
 .gantt-legend-item{display:flex;align-items:center;gap:6px;color:#cbd5e1;font-weight:700}
 .gantt-legend-dot{width:12px;height:12px;border-radius:3px}
 
