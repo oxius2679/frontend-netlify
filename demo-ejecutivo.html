@@ -1318,11 +1318,23 @@
   }
 
   // 3. Calcular EVM en EUROS (CFO)
-  function calculateEVMCosts(tasks, costConfig) {
-    const costPerHour = costConfig?.costPerHour || 50;
-    const overhead = costConfig?.overheadPercentage || 0;
-    const fixedCosts = (costConfig?.fixedCosts || []).reduce((sum, c) => sum + (Number(c.amount) || Number(c.monto) || 0), 0);
+    function calculateEVMCosts(tasks, costConfig) {
+    // Valores por defecto si no hay configuración
+    const costPerHour = Number(costConfig?.costPerHour) || 50;
+    const overheadRaw = Number(costConfig?.overheadPercentage) || 0;
     
+    // Convertir Overhead (si viene como 15 en lugar de 0.15)
+    const overheadMultiplier = overheadRaw > 1 ? (overheadRaw / 100) : overheadRaw;
+    
+    // Manejar Costos Fijos (pueden venir como número o como lista de objetos)
+    let fixedCosts = 0;
+    if (Array.isArray(costConfig?.fixedCosts)) {
+      fixedCosts = costConfig.fixedCosts.reduce((sum, c) => sum + (Number(c.amount) || Number(c.monto) || 0), 0);
+    } else if (typeof costConfig?.fixedCosts === 'number') {
+      fixedCosts = costConfig.fixedCosts;
+    }
+    
+    // Calcular variables
     const totalEstimatedHours = tasks.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
     const totalLoggedHours = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
     const earnedHours = tasks.reduce((sum, t) => {
@@ -1331,8 +1343,9 @@
       return sum;
     }, 0);
 
+    // FÓRMULA MAESTRA
     const variableCosts = totalEstimatedHours * costPerHour;
-    const BAC = variableCosts + fixedCosts + (variableCosts * overhead / 100);
+    const BAC = variableCosts + fixedCosts + (variableCosts * overheadMultiplier);
     const AC = totalLoggedHours * costPerHour;
     const EV = earnedHours * costPerHour;
     const CPI = AC > 0 ? EV / AC : 1;
@@ -1383,12 +1396,40 @@
         const tasks = (p.tasks || []).map((t, tIdx) => mapTask(t, tIdx));
         
         // Leer config de costos de localStorage
+                // 🔥 BÚSQUEDA INTELIGENTE DE CONFIGURACIÓN DE COSTOS
         let costConfig = null;
-        try {
-          const saved = localStorage.getItem(`evmCostConfig_p_${p.id}`);
-          if (saved) costConfig = JSON.parse(saved);
-        } catch(e) {
-          console.warn(`⚠️ No se pudo leer config de costos para proyecto ${p.id}`);
+        
+        // 1. Intentar leer del objeto del proyecto que viene del backend (si lo envía)
+        if (p.costConfig) {
+          costConfig = p.costConfig;
+        } else if (p.costPerHour || p.overheadPercentage || p.fixedCosts) {
+          costConfig = {
+            costPerHour: p.costPerHour,
+            overheadPercentage: p.overheadPercentage,
+            fixedCosts: p.fixedCosts
+          };
+        }
+
+        // 2. Si no está en el backend, buscar en localStorage (probando varias llaves posibles)
+        if (!costConfig) {
+          try {
+            const posiblesLlaves = [
+              `evmCostConfig_p_${p.id}`, 
+              `evmCostConfig_${p.id}`, 
+              `costConfig_${p.id}`,
+              `evm_cost_config_${p.id}`
+            ];
+            for (let llave of posiblesLlaves) {
+              const saved = localStorage.getItem(llave);
+              if (saved) {
+                costConfig = JSON.parse(saved);
+                console.log(`✅ Configuración de costos encontrada en llave: ${llave}`);
+                break;
+              }
+            }
+          } catch(e) {
+            console.warn(`⚠️ Error buscando config de costos para proyecto ${p.id}`, e);
+          }
         }
 
         const evmHours = calculateEVMHours(tasks);
