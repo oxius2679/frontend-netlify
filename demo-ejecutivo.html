@@ -1437,20 +1437,30 @@
           }
         }
 
-        const evmHours = calculateEVMHours(tasks);
+                const evmHours = calculateEVMHours(tasks);
         const evmCosts = calculateEVMCosts(tasks, costConfig);
 
-                       return {
+        // 🔥 CALCULAR FECHAS DEL PROYECTO BASADAS EN LAS TAREAS
+        let projectStart = p.startDate;
+        let projectEnd = p.endDate;
+        
+        // Si el proyecto no tiene fechas, las sacamos de la tarea más próxima y la más lejana
+        if ((!projectStart || !projectEnd) && tasks.length > 0) {
+            const taskDates = tasks.filter(t => t.deadline).map(t => new Date(t.deadline).getTime());
+            if (taskDates.length > 0) {
+                projectStart = new Date(Math.min(...taskDates)).toISOString();
+                projectEnd = new Date(Math.max(...taskDates)).toISOString();
+            }
+        }
+
+        return {
           id: p.id,
           name: p.name || `Proyecto ${idx + 1}`,
           client: 'Cliente',
-          
-          // 🔥 AQUÍ ESTÁ EL TRUCO: Usamos nuestro BAC calculado, IGNORANDO el del backend si es muy bajo
           budget: evmCosts.BAC, 
           actualCost: evmCosts.AC,
           earnedValue: evmCosts.EV,
-          plannedValue: evmCosts.PV, // Esto mantendrá el PV en €1700
-          
+          plannedValue: evmCosts.PV,
           margin: evmCosts.CPI >= 1 ? 25 : 15,
           roi: evmCosts.CPI >= 1 ? 30 : 10,
           health: evmHours.CPI >= 0.9 ? 'saludable' : evmHours.CPI >= 0.8 ? 'aceptable' : 'critico',
@@ -1458,8 +1468,8 @@
           phase: 'Ejecución',
           phaseProgress: Math.round(evmHours.SPI * 100),
           operHealth: evmHours.CPI >= 0.9 ? 'saludable' : 'aceptable',
-          startDate: p.createdAt || new Date().toISOString(),
-          endDate: null,
+          startDate: projectStart || new Date().toISOString(), // Usamos la fecha calculada
+          endDate: projectEnd || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // Usamos la fecha calculada
           milestones: [],
           blockers: [],
           team: [],
