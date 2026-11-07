@@ -2377,13 +2377,7 @@ var TABS={
   vip:{t:'Executive Experience · VIP',s:'Vista C-Suite',r:renderVIP}
 };
 function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});document.getElementById('v-'+id).classList.add('on');var tab=TABS[id];if(tab){document.getElementById('mTitle').textContent=tab.t;document.getElementById('mSub').textContent=tab.s;if(tab.r)tab.r();}}
-function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' 
-
-
-
-
-
-alertas';renderCFO();initVoice();}
+function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' alertas';renderCFO();initVoice();}
 function closeModal(){document.getElementById('modal').classList.remove('on');document.body.style.overflow='';}
 
 /* ═══════════════════════════════════════════════════════════
