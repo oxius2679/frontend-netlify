@@ -2380,14 +2380,7 @@ function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.c
 function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' 
 
 
-// 👇 AÑADE ESTA LÍNEA AQUÍ
-  if (typeof injectProjectSelector === 'function') {
-    injectProjectSelector();
-  }
-  
-  renderCFO();
-  initVoice();
-}
+
 
 
 alertas';renderCFO();initVoice();}
