@@ -1722,48 +1722,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .gantt-legend-item{display:flex;align-items:center;gap:6px;color:#cbd5e1;font-weight:700}
 .gantt-legend-dot{width:12px;height:12px;border-radius:3px}
 
-
-
-/* 🔥 MEJORAS VISUALES DEL GANTT (Pegado aquí) */
-.gantt-chart {
-  position: relative; 
-}
-.gantt-bar {
-  min-width: 30px !important; 
-  position: relative;
-  z-index: 2;
-}
-.gantt-bar-progress {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; /* Ajustado para que la sombra vaya a la derecha */
-  background: rgba(0,0,0,0.3); 
-  border-radius: 0 6px 6px 0;
-  pointer-events: none;
-}
-.gantt-today-global {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 2px;
-  background: linear-gradient(180deg, #fbbf24, #ef4444);
-  z-index: 5;
-  box-shadow: 0 0 12px #fbbf24;
-}
-.gantt-today-label-global {
-  position: absolute;
-  top: -24px;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #fbbf24, #ef4444);
-  color: #0b0e17;
-  font-size: 9px;
-  font-weight: 900;
-  padding: 2px 8px;
-  border-radius: 10px;
-  letter-spacing: 0.5px;
-  z-index: 6;
-}
-
-
-
 @media(max-width:1100px){.kpi-4{grid-template-columns:repeat(2,1fr)}.kpi-6{grid-template-columns:repeat(3,1fr)}.hero-grid,.chart-2{grid-template-columns:1fr}}
 @media(max-width:640px){.kpi-4,.kpi-6{grid-template-columns:1fr}}
 
@@ -2149,9 +2107,8 @@ function drawGantt(){
   var totalDays=Math.max(1, (globalEnd-globalStart)/(1000*60*60*24));
   var today=Date.now();
 
-  // Calcular posición de HOY global
+  // Calcular posición de HOY
   var todayPct=((today-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
-  var showToday = todayPct >= 0 && todayPct <= 100;
 
   // Header de meses
   var months=[];
@@ -2168,14 +2125,14 @@ function drawGantt(){
   html+='</div></div>';
 
   // Filas
-  PROJECTS.forEach(function(p){
+  PROJECTS.forEach(function(p, index){
     var pStart=new Date(p.startDate).getTime();
     var pEnd=new Date(p.endDate).getTime();
     var leftPct=((pStart-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
     var widthPct=((pEnd-pStart)/(1000*60*60*24))/totalDays*100;
     
-    // Si el proyecto dura 0 días (misma fecha), forzamos un mínimo de ancho
-    if (widthPct < 1.5) widthPct = 1.5;
+    // 🔥 Forzar ancho mínimo para que las tareas cortas se vean como barras
+    if (widthPct < 3) widthPct = 3;
 
     var color=p.opStatus==='bloqueado'?'#ef4444':p.opStatus==='pausa'?'#fbbf24':'#34d399';
     var borderColor=p.criticalPath?'#8b5cf6':color;
@@ -2183,9 +2140,9 @@ function drawGantt(){
 
     html+='<div class="gantt-row"><div class="gantt-row-label">'+p.name.substring(0,25)+'<div class="sub">'+p.client+' · '+progress+'%</div></div><div class="gantt-row-track">';
     
-    // Dibujar barra con progreso interno
-    html+='<div class="gantt-bar" style="left:'+leftPct+'%;width:'+widthPct+'%;background:linear-gradient(135deg,'+color+','+color+'cc);border:1px solid '+borderColor+';" title="'+p.name+' ('+progress+'%)">';
-    html+='<div class="gantt-bar-progress" style="width:'+(100-progress)+'%; right:0; left:auto; border-radius:0 6px 6px 0;"></div>'; // Relleno oscuro del progreso pendiente
+    // 🔥 Barra con brillo superior para indicar progreso
+    html+='<div class="gantt-bar" style="left:'+leftPct+'%;width:'+widthPct+'%;background:linear-gradient(135deg,'+color+','+color+'cc);border:1px solid '+borderColor+';overflow:hidden;" title="'+p.name+' ('+progress+'%)">';
+    html+='<div style="position:absolute; bottom:0; left:0; height:3px; width:'+progress+'%; background:rgba(255,255,255,0.8);"></div>'; // Línea de progreso
     html+='</div>';
 
     // Hitos
@@ -2196,17 +2153,20 @@ function drawGantt(){
       html+='<div class="gantt-milestone" style="left:'+mPct+'%;background:'+mColor+';color:'+mColor+';" title="'+m.name+' ('+fDate(m.date)+')"></div>';
     });
     
+    // 🔥 Línea HOY (solo dibujamos el texto en la primera fila para no saturar)
+    if(todayPct>=0 && todayPct<=100){
+      html+='<div class="gantt-today-line" style="left:'+todayPct+'%;"></div>';
+      if (index === 0) {
+        html+='<div class="gantt-today-label" style="left:'+todayPct+'%;">HOY</div>';
+      }
+    }
+    
     html+='</div></div>';
   });
   
-  // Inyectar la línea global de HOY (solo una vez)
-  if (showToday) {
-    html += '<div class="gantt-today-global" style="left: calc(200px + (100% - 200px) * '+(todayPct/100)+');"></div>';
-    html += '<div class="gantt-today-label-global" style="left: calc(200px + (100% - 200px) * '+(todayPct/100)+');">HOY</div>';
-  }
-  
   container.innerHTML=html;
 }
+
 function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('on');});document.querySelectorAll('.toggle-btn').forEach(function(b){if(b.textContent.trim()===(v==='hours'?'Horas':'%'))b.classList.add('on');});drawBurndown();}
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
