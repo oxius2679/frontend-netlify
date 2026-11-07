@@ -2827,8 +2827,16 @@ document.addEventListener('DOMContentLoaded',function(){
   };
 
   // 2. Crear e inyectar el HTML del selector
+    // 2. Crear e inyectar el HTML del selector
   function injectSelectorUI() {
-    if (document.getElementById('zepProjectSelector')) return; // Ya existe
+    // 👇 ESTA LÍNEA DESTRUYE EL SELECTOR VIEJO SI EXISTE 👇
+    const oldSelector = document.getElementById('zepProjectSelectorContainer');
+    if (oldSelector) {
+      oldSelector.remove(); // Lo borra del HTML
+      console.log('🗑️ Selector viejo eliminado');
+    }
+
+    if (document.getElementById('zepProjectSelector')) return; // Ya existe el nuevo
 
     const tabsContainer = document.getElementById('tabs');
     if (!tabsContainer) {
