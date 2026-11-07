@@ -1431,43 +1431,69 @@
   }
 
    // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
-    function injectProjectSelector() {
-    if (document.getElementById('zepProjectSelectorContainer')) return;
-    document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
+      // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
+  function injectProjectSelector() {
+    // 1. Eliminar si ya existe para evitar duplicados
+    const existing = document.getElementById('zepProjectSelectorContainer');
+    if (existing) existing.remove();
 
+    // 2. Buscar el contenedor derecho del modal (donde están las pestañas)
     const modalHeaderRight = document.querySelector('.modal-h .r');
-    if (!modalHeaderRight) return;
+    if (!modalHeaderRight) {
+      console.warn('⚠️ No se encontró el header del modal');
+      return;
+    }
 
+    // 3. Crear el contenedor
     const selectorContainer = document.createElement('div');
     selectorContainer.id = 'zepProjectSelectorContainer';
     selectorContainer.style.cssText = `
-      display: flex; align-items: center; margin-right: 15px; padding: 6px 12px;
-      background: rgba(15,23,42,0.9); border: 1px solid rgba(212,175,55,0.5);
-      border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      padding: 6px 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(212,175,55,0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     `;
 
     const label = document.createElement('span');
     label.textContent = '📊 Proyecto: ';
-    label.style.cssText = `margin-right: 8px; font-size: 12px; font-weight: 700; color: #fde68a;`;
+    label.style.cssText = `
+      margin-right: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fde68a;
+    `;
 
     const select = document.createElement('select');
     select.id = 'zepProjectSelector';
     select.style.cssText = `
-      background: rgba(30,41,59,0.8); color: #fde68a; border: 1px solid rgba(212,175,55,0.3);
-      font-weight: bold; font-size: 12px; cursor: pointer; outline: none;
-      padding: 4px 8px; border-radius: 6px; min-width: 150px;
+      background: rgba(30,41,59,0.8);
+      color: #fde68a;
+      border: 1px solid rgba(212,175,55,0.3);
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      min-width: 160px;
     `;
 
-    // 👇 NUEVO: Opción para ver TODO el portafolio de nuevo
+    // Opción Global
     const optionAll = document.createElement('option');
     optionAll.value = "-1";
-    optionAll.textContent = "Todos los proyectos (Global)";
+    optionAll.textContent = "Todos los proyectos";
     optionAll.style.color = '#1e293b';
     optionAll.style.fontWeight = 'bold';
     select.appendChild(optionAll);
 
-    // Opciones individuales
-    realProjects.forEach((p, i) => {
+    // Usar datos reales si existen, si no, usar los demo (window.PROJECTS)
+    const projectsToUse = (realProjects && realProjects.length > 0) ? realProjects : (window.PROJECTS || []);
+
+    projectsToUse.forEach((p, i) => {
       const option = document.createElement('option');
       option.value = i;
       option.textContent = p.name;
@@ -1475,8 +1501,6 @@
       option.style.fontWeight = 'bold';
       select.appendChild(option);
     });
-
-    select.value = activeProjectIndex.toString(); // Mantener selección actual
 
     select.addEventListener('change', (e) => {
       activeProjectIndex = parseInt(e.target.value);
@@ -1486,6 +1510,7 @@
     selectorContainer.appendChild(label);
     selectorContainer.appendChild(select);
     
+    // Insertar justo antes de las pestañas
     const tabsContainer = modalHeaderRight.querySelector('.tabs');
     if (tabsContainer) {
       modalHeaderRight.insertBefore(selectorContainer, tabsContainer);
@@ -1495,29 +1520,29 @@
   }
 
   // 6. Renderizar proyecto activo
-    function renderActiveProject() {
+      function renderActiveProject() {
     console.log(`🔄 Filtrando dashboard para índice: ${activeProjectIndex}`);
     
-    // 1. Guardar la data global original (solo la primera vez que se ejecuta)
+    // 1. Guardar la data global original
     if (!window._ALL_PROJECTS) {
       window._ALL_PROJECTS = window.PROJECTS; 
     }
     
-    // 2. Filtrar la data según la selección
+    // 2. Filtrar la data
     if (activeProjectIndex === -1) {
-      // Si elige "Todos", restauramos la data completa
+      // Ver todos
       window.PROJECTS = window._ALL_PROJECTS;
     } else {
-      // Si elige uno, dejamos solo ese proyecto en el array
+      // Ver solo el seleccionado
       window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
     }
     
-    // 3. Recalcular los totales (BAC, CPI, alertas, etc.) con la nueva data
+    // 3. Recalcular los totales (BAC, CPI, etc.)
     if (typeof calcTotals === 'function') {
       calcTotals();
     }
     
-    // 4. Actualizar los chips de la cabecera del modal para que reflejen el filtro
+    // 4. Actualizar los chips de la cabecera
     if (typeof TOTALS !== 'undefined') {
       const countText = TOTALS.count === 1 ? '1 proyecto' : TOTALS.count + ' proyectos';
       document.getElementById('chipP').textContent = '📋 ' + countText;
@@ -1526,11 +1551,10 @@
       document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
     }
     
-    // 5. Volver a dibujar la pestaña que esté activa actualmente
+    // 5. Volver a dibujar la pestaña que esté activa
     const activeTab = document.querySelector('.tab.on');
     if (activeTab) {
       const tabId = activeTab.dataset.tab;
-      // Buscamos en el objeto TABS global qué función le corresponde a esta pestaña
       if (typeof TABS !== 'undefined' && TABS[tabId] && TABS[tabId].r) {
         TABS[tabId].r();
       }
@@ -2353,7 +2377,20 @@ var TABS={
   vip:{t:'Executive Experience · VIP',s:'Vista C-Suite',r:renderVIP}
 };
 function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});document.getElementById('v-'+id).classList.add('on');var tab=TABS[id];if(tab){document.getElementById('mTitle').textContent=tab.t;document.getElementById('mSub').textContent=tab.s;if(tab.r)tab.r();}}
-function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' alertas';renderCFO();initVoice();}
+function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' 
+
+
+// 👇 AÑADE ESTA LÍNEA AQUÍ
+  if (typeof injectProjectSelector === 'function') {
+    injectProjectSelector();
+  }
+  
+  renderCFO();
+  initVoice();
+}
+
+
+alertas';renderCFO();initVoice();}
 function closeModal(){document.getElementById('modal').classList.remove('on');document.body.style.overflow='';}
 
 /* ═══════════════════════════════════════════════════════════
