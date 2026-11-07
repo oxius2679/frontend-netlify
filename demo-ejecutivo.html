@@ -1433,12 +1433,13 @@
    // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
       function injectProjectSelector() {
     // Evitar duplicados
-    const existing = document.getElementById('zepProjectSelectorContainer');
-    if (existing) existing.remove();
+    if (document.getElementById('zepProjectSelectorContainer')) return;
 
+    // Buscar el contenedor derecho del header del modal
     const modalHeaderRight = document.querySelector('.modal-h .r');
     if (!modalHeaderRight) return;
 
+    // Crear contenedor
     const selectorContainer = document.createElement('div');
     selectorContainer.id = 'zepProjectSelectorContainer';
     selectorContainer.style.cssText = `
@@ -1459,28 +1460,22 @@
       padding: 4px 8px; border-radius: 6px; min-width: 160px;
     `;
 
-    // Opción Global
+    // Opción "Todos"
     const optionAll = document.createElement('option');
     optionAll.value = "-1";
     optionAll.textContent = "Todos los proyectos";
-    optionAll.style.color = '#1e293b';
-    optionAll.style.fontWeight = 'bold';
     select.appendChild(optionAll);
 
-    // Usar window.PROJECTS (funciona tanto en demo como en real)
-    const projectsToUse = window.PROJECTS || [];
-
-    projectsToUse.forEach((p, i) => {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = p.name;
-      option.style.color = '#1e293b';
-      option.style.fontWeight = 'bold';
-      select.appendChild(option);
+    // Leer proyectos (sean demo o reales)
+    const projs = window.PROJECTS || [];
+    projs.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name;
+      select.appendChild(opt);
     });
 
-    select.value = activeProjectIndex.toString();
-
+    select.value = activeProjectIndex;
     select.addEventListener('change', (e) => {
       activeProjectIndex = parseInt(e.target.value);
       renderActiveProject();
@@ -1489,9 +1484,10 @@
     selectorContainer.appendChild(label);
     selectorContainer.appendChild(select);
     
-    const tabsContainer = modalHeaderRight.querySelector('.tabs');
-    if (tabsContainer) {
-      modalHeaderRight.insertBefore(selectorContainer, tabsContainer);
+    // Insertar antes de las pestañas
+    const tabs = modalHeaderRight.querySelector('.tabs');
+    if (tabs) {
+      modalHeaderRight.insertBefore(selectorContainer, tabs);
     } else {
       modalHeaderRight.prepend(selectorContainer);
     }
@@ -1499,48 +1495,40 @@
 
   // 6. Renderizar proyecto activo
       function renderActiveProject() {
-    // 1. Guardar la data global original (solo la primera vez)
+    // Guardar copia de seguridad la primera vez
     if (!window._ALL_PROJECTS) {
-      window._ALL_PROJECTS = JSON.parse(JSON.stringify(window.PROJECTS)); 
+      window._ALL_PROJECTS = window.PROJECTS.slice(); 
     }
-    
-    // 2. Filtrar la data
+
+    // Filtrar
     if (activeProjectIndex === -1) {
       window.PROJECTS = window._ALL_PROJECTS;
     } else {
-      if (window._ALL_PROJECTS[activeProjectIndex]) {
-        window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
-      }
+      window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
     }
-    
-    // 3. Recalcular los totales
-    if (typeof calcTotals === 'function') {
-      calcTotals();
-    }
-    
-    // 4. Actualizar los chips superiores
-    if (typeof TOTALS !== 'undefined') {
-      const countText = TOTALS.count === 1 ? '1 proyecto' : TOTALS.count + ' proyectos';
-      if(document.getElementById('chipP')) document.getElementById('chipP').textContent = '📋 ' + countText;
-      if(document.getElementById('chipB')) document.getElementById('chipB').textContent = '💶 ' + fEur(TOTALS.budget);
-      if(document.getElementById('chipC')) document.getElementById('chipC').textContent = '📈 CPI ' + TOTALS.cpiAvg.toFixed(2);
-      if(document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
-    }
-    
-    // 5. Volver a dibujar la pestaña activa de forma segura
+
+    // Recalcular totales
+    calcTotals();
+
+    // Actualizar chips superiores
+    document.getElementById('chipP').textContent = '📋 ' + TOTALS.count + ' proyectos';
+    document.getElementById('chipB').textContent = '💶 ' + fEur(TOTALS.budget);
+    document.getElementById('chipC').textContent = '📈 CPI ' + TOTALS.cpiAvg.toFixed(2);
+    document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
+
+    // Redibujar la pestaña que esté activa
     const activeTab = document.querySelector('.tab.on');
     if (activeTab) {
       const tabId = activeTab.dataset.tab;
-      if (tabId === 'cfo' && typeof renderCFO === 'function') renderCFO();
-      else if (tabId === 'ceo' && typeof renderCEO === 'function') renderCEO();
-      else if (tabId === 'coo' && typeof renderCOO === 'function') renderCOO();
-      else if (tabId === 'bi' && typeof renderBI === 'function') renderBI();
-      else if (tabId === 'grc' && typeof renderGRC === 'function') renderGRC();
-      else if (tabId === 'api' && typeof renderAPI === 'function') renderAPI();
-      else if (tabId === 'fin' && typeof renderFIN === 'function') renderFIN();
-      else if (tabId === 'vip' && typeof renderVIP === 'function') renderVIP();
+      if (tabId === 'cfo') renderCFO();
+      else if (tabId === 'ceo') renderCEO();
+      else if (tabId === 'coo') renderCOO();
+      else if (tabId === 'bi') renderBI();
+      else if (tabId === 'grc') renderGRC();
+      else if (tabId === 'api') renderAPI();
+      else if (tabId === 'fin') renderFIN();
+      else if (tabId === 'vip') renderVIP();
     }
-  }
   }
 </script>
 <!-- ============================================================
@@ -2361,15 +2349,18 @@ var TABS={
 function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});document.getElementById('v-'+id).classList.add('on');var tab=TABS[id];if(tab){document.getElementById('mTitle').textContent=tab.t;document.getElementById('mSub').textContent=tab.s;if(tab.r)tab.r();}}
 function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' alertas';renderCFO();initVoice();}
 
-// 👇 AÑADE ESTAS 3 LÍNEAS AQUÍ (con try-catch para evitar bloqueos)
+// 1. Primero dibujamos el CFO (esto asegura que el modal cargue)
+  renderCFO();
+
+  // 2. Luego intentamos inyectar el selector de forma segura
   try {
     if (typeof injectProjectSelector === 'function') injectProjectSelector();
-  } catch(e) { console.warn('Error cargando selector:', e); }
-
-  renderCFO();
+  } catch(e) {
+    console.log("Error al inyectar selector:", e);
+  }
+  
   initVoice();
 }
-
 
 function closeModal(){document.getElementById('modal').classList.remove('on');document.body.style.overflow='';}
 
