@@ -2319,11 +2319,14 @@ function renderBI(){
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 5 · GRC
    ═══════════════════════════════════════════════════════════ */
-function renderGRC(){
+async function renderGRC(){
   var t=TOTALS, e=t.evm;
   var el=document.getElementById('v-grc');
   
-  // 1. Calcular Trazabilidad y Datos Completos (dinámico)
+  // 1. MOSTRAR PANTALLA DE CARGA
+  el.innerHTML = '<div style="text-align:center; padding:60px; color:#a78bfa; font-weight:800; font-size:18px;">⏳ Conectando con el servidor para verificar seguridad...</div>';
+
+  // 2. CÁLCULOS DINÁMICOS DE COMPLIANCE Y RIESGOS
   var trazabilidad = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.assignee && tk.assignee !== 'Sin asignar';}).length;}, 0);
   var totalTareas = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).length;}, 0);
   var conDescripcion = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.description && tk.description.trim() !== '';}).length;}, 0);
@@ -2341,42 +2344,62 @@ function renderGRC(){
   ];
   var compliance=Math.round(areas.reduce(function(s,a){return s+a.s;},0)/areas.length);
 
-  // 2. Generar Matriz de Riesgos DINÁMICA basada en el proyecto activo
   var risks = [];
-  
-  // Riesgo de Costos
-  if (e.CPI < 0.95) {
-    risks.push({n:'Desviación de costos', p:'Alta', i:'Alto', sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:'Auditoría de horas + renegociación'});
-  }
-  
-  // Riesgo de Cronograma
-  if (e.SPI < 0.95) {
-    risks.push({n:'Retraso en cronograma', p:'Alta', i:'Medio', sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:'Fast-tracking + refuerzo de recursos'});
-  }
-
-  // Riesgo por Tareas Rezagadas (si hay)
+  if (e.CPI < 0.95) risks.push({n:'Desviación de costos', p:'Alta', i:'Alto', sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:'Auditoría de horas + renegociación'});
+  if (e.SPI < 0.95) risks.push({n:'Retraso en cronograma', p:'Alta', i:'Medio', sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:'Fast-tracking + refuerzo de recursos'});
   var overdueTasks = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.status === 'overdue';}).length;}, 0);
-  if (overdueTasks > 0) {
-    risks.push({n:'Tareas rezagadas', p:'Media', i:'Medio', sev:'medio', exp: overdueTasks * 500, mit:'Reasignación de tareas'});
-  }
-
-  // Si todo está bien, mostramos un riesgo de concentración genérico
-  if (risks.length === 0) {
-    risks.push({n:'Concentración de presupuesto', p:'Media', i:'Alto', sev:'alto', exp: t.budget * 0.1, mit:'Diversificación de portafolio'});
-  }
-  
+  if (overdueTasks > 0) risks.push({n:'Tareas rezagadas', p:'Media', i:'Medio', sev:'medio', exp: overdueTasks * 500, mit:'Reasignación de tareas'});
+  if (risks.length === 0) risks.push({n:'Concentración de presupuesto', p:'Media', i:'Alto', sev:'alto', exp: t.budget * 0.1, mit:'Diversificación de portafolio'});
   var totalExp = risks.reduce(function(s,r){return s+r.exp;},0);
 
-  // 3. Controles Internos (Estos se quedan estáticos porque son del sistema, no del proyecto)
-  var controls=[{n:'Audit log',s:'activo',d:'Cambios registrados'},{n:'Snapshots',s:'activo',d:'KPIs diarios'},{n:'RBAC',s:'activo',d:'Acceso por roles'},{n:'HTTPS',s:'activo',d:'TLS 1.3'},{n:'Backups',s:'activo',d:'RPO 24h'},{n:'DR',s:'parcial',d:'Procedimientos'},{n:'SOC 2',s:'parcial',d:'Auditoría externa'},{n:'GDPR',s:'parcial',d:'Consentimiento'}];
+  // 3. CONSUMIR EL ENDPOINT REAL DEL BACKEND
+  let systemControls = [];
+  try {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/system/health', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+    const data = await response.json();
 
+    // Mapear la respuesta del servidor al diseño visual
+    systemControls = [
+      {n:'Audit log', s: data.auditLog ? 'activo' : 'inactivo', d:'Cambios registrados'},
+      {n:'Snapshots', s: data.snapshots ? 'activo' : 'inactivo', d:'KPIs diarios'},
+      {n:'RBAC', s: data.rbac ? 'activo' : 'inactivo', d:'Acceso por roles'},
+      {n:'HTTPS', s: data.https ? 'activo' : 'inactivo', d:'TLS 1.3'},
+      {n:'Backups', s: data.backups?.activo ? 'activo' : 'inactivo', d: data.backups?.ultimo ? 'Último: ' + new Date(data.backups.ultimo).toLocaleString('es-ES') : 'Desconocido'},
+      {n:'DR', s: data.dr ? 'activo' : 'parcial', d:'Procedimientos'},
+      {n:'SOC 2', s: data.soc2 ? 'activo' : 'parcial', d:'Auditoría externa'},
+      {n:'GDPR', s: data.gdpr ? 'activo' : 'parcial', d:'Consentimiento'}
+    ];
+  } catch (error) {
+    console.warn("⚠️ No se pudo conectar al endpoint de salud.", error);
+    // Si falla el servidor, mostramos alerta roja en lugar de mentir
+    systemControls = [
+      {n:'Audit log', s:'error', d:'No verificable'}, {n:'Snapshots', s:'error', d:'No verificable'},
+      {n:'RBAC', s:'error', d:'No verificable'}, {n:'HTTPS', s:'error', d:'No verificable'},
+      {n:'Backups', s:'error', d:'No verificable'}, {n:'DR', s:'error', d:'No verificable'},
+      {n:'SOC 2', s:'error', d:'No verificable'}, {n:'GDPR', s:'error', d:'No verificable'}
+    ];
+  }
+
+  // 4. RENDERIZAR TODO EL HTML CON LOS DATOS REALES
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera.</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,'Críticos','r')+statCard(controls.filter(function(c){return c.s==='activo';}).length+'/'+controls.length,'Controles','g')+statCard(fEur(totalExp),'Exposición','r')+'</div></div></div>'+
-    '<div class="kpi-4">'+kpi('Compliance',compliance+'%',compliance>=80?'Conforme':'Atención',compliance>=80?'#34d399':'#fbbf24')+kpi('Críticos',risks.filter(function(r){return r.sev==='critico';}).length,'de '+risks.length,'#ef4444')+kpi('Controles',controls.filter(function(c){return c.s==='activo';}).length+'/'+controls.length,'activos','#34d399')+kpi('Exposición',fEur(totalExp),'riesgo','#a78bfa')+'</div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera en tiempo real.</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,'Críticos','r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,'Controles','g')+statCard(fEur(totalExp),'Exposición','r')+'</div></div></div>'+
+    '<div class="kpi-4">'+kpi('Compliance',compliance+'%',compliance>=80?'Conforme':'Atención',compliance>=80?'#34d399':'#fbbf24')+kpi('Críticos',risks.filter(function(r){return r.sev==='critico';}).length,'de '+risks.length,'#ef4444')+kpi('Controles',systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,'activos','#34d399')+kpi('Exposición',fEur(totalExp),'riesgo','#a78bfa')+'</div>'+
     '<div class="box"><div class="box-t"><span>🛡️</span> Cumplimiento</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+areas.map(function(a){var c=a.s>=80?'#34d399':a.s>=60?'#fbbf24':'#ef4444';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:20px;">'+(a.s>=80?'✅':a.s>=60?'⚠️':'❌')+'</span><span style="font-size:20px;font-weight:900;color:'+c+';">'+a.s+'%</span></div><div style="font-size:11px;font-weight:800;color:#fff;">'+a.n+'</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">'+a.d+'</div><div class="bar" style="margin-top:10px;"><div class="bar-f" style="width:'+a.s+'%;background:'+c+';"></div></div></div>';}).join('')+'</div></div>'+
     '<div class="box"><div class="box-t"><span>⚠️</span> Matriz de Riesgos (Dinámica)</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Riesgo</th><th class="n">Prob.</th><th class="n">Impacto</th><th class="n">Severidad</th><th class="n">Exposición</th><th>Mitigación</th></tr></thead><tbody>'+risks.map(function(r){var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n">'+r.p+'</td><td class="n">'+r.i+'</td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#94a3b8;">'+r.mit+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
-    '<div class="box"><div class="box-t"><span>🔒</span> Controles Internos</div><div style="display:flex;flex-direction:column;gap:10px;">'+controls.map(function(c){var col=c.s==='activo'?'#34d399':c.s==='parcial'?'#fbbf24':'#ef4444';return '<div style="padding:12px 14px;border-radius:10px;background:rgba(0,0,0,0.25);border-left:3px solid '+col+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><span>'+(c.s==='activo'?'✅':'⚠️')+'</span><span style="font-size:12.5px;font-weight:800;color:#fff;flex:1;">'+c.n+'</span><span class="badge" style="background:'+col+'22;color:'+col+';">'+c.s.toUpperCase()+'</span></div><div style="font-size:11px;color:#94a3b8;">'+c.d+'</div></div>';}).join('')+'</div></div>';
+    '<div class="box"><div class="box-t"><span>🔒</span> Controles de Seguridad de la Plataforma (Real-Time)</div><div style="display:flex;flex-direction:column;gap:10px;">'+
+    systemControls.map(function(c){
+      var col = c.s === 'activo' ? '#34d399' : c.s === 'parcial' ? '#fbbf24' : '#ef4444';
+      var icon = c.s === 'activo' ? '✅' : c.s === 'parcial' ? '⚠️' : '❌';
+      return '<div style="padding:12px 14px;border-radius:10px;background:rgba(0,0,0,0.25);border-left:3px solid '+col+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><span>'+icon+'</span><span style="font-size:12.5px;font-weight:800;color:#fff;flex:1;">'+c.n+'</span><span class="badge" style="background:'+col+'22;color:'+col+';">'+c.s.toUpperCase()+'</span></div><div style="font-size:11px;color:#94a3b8;">'+c.d+'</div></div>';
+    }).join('')+
+    '</div></div>';
 }
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
    ═══════════════════════════════════════════════════════════ */
