@@ -1453,94 +1453,126 @@
     }
   }
 
-  // 5. Inyectar Selector Visual
-  function injectProjectSelector() {
-    if (document.getElementById('zepProjectSelectorContainer')) {
-      console.log('⚠️ Selector ya existe');
-      return;
-    }
-
-    document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
-
-    const mainHeader = document.querySelector('header') || 
-                       document.querySelector('[class*="header"]') ||
-                       document.querySelector('[class*="topbar"]');
-    
-    if (!mainHeader) {
-      console.warn('⚠️ No se encontró el header');
-      return;
-    }
-
-    const selectorContainer = document.createElement('div');
-    selectorContainer.id = 'zepProjectSelectorContainer';
-    selectorContainer.style.cssText = `
-      display: flex;
-      align-items: center;
-      margin-left: 20px;
-      padding: 8px 16px;
-      background: rgba(15,23,42,0.9);
-      border: 2px solid rgba(212,175,55,0.5);
-      border-radius: 12px;
-    `;
-
-    const label = document.createElement('span');
-    label.textContent = '📊 Proyecto: ';
-    label.style.cssText = 'margin-right: 8px; font-size: 14px; font-weight: 700; color: #fde68a;';
-
-    const select = document.createElement('select');
-    select.id = 'zepProjectSelector';
-    select.style.cssText = `
-      background: rgba(30,41,59,0.8);
-      color: #fde68a;
-      border: 1px solid rgba(212,175,55,0.3);
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      outline: none;
-      padding: 6px 12px;
-      border-radius: 8px;
-      min-width: 180px;
-    `;
-
-    realProjects.forEach((p, i) => {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = p.name;
-      option.style.color = '#1e293b';
-      select.appendChild(option);
-    });
-
-    select.addEventListener('change', (e) => {
-      activeProjectIndex = parseInt(e.target.value);
-      console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
-      renderActiveProject();
-    });
-
-    selectorContainer.appendChild(label);
-    selectorContainer.appendChild(select);
-    mainHeader.appendChild(selectorContainer);
-    
-    console.log('✅ Selector inyectado');
+  // 5. Inyectar Selector Visual en el HEADER DEL MODAL (donde están las pestañas)
+function injectProjectSelector() {
+  // Evitar duplicados
+  if (document.getElementById('zepProjectSelectorContainer')) {
+    console.log('⚠️ Selector ya existe');
+    return;
   }
 
-  // 6. Renderizar proyecto activo
-  function renderActiveProject() {
-    console.log(`🔄 Renderizando proyecto: ${realProjects[activeProjectIndex].name}`);
-    
-    if (typeof window.renderCFO === 'function') window.renderCFO();
-    if (typeof window.renderCOO === 'function') window.renderCOO();
-  }
-
-  // 7. Ejecutar cuando el demo esté listo
-  window.addEventListener('zackyExecutiveReady', loadAndInjectData);
+  // 🔥 CLAVE: Buscar el header del MODAL, no el de la portada
+  const modalHeader = document.querySelector('.modal-h');
   
-  if (document.readyState === 'complete') {
-    setTimeout(loadAndInjectData, 1000);
-  } else {
-    window.addEventListener('load', () => setTimeout(loadAndInjectData, 1000));
+  if (!modalHeader) {
+    console.warn('⚠️ No se encontró .modal-h. El modal debe estar abierto.');
+    return;
   }
 
-})();
+  // Crear el contenedor del selector
+  const selectorContainer = document.createElement('div');
+  selectorContainer.id = 'zepProjectSelectorContainer';
+  selectorContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    padding: 6px 12px;
+    background: rgba(15,23,42,0.9);
+    border: 2px solid rgba(212,175,55,0.5);
+    border-radius: 10px;
+  `;
+
+  const label = document.createElement('span');
+  label.textContent = '📊 Proyecto: ';
+  label.style.cssText = 'margin-right: 8px; font-size: 13px; font-weight: 700; color: #fde68a;';
+
+  const select = document.createElement('select');
+  select.id = 'zepProjectSelector';
+  select.style.cssText = `
+    background: rgba(30,41,59,0.8);
+    color: #fde68a;
+    border: 1px solid rgba(212,175,55,0.3);
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    min-width: 160px;
+  `;
+
+  realProjects.forEach((p, i) => {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = p.name;
+    option.style.color = '#1e293b';
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', (e) => {
+    activeProjectIndex = parseInt(e.target.value);
+    console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
+    renderActiveProject();
+  });
+
+  selectorContainer.appendChild(label);
+  selectorContainer.appendChild(select);
+  
+  // Insertar al final del header del modal
+  modalHeader.appendChild(selectorContainer);
+  
+  console.log('✅ Selector inyectado en el header del modal');
+}
+
+ // 6. Renderizar proyecto activo (ACTUALIZA PROJECTS y TOTALS antes de renderizar)
+function renderActiveProject() {
+  console.log(`🔄 Renderizando proyecto: ${realProjects[activeProjectIndex].name}`);
+  
+  // 🔥 CLAVE: Actualizar window.PROJECTS con solo el proyecto seleccionado
+  const selectedProject = realProjects[activeProjectIndex];
+  window.PROJECTS = [selectedProject];
+  
+  // 🔥 CLAVE: Recalcular window.TOTALS basado en el proyecto seleccionado
+  window.TOTALS = {
+    budget: selectedProject.budget,
+    actualCost: selectedProject.actualCost,
+    earnedValue: selectedProject.earnedValue,
+    plannedValue: selectedProject.plannedValue,
+    margin: selectedProject.margin,
+    roi: selectedProject.roi,
+    cpi: selectedProject.evmCosts.CPI,
+    spi: selectedProject.evmCosts.SPI
+  };
+  
+  console.log('✅ PROJECTS actualizado:', window.PROJECTS);
+  console.log('✅ TOTALS actualizado:', window.TOTALS);
+  
+  // 🔥 CLAVE: Ahora sí llamar a las funciones de render
+  if (typeof window.renderCFO === 'function') {
+    window.renderCFO();
+    console.log('✅ renderCFO() ejecutado');
+  }
+  
+  if (typeof window.renderCOO === 'function') {
+    window.renderCOO();
+    console.log('✅ renderCOO() ejecutado');
+  }
+  
+  if (typeof window.renderCEO === 'function') {
+    window.renderCEO();
+    console.log('✅ renderCEO() ejecutado');
+  }
+  
+  if (typeof window.renderBI === 'function') {
+    window.renderBI();
+    console.log('✅ renderBI() ejecutado');
+  }
+  
+  if (typeof window.renderGRC === 'function') {
+    window.renderGRC();
+    console.log('✅ renderGRC() ejecutado');
+  }
+}
 </script>
 <!-- ============================================================
      FIN CAPA 2
