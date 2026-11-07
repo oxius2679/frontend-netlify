@@ -2768,5 +2768,104 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 </div>
+<!-- SELECTOR DE PROYECTO FUNCIONAL -->
+<script>
+(function() {
+  'use strict';
+  
+  if (window.__SELECTOR_PROYECTO_V1__) return;
+  window.__SELECTOR_PROYECTO_V1__ = true;
+  
+  // Interceptar openModal para inyectar selector
+  if (typeof window.openModal === 'function') {
+    const originalOpenModal = window.openModal;
+    window.openModal = function() {
+      originalOpenModal.apply(this, arguments);
+      setTimeout(injectarSelector, 300);
+    };
+  }
+  
+  function injectarSelector() {
+    if (document.getElementById('selectorProyectoModal')) return;
+    
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) return;
+    
+    const selector = document.createElement('div');
+    selector.id = 'selectorProyectoModal';
+    selector.style.cssText = 'display:flex;align-items:center;margin-left:15px;padding:6px 12px;background:rgba(15,23,42,0.9);border:2px solid rgba(212,175,55,0.5);border-radius:10px;';
+    
+    const label = document.createElement('span');
+    label.textContent = '📊 ';
+    label.style.cssText = 'margin-right:6px;font-size:14px;';
+    
+    const select = document.createElement('select');
+    select.id = 'selectProyecto';
+    select.style.cssText = 'background:rgba(30,41,59,0.8);color:#fde68a;border:1px solid rgba(212,175,55,0.3);font-weight:bold;font-size:13px;cursor:pointer;outline:none;padding:5px 10px;border-radius:6px;min-width:160px;';
+    
+    // Obtener proyectos reales
+    const proyectos = window.PROYECTOS_REALES || window.PROJECTS || [];
+    proyectos.forEach((p, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = p.name;
+      select.appendChild(option);
+    });
+    
+    // Event listener que SÍ actualiza los datos
+    select.addEventListener('change', function(e) {
+      const idx = parseInt(e.target.value);
+      console.log('🔄 Cambiando a proyecto:', proyectos[idx].name);
+      
+      // Actualizar PROJECTS con solo el proyecto seleccionado
+      window.PROJECTS = [proyectos[idx]];
+      
+      // Recalcular TOTALS
+      const p = proyectos[idx];
+      window.TOTALS = {
+        budget: p.budget || 0,
+        actualCost: p.actualCost || 0,
+        earnedValue: p.earnedValue || 0,
+        plannedValue: p.plannedValue || 0,
+        margin: p.margin || 0,
+        roi: p.roi || 0,
+        cpi: p.evmCosts?.CPI || 1,
+        spi: p.evmCosts?.SPI || 1
+      };
+      
+      console.log('✅ PROJECTS actualizado:', window.PROJECTS);
+      console.log('✅ TOTALS actualizado:', window.TOTALS);
+      
+      // Llamar a las funciones de render
+      if (typeof window.renderCFO === 'function') {
+        window.renderCFO();
+        console.log('✅ renderCFO ejecutado');
+      }
+      if (typeof window.renderCOO === 'function') {
+        window.renderCOO();
+        console.log('✅ renderCOO ejecutado');
+      }
+      if (typeof window.renderCEO === 'function') {
+        window.renderCEO();
+        console.log('✅ renderCEO ejecutado');
+      }
+      if (typeof window.renderBI === 'function') {
+        window.renderBI();
+        console.log('✅ renderBI ejecutado');
+      }
+      if (typeof window.renderGRC === 'function') {
+        window.renderGRC();
+        console.log('✅ renderGRC ejecutado');
+      }
+    });
+    
+    selector.appendChild(label);
+    selector.appendChild(select);
+    tabsContainer.parentNode.insertBefore(selector, tabsContainer.nextSibling);
+    
+    console.log('✅ Selector inyectado en el modal');
+  }
+})();
+</script>
 </body>
 </html>
