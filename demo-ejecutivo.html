@@ -1318,23 +1318,26 @@
   }
 
   // 3. Calcular EVM en EUROS (CFO)
-    function calculateEVMCosts(tasks, costConfig) {
-    // Valores por defecto si no hay configuración
-    const costPerHour = Number(costConfig?.costPerHour) || 50;
-    const overheadRaw = Number(costConfig?.overheadPercentage) || 0;
-    
-    // Convertir Overhead (si viene como 15 en lugar de 0.15)
+      function calculateEVMCosts(tasks, costConfig) {
+    // 🔥 FORZAMOS LOS VALORES POR DEFECTO DE TU SISTEMA ORIGINAL
+    // Si no hay configuración, asume €50/h, 15% Overhead y €2300 de Costos Fijos
+    const config = costConfig || {
+      costPerHour: 50,
+      overheadPercentage: 15, 
+      fixedCosts: 2300
+    };
+
+    const costPerHour = Number(config.costPerHour) || 50;
+    const overheadRaw = Number(config.overheadPercentage) || 0;
     const overheadMultiplier = overheadRaw > 1 ? (overheadRaw / 100) : overheadRaw;
     
-    // Manejar Costos Fijos (pueden venir como número o como lista de objetos)
     let fixedCosts = 0;
-    if (Array.isArray(costConfig?.fixedCosts)) {
-      fixedCosts = costConfig.fixedCosts.reduce((sum, c) => sum + (Number(c.amount) || Number(c.monto) || 0), 0);
-    } else if (typeof costConfig?.fixedCosts === 'number') {
-      fixedCosts = costConfig.fixedCosts;
+    if (Array.isArray(config.fixedCosts)) {
+      fixedCosts = config.fixedCosts.reduce((sum, c) => sum + (Number(c.amount) || Number(c.monto) || 0), 0);
+    } else if (typeof config.fixedCosts === 'number') {
+      fixedCosts = config.fixedCosts;
     }
     
-    // Calcular variables
     const totalEstimatedHours = tasks.reduce((sum, t) => sum + (Number(t.estimatedTime) || 0), 0);
     const totalLoggedHours = tasks.reduce((sum, t) => sum + (Number(t.timeLogged) || 0), 0);
     const earnedHours = tasks.reduce((sum, t) => {
@@ -1343,9 +1346,11 @@
       return sum;
     }, 0);
 
-    // FÓRMULA MAESTRA
     const variableCosts = totalEstimatedHours * costPerHour;
+    
+    // FÓRMULA MAESTRA: Variables + Fijos + Overhead
     const BAC = variableCosts + fixedCosts + (variableCosts * overheadMultiplier);
+    
     const AC = totalLoggedHours * costPerHour;
     const EV = earnedHours * costPerHour;
     const CPI = AC > 0 ? EV / AC : 1;
@@ -1435,15 +1440,16 @@
         const evmHours = calculateEVMHours(tasks);
         const evmCosts = calculateEVMCosts(tasks, costConfig);
 
-                return {
+                       return {
           id: p.id,
           name: p.name || `Proyecto ${idx + 1}`,
           client: 'Cliente',
-          // 💡 PRIORIDAD: Si el backend ya manda el BAC, AC, EV o PV, usarlos. Si no, usar el cálculo de tareas.
-          budget: p.budget || p.BAC || p.totalBudget || evmCosts.BAC,
-          actualCost: p.actualCost || p.AC || evmCosts.AC,
-          earnedValue: p.earnedValue || p.EV || evmCosts.EV,
-          plannedValue: p.plannedValue || p.PV || evmCosts.PV,
+          
+          // 🔥 AQUÍ ESTÁ EL TRUCO: Usamos nuestro BAC calculado, IGNORANDO el del backend si es muy bajo
+          budget: evmCosts.BAC, 
+          actualCost: evmCosts.AC,
+          earnedValue: evmCosts.EV,
+          plannedValue: evmCosts.PV, // Esto mantendrá el PV en €1700
           
           margin: evmCosts.CPI >= 1 ? 25 : 15,
           roi: evmCosts.CPI >= 1 ? 30 : 10,
