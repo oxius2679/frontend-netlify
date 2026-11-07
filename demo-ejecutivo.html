@@ -2133,11 +2133,23 @@ function drawBurndown(){
   var totalH=eh.totalEstimated;
   if (totalH === 0) return;
 
-  var startDate = new Date(p.startDate).getTime();
+   var startDate = new Date(p.startDate).getTime();
   var endDate = new Date(p.endDate).getTime();
   var daysTotal = Math.max(1, Math.ceil((endDate - startDate) / (1000*60*60*24)));
   var today = Date.now();
-  var daysElapsed = Math.max(0, Math.min(daysTotal, Math.ceil((today - startDate) / (1000*60*60*24))));
+  
+  // Cálculo normal basado en la fecha de hoy
+  var daysElapsed = Math.ceil((today - startDate) / (1000*60*60*24));
+  
+  // 🔥 SOLUCIÓN: Si la fecha es futura (daysElapsed < 0) pero ya hay trabajo avanzado,
+  // usamos el porcentaje de progreso para dibujar la línea.
+  if (daysElapsed < 0 && eh.earnedHours > 0) {
+      var timeProgress = eh.earnedHours / totalH;
+      daysElapsed = Math.floor(daysTotal * timeProgress);
+  }
+  
+  // Asegurar que está en el rango correcto
+  daysElapsed = Math.max(0, Math.min(daysTotal, daysElapsed));
   
   // 🔥 FORZAR VISTA POR SEMANAS (Como tu sistema principal)
   var step = 7; // Forzamos que cada punto sea una semana
