@@ -2008,9 +2008,37 @@ function renderCOO(){
   var spiH=totalPlannedH>0?totalEarnedH/totalPlannedH:1;
   var eacH=cpiH>0?totalEst/cpiH:totalEst;
   var vacH=totalEst-eacH;
-  var team={};
-  PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){if(!team[m.name])team[m.name]={name:m.name,role:m.role,hours:0,logged:0,projects:[],cost:0};team[m.name].hours+=m.hours;team[m.name].logged+=m.logged;team[m.name].cost=m.cost;if(team[m.name].projects.indexOf(p.client)===-1)team[m.name].projects.push(p.client);});});
-  var list=Object.values(team).map(function(m){m.util=m.hours>0?(m.logged/m.hours)*100:0;return m;}).sort(function(a,b){return b.util-a.util;});
+    var team={};
+  PROJECTS.forEach(function(p){
+    // Si tu sistema principal ya envía un equipo, lo usamos
+    if (p.team && p.team.length > 0) {
+      p.team.forEach(function(m){
+        if(!team[m.name]) team[m.name]={name:m.name,role:m.role||'Miembro',hours:0,logged:0,projects:[]};
+        team[m.name].hours+=(m.hours||0);
+        team[m.name].logged+=(m.logged||0);
+        if(team[m.name].projects.indexOf(p.name)===-1) team[m.name].projects.push(p.name);
+      });
+    } else {
+      // 🔥 SI NO HAY EQUIPO, LO EXTRAEMOS DE LAS TAREAS
+      (p.tasks||[]).forEach(function(t){
+        var assignee = t.assignee && t.assignee.trim() !== '' ? t.assignee : 'Sin asignar';
+        if(!team[assignee]) {
+          team[assignee] = {name: assignee, role: 'Recurso Asignado', hours: 0, logged: 0, projects: []};
+        }
+        team[assignee].hours += (Number(t.estimatedTime) || 0);
+        team[assignee].logged += (Number(t.timeLogged) || 0);
+        if(team[assignee].projects.indexOf(p.name) === -1) {
+          team[assignee].projects.push(p.name);
+        }
+      });
+    }
+  });
+
+  // Calcular utilización
+  var list=Object.values(team).map(function(m){
+    m.util = m.hours > 0 ? (m.logged / m.hours) * 100 : 0;
+    return m;
+  }).sort(function(a,b){ return b.util - a.util; });
   var statuses={activo:0,bloqueado:0,pausa:0};
   PROJECTS.forEach(function(p){statuses[p.opStatus]++;});
   el.innerHTML=
