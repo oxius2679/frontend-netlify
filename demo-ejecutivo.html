@@ -2129,52 +2129,52 @@ function drawBurndown(){
   if (!p && PROJECTS.length > 0) { p = PROJECTS[0]; currentBurndownProject = p.id; }
   if(!p) return;
   
-  var eh=evmHoursFor(p);
-  var totalH=eh.totalEstimated;
+  var eh = evmHoursFor(p);
+  var totalH = eh.totalEstimated;
   if (totalH === 0) return;
 
-   var startDate = new Date(p.startDate).getTime();
+  var startDate = new Date(p.startDate).getTime();
   var endDate = new Date(p.endDate).getTime();
   var daysTotal = Math.max(1, Math.ceil((endDate - startDate) / (1000*60*60*24)));
+  
+  // 🔥 CÁLCULO MAESTRO DEL TIEMPO (Basado en el progreso real, no en la fecha de hoy)
+  var timeProgress = eh.earnedHours / totalH; 
+  var daysElapsed = Math.floor(daysTotal * timeProgress);
+  
+  // Si el proyecto ya empezó en la vida real, usamos el tiempo real
   var today = Date.now();
-  
-  // Cálculo normal basado en la fecha de hoy
-  var daysElapsed = Math.ceil((today - startDate) / (1000*60*60*24));
-  
-  // 🔥 SOLUCIÓN: Si la fecha es futura (daysElapsed < 0) pero ya hay trabajo avanzado,
-  // usamos el porcentaje de progreso para dibujar la línea.
-  if (daysElapsed < 0 && eh.earnedHours > 0) {
-      var timeProgress = eh.earnedHours / totalH;
-      daysElapsed = Math.floor(daysTotal * timeProgress);
+  var realDaysElapsed = Math.ceil((today - startDate) / (1000*60*60*24));
+  if (realDaysElapsed > 0) {
+      daysElapsed = Math.min(daysTotal, realDaysElapsed);
   }
   
-  // Asegurar que está en el rango correcto
-  daysElapsed = Math.max(0, Math.min(daysTotal, daysElapsed));
+  // Forzamos al menos 1 día si hay trabajo hecho
+  if (eh.earnedHours > 0) {
+      daysElapsed = Math.max(1, daysElapsed);
+  }
   
-  // 🔥 FORZAR VISTA POR SEMANAS (Como tu sistema principal)
-  var step = 7; // Forzamos que cada punto sea una semana
+  // 🔥 SI EL PROYECTO DURA MENOS DE 14 DÍAS, GRAFICAMOS POR DÍAS EN LUGAR DE SEMANAS
+  var step = daysTotal <= 14 ? 1 : 7; 
+  var numSteps = Math.ceil(daysTotal / step);
+  if (numSteps < 5) numSteps = 5; // Mostrar al menos 5 puntos
+  
   var labels=[], ideal=[], real=[];
-  var numWeeks = Math.ceil(daysTotal / step);
-  if (numWeeks < 5) numWeeks = 5; // Si el proyecto es muy corto, mostramos al menos 5 semanas para que se vea bien
   
-  for(var i = 0; i <= numWeeks; i++){
+  for(var i = 0; i <= numSteps; i++){
     var d = i * step;
-    labels.push('Sem ' + i); // Etiquetas tipo "Sem 1", "Sem 2"
+    labels.push(step === 1 ? 'D' + i : 'Sem ' + i);
     
     var percentTime = Math.min(1, d / daysTotal);
     ideal.push(Math.max(0, totalH * (1 - percentTime)));
     
-    if(d <= daysElapsed){
+    if (d <= daysElapsed) {
       var progress = Math.min(1, d / Math.max(1, daysElapsed));
       var burnt = eh.earnedHours * progress;
       real.push(Math.max(0, totalH - burnt));
+    } else if (i === Math.ceil(daysElapsed / step)) {
+      real.push(Math.max(0, totalH - eh.earnedHours));
     } else {
-      // Si aún no llega esa semana, pero estamos a mitad de camino, mostramos el punto actual
-      if (i === Math.ceil(daysElapsed/step) && daysElapsed > 0) {
-         real.push(Math.max(0, totalH - eh.earnedHours));
-      } else {
-         real.push(null);
-      }
+      real.push(null);
     }
   }
   
@@ -2196,8 +2196,7 @@ function drawBurndown(){
       ]
     },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false,
       plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},
       scales:{
         y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return currentBurnView==='hours'?v+'h':v+'%';}}},
@@ -2206,7 +2205,7 @@ function drawBurndown(){
     }
   });
   
-  // El panel de información de abajo se mantiene exactamente igual...
+  // Panel de información inferior (Ahora usa los días calculados correctamente)
   var info=document.getElementById('burndownInfo');
   if(info){
     var remaining=totalH-eh.earnedHours;
@@ -2227,6 +2226,7 @@ function drawBurndown(){
     '</div><div style="font-size:11.5px;color:'+color+';">'+(isOnTrack?'✓ Al ritmo actual ('+burnRate.toFixed(1)+'h/día) cerrará en '+projectedEnd+' días (plan: '+daysTotal+').':'⚠ En riesgo. Cierre proyectado: '+projectedEnd+' días, '+(projectedEnd-daysTotal)+' días tarde.')+'</div>';
   }
 }
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 4 · BI
    ═══════════════════════════════════════════════════════════ */
