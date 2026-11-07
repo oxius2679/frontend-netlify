@@ -2745,177 +2745,178 @@ document.addEventListener('DOMContentLoaded',function(){
     });
     
     // Event listener que SÍ actualiza los datos
-    <!-- SELECTOR DE PROYECTO - VERSIÓN FINAL -->
-<script>
-(function() {
-  'use strict';
-  
-  if (window.__SELECTOR_FINAL__) return;
-  window.__SELECTOR_FINAL__ = true;
-  
-  // Esperar a que el selector exista
-  function esperarSelector() {
-    const select = document.getElementById('zepProjectSelector');
-    if (!select) {
-      setTimeout(esperarSelector, 500);
-      return;
-    }
-    
-    console.log('✅ Selector encontrado');
-    
     select.addEventListener('change', function(e) {
       const idx = parseInt(e.target.value);
-      console.log('🔄 Cambiando a proyecto índice:', idx);
+      console.log('🔄 Cambiando a proyecto:', proyectos[idx].name);
       
-      const todosProyectos = window.PROYECTOS_REALES || window.PROJECTS || [];
+      // Actualizar PROJECTS con solo el proyecto seleccionado
+      window.PROJECTS = [proyectos[idx]];
       
-      if (idx < 0 || idx >= todosProyectos.length) {
-        console.error('❌ Índice inválido:', idx);
-        return;
-      }
-      
-      const proyecto = todosProyectos[idx];
-      console.log('📊 Proyecto seleccionado:', proyecto.name);
-      
-      // 1. Actualizar PROJECTS
-      window.PROJECTS = [proyecto];
-      
-      // 2. Recalcular TOTALS completamente
-      var totalBudget = proyecto.budget || 0;
-      var totalAC = proyecto.actualCost || 0;
-      var totalEV = proyecto.earnedValue || 0;
-      var totalPV = proyecto.plannedValue || 0;
-      var CV = totalEV - totalAC;
-      var SV = totalEV - totalPV;
-      var CPI = totalAC > 0 ? totalEV / totalAC : 1;
-      var SPI = totalPV > 0 ? totalEV / totalPV : 1;
-      var EAC = CPI > 0 ? totalBudget / CPI : totalBudget;
-      var ETC = EAC - totalAC;
-      var VAC = totalBudget - EAC;
-      var TCPI = (totalBudget - totalEV) > 0 ? (totalBudget - totalEV) / (totalBudget - totalAC) : 1;
-      var PC = totalBudget > 0 ? (totalEV / totalBudget) * 100 : 0;
-      
+      // Recalcular TOTALS
+      const p = proyectos[idx];
       window.TOTALS = {
-        budget: totalBudget,
-        actualCost: totalAC,
-        earnedValue: totalEV,
-        plannedValue: totalPV,
-        marginAvg: proyecto.margin || 0,
-        roiAvg: proyecto.roi || 0,
-        criticos: proyecto.health === 'critico' ? [proyecto] : [],
-        alertas: proyecto.opStatus === 'bloqueado' ? 1 : 0,
-        evm: {
-          BAC: totalBudget, PV: totalPV, EV: totalEV, AC: totalAC,
-          CV: CV, SV: SV, CPI: CPI, SPI: SPI,
-          EAC: EAC, ETC: ETC, VAC: VAC, TCPI: TCPI, PC: PC,
-          EAC_atipico: totalAC + (totalBudget - totalEV),
-          EAC_tipico: CPI > 0 ? totalBudget / CPI : totalBudget,
-          EAC_mixto: totalAC + (totalBudget - totalEV) / (CPI * SPI)
-        }
+        budget: p.budget || 0,
+        actualCost: p.actualCost || 0,
+        earnedValue: p.earnedValue || 0,
+        plannedValue: p.plannedValue || 0,
+        margin: p.margin || 0,
+        roi: p.roi || 0,
+        cpi: p.evmCosts?.CPI || 1,
+        spi: p.evmCosts?.SPI || 1
       };
       
       console.log('✅ PROJECTS actualizado:', window.PROJECTS);
       console.log('✅ TOTALS actualizado:', window.TOTALS);
       
-      // 3. Llamar a TODAS las funciones de render
-      setTimeout(() => {
-        console.log('🎨 Ejecutando funciones de render...');
-        
-        var funcionesRender = ['renderCFO', 'renderCOO', 'renderCEO', 'renderBI', 'renderGRC', 'renderVIP', 'renderAPI', 'renderFIN'];
-        var ejecutadas = 0;
-        
-        funcionesRender.forEach(function(fn) {
-          if (typeof window[fn] === 'function') {
-            window[fn]();
-            ejecutadas++;
-            console.log('  ✅', fn, 'ejecutada');
-          } else {
-            console.log('  ⚠️', fn, 'no existe');
-          }
-        });
-        
-        console.log('🎨 Total funciones ejecutadas:', ejecutadas);
-      }, 150);
+      // Llamar a las funciones de render
+      if (typeof window.renderCFO === 'function') {
+        window.renderCFO();
+        console.log('✅ renderCFO ejecutado');
+      }
+      if (typeof window.renderCOO === 'function') {
+        window.renderCOO();
+        console.log('✅ renderCOO ejecutado');
+      }
+      if (typeof window.renderCEO === 'function') {
+        window.renderCEO();
+        console.log('✅ renderCEO ejecutado');
+      }
+      if (typeof window.renderBI === 'function') {
+        window.renderBI();
+        console.log('✅ renderBI ejecutado');
+      }
+      if (typeof window.renderGRC === 'function') {
+        window.renderGRC();
+        console.log('✅ renderGRC ejecutado');
+      }
     });
+    
+    selector.appendChild(label);
+    selector.appendChild(select);
+    tabsContainer.parentNode.insertBefore(selector, tabsContainer.nextSibling);
+    
+    console.log('✅ Selector inyectado en el modal');
   }
-  
-  esperarSelector();
 })();
 </script>
-<!-- RESTAURACIÓN DE EMERGENCIA -->
+<!-- ============================================================ -->
+<!-- SCRIPT DEFINITIVO: SELECTOR DE PROYECTOS Y FILTRADO          -->
+<!-- ============================================================ -->
 <script>
 (function() {
   'use strict';
   
-  // Eliminar cualquier interceptor previo
-  if (window.__INTERCEPTOR_PROYECTO__) {
-    delete window.__INTERCEPTOR_PROYECTO__;
-  }
-  
-  // Restaurar PROJECTS a los datos originales del demo
-  // Estos son los 6 proyectos hardcodeados del demo original
-  window.PROJECTS = [
-    {id:'p1', name:'Transformación Digital Core Banking', client:'BBVA', budget:450000, actualCost:320000, earnedValue:380000, plannedValue:400000, margin:28, roi:32, health:'saludable', opStatus:'activo', phase:'Rollout', phaseProgress:85, operHealth:'saludable', startDate:'2026-01-15', endDate:'2026-12-20', milestones:[{name:'Kick-off', date:'2026-01-15', status:'done'},{name:'Go-live', date:'2026-12-20', status:'pending'}], blockers:[], team:[{name:'Ana García', role:'PM', hours:120, logged:110, cost:95}], tasks:[{assignee:'Ana García', estimatedTime:120, timeLogged:110, progress:95, status:'completed', phase:'Cierre'}]},
-    {id:'p2', name:'AI Center of Excellence', client:'BBVA', budget:380000, actualCost:290000, earnedValue:310000, plannedValue:340000, margin:24, roi:28, health:'saludable', opStatus:'activo', phase:'Design', phaseProgress:65, operHealth:'saludable', startDate:'2026-02-01', endDate:'2026-11-30', milestones:[], blockers:[], team:[], tasks:[{assignee:'Carlos Méndez', estimatedTime:80, timeLogged:75, progress:90, status:'completed', phase:'Cierre'}]},
-    {id:'p3', name:'DHL Logistics Platform', client:'DHL', budget:220000, actualCost:180000, earnedValue:165000, plannedValue:190000, margin:18, roi:22, health:'aceptable', opStatus:'pausa', phase:'Development', phaseProgress:55, operHealth:'aceptable', startDate:'2026-03-01', endDate:'2026-12-15', milestones:[], blockers:[], team:[], tasks:[{assignee:'Laura Ruiz', estimatedTime:100, timeLogged:85, progress:65, status:'inProgress', phase:'Rollout'}]},
-    {id:'p4', name:'Retail Bank Mobile App', client:'BBVA', budget:180000, actualCost:140000, earnedValue:150000, plannedValue:160000, margin:22, roi:26, health:'saludable', opStatus:'activo', phase:'Testing', phaseProgress:75, operHealth:'saludable', startDate:'2026-04-01', endDate:'2026-11-20', milestones:[], blockers:[], team:[], tasks:[{assignee:'Pedro Sánchez', estimatedTime:60, timeLogged:55, progress:85, status:'inProgress', phase:'Testing'}]},
-    {id:'p5', name:'Cloud Migration AWS', client:'DHL', budget:320000, actualCost:260000, earnedValue:240000, plannedValue:280000, margin:20, roi:24, health:'aceptable', opStatus:'activo', phase:'Migration', phaseProgress:70, operHealth:'aceptable', startDate:'2026-01-20', endDate:'2026-12-31', milestones:[], blockers:[], team:[], tasks:[{assignee:'Javier Torres', estimatedTime:80, timeLogged:70, progress:60, status:'inProgress', phase:'Rollout'}]},
-    {id:'p6', name:'Zero Trust Cybersecurity', client:'DHL', budget:180000, actualCost:120000, earnedValue:105000, plannedValue:110000, margin:26, roi:24, health:'aceptable', opStatus:'pausa', phase:'Assessment', phaseProgress:45, operHealth:'riesgo', startDate:'2026-05-01', endDate:'2026-11-15', milestones:[], blockers:[], team:[], tasks:[]}
-  ];
-  
-  // Recalcular TOTALS con la estructura correcta
-  function recalcularTotals() {
-    var totalBudget = 0, totalAC = 0, totalEV = 0, totalPV = 0;
-    PROJECTS.forEach(function(p) {
-      totalBudget += p.budget || 0;
-      totalAC += p.actualCost || 0;
-      totalEV += p.earnedValue || 0;
-      totalPV += p.plannedValue || 0;
+  if (window.__SELECTOR_MAESTRO__) return;
+  window.__SELECTOR_MAESTRO__ = true;
+
+  // 1. Interceptar la apertura del modal para inyectar el selector visual
+  const originalOpenModal = window.openModal;
+  window.openModal = function() {
+    if (typeof originalOpenModal === 'function') {
+      originalOpenModal.apply(this, arguments);
+    }
+    // Esperar un poco a que el modal se dibuje
+    setTimeout(injectSelectorUI, 100);
+  };
+
+  // 2. Crear e inyectar el HTML del selector
+  function injectSelectorUI() {
+    if (document.getElementById('zepProjectSelector')) return; // Ya existe
+
+    const tabsContainer = document.getElementById('tabs');
+    if (!tabsContainer) {
+      console.warn('⚠️ No se encontró el contenedor de pestañas');
+      return;
+    }
+
+    // Guardar la data original para poder restaurarla
+    if (!window._ORIGINAL_PROJECTS) {
+      window._ORIGINAL_PROJECTS = JSON.parse(JSON.stringify(window.PROJECTS));
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display:flex; align-items:center; margin-right:12px; padding:4px 10px; background:rgba(15,23,42,0.9); border:1px solid rgba(212,175,55,0.5); border-radius:10px;';
+
+    const label = document.createElement('span');
+    label.textContent = '📊 Proyecto: ';
+    label.style.cssText = 'font-size:11px; font-weight:700; color:#fde68a; margin-right:6px;';
+
+    const select = document.createElement('select');
+    select.id = 'zepProjectSelector';
+    select.style.cssText = 'background:rgba(30,41,59,0.8); color:#fde68a; border:1px solid rgba(212,175,55,0.3); font-weight:bold; font-size:11px; cursor:pointer; outline:none; padding:4px; border-radius:6px;';
+
+    // Opción global
+    const optGlobal = document.createElement('option');
+    optGlobal.value = "-1";
+    optGlobal.textContent = "Todos los proyectos";
+    select.appendChild(optGlobal);
+
+    // Opciones de proyectos
+    window._ORIGINAL_PROJECTS.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.name.length > 25 ? p.name.substring(0, 25) + '...' : p.name;
+      select.appendChild(opt);
     });
+
+    // Evento al cambiar de proyecto
+    select.addEventListener('change', function(e) {
+      const idx = parseInt(e.target.value);
+      filterAndRender(idx);
+    });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(select);
     
-    var CV = totalEV - totalAC;
-    var SV = totalEV - totalPV;
-    var CPI = totalAC > 0 ? totalEV / totalAC : 1;
-    var SPI = totalPV > 0 ? totalEV / totalPV : 1;
-    var EAC = CPI > 0 ? totalBudget / CPI : totalBudget;
-    var ETC = EAC - totalAC;
-    var VAC = totalBudget - EAC;
-    var TCPI = (totalBudget - totalEV) > 0 ? (totalBudget - totalEV) / (totalBudget - totalAC) : 1;
-    var PC = totalBudget > 0 ? (totalEV / totalBudget) * 100 : 0;
-    
-    window.TOTALS = {
-      budget: totalBudget,
-      actualCost: totalAC,
-      earnedValue: totalEV,
-      plannedValue: totalPV,
-      marginAvg: PROJECTS.reduce(function(s, p) { return s + (p.margin || 0); }, 0) / PROJECTS.length,
-      roiAvg: PROJECTS.reduce(function(s, p) { return s + (p.roi || 0); }, 0) / PROJECTS.length,
-      criticos: PROJECTS.filter(function(p) { return p.health === 'critico'; }),
-      alertas: PROJECTS.filter(function(p) { return p.opStatus === 'bloqueado'; }).length,
-      evm: {
-        BAC: totalBudget, PV: totalPV, EV: totalEV, AC: totalAC,
-        CV: CV, SV: SV, CPI: CPI, SPI: SPI,
-        EAC: EAC, ETC: ETC, VAC: VAC, TCPI: TCPI, PC: PC,
-        EAC_atipico: totalAC + (totalBudget - totalEV),
-        EAC_tipico: CPI > 0 ? totalBudget / CPI : totalBudget,
-        EAC_mixto: totalAC + (totalBudget - totalEV) / (CPI * SPI)
-      }
-    };
+    // Insertarlo al principio de las pestañas (justo antes de CFO)
+    tabsContainer.prepend(wrapper);
   }
-  
-  recalcularTotals();
-  
-  // Re-renderizar todas las vistas
-  setTimeout(function() {
-    if (typeof renderCFO === 'function') renderCFO();
-    if (typeof renderCEO === 'function') renderCEO();
-    if (typeof renderCOO === 'function') renderCOO();
-    if (typeof renderBI === 'function') renderBI();
-    if (typeof renderGRC === 'function') renderGRC();
-    if (typeof renderVIP === 'function') renderVIP();
-    console.log('✅ Sistema restaurado a datos demo originales');
-  }, 500);
+
+  // 3. Filtrar los datos, recalcular y volver a dibujar
+  function filterAndRender(index) {
+    // Restaurar data completa si es -1, o filtrar si es un proyecto
+    if (index === -1) {
+      window.PROJECTS = JSON.parse(JSON.stringify(window._ORIGINAL_PROJECTS));
+    } else {
+      const selectedProject = JSON.parse(JSON.stringify(window._ORIGINAL_PROJECTS[index]));
+      window.PROJECTS = [selectedProject];
+    }
+
+    // Recalcular los totales (TOTALS) usando la función nativa del sistema
+    if (typeof window.calcTotals === 'function') {
+      window.calcTotals();
+    }
+
+    // Actualizar las "chips" de la cabecera
+    if (window.TOTALS) {
+      const countText = window.TOTALS.count === 1 ? '1 proyecto' : window.TOTALS.count + ' proyectos';
+      if (document.getElementById('chipP')) document.getElementById('chipP').textContent = '📋 ' + countText;
+      if (document.getElementById('chipB')) document.getElementById('chipB').textContent = '💶 ' + window.fEur(window.TOTALS.budget);
+      if (document.getElementById('chipC')) document.getElementById('chipC').textContent = '📈 CPI ' + window.TOTALS.cpiAvg.toFixed(2);
+      if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + window.TOTALS.alerts + ' alertas';
+    }
+
+    // Volver a renderizar la pestaña que esté activa en ese momento
+    const activeTab = document.querySelector('.tab.on');
+    if (activeTab) {
+      const tabId = activeTab.dataset.tab;
+      if (tabId === 'cfo' && typeof window.renderCFO === 'function') window.renderCFO();
+      else if (tabId === 'ceo' && typeof window.renderCEO === 'function') window.renderCEO();
+      else if (tabId === 'coo' && typeof window.renderCOO === 'function') window.renderCOO();
+      else if (tabId === 'bi' && typeof window.renderBI === 'function') window.renderBI();
+      else if (tabId === 'grc' && typeof window.renderGRC === 'function') window.renderGRC();
+      else if (tabId === 'api' && typeof window.renderAPI === 'function') window.renderAPI();
+      else if (tabId === 'fin' && typeof window.renderFIN === 'function') window.renderFIN();
+      else if (tabId === 'vip' && typeof window.renderVIP === 'function') window.renderVIP();
+    }
+    
+    console.log('✅ Datos filtrados y renderizados para el índice:', index);
+  }
+
 })();
 </script>
+</body>
+</html>
+
 </body>
 </html>
