@@ -1445,7 +1445,7 @@
       console.log('📊 Proyectos:', realProjects.map(p => p.name));
       
       // Inyectar selector y renderizar
-    
+      injectProjectSelector();
       renderActiveProject();
 
     } catch (error) {
@@ -1665,6 +1665,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 @media(max-width:1100px){.kpi-4{grid-template-columns:repeat(2,1fr)}.kpi-6{grid-template-columns:repeat(3,1fr)}.hero-grid,.chart-2{grid-template-columns:1fr}}
 @media(max-width:640px){.kpi-4,.kpi-6{grid-template-columns:1fr}}
+
+
+/* Ocultar el selector viejo que no funciona */
+#zepProjectSelectorContainer {
+  display: none !important;
+}
+
 </style>
 </head>
 <body>
