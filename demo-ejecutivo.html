@@ -1458,8 +1458,10 @@
           phase: 'Ejecución',
           phaseProgress: Math.round(evmHours.SPI * 100),
           operHealth: evmHours.CPI >= 0.9 ? 'saludable' : 'aceptable',
-          startDate: p.createdAt || new Date().toISOString(),
-          endDate: null,
+          // DESPUÉS (Copia y pega esto):
+          startDate: p.startDate || p.createdAt || new Date().toISOString(),
+          // Si el backend no manda fecha de fin, simulamos que dura 90 días
+          endDate: p.endDate || p.deadline || new Date(new Date(p.createdAt || Date.now()).getTime() + (90 * 24 * 60 * 60 * 1000)).toISOString(),
           milestones: [],
           blockers: [],
           team: [],
