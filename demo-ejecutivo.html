@@ -1430,87 +1430,91 @@
     }
   }
 
- // 5. Inyectar Selector Visual DENTRO DEL MODAL (al lado de las pestañas CFO, CEO, COO)
-function injectProjectSelector() {
-  // Evitar duplicados
-  if (document.getElementById('zepProjectSelectorContainer')) {
-    console.log('⚠️ Selector ya existe, no se duplica');
-    return;
+   // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
+  function injectProjectSelector() {
+    // Evitar duplicados
+    if (document.getElementById('zepProjectSelectorContainer')) {
+      console.log('⚠️ Selector ya existe, no se duplica');
+      return;
+    }
+
+    // Eliminar selectores duplicados existentes
+    document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
+
+    // Buscar el contenedor derecho del header del modal (donde están las pestañas y botones)
+    const modalHeaderRight = document.querySelector('.modal-h .r');
+    
+    if (!modalHeaderRight) {
+      console.warn('⚠️ No se encontró el contenedor .r del modal');
+      return;
+    }
+
+    // Crear el contenedor del selector
+    const selectorContainer = document.createElement('div');
+    selectorContainer.id = 'zepProjectSelectorContainer';
+    selectorContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      padding: 6px 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(212,175,55,0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    `;
+
+    const label = document.createElement('span');
+    label.textContent = '📊 Proyecto: ';
+    label.style.cssText = `
+      margin-right: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fde68a;
+    `;
+
+    const select = document.createElement('select');
+    select.id = 'zepProjectSelector';
+    select.style.cssText = `
+      background: rgba(30,41,59,0.8);
+      color: #fde68a;
+      border: 1px solid rgba(212,175,55,0.3);
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      min-width: 150px;
+    `;
+
+    realProjects.forEach((p, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = p.name;
+      option.style.color = '#1e293b';
+      option.style.fontWeight = 'bold';
+      select.appendChild(option);
+    });
+
+    select.addEventListener('change', (e) => {
+      activeProjectIndex = parseInt(e.target.value);
+      console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
+      renderActiveProject();
+    });
+
+    selectorContainer.appendChild(label);
+    selectorContainer.appendChild(select);
+    
+    // Insertar justo ANTES de las pestañas (.tabs) para que quede al lado de CFO
+    const tabsContainer = modalHeaderRight.querySelector('.tabs');
+    if (tabsContainer) {
+      modalHeaderRight.insertBefore(selectorContainer, tabsContainer);
+    } else {
+      modalHeaderRight.prepend(selectorContainer);
+    }
+    
+    console.log('✅ Selector de proyectos inyectado en el header del modal al lado de CFO');
   }
-
-  // Eliminar selectores duplicados existentes
-  document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
-
-  // 🔥 CLAVE: Buscar el contenedor de las pestañas dentro del modal
-  // El HTML es: <div class="modal-h"> ... <div class="r"> <div class="tabs" id="tabs"> ... </div> ... </div> </div>
-  const tabsContainer = document.getElementById('tabs');
-  
-  if (!tabsContainer) {
-    console.warn('⚠️ No se encontró el contenedor de pestañas (id="tabs")');
-    return;
-  }
-
-  // Crear el contenedor del selector
-  const selectorContainer = document.createElement('div');
-  selectorContainer.id = 'zepProjectSelectorContainer';
-  selectorContainer.style.cssText = `
-    display: flex;
-    align-items: center;
-    margin-left: 15px;
-    padding: 6px 12px;
-    background: rgba(15,23,42,0.9);
-    border: 2px solid rgba(212,175,55,0.5);
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  `;
-
-  const label = document.createElement('span');
-  label.textContent = '📊 Proyecto: ';
-  label.style.cssText = `
-    margin-right: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #fde68a;
-  `;
-
-  const select = document.createElement('select');
-  select.id = 'zepProjectSelector';
-  select.style.cssText = `
-    background: rgba(30,41,59,0.8);
-    color: #fde68a;
-    border: 1px solid rgba(212,175,55,0.3);
-    font-weight: bold;
-    font-size: 13px;
-    cursor: pointer;
-    outline: none;
-    padding: 5px 10px;
-    border-radius: 6px;
-    min-width: 160px;
-  `;
-
-  realProjects.forEach((p, i) => {
-    const option = document.createElement('option');
-    option.value = i;
-    option.textContent = p.name;
-    option.style.color = '#1e293b';
-    option.style.fontWeight = 'bold';
-    select.appendChild(option);
-  });
-
-  select.addEventListener('change', (e) => {
-    activeProjectIndex = parseInt(e.target.value);
-    console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
-    renderActiveProject();
-  });
-
-  selectorContainer.appendChild(label);
-  selectorContainer.appendChild(select);
-  
-  // 🔥 Insertar DESPUÉS del contenedor de pestañas (no antes)
-  tabsContainer.parentNode.insertBefore(selectorContainer, tabsContainer.nextSibling);
-  
-  console.log('✅ Selector de proyectos inyectado al lado de las pestañas CFO, CEO, COO');
-}
 
   // 6. Renderizar proyecto activo
   function renderActiveProject() {
@@ -1739,16 +1743,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 
    <span class="badge-live"><i class="fas fa-circle"></i> DEMO 2026</span>
-
-<div id="zepProjectSelectorContainer" style="display:flex; align-items:center; margin-left:20px; padding:8px 16px; background:rgba(15,23,42,0.9); border:2px solid rgba(212,175,55,0.5); border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-  <span style="margin-right:10px; font-size:14px; font-weight:700; color:#fde68a;">📊 Proyecto:</span>
-  <select id="zepProjectSelector" style="background:rgba(30,41,59,0.8); color:#fde68a; border:1px solid rgba(212,175,55,0.3); font-weight:bold; font-size:14px; cursor:pointer; outline:none; padding:6px 12px; border-radius:8px; min-width:180px;">
-    <option value="0">CONSULTORIA</option>
-    <option value="1">palomin</option>
-    <option value="2">renatin</option>
-    <option value="3">sin proyectos</option>
-  </select>
-</div>
 
 
 
