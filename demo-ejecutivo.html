@@ -1431,103 +1431,132 @@
   }
 
    // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
-      function injectProjectSelector() {
+      // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
+  function injectProjectSelector() {
     // Evitar duplicados
-    if (document.getElementById('zepProjectSelectorContainer')) return;
+    if (document.getElementById('zepProjectSelectorContainer')) {
+      console.log('⚠️ Selector ya existe, no se duplica');
+      return;
+    }
 
-    // Buscar el contenedor derecho del header del modal
+    // Eliminar selectores duplicados existentes
+    document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
+
+    // Buscar el contenedor derecho del header del modal (donde están las pestañas y botones)
     const modalHeaderRight = document.querySelector('.modal-h .r');
-    if (!modalHeaderRight) return;
+    
+    if (!modalHeaderRight) {
+      console.warn('⚠️ No se encontró el contenedor .r del modal');
+      return;
+    }
 
-    // Crear contenedor
+    // Crear el contenedor del selector
     const selectorContainer = document.createElement('div');
     selectorContainer.id = 'zepProjectSelectorContainer';
     selectorContainer.style.cssText = `
-      display: flex; align-items: center; margin-right: 15px; padding: 6px 12px;
-      background: rgba(15,23,42,0.9); border: 1px solid rgba(212,175,55,0.5);
-      border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+      padding: 6px 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(212,175,55,0.5);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     `;
 
     const label = document.createElement('span');
     label.textContent = '📊 Proyecto: ';
-    label.style.cssText = `margin-right: 8px; font-size: 12px; font-weight: 700; color: #fde68a;`;
+    label.style.cssText = `
+      margin-right: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fde68a;
+    `;
 
     const select = document.createElement('select');
     select.id = 'zepProjectSelector';
     select.style.cssText = `
-      background: rgba(30,41,59,0.8); color: #fde68a; border: 1px solid rgba(212,175,55,0.3);
-      font-weight: bold; font-size: 12px; cursor: pointer; outline: none;
-      padding: 4px 8px; border-radius: 6px; min-width: 160px;
+      background: rgba(30,41,59,0.8);
+      color: #fde68a;
+      border: 1px solid rgba(212,175,55,0.3);
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      min-width: 150px;
     `;
 
-    // Opción "Todos"
-    const optionAll = document.createElement('option');
-    optionAll.value = "-1";
-    optionAll.textContent = "Todos los proyectos";
-    select.appendChild(optionAll);
-
-    // Leer proyectos (sean demo o reales)
-    const projs = window.PROJECTS || [];
-    projs.forEach((p, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = p.name;
-      select.appendChild(opt);
+    realProjects.forEach((p, i) => {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = p.name;
+      option.style.color = '#1e293b';
+      option.style.fontWeight = 'bold';
+      select.appendChild(option);
     });
 
-    select.value = activeProjectIndex;
     select.addEventListener('change', (e) => {
       activeProjectIndex = parseInt(e.target.value);
+      console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
       renderActiveProject();
     });
 
     selectorContainer.appendChild(label);
     selectorContainer.appendChild(select);
     
-    // Insertar antes de las pestañas
-    const tabs = modalHeaderRight.querySelector('.tabs');
-    if (tabs) {
-      modalHeaderRight.insertBefore(selectorContainer, tabs);
+    // Insertar justo ANTES de las pestañas (.tabs) para que quede al lado de CFO
+    const tabsContainer = modalHeaderRight.querySelector('.tabs');
+    if (tabsContainer) {
+      modalHeaderRight.insertBefore(selectorContainer, tabsContainer);
     } else {
       modalHeaderRight.prepend(selectorContainer);
     }
+    
+    console.log('✅ Selector de proyectos inyectado en el header del modal al lado de CFO');
   }
 
   // 6. Renderizar proyecto activo
-      function renderActiveProject() {
-    // Guardar copia de seguridad la primera vez
+    function renderActiveProject() {
+    console.log(`🔄 Filtrando dashboard para índice: ${activeProjectIndex}`);
+    
+    // 1. Guardar la data global original (solo la primera vez que se ejecuta)
     if (!window._ALL_PROJECTS) {
-      window._ALL_PROJECTS = window.PROJECTS.slice(); 
+      window._ALL_PROJECTS = window.PROJECTS; 
     }
-
-    // Filtrar
+    
+    // 2. Filtrar la data según la selección
     if (activeProjectIndex === -1) {
+      // Si elige "Todos", restauramos la data completa
       window.PROJECTS = window._ALL_PROJECTS;
     } else {
+      // Si elige uno, dejamos solo ese proyecto en el array
       window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
     }
-
-    // Recalcular totales
-    calcTotals();
-
-    // Actualizar chips superiores
-    document.getElementById('chipP').textContent = '📋 ' + TOTALS.count + ' proyectos';
-    document.getElementById('chipB').textContent = '💶 ' + fEur(TOTALS.budget);
-    document.getElementById('chipC').textContent = '📈 CPI ' + TOTALS.cpiAvg.toFixed(2);
-    document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
-
-    // Redibujar la pestaña que esté activa
+    
+    // 3. Recalcular los totales (BAC, CPI, alertas, etc.) con la nueva data
+    if (typeof calcTotals === 'function') {
+      calcTotals();
+    }
+    
+    // 4. Actualizar los chips de la cabecera del modal para que reflejen el filtro
+    if (typeof TOTALS !== 'undefined') {
+      const countText = TOTALS.count === 1 ? '1 proyecto' : TOTALS.count + ' proyectos';
+      document.getElementById('chipP').textContent = '📋 ' + countText;
+      document.getElementById('chipB').textContent = '💶 ' + fEur(TOTALS.budget);
+      document.getElementById('chipC').textContent = '📈 CPI ' + TOTALS.cpiAvg.toFixed(2);
+      document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
+    }
+    
+    // 5. Volver a dibujar la pestaña que esté activa actualmente
     const activeTab = document.querySelector('.tab.on');
     if (activeTab) {
       const tabId = activeTab.dataset.tab;
-      if (tabId === 'cfo') renderCFO();
-      else if (tabId === 'ceo') renderCEO();
-      else if (tabId === 'coo') renderCOO();
-      else if (tabId === 'bi') renderBI();
-      else if (tabId === 'grc') renderGRC();
-      else if (tabId === 'api') renderAPI();
-      else if (tabId === 'fin') renderFIN();
-      else if (tabId === 'vip') renderVIP();
+      // Buscamos en el objeto TABS global qué función le corresponde a esta pestaña
+      if (typeof TABS !== 'undefined' && TABS[tabId] && TABS[tabId].r) {
+        TABS[tabId].r();
+      }
     }
   }
 </script>
@@ -2348,20 +2377,6 @@ var TABS={
 };
 function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});document.getElementById('v-'+id).classList.add('on');var tab=TABS[id];if(tab){document.getElementById('mTitle').textContent=tab.t;document.getElementById('mSub').textContent=tab.s;if(tab.r)tab.r();}}
 function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' alertas';renderCFO();initVoice();}
-
-// 1. Primero dibujamos el CFO (esto asegura que el modal cargue)
-  renderCFO();
-
-  // 2. Luego intentamos inyectar el selector de forma segura
-  try {
-    if (typeof injectProjectSelector === 'function') injectProjectSelector();
-  } catch(e) {
-    console.log("Error al inyectar selector:", e);
-  }
-  
-  initVoice();
-}
-
 function closeModal(){document.getElementById('modal').classList.remove('on');document.body.style.overflow='';}
 
 /* ═══════════════════════════════════════════════════════════
