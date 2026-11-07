@@ -2125,33 +2125,76 @@ function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
 function drawBurndown(){
-  // 🔥 SOLUCIÓN: Buscar el proyecto forzando el ID a texto
   var p = PROJECTS.find(function(x){ return String(x.id) === String(currentBurndownProject); });
+  if (!p && PROJECTS.length > 0) { p = PROJECTS[0]; currentBurndownProject = p.id; }
+  if(!p) return;
   
-  // Si no lo encuentra (porque el ID de la BD no coincide con el del demo), usa el primero
-  if (!p && PROJECTS.length > 0) {
-    p = PROJECTS[0];
-    currentBurndownProject = p.id;
-  }
-
-  if(!p) return;  var eh=evmHoursFor(p);
+  var eh=evmHoursFor(p);
   var totalH=eh.totalEstimated;
-  var daysTotal=Math.max(1,Math.ceil((new Date(p.endDate)-new Date(p.startDate))/(1000*60*60*24)));
-  var daysElapsed=Math.max(0,Math.min(daysTotal,Math.ceil((Date.now()-new Date(p.startDate))/(1000*60*60*24))));
-  var step=Math.max(1,Math.ceil(daysTotal/20));
-  var labels=[],ideal=[],real=[];
-  for(var d=0;d<=daysTotal;d+=step){
-    labels.push('D'+d);
-    ideal.push(Math.max(0,totalH*(1-d/daysTotal)));
-    if(d<=daysElapsed){var progress=Math.min(1,d/Math.max(1,daysElapsed));var burnt=eh.earnedHours*progress;real.push(Math.max(0,totalH-burnt));}else{real.push(null);}
+  if (totalH === 0) return;
+
+  var startDate = new Date(p.startDate).getTime();
+  var endDate = new Date(p.endDate).getTime();
+  var daysTotal = Math.max(1, Math.ceil((endDate - startDate) / (1000*60*60*24)));
+  var today = Date.now();
+  var daysElapsed = Math.max(0, Math.min(daysTotal, Math.ceil((today - startDate) / (1000*60*60*24))));
+  
+  // 🔥 FORZAR VISTA POR SEMANAS (Como tu sistema principal)
+  var step = 7; // Forzamos que cada punto sea una semana
+  var labels=[], ideal=[], real=[];
+  var numWeeks = Math.ceil(daysTotal / step);
+  if (numWeeks < 5) numWeeks = 5; // Si el proyecto es muy corto, mostramos al menos 5 semanas para que se vea bien
+  
+  for(var i = 0; i <= numWeeks; i++){
+    var d = i * step;
+    labels.push('Sem ' + i); // Etiquetas tipo "Sem 1", "Sem 2"
+    
+    var percentTime = Math.min(1, d / daysTotal);
+    ideal.push(Math.max(0, totalH * (1 - percentTime)));
+    
+    if(d <= daysElapsed){
+      var progress = Math.min(1, d / Math.max(1, daysElapsed));
+      var burnt = eh.earnedHours * progress;
+      real.push(Math.max(0, totalH - burnt));
+    } else {
+      // Si aún no llega esa semana, pero estamos a mitad de camino, mostramos el punto actual
+      if (i === Math.ceil(daysElapsed/step) && daysElapsed > 0) {
+         real.push(Math.max(0, totalH - eh.earnedHours));
+      } else {
+         real.push(null);
+      }
+    }
   }
-  var dataIdeal=currentBurnView==='hours'?ideal:ideal.map(function(v){return totalH>0?(v/totalH)*100:0;});
-  var dataReal=currentBurnView==='hours'?real:real.map(function(v){return v!==null&&totalH>0?(v/totalH)*100:null;});
-  var yLabel=currentBurnView==='hours'?'Horas restantes':'% restante';
+  
+  var dataIdeal = currentBurnView==='hours' ? ideal : ideal.map(function(v){return totalH>0?(v/totalH)*100:0;});
+  var dataReal = currentBurnView==='hours' ? real : real.map(function(v){return v!==null&&totalH>0?(v/totalH)*100:null;});
+  var yLabel = currentBurnView==='hours'?'Horas restantes':'% restante';
+  
   if(charts.burn)charts.burn.destroy();
   var ctx=document.getElementById('cBurn');
   if(!ctx)return;
-  charts.burn=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:labels,datasets:[{label:'Ideal ('+yLabel+')',data:dataIdeal,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0,spanGaps:true},{label:'Real ('+yLabel+')',data:dataReal,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:'#34d399',spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return currentBurnView==='hours'?v+'h':v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:9,weight:'700'},maxRotation:0,autoSkip:true,maxTicksLimit:12}}}}});
+  
+  charts.burn=new Chart(ctx.getContext('2d'),{
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'Ideal ('+yLabel+')',data:dataIdeal,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3,spanGaps:true},
+        {label:'Real ('+yLabel+')',data:dataReal,borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#ec4899',spanGaps:true}
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},
+      scales:{
+        y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return currentBurnView==='hours'?v+'h':v+'%';}}},
+        x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}
+      }
+    }
+  });
+  
+  // El panel de información de abajo se mantiene exactamente igual...
   var info=document.getElementById('burndownInfo');
   if(info){
     var remaining=totalH-eh.earnedHours;
@@ -2162,6 +2205,7 @@ function drawBurndown(){
     var projectedEnd=daysElapsed+daysToComplete;
     var isOnTrack=projectedEnd<=daysTotal;
     var color=isOnTrack?'#34d399':'#ef4444';
+    
     info.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:10px;">'+
       '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Progreso</div><div style="font-size:16px;font-weight:900;color:#34d399;margin-top:4px;">'+progressPct.toFixed(1)+'%</div></div>'+
       '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Tiempo</div><div style="font-size:16px;font-weight:900;color:#fbbf24;margin-top:4px;">'+timePct.toFixed(1)+'%</div></div>'+
@@ -2171,7 +2215,6 @@ function drawBurndown(){
     '</div><div style="font-size:11.5px;color:'+color+';">'+(isOnTrack?'✓ Al ritmo actual ('+burnRate.toFixed(1)+'h/día) cerrará en '+projectedEnd+' días (plan: '+daysTotal+').':'⚠ En riesgo. Cierre proyectado: '+projectedEnd+' días, '+(projectedEnd-daysTotal)+' días tarde.')+'</div>';
   }
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 4 · BI
    ═══════════════════════════════════════════════════════════ */
