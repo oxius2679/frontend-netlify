@@ -1867,6 +1867,13 @@ function evmHoursFor(p){
   var daysTotal=Math.max(1,(new Date(p.endDate)-new Date(p.startDate))/(1000*60*60*24));
   var daysElapsed=Math.max(0,(Date.now()-new Date(p.startDate))/(1000*60*60*24));
   var timeProgress=Math.max(0,Math.min(1,daysElapsed/daysTotal));
+
+  // 🔥 SOLUCIÓN: Si la fecha de inicio es futura pero ya hay horas trabajadas, 
+  // asumimos que el planificado debe reflejar el 100% de las horas totales.
+  if (daysElapsed === 0 && totalEstimated > 0 && earnedHours > 0) {
+      timeProgress = 1; 
+  }
+
   var plannedHours=totalEstimated*timeProgress;
   var CPIH=totalLogged>0?earnedHours/totalLogged:1;
   var SPIH=plannedHours>0?earnedHours/plannedHours:1;
@@ -1875,7 +1882,6 @@ function evmHoursFor(p){
   var PCH=totalEstimated>0?(earnedHours/totalEstimated)*100:0;
   return {totalEstimated,totalLogged,earnedHours,plannedHours,CPIH,SPIH,EACH,VACH,PCH,timeProgress,phases,daysTotal,daysElapsed};
 }
-
 function calcTotals(){
   var t={count:PROJECTS.length,budget:0,actualCost:0,earnedValue:0,plannedValue:0,marginWeighted:0};
   PROJECTS.forEach(function(p){
