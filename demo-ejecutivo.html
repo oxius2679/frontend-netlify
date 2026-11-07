@@ -1463,8 +1463,12 @@
           plannedValue: evmCosts.PV,
           margin: evmCosts.CPI >= 1 ? 25 : 15,
           roi: evmCosts.CPI >= 1 ? 30 : 10,
-          health: evmHours.CPI >= 0.9 ? 'saludable' : evmHours.CPI >= 0.8 ? 'aceptable' : 'critico',
-          opStatus: evmHours.CPI >= 0.9 && evmHours.SPI >= 0.9 ? 'activo' : (evmHours.CPI < 0.8 || evmHours.SPI < 0.8) ? 'bloqueado' : 'pausa',
+                    health: evmHours.CPI >= 0.9 ? 'saludable' : evmHours.CPI >= 0.8 ? 'aceptable' : 'critico',
+          // 🔥 REGLA MEJORADA: Más tolerante y respeta el backend
+          opStatus: p.status ? p.status : (
+            (evmHours.CPI >= 0.9 && evmHours.SPI >= 0.8) ? 'activo' : 
+            (evmHours.CPI < 0.7 || evmHours.SPI < 0.6) ? 'bloqueado' : 'pausa'
+          ),
           phase: 'Ejecución',
           phaseProgress: Math.round(evmHours.SPI * 100),
           operHealth: evmHours.CPI >= 0.9 ? 'saludable' : 'aceptable',
@@ -2047,7 +2051,7 @@ function renderCOO(){
   var statuses={activo:0,bloqueado:0,pausa:0};
   PROJECTS.forEach(function(p){statuses[p.opStatus]++;});
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Capacity Planning · Operación Real + EVM en Horas + Gantt</h2><p>Visión operativa con <strong>status, fase, hitos, bloqueos, Gantt visual</strong> y <strong>EVM en horas</strong>. Burndown por proyecto, no por sprint.</p></div><div class="hero-stats">'+statCard(statuses.activo,'Activos','gr')+statCard(statuses.bloqueado,'Bloqueados','r')+statCard(statuses.pausa,'En pausa','g')+statCard(fH(totalEst),'Horas','g')+'</div></div></div>'+
+       '<div class="hero"><div class="hero-grid"><div><h2>Capacity Planning · Operación Real + EVM en Horas + Gantt</h2><p>Visión operativa con <strong>status, fase, hitos, bloqueos, Gantt visual</strong> y <strong>EVM en horas</strong>. Burndown por proyecto, no por sprint.</p></div><div class="hero-stats">'+statCard(statuses.activo,'En Curso','gr')+statCard(statuses.bloqueado,'Críticos','r')+statCard(statuses.pausa,'En Riesgo','g')+statCard(fH(totalEst),'Horas','g')+'</div></div></div>'+
     '<h3 style="font-size:13px;color:var(--violet-l);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;font-weight:900;">⏱️ EVM en Horas · Portfolio</h3>'+
     '<div class="kpi-6">'+
       kpi('PV_h · Horas Planificadas',fH(totalPlannedH),'A la fecha','#94a3b8','PV_h = plan × time%')+
@@ -2070,9 +2074,8 @@ function renderCOO(){
     '<div class="box"><div class="box-t"><span>📡</span> Status Operativo por Proyecto</div>'+
       PROJECTS.map(function(p){
         var eh=evmHoursFor(p);
-                var opColor=p.opStatus==='bloqueado'?'#ef4444':p.opStatus==='pausa'?'#fbbf24':'#34d399';
+                        var opColor=p.opStatus==='bloqueado'?'#ef4444':p.opStatus==='pausa'?'#fbbf24':'#34d399';
         var opIcon=p.opStatus==='bloqueado'?'🔴':p.opStatus==='pausa'?'🟡':'🟢';
-        // 🔥 ETIQUETAS PROFESIONALES PMI
         var opLabel=p.opStatus==='bloqueado'?'CRÍTICO':p.opStatus==='pausa'?'EN RIESGO':'EN CURSO';
         var doneM=p.milestones.filter(function(m){return m.status==='done';}).length;
         return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+p.client+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+p.phase+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
@@ -2094,7 +2097,7 @@ function renderCOO(){
     '<div class="box"><div class="box-t"><span>🔥</span> Burndown por Proyecto · Horas Restantes vs Tiempo</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">Proyecto:</label><select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+p.client+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">Horas</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
     // TABLA EVM HORAS
     '<div class="box"><div class="box-t"><span>⏱️</span> EVM en Horas · Detalle</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Proyecto</th><th class="n">Est.</th><th class="n">PV_h</th><th class="n">EV_h</th><th class="n">AC_h</th><th class="n">CPI_h</th><th class="n">SPI_h</th><th class="n">EAC_h</th><th class="n">VAC_h</th><th>Status</th></tr></thead><tbody>'+
-         PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=p.opStatus==='bloqueado'?'Crítico':p.opStatus==='pausa'?'En Riesgo':'En Curso';return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
+               PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=p.opStatus==='bloqueado'?'Crítico':p.opStatus==='pausa'?'En Riesgo':'En Curso';return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
       '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fH(totalEst)+'</td><td class="n">'+fH(totalPlannedH)+'</td><td class="n">'+fH(totalEarnedH)+'</td><td class="n">'+fH(totalLog)+'</td><td class="n">'+cpiH.toFixed(2)+'</td><td class="n">'+spiH.toFixed(2)+'</td><td class="n">'+fH(eacH)+'</td><td class="n">'+(vacH>=0?'+':'')+fH(vacH)+'</td><td></td></tr></tfoot></table></div></div>'+
     // EQUIPO
     '<div class="box"><div class="box-t"><span>👥</span> Carga por Miembro</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Miembro</th><th>Rol</th><th class="n">Asignadas</th><th class="n">Registradas</th><th class="n">Utilización</th><th>Proyectos</th><th>Estado</th></tr></thead><tbody>'+
