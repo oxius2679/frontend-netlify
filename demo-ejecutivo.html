@@ -1456,21 +1456,55 @@
   
 
   // 6. Renderizar proyecto activo
-  function renderActiveProject() {
-    console.log(`🔄 Renderizando proyecto: ${realProjects[activeProjectIndex].name}`);
-    
-    if (typeof window.renderCFO === 'function') window.renderCFO();
-    if (typeof window.renderCOO === 'function') window.renderCOO();
-  }
-
-  // 7. Ejecutar cuando el demo esté listo
-  window.addEventListener('zackyExecutiveReady', loadAndInjectData);
+  // 6. Renderizar proyecto activo (ACTUALIZA PROJECTS y TOTALS antes de renderizar)
+function renderActiveProject() {
+  console.log(`🔄 Renderizando proyecto: ${realProjects[activeProjectIndex].name}`);
   
-  if (document.readyState === 'complete') {
-    setTimeout(loadAndInjectData, 1000);
-  } else {
-    window.addEventListener('load', () => setTimeout(loadAndInjectData, 1000));
+  // 🔥 CLAVE: Actualizar window.PROJECTS con solo el proyecto seleccionado
+  const selectedProject = realProjects[activeProjectIndex];
+  window.PROJECTS = [selectedProject];
+  
+  // 🔥 CLAVE: Recalcular window.TOTALS basado en el proyecto seleccionado
+  window.TOTALS = {
+    budget: selectedProject.budget,
+    actualCost: selectedProject.actualCost,
+    earnedValue: selectedProject.earnedValue,
+    plannedValue: selectedProject.plannedValue,
+    margin: selectedProject.margin,
+    roi: selectedProject.roi,
+    cpi: selectedProject.evmCosts.CPI,
+    spi: selectedProject.evmCosts.SPI
+  };
+  
+  console.log('✅ PROJECTS actualizado:', window.PROJECTS);
+  console.log('✅ TOTALS actualizado:', window.TOTALS);
+  
+  // 🔥 CLAVE: Ahora sí llamar a las funciones de render
+  if (typeof window.renderCFO === 'function') {
+    window.renderCFO();
+    console.log('✅ renderCFO() ejecutado');
   }
+  
+  if (typeof window.renderCOO === 'function') {
+    window.renderCOO();
+    console.log('✅ renderCOO() ejecutado');
+  }
+  
+  if (typeof window.renderCEO === 'function') {
+    window.renderCEO();
+    console.log('✅ renderCEO() ejecutado');
+  }
+  
+  if (typeof window.renderBI === 'function') {
+    window.renderBI();
+    console.log('✅ renderBI() ejecutado');
+  }
+  
+  if (typeof window.renderGRC === 'function') {
+    window.renderGRC();
+    console.log('✅ renderGRC() ejecutado');
+  }
+}
 
 })();
 </script>
