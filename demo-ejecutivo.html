@@ -1458,10 +1458,8 @@
           phase: 'Ejecución',
           phaseProgress: Math.round(evmHours.SPI * 100),
           operHealth: evmHours.CPI >= 0.9 ? 'saludable' : 'aceptable',
-          // DESPUÉS (Copia y pega esto):
-          startDate: p.startDate || p.createdAt || new Date().toISOString(),
-          // Si el backend no manda fecha de fin, simulamos que dura 90 días
-          endDate: p.endDate || p.deadline || new Date(new Date(p.createdAt || Date.now()).getTime() + (90 * 24 * 60 * 60 * 1000)).toISOString(),
+          startDate: p.createdAt || new Date().toISOString(),
+          endDate: null,
           milestones: [],
           blockers: [],
           team: [],
@@ -2117,9 +2115,16 @@ function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
 function drawBurndown(){
-  var p=PROJECTS.find(function(x){return x.id===currentBurndownProject;});
-  if(!p)return;
-  var eh=evmHoursFor(p);
+  // 🔥 SOLUCIÓN: Buscar el proyecto forzando el ID a texto
+  var p = PROJECTS.find(function(x){ return String(x.id) === String(currentBurndownProject); });
+  
+  // Si no lo encuentra (porque el ID de la BD no coincide con el del demo), usa el primero
+  if (!p && PROJECTS.length > 0) {
+    p = PROJECTS[0];
+    currentBurndownProject = p.id;
+  }
+
+  if(!p) return;  var eh=evmHoursFor(p);
   var totalH=eh.totalEstimated;
   var daysTotal=Math.max(1,Math.ceil((new Date(p.endDate)-new Date(p.startDate))/(1000*60*60*24)));
   var daysElapsed=Math.max(0,Math.min(daysTotal,Math.ceil((Date.now()-new Date(p.startDate))/(1000*60*60*24))));
