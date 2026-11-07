@@ -2799,6 +2799,80 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 })();
 </script>
-
+<!-- RESTAURACIÓN DE EMERGENCIA -->
+<script>
+(function() {
+  'use strict';
+  
+  // Eliminar cualquier interceptor previo
+  if (window.__INTERCEPTOR_PROYECTO__) {
+    delete window.__INTERCEPTOR_PROYECTO__;
+  }
+  
+  // Restaurar PROJECTS a los datos originales del demo
+  // Estos son los 6 proyectos hardcodeados del demo original
+  window.PROJECTS = [
+    {id:'p1', name:'Transformación Digital Core Banking', client:'BBVA', budget:450000, actualCost:320000, earnedValue:380000, plannedValue:400000, margin:28, roi:32, health:'saludable', opStatus:'activo', phase:'Rollout', phaseProgress:85, operHealth:'saludable', startDate:'2026-01-15', endDate:'2026-12-20', milestones:[{name:'Kick-off', date:'2026-01-15', status:'done'},{name:'Go-live', date:'2026-12-20', status:'pending'}], blockers:[], team:[{name:'Ana García', role:'PM', hours:120, logged:110, cost:95}], tasks:[{assignee:'Ana García', estimatedTime:120, timeLogged:110, progress:95, status:'completed', phase:'Cierre'}]},
+    {id:'p2', name:'AI Center of Excellence', client:'BBVA', budget:380000, actualCost:290000, earnedValue:310000, plannedValue:340000, margin:24, roi:28, health:'saludable', opStatus:'activo', phase:'Design', phaseProgress:65, operHealth:'saludable', startDate:'2026-02-01', endDate:'2026-11-30', milestones:[], blockers:[], team:[], tasks:[{assignee:'Carlos Méndez', estimatedTime:80, timeLogged:75, progress:90, status:'completed', phase:'Cierre'}]},
+    {id:'p3', name:'DHL Logistics Platform', client:'DHL', budget:220000, actualCost:180000, earnedValue:165000, plannedValue:190000, margin:18, roi:22, health:'aceptable', opStatus:'pausa', phase:'Development', phaseProgress:55, operHealth:'aceptable', startDate:'2026-03-01', endDate:'2026-12-15', milestones:[], blockers:[], team:[], tasks:[{assignee:'Laura Ruiz', estimatedTime:100, timeLogged:85, progress:65, status:'inProgress', phase:'Rollout'}]},
+    {id:'p4', name:'Retail Bank Mobile App', client:'BBVA', budget:180000, actualCost:140000, earnedValue:150000, plannedValue:160000, margin:22, roi:26, health:'saludable', opStatus:'activo', phase:'Testing', phaseProgress:75, operHealth:'saludable', startDate:'2026-04-01', endDate:'2026-11-20', milestones:[], blockers:[], team:[], tasks:[{assignee:'Pedro Sánchez', estimatedTime:60, timeLogged:55, progress:85, status:'inProgress', phase:'Testing'}]},
+    {id:'p5', name:'Cloud Migration AWS', client:'DHL', budget:320000, actualCost:260000, earnedValue:240000, plannedValue:280000, margin:20, roi:24, health:'aceptable', opStatus:'activo', phase:'Migration', phaseProgress:70, operHealth:'aceptable', startDate:'2026-01-20', endDate:'2026-12-31', milestones:[], blockers:[], team:[], tasks:[{assignee:'Javier Torres', estimatedTime:80, timeLogged:70, progress:60, status:'inProgress', phase:'Rollout'}]},
+    {id:'p6', name:'Zero Trust Cybersecurity', client:'DHL', budget:180000, actualCost:120000, earnedValue:105000, plannedValue:110000, margin:26, roi:24, health:'aceptable', opStatus:'pausa', phase:'Assessment', phaseProgress:45, operHealth:'riesgo', startDate:'2026-05-01', endDate:'2026-11-15', milestones:[], blockers:[], team:[], tasks:[]}
+  ];
+  
+  // Recalcular TOTALS con la estructura correcta
+  function recalcularTotals() {
+    var totalBudget = 0, totalAC = 0, totalEV = 0, totalPV = 0;
+    PROJECTS.forEach(function(p) {
+      totalBudget += p.budget || 0;
+      totalAC += p.actualCost || 0;
+      totalEV += p.earnedValue || 0;
+      totalPV += p.plannedValue || 0;
+    });
+    
+    var CV = totalEV - totalAC;
+    var SV = totalEV - totalPV;
+    var CPI = totalAC > 0 ? totalEV / totalAC : 1;
+    var SPI = totalPV > 0 ? totalEV / totalPV : 1;
+    var EAC = CPI > 0 ? totalBudget / CPI : totalBudget;
+    var ETC = EAC - totalAC;
+    var VAC = totalBudget - EAC;
+    var TCPI = (totalBudget - totalEV) > 0 ? (totalBudget - totalEV) / (totalBudget - totalAC) : 1;
+    var PC = totalBudget > 0 ? (totalEV / totalBudget) * 100 : 0;
+    
+    window.TOTALS = {
+      budget: totalBudget,
+      actualCost: totalAC,
+      earnedValue: totalEV,
+      plannedValue: totalPV,
+      marginAvg: PROJECTS.reduce(function(s, p) { return s + (p.margin || 0); }, 0) / PROJECTS.length,
+      roiAvg: PROJECTS.reduce(function(s, p) { return s + (p.roi || 0); }, 0) / PROJECTS.length,
+      criticos: PROJECTS.filter(function(p) { return p.health === 'critico'; }),
+      alertas: PROJECTS.filter(function(p) { return p.opStatus === 'bloqueado'; }).length,
+      evm: {
+        BAC: totalBudget, PV: totalPV, EV: totalEV, AC: totalAC,
+        CV: CV, SV: SV, CPI: CPI, SPI: SPI,
+        EAC: EAC, ETC: ETC, VAC: VAC, TCPI: TCPI, PC: PC,
+        EAC_atipico: totalAC + (totalBudget - totalEV),
+        EAC_tipico: CPI > 0 ? totalBudget / CPI : totalBudget,
+        EAC_mixto: totalAC + (totalBudget - totalEV) / (CPI * SPI)
+      }
+    };
+  }
+  
+  recalcularTotals();
+  
+  // Re-renderizar todas las vistas
+  setTimeout(function() {
+    if (typeof renderCFO === 'function') renderCFO();
+    if (typeof renderCEO === 'function') renderCEO();
+    if (typeof renderCOO === 'function') renderCOO();
+    if (typeof renderBI === 'function') renderBI();
+    if (typeof renderGRC === 'function') renderGRC();
+    if (typeof renderVIP === 'function') renderVIP();
+    console.log('✅ Sistema restaurado a datos demo originales');
+  }, 500);
+})();
+</script>
 </body>
 </html>
