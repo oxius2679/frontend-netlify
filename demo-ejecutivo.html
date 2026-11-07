@@ -1430,21 +1430,29 @@
     }
   }
 
-  // 5. Inyectar Selector Visual en la barra superior del demo
+  // 5. Inyectar Selector Visual en el HEADER PRINCIPAL (al lado del título)
 function injectProjectSelector() {
-  // Buscar la barra de navegación superior (donde están las pestañas CFO, CEO, COO, etc.)
-  const navBar = document.querySelector('nav') || 
-                 document.querySelector('[class*="nav"]') || 
-                 document.querySelector('[class*="header"]') ||
-                 document.querySelector('[class*="topbar"]') ||
-                 document.querySelector('[class*="toolbar"]');
-  
-  if (!navBar) {
-    console.warn('⚠️ No se encontró la barra de navegación para inyectar el selector');
+  // Evitar duplicados
+  if (document.getElementById('zepProjectSelectorContainer')) {
+    console.log('⚠️ Selector ya existe, no se duplica');
     return;
   }
 
-  // Crear el selector
+  // Eliminar selectores duplicados existentes (si los hay)
+  const existingSelectors = document.querySelectorAll('#zepProjectSelectorContainer, [id*="projectSelector"]');
+  existingSelectors.forEach(el => el.remove());
+
+  // Buscar el header principal (donde está "ZACKY EXECUTIVE PRO · C-SUITE COMMAND CENTER")
+  const mainHeader = document.querySelector('header') || 
+                     document.querySelector('[class*="header"]') ||
+                     document.querySelector('[class*="topbar"]');
+  
+  if (!mainHeader) {
+    console.warn('⚠️ No se encontró el header principal');
+    return;
+  }
+
+  // Crear el contenedor del selector
   const selectorContainer = document.createElement('div');
   selectorContainer.id = 'zepProjectSelectorContainer';
   selectorContainer.style.cssText = `
@@ -1454,15 +1462,18 @@ function injectProjectSelector() {
     padding: 8px 16px;
     background: rgba(15,23,42,0.8);
     border: 1px solid rgba(212,175,55,0.4);
-    border-radius: 8px;
-    color: #fde68a;
-    font-weight: bold;
-    font-size: 14px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   `;
 
   const label = document.createElement('span');
   label.textContent = '📊 Proyecto: ';
-  label.style.marginRight = '8px';
+  label.style.cssText = `
+    margin-right: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fde68a;
+  `;
 
   const select = document.createElement('select');
   select.id = 'zepProjectSelector';
@@ -1474,6 +1485,7 @@ function injectProjectSelector() {
     font-size: 14px;
     cursor: pointer;
     outline: none;
+    padding: 4px 8px;
   `;
 
   realProjects.forEach((p, i) => {
@@ -1492,9 +1504,11 @@ function injectProjectSelector() {
 
   selectorContainer.appendChild(label);
   selectorContainer.appendChild(select);
-  navBar.appendChild(selectorContainer);
   
-  console.log('✅ Selector de proyectos inyectado en la barra superior');
+  // Insertar al final del header principal
+  mainHeader.appendChild(selectorContainer);
+  
+  console.log('✅ Selector de proyectos inyectado en el header principal');
 }
 
   // 6. Renderizar proyecto activo
