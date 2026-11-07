@@ -1430,140 +1430,49 @@
     }
   }
 
-   // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
-      // 5. Inyectar Selector Visual en el HEADER DEL MODAL (al lado de las pestañas)
+  // 5. Inyectar Selector Visual al lado del título
   function injectProjectSelector() {
-    // Evitar duplicados
-    if (document.getElementById('zepProjectSelectorContainer')) {
-      console.log('⚠️ Selector ya existe, no se duplica');
-      return;
-    }
+    const titleElement = document.querySelector('.zep-title') || document.querySelector('h1');
+    if (!titleElement) return;
 
-    // Eliminar selectores duplicados existentes
-    document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
-
-    // Buscar el contenedor derecho del header del modal (donde están las pestañas y botones)
-    const modalHeaderRight = document.querySelector('.modal-h .r');
+    const selectorHTML = `
+      <select id="zepProjectSelector" style="
+        margin-left: 20px; padding: 8px 16px; border-radius: 8px; 
+        background: rgba(15,23,42,0.8); color: #fde68a; border: 1px solid rgba(212,175,55,0.4);
+        font-weight: bold; font-size: 14px; cursor: pointer; outline: none;
+      ">
+        ${realProjects.map((p, i) => `<option value="${i}">${p.name}</option>`).join('')}
+      </select>
+    `;
     
-    if (!modalHeaderRight) {
-      console.warn('⚠️ No se encontró el contenedor .r del modal');
-      return;
-    }
+    titleElement.insertAdjacentHTML('afterend', selectorHTML);
 
-    // Crear el contenedor del selector
-    const selectorContainer = document.createElement('div');
-    selectorContainer.id = 'zepProjectSelectorContainer';
-    selectorContainer.style.cssText = `
-      display: flex;
-      align-items: center;
-      margin-right: 15px;
-      padding: 6px 12px;
-      background: rgba(15,23,42,0.9);
-      border: 1px solid rgba(212,175,55,0.5);
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    `;
-
-    const label = document.createElement('span');
-    label.textContent = '📊 Proyecto: ';
-    label.style.cssText = `
-      margin-right: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #fde68a;
-    `;
-
-    const select = document.createElement('select');
-    select.id = 'zepProjectSelector';
-    select.style.cssText = `
-      background: rgba(30,41,59,0.8);
-      color: #fde68a;
-      border: 1px solid rgba(212,175,55,0.3);
-      font-weight: bold;
-      font-size: 12px;
-      cursor: pointer;
-      outline: none;
-      padding: 4px 8px;
-      border-radius: 6px;
-      min-width: 150px;
-    `;
-
-    realProjects.forEach((p, i) => {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = p.name;
-      option.style.color = '#1e293b';
-      option.style.fontWeight = 'bold';
-      select.appendChild(option);
-    });
-
-    select.addEventListener('change', (e) => {
+    document.getElementById('zepProjectSelector').addEventListener('change', (e) => {
       activeProjectIndex = parseInt(e.target.value);
-      console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
       renderActiveProject();
     });
-
-    selectorContainer.appendChild(label);
-    selectorContainer.appendChild(select);
-    
-    // Insertar justo ANTES de las pestañas (.tabs) para que quede al lado de CFO
-    const tabsContainer = modalHeaderRight.querySelector('.tabs');
-    if (tabsContainer) {
-      modalHeaderRight.insertBefore(selectorContainer, tabsContainer);
-    } else {
-      modalHeaderRight.prepend(selectorContainer);
-    }
-    
-    console.log('✅ Selector de proyectos inyectado en el header del modal al lado de CFO');
   }
 
   // 6. Renderizar proyecto activo
-    function renderActiveProject() {
-    console.log(`🔄 Filtrando dashboard para índice: ${activeProjectIndex}`);
-    
-    // 1. Guardar la data global original (solo la primera vez que se ejecuta)
-    if (!window._ALL_PROJECTS) {
-      window._ALL_PROJECTS = window.PROJECTS; 
-    }
-    
-    // 2. Filtrar la data según la selección
-    if (activeProjectIndex === -1) {
-      // Si elige "Todos", restauramos la data completa
-      window.PROJECTS = window._ALL_PROJECTS;
-    } else {
-      // Si elige uno, dejamos solo ese proyecto en el array
-      window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
-    }
-    
-    // 3. Recalcular los totales (BAC, CPI, alertas, etc.) con la nueva data
-    if (typeof calcTotals === 'function') {
-      calcTotals();
-    }
-    
-    // 4. Actualizar los chips de la cabecera del modal para que reflejen el filtro
-    if (typeof TOTALS !== 'undefined') {
-      const countText = TOTALS.count === 1 ? '1 proyecto' : TOTALS.count + ' proyectos';
-      document.getElementById('chipP').textContent = '📋 ' + countText;
-      document.getElementById('chipB').textContent = '💶 ' + fEur(TOTALS.budget);
-      document.getElementById('chipC').textContent = '📈 CPI ' + TOTALS.cpiAvg.toFixed(2);
-      document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
-    }
-    
-    // 5. Volver a dibujar la pestaña que esté activa actualmente
-    const activeTab = document.querySelector('.tab.on');
-    if (activeTab) {
-      const tabId = activeTab.dataset.tab;
-      // Buscamos en el objeto TABS global qué función le corresponde a esta pestaña
-      if (typeof TABS !== 'undefined' && TABS[tabId] && TABS[tabId].r) {
-        TABS[tabId].r();
-      }
-    }
+  function renderActiveProject() {
+    console.log(`🔄 Cambiando a proyecto: ${realProjects[activeProjectIndex].name}`);
+    if (typeof window.renderCFO === 'function') window.renderCFO();
+    if (typeof window.renderCOO === 'function') window.renderCOO();
   }
+
+  // Ejecutar cuando el demo esté listo
+  window.addEventListener('zackyExecutiveReady', loadAndInjectData);
+  if (document.readyState === 'complete') {
+    setTimeout(loadAndInjectData, 1000);
+  } else {
+    window.addEventListener('load', () => setTimeout(loadAndInjectData, 1000));
+  }
+
+})();
 </script>
 <!-- ============================================================
      FIN CAPA 2
 ============================================================ -->
-
 
 <!DOCTYPE html>
 <html lang="es">
