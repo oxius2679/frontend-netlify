@@ -1520,29 +1520,29 @@
   }
 
   // 6. Renderizar proyecto activo
-      function renderActiveProject() {
+    function renderActiveProject() {
     console.log(`🔄 Filtrando dashboard para índice: ${activeProjectIndex}`);
     
-    // 1. Guardar la data global original
+    // 1. Guardar la data global original (solo la primera vez que se ejecuta)
     if (!window._ALL_PROJECTS) {
       window._ALL_PROJECTS = window.PROJECTS; 
     }
     
-    // 2. Filtrar la data
+    // 2. Filtrar la data según la selección
     if (activeProjectIndex === -1) {
-      // Ver todos
+      // Si elige "Todos", restauramos la data completa
       window.PROJECTS = window._ALL_PROJECTS;
     } else {
-      // Ver solo el seleccionado
+      // Si elige uno, dejamos solo ese proyecto en el array
       window.PROJECTS = [window._ALL_PROJECTS[activeProjectIndex]];
     }
     
-    // 3. Recalcular los totales (BAC, CPI, etc.)
+    // 3. Recalcular los totales (BAC, CPI, alertas, etc.) con la nueva data
     if (typeof calcTotals === 'function') {
       calcTotals();
     }
     
-    // 4. Actualizar los chips de la cabecera
+    // 4. Actualizar los chips de la cabecera del modal para que reflejen el filtro
     if (typeof TOTALS !== 'undefined') {
       const countText = TOTALS.count === 1 ? '1 proyecto' : TOTALS.count + ' proyectos';
       document.getElementById('chipP').textContent = '📋 ' + countText;
@@ -1551,10 +1551,11 @@
       document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' alertas';
     }
     
-    // 5. Volver a dibujar la pestaña que esté activa
+    // 5. Volver a dibujar la pestaña que esté activa actualmente
     const activeTab = document.querySelector('.tab.on');
     if (activeTab) {
       const tabId = activeTab.dataset.tab;
+      // Buscamos en el objeto TABS global qué función le corresponde a esta pestaña
       if (typeof TABS !== 'undefined' && TABS[tabId] && TABS[tabId].r) {
         TABS[tabId].r();
       }
