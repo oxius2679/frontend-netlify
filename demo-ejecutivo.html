@@ -1430,7 +1430,7 @@
     }
   }
 
-  // 5. Inyectar Selector Visual en el HEADER DEL MODAL (donde están las pestañas CFO, CEO, COO)
+ // 5. Inyectar Selector Visual DENTRO DEL MODAL (al lado de las pestañas CFO, CEO, COO)
 function injectProjectSelector() {
   // Evitar duplicados
   if (document.getElementById('zepProjectSelectorContainer')) {
@@ -1441,12 +1441,12 @@ function injectProjectSelector() {
   // Eliminar selectores duplicados existentes
   document.querySelectorAll('[id*="zepProjectSelector"]').forEach(el => el.remove());
 
-  // Buscar el header del MODAL (no el header de la preview)
-  const modalHeader = document.querySelector('.modal-h') || 
-                      document.querySelector('.modal-box > div:first-child');
+  // 🔥 CLAVE: Buscar el contenedor de las pestañas dentro del modal
+  // El HTML es: <div class="modal-h"> ... <div class="r"> <div class="tabs" id="tabs"> ... </div> ... </div> </div>
+  const tabsContainer = document.getElementById('tabs');
   
-  if (!modalHeader) {
-    console.warn('⚠️ No se encontró el header del modal');
+  if (!tabsContainer) {
+    console.warn('⚠️ No se encontró el contenedor de pestañas (id="tabs")');
     return;
   }
 
@@ -1457,7 +1457,7 @@ function injectProjectSelector() {
     display: flex;
     align-items: center;
     margin-left: 15px;
-    padding: 8px 14px;
+    padding: 6px 12px;
     background: rgba(15,23,42,0.9);
     border: 2px solid rgba(212,175,55,0.5);
     border-radius: 10px;
@@ -1506,10 +1506,10 @@ function injectProjectSelector() {
   selectorContainer.appendChild(label);
   selectorContainer.appendChild(select);
   
-  // Insertar al final del header del modal
-  modalHeader.appendChild(selectorContainer);
+  // 🔥 Insertar DESPUÉS del contenedor de pestañas (no antes)
+  tabsContainer.parentNode.insertBefore(selectorContainer, tabsContainer.nextSibling);
   
-  console.log('✅ Selector de proyectos inyectado en el header del modal');
+  console.log('✅ Selector de proyectos inyectado al lado de las pestañas CFO, CEO, COO');
 }
 
   // 6. Renderizar proyecto activo
