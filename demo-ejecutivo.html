@@ -2966,11 +2966,12 @@ async function exportPDF(){
     var opex = revenue * 0.12;
     var ebitda = gp - opex;
 
-    // --- GRÁFICOS CON DATALABELS (VALORES VISIBLES) ---
+    // --- GRÁFICOS ---
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
+    // 1. Curva S LIMPIA (sin etiquetas encimadas, los ejes ya dicen los valores)
     var sCurveImg=await renderChartToImage({
       type:'line',
       data:{labels:months,datasets:[
@@ -2982,17 +2983,13 @@ async function exportPDF(){
         responsive:false,animation:false,
         plugins:{
           legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},
-          datalabels:{
-            color: function(context) { return context.dataset.borderColor; }, // Color de la línea
-            font:{size:9,weight:'bold'},
-            align:'top', offset:4,
-            formatter: function(value, context) { return value; } // Mostrar el valor
-          }
+          datalabels:{ display: false } // 🔥 OCULTAMOS LAS ETIQUETAS ENCIMADAS
         },
         scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
       }
     },1000,400);
 
+    // 2. Dona Financiera (Leyenda abajo para que no se corte)
     var finPieImg=await renderChartToImage({
       type:'doughnut',
       data:{
@@ -3002,7 +2999,7 @@ async function exportPDF(){
       options:{
         responsive:false,animation:false,
         plugins:{
-          legend:{position:'right',labels:{color:'#333',font:{size:12,weight:'bold'},padding:20}},
+          legend:{position:'bottom',labels:{color:'#333',font:{size:12,weight:'bold'},padding:15}},
           datalabels:{
             color:'#fff', font:{size:12,weight:'bold'},
             formatter:function(value, context){
@@ -3015,12 +3012,19 @@ async function exportPDF(){
       }
     },700,400);
 
+    // 3. Barras CPI vs SPI (Formateado a 2 decimales)
     var cpiSpiImg=await renderChartToImage({
       type:'bar',
       data:{labels:['CPI', 'SPI'],datasets:[{data:[e.CPI, e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},
       options:{
         responsive:false,animation:false,
-        plugins:{legend:{display:false}, datalabels:{color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top'}},
+        plugins:{
+          legend:{display:false}, 
+          datalabels:{
+            color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top',
+            formatter: function(value) { return value.toFixed(2); } // 🔥 SOLO 2 DECIMALES
+          }
+        },
         scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
       }
     },600,400);
@@ -3125,7 +3129,6 @@ async function exportPDF(){
   }catch(err){ console.error(err); alert('Error PDF: '+err.message); }
 }
 
-
 // ============================================================
 // 📊 EXPORTACIÓN PPTX - NIVEL SILICON VALLEY (IMÁGENES DE ALTA CALIDAD)
 // ============================================================
@@ -3166,7 +3169,7 @@ async function exportPPTX(){
       return s;
     }
 
-    // 🎨 GENERAR LAS MISMAS IMÁGENES QUE EL PDF PARA EL PPTX
+    // 🎨 GENERAR IMÁGENES
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
@@ -3183,21 +3186,20 @@ async function exportPPTX(){
     var finPieImg = await renderChartToImage({
       type:'doughnut',
       data:{labels:['Costes','OpEx','EBITDA'],datasets:[{data:[costs,opex,ebitda>0?ebitda:0],backgroundColor:['#EF4444','#F59E0B','#10B981'],borderWidth:0}]},
-      options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#94A3B8',font:{size:11}}},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:function(v,ctx){var sum=ctx.dataset.data.reduce((a,b)=>a+b,0);return sum>0?Math.round((v/sum)*100)+'%':'';}}},cutout:'60%'}},600,400);
+      options:{responsive:false,animation:false,plugins:{legend:{position:'bottom',labels:{color:'#94A3B8',font:{size:11}}},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:function(v,ctx){var sum=ctx.dataset.data.reduce((a,b)=>a+b,0);return sum>0?Math.round((v/sum)*100)+'%':'';}}},cutout:'60%'}},600,400);
 
     var cpiSpiImg = await renderChartToImage({
       type:'bar',
       data:{labels:['CPI','SPI'],datasets:[{data:[e.CPI,e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},
-      options:{responsive:false,animation:false,plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:14,weight:'bold'},anchor:'end',align:'top'}},scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:12}}}}}},600,400);
+      options:{responsive:false,animation:false,plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:14,weight:'bold'},anchor:'end',align:'top', formatter: function(v){ return v.toFixed(2); } }},scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:12}}}}}},600,400);
 
-    // ═══ SLIDE 1: PORTADA ═══
+    // SLIDES
     var s1=pptx.addSlide(); s1.background={color:bgDark};
     s1.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:cGold}});
     s1.addText('EXECUTIVE PORTFOLIO',{x:0.5,y:2,w:12.3,h:1,fontSize:48,bold:true,color:textWhite,align:'center'});
     s1.addText('PERFORMANCE REVIEW',{x:0.5,y:3,w:12.3,h:1,fontSize:32,bold:true,color:cGold,align:'center'});
     s1.addText('C-Suite Command Center · '+t.count+' Proyectos',{x:0.5,y:4.5,w:12.3,h:0.4,fontSize:14,color:textGray,align:'center'});
 
-    // ═══ SLIDE 2: KPIs + Gráfico de Barras (Imagen) ═══
     var s2=newSlide('Portfolio Summary', 'Key Performance Indicators (PMI)', cGold);
     [{l:'PROYECTOS',v:String(t.count),c:cViolet},{l:'BAC TOTAL',v:fEur(t.budget),c:cGold},{l:'CPI GLOBAL',v:e.CPI.toFixed(2),c:e.CPI>=0.9?cGreen:cRed},{l:'SPI GLOBAL',v:e.SPI.toFixed(2),c:e.SPI>=0.9?cGreen:cRed}].forEach(function(k,i){
       var x=0.5+i*3.1;
@@ -3206,14 +3208,12 @@ async function exportPPTX(){
       s2.addText(k.v,{x:x+0.2,y:1.9,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
     });
     if(cpiSpiImg) s2.addImage({data: cpiSpiImg, x:0.5, y:3, w:5.5, h:2.8});
-    
     s2.addShape(pptx.ShapeType.roundRect,{x:6.5,y:3,w:6.3,h:2.8,fill:{color:cardDark},line:{color:'334155',width:1},rectRadius:0.1});
     s2.addText('ANÁLISIS EJECUTIVO',{x:6.7,y:3.2,w:6,h:0.3,fontSize:12,bold:true,color:cGold});
     var analysis = 'El portafolio registra un CPI de ' + e.CPI.toFixed(2) + ' y un SPI de ' + e.SPI.toFixed(2) + '. ';
     analysis += e.VAC >= 0 ? 'La proyección al cierre indica un ahorro de ' + fEur(e.VAC) + '.' : 'Se proyecta un sobrecosto de ' + fEur(Math.abs(e.VAC)) + ', lo que requiere auditoría inmediata.';
     s2.addText(analysis,{x:6.7,y:3.6,w:6,h:2,fontSize:12,color:textWhite,lineSpacing:20,valign:'middle'});
 
-    // ═══ SLIDE 3: FINANZAS + Gráfico de Dona (Imagen) ═══
     var s3=newSlide('Advanced Finance', 'Profit & Loss (P&L) y Estructura de Costes', cGreen);
     var finRows=[['CONCEPTO','VALOR']];
     finRows.push(['Ingresos Facturables', safeEur(revenue)]);
@@ -3223,13 +3223,11 @@ async function exportPPTX(){
     s3.addTable(finRows,{x:0.5,y:1.5,w:5.5,fontSize:12,color:textWhite,border:{type:'solid',color:'334155',pt:1},fill:{color:cardDark},align:'left'});
     if(finPieImg) s3.addImage({data: finPieImg, x:6.5, y:1.5, w:6, h:4.5});
 
-    // ═══ SLIDE 4: MATRIZ DE PROYECTOS ═══
     var s4=newSlide('Project Health Matrix', 'Desglose Individual del Portafolio', cBlue);
     var pRows=[['PROYECTO','BAC','CPI','SPI','SALUD']];
     exportProjects.forEach(function(p){ var m=evmFor(p); pRows.push([p.name.substring(0,20), safeEur(m.BAC), m.CPI.toFixed(2), m.SPI.toFixed(2), p.health.toUpperCase()]); });
     s4.addTable(pRows,{x:0.5,y:1.5,w:12.3,fontSize:11,color:textWhite,border:{type:'solid',color:'334155',pt:1},fill:{color:cardDark},align:'center'});
 
-    // ═══ SLIDE 5: RIESGOS Y ALERTAS ═══
     var s5=newSlide('Risk & Alerts', 'Proyectos que requieren intervención', cRed);
     s5.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:12.3,h:4,fill:{color:cardDark},line:{color:cRed,width:1.5},rectRadius:0.1});
     s5.addText('CRITICAL ALERTS',{x:0.8,y:1.8,w:11.8,h:0.3,fontSize:14,bold:true,color:cRed});
@@ -3237,7 +3235,6 @@ async function exportPPTX(){
     var alertText = criticalProjs.length > 0 ? criticalProjs.map(function(p){ return '• ' + p.name + ' (CPI: ' + evmFor(p).CPI.toFixed(2) + ' | SPI: ' + evmFor(p).SPI.toFixed(2) + ')'; }).join('\n') : 'No hay proyectos en estado crítico.';
     s5.addText(alertText,{x:0.8,y:2.4,w:11.8,h:2,fontSize:12,color:textWhite,lineSpacing:24});
 
-    // ═══ SLIDE 6: RECOMENDACIONES ═══
     var s6=newSlide('Strategic Recommendations', 'Next Steps & Action Plan', cGold);
     s6.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:12.3,h:4,fill:{color:cardDark},line:{color:cGold,width:1.5},rectRadius:0.1});
     s6.addText('El portafolio cierra con '+t.count+' proyectos, '+fEur(t.budget)+' en fees, CPI '+e.CPI.toFixed(2)+' y SPI '+e.SPI.toFixed(2)+'.',{x:0.8,y:1.8,w:11.8,h:0.6,fontSize:14,color:textWhite,bold:true});
@@ -3250,7 +3247,6 @@ async function exportPPTX(){
     pptx.writeFile({fileName:'Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
   }catch(err){ console.error(err); alert('Error PPTX: '+err.message); }
 }
-
 
 /* ═══════════════════════════════════════════════════════════
    INIT
