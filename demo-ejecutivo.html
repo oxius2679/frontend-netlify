@@ -2447,36 +2447,49 @@ function renderFIN(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-fin');
   
-  var revenue=0, costs=0, totalHours=0;
+  var revenue=0, costs=0, totalHours=0, totalROI=0;
   
   PROJECTS.forEach(function(p){
     var eh = evmHoursFor(p);
     var logged = eh.totalLogged || 0;
     var costPerHour = 50; 
     var projCost = logged * costPerHour;
-    var projRev = projCost * 1.45; 
+    
+    // 🔥 Usamos el ROI real del proyecto (si existe) o un margen por defecto
+    var roiMultiplier = p.roi ? (1 + (p.roi / 100)) : 1.25; 
+    var projRev = projCost * roiMultiplier;
     
     revenue += projRev;
     costs += projCost;
     totalHours += logged;
+    totalROI += (p.roi || 25);
   });
+
+  var avgROI = PROJECTS.length > 0 ? (totalROI / PROJECTS.length) / 100 : 0.25;
 
   var grossProfit=revenue-costs;
   var grossMarginPct=revenue>0?(grossProfit/revenue)*100:0;
   var opex=revenue*0.12, ebitda=grossProfit-opex, ebitdaPct=revenue>0?(ebitda/revenue)*100:0;
   var breakEven = grossMarginPct > 0 ? opex/(grossMarginPct/100) : 0;
   
-  var cashFlows=[revenue*0.85,revenue*0.95,revenue*1.10,revenue*1.25];
-  var wacc=0.12,npv=-costs;
+  // 🔥 FLUJOS DE CAJA DINÁMICOS BASADOS EN EL CPI DEL PROYECTO
+  // Si el proyecto va mal (CPI < 1), los flujos futuros se reducen
+  var cpiFactor = e.CPI > 0 ? e.CPI : 1;
+  var cashFlows = [
+    revenue * 0.70 * cpiFactor, 
+    revenue * 0.85 * cpiFactor, 
+    revenue * 1.05 * cpiFactor, 
+    revenue * 1.30 * cpiFactor
+  ];
+  
+  var wacc=0.12, npv=-costs;
   cashFlows.forEach(function(cf,i){npv+=cf/Math.pow(1+wacc,i+1);});
   
-  // 🔥 CÁLCULO DEL TIR REAL (Integrado y seguro)
+  // 🔥 CÁLCULO DEL TIR REAL (Método de Bisección)
   var irr = 0;
   if (costs > 0 && revenue > 0) {
-    // Algoritmo de Bisección para TIR
-    var fullCashFlows = [-costs].concat(cashFlows); 
-    var low = -0.99;
-    var high = 10.0;
+    var fullCashFlows = [-costs].concat(cashFlows);
+    var low = -0.99, high = 10.0;
     for (var i = 0; i < 100; i++) {
       var mid = (low + high) / 2;
       var npv_temp = 0;
@@ -2500,8 +2513,6 @@ function renderFIN(){
   
   var avgClientRate = totalHours > 0 ? revenue/totalHours : 0;
   var avgCostRate = totalHours > 0 ? costs/totalHours : 0;
-
-  // Formatear TIR para mostrarlo
   var displayIRR = irr > 0 ? fPct(irr * 100) : '—';
   var irrColor = irr > wacc ? '#34d399' : (irr > 0 ? '#fbbf24' : '#94a3b8');
 
@@ -2516,7 +2527,8 @@ function renderFIN(){
       var eh = evmHoursFor(p);
       var projHours = eh.totalLogged || 0;
       var projCost = projHours * 50;
-      var projRev = projCost * 1.45;
+      var roiMultiplier = p.roi ? (1 + (p.roi / 100)) : 1.25;
+      var projRev = projCost * roiMultiplier;
       var projProfit = projRev - projCost;
       var projMargin = projRev > 0 ? (projProfit / projRev) * 100 : 0;
       var marginPerHour = projHours > 0 ? projProfit / projHours : 0;
@@ -2532,13 +2544,12 @@ function renderFIN(){
   setTimeout(function(){
     if(charts.margin)charts.margin.destroy();
     var c1=document.getElementById('cMargin');
-    if(c1 && PROJECTS.length > 0){charts.margin=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'Margen (%)',data:PROJECTS.map(function(p){var eh=evmHoursFor(p);var log=eh.totalLogged||0;return log>0?45:0;}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
+    if(c1 && PROJECTS.length > 0){charts.margin=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'Margen (%)',data:PROJECTS.map(function(p){var eh=evmHoursFor(p);var log=eh.totalLogged||0;return log>0?(p.roi||25):0;}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
     if(charts.fx)charts.fx.destroy();
     var c2=document.getElementById('cFX');
     if(c2 && revenue > 0){charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*1.08,revenue*0.85,revenue*20.5],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});}
   },100);
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 8 · VIP
    ═══════════════════════════════════════════════════════════ */
