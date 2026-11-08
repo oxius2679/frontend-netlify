@@ -2401,6 +2401,8 @@ function drawGantt(){
   if(!container)return;
   var isEn = window.currentDashboardLang === 'en';
   
+  // 🔥 TRADUCTOR PARA EL GANTT
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
   var translatePhase = function(phase) {
     if (!isEn) return phase;
     var map = {'Ejecución': 'Execution', 'Diseño': 'Design', 'Desarrollo': 'Development', 'Pruebas': 'Testing', 'Cierre': 'Closure'};
@@ -2434,7 +2436,8 @@ function drawGantt(){
     var borderColor=p.criticalPath?'#8b5cf6':color;
     var progress=Math.round(evmHoursFor(p).PCH);
 
-    html+='<div class="gantt-row"><div class="gantt-row-label">'+p.name.substring(0,25)+'<div class="sub">'+p.client+' · '+progress+'%</div></div><div class="gantt-row-track">';
+    // 🔥 AQUÍ ESTÁ EL CAMBIO: transClient(p.client)
+    html+='<div class="gantt-row"><div class="gantt-row-label">'+p.name.substring(0,25)+'<div class="sub">'+transClient(p.client)+' · '+progress+'%</div></div><div class="gantt-row-track">';
     html+='<div class="gantt-bar" style="left:'+leftPct+'%;width:'+widthPct+'%;background:linear-gradient(135deg,'+color+','+color+'cc);border:1px solid '+borderColor+';">'+translatePhase(p.phase)+' ('+p.phaseProgress+'%)</div>';
     
     p.milestones.forEach(function(m){
@@ -2452,6 +2455,8 @@ function drawGantt(){
   });
   container.innerHTML=html;
 }
+
+
 function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('on');});document.querySelectorAll('.toggle-btn').forEach(function(b){if(b.textContent.trim()===(v==='hours'?'Horas':'%'))b.classList.add('on');});drawBurndown();}
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
