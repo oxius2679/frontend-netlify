@@ -1954,10 +1954,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- CONTENEDOR SUPERIOR (Cabecera con textos) -->
     <div class="landing-header">
       <div class="landing-top-row">
-        <div class="landing-left">
-          <div class="icon"><i class="fas fa-crown"></i></div>
+                <div class="landing-left">
+          <!-- Cambiamos la corona por la imagen y ajustamos el fondo a azul marino -->
+          <div class="icon" style="background: #0B1120; border: 1px solid rgba(212,175,55,0.3); overflow: hidden;">
+            <img src="zacky45.png" alt="Zacky Logo" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
           <div class="text">
-            <h1>ZACKY EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
+            <h1>ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
             <p>8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
           </div>
         </div>
@@ -1983,10 +1986,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 
 <div class="fab" onclick="openModal()">
-    <i class="fas fa-crown"></i>
+    <!-- Reemplazamos la corona por la imagen -->
+    <img src="zacky45.png" alt="Zacky Logo" style="width: 45px; height: 45px; object-fit: contain; border-radius: 50%;">
     <span class="fab-text">Entrar al Dashboard</span>
 </div>
-
 <div class="modal" id="modal">
   <div class="modal-box">
     <div class="modal-h">
