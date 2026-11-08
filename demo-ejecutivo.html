@@ -1948,10 +1948,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- CONTENEDOR SUPERIOR (Cabecera con textos) -->
     <div class="landing-header">
       <div class="landing-top-row">
-                        <div class="landing-left">
-          <!-- Icono con la cabecita dorada -->
-          <div class="icon" style="background: #0B1120; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; padding: 0;">
-            <img src="zacky45.png" alt="Zacky Logo" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
+                                <div class="landing-left">
+          <!-- 1. EL ICONO (Solo la imagen, sin texto adentro) -->
+          <div class="icon" style="background: #0B1120; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; display: flex; justify-content: center; align-items: center;">
+            <img src="zacky45.png" alt="Zacky Logo" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          
+          <!-- 2. EL TEXTO (Separado del icono) -->
           <div class="text">
             <h1>ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
             <p>8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
@@ -1974,12 +1977,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- 👆 FIN DEL BLOQUE PEGADO 👆 -->
 
 
-<div class="fab" onclick="openModal()">
-    <!-- Reemplazamos la corona por la imagen -->
-  <img src="zacky45.png" alt="Zacky Logo" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
-    <span class="fab-text">Entrar al Dashboard</span>
-</div>
-<div class="modal" id="modal">
+<div class="fab" onclick="openModal()" style="display: flex; justify-content: center; align-items: center; background: #0B1120; border: 1px solid rgba(212,175,55,0.5); padding: 0 12px;">
+    <!-- Imagen con TAMAÑO FIJO (40px) para que no se estire -->
+    <img src="zacky45.png" alt="Zacky Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0;">
+    
+    <!-- Texto al lado -->
+    <span class="fab-text" style="margin-left: 10px;">Entrar al Dashboard</span>
+</div><div class="modal" id="modal">
   <div class="modal-box">
     <div class="modal-h">
       <div>
