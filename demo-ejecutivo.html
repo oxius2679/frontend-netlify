@@ -2983,13 +2983,14 @@ function renderChartToImage(config, width, height) {
     canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
     document.body.appendChild(canvas);
 
-    // Asegurar que el plugin de etiquetas esté registrado
+    // 🔥 REGISTRAR EL PLUGIN DE ETIQUETAS GLOBALMENTE
     if (typeof ChartDataLabels !== 'undefined' && !Chart.registry.plugins.get('datalabels')) {
         Chart.register(ChartDataLabels);
     }
 
     var chart = new Chart(canvas.getContext('2d'), config);
     
+    // Esperar 600ms para asegurar que las etiquetas se dibujen
     setTimeout(function(){
       try {
         var dataUrl = canvas.toDataURL('image/png');
@@ -3001,9 +3002,12 @@ function renderChartToImage(config, width, height) {
         document.body.removeChild(canvas);
         resolve(null);
       }
-    }, 500); // Esperar medio segundo para que se rendericen bien las etiquetas
+    }, 600);
   });
 }
+
+
+
 /* ═══════════════════════════════════════════════════════════
    EXPORT PDF SUPER COMPLETO CON GRÁFICOS
    ═══════════════════════════════════════════════════════════ */
@@ -3032,12 +3036,12 @@ async function exportPDF(){
     var opex = revenue * 0.12;
     var ebitda = gp - opex;
 
-    // --- GRÁFICOS ---
+    // --- GRÁFICOS CON VALORES VISIBLES ---
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
-    // 1. Curva S LIMPIA (sin etiquetas encimadas, los ejes ya dicen los valores)
+    // Curva S con etiquetas en los puntos (solo EV y AC)
     var sCurveImg=await renderChartToImage({
       type:'line',
       data:{labels:months,datasets:[
@@ -3049,13 +3053,18 @@ async function exportPDF(){
         responsive:false,animation:false,
         plugins:{
           legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},
-          datalabels:{ display: false } // 🔥 OCULTAMOS LAS ETIQUETAS ENCIMADAS
+          datalabels:{
+            color: function(context) { return context.dataset.borderColor; },
+            font:{size:10,weight:'bold'},
+            align:'top', offset:4,
+            formatter: function(value, context) { return value; }
+          }
         },
         scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
       }
     },1000,400);
 
-    // 2. Dona Financiera (Leyenda abajo para que no se corte)
+    // Dona con porcentajes
     var finPieImg=await renderChartToImage({
       type:'doughnut',
       data:{
@@ -3078,7 +3087,7 @@ async function exportPDF(){
       }
     },700,400);
 
-    // 3. Barras CPI vs SPI (Formateado a 2 decimales)
+    // Barras CPI/SPI con 2 decimales
     var cpiSpiImg=await renderChartToImage({
       type:'bar',
       data:{labels:['CPI', 'SPI'],datasets:[{data:[e.CPI, e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},
@@ -3088,7 +3097,7 @@ async function exportPDF(){
           legend:{display:false}, 
           datalabels:{
             color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top',
-            formatter: function(value) { return value.toFixed(2); } // 🔥 SOLO 2 DECIMALES
+            formatter: function(value) { return value.toFixed(2); }
           }
         },
         scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
@@ -3140,7 +3149,7 @@ async function exportPDF(){
     doc.setTextColor(navy[0], navy[1], navy[2]); doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Análisis del Estado', 20, y+8);
     doc.setTextColor(textMain[0], textMain[1], textMain[2]); doc.setFontSize(9); doc.setFont('helvetica','normal');
     var analysisText = 'El portafolio registra una eficiencia en costes (CPI) del ' + (e.CPI*100).toFixed(0) + '% y un cumplimiento de cronograma (SPI) del ' + (e.SPI*100).toFixed(0) + '%. ';
-    analysisText += e.VAC >= 0 ? 'La proyección al cierre indica un ahorro de ' + fEur(e.VAC) + '.' : 'Alerta: Se proyecta un sobrecosto de ' + fEur(Math.abs(e.VAC)) + ' al cierre, lo que requiere intervención inmediata de la dirección.';
+    analysisText += e.VAC >= 0 ? 'La proyección al cierre indica un ahorro de ' + fEur(e.VAC) + '.' : 'Alerta: Se proyecta un sobrecosto de ' + fEur(Math.abs(e.VAC)) + ' al cierre, lo que requiere intervención inmediata.';
     doc.text(doc.splitTextToSize(analysisText, W-40), 20, y+16); y+=55;
     y = addSectionTitle('2. Curva S · Valor Planificado vs Ganado vs Real', y);
     if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 60); }
@@ -3194,7 +3203,6 @@ async function exportPDF(){
     doc.save('Executive_Report_'+new Date().toISOString().split('T')[0]+'.pdf');
   }catch(err){ console.error(err); alert('Error PDF: '+err.message); }
 }
-
 // ============================================================
 // 📊 EXPORTACIÓN PPTX - NIVEL SILICON VALLEY (IMÁGENES DE ALTA CALIDAD)
 // ============================================================
@@ -3313,7 +3321,6 @@ async function exportPPTX(){
     pptx.writeFile({fileName:'Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
   }catch(err){ console.error(err); alert('Error PPTX: '+err.message); }
 }
-
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
