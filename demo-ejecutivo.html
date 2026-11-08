@@ -2412,10 +2412,7 @@ function renderCOO(){
     
     '<div class="box"><div class="box-t"><span>🔥</span> '+tr.burndown+'</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">'+tr.project+'</label>
 
-'<select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){
-  var clientName = (isEn && p.client === 'Cliente') ? 'Client' : p.client;
-  return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+clientName+' — '+p.name.substring(0,40)+'</option>';
-}).join('')+'</select>'
+<select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){var clientName=(isEn && p.client==='Cliente')?'Client':p.client; return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+clientName+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select>
 
 <div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">'+(isEn?'Hours':'Horas')+'</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
     
