@@ -3200,8 +3200,57 @@ var TABS={
   fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR',r:renderFIN},
   vip:{t:'Executive Experience · VIP',s:'Vista C-Suite',r:renderVIP}
 };
-function switchTab(id){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});document.getElementById('v-'+id).classList.add('on');var tab=TABS[id];if(tab){document.getElementById('mTitle').textContent=tab.t;document.getElementById('mSub').textContent=tab.s;if(tab.r)tab.r();}}
-function openModal(){document.getElementById('modal').classList.add('on');document.body.style.overflow='hidden';calcTotals();document.getElementById('chipP').textContent='📋 '+TOTALS.count+' proyectos';document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' alertas';renderCFO();initVoice();}
+
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.querySelector('.tab[data-tab="'+id+'"]').classList.add('on');
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
+  document.getElementById('v-'+id).classList.add('on');
+  
+  var tab = TABS[id];
+  if(tab){
+    // 🔥 Usar el título traducido según el idioma actual
+    var titleData = TAB_TITLES[currentDashboardLang][id];
+    if(titleData) {
+        document.getElementById('mTitle').textContent = titleData.t;
+        document.getElementById('mSub').textContent = titleData.s;
+    } else {
+        // Respaldo por si acaso
+        document.getElementById('mTitle').textContent = tab.t;
+        document.getElementById('mSub').textContent = tab.s;
+    }
+    
+    if(tab.r) tab.r();
+  }
+}
+
+function openModal(){
+  document.getElementById('modal').classList.add('on');
+  document.body.style.overflow='hidden';
+  calcTotals();
+  
+  // 🔥 Chips dinámicos traducidos
+  document.getElementById('chipP').textContent='📋 '+TOTALS.count+' '+DASHBOARD_I18N[currentDashboardLang].chip_projects;
+  document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);
+  document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);
+  document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' '+DASHBOARD_I18N[currentDashboardLang].chip_alerts;
+  
+  // 🔥 Si el modal se abre en inglés, aseguramos que el título esté traducido
+  const activeTab = document.querySelector('.tab.on');
+  if(activeTab) {
+      const tabId = activeTab.dataset.tab;
+      const titleData = TAB_TITLES[currentDashboardLang][tabId];
+      if(titleData) {
+          document.getElementById('mTitle').textContent = titleData.t;
+          document.getElementById('mSub').textContent = titleData.s;
+      }
+  }
+
+  renderCFO();
+  initVoice();
+}
+
 function closeModal(){document.getElementById('modal').classList.remove('on');document.body.style.overflow='';}
 
 /* ═══════════════════════════════════════════════════════════
@@ -3695,57 +3744,93 @@ document.addEventListener('DOMContentLoaded',function(){
 </body>
 </html>
 <script>
+<script>
 // ============================================================
-// 🌐 SISTEMA DE IDIOMAS (i18n) - PASO 1: CABECERA
+// 🌐 SISTEMA DE IDIOMAS (i18n) - PASO 2: MODAL Y CHIPS
 // ============================================================
 const DASHBOARD_I18N = {
     es: {
+        // Cabecera
         header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
         header_subtitle: "8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D",
         story_title: "La suite ejecutiva con operación real, Gantt y reportes con gráficos",
-        story_text: "<strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta."
+        story_text: "<strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.",
+        // Chips
+        chip_projects: "proyectos",
+        chip_alerts: "alertas",
+        // Pestañas (Títulos del modal)
+        tab_cfo_t: "Portafolio Financiero · CFO", tab_cfo_s: "EVM completo en € · Consolidado",
+        tab_ceo_t: "OKRs & Estrategia · CEO", tab_ceo_s: "Cuadro de mando integral",
+        tab_coo_t: "Capacity Planning · COO", tab_coo_s: "Operación + Gantt + EVM horas + Burndown",
+        tab_bi_t: "Business Intelligence · BI", tab_bi_s: "IA analítica · Insights",
+        tab_grc_t: "Governance & Compliance · GRC", tab_grc_s: "Riesgos · Auditoría",
+        tab_api_t: "Enterprise Integrations · API", tab_api_s: "SSO · API · Webhooks",
+        tab_fin_t: "Advanced Finance · FIN", tab_fin_s: "P&L · EBITDA · VAN · TIR",
+        tab_vip_t: "Executive Experience · VIP", tab_vip_s: "Vista C-Suite"
     },
     en: {
+        // Header
         header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
         header_subtitle: "8 modules · EVM € and hours · Gantt · Real operation · AI analytics · PDF/PPTX with charts · 3D",
         story_title: "The executive suite with real operation, Gantt, and reports with charts",
-        story_text: "<strong>8 modules</strong> · EVM € (CFO) and hours (COO) · <strong>Interactive Gantt with milestones and critical path</strong> · Project burndown · Conversational AI · <strong>PDF and PPTX with charts, tables, and images</strong> · 3D effects on every card."
+        story_text: "<strong>8 modules</strong> · EVM € (CFO) and hours (COO) · <strong>Interactive Gantt with milestones and critical path</strong> · Project burndown · Conversational AI · <strong>PDF and PPTX with charts, tables, and images</strong> · 3D effects on every card.",
+        // Chips
+        chip_projects: "projects",
+        chip_alerts: "alerts",
+        // Tabs (Modal Titles)
+        tab_cfo_t: "Financial Portfolio · CFO", tab_cfo_s: "Full EVM in € · Consolidated",
+        tab_ceo_t: "OKRs & Strategy · CEO", tab_ceo_s: "Balanced Scorecard",
+        tab_coo_t: "Capacity Planning · COO", tab_coo_s: "Operations + Gantt + EVM hours + Burndown",
+        tab_bi_t: "Business Intelligence · BI", tab_bi_s: "AI Analytics · Insights",
+        tab_grc_t: "Governance & Compliance · GRC", tab_grc_s: "Risks · Audit",
+        tab_api_t: "Enterprise Integrations · API", tab_api_s: "SSO · API · Webhooks",
+        tab_fin_t: "Advanced Finance · FIN", tab_fin_s: "P&L · EBITDA · NPV · IRR",
+        tab_vip_t: "Executive Experience · VIP", tab_vip_s: "C-Suite View"
     }
+};
+
+const TAB_TITLES = {
+    es: { cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado'}, ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral'}, coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown'}, bi:{t:'Business Intelligence · BI',s:'IA analítica · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR'}, vip:{t:'Executive Experience · VIP',s:'Vista C-Suite'} },
+    en: { cfo:{t:'Financial Portfolio · CFO',s:'Full EVM in € · Consolidated'}, ceo:{t:'OKRs & Strategy · CEO',s:'Balanced Scorecard'}, coo:{t:'Capacity Planning · COO',s:'Operations + Gantt + EVM hours + Burndown'}, bi:{t:'Business Intelligence · BI',s:'AI Analytics · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Risks · Audit'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · NPV · IRR'}, vip:{t:'Executive Experience · VIP',s:'C-Suite View'} }
 };
 
 let currentDashboardLang = localStorage.getItem('dashboardLang') || 'es';
 
 function toggleDashboardLang() {
-    // Cambiamos el idioma
     currentDashboardLang = currentDashboardLang === 'es' ? 'en' : 'es';
-    
-    // Guardamos la preferencia en el navegador
     localStorage.setItem('dashboardLang', currentDashboardLang);
     
-    // Actualizamos todos los textos que tengan el atributo data-i18n
+    // 1. Traducir textos estáticos (data-i18n)
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const translation = DASHBOARD_I18N[currentDashboardLang][key];
-        
-        if (translation) {
-            // Usamos innerHTML porque algunos textos tienen negritas (<strong>)
-            el.innerHTML = translation;
-        }
+        if (translation) el.innerHTML = translation;
     });
 
-    // Actualizamos el texto del botón
-    const btn = document.getElementById('langToggleBtn');
-    if (btn) {
-        btn.textContent = currentDashboardLang === 'es' ? '🌐 EN' : '🌐 ES';
+    // 2. Traducir títulos del modal si está abierto
+    const activeTab = document.querySelector('.tab.on');
+    if (activeTab) {
+        const tabId = activeTab.dataset.tab;
+        const titleData = TAB_TITLES[currentDashboardLang][tabId];
+        if (titleData) {
+            document.getElementById('mTitle').textContent = titleData.t;
+            document.getElementById('mSub').textContent = titleData.s;
+        }
     }
+
+    // 3. Traducir Chips si el modal está abierto
+    if (document.getElementById('modal').classList.contains('on') && typeof TOTALS !== 'undefined') {
+        document.getElementById('chipP').textContent = '📋 ' + TOTALS.count + ' ' + DASHBOARD_I18N[currentDashboardLang].chip_projects;
+        document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' ' + DASHBOARD_I18N[currentDashboardLang].chip_alerts;
+    }
+
+    // 4. Actualizar botón
+    const btn = document.getElementById('langToggleBtn');
+    if (btn) btn.textContent = currentDashboardLang === 'es' ? '🌐 EN' : '🌐 ES';
 }
 
-// Ejecutar al cargar la página para aplicar el idioma guardado
 document.addEventListener('DOMContentLoaded', () => {
-    if (currentDashboardLang === 'en') {
-        setTimeout(toggleDashboardLang, 500); // Pequeño delay para que cargue el DOM
-    }
+    if (currentDashboardLang === 'en') setTimeout(toggleDashboardLang, 500);
 });
-</script>
-</body>
+</script></body>
 </html>
