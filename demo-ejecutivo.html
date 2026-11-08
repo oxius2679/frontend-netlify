@@ -1596,27 +1596,25 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     bottom: 30px !important;
     right: 30px !important;
     background: #0B1120 !important; 
-    border: 2px solid #D4AF37 !important; 
-    height: 64px !important;
-    width: auto !important; /* Esto hace que se adapte al texto */
-    padding: 0 24px 0 12px !important;
-    border-radius: 50px !important; 
+    border: 1.5px solid #D4AF37 !important; 
+    height: 50px !important; /* Más pequeño y elegante */
+    width: auto !important; 
+    padding: 0 16px 0 8px !important; /* Más compacto */
+    border-radius: 30px !important; 
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 2px 4px rgba(212,175,55,0.2) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.8), inset 0 1px 3px rgba(212,175,55,0.2) !important;
     cursor: pointer !important;
-    z-index: 99999 !important; /* Asegura que esté por encima de todo */
-    transition: transform 0.3s ease !important;
-    overflow: visible !important; /* ESTO ES CLAVE: evita que el texto se corte */
+    z-index: 99999 !important; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    overflow: visible !important; 
 }
 
 .fab:hover {
-    transform: translateY(-5px) scale(1.03) !important;
-    box-shadow: 0 20px 40px rgba(212,175,55,0.4) !important;
-}
-.fab-img {
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 0 12px 25px rgba(212,175,55,0.4) !important;
+}.fab-img {
     width: 44px;
     height: 44px;
     object-fit: cover;
@@ -1998,8 +1996,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 
 <div class="fab" onclick="openModal()">
-    <img src="zacky45.png" alt="Zacky Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
-    <span style="color: #D4AF37; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap;">Entrar al Dashboard</span>
+    <img src="zacky45.png" alt="Zacky Logo" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;">
+    <span style="color: #D4AF37; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; margin-left: 8px;">Entrar</span>
 </div>
 </div>
 
