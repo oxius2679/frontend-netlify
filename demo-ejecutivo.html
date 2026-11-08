@@ -2167,19 +2167,6 @@ function kpi(l,v,s,c,f){return '<div class="kpi" style="--c:'+c+'"><div class="l
 function renderCFO(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-cfo');
-
-// 🔥 NUEVO: Detectar idioma
-  var isEn = window.currentDashboardLang === 'en';
-  var text = {
-    heroTitle: isEn ? "Financial Portfolio · Full PMI EVM (€)" : "Portafolio Financiero · EVM Completo PMI (€)",
-    heroSub: isEn ? "The 14 PMI EVM metrics in euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 methods), ETC, VAC, TCPI and % Completed." : "Las 14 métricas EVM del PMI en euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 métodos), ETC, VAC, TCPI y % Completado.",
-    chart1: isEn ? "S-Curve · PV vs EV vs AC" : "Curva S · PV vs EV vs AC",
-    chart2: isEn ? "EAC vs BAC by Project" : "EAC vs BAC por Proyecto",
-    tableTitle: isEn ? "EVM Detail (€) by Project" : "Detalle EVM (€) por Proyecto",
-    // Puedes agregar más textos aquí
-  };
-
-
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Portafolio Financiero · EVM Completo PMI (€)</h2><p>Las 14 métricas EVM del PMI en euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 métodos), ETC, VAC, TCPI y % Completado.</p></div><div class="hero-stats">'+statCard(t.count,'Proyectos')+statCard(fEur(t.budget),'BAC Total','g')+statCard(e.CPI.toFixed(2),'CPI Global','gr')+statCard(e.SPI.toFixed(2),'SPI Global')+'</div></div></div>'+
     '<div class="kpi-6">'+
