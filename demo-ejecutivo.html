@@ -2498,7 +2498,15 @@ function initVoice(){
   }
 }
 function toggleMic(){if(!recognition){addChatMsg('Navegador no soporta voz.','bot');return;}if(isRecording){recognition.stop();return;}recognition.start();isRecording=true;document.getElementById('chatMic').classList.add('rec');}
-function addChatMsg(text,who){var m=document.getElementById('chatM');if(!m)return;var d=document.createElement('div');d.className='msg '+who;d.innerHTML=text+'<div class="m">'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight;}
+function addChatMsg(text, who, customId){
+  var m=document.getElementById('chatM');if(!m)return;
+  var d=document.createElement('div');
+  d.className='msg '+who;
+  if (customId) d.id = customId; 
+  d.innerHTML=text+'<div class="m">'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'</div>';
+  m.appendChild(d);m.scrollTop=m.scrollHeight;
+}
+
 function generateAIResponse(q){
   q=q.toLowerCase();
   var t=TOTALS,e=t.evm;
@@ -2523,9 +2531,130 @@ function generateAIResponse(q){
   for(var i=0;i<PROJECTS.length;i++){var p=PROJECTS[i];if(q.indexOf(p.client.toLowerCase())>=0||q.indexOf(p.name.toLowerCase().substring(0,12))>=0){var m=evmFor(p),eh=evmHoursFor(p);return '<strong>'+p.name+'</strong>:<br><br>• Fase: '+p.phase+' ('+p.phaseProgress+'%)<br>• Status: '+p.opStatus.toUpperCase()+'<br>• BAC: '+fEur(m.BAC)+'<br>• CPI: '+m.CPI.toFixed(2)+'<br>• CPI_h: '+eh.CPIH.toFixed(2)+'<br>• EAC: '+fEur(m.EAC)+'<br>• Hitos: '+p.milestones.filter(function(m){return m.status==='done';}).length+'/'+p.milestones.length+(p.blockers.length>0?'<br>• ⚠️ '+p.blockers.length+' bloqueo(s)':'');}}
   return 'He procesado tu consulta:<br><br>• CPI: '+e.CPI.toFixed(2)+' · SPI: '+e.SPI.toFixed(2)+'<br>• '+PROJECTS.length+' proyectos<br><br>Puedo profundizar en: <strong>CPI, SPI, operación, bloqueos, burndown, hitos, gantt, margen, riesgos, EAC</strong>.';
 }
-function sendChat(){var inp=document.getElementById('chatIn');if(!inp)return;var text=inp.value.trim();if(!text)return;addChatMsg(text,'user');inp.value='';setTimeout(function(){addChatMsg(generateAIResponse(text),'bot');},600);}
-function handleFile(input){var f=input.files[0];if(!f)return;addChatMsg('📎 '+f.name,f.length,f.size,'user');setTimeout(function(){addChatMsg(generateAIResponse('archivo'),'bot');},1200);input.value='';}
+async function sendChat(){
+  var inp=document.getElementById('chatIn');
+  if(!inp)return;
+  var text=inp.value.trim();
+  if(!text)return;
+  
+  addChatMsg(text,'user');
+  inp.value='';
+  
+  var loadingId = 'loading_' + Date.now();
+  addChatMsg('<i class="fas fa-circle-notch fa-spin" style="color:#ec4899;"></i> Analizando datos del portafolio...', 'bot', loadingId);
+  
+  var contextData = "Datos del portafolio actual:\n";
+  if (window.PROJECTS && window.PROJECTS.length > 0) {
+    window.PROJECTS.forEach(p => {
+      var m = evmFor(p);
+      var eh = evmHoursFor(p);
+      contextData += `- Proyecto: ${p.name} | Cliente: ${p.client} | Status: ${p.opStatus} | Fase: ${p.phase} | BAC: €${m.BAC.toFixed(0)} | CPI: ${m.CPI.toFixed(2)} | SPI: ${m.SPI.toFixed(2)} | Horas Restantes: ${(eh.totalEstimated - eh.earnedHours).toFixed(0)}h | Riesgos: ${p.blockers.length}\n`;
+    });
+  } else {
+    contextData += "No hay proyectos cargados en este momento.";
+  }
 
+  try {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/ai/chat', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ message: text, context: contextData })
+    });
+    
+    const data = await response.json();
+    
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+    
+    if (data.success) {
+      var formattedReply = data.reply.replace(/\n/g, '<br>');
+      addChatMsg(formattedReply, 'bot');
+    } else {
+      addChatMsg('❌ Hubo un error en el servidor de IA.', 'bot');
+    }
+    
+  } catch (error) {
+    console.error(error);
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+    addChatMsg('❌ Error de conexión. Verifica tu red o el estado del servidor.', 'bot');
+  }
+}
+
+function handleFile(input){
+  var f=input.files[0];if(!f)return;
+  addChatMsg('📎 '+f.name, 'user');
+  setTimeout(function(){
+    addChatMsg('He recibido el archivo. Por ahora solo puedo analizar los datos que me pases por texto.', 'bot');
+  },1000);
+  input.value='';
+}
+async function sendChat(){
+  var inp=document.getElementById('chatIn');
+  if(!inp)return;
+  var text=inp.value.trim();
+  if(!text)return;
+  
+  addChatMsg(text,'user');
+  inp.value='';
+  
+  var loadingId = 'loading_' + Date.now();
+  addChatMsg('<i class="fas fa-circle-notch fa-spin" style="color:#ec4899;"></i> Analizando datos del portafolio...', 'bot', loadingId);
+  
+  var contextData = "Datos del portafolio actual:\n";
+  if (window.PROJECTS && window.PROJECTS.length > 0) {
+    window.PROJECTS.forEach(p => {
+      var m = evmFor(p);
+      var eh = evmHoursFor(p);
+      contextData += `- Proyecto: ${p.name} | Cliente: ${p.client} | Status: ${p.opStatus} | Fase: ${p.phase} | BAC: €${m.BAC.toFixed(0)} | CPI: ${m.CPI.toFixed(2)} | SPI: ${m.SPI.toFixed(2)} | Horas Restantes: ${(eh.totalEstimated - eh.earnedHours).toFixed(0)}h | Riesgos: ${p.blockers.length}\n`;
+    });
+  } else {
+    contextData += "No hay proyectos cargados en este momento.";
+  }
+
+  try {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const response = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/ai/chat', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ message: text, context: contextData })
+    });
+    
+    const data = await response.json();
+    
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+    
+    if (data.success) {
+      var formattedReply = data.reply.replace(/\n/g, '<br>');
+      addChatMsg(formattedReply, 'bot');
+    } else {
+      addChatMsg('❌ Hubo un error en el servidor de IA.', 'bot');
+    }
+    
+  } catch (error) {
+    console.error(error);
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+    addChatMsg('❌ Error de conexión. Verifica tu red o el estado del servidor.', 'bot');
+  }
+}
+
+function handleFile(input){
+  var f=input.files[0];if(!f)return;
+  addChatMsg('📎 '+f.name, 'user');
+  setTimeout(function(){
+    addChatMsg('He recibido el archivo. Por ahora solo puedo analizar los datos que me pases por texto.', 'bot');
+  },1000);
+  input.value='';
+}
 /* ═══════════════════════════════════════════════════════════
    NAV
    ═══════════════════════════════════════════════════════════ */
