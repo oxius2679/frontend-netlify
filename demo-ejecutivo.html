@@ -2509,46 +2509,53 @@ function drawBurndown(){
 function renderBI(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-bi');
-  var worstMargin=PROJECTS.slice().sort(function(a,b){return a.margin-b.margin;})[0];
-  var bestMargin=PROJECTS.slice().sort(function(a,b){return b.margin-a.margin;})[0];
-  var totalHours=PROJECTS.reduce(function(s,p){return s+p.tasks.reduce(function(a,tk){return a+tk.estimatedTime;},0);},0);
-  var loggedHours=PROJECTS.reduce(function(s,p){return s+p.tasks.reduce(function(a,tk){return a+tk.timeLogged;},0);},0);
+  var isEn = window.currentDashboardLang === 'en';
+  
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
+  
+  var worstMargin=PROJECTS.slice().sort(function(a,b){return a.margin-b.margin;})[0] || {};
+  var bestMargin=PROJECTS.slice().sort(function(a,b){return b.margin-a.margin;})[0] || {};
+  var totalHours=PROJECTS.reduce(function(s,p){return s+(p.tasks||[]).reduce(function(a,tk){return a+tk.estimatedTime;},0);},0);
+  var loggedHours=PROJECTS.reduce(function(s,p){return s+(p.tasks||[]).reduce(function(a,tk){return a+tk.timeLogged;},0);},0);
+
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Business Intelligence · IA Analítica Conversacional</h2><p>Asistente IA que analiza el estado real del portafolio en cada pregunta. Incluye voz y análisis de archivos.</p></div><div class="hero-stats">'+statCard('8','Análisis','g')+statCard(PROJECTS.length,'Proyectos')+statCard('24/7','IA','gr')+statCard('🎤','Voz','r')+'</div></div></div>'+
-    '<div class="box"><div class="box-t"><span>🤖</span> Asistente IA · PM Virtual</div><div class="chat"><div class="chat-h"><div class="ico"><i class="fas fa-robot"></i></div><div><div class="n">PM Virtual · Zacky AI</div><div class="st"><i class="fas fa-circle" style="font-size:6px;"></i> En línea · '+PROJECTS.length+' proyectos</div></div></div><div class="chat-m" id="chatM"><div class="msg bot">Hola. Soy tu PM Virtual. Analizo:<br><br>• <strong>CPI, SPI, EAC, VAC</strong> (€ y horas)<br>• <strong>Márgenes</strong> por cliente<br>• <strong>Status operativo</strong>, fases y bloqueos<br>• <strong>Burndown, hitos y horas</strong><br><br>Usa el micrófono 🎤 o adjunta archivos 📎. ¿Qué analizamos?<div class="m">Ahora</div></div></div><div class="chat-i"><button class="chat-b file" onclick="document.getElementById(\'chatFile\').click()"><i class="fas fa-paperclip"></i></button><input type="file" id="chatFile" style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFile(this)"><input type="text" class="chat-in" id="chatIn" placeholder="Pregunta sobre el portafolio..." onkeypress="if(event.key===\'Enter\')sendChat()"><button class="chat-b mic" id="chatMic" onclick="toggleMic()"><i class="fas fa-microphone"></i></button><button class="chat-b send" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button></div></div></div>'+
-    '<div class="box"><div class="box-t"><span>🧠</span> Insights Automáticos</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">'+
-      [{icon:'🚨',c:'#ef4444',t:'Estado Global',x:'CPI '+e.CPI.toFixed(2)+' · SPI '+e.SPI.toFixed(2)+'. '+(e.CPI<0.95||e.SPI<0.95?'Requiere plan de recuperación.':'En zona de tolerancia.')},
-       {icon:'💰',c:'#fbbf24',t:'Margen',x:'Promedio: '+fPct(t.marginAvg)+'. Peor: '+worstMargin.name+' ('+worstMargin.margin+'%). Mejor: '+bestMargin.name+' ('+bestMargin.margin+'%).'},
-       {icon:'⚡',c:'#34d399',t:'Eficiencia',x:loggedHours+'h de '+totalHours+'h ('+((loggedHours/totalHours)*100).toFixed(0)+'%).'},
-       {icon:'📡',c:'#67e8f9',t:'Operación',x:PROJECTS.filter(function(p){return p.opStatus==='bloqueado';}).length+' bloqueados · '+PROJECTS.filter(function(p){return p.opStatus==='pausa';}).length+' pausa · '+PROJECTS.filter(function(p){return p.opStatus==='activo';}).length+' activos.'},
-       {icon:'🎯',c:'#a78bfa',t:'Concentración',x:PROJECTS[0].name+' = '+((PROJECTS[0].budget/t.budget)*100).toFixed(0)+'% del presupuesto.'},
-       {icon:'📊',c:'#fbbf24',t:'Forecast EAC',x:'EAC: '+fEur(e.EAC)+'. VAC: '+(e.VAC>=0?'+':'')+fEur(e.VAC)+'. TCPI: '+e.TCPI.toFixed(2)+'.'}
+    '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "Business Intelligence · Conversational AI Analytics" : "Business Intelligence · IA Analítica Conversacional")+'</h2><p>'+(isEn ? "AI Assistant that analyzes the real state of the portfolio on every question. Includes voice and file analysis." : "Asistente IA que analiza el estado real del portafolio en cada pregunta. Incluye voz y análisis de archivos.")+'</p></div><div class="hero-stats">'+statCard('8',(isEn?'Analysis':'Análisis'),'g')+statCard(PROJECTS.length,(isEn?'Projects':'Proyectos'))+statCard('24/7','IA','gr')+statCard('🎤',(isEn?'Voice':'Voz'),'r')+'</div></div></div>'+
+    
+    '<div class="box"><div class="box-t"><span>🤖</span> '+(isEn?'AI Assistant · Virtual PM':'Asistente IA · PM Virtual')+'</div><div class="chat"><div class="chat-h"><div class="ico"><i class="fas fa-robot"></i></div><div><div class="n">'+(isEn?'Virtual PM · Zacky AI':'PM Virtual · Zacky AI')+'</div><div class="st"><i class="fas fa-circle" style="font-size:6px;"></i> '+(isEn?'Online':'En línea')+' · '+PROJECTS.length+' '+(isEn?'projects':'proyectos')+'</div></div></div><div class="chat-m" id="chatM"><div class="msg bot">'+(isEn?'Hello. I am your Virtual PM. I analyze:<br><br>• <strong>CPI, SPI, EAC, VAC</strong> (€ and hours)<br>• <strong>Margins</strong> by client<br>• <strong>Operational status</strong>, phases and blockers<br>• <strong>Burndown, milestones and hours</strong><br><br>Use the microphone 🎤 or attach files 📎. What shall we analyze?':'Hola. Soy tu PM Virtual. Analizo:<br><br>• <strong>CPI, SPI, EAC, VAC</strong> (€ y horas)<br>• <strong>Márgenes</strong> por cliente<br>• <strong>Status operativo</strong>, fases y bloqueos<br>• <strong>Burndown, hitos y horas</strong><br><br>Usa el micrófono 🎤 o adjunta archivos 📎. ¿Qué analizamos?')+'<div class="m">'+(isEn?'Now':'Ahora')+'</div></div></div><div class="chat-i"><button class="chat-b file" onclick="document.getElementById(\'chatFile\').click()"><i class="fas fa-paperclip"></i></button><input type="file" id="chatFile" style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFile(this)"><input type="text" class="chat-in" id="chatIn" placeholder="'+(isEn?'Ask about the portfolio...':'Pregunta sobre el portafolio...')+'" onkeypress="if(event.key===\'Enter\')sendChat()"><button class="chat-b mic" id="chatMic" onclick="toggleMic()"><i class="fas fa-microphone"></i></button><button class="chat-b send" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button></div></div></div>'+
+    
+    '<div class="box"><div class="box-t"><span>🧠</span> '+(isEn?'Automatic Insights':'Insights Automáticos')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">'+
+      [{icon:'🚨',c:'#ef4444',t:(isEn?'Global Status':'Estado Global'),x:'CPI '+e.CPI.toFixed(2)+' · SPI '+e.SPI.toFixed(2)+'. '+(e.CPI<0.95||e.SPI<0.95?(isEn?'Requires recovery plan.':'Requiere plan de recuperación.'):(isEn?'Within tolerance zone.':'En zona de tolerancia.'))},
+       {icon:'💰',c:'#fbbf24',t:(isEn?'Margin':'Margen'),x:(isEn?'Average: ':'Promedio: ')+fPct(t.marginAvg)+'. '+(isEn?'Worst: ':'Peor: ')+(worstMargin.name||'—')+' ('+(worstMargin.margin||0)+'%). '+(isEn?'Best: ':'Mejor: ')+(bestMargin.name||'—')+' ('+(bestMargin.margin||0)+'%).'},
+       {icon:'⚡',c:'#34d399',t:(isEn?'Efficiency':'Eficiencia'),x:loggedHours+'h '+(isEn?'of ':'de ')+totalHours+'h ('+((loggedHours/(totalHours||1))*100).toFixed(0)+'%).'},
+       {icon:'📡',c:'#67e8f9',t:(isEn?'Operation':'Operación'),x:PROJECTS.filter(function(p){return p.opStatus==='bloqueado';}).length+(isEn?' blocked':' bloqueados')+' · '+PROJECTS.filter(function(p){return p.opStatus==='pausa';}).length+(isEn?' paused':' pausa')+' · '+PROJECTS.filter(function(p){return p.opStatus==='activo';}).length+(isEn?' active':' activos')+'.'},
+       {icon:'🎯',c:'#a78bfa',t:(isEn?'Concentration':'Concentración'),x:(PROJECTS[0]?PROJECTS[0].name:'—')+' = '+((PROJECTS[0]?(PROJECTS[0].budget/t.budget)*100:0)).toFixed(0)+'% '+(isEn?'of the budget.':'del presupuesto.')},
+       {icon:'📊',c:'#fbbf24',t:(isEn?'EAC Forecast':'Forecast EAC'),x:'EAC: '+fEur(e.EAC)+'. VAC: '+(e.VAC>=0?'+':'')+fEur(e.VAC)+'. TCPI: '+e.TCPI.toFixed(2)+'.'}
       ].map(function(ins){return '<div class="insight" style="border-left-color:'+ins.c+';"><div class="h" style="color:'+ins.c+';"><span style="font-size:18px;">'+ins.icon+'</span>'+ins.t+'</div><div class="txt">'+ins.x+'</div></div>';}).join('')+
     '</div></div>'+
-    '<div class="chart-2"><div class="chart-card"><div class="t"><span>🏆</span> Top Performers</div><canvas id="cTop"></canvas></div><div class="chart-card"><div class="t"><span>📉</span> Requieren Atención</div><canvas id="cBot"></canvas></div></div>';
+    
+    '<div class="chart-2"><div class="chart-card"><div class="t"><span>🏆</span> '+(isEn?'Top Performers':'Top Performers')+'</div><canvas id="cTop"></canvas></div><div class="chart-card"><div class="t"><span>📉</span> '+(isEn?'Require Attention':'Requieren Atención')+'</div><canvas id="cBot"></canvas></div></div>';
+  
   setTimeout(function(){
     var sorted=PROJECTS.slice().sort(function(a,b){var ea=evmFor(a),eb=evmFor(b);return (eb.CPI+eb.SPI)-(ea.CPI+ea.SPI);});
     var top=sorted.slice(0,3),bot=sorted.slice(-3).reverse();
     if(charts.top)charts.top.destroy();
     var c1=document.getElementById('cTop');
-    if(c1){charts.top=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:top.map(function(p){return p.client;}),datasets:[{label:'Score',data:top.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}});}
+    if(c1){charts.top=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:top.map(function(p){return transClient(p.client);}),datasets:[{label:'Score',data:top.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}});}
     if(charts.bot)charts.bot.destroy();
     var c2=document.getElementById('cBot');
-    if(c2){charts.bot=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:bot.map(function(p){return p.client;}),datasets:[{label:'Score',data:bot.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:6,barPercentage:0.6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}});}
+    if(c2){charts.bot=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:bot.map(function(p){return transClient(p.client);}),datasets:[{label:'Score',data:bot.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:6,barPercentage:0.6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}});}
   },100);
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 5 · GRC
    ═══════════════════════════════════════════════════════════ */
 async function renderGRC(){
   var t=TOTALS, e=t.evm;
   var el=document.getElementById('v-grc');
+  var isEn = window.currentDashboardLang === 'en';
   
-  // 1. MOSTRAR PANTALLA DE CARGA
-  el.innerHTML = '<div style="text-align:center; padding:60px; color:#a78bfa; font-weight:800; font-size:18px;">⏳ Conectando con el servidor para verificar seguridad...</div>';
+  el.innerHTML = '<div style="text-align:center; padding:60px; color:#a78bfa; font-weight:800; font-size:18px;">⏳ '+(isEn?'Connecting to server to verify security...':'Conectando con el servidor para verificar seguridad...')+'</div>';
 
-  // 2. CÁLCULOS DINÁMICOS DE COMPLIANCE Y RIESGOS
   var trazabilidad = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.assignee && tk.assignee !== 'Sin asignar';}).length;}, 0);
   var totalTareas = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).length;}, 0);
   var conDescripcion = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.description && tk.description.trim() !== '';}).length;}, 0);
@@ -2558,23 +2565,22 @@ async function renderGRC(){
   var docScore = totalTareas > 0 ? Math.round(((traceScore + dataScore) / 2)) : 100;
   
   var areas=[
-    {n:'Trazabilidad',s:traceScore,d:trazabilidad+'/'+totalTareas},
-    {n:'Datos Completos',s:dataScore,d:conDescripcion+'/'+totalTareas},
-    {n:'Control Financiero',s:Math.min(100, Math.round(e.CPI*100)),d:'CPI '+e.CPI.toFixed(2)},
-    {n:'Cronograma',s:Math.min(100, Math.round(e.SPI*100)),d:'SPI '+e.SPI.toFixed(2)},
-    {n:'Documentación',s:docScore,d:'Cobertura'}
+    {n:(isEn?'Traceability':'Trazabilidad'),s:traceScore,d:trazabilidad+'/'+totalTareas},
+    {n:(isEn?'Complete Data':'Datos Completos'),s:dataScore,d:conDescripcion+'/'+totalTareas},
+    {n:(isEn?'Financial Control':'Control Financiero'),s:Math.min(100, Math.round(e.CPI*100)),d:'CPI '+e.CPI.toFixed(2)},
+    {n:(isEn?'Schedule':'Cronograma'),s:Math.min(100, Math.round(e.SPI*100)),d:'SPI '+e.SPI.toFixed(2)},
+    {n:(isEn?'Documentation':'Documentación'),s:docScore,d:(isEn?'Coverage':'Cobertura')}
   ];
   var compliance=Math.round(areas.reduce(function(s,a){return s+a.s;},0)/areas.length);
 
   var risks = [];
-  if (e.CPI < 0.95) risks.push({n:'Desviación de costos', p:'Alta', i:'Alto', sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:'Auditoría de horas + renegociación'});
-  if (e.SPI < 0.95) risks.push({n:'Retraso en cronograma', p:'Alta', i:'Medio', sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:'Fast-tracking + refuerzo de recursos'});
+  if (e.CPI < 0.95) risks.push({n:(isEn?'Cost deviation':'Desviación de costos'), p:(isEn?'High':'Alta'), i:(isEn?'High':'Alto'), sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:(isEn?'Hours audit + renegotiation':'Auditoría de horas + renegociación')});
+  if (e.SPI < 0.95) risks.push({n:(isEn?'Schedule delay':'Retraso en cronograma'), p:(isEn?'High':'Alta'), i:(isEn?'Medium':'Medio'), sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:(isEn?'Fast-tracking + resource reinforcement':'Fast-tracking + refuerzo de recursos')});
   var overdueTasks = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.status === 'overdue';}).length;}, 0);
-  if (overdueTasks > 0) risks.push({n:'Tareas rezagadas', p:'Media', i:'Medio', sev:'medio', exp: overdueTasks * 500, mit:'Reasignación de tareas'});
-  if (risks.length === 0) risks.push({n:'Concentración de presupuesto', p:'Media', i:'Alto', sev:'alto', exp: t.budget * 0.1, mit:'Diversificación de portafolio'});
+  if (overdueTasks > 0) risks.push({n:(isEn?'Overdue tasks':'Tareas rezagadas'), p:(isEn?'Medium':'Media'), i:(isEn?'Medium':'Medio'), sev:'medio', exp: overdueTasks * 500, mit:(isEn?'Task reassignment':'Reasignación de tareas')});
+  if (risks.length === 0) risks.push({n:(isEn?'Budget concentration':'Concentración de presupuesto'), p:(isEn?'Medium':'Media'), i:(isEn?'High':'Alto'), sev:'alto', exp: t.budget * 0.1, mit:(isEn?'Portfolio diversification':'Diversificación de portafolio')});
   var totalExp = risks.reduce(function(s,r){return s+r.exp;},0);
 
-  // 3. CONSUMIR EL ENDPOINT REAL DEL BACKEND
   let systemControls = [];
   try {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -2585,35 +2591,35 @@ async function renderGRC(){
     if (!response.ok) throw new Error('Error HTTP: ' + response.status);
     const data = await response.json();
 
-    // Mapear la respuesta del servidor al diseño visual
     systemControls = [
-      {n:'Audit log', s: data.auditLog ? 'activo' : 'inactivo', d:'Cambios registrados'},
-      {n:'Snapshots', s: data.snapshots ? 'activo' : 'inactivo', d:'KPIs diarios'},
-      {n:'RBAC', s: data.rbac ? 'activo' : 'inactivo', d:'Acceso por roles'},
+      {n:'Audit log', s: data.auditLog ? 'activo' : 'inactivo', d:(isEn?'Recorded changes':'Cambios registrados')},
+      {n:'Snapshots', s: data.snapshots ? 'activo' : 'inactivo', d:(isEn?'Daily KPIs':'KPIs diarios')},
+      {n:'RBAC', s: data.rbac ? 'activo' : 'inactivo', d:(isEn?'Role access':'Acceso por roles')},
       {n:'HTTPS', s: data.https ? 'activo' : 'inactivo', d:'TLS 1.3'},
-      {n:'Backups', s: data.backups?.activo ? 'activo' : 'inactivo', d: data.backups?.ultimo ? 'Último: ' + new Date(data.backups.ultimo).toLocaleString('es-ES') : 'Desconocido'},
-      {n:'DR', s: data.dr ? 'activo' : 'parcial', d:'Procedimientos'},
-      {n:'SOC 2', s: data.soc2 ? 'activo' : 'parcial', d:'Auditoría externa'},
-      {n:'GDPR', s: data.gdpr ? 'activo' : 'parcial', d:'Consentimiento'}
+      {n:'Backups', s: data.backups?.activo ? 'activo' : 'inactivo', d: data.backups?.ultimo ? (isEn?'Last: ':'Último: ') + new Date(data.backups.ultimo).toLocaleString(isEn?'en-US':'es-ES') : (isEn?'Unknown':'Desconocido')},
+      {n:'DR', s: data.dr ? 'activo' : 'parcial', d:(isEn?'Procedures':'Procedimientos')},
+      {n:'SOC 2', s: data.soc2 ? 'activo' : 'parcial', d:(isEn?'External audit':'Auditoría externa')},
+      {n:'GDPR', s: data.gdpr ? 'activo' : 'parcial', d:(isEn?'Consent':'Consentimiento')}
     ];
   } catch (error) {
-    console.warn("⚠️ No se pudo conectar al endpoint de salud.", error);
-    // Si falla el servidor, mostramos alerta roja en lugar de mentir
     systemControls = [
-      {n:'Audit log', s:'error', d:'No verificable'}, {n:'Snapshots', s:'error', d:'No verificable'},
-      {n:'RBAC', s:'error', d:'No verificable'}, {n:'HTTPS', s:'error', d:'No verificable'},
-      {n:'Backups', s:'error', d:'No verificable'}, {n:'DR', s:'error', d:'No verificable'},
-      {n:'SOC 2', s:'error', d:'No verificable'}, {n:'GDPR', s:'error', d:'No verificable'}
+      {n:'Audit log', s:'error', d:(isEn?'Not verifiable':'No verificable')}, {n:'Snapshots', s:'error', d:(isEn?'Not verifiable':'No verificable')},
+      {n:'RBAC', s:'error', d:(isEn?'Not verifiable':'No verificable')}, {n:'HTTPS', s:'error', d:(isEn?'Not verifiable':'No verificable')},
+      {n:'Backups', s:'error', d:(isEn?'Not verifiable':'No verificable')}, {n:'DR', s:'error', d:(isEn?'Not verifiable':'No verificable')},
+      {n:'SOC 2', s:'error', d:(isEn?'Not verifiable':'No verificable')}, {n:'GDPR', s:'error', d:(isEn?'Not verifiable':'No verificable')}
     ];
   }
 
-  // 4. RENDERIZAR TODO EL HTML CON LOS DATOS REALES
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera en tiempo real.</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,'Críticos','r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,'Controles','g')+statCard(fEur(totalExp),'Exposición','r')+'</div></div></div>'+
-    '<div class="kpi-4">'+kpi('Compliance',compliance+'%',compliance>=80?'Conforme':'Atención',compliance>=80?'#34d399':'#fbbf24')+kpi('Críticos',risks.filter(function(r){return r.sev==='critico';}).length,'de '+risks.length,'#ef4444')+kpi('Controles',systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,'activos','#34d399')+kpi('Exposición',fEur(totalExp),'riesgo','#a78bfa')+'</div>'+
-    '<div class="box"><div class="box-t"><span>🛡️</span> Cumplimiento</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+areas.map(function(a){var c=a.s>=80?'#34d399':a.s>=60?'#fbbf24':'#ef4444';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:20px;">'+(a.s>=80?'✅':a.s>=60?'⚠️':'❌')+'</span><span style="font-size:20px;font-weight:900;color:'+c+';">'+a.s+'%</span></div><div style="font-size:11px;font-weight:800;color:#fff;">'+a.n+'</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">'+a.d+'</div><div class="bar" style="margin-top:10px;"><div class="bar-f" style="width:'+a.s+'%;background:'+c+';"></div></div></div>';}).join('')+'</div></div>'+
-    '<div class="box"><div class="box-t"><span>⚠️</span> Matriz de Riesgos (Dinámica)</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Riesgo</th><th class="n">Prob.</th><th class="n">Impacto</th><th class="n">Severidad</th><th class="n">Exposición</th><th>Mitigación</th></tr></thead><tbody>'+risks.map(function(r){var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n">'+r.p+'</td><td class="n">'+r.i+'</td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#94a3b8;">'+r.mit+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
-    '<div class="box"><div class="box-t"><span>🔒</span> Controles de Seguridad de la Plataforma (Real-Time)</div><div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Governance & Compliance · ISO 31000':'Governance & Compliance · ISO 31000')+'</h2><p>'+(isEn?'Regulatory compliance, 5x5 risk matrix, internal controls and financial exposure in real time.':'Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera en tiempo real.')+'</p></div><div class="hero-stats">'+statCard(compliance+'%',(isEn?'Compliance':'Compliance'),compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'Critical':'Críticos'),'r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'Controls':'Controles'),'g')+statCard(fEur(totalExp),(isEn?'Exposure':'Exposición'),'r')+'</div></div></div>'+
+    
+    '<div class="kpi-4">'+kpi((isEn?'Compliance':'Compliance'),compliance+'%',compliance>=80?(isEn?'Compliant':'Conforme'):(isEn?'Attention':'Atención'),compliance>=80?'#34d399':'#fbbf24')+kpi((isEn?'Critical':'Críticos'),risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'of ':'de ')+risks.length,'#ef4444')+kpi((isEn?'Controls':'Controles'),systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'active':'activos'),'#34d399')+kpi((isEn?'Exposure':'Exposición'),fEur(totalExp),(isEn?'risk':'riesgo'),'#a78bfa')+'</div>'+
+    
+    '<div class="box"><div class="box-t"><span>🛡️</span> '+(isEn?'Compliance':'Cumplimiento')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+areas.map(function(a){var c=a.s>=80?'#34d399':a.s>=60?'#fbbf24':'#ef4444';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:20px;">'+(a.s>=80?'✅':a.s>=60?'⚠️':'❌')+'</span><span style="font-size:20px;font-weight:900;color:'+c+';">'+a.s+'%</span></div><div style="font-size:11px;font-weight:800;color:#fff;">'+a.n+'</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">'+a.d+'</div><div class="bar" style="margin-top:10px;"><div class="bar-f" style="width:'+a.s+'%;background:'+c+';"></div></div></div>';}).join('')+'</div></div>'+
+    
+    '<div class="box"><div class="box-t"><span>⚠️</span> '+(isEn?'Dynamic Risk Matrix':'Matriz de Riesgos (Dinámica)')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Prob.':'Prob.')+'</th><th class="n">'+(isEn?'Impact':'Impacto')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Mitigation':'Mitigación')+'</th></tr></thead><tbody>'+risks.map(function(r){var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n">'+r.p+'</td><td class="n">'+r.i+'</td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#94a3b8;">'+r.mit+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
+    
+    '<div class="box"><div class="box-t"><span>🔒</span> '+(isEn?'Platform Security Controls (Real-Time)':'Controles de Seguridad de la Plataforma (Real-Time)')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
     systemControls.map(function(c){
       var col = c.s === 'activo' ? '#34d399' : c.s === 'parcial' ? '#fbbf24' : '#ef4444';
       var icon = c.s === 'activo' ? '✅' : c.s === 'parcial' ? '⚠️' : '❌';
@@ -2621,7 +2627,6 @@ async function renderGRC(){
     }).join('')+
     '</div></div>';
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
    ═══════════════════════════════════════════════════════════ */
