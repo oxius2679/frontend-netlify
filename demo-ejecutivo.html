@@ -1595,25 +1595,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     display: none;
     opacity: 0;
     white-space: nowrap;
-    font-size: 15px;
-    font-weight: 900;
-    margin-left: 12px;
+    font-size: 13px; /* Letra un poco más pequeña */
+    font-weight: 800;
+    margin-left: 8px; /* Menos espacio entre imagen y texto */
     letter-spacing: 0.5px;
 }
 
 .fab:hover {
-    width: 240px;
+    width: 270px; /* Se expande más para que quepa todo */
+    padding: 0 15px; /* Un poco de margen interno */
     border-radius: 40px;
     transform: scale(1.05);
     box-shadow: 0 30px 70px rgba(139,92,246,0.9);
 }
-
-.fab:hover .fab-text {
-    display: block;
-    opacity: 1;
-    animation: fadeInRight 0.4s ease forwards;
-}
-
 @keyframes fadeInRight {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
