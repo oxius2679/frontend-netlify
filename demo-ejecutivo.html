@@ -2632,22 +2632,18 @@ async function renderGRC(){
    ═══════════════════════════════════════════════════════════ */
 async function renderAPI(){
   var el=document.getElementById('v-api');
+  var isEn = window.currentDashboardLang === 'en';
   
-  // 🔥 1. OBTENER DATOS REALES DEL BACKEND
   let systemHealth = { slack: false, jira: false, stripe: false };
   let totalProjects = 0;
   
   try {
-    // Consultamos el estado de salud (que ya tenemos)
     const healthRes = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/system/health');
     if (healthRes.ok) {
       const healthData = await healthRes.json();
-      // Si el sistema tiene backups, asumimos que está "vivo"
-      systemHealth.slack = healthData.snapshots; // Simulamos que si hay snapshots, Slack puede estar activo
+      systemHealth.slack = healthData.snapshots;
       systemHealth.stripe = healthData.auditLog; 
     }
-    
-    // Consultamos el número real de proyectos
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     const projRes = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -2658,78 +2654,67 @@ async function renderAPI(){
     }
   } catch(e) { console.warn("Usando datos por defecto para API", e); }
 
-  // 2. Definir integraciones con estado dinámico
   var integrations=[
-    {cat:'Identidad',icon:'🔐',n:'SSO Google',s:'activo',d:'Google Workspace'},
-    {cat:'Identidad',icon:'🔐',n:'SSO Microsoft',s:'beta',d:'Azure AD'},
-    {cat:'Identidad',icon:'🏢',n:'AD / LDAP',s:'roadmap',d:'Directorio'},
-    {cat:'Identidad',icon:'🛡️',n:'SAML 2.0',s:'roadmap',d:'Federación'},
-    {cat:'Colaboración',icon:'💬',n:'Slack',s:systemHealth.slack ? 'activo' : 'roadmap',d:systemHealth.slack ? 'Webhook Configurado' : 'Notificaciones'},
-    {cat:'Colaboración',icon:'👥',n:'Teams',s:'activo',d:'Reuniones'},
-    {cat:'Colaboración',icon:'📹',n:'Google Meet',s:'roadmap',d:'Reuniones'},
-    {cat:'Proyectos',icon:'📋',n:'Jira',s:'activo',d:'Bidireccional'},
-    {cat:'Proyectos',icon:'✅',n:'ClickUp',s:'roadmap',d:'Tareas'},
-    {cat:'Proyectos',icon:'📌',n:'Trello',s:'roadmap',d:'Tableros'},
-    {cat:'Proyectos',icon:'🎯',n:'Asana',s:'roadmap',d:'Proyectos'},
-    {cat:'Proyectos',icon:'📅',n:'Monday',s:'roadmap',d:'Boards'},
+    {cat:(isEn?'Identity':'Identidad'),icon:'🔐',n:'SSO Google',s:'activo',d:'Google Workspace'},
+    {cat:(isEn?'Identity':'Identidad'),icon:'🔐',n:'SSO Microsoft',s:'beta',d:'Azure AD'},
+    {cat:(isEn?'Identity':'Identidad'),icon:'🏢',n:'AD / LDAP',s:'roadmap',d:(isEn?'Directory':'Directorio')},
+    {cat:(isEn?'Identity':'Identidad'),icon:'🛡️',n:'SAML 2.0',s:'roadmap',d:(isEn?'Federation':'Federación')},
+    {cat:(isEn?'Collaboration':'Colaboración'),icon:'💬',n:'Slack',s:systemHealth.slack ? 'activo' : 'roadmap',d:systemHealth.slack ? (isEn?'Webhook Configured':'Webhook Configurado') : (isEn?'Notifications':'Notificaciones')},
+    {cat:(isEn?'Collaboration':'Colaboración'),icon:'👥',n:'Teams',s:'activo',d:(isEn?'Meetings':'Reuniones')},
+    {cat:(isEn?'Collaboration':'Colaboración'),icon:'📹',n:'Google Meet',s:'roadmap',d:(isEn?'Meetings':'Reuniones')},
+    {cat:(isEn?'Projects':'Proyectos'),icon:'📋',n:'Jira',s:'activo',d:(isEn?'Bidirectional':'Bidireccional')},
+    {cat:(isEn?'Projects':'Proyectos'),icon:'✅',n:'ClickUp',s:'roadmap',d:(isEn?'Tasks':'Tareas')},
+    {cat:(isEn?'Projects':'Proyectos'),icon:'📌',n:'Trello',s:'roadmap',d:(isEn?'Boards':'Tableros')},
+    {cat:(isEn?'Projects':'Proyectos'),icon:'🎯',n:'Asana',s:'roadmap',d:(isEn?'Projects':'Proyectos')},
+    {cat:(isEn?'Projects':'Proyectos'),icon:'📅',n:'Monday',s:'roadmap',d:(isEn?'Boards':'Boards')},
     {cat:'ERP',icon:'🏭',n:'SAP',s:'roadmap',d:'ERP'},
-    {cat:'ERP',icon:'💼',n:'NetSuite',s:'roadmap',d:'Contable'},
-    {cat:'ERP',icon:'📊',n:'QuickBooks',s:'roadmap',d:'Facturación'},
-    {cat:'ERP',icon:'💳',n:'Stripe',s:systemHealth.stripe ? 'activo' : 'roadmap',d:'Pagos'},
-    {cat:'CRM',icon:'☁️',n:'Salesforce',s:'roadmap',d:'Clientes'},
-    {cat:'CRM',icon:'🧡',n:'HubSpot',s:'roadmap',d:'Leads'},
-    {cat:'BI',icon:'📈',n:'Power BI',s:'activo',d:'Streaming'},
-    {cat:'BI',icon:'📉',n:'Tableau',s:'roadmap',d:'Datasets'},
-    {cat:'BI',icon:'🔍',n:'Looker',s:'roadmap',d:'Conectores'}
+    {cat:'ERP',icon:'💼',n:'NetSuite',s:'roadmap',d:(isEn?'Accounting':'Contable')},
+    {cat:'ERP',icon:'📊',n:'QuickBooks',s:'roadmap',d:(isEn?'Billing':'Facturación')},
+    {cat:'ERP',icon:'💳',n:'Stripe',s:systemHealth.stripe ? 'activo' : 'roadmap',d:(isEn?'Payments':'Pagos')},
+    {cat:'CRM',icon:'☁️',n:'Salesforce',s:'roadmap',d:(isEn?'Clients':'Clientes')},
+    {cat:'CRM',icon:'🧡',n:'HubSpot',s:'roadmap',d:(isEn?'Leads':'Leads')},
+    {cat:'BI',icon:'📈',n:'Power BI',s:'activo',d:(isEn?'Streaming':'Streaming')},
+    {cat:'BI',icon:'📉',n:'Tableau',s:'roadmap',d:(isEn?'Datasets':'Datasets')},
+    {cat:'BI',icon:'🔍',n:'Looker',s:'roadmap',d:(isEn?'Connectors':'Conectores')}
   ];
 
   var cats=[];integrations.forEach(function(i){if(cats.indexOf(i.cat)===-1)cats.push(i.cat);});
 
-  // 3. Endpoints con datos reales
   var endpoints=[
-    {m:'GET',p:'/api/projects',d:'Lista proyectos ('+totalProjects+' activos)'},
-    {m:'POST',p:'/api/projects',d:'Crea/actualiza'},
-    {m:'GET',p:'/api/history/kpis/:id',d:'Serie KPIs'},
-    {m:'GET',p:'/api/history/summary/:id',d:'Resumen'},
-    {m:'POST',p:'/api/ai-analyst',d:'Consultas IA'},
+    {m:'GET',p:'/api/projects',d:(isEn?'List projects (':'Lista proyectos (')+totalProjects+(isEn?' active)':' activos)')},
+    {m:'POST',p:'/api/projects',d:(isEn?'Create/update':'Crea/actualiza')},
+    {m:'GET',p:'/api/history/kpis/:id',d:(isEn?'KPIs series':'Serie KPIs')},
+    {m:'GET',p:'/api/history/summary/:id',d:(isEn?'Summary':'Resumen')},
+    {m:'POST',p:'/api/ai-analyst',d:(isEn?'AI queries':'Consultas IA')},
     {m:'POST',p:'/api/snapshots',d:'Snapshot'},
     {m:'POST',p:'/api/audit/task-change',d:'Audit'},
     {m:'POST',p:'/api/transcribe',d:'Whisper'},
-    {m:'POST',p:'/api/upload-doc',d:'Extrae texto'}
+    {m:'POST',p:'/api/upload-doc',d:(isEn?'Extract text':'Extrae texto')}
   ];
 
-  var webhooks=[{e:'task.created',d:'Al crear tarea'},{e:'task.updated',d:'Al modificar'},{e:'task.overdue',d:'Tarea vence'},{e:'project.at-risk',d:'En riesgo'},{e:'budget.exceeded',d:'Supera presupuesto'},{e:'milestone.reached',d:'Hito'}];
+  var webhooks=[
+    {e:'task.created',d:(isEn?'On task creation':'Al crear tarea')},
+    {e:'task.updated',d:(isEn?'On modification':'Al modificar')},
+    {e:'task.overdue',d:(isEn?'Task expires':'Tarea vence')},
+    {e:'project.at-risk',d:(isEn?'At risk':'En riesgo')},
+    {e:'budget.exceeded',d:(isEn?'Exceeds budget':'Supera presupuesto')},
+    {e:'milestone.reached',d:(isEn?'Milestone':'Hito')}
+  ];
 
-  // 4. Renderizar
+  var getStatusLabel = function(s) {
+    if (isEn) return {activo:'ACTIVE', beta:'BETA', roadmap:'ROADMAP'}[s] || s;
+    return {activo:'ACTIVO', beta:'BETA', roadmap:'ROADMAP'}[s] || s;
+  };
+
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Enterprise Integrations · API & Webhooks</h2><p>Ecosistema completo: SSO, colaboración, proyectos, ERP, CRM, BI. API REST, webhooks y seguridad enterprise.</p></div><div class="hero-stats">'+statCard(integrations.filter(function(i){return i.s==='activo';}).length,'Activas','gr')+statCard(integrations.filter(function(i){return i.s==='roadmap';}).length,'Roadmap')+statCard(endpoints.length,'Endpoints','g')+statCard(webhooks.length,'Webhooks','r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>Enterprise Integrations · API & Webhooks</h2><p>'+(isEn?'Complete ecosystem: SSO, collaboration, projects, ERP, CRM, BI. REST API, webhooks and enterprise security.':'Ecosistema completo: SSO, colaboración, proyectos, ERP, CRM, BI. API REST, webhooks y seguridad enterprise.')+'</p></div><div class="hero-stats">'+statCard(integrations.filter(function(i){return i.s==='activo';}).length,(isEn?'Active':'Activas'),'gr')+statCard(integrations.filter(function(i){return i.s==='roadmap';}).length,'Roadmap')+statCard(endpoints.length,(isEn?'Endpoints':'Endpoints'),'g')+statCard(webhooks.length,(isEn?'Webhooks':'Webhooks'),'r')+'</div></div></div>'+
     
-    cats.map(function(cat){var items=integrations.filter(function(i){return i.cat===cat;});return '<div class="box"><div class="box-t"><span>🔌</span> '+cat+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;">'+items.map(function(i){var c=i.s==='activo'?'#34d399':i.s==='beta'?'#fbbf24':'#a78bfa';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">'+i.icon+'</span><span class="badge" style="background:'+c+'22;color:'+c+';">'+i.s.toUpperCase()+'</span></div><div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">'+i.n+'</div><div style="font-size:11px;color:#94a3b8;">'+i.d+'</div></div>';}).join('')+'</div></div>';}).join('')+
+    cats.map(function(cat){var items=integrations.filter(function(i){return i.cat===cat;});return '<div class="box"><div class="box-t"><span>🔌</span> '+cat+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;">'+items.map(function(i){var c=i.s==='activo'?'#34d399':i.s==='beta'?'#fbbf24':'#a78bfa';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">'+i.icon+'</span><span class="badge" style="background:'+c+'22;color:'+c+';">'+getStatusLabel(i.s)+'</span></div><div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;">'+i.n+'</div><div style="font-size:11px;color:#94a3b8;">'+i.d+'</div></div>';}).join('')+'</div></div>';}).join('')+
     
-    '<div class="box"><div class="box-t"><span>🚀</span> API REST · Documentación</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="width:70px;">Método</th><th style="width:280px;">Endpoint</th><th>Descripción</th></tr></thead><tbody>'+endpoints.map(function(e){var mc=e.m==='GET'?'#34d399':'#fbbf24';return '<tr><td><span class="badge" style="background:'+mc+'22;color:'+mc+';">'+e.m+'</span></td><td style="font-family:monospace;color:#fbbf24;font-weight:800;">'+e.p+'</td><td style="color:#94a3b8;">'+e.d+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
+    '<div class="box"><div class="box-t"><span>🚀</span> API REST · '+(isEn?'Documentation':'Documentación')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th style="width:70px;">'+(isEn?'Method':'Método')+'</th><th style="width:280px;">Endpoint</th><th>'+(isEn?'Description':'Descripción')+'</th></tr></thead><tbody>'+endpoints.map(function(e){var mc=e.m==='GET'?'#34d399':'#fbbf24';return '<tr><td><span class="badge" style="background:'+mc+'22;color:'+mc+';">'+e.m+'</span></td><td style="font-family:monospace;color:#fbbf24;font-weight:800;">'+e.p+'</td><td style="color:#94a3b8;">'+e.d+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
     
-    '<div class="box"><div class="box-t"><span>📡</span> Webhooks · Eventos del Sistema</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">'+webhooks.map(function(w){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="font-family:monospace;font-size:12px;font-weight:900;color:#67e8f9;margin-bottom:6px;">'+w.e+'</div><div style="font-size:11.5px;color:#94a3b8;">'+w.d+'</div></div>';}).join('')+'</div></div>';
+    '<div class="box"><div class="box-t"><span>📡</span> Webhooks · '+(isEn?'System Events':'Eventos del Sistema')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">'+webhooks.map(function(w){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="font-family:monospace;font-size:12px;font-weight:900;color:#67e8f9;margin-bottom:6px;">'+w.e+'</div><div style="font-size:11.5px;color:#94a3b8;">'+w.d+'</div></div>';}).join('')+'</div></div>';
 }
-
-// 🔥 FUNCIÓN MATEMÁTICA PARA CALCULAR EL TIR REAL (Método de Bisección)
-function calculateIRR(cashFlows) {
-  let low = -0.99; // -99% de retorno
-  let high = 10.0; // 1000% de retorno (límite superior)
-  const precision = 0.00001;
-
-  for (let i = 0; i < 100; i++) {
-    let mid = (low + high) / 2;
-    let npv = 0;
-    for (let j = 0; j < cashFlows.length; j++) {
-      npv += cashFlows[j] / Math.pow(1 + mid, j);
-    }
-    if (Math.abs(npv) < precision) return mid;
-    if (npv > 0) low = mid;
-    else high = mid;
-  }
-  return (low + high) / 2; // Retorna la mejor aproximación
-}
-
 
 
 
@@ -2739,31 +2724,24 @@ function calculateIRR(cashFlows) {
 async function renderFIN(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-fin');
+  var isEn = window.currentDashboardLang === 'en';
   
-  // 🔥 OBTENER TASAS DE CAMBIO REALES DESDE TU BACKEND
   let rates = { EUR: 1, USD: 1.08, GBP: 0.85, MXN: 20.5 };
   try {
     const rateRes = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/fx-rates');
     if (rateRes.ok) {
       const rateData = await rateRes.json();
-      if (rateData && rateData.USD) {
-        rates = rateData;
-        console.log("💱 Tasas de cambio reales cargadas:", rates);
-      }
+      if (rateData && rateData.USD) rates = rateData;
     }
-  } catch (err) {
-    console.warn("⚠️ Usando tasas por defecto (sin conexión Forex).", err);
-  }
+  } catch (err) { console.warn("Usando tasas por defecto."); }
 
   var revenue=0, costs=0, totalHours=0;
-  
   PROJECTS.forEach(function(p){
     var eh = evmHoursFor(p);
     var logged = eh.totalLogged || 0;
     var costPerHour = 50; 
     var projCost = logged * costPerHour;
     var projRev = projCost * 1.45; 
-    
     revenue += projRev;
     costs += projCost;
     totalHours += logged;
@@ -2773,12 +2751,9 @@ async function renderFIN(){
   var grossMarginPct=revenue>0?(grossProfit/revenue)*100:0;
   var opex=revenue*0.12, ebitda=grossProfit-opex, ebitdaPct=revenue>0?(ebitda/revenue)*100:0;
   var breakEven = grossMarginPct > 0 ? opex/(grossMarginPct/100) : 0;
-  
   var cashFlows=[revenue*0.85,revenue*0.95,revenue*1.10,revenue*1.25];
   var wacc=0.12,npv=-costs;
   cashFlows.forEach(function(cf,i){npv+=cf/Math.pow(1+wacc,i+1);});
-  
-  // Cálculo del TIR Real (Bisección)
   var irr = 0;
   if (costs > 0 && revenue > 0) {
     var fullCashFlows = [-costs].concat(cashFlows); 
@@ -2786,36 +2761,28 @@ async function renderFIN(){
     for (var i = 0; i < 100; i++) {
       var mid = (low + high) / 2;
       var npv_temp = 0;
-      for (var j = 0; j < fullCashFlows.length; j++) {
-        npv_temp += fullCashFlows[j] / Math.pow(1 + mid, j);
-      }
+      for (var j = 0; j < fullCashFlows.length; j++) { npv_temp += fullCashFlows[j] / Math.pow(1 + mid, j); }
       if (Math.abs(npv_temp) < 0.00001) { irr = mid; break; }
-      if (npv_temp > 0) low = mid;
-      else high = mid;
+      if (npv_temp > 0) low = mid; else high = mid;
     }
   }
-  
   var cumulative=-costs, payback=0;
-  for(var i=0;i<cashFlows.length;i++){
-    cumulative += cashFlows[i];
-    if(cumulative >= 0 && cashFlows[i] > 0){
-      payback = i + (Math.abs(cumulative - cashFlows[i]) / cashFlows[i]);
-      break;
-    }
-  }
-  
+  for(var i=0;i<cashFlows.length;i++){cumulative += cashFlows[i];if(cumulative >= 0 && cashFlows[i] > 0){payback = i + (Math.abs(cumulative - cashFlows[i]) / cashFlows[i]);break;}}
   var avgClientRate = totalHours > 0 ? revenue/totalHours : 0;
   var avgCostRate = totalHours > 0 ? costs/totalHours : 0;
   var displayIRR = irr > 0 ? fPct(irr * 100) : '—';
   var irrColor = irr > wacc ? '#34d399' : (irr > 0 ? '#fbbf24' : '#94a3b8');
 
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>Advanced Finance · Nivel CFO</h2><p>P&L completo, EBITDA, Break-even, VAN, TIR, Payback, Flujo de Caja. Multi-moneda y proyecciones.</p></div><div class="hero-stats">'+statCard(fEur(revenue),'Ingresos','gr')+statCard(fEur(grossProfit),'Beneficio','g')+statCard(fPct(grossMarginPct),'Margen')+statCard(fEur(ebitda),'EBITDA','r')+'</div></div></div>'+
-    '<div class="kpi-4">'+kpi('Ingresos Facturables',fEur(revenue),fN(totalHours)+'h','#34d399','Rev = Σ(h × rate)')+kpi('Costes Directos',fEur(costs),'Tarifas internas','#ef4444','Cost = Σ(h × cost)')+kpi('Beneficio Bruto',fEur(grossProfit),fPct(grossMarginPct)+' margen','#fbbf24','GP = Rev − Cost')+kpi('EBITDA',fEur(ebitda),fPct(ebitdaPct)+' margen',ebitda>0?'#34d399':'#ef4444','EBITDA = GP − OpEx')+'</div>'+
-    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('TIR (IRR)',displayIRR,irr>wacc?'Excelente':'Retorno',irrColor,'IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
-    '<div class="kpi-4">'+kpi('Tarifa Cliente',fEur(avgClientRate)+'/h','Facturado','#34d399')+kpi('Coste Interno',fEur(avgCostRate)+'/h','Real','#ef4444')+kpi('Margen/hora',fEur(avgClientRate-avgCostRate)+'/h',fPct(grossMarginPct)+' margen','#fbbf24')+kpi('Horas Totales',fN(totalHours)+'h','Portafolio','#a78bfa')+'</div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Advanced Finance · CFO Level':'Advanced Finance · Nivel CFO')+'</h2><p>'+(isEn?'Complete P&L, EBITDA, Break-even, NPV, IRR, Payback, Cash Flow. Multi-currency and projections.':'P&L completo, EBITDA, Break-even, VAN, TIR, Payback, Flujo de Caja. Multi-moneda y proyecciones.')+'</p></div><div class="hero-stats">'+statCard(fEur(revenue),(isEn?'Revenue':'Ingresos'),'gr')+statCard(fEur(grossProfit),(isEn?'Profit':'Beneficio'),'g')+statCard(fPct(grossMarginPct),(isEn?'Margin':'Margen'))+statCard(fEur(ebitda),'EBITDA','r')+'</div></div></div>'+
     
-    '<div class="box"><div class="box-t"><span>💼</span> Rentabilidad por Proyecto</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Proyecto</th><th class="n">Horas</th><th class="n">Ingresos</th><th class="n">Costes</th><th class="n">Beneficio</th><th class="n">% Margen</th><th class="n">Margen/h</th></tr></thead><tbody>'+
+    '<div class="kpi-4">'+kpi((isEn?'Billable Revenue':'Ingresos Facturables'),fEur(revenue),fN(totalHours)+'h','#34d399','Rev = Σ(h × rate)')+kpi((isEn?'Direct Costs':'Costes Directos'),fEur(costs),(isEn?'Internal rates':'Tarifas internas'),'#ef4444','Cost = Σ(h × cost)')+kpi((isEn?'Gross Profit':'Beneficio Bruto'),fEur(grossProfit),fPct(grossMarginPct)+(isEn?' margin':' margen'),'#fbbf24','GP = Rev − Cost')+kpi('EBITDA',fEur(ebitda),fPct(ebitdaPct)+(isEn?' margin':' margen'),ebitda>0?'#34d399':'#ef4444','EBITDA = GP − OpEx')+'</div>'+
+    
+    '<div class="kpi-4">'+kpi('NPV',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 '+(isEn?'years':'años'),npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('IRR',displayIRR,(isEn?'Return':'Retorno'),irrColor,'IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+(isEn?' years':' años'):'—',(isEn?'Recovery':'Recuperación'),'#a78bfa',(isEn?'Recovery time':'Tiempo recuperación'))+kpi('Break-even',breakEven>0?fEur(breakEven):'—',(isEn?'Equilibrium':'Equilibrio'),'#67e8f9','BE = OpEx / GM%')+'</div>'+
+    
+    '<div class="kpi-4">'+kpi((isEn?'Client Rate':'Tarifa Cliente'),fEur(avgClientRate)+'/h',(isEn?'Billed':'Facturado'),'#34d399')+kpi((isEn?'Internal Cost':'Coste Interno'),fEur(avgCostRate)+'/h',(isEn?'Real':'Real'),'#ef4444')+kpi((isEn?'Margin/hour':'Margen/hora'),fEur(avgClientRate-avgCostRate)+'/h',fPct(grossMarginPct)+(isEn?' margin':' margen'),'#fbbf24')+kpi((isEn?'Total Hours':'Horas Totales'),fN(totalHours)+'h',(isEn?'Portfolio':'Portafolio'),'#a78bfa')+'</div>'+
+    
+    '<div class="box"><div class="box-t"><span>💼</span> '+(isEn?'Profitability by Project':'Rentabilidad por Proyecto')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Project':'Proyecto')+'</th><th class="n">'+(isEn?'Hours':'Horas')+'</th><th class="n">'+(isEn?'Revenue':'Ingresos')+'</th><th class="n">'+(isEn?'Costs':'Costes')+'</th><th class="n">'+(isEn?'Profit':'Beneficio')+'</th><th class="n">'+(isEn?'Margin %':'% Margen')+'</th><th class="n">'+(isEn?'Margin/h':'Margen/h')+'</th></tr></thead><tbody>'+
     PROJECTS.map(function(p){
       var eh = evmHoursFor(p);
       var projHours = eh.totalLogged || 0;
@@ -2824,33 +2791,25 @@ async function renderFIN(){
       var projProfit = projRev - projCost;
       var projMargin = projRev > 0 ? (projProfit / projRev) * 100 : 0;
       var marginPerHour = projHours > 0 ? projProfit / projHours : 0;
-      
       return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+'</span></td><td class="n">'+projHours+'h</td><td class="n" style="color:#34d399;">'+fEur(projRev)+'</td><td class="n" style="color:#ef4444;">'+fEur(projCost)+'</td><td class="n" style="color:'+(projProfit>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(projProfit>=0?'+':'')+fEur(projProfit)+'</td><td class="n" style="color:'+(projMargin>=30?'#34d399':projMargin>=25?'#fbbf24':'#ef4444')+';font-weight:900;">'+fPct(projMargin)+'</td><td class="n" style="color:#fbbf24;">'+fEur(marginPerHour)+'/h</td></tr>';
     }).join('')+
     '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fN(totalHours)+'h</td><td class="n">'+fEur(revenue)+'</td><td class="n">'+fEur(costs)+'</td><td class="n">'+fEur(grossProfit)+'</td><td class="n">'+fPct(grossMarginPct)+'</td><td class="n">'+fEur(avgClientRate-avgCostRate)+'/h</td></tr></tfoot></table></div></div>'+
     
-    '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> Margen por Proyecto</div><canvas id="cMargin"></canvas></div><div class="chart-card"><div class="t"><span>💱</span> Multi-Moneda</div><canvas id="cFX"></canvas></div></div>'+
+    '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> '+(isEn?'Margin by Project':'Margen por Proyecto')+'</div><canvas id="cMargin"></canvas></div><div class="chart-card"><div class="t"><span>💱</span> '+(isEn?'Multi-Currency':'Multi-Moneda')+'</div><canvas id="cFX"></canvas></div></div>'+
     
-    // TARJETAS MULTI-MONEDA (Ahora usan las tasas reales)
-    '<div class="box"><div class="box-t"><span>💱</span> Multi-Moneda</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">'+
-    [{n:'Euro',c:'EUR',s:'€',r:1},{n:'Dólar',c:'USD',s:'$',r:rates.USD},{n:'Libra',c:'GBP',s:'£',r:rates.GBP},{n:'Peso MX',c:'MXN',s:'$',r:rates.MXN}].map(function(m){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:13px;font-weight:800;color:#fff;">'+m.n+'</div><div style="font-size:10px;color:#94a3b8;">'+m.c+' · '+m.r.toFixed(2)+'</div></div><div style="font-size:15px;font-weight:900;color:#67e8f9;">'+m.s+fN(Math.round(revenue*m.r))+'</div></div></div>';}).join('')+'</div></div>'+
+    '<div class="box"><div class="box-t"><span>💱</span> '+(isEn?'Multi-Currency':'Multi-Moneda')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">'+[{n:(isEn?'Euro':'Euro'),c:'EUR',s:'€',r:1},{n:(isEn?'Dollar':'Dólar'),c:'USD',s:'$',r:rates.USD},{n:(isEn?'Pound':'Libra'),c:'GBP',s:'£',r:rates.GBP},{n:(isEn?'Mexican Peso':'Peso MX'),c:'MXN',s:'$',r:rates.MXN}].map(function(m){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:13px;font-weight:800;color:#fff;">'+m.n+'</div><div style="font-size:10px;color:#94a3b8;">'+m.c+' · '+m.r+'</div></div><div style="font-size:15px;font-weight:900;color:#67e8f9;">'+m.s+fN(Math.round(revenue*m.r))+'</div></div></div>';}).join('')+'</div></div>'+
     
-    '<div class="box"><div class="box-t"><span>🔮</span> Proyección 4 Trimestres</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">'+['Q1-27','Q2-27','Q3-27','Q4-27'].map(function(q,i){var factor=1.15+(i*0.15);var proj=revenue*factor;var c=i===0?'#34d399':i===1?'#fbbf24':i===2?'#a78bfa':'#67e8f9';return '<div style="padding:16px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';text-align:center;"><div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">'+q+'</div><div style="font-size:22px;font-weight:900;color:'+c+';">'+fEur(proj)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:6px;">+'+((factor-1)*100).toFixed(0)+'%</div></div>';}).join('')+'</div></div>';
+    '<div class="box"><div class="box-t"><span>🔮</span> '+(isEn?'4-Quarter Projection':'Proyección 4 Trimestres')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">'+['Q1-27','Q2-27','Q3-27','Q4-27'].map(function(q,i){var factor=1.15+(i*0.15);var proj=revenue*factor;var c=i===0?'#34d399':i===1?'#fbbf24':i===2?'#a78bfa':'#67e8f9';return '<div style="padding:16px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';text-align:center;"><div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">'+q+'</div><div style="font-size:22px;font-weight:900;color:'+c+';">'+fEur(proj)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:6px;">+'+((factor-1)*100).toFixed(0)+'%</div></div>';}).join('')+'</div></div>';
 
   setTimeout(function(){
     if(charts.margin)charts.margin.destroy();
     var c1=document.getElementById('cMargin');
-    if(c1 && PROJECTS.length > 0){charts.margin=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'Margen (%)',data:PROJECTS.map(function(p){var eh=evmHoursFor(p);var log=eh.totalLogged||0;return log>0?45:0;}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
-    
+    if(c1 && PROJECTS.length > 0){charts.margin=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name.substring(0,15);}),datasets:[{label:(isEn?'Margin (%)':'Margen (%)'),data:PROJECTS.map(function(p){var eh=evmHoursFor(p);var log=eh.totalLogged||0;return log>0?45:0;}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
     if(charts.fx)charts.fx.destroy();
     var c2=document.getElementById('cFX');
-    if(c2 && revenue > 0){
-      // GRÁFICA MULTI-MONEDA (Ahora usa las tasas reales)
-      charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*rates.USD,revenue*rates.GBP,revenue*rates.MXN],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});
-    }
+    if(c2 && revenue > 0){charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*rates.USD,revenue*rates.GBP,revenue*rates.MXN],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});}
   },100);
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 8 · VIP
    ═══════════════════════════════════════════════════════════ */
