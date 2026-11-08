@@ -1937,11 +1937,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     height: auto;
     display: block;
     border-radius: 24px;
-    /* 🔥 NUEVO: Difuminar los bordes superior e inferior para integrarlo */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+    
+    /* 🔥 NUEVO: Difuminar los bordes para integrarlo con el fondo */
+    -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 70%, transparent 100%);
 }
-
 
 
 /* Ajustes Responsivos */
