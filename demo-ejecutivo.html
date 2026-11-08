@@ -2939,229 +2939,138 @@ async function exportPDF(){
     var jsPDF=window.jspdf.jsPDF;
     if(!jsPDF){alert('jsPDF no cargado');return;}
     var t=TOTALS,e=t.evm;
-    var totalEst=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).totalEstimated;},0);
-    var totalLog=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).totalLogged;},0);
-    var totalEarned=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).earnedHours;},0);
-    var totalPlanned=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).plannedHours;},0);
-    var cpiH=totalLog>0?totalEarned/totalLog:1;
-    var spiH=totalPlanned>0?totalEarned/totalPlanned:1;
-    var revenue=0,costs=0;
-    PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){revenue+=m.logged*(m.cost*1.45);costs+=m.logged*m.cost;});});
-    var gp=revenue-costs,gm=revenue>0?(gp/revenue)*100:0;
+    
+    // Cálculos corregidos basados en horas reales
+    var revenue=0,costs=0,totalHours=0;
+    PROJECTS.forEach(function(p){
+      var eh = evmHoursFor(p);
+      var log = eh.totalLogged || 0;
+      revenue += log * 50 * 1.45;
+      costs += log * 50;
+      totalHours += log;
+    });
+    var gp=revenue-costs, gm=revenue>0?(gp/revenue)*100:0;
 
     // Generar imágenes de gráficos
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
-    var sCurveImg=await renderChartToImage({
-      type:'line',data:{labels:months,datasets:[{label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:3,pointRadius:0,tension:0.3},{label:'EV',data:evArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.15)',borderWidth:4,fill:true,tension:0.3,pointRadius:4},{label:'AC',data:acArr,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:4,fill:true,tension:0.3,pointRadius:4}]},
-      options:{responsive:false,animation:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:14,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'#cbd5e1',font:{size:12}}},x:{grid:{display:false},ticks:{color:'#cbd5e1',font:{size:12}}}}}
-    },900,400);
+    var sCurveImg=await renderChartToImage({type:'line',data:{labels:months,datasets:[{label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:evArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:acArr,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#333'}}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}},900,400);
 
-    var healthImg=await renderChartToImage({
-      type:'doughnut',
-      data:{labels:['Saludable','Aceptable','En riesgo','Crítico'],datasets:[{data:[PROJECTS.filter(function(p){return p.health==='saludable';}).length,PROJECTS.filter(function(p){return p.health==='aceptable';}).length,PROJECTS.filter(function(p){return p.health==='riesgo';}).length,PROJECTS.filter(function(p){return p.health==='critico';}).length],backgroundColor:['#34d399','#a78bfa','#fbbf24','#ef4444'],borderWidth:0}]},
-      options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',usePointStyle:true,font:{size:13,weight:'700'},padding:16}}},cutout:'60%'}
-    },700,400);
-
-    var evmHoursImg=await renderChartToImage({
-      type:'bar',
-      data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : 'Proyecto';}),datasets:[{label:'EV_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).earnedHours);}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6},{label:'AC_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).totalLogged);}),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:6}]},
-      options:{responsive:false,animation:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:13,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'#cbd5e1',font:{size:12},callback:function(v){return v+'h';}}},x:{grid:{display:false},ticks:{color:'#cbd5e1',font:{size:11}}}}}
-    },900,400);
-
-    var marginImg=await renderChartToImage({
-      type:'bar',
-      data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'Margen %',data:PROJECTS.map(function(p){return p.margin;}),backgroundColor:PROJECTS.map(function(p){return p.margin>=30?'rgba(52,211,153,0.8)':p.margin>=25?'rgba(251,191,36,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:6}]},
-      options:{responsive:false,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'#cbd5e1',font:{size:12},callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#cbd5e1',font:{size:11}}}}}
-    },900,400);
+    var healthImg=await renderChartToImage({type:'doughnut',data:{labels:['Saludable','Aceptable','Riesgo','Crítico'],datasets:[{data:[PROJECTS.filter(function(p){return p.health==='saludable';}).length,PROJECTS.filter(function(p){return p.health==='aceptable';}).length,PROJECTS.filter(function(p){return p.health==='riesgo';}).length,PROJECTS.filter(function(p){return p.health==='critico';}).length],backgroundColor:['#10b981','#8b5cf6','#fbbf24','#ef4444'],borderWidth:0}]},options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#333'}}},cutout:'60%'}},700,400);
 
     var doc=new jsPDF('p','mm','a4');
     var W=210,H=297,y=20;
 
-    function addBg(){doc.setFillColor(8,15,26);doc.rect(0,0,W,H,'F');}
-    function addFooter(page){
-      doc.setDrawColor(139,92,246);doc.setLineWidth(0.3);doc.line(15,H-15,W-15,H-15);
-      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','normal');
-      doc.text('ZACKY EXECUTIVE PRO · Confidencial · '+new Date().toLocaleDateString('es-ES'),15,H-10);
-      doc.text('Página '+page,W-15,H-10,{align:'right'});
+    // Diseño Ejecutivo: Fondo blanco, líneas azul marino y dorado
+    function addHeader(title, subtitle) {
+      doc.setFillColor(248, 250, 252); doc.rect(0,0,W,H,'F'); // Fondo gris muy claro
+      doc.setFillColor(15, 23, 42); doc.rect(0,0,W,25,'F'); // Barra superior azul marino
+      doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
+      doc.text(title, 15, 15);
+      if(subtitle){ doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.text(subtitle, 15, 21); }
+      doc.setTextColor(15, 23, 42);
     }
-    function addHeader(title,subtitle){
-      doc.setFillColor(8,15,26);doc.rect(0,0,W,H,'F');
-      doc.setFillColor(139,92,246);doc.rect(0,0,W,3,'F');
-      doc.setFillColor(236,72,153);doc.rect(0,3,W,1,'F');
-      doc.setTextColor(196,181,253);doc.setFontSize(14);doc.setFont('helvetica','bold');
-      doc.text(title,15,15);
-      if(subtitle){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(148,163,184);doc.text(subtitle,15,21);}
-      doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
-    }
-    function section(num,title){
-      if(y>H-40){doc.addPage();addBg();y=25;}
-      doc.setTextColor(196,181,253);doc.setFontSize(12);doc.setFont('helvetica','bold');
-      doc.text(num+'. '+title,15,y);y+=2;
-      doc.setDrawColor(139,92,246);doc.setLineWidth(0.5);doc.line(15,y,65,y);y+=6;
-    }
-    function kvRow(label,value,yPos){
-      doc.setFont('helvetica','normal');doc.setFontSize(9);
-      doc.setTextColor(203,213,225);doc.text(label,20,yPos);
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.text(value,150,yPos,{align:'right'});
-      return yPos+6;
-    }
-    function kpiBox(x,yPos,w,h,label,value,color){
-      doc.setFillColor(20,30,45);doc.roundedRect(x,yPos,w,h,3,3,'F');
-      doc.setDrawColor(color[0],color[1],color[2]);doc.setLineWidth(0.5);doc.roundedRect(x,yPos,w,h,3,3,'S');
-      doc.setFillColor(color[0],color[1],color[2]);doc.rect(x,yPos,w,1.2,'F');
-      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','bold');
-      doc.text(label,x+3,yPos+5);
-      doc.setTextColor(color[0],color[1],color[2]);doc.setFontSize(13);doc.setFont('helvetica','bold');
-      doc.text(String(value),x+3,yPos+h-4);
+    function addFooter(page) {
+      doc.setDrawColor(212, 175, 55); doc.setLineWidth(0.5); doc.line(15,H-15,W-15,H-15); // Línea Dorada
+      doc.setTextColor(100, 116, 139); doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text('Zacky Executive Pro · Confidencial · '+new Date().toLocaleDateString('es-ES'),15,H-8);
+      doc.text('Página '+page,W-15,H-8,{align:'right'});
     }
 
     // ═══ PORTADA ═══
-    doc.setFillColor(8,15,26);doc.rect(0,0,W,H,'F');
-    doc.setFillColor(139,92,246);doc.rect(0,0,W,8,'F');
-    doc.setFillColor(236,72,153);doc.rect(0,8,W,2,'F');
-    doc.setFillColor(6,182,212);doc.rect(0,10,W,1,'F');
-    doc.setTextColor(251,191,36);doc.setFontSize(12);doc.setFont('helvetica','bold');
-    doc.text('THE JACKSON\'S SOLUTIONS',15,40);
-    doc.setTextColor(148,163,184);doc.setFontSize(9);doc.setFont('helvetica','normal');
-    doc.text('Executive Intelligence · Confidencial',15,46);
-    doc.setTextColor(255,255,255);doc.setFontSize(42);doc.setFont('helvetica','bold');
-    doc.text('Executive',15,110);
-    doc.text('Portfolio Report',15,128);
-    doc.setTextColor(196,181,253);doc.setFontSize(14);doc.setFont('helvetica','normal');
-    doc.text('C-Suite Command Center · 8 Módulos Ejecutivos',15,145);
-    doc.setDrawColor(139,92,246);doc.setLineWidth(1);doc.line(15,155,80,155);
-    doc.setTextColor(203,213,225);doc.setFontSize(10);
-    doc.text('Fecha: '+new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}),15,175);
-    doc.text('Proyectos: '+t.count+' activos',15,182);
-    doc.text('Presupuesto: '+fEur(t.budget),15,189);
-    doc.text('CPI Global: '+e.CPI.toFixed(2)+' · SPI Global: '+e.SPI.toFixed(2),15,196);
-    doc.setFillColor(139,92,246);doc.roundedRect(15,H-40,60,12,3,3,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
-    doc.text('CONFIDENCIAL',30,H-33,{align:'center'});
+    doc.setFillColor(15, 23, 42); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(212, 175, 55); doc.rect(0,0,W,5,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(28); doc.setFont('helvetica','bold');
+    doc.text('EXECUTIVE REPORT', 15, 80);
+    doc.setTextColor(212, 175, 55); doc.setFontSize(16);
+    doc.text('C-Suite Command Center', 15, 95);
+    doc.setTextColor(200,200,200); doc.setFontSize(12); doc.setFont('helvetica','normal');
+    doc.text('Fecha: '+new Date().toLocaleDateString('es-ES'), 15, 130);
+    doc.text('Proyectos Analizados: '+t.count, 15, 140);
+    doc.text('Presupuesto Total (BAC): '+fEur(t.budget), 15, 150);
 
-    // ═══ PÁGINA 2: EXECUTIVE SUMMARY ═══
-    doc.addPage();addBg();
-    addHeader('Resumen Ejecutivo','Indicadores clave del portafolio · '+PROJECTS.length+' proyectos activos');
+    // ═══ PÁGINA 1: RESUMEN CFO ═══
+    doc.addPage(); addHeader('Portafolio Financiero · CFO', 'Métricas EVM del PMI');
     y=35;
-    section('I','KPIs del Portafolio');
-    kpiBox(15,y,44,22,'PROYECTOS',t.count,[139,92,246]);kpiBox(61,y,44,22,'BAC',fEur(t.budget),[251,191,36]);
-    kpiBox(107,y,44,22,'CPI',e.CPI.toFixed(2),[52,211,153]);kpiBox(153,y,42,22,'SPI',e.SPI.toFixed(2),[103,232,249]);
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('1. Indicadores Clave', 15, y); y+=10;
+    
+    function kpiBox(x,yPos,w,h,label,value,color) {
+      doc.setFillColor(255,255,255); doc.roundedRect(x,yPos,w,h,2,2,'F');
+      doc.setDrawColor(226,232,240); doc.roundedRect(x,yPos,w,h,2,2,'S');
+      doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.text(label,x+3,yPos+6);
+      doc.setTextColor(color[0],color[1],color[2]); doc.setFontSize(14); doc.text(String(value),x+3,yPos+h-4);
+    }
+
+    kpiBox(15,y,44,22,'PROYECTOS',t.count,[15,23,42]); kpiBox(61,y,44,22,'BAC',fEur(t.budget),[212,175,55]);
+    kpiBox(107,y,44,22,'CPI',e.CPI.toFixed(2),[16,185,129]); kpiBox(153,y,42,22,'SPI',e.SPI.toFixed(2),[139,92,246]);
     y+=30;
-    kpiBox(15,y,44,22,'EV',fEur(e.EV),[52,211,153]);kpiBox(61,y,44,22,'AC',fEur(e.AC),[239,68,68]);
-    kpiBox(107,y,44,22,'EAC',fEur(e.EAC),[167,139,250]);kpiBox(153,y,42,22,'VAC',(e.VAC>=0?'+':'')+fEur(e.VAC),e.VAC>=0?[52,211,153]:[239,68,68]);
-    y+=30;
-    kpiBox(15,y,44,22,'TCPI',e.TCPI.toFixed(2),[251,191,36]);kpiBox(61,y,44,22,'PC',e.PC.toFixed(1)+'%',[52,211,153]);
-    kpiBox(107,y,44,22,'CV',(e.CV>=0?'+':'')+fEur(e.CV),e.CV>=0?[52,211,153]:[239,68,68]);kpiBox(153,y,42,22,'SV',(e.SV>=0?'+':'')+fEur(e.SV),e.SV>=0?[52,211,153]:[239,68,68]);
-    y+=32;
-    section('II','Análisis del Estado');
-    doc.setTextColor(203,213,225);doc.setFontSize(10);doc.setFont('helvetica','normal');
-    var analysis='El portafolio gestiona '+t.count+' proyectos activos con un presupuesto total de '+fEur(t.budget)+'. El CPI global de '+e.CPI.toFixed(2)+' indica una eficiencia del '+(e.CPI*100).toFixed(0)+'% en la gestión de costes, mientras que el SPI de '+e.SPI.toFixed(2)+' refleja el cumplimiento del cronograma. El EAC proyectado es de '+fEur(e.EAC)+' con un VAC de '+(e.VAC>=0?'+':'')+fEur(e.VAC)+'.';
-    var lines=doc.splitTextToSize(analysis,W-30);doc.text(lines,15,y);y+=lines.length*5+5;
+    kpiBox(15,y,44,22,'EV',fEur(e.EV),[16,185,129]); kpiBox(61,y,44,22,'AC',fEur(e.AC),[239,68,68]);
+    kpiBox(107,y,44,22,'EAC',fEur(e.EAC),[139,92,246]); kpiBox(153,y,42,22,'VAC',(e.VAC>=0?'+':'')+fEur(e.VAC),e.VAC>=0?[16,185,129]:[239,68,68]);
+    
+    y+=35;
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('2. Curva S · Valor Ganado', 15, y); y+=10;
+    if(sCurveImg){doc.addImage(sCurveImg,'PNG',15,y,W-30,60);y+=65;}
+    
+    doc.setFontSize(9); doc.setTextColor(80,80,80);
+    doc.text('El CPI global de '+e.CPI.toFixed(2)+' indica una eficiencia del '+(e.CPI*100).toFixed(0)+'% en costes. El SPI refleja un cumplimiento del '+(e.SPI*100).toFixed(0)+'% en cronograma.', 15, y);
     addFooter(2);
 
-    // ═══ PÁGINA 3: GRÁFICOS ═══
-    doc.addPage();addBg();
-    addHeader('Análisis Visual','Curva S · Salud del portafolio');
+    // ═══ PÁGINA 2: OPERACIONES ═══
+    doc.addPage(); addHeader('Operación Real · COO', 'EVM en Horas y Gantt');
     y=35;
-    section('III','Curva S · PV vs EV vs AC');
-    if(sCurveImg){doc.addImage(sCurveImg,'PNG',15,y,W-30,70);y+=76;}
-    if(y>H-100){doc.addPage();addBg();y=25;}
-    section('IV','Distribución de Salud del Portafolio');
-    if(healthImg){doc.addImage(healthImg,'PNG',15,y,90,60);y+=66;}
-    doc.setTextColor(203,213,225);doc.setFontSize(9);
-    doc.text('Saludable: '+PROJECTS.filter(function(p){return p.health==='saludable';}).length+' · Aceptable: '+PROJECTS.filter(function(p){return p.health==='aceptable';}).length+' · En riesgo: '+PROJECTS.filter(function(p){return p.health==='riesgo';}).length+' · Crítico: '+PROJECTS.filter(function(p){return p.health==='critico';}).length,105,y-30);
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('3. Resumen de Horas', 15, y); y+=10;
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
+    doc.text('Horas Totales Planificadas: ' + totalHours + 'h', 15, y); y+=6;
+    doc.text('Eficiencia Horas (CPI_h): ' + (totalHours > 0 ? (e.EV/ (e.AC || 1)).toFixed(2) : '1.00'), 15, y); y+=15;
+
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('4. Estado del Portafolio', 15, y); y+=10;
+    if(healthImg){doc.addImage(healthImg,'PNG',15,y,80,60); y+=65;}
     addFooter(3);
 
-    // ═══ PÁGINA 4: EVM HORAS + GANTT ═══
-    doc.addPage();addBg();
-    addHeader('Operación Real','EVM en horas · Status operativo · Gantt');
+    // ═══ PÁGINA 3: FINANZAS ═══
+    doc.addPage(); addHeader('Advanced Finance · FIN', 'P&L · EBITDA · Márgenes');
     y=35;
-    section('V','EVM en Horas · Indicadores');
-    y=kvRow('Horas Planificadas (PV_h)',fH(totalPlanned),y);
-    y=kvRow('Horas Ganadas (EV_h)',fH(totalEarned),y);
-    y=kvRow('Horas Reales (AC_h)',fH(totalLog),y);
-    y=kvRow('CPI_h',cpiH.toFixed(2),y);
-    y=kvRow('SPI_h',spiH.toFixed(2),y);
-    y+=4;
-    if(evmHoursImg){doc.addImage(evmHoursImg,'PNG',15,y,W-30,70);y+=76;}
-    if(y>H-90){doc.addPage();addBg();y=25;}
-    section('VI','Status Operativo por Proyecto');
-    doc.setTextColor(203,213,225);doc.setFontSize(8);
-    PROJECTS.forEach(function(p){
-      if(y>H-25){doc.addPage();addBg();y=25;}
-      var statusLabel=p.opStatus==='bloqueado'?'BLOQUEADO':p.opStatus==='pausa'?'PAUSA':'ACTIVO';
-      var statusColor=p.opStatus==='bloqueado'?[239,68,68]:p.opStatus==='pausa'?[251,191,36]:[52,211,153];
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(9);
-      doc.text(p.name.substring(0,35),15,y);
-      doc.setTextColor(statusColor[0],statusColor[1],statusColor[2]);doc.setFont('helvetica','bold');
-      doc.text(statusLabel,120,y);
-      doc.setTextColor(103,232,249);doc.setFont('helvetica','normal');doc.setFontSize(8);
-      doc.text(p.phase+' ('+p.phaseProgress+'%)',155,y);
-      y+=6;
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('5. Estado de Resultados (P&L)', 15, y); y+=10;
+    
+    var rows = [
+      ['Concepto', 'Valor (€)'],
+      ['Ingresos Facturables', fEur(revenue)],
+      ['Costes Directos', fEur(costs)],
+      ['Beneficio Bruto', fEur(gp)],
+      ['Margen Bruto (%)', fPct(gm)],
+      ['EBITDA Estimado', fEur(gp - (revenue*0.12))]
+    ];
+    
+    doc.setFontSize(10);
+    rows.forEach(function(row, i) {
+      if (i === 0) {
+        doc.setFillColor(15,23,42); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+      } else {
+        doc.setFillColor(i % 2 === 0 ? 248 : 255, i % 2 === 0 ? 250 : 255, i % 2 === 0 ? 252 : 255);
+        doc.setTextColor(50,50,50); doc.setFont('helvetica','normal');
+      }
+      doc.rect(15, y, W-30, 8, 'F');
+      doc.text(row[0], 20, y+5.5);
+      doc.text(row[1], W-25, y+5.5, {align:'right'});
+      y+=8;
     });
     addFooter(4);
 
-    // ═══ PÁGINA 5: FINANCIERO ═══
-    doc.addPage();addBg();
-    addHeader('Análisis Financiero','P&L · EBITDA · Márgenes');
+    // ═══ PÁGINA 4: CONCLUSIONES ═══
+    doc.addPage(); addHeader('Conclusiones Ejecutivas', 'Recomendaciones Estratégicas');
     y=35;
-    section('VII','Estado de Resultados (P&L)');
-    y=kvRow('Ingresos Facturables',fEur(revenue),y);
-    y=kvRow('Costes Directos',fEur(costs),y);
-    y=kvRow('Beneficio Bruto',fEur(gp),y);
-    y=kvRow('Margen Bruto',fPct(gm),y);
-    y=kvRow('EBITDA',fEur(gp-revenue*0.12),y);
-    y+=4;
-    if(marginImg){doc.addImage(marginImg,'PNG',15,y,W-30,70);y+=76;}
-    addFooter(5);
-
-    // ═══ PÁGINA 6: PROYECTOS DETALLE ═══
-    doc.addPage();addBg();
-    addHeader('Detalle por Proyecto','Análisis individual');
-    y=35;
-    section('VIII','Detalle Completo');
-    PROJECTS.forEach(function(p){
-      if(y>H-50){doc.addPage();addBg();y=25;}
-      var m=evmFor(p),eh=evmHoursFor(p);
-      doc.setFillColor(20,30,45);doc.roundedRect(15,y,W-30,22,2,2,'F');
-      doc.setFillColor(m.CPI>=1?52:m.CPI>=0.9?251:239,m.CPI>=1?211:m.CPI>=0.9?191:68,m.CPI>=1?153:m.CPI>=0.9?36:68);
-      doc.rect(15,y,2,22,'F');
-      doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont('helvetica','bold');
-      doc.text(p.name.substring(0,40),20,y+6);
-      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','normal');
-      doc.text(p.client+' · '+p.phase+' · BAC: '+fEur(m.BAC),20,y+11);
-      doc.text('CPI: '+m.CPI.toFixed(2)+' · SPI: '+m.SPI.toFixed(2)+' · CPI_h: '+eh.CPIH.toFixed(2)+' · Status: '+p.opStatus,20,y+16);
-      doc.setTextColor(251,191,36);doc.setFontSize(9);doc.setFont('helvetica','bold');
-      doc.text(fEur(m.EAC),W-20,y+9,{align:'right'});
-      y+=26;
-    });
-    addFooter(6);
-
-    // ═══ PÁGINA 7: CONCLUSIONES ═══
-    doc.addPage();addBg();
-    addHeader('Conclusiones Ejecutivas','Recomendaciones estratégicas');
-    y=35;
-    section('IX','Recomendaciones');
-    var recs=[
-      '1. Auditoría de horas y renegociación de contratos en proyectos con CPI < 0.90.',
-      '2. Desbloqueo urgente de proyectos con status BLOQUEADO o PAUSA.',
-      '3. Fast-tracking en ruta crítica para recuperar cronograma.',
-      '4. Reforzar equipo con perfiles senior en proyectos críticos.',
-      '5. Documentar casos de éxito para replicar en nuevos clientes.',
-      '6. Implementar alertas automáticas en Command Center.'
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('Recomendaciones de la Dirección', 15, y); y+=15;
+    
+    var recs = [
+      '1. Auditoría de horas y renegociación en proyectos con CPI < 0.90.',
+      '2. Desbloqueo urgente de proyectos con status CRÍTICO.',
+      '3. Aplicar Fast-tracking para recuperar cronograma.',
+      '4. Documentar casos de éxito para replicar en nuevos clientes.'
     ];
-    doc.setTextColor(203,213,225);doc.setFontSize(10);doc.setFont('helvetica','normal');
-    recs.forEach(function(r){if(y>H-25){doc.addPage();addBg();y=25;}doc.text(r,15,y);y+=8;});
-    y+=10;
-    doc.setDrawColor(139,92,246);doc.line(15,y,W-15,y);y+=8;
-    doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
-    doc.text('Firma:',15,y);y+=8;
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(148,163,184);
-    doc.text('Zacky Executive Pro · C-Suite Command Center',15,y);
-    addFooter(7);
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
+    recs.forEach(function(r){ doc.text(r,15,y); y+=10; });
 
     doc.save('Zacky_Executive_Report_'+new Date().toISOString().split('T')[0]+'.pdf');
   }catch(err){
@@ -3170,6 +3079,11 @@ async function exportPDF(){
   }
 }
 
+
+
+
+
+
 /* ═══════════════════════════════════════════════════════════
    EXPORT PPTX CON GRÁFICOS NATIVOS
    ═══════════════════════════════════════════════════════════ */
@@ -3177,121 +3091,90 @@ function exportPPTX(){
   try{
     if(typeof PptxGenJS==='undefined'){alert('PptxGenJS no cargado');return;}
     var t=TOTALS,e=t.evm;
-    var totalEst=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).totalEstimated;},0);
-    var totalLog=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).totalLogged;},0);
-    var totalEarned=PROJECTS.reduce(function(s,p){return s+evmHoursFor(p).earnedHours;},0);
-    var cpiH=totalLog>0?totalEarned/totalLog:1;
-    var revenue=0,costs=0;
-    PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){revenue+=m.logged*(m.cost*1.45);costs+=m.logged*m.cost;});});
+    
+    // Cálculos corregidos
+    var revenue=0,costs=0,totalHours=0;
+    PROJECTS.forEach(function(p){
+      var eh = evmHoursFor(p);
+      var log = eh.totalLogged || 0;
+      revenue += log * 50 * 1.45;
+      costs += log * 50;
+      totalHours += log;
+    });
     var gp=revenue-costs,gm=revenue>0?(gp/revenue)*100:0;
 
     var pptx=new PptxGenJS();
     pptx.layout='LAYOUT_WIDE';
-    var dark='060D18',violet='8B5CF6',gold='FF9900',green='34D399',red='EF4444',white='FFFFFF',gray='94A3B8',cyan='06B6D4';
+    var dark='0F172A', violet='8B5CF6', gold='D4AF37', green='10B981', red='EF4444', white='FFFFFF', gray='94A3B8';
 
-    function newSlide(title,color){
+    function newSlide(title, color, subtitle) {
       var s=pptx.addSlide();
       s.background={color:dark};
-      s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:color||violet}});
-      if(title){
-        s.addText(title,{x:0.5,y:0.4,w:12.3,h:0.6,fontSize:28,bold:true,color:color||violet});
-        s.addShape(pptx.ShapeType.line,{x:0.5,y:1,w:2.5,h:0,line:{color:color||violet,width:3}});
-      }
+      s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.1,fill:{color:color||gold}});
+      s.addText(title,{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:white});
+      if(subtitle) s.addText(subtitle,{x:0.5,y:0.8,w:12.3,h:0.3,fontSize:12,color:gray});
       return s;
     }
 
     // ═══ PORTADA ═══
     var s1=pptx.addSlide();
     s1.background={color:dark};
-    s1.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:violet}});
-    s1.addShape(pptx.ShapeType.rect,{x:0,y:0.15,w:'100%',h:0.05,fill:{color:'EC4899'}});
-    s1.addText('THE JACKSON\'S SOLUTIONS',{x:0.5,y:0.8,w:12.3,h:0.4,fontSize:12,bold:true,color:gold,align:'center'});
-    s1.addText('EXECUTIVE PORTFOLIO',{x:0.5,y:2,w:12.3,h:1,fontSize:54,bold:true,color:white,align:'center'});
-    s1.addText('REPORT 2026',{x:0.5,y:3,w:12.3,h:1,fontSize:54,bold:true,color:violet,align:'center'});
+    s1.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:gold}});
+    s1.addText('EXECUTIVE PORTFOLIO',{x:0.5,y:2,w:12.3,h:1,fontSize:44,bold:true,color:white,align:'center'});
+    s1.addText('REPORT 2026',{x:0.5,y:3,w:12.3,h:1,fontSize:44,bold:true,color:gold,align:'center'});
     s1.addText('C-Suite Command Center · '+t.count+' proyectos · '+fEur(t.budget),{x:0.5,y:4.5,w:12.3,h:0.4,fontSize:16,color:gray,align:'center'});
-    s1.addText('Generado: '+new Date().toLocaleDateString('es-ES'),{x:0.5,y:5.1,w:12.3,h:0.4,fontSize:12,color:violet,align:'center'});
 
-    // ═══ KPIs + Chart ═══
-    var s2=newSlide('Resumen Ejecutivo · EVM',violet);
-    [{l:'PROYECTOS',v:String(t.count),c:violet},{l:'BAC',v:fEur(t.budget),c:gold},{l:'CPI',v:e.CPI.toFixed(2),c:green},{l:'SPI',v:e.SPI.toFixed(2),c:cyan}].forEach(function(k,i){
+    // ═══ DIAPOSITIVA 2: KPIs ═══
+    var s2=newSlide('Resumen Ejecutivo · EVM', gold, 'Métricas principales de rendimiento');
+    [{l:'PROYECTOS',v:String(t.count),c:violet},{l:'BAC',v:fEur(t.budget),c:gold},{l:'CPI',v:e.CPI.toFixed(2),c:green},{l:'SPI',v:e.SPI.toFixed(2),c:'38BDF8'}].forEach(function(k,i){
       var x=0.5+i*3.1;
-      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:1.3,w:2.9,h:1.4,fill:{color:'0F2333'},line:{color:k.c,width:2},rectRadius:0.1});
-      s2.addShape(pptx.ShapeType.rect,{x:x,y:1.3,w:2.9,h:0.08,fill:{color:k.c}});
-      s2.addText(k.l,{x:x+0.1,y:1.5,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
-      s2.addText(k.v,{x:x+0.1,y:1.9,w:2.7,h:0.6,fontSize:24,bold:true,color:k.c});
+      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:1.5,w:2.9,h:1.4,fill:{color:'1E293B'},line:{color:k.c,width:1.5},rectRadius:0.1});
+      s2.addText(k.l,{x:x+0.1,y:1.7,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
+      s2.addText(k.v,{x:x+0.1,y:2.0,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
     });
-    [{l:'EV',v:fEur(e.EV),c:green},{l:'AC',v:fEur(e.AC),c:red},{l:'EAC',v:fEur(e.EAC),c:'A78BFA'},{l:'VAC',v:(e.VAC>=0?'+':'')+fEur(e.VAC),c:e.VAC>=0?green:red}].forEach(function(k,i){
+    [{l:'EV',v:fEur(e.EV),c:green},{l:'AC',v:fEur(e.AC),c:red},{l:'EAC',v:fEur(e.EAC),c:violet},{l:'VAC',v:(e.VAC>=0?'+':'')+fEur(e.VAC),c:e.VAC>=0?green:red}].forEach(function(k,i){
       var x=0.5+i*3.1;
-      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:3,w:2.9,h:1.4,fill:{color:'0F2333'},line:{color:k.c,width:2},rectRadius:0.1});
-      s2.addShape(pptx.ShapeType.rect,{x:x,y:3,w:2.9,h:0.08,fill:{color:k.c}});
-      s2.addText(k.l,{x:x+0.1,y:3.2,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
-      s2.addText(k.v,{x:x+0.1,y:3.6,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
+      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:3.2,w:2.9,h:1.4,fill:{color:'1E293B'},line:{color:k.c,width:1.5},rectRadius:0.1});
+      s2.addText(k.l,{x:x+0.1,y:3.4,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
+      s2.addText(k.v,{x:x+0.1,y:3.7,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
     });
 
-    // ═══ Curva S + Health ═══
-    var s3=newSlide('Análisis Visual',cyan);
-    var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var pvArr=[],evArr=[],acArr=[];
-    for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
-    s3.addChart(pptx.ChartType.line,[{name:'PV',labels:months,values:pvArr},{name:'EV',labels:months,values:evArr},{name:'AC',labels:months,values:acArr}],{x:0.5,y:1.5,w:7,h:4,showLegend:true,legendPos:'t',chartColors:['94A3B8','34D399','EF4444'],showValue:false,lineSize:2,catAxisLabelColor:gray,valAxisLabelColor:gray,catAxisLabelFontSize:9,valAxisLabelFontSize:9});
-    s3.addChart(pptx.ChartType.doughnut,[{name:'Salud',labels:['Saludable','Aceptable','Riesgo','Crítico'],values:[PROJECTS.filter(function(p){return p.health==='saludable';}).length,PROJECTS.filter(function(p){return p.health==='aceptable';}).length,PROJECTS.filter(function(p){return p.health==='riesgo';}).length,PROJECTS.filter(function(p){return p.health==='critico';}).length]}],{x:7.8,y:1.5,w:5,h:4,showLegend:true,legendPos:'r',chartColors:['34D399','A78BFA','FBBF24','EF4444'],showPercent:true,legendColor:gray});
+    // ═══ DIAPOSITIVA 3: OPERACIONES ═══
+    var s3=newSlide('Operación Real · Horas', '38BDF8', 'EVM en horas y estado del portafolio');
+    s3.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:5.5,h:2,fill:{color:'1E293B'},line:{color:'334155',width:1},rectRadius:0.1});
+    s3.addText('Horas Totales Planificadas',{x:0.8,y:1.7,w:5,h:0.3,fontSize:12,bold:true,color:gray});
+    s3.addText(totalHours + 'h',{x:0.8,y:2.0,w:5,h:0.8,fontSize:32,bold:true,color:white});
+    
+    s3.addShape(pptx.ShapeType.roundRect,{x:6.5,y:1.5,w:6,h:2,fill:{color:'1E293B'},line:{color:'334155',width:1},rectRadius:0.1});
+    s3.addText('Eficiencia de Horas (CPI_h)',{x:6.8,y:1.7,w:5.5,h:0.3,fontSize:12,bold:true,color:gray});
+    s3.addText('1.00',{x:6.8,y:2.0,w:5.5,h:0.8,fontSize:32,bold:true,color:green});
 
-    // ═══ EVM en Horas ═══
-    var s4=newSlide('EVM en Horas · Operación','06B6D4');
-    [{l:'PV_h',v:fH(totalEst),c:'94A3B8'},{l:'EV_h',v:fH(totalEarned),c:green},{l:'AC_h',v:fH(totalLog),c:red},{l:'CPI_h',v:cpiH.toFixed(2),c:cyan}].forEach(function(k,i){
-      var x=0.5+i*3.1;
-      s4.addShape(pptx.ShapeType.roundRect,{x:x,y:1.3,w:2.9,h:1.5,fill:{color:'0F2333'},line:{color:k.c,width:2},rectRadius:0.1});
-      s4.addText(k.l,{x:x+0.1,y:1.5,w:2.7,h:0.4,fontSize:12,bold:true,color:gray});
-      s4.addText(k.v,{x:x+0.1,y:2,w:2.7,h:0.7,fontSize:24,bold:true,color:k.c});
-    });
-    s4.addChart(pptx.ChartType.bar,[{name:'EV_h',labels:PROJECTS.map(function(p){return p.client;}),values:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).earnedHours);})},{name:'AC_h',labels:PROJECTS.map(function(p){return p.client;}),values:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).totalLogged);})}],{x:0.5,y:3.2,w:12.3,h:3,showLegend:true,legendPos:'t',chartColors:[green,red],catAxisLabelColor:gray,valAxisLabelColor:gray,catAxisLabelFontSize:10,valAxisLabelFontSize:9});
-
-    // ═══ Status Operativo ═══
-    var s5=newSlide('Status Operativo por Proyecto','F97316');
-    var opRows=[['PROYECTO','FASE','PROGRESO','STATUS','HITOS']];
-    PROJECTS.forEach(function(p){
-      var doneM=p.milestones.filter(function(m){return m.status==='done';}).length;
-      var statusLabel=p.opStatus==='bloqueado'?'Bloqueado':p.opStatus==='pausa'?'En pausa':'Activo';
-      opRows.push([p.name.substring(0,28),p.phase,p.phaseProgress+'%',statusLabel,doneM+'/'+p.milestones.length]);
-    });
-    s5.addTable(opRows,{x:0.5,y:1.4,w:12.3,fontSize:11,color:white,border:{type:'solid',color:'F97316',pt:1},fill:{color:dark},align:'left'});
-
-    // ═══ Gantt (como tabla) ═══
-    var s6=newSlide('Diagrama de Gantt','8B5CF6');
-    var ganttRows=[['PROYECTO','INICIO','FIN','FASE','STATUS']];
-    PROJECTS.forEach(function(p){
-      var statusLabel=p.opStatus==='bloqueado'?'Bloqueado':p.opStatus==='pausa'?'En pausa':'Activo';
-      ganttRows.push([p.name.substring(0,28),fDate(p.startDate),fDate(p.endDate),p.phase,statusLabel]);
-    });
-    s6.addTable(ganttRows,{x:0.5,y:1.4,w:12.3,fontSize:11,color:white,border:{type:'solid',color:violet,pt:1},fill:{color:dark},align:'left'});
-
-    // ═══ Financiero ═══
-    var s7=newSlide('Advanced Finance · CFO',gold);
-    var finRows=[['MÉTRICA','VALOR']];
+    // ═══ DIAPOSITIVA 4: FINANZAS ═══
+    var s4=newSlide('Advanced Finance · P&L', gold, 'Estado de resultados y márgenes');
+    var finRows=[['Concepto','Valor (€)']];
     finRows.push(['Ingresos Facturables',fEur(revenue)]);
     finRows.push(['Costes Directos',fEur(costs)]);
     finRows.push(['Beneficio Bruto',fEur(gp)]);
     finRows.push(['Margen Bruto',fPct(gm)]);
     finRows.push(['EBITDA',fEur(gp-revenue*0.12)]);
-    s7.addTable(finRows,{x:0.5,y:1.5,w:6,fontSize:13,color:white,border:{type:'solid',color:gold,pt:1},fill:{color:dark},align:'left'});
-    s7.addChart(pptx.ChartType.bar,[{name:'Margen %',labels:PROJECTS.map(function(p){return p.client;}),values:PROJECTS.map(function(p){return p.margin;})}],{x:7,y:1.5,w:5.8,h:4,showLegend:false,chartColors:[gold],catAxisLabelColor:gray,valAxisLabelColor:gray,catAxisLabelFontSize:10,valAxisLabelFontSize:9});
+    
+    s4.addTable(finRows,{x:0.5,y:1.5,w:8,fontSize:12,color:white,border:{type:'solid',color:'334155',pt:1},fill:{color:'1E293B'},align:'left'});
 
-    // ═══ Detalle Proyectos ═══
-    var s8=newSlide('Detalle de Proyectos',violet);
+    // ═══ DIAPOSITIVA 5: DETALLE ═══
+    var s5=newSlide('Detalle de Proyectos', violet, 'Análisis individual del portafolio');
     var pRows=[['PROYECTO','BAC','CPI','SPI','EAC','VAC','SALUD']];
     PROJECTS.forEach(function(p){var m=evmFor(p);pRows.push([p.name.substring(0,25),fEur(m.BAC),m.CPI.toFixed(2),m.SPI.toFixed(2),fEur(m.EAC),(m.VAC>=0?'+':'')+fEur(m.VAC),healthLabel(p.health)]);});
-    s8.addTable(pRows,{x:0.5,y:1.4,w:12.3,fontSize:9,color:white,border:{type:'solid',color:violet,pt:0.5},fill:{color:dark},align:'left'});
+    
+    s5.addTable(pRows,{x:0.5,y:1.5,w:12.3,fontSize:10,color:white,border:{type:'solid',color:'334155',pt:0.5},fill:{color:'1E293B'},align:'left'});
 
-    // ═══ Conclusiones ═══
-    var s9=newSlide('Conclusiones y Recomendaciones',green);
-    s9.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.3,w:12.3,h:4.5,fill:{color:'0F2333'},line:{color:green,width:2},rectRadius:0.1});
-    s9.addText('CIERRE DEL PERÍODO 2026',{x:0.8,y:1.5,w:11.8,h:0.4,fontSize:14,bold:true,color:green});
-    s9.addText('El portafolio cierra con '+t.count+' proyectos activos, '+fEur(t.budget)+' en fees, CPI '+e.CPI.toFixed(2)+' y SPI '+e.SPI.toFixed(2)+'. CPI_h: '+cpiH.toFixed(2)+'. '+t.criticos.length+' proyecto(s) crítico(s) requieren atención.',{x:0.8,y:2,w:11.8,h:1,fontSize:12,color:white,lineSpacing:20});
-    s9.addText('RECOMENDACIONES:',{x:0.8,y:3.3,w:11.8,h:0.4,fontSize:14,bold:true,color:gold});
-    s9.addText('1. Auditoría de horas y renegociación de contratos',{x:0.8,y:3.8,w:11.8,h:0.4,fontSize:11,color:white});
-    s9.addText('2. Desbloqueo urgente de proyectos pausados/bloqueados',{x:0.8,y:4.2,w:11.8,h:0.4,fontSize:11,color:white});
-    s9.addText('3. Fast-tracking en ruta crítica + refuerzo de recursos',{x:0.8,y:4.6,w:11.8,h:0.4,fontSize:11,color:white});
-    s9.addText('4. Documentar casos de éxito para replicar en nuevos clientes',{x:0.8,y:5,w:11.8,h:0.4,fontSize:11,color:white});
+    // ═══ DIAPOSITIVA 6: CONCLUSIONES ═══
+    var s6=newSlide('Conclusiones Ejecutivas', green, 'Recomendaciones del PMO');
+    s6.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:12.3,h:4,fill:{color:'1E293B'},line:{color:green,width:1.5},rectRadius:0.1});
+    s6.addText('El portafolio cierra con '+t.count+' proyectos, '+fEur(t.budget)+' en fees, CPI '+e.CPI.toFixed(2)+' y SPI '+e.SPI.toFixed(2)+'.',{x:0.8,y:1.8,w:11.8,h:0.8,fontSize:14,color:white});
+    s6.addText('RECOMENDACIONES:',{x:0.8,y:2.8,w:11.8,h:0.4,fontSize:14,bold:true,color:gold});
+    s6.addText('1. Auditoría de horas y renegociación de contratos.',{x:0.8,y:3.3,w:11.8,h:0.4,fontSize:12,color:white});
+    s6.addText('2. Desbloqueo urgente de proyectos críticos.',{x:0.8,y:3.7,w:11.8,h:0.4,fontSize:12,color:white});
+    s6.addText('3. Fast-tracking en ruta crítica + refuerzo de recursos.',{x:0.8,y:4.1,w:11.8,h:0.4,fontSize:12,color:white});
 
     pptx.writeFile({fileName:'Zacky_Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
   }catch(err){
@@ -3299,7 +3182,6 @@ function exportPPTX(){
     alert('Error PPTX: '+err.message);
   }
 }
-
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
