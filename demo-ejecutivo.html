@@ -2476,11 +2476,16 @@ function renderFIN(){
   // Si el proyecto va mal (CPI < 1), los flujos futuros se reducen
     var cpiFactor = e.CPI > 0 ? e.CPI : 1;
   // 🔥 FLUJOS DE CAJA REALISTAS: Basados en los ingresos proyectados, ajustados por la eficiencia (CPI)
+    var cpiFactor = e.CPI > 0 ? e.CPI : 1;
+  // 🔥 FLUJO DE CAJA LIBRE REAL: Usamos el Beneficio Bruto (Gross Profit) como base
+  // y aplicamos un crecimiento conservador del 5% anual (estándar de la industria).
+  // Si el proyecto es ineficiente (CPI < 1), el flujo se castiga proporcionalmente.
+  var baseCashFlow = grossProfit > 0 ? grossProfit : 0;
   var cashFlows = [
-    revenue * 0.50 * cpiFactor, 
-    revenue * 0.60 * cpiFactor, 
-    revenue * 0.70 * cpiFactor, 
-    revenue * 0.80 * cpiFactor
+    baseCashFlow * 1.00 * cpiFactor, // Año 1: Beneficio base
+    baseCashFlow * 1.05 * cpiFactor, // Año 2: +5% de crecimiento
+    baseCashFlow * 1.10 * cpiFactor, // Año 3: +10%
+    baseCashFlow * 1.15 * cpiFactor  // Año 4: +15%
   ];
   
   var wacc=0.12, npv=-costs;
