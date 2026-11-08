@@ -2196,11 +2196,11 @@ function renderCFO(){
       kpi('TCPI',e.TCPI.toFixed(2),e.TCPI<=1?(isEn?'Achievable':'Alcanzable'):(isEn?'Difficult':'Difícil'),e.TCPI<=1?'#34d399':e.TCPI<=1.1?'#fbbf24':'#ef4444','TCPI = (BAC−EV)/(BAC−AC)')+
     '</div>'+
     
-    '<div class="kpi-4">'+
-      kpi('EAC Atípico',fEur(e.EAC_atipico),isEn ? 'Remaining work at plan' : 'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
-      kpi('EAC Típico (CPI)',fEur(e.EAC_tipico),isEn ? 'Efficiency remains' : 'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
-      kpi('EAC Mixto',fEur(e.EAC_mixto),isEn ? 'CPI and SPI considered' : 'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
-      kpi('% Completado (PC)',e.PC.toFixed(1)+'%','EV / BAC','#34d399','PC = EV / BAC')+
+        '<div class="kpi-4">'+
+      kpi((isEn ? 'ATYPICAL EAC' : 'EAC Atípico'),fEur(e.EAC_atipico),isEn ? 'Remaining work at plan' : 'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
+      kpi((isEn ? 'TYPICAL EAC (CPI)' : 'EAC Típico (CPI)'),fEur(e.EAC_tipico),isEn ? 'Efficiency remains' : 'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
+      kpi((isEn ? 'MIXED EAC' : 'EAC Mixto'),fEur(e.EAC_mixto),isEn ? 'CPI and SPI considered' : 'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
+      kpi((isEn ? '% COMPLETED (PC)' : '% Completado (PC)'),e.PC.toFixed(1)+'%','EV / BAC','#34d399','PC = EV / BAC')+
     '</div>'+
     
     '<div class="chart-2">'+
