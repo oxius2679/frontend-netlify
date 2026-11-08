@@ -2564,15 +2564,50 @@ async function renderFIN(){
 function renderVIP(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-vip');
+  
+  // 🔥 NUEVOS CÁLCULOS: Concentración de Clientes
+  var revenueByClient = {};
+  PROJECTS.forEach(function(p){
+    var eh = evmHoursFor(p);
+    var logged = eh.totalLogged || 0;
+    var rev = logged * 50 * 1.45; 
+    if (!revenueByClient[p.client]) revenueByClient[p.client] = 0;
+    revenueByClient[p.client] += rev;
+  });
+  var clientLabels = Object.keys(revenueByClient);
+  var clientData = Object.values(revenueByClient);
+
+  // 🔥 NUEVOS CÁLCULOS: Pulso del Equipo (Burnout)
+  var teamStats = {};
+  PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(t){
+      var assignee = t.assignee && t.assignee.trim() !== '' ? t.assignee : 'Sin asignar';
+      if(!teamStats[assignee]) teamStats[assignee] = { name: assignee, hours: 0, logged: 0 };
+      teamStats[assignee].hours += (Number(t.estimatedTime) || 0);
+      teamStats[assignee].logged += (Number(t.timeLogged) || 0);
+    });
+  });
+  
+  var overloadedCount = 0;
+  Object.values(teamStats).forEach(function(m){
+    if (m.name !== 'Sin asignar' && m.hours > 0) {
+      var util = (m.logged / m.hours) * 100;
+      if (util > 90) overloadedCount++;
+    }
+  });
+
+  // Lógica original del Score
   var score=Math.round((Math.min(1.5,e.CPI)/1.5*30)+(Math.min(1.5,e.SPI)/1.5*30)+(t.marginAvg>0?20:Math.max(0,20+t.marginAvg*0.5))+(PROJECTS.length>0?20:10));
   var scoreC=score>=80?'#34d399':score>=60?'#fbbf24':score>=40?'#f97316':'#ef4444';
   var estado=score>=80?{t:'🏆 Excelencia Ejecutiva',m:'El portafolio opera con rentabilidad positiva, eficiencia y cumplimiento.',e:'ÓPTIMO'}:score>=60?{t:'✅ Operación Estable',m:'Indicadores en zona de tolerancia.',e:'ESTABLE'}:score>=40?{t:'⚠️ Requiere Atención',m:'Indicadores fuera de rango óptimo.',e:'ATENCIÓN'}:{t:'🚨 Intervención Necesaria',m:'Desviaciones significativas.',e:'CRÍTICO'};
+  
   var alerts=[];
   if(t.criticos.length>0)alerts.push({n:'CRÍTICO',c:'#ef4444',ico:'🚨',t:t.criticos.length+' crítico(s)',d:t.criticos.map(function(p){return p.name;}).join(', '),a:'Reunión urgente + plan 48h'});
   if(e.VAC<0)alerts.push({n:'ALTO',c:'#f97316',ico:'💰',t:'Sobrecosto '+fEur(Math.abs(e.VAC)),d:'EAC supera BAC.',a:'Auditoría + renegociación'});
   var bloqueados=PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
-  if(bloqueados.length>0)alerts.push({n:'ALTO',c:'#f97316',ico:'🔴',t:bloqueados.length+' bloqueado(s)',d:bloqueados.map(function(p){return p.name;}).join(', '),a:'Desbloqueo urgente'});
+  if(bloqueados.length>0)alerts.push({n:'ALTO',c:'#f97316',ico:'🔴',t:bloqueados.length+' crítico(s) por desviación',d:bloqueados.map(function(p){return p.name;}).join(', '),a:'Desbloqueo urgente'});
   if(t.riesgos.length>0)alerts.push({n:'MEDIO',c:'#fbbf24',ico:'⚠️',t:t.riesgos.length+' en riesgo',d:t.riesgos.map(function(p){return p.name;}).join(', '),a:'Plan de choque'});
+  
   var decisions=[];
   if(e.CPI<0.95)decisions.push({t:'Reestructurar costes',d:'CPI '+e.CPI.toFixed(2)+'. Auditoría de horas y renegociación.',c:'#ef4444'});
   else decisions.push({t:'Acelerar crecimiento',d:'Aprobar expansión con 2 proyectos.',c:'#34d399'});
@@ -2580,14 +2615,58 @@ function renderVIP(){
   else if(e.SPI<0.95)decisions.push({t:'Recuperar cronograma',d:'SPI '+e.SPI.toFixed(2)+'. Fast-tracking.',c:'#f97316'});
   else decisions.push({t:'Consolidar contratos',d:'Renegociar con clientes clave.',c:'#34d399'});
   decisions.push({t:'Invertir en equipo',d:'Capacitación EVM y PMI para PMs.',c:'#a78bfa'});
+
   el.innerHTML=
     '<div class="box" style="background:linear-gradient(135deg,'+scoreC+'15,rgba(12,6,30,0.95));border:1px solid '+scoreC+'55;padding:34px;"><div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap;"><div style="text-align:center;"><div style="font-size:96px;font-weight:900;color:'+scoreC+';line-height:1;">'+score+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">Score Ejecutivo</div></div><div style="flex:1;min-width:280px;"><div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">'+estado.t+'</div><div style="font-size:14px;color:#cbd5e1;line-height:1.7;">'+estado.m+'</div><div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge" style="background:'+scoreC+'22;color:'+scoreC+';">'+estado.e+'</span><span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;">ACTUALIZADO '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'</span></div></div></div></div>'+
     '<div class="kpi-4">'+kpi('Estado Financiero',e.CPI.toFixed(2),e.CPI>=1?'Óptimo':e.CPI>=0.9?'Tolerancia':'Atención',e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444')+kpi('Cronograma',e.SPI.toFixed(2),e.SPI>=1?'En tiempo':e.SPI>=0.9?'Tolerancia':'Retrasado',e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444')+kpi('Portafolio',PROJECTS.length,'proyectos','#a78bfa')+kpi('Valor',fEur(t.budget),'presupuesto','#67e8f9')+'</div>'+
+    
     '<div class="box"><div class="box-t"><span>🚨</span> Alertas Priorizadas</div>'+(alerts.length===0?'<div style="text-align:center;padding:30px;color:#34d399;">✅ Sin alertas críticas.</div>':'<div style="display:flex;flex-direction:column;gap:12px;">'+alerts.map(function(a){return '<div style="padding:16px 20px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:4px solid '+a.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:20px;">'+a.ico+'</span><span class="badge" style="background:'+a.c+'22;color:'+a.c+';">'+a.n+'</span><span style="font-size:13.5px;font-weight:900;color:#fff;">'+a.t+'</span></div><div style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">'+a.d+'</div><div style="font-size:11.5px;color:'+a.c+';font-weight:700;">→ '+a.a+'</div></div>';}).join('')+'</div>')+'</div>'+
+    
     '<div class="box"><div class="box-t"><span>⚡</span> Decisiones Ejecutivas de Hoy</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">'+decisions.map(function(d,i){return '<div style="padding:18px;border-radius:14px;background:rgba(0,0,0,0.3);border:1px solid '+d.c+'55;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:32px;height:32px;border-radius:10px;background:'+d.c+';color:#0b0e17;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:13px;font-weight:900;color:#fff;">'+d.t+'</span></div><div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;">'+d.d+'</div></div>';}).join('')+'</div></div>'+
-    '<div class="box"><div class="box-t"><span>📌</span> Resumen 15 Segundos</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+[{l:'Dónde estamos',v:e.PC.toFixed(0)+'%',s:'avance',c:'#fbbf24'},{l:'¿Vamos bien?',v:(e.CPI>=1&&e.SPI>=1)?'✅ Sí':(e.CPI>=0.9||e.SPI>=0.9)?'⚠️ Cautela':'🔴 No',s:'estado',c:(e.CPI>=1&&e.SPI>=1)?'#34d399':'#fbbf24'},{l:'Riesgo principal',v:e.CPI<0.9?'Costes':bloqueados.length>0?'Bloqueos':e.SPI<0.9?'Cronograma':'Ninguno',s:'foco',c:'#ef4444'},{l:'Acción hoy',v:e.CPI<0.9?'Auditar':bloqueados.length>0?'Desbloquear':'Mantener',s:'decisión',c:'#a78bfa'}].map(function(k){return '<div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(0,0,0,0.3);"><div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">'+k.l+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v+'</div><div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">'+k.s+'</div></div>';}).join('')+'</div></div>';
-}
+    
+    '<div class="box"><div class="box-t"><span>📌</span> Resumen 15 Segundos</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+[{l:'Dónde estamos',v:e.PC.toFixed(0)+'%',s:'avance',c:'#fbbf24'},{l:'¿Vamos bien?',v:(e.CPI>=1&&e.SPI>=1)?'✅ Sí':(e.CPI>=0.9||e.SPI>=0.9)?'⚠️ Cautela':'🔴 No',s:'estado',c:(e.CPI>=1&&e.SPI>=1)?'#34d399':'#fbbf24'},{l:'Riesgo principal',v:e.CPI<0.9?'Costes':bloqueados.length>0?'Bloqueos':e.SPI<0.9?'Cronograma':'Ninguno',s:'foco',c:'#ef4444'},{l:'Acción hoy',v:e.CPI<0.9?'Auditar':bloqueados.length>0?'Desbloquear':'Mantener',s:'decisión',c:'#a78bfa'}].map(function(k){return '<div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(0,0,0,0.3);"><div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">'+k.l+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v+'</div><div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">'+k.s+'</div></div>';}).join('')+'</div></div>'+
+    
+    // 🔥 NUEVA SECCIÓN: CONCENTRACIÓN Y EQUIPO
+    '<div class="chart-2">'+
+      '<div class="chart-card"><div class="t"><span>🏢</span> Concentración de Ingresos (Riesgo Cliente)</div><canvas id="cVIPClient"></canvas></div>'+
+      '<div class="chart-card"><div class="t"><span>🔥</span> Pulso del Equipo (Burnout)</div>'+
+        '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:180px;">'+
+          '<div style="font-size:64px; font-weight:900; color:'+(overloadedCount>0?'#ef4444':'#34d399')+'; line-height:1;">'+overloadedCount+'</div>'+
+          '<div style="font-size:14px; font-weight:800; color:#fff; margin-top:10px;">Miembros Sobrecargados</div>'+
+          '<div style="font-size:11px; color:#94a3b8; margin-top:4px;">(Utilización &gt; 90%)</div>'+
+          '<div style="margin-top:15px; padding:8px 16px; border-radius:8px; background:rgba(0,0,0,0.3); font-size:11px; color:'+(overloadedCount>0?'#fca5a5':'#6ee7b7')+';">'+(overloadedCount>0?'⚠️ Riesgo de burnout en el equipo':'✅ Equipo balanceado')+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
 
+  setTimeout(function(){
+    // Gráfica de Concentración de Clientes
+    if(charts.vipClient)charts.vipClient.destroy();
+    var cVip = document.getElementById('cVIPClient');
+    if(cVip && clientLabels.length > 0){
+      charts.vipClient = new Chart(cVip.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: clientLabels,
+          datasets: [{
+            data: clientData,
+            backgroundColor: ['#34d399', '#a78bfa', '#fbbf24', '#67e8f9', '#ef4444', '#ec4899'],
+            borderWidth: 0,
+            hoverOffset: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: '#e8edf5', font: { size: 11, weight: '700' }, usePointStyle: true, padding: 14 } }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+  }, 100);
+}
 /* ═══════════════════════════════════════════════════════════
    IA CHAT
    ═══════════════════════════════════════════════════════════ */
