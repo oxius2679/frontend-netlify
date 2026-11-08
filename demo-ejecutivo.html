@@ -2909,29 +2909,35 @@ function closeModal(){document.getElementById('modal').classList.remove('on');do
 /* ═══════════════════════════════════════════════════════════
    CHART RENDER HELPER (para capturar imágenes para PDF)
    ═══════════════════════════════════════════════════════════ */
-function renderChartToImage(config,width,height){
+function renderChartToImage(config, width, height) {
   return new Promise(function(resolve){
-    var canvas=document.createElement('canvas');
-    canvas.width=width||800;
-    canvas.height=height||400;
-    canvas.style.cssText='position:fixed;left:-9999px;top:-9999px;';
+    var canvas = document.createElement('canvas');
+    canvas.width = width || 800;
+    canvas.height = height || 400;
+    canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
     document.body.appendChild(canvas);
-    var chart=new Chart(canvas.getContext('2d'),config);
+
+    // Asegurar que el plugin de etiquetas esté registrado
+    if (typeof ChartDataLabels !== 'undefined' && !Chart.registry.plugins.get('datalabels')) {
+        Chart.register(ChartDataLabels);
+    }
+
+    var chart = new Chart(canvas.getContext('2d'), config);
+    
     setTimeout(function(){
-      try{
-        var dataUrl=canvas.toDataURL('image/png');
+      try {
+        var dataUrl = canvas.toDataURL('image/png');
         chart.destroy();
         document.body.removeChild(canvas);
         resolve(dataUrl);
-      }catch(err){
+      } catch(err) {
         chart.destroy();
         document.body.removeChild(canvas);
         resolve(null);
       }
-    },300);
+    }, 500); // Esperar medio segundo para que se rendericen bien las etiquetas
   });
 }
-
 /* ═══════════════════════════════════════════════════════════
    EXPORT PDF SUPER COMPLETO CON GRÁFICOS
    ═══════════════════════════════════════════════════════════ */
@@ -2960,48 +2966,38 @@ async function exportPDF(){
     var opex = revenue * 0.12;
     var ebitda = gp - opex;
 
-    // --- GENERACIÓN DE GRÁFICOS PARA EL PDF (CON VALORES VISIBLES) ---
+    // --- GRÁFICOS CON DATALABELS (VALORES VISIBLES) ---
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
-    // Curva S con datalabels (valores en los puntos)
     var sCurveImg=await renderChartToImage({
       type:'line',
-      data:{
-        labels:months,
-        datasets:[
-          {label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:4,pointBackgroundColor:'#94a3b8',tension:0.3},
-          {label:'EV',data:evArr,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#10B981'},
-          {label:'AC',data:acArr,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#EF4444'}
-        ]
-      },
+      data:{labels:months,datasets:[
+        {label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},
+        {label:'EV',data:evArr,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#10B981'},
+        {label:'AC',data:acArr,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#EF4444'}
+      ]},
       options:{
         responsive:false,animation:false,
         plugins:{
           legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},
           datalabels:{
-            color:'#333', font:{size:8,weight:'bold'}, align:'top', offset:4,
-            formatter:function(value, context){ return context.datasetIndex === 0 ? '' : value; } // Ocultar PV para no saturar
+            color: function(context) { return context.dataset.borderColor; }, // Color de la línea
+            font:{size:9,weight:'bold'},
+            align:'top', offset:4,
+            formatter: function(value, context) { return value; } // Mostrar el valor
           }
         },
-        scales:{
-          y:{beginAtZero:true,grid:{color:'#E2E8F0'},ticks:{font:{size:10}}},
-          x:{grid:{display:false},ticks:{font:{size:10}}}
-        }
+        scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
       }
     },1000,400);
 
-    // Dona Financiera con porcentajes y valores
     var finPieImg=await renderChartToImage({
       type:'doughnut',
       data:{
         labels:['Costes Directos', 'OpEx', 'EBITDA'],
-        datasets:[{
-          data:[costs, opex, ebitda > 0 ? ebitda : 0],
-          backgroundColor:['#EF4444','#F59E0B','#10B981'],
-          borderWidth:0
-        }]
+        datasets:[{data:[costs, opex, ebitda > 0 ? ebitda : 0],backgroundColor:['#EF4444','#F59E0B','#10B981'],borderWidth:0}]
       },
       options:{
         responsive:false,animation:false,
@@ -3011,8 +3007,7 @@ async function exportPDF(){
             color:'#fff', font:{size:12,weight:'bold'},
             formatter:function(value, context){
               var sum = context.dataset.data.reduce((a,b)=>a+b,0);
-              var pct = sum > 0 ? Math.round((value/sum)*100) : 0;
-              return pct + '%';
+              return sum > 0 ? Math.round((value/sum)*100) + '%' : '';
             }
           }
         },
@@ -3020,23 +3015,18 @@ async function exportPDF(){
       }
     },700,400);
 
-    // Barras CPI vs SPI con valores
     var cpiSpiImg=await renderChartToImage({
       type:'bar',
       data:{labels:['CPI', 'SPI'],datasets:[{data:[e.CPI, e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},
       options:{
         responsive:false,animation:false,
-        plugins:{
-          legend:{display:false},
-          datalabels:{color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top'}
-        },
-        scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#E2E8F0'}},x:{grid:{display:false},ticks:{font:{size:14,weight:'bold'}}}}
+        plugins:{legend:{display:false}, datalabels:{color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top'}},
+        scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}
       }
     },600,400);
 
     var doc=new jsPDF('p','mm','a4');
     var W=210,H=297,y=20;
-    
     var navy = [15, 23, 42]; var gold = [212, 175, 55]; var lightBg = [248, 250, 252]; var textMain = [30, 41, 59]; var textMuted = [100, 116, 139];
 
     function addBg() { doc.setFillColor(lightBg[0], lightBg[1], lightBg[2]); doc.rect(0,0,W,H,'F'); }
@@ -3075,7 +3065,6 @@ async function exportPDF(){
     };
     kpiBox(15, y, 'PROYECTOS', t.count, navy); kpiBox(61, y, 'BAC TOTAL', fEur(t.budget), gold);
     kpiBox(107, y, 'CPI GLOBAL', e.CPI.toFixed(2), e.CPI>=0.9?[16,185,129]:[239,68,68]); kpiBox(153, y, 'SPI GLOBAL', e.SPI.toFixed(2), e.SPI>=0.9?[16,185,129]:[239,68,68]);
-    
     y+=30;
     doc.setFillColor(255,255,255); doc.setDrawColor(226,232,240); doc.roundedRect(15, y, W-30, 45, 3, 3, 'FD');
     doc.setTextColor(navy[0], navy[1], navy[2]); doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Análisis del Estado', 20, y+8);
@@ -3083,7 +3072,6 @@ async function exportPDF(){
     var analysisText = 'El portafolio registra una eficiencia en costes (CPI) del ' + (e.CPI*100).toFixed(0) + '% y un cumplimiento de cronograma (SPI) del ' + (e.SPI*100).toFixed(0) + '%. ';
     analysisText += e.VAC >= 0 ? 'La proyección al cierre indica un ahorro de ' + fEur(e.VAC) + '.' : 'Alerta: Se proyecta un sobrecosto de ' + fEur(Math.abs(e.VAC)) + ' al cierre, lo que requiere intervención inmediata de la dirección.';
     doc.text(doc.splitTextToSize(analysisText, W-40), 20, y+16); y+=55;
-
     y = addSectionTitle('2. Curva S · Valor Planificado vs Ganado vs Real', y);
     if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 60); }
 
@@ -3138,7 +3126,6 @@ async function exportPDF(){
 }
 
 
-
 // ============================================================
 // 📊 EXPORTACIÓN PPTX - NIVEL SILICON VALLEY (IMÁGENES DE ALTA CALIDAD)
 // ============================================================
@@ -3179,16 +3166,29 @@ async function exportPPTX(){
       return s;
     }
 
-    // 🎨 GENERAR IMÁGENES CON CHART.JS PARA EL PPTX
+    // 🎨 GENERAR LAS MISMAS IMÁGENES QUE EL PDF PARA EL PPTX
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
-    var sCurveImg = await renderChartToImage({type:'line',data:{labels:months,datasets:[{label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:evArr,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:acArr,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#ccc',font:{size:10}}}},scales:{y:{beginAtZero:true,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}}},1000,400);
+    var sCurveImg = await renderChartToImage({
+      type:'line',
+      data:{labels:months,datasets:[
+        {label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},
+        {label:'EV',data:evArr,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:'#10B981'},
+        {label:'AC',data:acArr,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:'#EF4444'}
+      ]},
+      options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#94A3B8',font:{size:10}}},datalabels:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}}},1000,400);
 
-    var finPieImg = await renderChartToImage({type:'doughnut',data:{labels:['Costes','OpEx','EBITDA'],datasets:[{data:[costs,opex,ebitda>0?ebitda:0],backgroundColor:['#EF4444','#F59E0B','#10B981'],borderWidth:0}]},options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#ccc',font:{size:11}}},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:function(v,ctx){var sum=ctx.dataset.data.reduce((a,b)=>a+b,0);return sum>0?Math.round((v/sum)*100)+'%':'';}}},cutout:'60%'}},600,400);
+    var finPieImg = await renderChartToImage({
+      type:'doughnut',
+      data:{labels:['Costes','OpEx','EBITDA'],datasets:[{data:[costs,opex,ebitda>0?ebitda:0],backgroundColor:['#EF4444','#F59E0B','#10B981'],borderWidth:0}]},
+      options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#94A3B8',font:{size:11}}},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:function(v,ctx){var sum=ctx.dataset.data.reduce((a,b)=>a+b,0);return sum>0?Math.round((v/sum)*100)+'%':'';}}},cutout:'60%'}},600,400);
 
-    var cpiSpiImg = await renderChartToImage({type:'bar',data:{labels:['CPI','SPI'],datasets:[{data:[e.CPI,e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},options:{responsive:false,animation:false,plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:14,weight:'bold'},anchor:'end',align:'top'}},scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:12}}}}}},600,400);
+    var cpiSpiImg = await renderChartToImage({
+      type:'bar',
+      data:{labels:['CPI','SPI'],datasets:[{data:[e.CPI,e.SPI],backgroundColor:['#3B82F6','#8B5CF6'],borderRadius:6,barPercentage:0.4}]},
+      options:{responsive:false,animation:false,plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:14,weight:'bold'},anchor:'end',align:'top'}},scales:{y:{beginAtZero:true,max:1.5,grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:12}}}}}},600,400);
 
     // ═══ SLIDE 1: PORTADA ═══
     var s1=pptx.addSlide(); s1.background={color:bgDark};
@@ -3205,7 +3205,6 @@ async function exportPPTX(){
       s2.addText(k.l,{x:x+0.2,y:1.6,w:2.7,h:0.3,fontSize:10,bold:true,color:textGray});
       s2.addText(k.v,{x:x+0.2,y:1.9,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
     });
-    
     if(cpiSpiImg) s2.addImage({data: cpiSpiImg, x:0.5, y:3, w:5.5, h:2.8});
     
     s2.addShape(pptx.ShapeType.roundRect,{x:6.5,y:3,w:6.3,h:2.8,fill:{color:cardDark},line:{color:'334155',width:1},rectRadius:0.1});
@@ -3249,11 +3248,10 @@ async function exportPPTX(){
     s6.addText('4. Invertir en capacitación EVM/PMI para el equipo directivo.',{x:0.8,y:4.5,w:11.8,h:0.3,fontSize:12,color:textWhite});
 
     pptx.writeFile({fileName:'Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
-  }catch(err){ 
-    console.error(err); 
-    alert('Error PPTX: '+err.message); 
-  }
+  }catch(err){ console.error(err); alert('Error PPTX: '+err.message); }
 }
+
+
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
