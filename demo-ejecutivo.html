@@ -2170,11 +2170,9 @@ function kpi(l,v,s,c,f){return '<div class="kpi" style="--c:'+c+'"><div class="l
 function renderCFO(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-cfo');
-  
-  // 🔥 DETECCIÓN DE IDIOMA
   var isEn = window.currentDashboardLang === 'en';
   
-  // Función auxiliar para traducir el estado de salud de la tabla
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
   var getHealthLabel = function(h) {
     if (isEn) return {saludable:'Healthy', aceptable:'Acceptable', riesgo:'At Risk', critico:'Critical'}[h] || h;
     return {saludable:'Saludable', aceptable:'Aceptable', riesgo:'Riesgo', critico:'Crítico'}[h] || h;
@@ -2201,7 +2199,7 @@ function renderCFO(){
       kpi('TCPI',e.TCPI.toFixed(2),e.TCPI<=1?(isEn?'Achievable':'Alcanzable'):(isEn?'Difficult':'Difícil'),e.TCPI<=1?'#34d399':e.TCPI<=1.1?'#fbbf24':'#ef4444','TCPI = (BAC−EV)/(BAC−AC)')+
     '</div>'+
     
-        '<div class="kpi-4">'+
+    '<div class="kpi-4">'+
       kpi((isEn ? 'ATYPICAL EAC' : 'EAC Atípico'),fEur(e.EAC_atipico),isEn ? 'Remaining work at plan' : 'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
       kpi((isEn ? 'TYPICAL EAC (CPI)' : 'EAC Típico (CPI)'),fEur(e.EAC_tipico),isEn ? 'Efficiency remains' : 'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
       kpi((isEn ? 'MIXED EAC' : 'EAC Mixto'),fEur(e.EAC_mixto),isEn ? 'CPI and SPI considered' : 'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
@@ -2215,7 +2213,7 @@ function renderCFO(){
     
     '<div class="box"><div class="box-t"><span>📋</span> '+(isEn ? "EVM Detail (€) by Project" : "Detalle EVM (€) por Proyecto")+'</div><div style="overflow-x:auto;"><table class="tbl">'+
       '<thead><tr><th>'+(isEn ? "Project" : "Proyecto")+'</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">EAC</th><th class="n">VAC</th><th class="n">TCPI</th><th>'+(isEn ? "Health" : "Salud")+'</th></tr></thead>'+
-      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+window.translateClient(p.client)+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
+      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+transClient(p.client)+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
       '</tbody><tfoot><tr><td>'+(isEn ? "TOTAL" : "TOTAL")+'</td><td class="n">'+fEur(t.budget)+'</td><td class="n">'+fEur(t.earnedValue)+'</td><td class="n">'+fEur(t.actualCost)+'</td><td class="n">'+e.CPI.toFixed(2)+'</td><td class="n">'+e.SPI.toFixed(2)+'</td><td class="n">'+fEur(e.EAC)+'</td><td class="n">'+(e.VAC>=0?'+':'')+fEur(e.VAC)+'</td><td class="n">'+e.TCPI.toFixed(2)+'</td><td></td></tr></tfoot>'+
     '</table></div></div>';
 
@@ -2225,20 +2223,19 @@ function renderCFO(){
     if(c1){
       var months = isEn ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       var pv=[],ev=[],ac=[];
-      for(var i=0;i<12;i++){
-        pv.push(Math.round(t.plannedValue*((i+1)/12)));
-        ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));
-        ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));
-      }
+      for(var i=0;i<12;i++){pv.push(Math.round(t.plannedValue*((i+1)/12)));ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
       charts.s=new Chart(c1.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'PV',data:pv,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:ev,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:ac,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:10,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}});
     }
     if(charts.eac)charts.eac.destroy();
     var c2=document.getElementById('cEac');
     if(c2){
-      charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});
+      charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return transClient(p.client);}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});
     }
   },100);
 }
+
+
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 2 · CEO
    ═══════════════════════════════════════════════════════════ */
@@ -2247,42 +2244,23 @@ function renderCEO(){
   var el=document.getElementById('v-ceo');
   var isEn = window.currentDashboardLang === 'en';
   
-  // 1. CÁLCULOS DINÁMICOS DE LAS PERSPECTIVAS
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
+  
   var scoreFin=Math.round(Math.min(100,(e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
   var scoreCli=Math.round((e.EV/e.BAC)*100);
   var scoreProc=Math.round(e.SPI*100);
-  
-  // 2. CÁLCULO DINÁMICO DE APRENDIZAJE
-  var totalEstTasks = 0;
-  var totalLogTasks = 0;
-  PROJECTS.forEach(function(p){
-    (p.tasks||[]).forEach(function(tk){
-      totalEstTasks += (tk.estimatedTime || 0);
-      totalLogTasks += (tk.timeLogged || 0);
-    });
-  });
+  var totalEstTasks = 0; var totalLogTasks = 0;
+  PROJECTS.forEach(function(p){(p.tasks||[]).forEach(function(tk){totalEstTasks += (tk.estimatedTime || 0); totalLogTasks += (tk.timeLogged || 0);});});
   var scoreApr = totalEstTasks > 0 ? Math.min(100, Math.round((totalLogTasks / totalEstTasks) * 100)) : 0;
-  
   var totalScore=Math.round((scoreFin+scoreCli+scoreProc+scoreApr)/4);
 
-  // 3. GENERAR LAS 3 DECISIONES DINÁMICAS
   var bloqueados = PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
   var decisions = [];
-  
-  if(e.CPI < 0.95) {
-    decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'), d:(isEn?'CPI ':'CPI ')+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'), c:'#ef4444'});
-  } else {
-    decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'), d:(isEn?'Approve expansion with new projects.':'Aprobar expansión con nuevos proyectos.'), c:'#34d399'});
-  }
-  
-  if(bloqueados.length > 0) {
-    decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'), d:bloqueados.length+(isEn?' project(s) require urgent intervention.':' proyecto(s) requieren intervención urgente.'), c:'#f97316'});
-  } else if(e.SPI < 0.95) {
-    decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'), d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Apply Fast-tracking.':'. Aplicar Fast-tracking.'), c:'#f97316'});
-  } else {
-    decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'), d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'), c:'#34d399'});
-  }
-  
+  if(e.CPI < 0.95) { decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'), d:(isEn?'CPI ':'CPI ')+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'), c:'#ef4444'}); }
+  else { decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'), d:(isEn?'Approve expansion with new projects.':'Aprobar expansión con nuevos proyectos.'), c:'#34d399'}); }
+  if(bloqueados.length > 0) { decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'), d:bloqueados.length+(isEn?' project(s) require urgent intervention.':' proyecto(s) requieren intervención urgente.'), c:'#f97316'}); }
+  else if(e.SPI < 0.95) { decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'), d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Apply Fast-tracking.':'. Aplicar Fast-tracking.'), c:'#f97316'}); }
+  else { decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'), d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'), c:'#34d399'}); }
   decisions.push({t:(isEn?'Invest in team':'Invertir en equipo'), d:(isEn?'EVM/PMI training for PMs.':'Capacitación EVM/PMI para PMs.'), c:'#a78bfa'});
 
   el.innerHTML=
@@ -2312,12 +2290,14 @@ function renderCEO(){
   setTimeout(function(){
     if(charts.align)charts.align.destroy();
     var c1=document.getElementById('cAlign');
-    if(c1){charts.align=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : (p.client || 'Proyecto');}),datasets:[{label:(isEn?'Alignment (%)':'Alineación (%)'),data:PROJECTS.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:PROJECTS.map(function(p){var m=evmFor(p);return (m.CPI+m.SPI)/2>=0.95?'rgba(52,211,153,0.8)':'rgba(251,191,36,0.8)';}),borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
+    if(c1){charts.align=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : transClient(p.client);}),datasets:[{label:(isEn?'Alignment (%)':'Alineación (%)'),data:PROJECTS.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:PROJECTS.map(function(p){var m=evmFor(p);return (m.CPI+m.SPI)/2>=0.95?'rgba(52,211,153,0.8)':'rgba(251,191,36,0.8)';}),borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
     if(charts.fc)charts.fc.destroy();
     var c2=document.getElementById('cFc');
     if(c2){charts.fc=new Chart(c2.getContext('2d'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:(isEn?'Revenue':'Ingresos'),data:[t.budget*1.15,t.budget*1.35,t.budget*1.60,t.budget*1.90],borderColor:'#a78bfa',backgroundColor:'rgba(139,92,246,0.15)',borderWidth:3,fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#a78bfa'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11,weight:'700'}}}}}});}
   },100);
 }
+
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 3 · COO con GANTT
    ═══════════════════════════════════════════════════════════ */
