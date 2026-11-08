@@ -2416,6 +2416,30 @@ function renderAPI(){
     '<div class="box"><div class="box-t"><span>📡</span> Webhooks</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">'+webhooks.map(function(w){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="font-family:monospace;font-size:12px;font-weight:900;color:#67e8f9;margin-bottom:6px;">'+w.e+'</div><div style="font-size:11.5px;color:#94a3b8;">'+w.d+'</div></div>';}).join('')+'</div></div>';
 }
 
+
+
+// 🔥 FUNCIÓN MATEMÁTICA PARA CALCULAR EL TIR REAL (Método de Bisección)
+function calculateIRR(cashFlows) {
+  let low = -0.99; // -99% de retorno
+  let high = 10.0; // 1000% de retorno (límite superior)
+  const precision = 0.00001;
+
+  for (let i = 0; i < 100; i++) {
+    let mid = (low + high) / 2;
+    let npv = 0;
+    for (let j = 0; j < cashFlows.length; j++) {
+      npv += cashFlows[j] / Math.pow(1 + mid, j);
+    }
+    if (Math.abs(npv) < precision) return mid;
+    if (npv > 0) low = mid;
+    else high = mid;
+  }
+  return (low + high) / 2; // Retorna la mejor aproximación
+}
+
+
+
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 7 · FIN
    ═══════════════════════════════════════════════════════════ */
@@ -2445,11 +2469,17 @@ function renderFIN(){
   // Evitar división por cero
   var breakEven = grossMarginPct > 0 ? opex/(grossMarginPct/100) : 0;
   
-  var cashFlows=[revenue*0.85,revenue*0.95,revenue*1.10,revenue*1.25];
+    var cashFlows=[revenue*0.85,revenue*0.95,revenue*1.10,revenue*1.25];
   var wacc=0.12,npv=-costs;
   cashFlows.forEach(function(cf,i){npv+=cf/Math.pow(1+wacc,i+1);});
   
-  var irr=0.18, cumulative=-costs, payback=0;
+  // 🔥 CÁLCULO DEL TIR REAL
+  // Armamos el flujo de caja completo: Inversión inicial (negativa) + flujos futuros
+  var fullCashFlows = [-costs, ...cashFlows];
+  // Si no hay costos (proyecto sin horas), el TIR no se puede calcular
+  var irr = costs > 0 ? calculateIRR(fullCashFlows) : 0; 
+  
+  var cumulative=-costs,payback=0;
   for(var i=0;i<cashFlows.length;i++){
     cumulative += cashFlows[i];
     if(cumulative >= 0 && cashFlows[i] > 0){
@@ -2464,7 +2494,10 @@ function renderFIN(){
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Advanced Finance · Nivel CFO</h2><p>P&L completo, EBITDA, Break-even, VAN, TIR, Payback, Flujo de Caja. Multi-moneda y proyecciones.</p></div><div class="hero-stats">'+statCard(fEur(revenue),'Ingresos','gr')+statCard(fEur(grossProfit),'Beneficio','g')+statCard(fPct(grossMarginPct),'Margen')+statCard(fEur(ebitda),'EBITDA','r')+'</div></div></div>'+
     '<div class="kpi-4">'+kpi('Ingresos Facturables',fEur(revenue),fN(totalHours)+'h','#34d399','Rev = Σ(h × rate)')+kpi('Costes Directos',fEur(costs),'Tarifas internas','#ef4444','Cost = Σ(h × cost)')+kpi('Beneficio Bruto',fEur(grossProfit),fPct(grossMarginPct)+' margen','#fbbf24','GP = Rev − Cost')+kpi('EBITDA',fEur(ebitda),fPct(ebitdaPct)+' margen',ebitda>0?'#34d399':'#ef4444','EBITDA = GP − OpEx')+'</div>'+
-    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('TIR (IRR)',fPct(irr*100),'Retorno',irr>wacc?'#34d399':'#fbbf24','IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
+    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+// Si el TIR es 0 (porque no hay costos), mostramos un guion elegante
+var displayIRR = irr > 0 ? fPct(irr * 100) : '—';
+var irrColor = irr > wacc ? '#34d399' : (irr > 0 ? '#fbbf24' : '#94a3b8');
+kpi('TIR (IRR)', displayIRR, irr > wacc ? 'Excelente' : 'Retorno', irrColor, 'IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
     '<div class="kpi-4">'+kpi('Tarifa Cliente',fEur(avgClientRate)+'/h','Facturado','#34d399')+kpi('Coste Interno',fEur(avgCostRate)+'/h','Real','#ef4444')+kpi('Margen/hora',fEur(avgClientRate-avgCostRate)+'/h',fPct(grossMarginPct)+' margen','#fbbf24')+kpi('Horas Totales',fN(totalHours)+'h','Portafolio','#a78bfa')+'</div>'+
     
     // 🔥 TABLA CORREGIDA
