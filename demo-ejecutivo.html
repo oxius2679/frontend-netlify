@@ -1591,27 +1591,46 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
 
-.fab-text {
-    display: none;
-    opacity: 0;
-    white-space: nowrap;
-    font-size: 13px; /* Letra un poco más pequeña */
-    font-weight: 800;
-    margin-left: 8px; /* Menos espacio entre imagen y texto */
-    letter-spacing: 0.5px;
+.fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #0B1120; /* Fondo azul marino */
+    border: 2px solid #D4AF37; /* Borde dorado */
+    height: 64px;
+    padding: 0 24px 0 10px; /* Espacio interno para que respire el texto */
+    border-radius: 40px; /* Forma de píldora */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px; /* Separación entre imagen y texto */
+    box-shadow: 0 10px 30px rgba(212,175,55,0.3), inset 0 2px 4px rgba(255,255,255,0.1);
+    cursor: pointer;
+    z-index: 9998;
+    transition: all 0.3s ease;
 }
 
 .fab:hover {
-    width: 270px; /* Se expande más para que quepa todo */
-    padding: 0 15px; /* Un poco de margen interno */
-    border-radius: 40px;
-    transform: scale(1.05);
-    box-shadow: 0 30px 70px rgba(139,92,246,0.9);
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 20px 50px rgba(212,175,55,0.5);
 }
-@keyframes fadeInRight {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
+
+.fab-img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #0B1120;
 }
+
+.fab-text {
+    color: #D4AF37; /* Texto dorado */
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(24px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.on{display:flex}
 .modal-box{width:96vw;max-width:1500px;height:92vh;max-height:960px;background:linear-gradient(145deg,#0a1521,var(--bg));border-radius:36px;border:1px solid rgba(139,92,246,0.35);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 60px 150px rgba(0,0,0,0.9),0 0 200px rgba(139,92,246,0.2)}
@@ -1977,13 +1996,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- 👆 FIN DEL BLOQUE PEGADO 👆 -->
 
 
-<div class="fab" onclick="openModal()" style="display: flex; justify-content: center; align-items: center; background: #0B1120; border: 1px solid rgba(212,175,55,0.5); padding: 0 12px;">
-    <!-- Imagen con TAMAÑO FIJO (40px) para que no se estire -->
-    <img src="zacky45.png" alt="Zacky Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0;">
-    
-    <!-- Texto al lado -->
-    <span class="fab-text" style="margin-left: 10px;">Entrar al Dashboard</span>
-</div><div class="modal" id="modal">
+<div class="fab" onclick="openModal()">
+    <img src="zacky45.png" alt="Zacky Logo" class="fab-img">
+    <span class="fab-text">Entrar al Dashboard</span>
+</div></div><div class="modal" id="modal">
   <div class="modal-box">
     <div class="modal-h">
       <div>
