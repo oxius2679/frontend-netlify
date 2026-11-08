@@ -1592,29 +1592,30 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 }
 
 .fab {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: #0B1120; /* Fondo azul marino */
-    border: 2px solid #D4AF37; /* Borde dorado */
-    height: 64px;
-    padding: 0 24px 0 10px; /* Espacio interno para que respire el texto */
-    border-radius: 40px; /* Forma de píldora */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px; /* Separación entre imagen y texto */
-    box-shadow: 0 10px 30px rgba(212,175,55,0.3), inset 0 2px 4px rgba(255,255,255,0.1);
-    cursor: pointer;
-    z-index: 9998;
-    transition: all 0.3s ease;
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    background: #0B1120 !important; 
+    border: 2px solid #D4AF37 !important; 
+    height: 64px !important;
+    width: auto !important; /* Esto hace que se adapte al texto */
+    padding: 0 24px 0 12px !important;
+    border-radius: 50px !important; 
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 2px 4px rgba(212,175,55,0.2) !important;
+    cursor: pointer !important;
+    z-index: 99999 !important; /* Asegura que esté por encima de todo */
+    transition: transform 0.3s ease !important;
+    overflow: visible !important; /* ESTO ES CLAVE: evita que el texto se corte */
 }
 
 .fab:hover {
-    transform: translateY(-5px) scale(1.03);
-    box-shadow: 0 20px 50px rgba(212,175,55,0.5);
+    transform: translateY(-5px) scale(1.03) !important;
+    box-shadow: 0 20px 40px rgba(212,175,55,0.4) !important;
 }
-
 .fab-img {
     width: 44px;
     height: 44px;
@@ -1997,9 +1998,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 
 <div class="fab" onclick="openModal()">
-    <img src="zacky45.png" alt="Zacky Logo" class="fab-img">
-    <span class="fab-text">Entrar al Dashboard</span>
-</div></div><div class="modal" id="modal">
+    <img src="zacky45.png" alt="Zacky Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;">
+    <span style="color: #D4AF37; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap;">Entrar al Dashboard</span>
+</div>
+</div>
+
+<div class="modal" id="modal">
   <div class="modal-box">
     <div class="modal-h">
       <div>
