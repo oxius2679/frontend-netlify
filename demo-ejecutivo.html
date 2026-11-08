@@ -1569,8 +1569,55 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .story .h{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:15px;font-weight:700;color:var(--violet-l)}
 .story p{font-size:13.5px;line-height:1.7}
 .story strong{color:var(--violet-l)}
-.fab{position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,var(--violet),#6d28d9);width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 20px 50px rgba(139,92,246,0.7),0 0 100px rgba(139,92,246,0.4),inset 0 2px 4px rgba(255,255,255,0.2);cursor:pointer;z-index:9998;color:#fff;font-size:30px;transition:all .3s;border:1px solid rgba(255,255,255,0.15)}
-.fab:hover{transform:scale(1.1) rotate(6deg);box-shadow:0 30px 70px rgba(139,92,246,0.9)}
+
+.fab{
+    position:fixed;
+    bottom:30px;
+    right:30px;
+    background:linear-gradient(135deg,var(--violet),#6d28d9);
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 20px 50px rgba(139,92,246,0.7),0 0 100px rgba(139,92,246,0.4),inset 0 2px 4px rgba(255,255,255,0.2);
+    cursor:pointer;
+    z-index:9998;
+    color:#fff;
+    font-size:30px;
+    border:1px solid rgba(255,255,255,0.15);
+    overflow:hidden;
+    transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.fab-text {
+    display: none;
+    opacity: 0;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 900;
+    margin-left: 12px;
+    letter-spacing: 0.5px;
+}
+
+.fab:hover {
+    width: 240px;
+    border-radius: 40px;
+    transform: scale(1.05);
+    box-shadow: 0 30px 70px rgba(139,92,246,0.9);
+}
+
+.fab:hover .fab-text {
+    display: block;
+    opacity: 1;
+    animation: fadeInRight 0.4s ease forwards;
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(24px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.on{display:flex}
 .modal-box{width:96vw;max-width:1500px;height:92vh;max-height:960px;background:linear-gradient(145deg,#0a1521,var(--bg));border-radius:36px;border:1px solid rgba(139,92,246,0.35);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 60px 150px rgba(0,0,0,0.9),0 0 200px rgba(139,92,246,0.2)}
@@ -1860,9 +1907,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     align-items: center;
     border-radius: 24px;
     overflow: hidden;
-    /* Borde sutil y sombra para que resalte */
     box-shadow: 0 30px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    /* 🔥 NUEVO: Efecto de transición suave */
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease;
 }
+
+/* 🔥 NUEVO: Efecto al pasar el ratón */
+.hero-image-container:hover {
+    transform: translateY(-10px) scale(1.01);
+    box-shadow: 0 40px 120px rgba(212,175,55,0.15), 0 0 0 1px rgba(212,175,55,0.3);
+}
+
 
 .hero-image {
     width: 100%;
@@ -1870,7 +1925,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     height: auto;
     display: block;
     border-radius: 24px;
+    /* 🔥 NUEVO: Difuminar los bordes superior e inferior para integrarlo */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%);
 }
+
+
 
 /* Ajustes Responsivos */
 @media (max-width: 768px) {
@@ -1922,7 +1982,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- 👆 FIN DEL BLOQUE PEGADO 👆 -->
 
 
-<div class="fab" onclick="openModal()"><i class="fas fa-crown"></i></div>
+<div class="fab" onclick="openModal()">
+    <i class="fas fa-crown"></i>
+    <span class="fab-text">Entrar al Dashboard</span>
+</div>
 
 <div class="modal" id="modal">
   <div class="modal-box">
