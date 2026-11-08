@@ -2390,7 +2390,7 @@ function renderCOO(){
         var opIcon=p.opStatus==='bloqueado'?'🔴':p.opStatus==='pausa'?'🟡':'🟢';
         var opLabel=getOpLabel(p.opStatus);
         var doneM=p.milestones.filter(function(m){return m.status==='done';}).length;
-        return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+window.translateClient(p.client)+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+translatePhase(p.phase)+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
+        return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+p.client+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+translatePhase(p.phase)+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
           '<div class="op-progress"><span class="op-progress-lbl">'+tr.phase+' '+translatePhase(p.phase)+'</span><div class="op-progress-track"><div class="op-progress-fill" style="width:'+p.phaseProgress+'%;background:'+opColor+';"></div></div><span class="op-progress-val" style="color:'+opColor+';">'+p.phaseProgress+'%</span></div>'+
           '<div class="op-grid">'+
             '<div class="op-metric"><div class="l">'+tr.plan+'</div><div class="v">'+fH(eh.totalEstimated)+'</div><div class="s">'+fH(eh.plannedHours)+' '+(isEn?'to date':'a la fecha')+'</div></div>'+
