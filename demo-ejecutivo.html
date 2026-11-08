@@ -1973,10 +1973,13 @@ function renderCFO(){
 function renderCEO(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-ceo');
+  
+  // 1. CÁLCULOS DINÁMICOS DE LAS PERSPECTIVAS
   var scoreFin=Math.round(Math.min(100,(e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
   var scoreCli=Math.round((e.EV/e.BAC)*100);
   var scoreProc=Math.round(e.SPI*100);
-    // 🔥 CÁLCULO DINÁMICO DE APRENDIZAJE (Basado en utilización del equipo)
+  
+  // 2. CÁLCULO DINÁMICO DE APRENDIZAJE (Horas trabajadas vs Estimadas)
   var totalEstTasks = 0;
   var totalLogTasks = 0;
   PROJECTS.forEach(function(p){
@@ -1986,31 +1989,37 @@ function renderCEO(){
     });
   });
   var scoreApr = totalEstTasks > 0 ? Math.min(100, Math.round((totalLogTasks / totalEstTasks) * 100)) : 0;
+  
   var totalScore=Math.round((scoreFin+scoreCli+scoreProc+scoreApr)/4);
+
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>OKRs & Estrategia · Cuadro de Mando Integral</h2><p>Balanced Scorecard con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.</p></div><div class="hero-stats">'+statCard(totalScore,'Score Estratégico','g')+statCard(5,'Objetivos')+statCard(4,'Perspectivas','gr')+statCard(3,'Decisiones','r')+'</div></div></div>'+
     '<div class="box"><div class="box-t"><span>🎯</span> Cuadro de Mando Integral</div><div style="display:flex;gap:32px;flex-wrap:wrap;align-items:center;">'+
-      '<div style="text-align:center;min-width:180px;"><div style="font-size:72px;font-weight:900;color:#34d399;line-height:1;">'+totalScore+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:3px;text-transform:uppercase;margin-top:8px;font-weight:800;">Score Estratégico</div><div style="font-size:11px;color:#94a3b8;margin-top:6px;">'+(totalScore>=75?'🟢 Excelente':totalScore>=50?'🟡 Estable':'🔴 Requiere acción')+'</div></div>'+
+      '<div style="text-align:center;min-width:180px;"><div style="font-size:72px;font-weight:900;color:'+(totalScore>=75?'#34d399':totalScore>=50?'#fbbf24':'#ef4444')+';line-height:1;">'+totalScore+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:3px;text-transform:uppercase;margin-top:8px;font-weight:800;">Score Estratégico</div><div style="font-size:11px;color:#94a3b8;margin-top:6px;">'+(totalScore>=75?'🟢 Excelente':totalScore>=50?'🟡 Estable':'🔴 Requiere acción')+'</div></div>'+
       '<div style="flex:1;min-width:280px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+[{icon:'💰',l:'Financiera',v:scoreFin,c:'#34d399'},{icon:'🎯',l:'Cliente',v:scoreCli,c:'#a78bfa'},{icon:'⚙️',l:'Procesos',v:scoreProc,c:'#fbbf24'},{icon:'🧠',l:'Aprendizaje',v:scoreApr,c:'#67e8f9'}].map(function(p){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+p.c+';"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:16px;">'+p.icon+'</span><span style="font-size:22px;font-weight:900;color:'+p.c+';">'+p.v+'</span></div><div style="font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:800;">'+p.l+'</div><div class="bar"><div class="bar-f" style="width:'+p.v+'%;background:'+p.c+';"></div></div></div>';}).join('')+'</div>'+
     '</div></div>'+
     '<div class="box"><div class="box-t"><span>🎯</span> Objetivos Estratégicos</div><div style="display:flex;flex-direction:column;gap:12px;">'+
       [{t:'Optimizar eficiencia de costos (CPI ≥ 1.00)',d:'CPI actual: '+e.CPI.toFixed(2),p:Math.min(100,Math.round(e.CPI*100)),c:e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444',est:e.CPI>=1?'Logrado':e.CPI>=0.9?'En curso':'Riesgo'},
        {t:'Alinear cronograma (SPI ≥ 1.00)',d:'SPI actual: '+e.SPI.toFixed(2),p:Math.min(100,Math.round(e.SPI*100)),c:e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444',est:e.SPI>=1?'Logrado':e.SPI>=0.9?'En curso':'Riesgo'},
        {t:'Alcanzar margen positivo',d:'Margen promedio: '+fPct(t.marginAvg),p:Math.round(Math.min(100,t.marginAvg*3)),c:t.marginAvg>=25?'#34d399':'#fbbf24',est:t.marginAvg>=25?'Logrado':'En curso'},
-       {t:'Reducir tareas rezagadas',d:'Rezagos: '+PROJECTS.reduce(function(s,p){return s+p.tasks.filter(function(tk){return tk.status==='overdue';}).length;},0),p:65,c:'#fbbf24',est:'En curso'},
+       {t:'Reducir tareas rezagadas',d:'Rezagos: '+PROJECTS.reduce(function(s,p){return s+(p.tasks||[]).filter(function(tk){return tk.status==='overdue';}).length;},0),p:65,c:'#fbbf24',est:'En curso'},
        {t:'Escalar portafolio',d:'Activos: '+PROJECTS.length+' · Target: 8',p:Math.round((PROJECTS.length/8)*100),c:'#a78bfa',est:'En curso'}
       ].map(function(o){return '<div style="padding:16px 20px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:4px solid '+o.c+';"><div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:14px;font-weight:900;color:#fff;">'+o.t+'</span><span class="badge" style="background:'+o.c+'22;color:'+o.c+';">'+o.est+'</span></div><div style="font-size:12px;color:#94a3b8;">'+o.d+'</div></div><div style="font-size:22px;font-weight:900;color:'+o.c+';text-align:right;">'+o.p+'%</div></div><div class="bar"><div class="bar-f" style="width:'+o.p+'%;background:'+o.c+';"></div></div></div>';}).join('')+
     '</div></div>'+
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> Alineación por Proyecto</div><canvas id="cAlign"></canvas></div><div class="chart-card"><div class="t"><span>📈</span> Forecast 4 Trimestres</div><canvas id="cFc"></canvas></div></div>';
-    setTimeout(function(){
+
+  setTimeout(function(){
+    // Gráfica de Alineación (Usa el nombre del proyecto)
     if(charts.align)charts.align.destroy();
     var c1=document.getElementById('cAlign');
     if(c1){charts.align=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : (p.client || 'Proyecto');}),datasets:[{label:'Alineación (%)',data:PROJECTS.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:PROJECTS.map(function(p){var m=evmFor(p);return (m.CPI+m.SPI)/2>=0.95?'rgba(52,211,153,0.8)':'rgba(251,191,36,0.8)';}),borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
+    
+    // Gráfica de Forecast
     if(charts.fc)charts.fc.destroy();
     var c2=document.getElementById('cFc');
     if(c2){charts.fc=new Chart(c2.getContext('2d'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:'Ingresos',data:[t.budget*1.15,t.budget*1.35,t.budget*1.60,t.budget*1.90],borderColor:'#a78bfa',backgroundColor:'rgba(139,92,246,0.15)',borderWidth:3,fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#a78bfa'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11,weight:'700'}}}}}});}
   },100);
-
+}
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 3 · COO con GANTT
    ═══════════════════════════════════════════════════════════ */
