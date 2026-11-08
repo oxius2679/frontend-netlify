@@ -2447,23 +2447,6 @@ function renderFIN(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-fin');
   
-
-// 🔥 OBTENER TASAS DE CAMBIO REALES DESDE TU BACKEND
-  let rates = { EUR: 1, USD: 1.08, GBP: 0.85, MXN: 20.5 }; // Fallback de seguridad
-  try {
-    const rateRes = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/fx-rates');
-    if (rateRes.ok) {
-      const rateData = await rateRes.json();
-      if (rateData && rateData.USD) {
-        rates = rateData;
-        console.log("💱 Tasas de cambio cargadas desde el servidor:", rates);
-      }
-    }
-  } catch (err) {
-    console.warn("⚠️ Usando tasas por defecto, no se pudo conectar a Forex.", err);
-  }
-
-
   var revenue=0, costs=0, totalHours=0, totalROI=0;
   
   PROJECTS.forEach(function(p){
