@@ -1976,7 +1976,16 @@ function renderCEO(){
   var scoreFin=Math.round(Math.min(100,(e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
   var scoreCli=Math.round((e.EV/e.BAC)*100);
   var scoreProc=Math.round(e.SPI*100);
-  var scoreApr=78;
+    // 🔥 CÁLCULO DINÁMICO DE APRENDIZAJE (Basado en utilización del equipo)
+  var totalEstTasks = 0;
+  var totalLogTasks = 0;
+  PROJECTS.forEach(function(p){
+    (p.tasks||[]).forEach(function(tk){
+      totalEstTasks += (tk.estimatedTime || 0);
+      totalLogTasks += (tk.timeLogged || 0);
+    });
+  });
+  var scoreApr = totalEstTasks > 0 ? Math.min(100, Math.round((totalLogTasks / totalEstTasks) * 100)) : 0;
   var totalScore=Math.round((scoreFin+scoreCli+scoreProc+scoreApr)/4);
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>OKRs & Estrategia · Cuadro de Mando Integral</h2><p>Balanced Scorecard con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.</p></div><div class="hero-stats">'+statCard(totalScore,'Score Estratégico','g')+statCard(5,'Objetivos')+statCard(4,'Perspectivas','gr')+statCard(3,'Decisiones','r')+'</div></div></div>'+
@@ -2920,7 +2929,7 @@ async function exportPDF(){
 
     var evmHoursImg=await renderChartToImage({
       type:'bar',
-      data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'EV_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).earnedHours);}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6},{label:'AC_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).totalLogged);}),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:6}]},
+      data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : 'Proyecto';}),datasets:[{label:'EV_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).earnedHours);}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6},{label:'AC_h',data:PROJECTS.map(function(p){return Math.round(evmHoursFor(p).totalLogged);}),backgroundColor:'rgba(239,68,68,0.8)',borderRadius:6}]},
       options:{responsive:false,animation:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:13,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'#cbd5e1',font:{size:12},callback:function(v){return v+'h';}}},x:{grid:{display:false},ticks:{color:'#cbd5e1',font:{size:11}}}}}
     },900,400);
 
