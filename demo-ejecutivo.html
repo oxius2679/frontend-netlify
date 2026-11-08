@@ -2449,13 +2449,12 @@ function renderFIN(){
   
   var revenue=0, costs=0, totalHours=0;
   
-  // 🔥 LÓGICA CORREGIDA: Basada en horas reales de las tareas
   PROJECTS.forEach(function(p){
     var eh = evmHoursFor(p);
     var logged = eh.totalLogged || 0;
-    var costPerHour = 50; // Tarifa interna estimada
+    var costPerHour = 50; 
     var projCost = logged * costPerHour;
-    var projRev = projCost * 1.45; // Margen del 45%
+    var projRev = projCost * 1.45; 
     
     revenue += projRev;
     costs += projCost;
@@ -2465,15 +2464,32 @@ function renderFIN(){
   var grossProfit=revenue-costs;
   var grossMarginPct=revenue>0?(grossProfit/revenue)*100:0;
   var opex=revenue*0.12, ebitda=grossProfit-opex, ebitdaPct=revenue>0?(ebitda/revenue)*100:0;
-  
-  // Evitar división por cero
   var breakEven = grossMarginPct > 0 ? opex/(grossMarginPct/100) : 0;
   
   var cashFlows=[revenue*0.85,revenue*0.95,revenue*1.10,revenue*1.25];
   var wacc=0.12,npv=-costs;
   cashFlows.forEach(function(cf,i){npv+=cf/Math.pow(1+wacc,i+1);});
   
-  var irr=0.18, cumulative=-costs, payback=0;
+  // 🔥 CÁLCULO DEL TIR REAL (Integrado y seguro)
+  var irr = 0;
+  if (costs > 0 && revenue > 0) {
+    // Algoritmo de Bisección para TIR
+    var fullCashFlows = [-costs].concat(cashFlows); 
+    var low = -0.99;
+    var high = 10.0;
+    for (var i = 0; i < 100; i++) {
+      var mid = (low + high) / 2;
+      var npv_temp = 0;
+      for (var j = 0; j < fullCashFlows.length; j++) {
+        npv_temp += fullCashFlows[j] / Math.pow(1 + mid, j);
+      }
+      if (Math.abs(npv_temp) < 0.00001) { irr = mid; break; }
+      if (npv_temp > 0) low = mid;
+      else high = mid;
+    }
+  }
+  
+  var cumulative=-costs, payback=0;
   for(var i=0;i<cashFlows.length;i++){
     cumulative += cashFlows[i];
     if(cumulative >= 0 && cashFlows[i] > 0){
@@ -2485,13 +2501,16 @@ function renderFIN(){
   var avgClientRate = totalHours > 0 ? revenue/totalHours : 0;
   var avgCostRate = totalHours > 0 ? costs/totalHours : 0;
 
+  // Formatear TIR para mostrarlo
+  var displayIRR = irr > 0 ? fPct(irr * 100) : '—';
+  var irrColor = irr > wacc ? '#34d399' : (irr > 0 ? '#fbbf24' : '#94a3b8');
+
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Advanced Finance · Nivel CFO</h2><p>P&L completo, EBITDA, Break-even, VAN, TIR, Payback, Flujo de Caja. Multi-moneda y proyecciones.</p></div><div class="hero-stats">'+statCard(fEur(revenue),'Ingresos','gr')+statCard(fEur(grossProfit),'Beneficio','g')+statCard(fPct(grossMarginPct),'Margen')+statCard(fEur(ebitda),'EBITDA','r')+'</div></div></div>'+
     '<div class="kpi-4">'+kpi('Ingresos Facturables',fEur(revenue),fN(totalHours)+'h','#34d399','Rev = Σ(h × rate)')+kpi('Costes Directos',fEur(costs),'Tarifas internas','#ef4444','Cost = Σ(h × cost)')+kpi('Beneficio Bruto',fEur(grossProfit),fPct(grossMarginPct)+' margen','#fbbf24','GP = Rev − Cost')+kpi('EBITDA',fEur(ebitda),fPct(ebitdaPct)+' margen',ebitda>0?'#34d399':'#ef4444','EBITDA = GP − OpEx')+'</div>'+
-    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('TIR (IRR)',fPct(irr*100),'Retorno',irr>wacc?'#34d399':'#fbbf24','IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
+    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('TIR (IRR)',displayIRR,irr>wacc?'Excelente':'Retorno',irrColor,'IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
     '<div class="kpi-4">'+kpi('Tarifa Cliente',fEur(avgClientRate)+'/h','Facturado','#34d399')+kpi('Coste Interno',fEur(avgCostRate)+'/h','Real','#ef4444')+kpi('Margen/hora',fEur(avgClientRate-avgCostRate)+'/h',fPct(grossMarginPct)+' margen','#fbbf24')+kpi('Horas Totales',fN(totalHours)+'h','Portafolio','#a78bfa')+'</div>'+
     
-    // 🔥 TABLA CORREGIDA
     '<div class="box"><div class="box-t"><span>💼</span> Rentabilidad por Proyecto</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Proyecto</th><th class="n">Horas</th><th class="n">Ingresos</th><th class="n">Costes</th><th class="n">Beneficio</th><th class="n">% Margen</th><th class="n">Margen/h</th></tr></thead><tbody>'+
     PROJECTS.map(function(p){
       var eh = evmHoursFor(p);
@@ -2519,6 +2538,7 @@ function renderFIN(){
     if(c2 && revenue > 0){charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*1.08,revenue*0.85,revenue*20.5],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});}
   },100);
 }
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 8 · VIP
    ═══════════════════════════════════════════════════════════ */
