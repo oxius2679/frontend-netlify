@@ -2318,6 +2318,8 @@ function renderCEO(){
     if(c2){charts.fc=new Chart(c2.getContext('2d'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:(isEn?'Revenue':'Ingresos'),data:[t.budget*1.15,t.budget*1.35,t.budget*1.60,t.budget*1.90],borderColor:'#a78bfa',backgroundColor:'rgba(139,92,246,0.15)',borderWidth:3,fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#a78bfa'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11,weight:'700'}}}}}});}
   },100);
 }
+
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 3 · COO con GANTT
    ═══════════════════════════════════════════════════════════ */
