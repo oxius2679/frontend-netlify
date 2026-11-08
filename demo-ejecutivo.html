@@ -2474,14 +2474,13 @@ function renderFIN(){
   
   // 🔥 FLUJOS DE CAJA DINÁMICOS BASADOS EN EL CPI DEL PROYECTO
   // Si el proyecto va mal (CPI < 1), los flujos futuros se reducen
-   var cpiFactor = e.CPI > 0 ? e.CPI : 1;
-  // 🔥 FLUJOS CONSERVADORES: Basados en el beneficio neto proyectado, no en los ingresos brutos
-  var annualProfit = (grossProfit > 0 ? grossProfit : costs * 0.15);
+    var cpiFactor = e.CPI > 0 ? e.CPI : 1;
+  // 🔥 FLUJOS DE CAJA REALISTAS: Basados en los ingresos proyectados, ajustados por la eficiencia (CPI)
   var cashFlows = [
-    annualProfit * 0.70 * cpiFactor, 
-    annualProfit * 0.90 * cpiFactor, 
-    annualProfit * 1.10 * cpiFactor, 
-    annualProfit * 1.25 * cpiFactor
+    revenue * 0.50 * cpiFactor, 
+    revenue * 0.60 * cpiFactor, 
+    revenue * 0.70 * cpiFactor, 
+    revenue * 0.80 * cpiFactor
   ];
   
   var wacc=0.12, npv=-costs;
