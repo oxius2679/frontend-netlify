@@ -2447,6 +2447,23 @@ function renderFIN(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-fin');
   
+
+// 🔥 OBTENER TASAS DE CAMBIO REALES DESDE TU BACKEND
+  let rates = { EUR: 1, USD: 1.08, GBP: 0.85, MXN: 20.5 }; // Fallback de seguridad
+  try {
+    const rateRes = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/fx-rates');
+    if (rateRes.ok) {
+      const rateData = await rateRes.json();
+      if (rateData && rateData.USD) {
+        rates = rateData;
+        console.log("💱 Tasas de cambio cargadas desde el servidor:", rates);
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Usando tasas por defecto, no se pudo conectar a Forex.", err);
+  }
+
+
   var revenue=0, costs=0, totalHours=0, totalROI=0;
   
   PROJECTS.forEach(function(p){
@@ -2544,7 +2561,7 @@ function renderFIN(){
     '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fN(totalHours)+'h</td><td class="n">'+fEur(revenue)+'</td><td class="n">'+fEur(costs)+'</td><td class="n">'+fEur(grossProfit)+'</td><td class="n">'+fPct(grossMarginPct)+'</td><td class="n">'+fEur(avgClientRate-avgCostRate)+'/h</td></tr></tfoot></table></div></div>'+
     
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> Margen por Proyecto</div><canvas id="cMargin"></canvas></div><div class="chart-card"><div class="t"><span>💱</span> Multi-Moneda</div><canvas id="cFX"></canvas></div></div>'+
-    '<div class="box"><div class="box-t"><span>💱</span> Multi-Moneda</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">'+[{n:'Euro',c:'EUR',s:'€',r:1},{n:'Dólar',c:'USD',s:'$',r:1.08},{n:'Libra',c:'GBP',s:'£',r:0.85},{n:'Peso MX',c:'MXN',s:'$',r:20.5}].map(function(m){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:13px;font-weight:800;color:#fff;">'+m.n+'</div><div style="font-size:10px;color:#94a3b8;">'+m.c+' · '+m.r+'</div></div><div style="font-size:15px;font-weight:900;color:#67e8f9;">'+m.s+fN(Math.round(revenue*m.r))+'</div></div></div>';}).join('')+'</div></div>'+
+    '<div class="box"><div class="box-t"><span>💱</span> Multi-Moneda</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">'+[{n:'Euro',c:'EUR',s:'€',r:1},{n:'Dólar',c:'USD',s:'$',r:rates.USD},{n:'Libra',c:'GBP',s:'£',r:rates.GBP},{n:'Peso MX',c:'MXN',s:'$',r:rates.MXN}].map(function(m){return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid #67e8f9;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:13px;font-weight:800;color:#fff;">'+m.n+'</div><div style="font-size:10px;color:#94a3b8;">'+m.c+' · '+m.r+'</div></div><div style="font-size:15px;font-weight:900;color:#67e8f9;">'+m.s+fN(Math.round(revenue*m.r))+'</div></div></div>';}).join('')+'</div></div>'+
     '<div class="box"><div class="box-t"><span>🔮</span> Proyección 4 Trimestres</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">'+['Q1-27','Q2-27','Q3-27','Q4-27'].map(function(q,i){var factor=1.15+(i*0.15);var proj=revenue*factor;var c=i===0?'#34d399':i===1?'#fbbf24':i===2?'#a78bfa':'#67e8f9';return '<div style="padding:16px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';text-align:center;"><div style="font-size:10px;color:#fbbf24;letter-spacing:2px;font-weight:800;margin-bottom:8px;">'+q+'</div><div style="font-size:22px;font-weight:900;color:'+c+';">'+fEur(proj)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:6px;">+'+((factor-1)*100).toFixed(0)+'%</div></div>';}).join('')+'</div></div>';
 
   setTimeout(function(){
@@ -2553,7 +2570,7 @@ function renderFIN(){
     if(c1 && PROJECTS.length > 0){charts.margin=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'Margen (%)',data:PROJECTS.map(function(p){var eh=evmHoursFor(p);var log=eh.totalLogged||0;return log>0?(p.roi||25):0;}),backgroundColor:'rgba(52,211,153,0.8)',borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:50,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
     if(charts.fx)charts.fx.destroy();
     var c2=document.getElementById('cFX');
-    if(c2 && revenue > 0){charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*1.08,revenue*0.85,revenue*20.5],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});}
+    if(c2 && revenue > 0){charts.fx=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:['EUR','USD','GBP','MXN'],datasets:[{data:[revenue,revenue*rates.USD,revenue*rates.GBP,revenue*rates.MXN],backgroundColor:['#34d399','#a78bfa','#fbbf24','#67e8f9'],borderWidth:0,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}});}
   },100);
 }
 /* ═══════════════════════════════════════════════════════════
