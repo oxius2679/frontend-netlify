@@ -1958,24 +1958,29 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
  <div class="preview">
     <!-- CONTENEDOR SUPERIOR (Cabecera con textos) -->
     <div class="landing-header">
-      <div class="landing-top-row">
-                                <div class="landing-left">
-          <!-- 1. EL ICONO (Solo la imagen, sin texto adentro) -->
+           <div class="landing-top-row">
+        <div class="landing-left">
           <div class="icon" style="background: #0B1120; border: 1px solid rgba(212,175,55,0.3); overflow: hidden; display: flex; justify-content: center; align-items: center;">
             <img src="zacky45.png" alt="Zacky Logo" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
-          
-          <!-- 2. EL TEXTO (Separado del icono) -->
           <div class="text">
-            <h1>ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
-            <p>8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
+            <!-- 🔥 Agregamos data-i18n -->
+            <h1 data-i18n="header_title">ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
+            <p data-i18n="header_subtitle">8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
           </div>
         </div>
+        <div class="landing-right" style="display: flex; align-items: center; gap: 15px;">
+          <!-- 🔥 NUEVO BOTÓN DE IDIOMA -->
+          <button id="langToggleBtn" onclick="toggleDashboardLang()" style="background: rgba(15,23,42,0.8); border: 1px solid rgba(212,175,55,0.5); color: #fde68a; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.3s;">🌐 EN</button>
+          <span class="badge-live"><i class="fas fa-circle"></i> DEMO 2026</span>
+        </div>
+      </div>
       
       <!-- Caja de texto dorada -->
       <div class="story-box">
-        <div class="story-title"><span style="font-size:24px;">👑</span> La suite ejecutiva con operación real, Gantt y reportes con gráficos</div>
-        <p><strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.</p>
+        <!-- 🔥 Agregamos data-i18n -->
+        <div class="story-title"><span style="font-size:24px;">👑</span> <span data-i18n="story_title">La suite ejecutiva con operación real, Gantt y reportes con gráficos</span></div>
+        <p data-i18n="story_text"><strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.</p>
       </div>
     </div>
 
@@ -3689,6 +3694,58 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 </body>
 </html>
+<script>
+// ============================================================
+// 🌐 SISTEMA DE IDIOMAS (i18n) - PASO 1: CABECERA
+// ============================================================
+const DASHBOARD_I18N = {
+    es: {
+        header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
+        header_subtitle: "8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D",
+        story_title: "La suite ejecutiva con operación real, Gantt y reportes con gráficos",
+        story_text: "<strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta."
+    },
+    en: {
+        header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
+        header_subtitle: "8 modules · EVM € and hours · Gantt · Real operation · AI analytics · PDF/PPTX with charts · 3D",
+        story_title: "The executive suite with real operation, Gantt, and reports with charts",
+        story_text: "<strong>8 modules</strong> · EVM € (CFO) and hours (COO) · <strong>Interactive Gantt with milestones and critical path</strong> · Project burndown · Conversational AI · <strong>PDF and PPTX with charts, tables, and images</strong> · 3D effects on every card."
+    }
+};
 
+let currentDashboardLang = localStorage.getItem('dashboardLang') || 'es';
+
+function toggleDashboardLang() {
+    // Cambiamos el idioma
+    currentDashboardLang = currentDashboardLang === 'es' ? 'en' : 'es';
+    
+    // Guardamos la preferencia en el navegador
+    localStorage.setItem('dashboardLang', currentDashboardLang);
+    
+    // Actualizamos todos los textos que tengan el atributo data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translation = DASHBOARD_I18N[currentDashboardLang][key];
+        
+        if (translation) {
+            // Usamos innerHTML porque algunos textos tienen negritas (<strong>)
+            el.innerHTML = translation;
+        }
+    });
+
+    // Actualizamos el texto del botón
+    const btn = document.getElementById('langToggleBtn');
+    if (btn) {
+        btn.textContent = currentDashboardLang === 'es' ? '🌐 EN' : '🌐 ES';
+    }
+}
+
+// Ejecutar al cargar la página para aplicar el idioma guardado
+document.addEventListener('DOMContentLoaded', () => {
+    if (currentDashboardLang === 'en') {
+        setTimeout(toggleDashboardLang, 500); // Pequeño delay para que cargue el DOM
+    }
+});
+</script>
 </body>
 </html>
