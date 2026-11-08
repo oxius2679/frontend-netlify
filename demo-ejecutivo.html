@@ -1735,6 +1735,153 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   display: none !important;
 }
 
+/* =======================================================
+   NUEVO DISEÑO DE PANTALLA PRINCIPAL (LANDING)
+   ======================================================= */
+.preview {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+/* Cabecera con el recuadro oscuro */
+.landing-header {
+    background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(10,15,30,0.95));
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 24px;
+    padding: 28px 36px;
+    margin-bottom: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+}
+
+.landing-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.landing-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.landing-left .icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(145deg, var(--violet), #6d28d9);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #fff;
+    box-shadow: 0 15px 40px rgba(139,92,246,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+.landing-left h1 {
+    font-size: 22px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+.landing-left p {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.landing-right .badge-live {
+    background: rgba(139,92,246,0.15);
+    color: #c4b5fd;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid rgba(139,92,246,0.3);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.landing-right .badge-live i {
+    color: #34d399; /* Puntito verde de encendido */
+    font-size: 8px;
+}
+
+/* Caja Dorada (Story) */
+.story-box {
+    background: linear-gradient(90deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02));
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 16px;
+    padding: 20px 24px;
+    border-left: 4px solid var(--gold); /* Rayita dorada a la izquierda */
+}
+
+.story-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fde68a;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.story-box p {
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.story-box strong {
+    color: #fff;
+}
+
+/* Contenedor de la Imagen Central */
+.hero-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 24px;
+    overflow: hidden;
+    /* Borde sutil y sombra para que resalte */
+    box-shadow: 0 30px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.hero-image {
+    width: 100%;
+    max-width: 1000px;
+    height: auto;
+    display: block;
+    border-radius: 24px;
+}
+
+/* Ajustes Responsivos */
+@media (max-width: 768px) {
+    .landing-header { padding: 20px; }
+    .landing-left h1 { font-size: 18px; }
+    .landing-top-row { flex-direction: column; align-items: flex-start; }
+    .landing-right { margin-top: 10px; }
+}
+
+
+
 </style>
 </head>
 <body>
@@ -1743,27 +1890,37 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <div id="demoContent" style="display:none;">
 
 
-<div class="preview">
-  <div class="preview-header">
-    <div class="l">
-      <div class="icon"><i class="fas fa-crown"></i></div>
-      <div>
-        <h1>ZACKY EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
-        <p>8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
+ <div class="preview">
+    <!-- CONTENEDOR SUPERIOR (Cabecera con textos) -->
+    <div class="landing-header">
+      <div class="landing-top-row">
+        <div class="landing-left">
+          <div class="icon"><i class="fas fa-crown"></i></div>
+          <div class="text">
+            <h1>ZACKY EXECUTIVE PRO · C-SUITE COMMAND CENTER</h1>
+            <p>8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D</p>
+          </div>
+        </div>
+        <div class="landing-right">
+          <span class="badge-live"><i class="fas fa-circle"></i> DEMO 2026</span>
+        </div>
+      </div>
+      
+      <!-- Caja de texto dorada -->
+      <div class="story-box">
+        <div class="story-title"><span style="font-size:24px;">👑</span> La suite ejecutiva con operación real, Gantt y reportes con gráficos</div>
+        <p><strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.</p>
       </div>
     </div>
 
-
-   <span class="badge-live"><i class="fas fa-circle"></i> DEMO 2026</span>
-
-
-
+    <!-- CONTENEDOR DE LA IMAGEN CENTRAL -->
+    <div class="hero-image-container">
+      <!-- Asegúrate de que tu imagen se llame exactamente así y esté en la misma carpeta -->
+      <img src="zacky22.png" alt="Zacky Executive Pro Portada" class="hero-image">
+    </div>
   </div>
-  <div class="story">
-    <div class="h"><span style="font-size:24px;">👑</span> La suite ejecutiva con operación real, Gantt y reportes con gráficos</div>
-    <p><strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.</p>
-  </div>
-</div>
+  <!-- 👆 FIN DEL BLOQUE PEGADO 👆 -->
+
 
 <div class="fab" onclick="openModal()"><i class="fas fa-crown"></i></div>
 
