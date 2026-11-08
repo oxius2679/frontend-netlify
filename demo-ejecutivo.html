@@ -2170,11 +2170,9 @@ function kpi(l,v,s,c,f){return '<div class="kpi" style="--c:'+c+'"><div class="l
 function renderCFO(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-cfo');
-  
-  // 🔥 DETECCIÓN DE IDIOMA
   var isEn = window.currentDashboardLang === 'en';
   
-  // Función auxiliar para traducir el estado de salud de la tabla
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
   var getHealthLabel = function(h) {
     if (isEn) return {saludable:'Healthy', aceptable:'Acceptable', riesgo:'At Risk', critico:'Critical'}[h] || h;
     return {saludable:'Saludable', aceptable:'Aceptable', riesgo:'Riesgo', critico:'Crítico'}[h] || h;
@@ -2201,7 +2199,7 @@ function renderCFO(){
       kpi('TCPI',e.TCPI.toFixed(2),e.TCPI<=1?(isEn?'Achievable':'Alcanzable'):(isEn?'Difficult':'Difícil'),e.TCPI<=1?'#34d399':e.TCPI<=1.1?'#fbbf24':'#ef4444','TCPI = (BAC−EV)/(BAC−AC)')+
     '</div>'+
     
-        '<div class="kpi-4">'+
+    '<div class="kpi-4">'+
       kpi((isEn ? 'ATYPICAL EAC' : 'EAC Atípico'),fEur(e.EAC_atipico),isEn ? 'Remaining work at plan' : 'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
       kpi((isEn ? 'TYPICAL EAC (CPI)' : 'EAC Típico (CPI)'),fEur(e.EAC_tipico),isEn ? 'Efficiency remains' : 'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
       kpi((isEn ? 'MIXED EAC' : 'EAC Mixto'),fEur(e.EAC_mixto),isEn ? 'CPI and SPI considered' : 'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
@@ -2215,7 +2213,7 @@ function renderCFO(){
     
     '<div class="box"><div class="box-t"><span>📋</span> '+(isEn ? "EVM Detail (€) by Project" : "Detalle EVM (€) por Proyecto")+'</div><div style="overflow-x:auto;"><table class="tbl">'+
       '<thead><tr><th>'+(isEn ? "Project" : "Proyecto")+'</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">EAC</th><th class="n">VAC</th><th class="n">TCPI</th><th>'+(isEn ? "Health" : "Salud")+'</th></tr></thead>'+
-      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+window.translateClient(p.client)+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
+      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+transClient(p.client)+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
       '</tbody><tfoot><tr><td>'+(isEn ? "TOTAL" : "TOTAL")+'</td><td class="n">'+fEur(t.budget)+'</td><td class="n">'+fEur(t.earnedValue)+'</td><td class="n">'+fEur(t.actualCost)+'</td><td class="n">'+e.CPI.toFixed(2)+'</td><td class="n">'+e.SPI.toFixed(2)+'</td><td class="n">'+fEur(e.EAC)+'</td><td class="n">'+(e.VAC>=0?'+':'')+fEur(e.VAC)+'</td><td class="n">'+e.TCPI.toFixed(2)+'</td><td></td></tr></tfoot>'+
     '</table></div></div>';
 
@@ -2225,20 +2223,17 @@ function renderCFO(){
     if(c1){
       var months = isEn ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       var pv=[],ev=[],ac=[];
-      for(var i=0;i<12;i++){
-        pv.push(Math.round(t.plannedValue*((i+1)/12)));
-        ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));
-        ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));
-      }
+      for(var i=0;i<12;i++){pv.push(Math.round(t.plannedValue*((i+1)/12)));ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
       charts.s=new Chart(c1.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'PV',data:pv,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:ev,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:ac,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:10,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}});
     }
     if(charts.eac)charts.eac.destroy();
     var c2=document.getElementById('cEac');
     if(c2){
-      charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});
+      charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return transClient(p.client);}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});
     }
   },100);
 }
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 2 · CEO
    ═══════════════════════════════════════════════════════════ */
@@ -2247,42 +2242,23 @@ function renderCEO(){
   var el=document.getElementById('v-ceo');
   var isEn = window.currentDashboardLang === 'en';
   
-  // 1. CÁLCULOS DINÁMICOS DE LAS PERSPECTIVAS
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
+  
   var scoreFin=Math.round(Math.min(100,(e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
   var scoreCli=Math.round((e.EV/e.BAC)*100);
   var scoreProc=Math.round(e.SPI*100);
-  
-  // 2. CÁLCULO DINÁMICO DE APRENDIZAJE
-  var totalEstTasks = 0;
-  var totalLogTasks = 0;
-  PROJECTS.forEach(function(p){
-    (p.tasks||[]).forEach(function(tk){
-      totalEstTasks += (tk.estimatedTime || 0);
-      totalLogTasks += (tk.timeLogged || 0);
-    });
-  });
+  var totalEstTasks = 0; var totalLogTasks = 0;
+  PROJECTS.forEach(function(p){(p.tasks||[]).forEach(function(tk){totalEstTasks += (tk.estimatedTime || 0); totalLogTasks += (tk.timeLogged || 0);});});
   var scoreApr = totalEstTasks > 0 ? Math.min(100, Math.round((totalLogTasks / totalEstTasks) * 100)) : 0;
-  
   var totalScore=Math.round((scoreFin+scoreCli+scoreProc+scoreApr)/4);
 
-  // 3. GENERAR LAS 3 DECISIONES DINÁMICAS
   var bloqueados = PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
   var decisions = [];
-  
-  if(e.CPI < 0.95) {
-    decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'), d:(isEn?'CPI ':'CPI ')+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'), c:'#ef4444'});
-  } else {
-    decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'), d:(isEn?'Approve expansion with new projects.':'Aprobar expansión con nuevos proyectos.'), c:'#34d399'});
-  }
-  
-  if(bloqueados.length > 0) {
-    decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'), d:bloqueados.length+(isEn?' project(s) require urgent intervention.':' proyecto(s) requieren intervención urgente.'), c:'#f97316'});
-  } else if(e.SPI < 0.95) {
-    decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'), d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Apply Fast-tracking.':'. Aplicar Fast-tracking.'), c:'#f97316'});
-  } else {
-    decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'), d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'), c:'#34d399'});
-  }
-  
+  if(e.CPI < 0.95) { decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'), d:(isEn?'CPI ':'CPI ')+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'), c:'#ef4444'}); }
+  else { decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'), d:(isEn?'Approve expansion with new projects.':'Aprobar expansión con nuevos proyectos.'), c:'#34d399'}); }
+  if(bloqueados.length > 0) { decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'), d:bloqueados.length+(isEn?' project(s) require urgent intervention.':' proyecto(s) requieren intervención urgente.'), c:'#f97316'}); }
+  else if(e.SPI < 0.95) { decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'), d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Apply Fast-tracking.':'. Aplicar Fast-tracking.'), c:'#f97316'}); }
+  else { decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'), d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'), c:'#34d399'}); }
   decisions.push({t:(isEn?'Invest in team':'Invertir en equipo'), d:(isEn?'EVM/PMI training for PMs.':'Capacitación EVM/PMI para PMs.'), c:'#a78bfa'});
 
   el.innerHTML=
@@ -2312,13 +2288,12 @@ function renderCEO(){
   setTimeout(function(){
     if(charts.align)charts.align.destroy();
     var c1=document.getElementById('cAlign');
-    if(c1){charts.align=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : (p.client || 'Proyecto');}),datasets:[{label:(isEn?'Alignment (%)':'Alineación (%)'),data:PROJECTS.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:PROJECTS.map(function(p){var m=evmFor(p);return (m.CPI+m.SPI)/2>=0.95?'rgba(52,211,153,0.8)':'rgba(251,191,36,0.8)';}),borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
+    if(c1){charts.align=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.name ? p.name.substring(0,15) : transClient(p.client);}),datasets:[{label:(isEn?'Alignment (%)':'Alineación (%)'),data:PROJECTS.map(function(p){var m=evmFor(p);return Math.round(((m.CPI+m.SPI)/2)*100);}),backgroundColor:PROJECTS.map(function(p){var m=evmFor(p);return (m.CPI+m.SPI)/2>=0.95?'rgba(52,211,153,0.8)':'rgba(251,191,36,0.8)';}),borderRadius:6,barPercentage:0.6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
     if(charts.fc)charts.fc.destroy();
     var c2=document.getElementById('cFc');
     if(c2){charts.fc=new Chart(c2.getContext('2d'),{type:'line',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:(isEn?'Revenue':'Ingresos'),data:[t.budget*1.15,t.budget*1.35,t.budget*1.60,t.budget*1.90],borderColor:'#a78bfa',backgroundColor:'rgba(139,92,246,0.15)',borderWidth:3,fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:'#a78bfa'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11,weight:'700'}}}}}});}
   },100);
 }
-
 
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 3 · COO con GANTT
@@ -2330,7 +2305,7 @@ function renderCOO(){
   var el=document.getElementById('v-coo');
   var isEn = window.currentDashboardLang === 'en';
   
-  // 🔥 Traductor interno para las fases del backend
+  var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
   var translatePhase = function(phase) {
     if (!isEn) return phase;
     var map = {'Ejecución': 'Execution', 'Diseño': 'Design', 'Desarrollo': 'Development', 'Pruebas': 'Testing', 'Cierre': 'Closure'};
@@ -2344,7 +2319,7 @@ function renderCOO(){
   var eacH=cpiH>0?totalEst/cpiH:totalEst;
   var vacH=totalEst-eacH;
   var team={};
-  PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){if(!team[m.name])team[m.name]={name:m.name,role:m.role,hours:0,logged:0,projects:[],cost:0};team[m.name].hours+=m.hours;team[m.name].logged+=m.logged;team[m.name].cost=m.cost;if(team[m.name].projects.indexOf(p.client)===-1)team[m.name].projects.push(p.client);});});
+  PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){if(!team[m.name])team[m.name]={name:m.name,role:m.role,hours:0,logged:0,projects:[],cost:0};team[m.name].hours+=m.hours;team[m.name].logged+=m.logged;team[m.name].cost=m.cost;if(team[m.name].projects.indexOf(transClient(p.client))===-1)team[m.name].projects.push(transClient(p.client));});});
   var list=Object.values(team).map(function(m){m.util=m.hours>0?(m.logged/m.hours)*100:0;return m;}).sort(function(a,b){return b.util-a.util;});
   var statuses={activo:0,bloqueado:0,pausa:0};
   PROJECTS.forEach(function(p){statuses[p.opStatus]++;});
@@ -2392,7 +2367,7 @@ function renderCOO(){
         var opIcon=p.opStatus==='bloqueado'?'🔴':p.opStatus==='pausa'?'🟡':'🟢';
         var opLabel=getOpLabel(p.opStatus);
         var doneM=p.milestones.filter(function(m){return m.status==='done';}).length;
-        return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+p.client+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+translatePhase(p.phase)+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
+        return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+transClient(p.client)+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+translatePhase(p.phase)+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
           '<div class="op-progress"><span class="op-progress-lbl">'+tr.phase+' '+translatePhase(p.phase)+'</span><div class="op-progress-track"><div class="op-progress-fill" style="width:'+p.phaseProgress+'%;background:'+opColor+';"></div></div><span class="op-progress-val" style="color:'+opColor+';">'+p.phaseProgress+'%</span></div>'+
           '<div class="op-grid">'+
             '<div class="op-metric"><div class="l">'+tr.plan+'</div><div class="v">'+fH(eh.totalEstimated)+'</div><div class="s">'+fH(eh.plannedHours)+' '+(isEn?'to date':'a la fecha')+'</div></div>'+
@@ -2408,10 +2383,10 @@ function renderCOO(){
       }).join('')+
     '</div>'+
     
-    '<div class="box"><div class="box-t"><span>🔥</span> '+tr.burndown+'</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">'+tr.project+'</label><select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+p.client+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">'+(isEn?'Hours':'Horas')+'</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
+    '<div class="box"><div class="box-t"><span>🔥</span> '+tr.burndown+'</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">'+tr.project+'</label><select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+transClient(p.client)+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">'+(isEn?'Hours':'Horas')+'</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
     
     '<div class="box"><div class="box-t"><span>⏱️</span> '+tr.evmHours+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+tr.project.replace(':','')+'</th><th class="n">Est.</th><th class="n">PV_h</th><th class="n">EV_h</th><th class="n">AC_h</th><th class="n">CPI_h</th><th class="n">SPI_h</th><th class="n">EAC_h</th><th class="n">VAC_h</th><th>'+tr.status+'</th></tr></thead><tbody>'+
-      PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=getOpLabel(p.opStatus);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+translatePhase(p.phase)+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
+      PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=getOpLabel(p.opStatus);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+transClient(p.client)+' · '+translatePhase(p.phase)+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
       '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fH(totalEst)+'</td><td class="n">'+fH(totalPlannedH)+'</td><td class="n">'+fH(totalEarnedH)+'</td><td class="n">'+fH(totalLog)+'</td><td class="n">'+cpiH.toFixed(2)+'</td><td class="n">'+spiH.toFixed(2)+'</td><td class="n">'+fH(eacH)+'</td><td class="n">'+(vacH>=0?'+':'')+fH(vacH)+'</td><td></td></tr></tfoot></table></div></div>'+
     
     '<div class="box"><div class="box-t"><span>👥</span> '+tr.teamLoad+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+tr.member+'</th><th>'+tr.role+'</th><th class="n">'+tr.assigned+'</th><th class="n">'+tr.logged+'</th><th class="n">'+tr.utilization+'</th><th>'+tr.projects+'</th><th>'+tr.status+'</th></tr></thead><tbody>'+
@@ -2419,7 +2394,6 @@ function renderCOO(){
     '</tbody></table></div></div>';
   setTimeout(function(){drawGantt();drawBurndown();},100);
 }
-
 
 
 function drawGantt(){
