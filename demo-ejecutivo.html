@@ -2938,11 +2938,18 @@ async function exportPDF(){
   try{
     var jsPDF=window.jspdf.jsPDF;
     if(!jsPDF){alert('jsPDF no cargado');return;}
-    var t=TOTALS,e=t.evm;
     
-    // Cálculos corregidos basados en horas reales
+    // 🔥 FORZAR EXPORTACIÓN DE TODOS LOS PROYECTOS (Ignorando el filtro)
+    var exportProjects = window._ORIGINAL_PROJECTS || PROJECTS;
+    var t = { count: exportProjects.length, budget: 0, actualCost: 0, earnedValue: 0, plannedValue: 0 };
+    exportProjects.forEach(function(p){
+      var m = evmFor(p);
+      t.budget += m.BAC; t.actualCost += m.AC; t.earnedValue += m.EV; t.plannedValue += m.PV;
+    });
+    var e = evmFor({budget:t.budget, actualCost:t.actualCost, earnedValue:t.earnedValue, plannedValue:t.plannedValue});
+
     var revenue=0,costs=0,totalHours=0;
-    PROJECTS.forEach(function(p){
+    exportProjects.forEach(function(p){
       var eh = evmHoursFor(p);
       var log = eh.totalLogged || 0;
       revenue += log * 50 * 1.45;
@@ -2951,134 +2958,155 @@ async function exportPDF(){
     });
     var gp=revenue-costs, gm=revenue>0?(gp/revenue)*100:0;
 
-    // Generar imágenes de gráficos
+    // Generar gráficos
     var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     var pvArr=[],evArr=[],acArr=[];
     for(var i=0;i<12;i++){pvArr.push(Math.round(t.plannedValue*((i+1)/12)));evArr.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));acArr.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
 
-    var sCurveImg=await renderChartToImage({type:'line',data:{labels:months,datasets:[{label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:evArr,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:acArr,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#333'}}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}},900,400);
-
-    var healthImg=await renderChartToImage({type:'doughnut',data:{labels:['Saludable','Aceptable','Riesgo','Crítico'],datasets:[{data:[PROJECTS.filter(function(p){return p.health==='saludable';}).length,PROJECTS.filter(function(p){return p.health==='aceptable';}).length,PROJECTS.filter(function(p){return p.health==='riesgo';}).length,PROJECTS.filter(function(p){return p.health==='critico';}).length],backgroundColor:['#10b981','#8b5cf6','#fbbf24','#ef4444'],borderWidth:0}]},options:{responsive:false,animation:false,plugins:{legend:{position:'right',labels:{color:'#333'}}},cutout:'60%'}},700,400);
+    var sCurveImg=await renderChartToImage({type:'line',data:{labels:months,datasets:[{label:'PV',data:pvArr,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:evArr,borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:acArr,borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}}},scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}}},1000,400);
 
     var doc=new jsPDF('p','mm','a4');
     var W=210,H=297,y=20;
 
-    // Diseño Ejecutivo: Fondo blanco, líneas azul marino y dorado
-    function addHeader(title, subtitle) {
-      doc.setFillColor(248, 250, 252); doc.rect(0,0,W,H,'F'); // Fondo gris muy claro
-      doc.setFillColor(15, 23, 42); doc.rect(0,0,W,25,'F'); // Barra superior azul marino
+    // Paleta de colores corporativa
+    var navy = [11, 19, 43]; // #0B132B
+    var gold = [212, 175, 55]; // #D4AF37
+    var bgLight = [248, 250, 252]; // #F8FAFC
+    var txtDark = [30, 41, 59]; // #1E293B
+
+    // --- PLANTILLAS DE DISEÑO ---
+    function addBg() { doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]); doc.rect(0,0,W,H,'F'); }
+    function addHeader(title, subtitle, pageNum) {
+      doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,28,'F');
+      doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,28,W,1.5,'F'); // Línea dorada
       doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
-      doc.text(title, 15, 15);
-      if(subtitle){ doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.text(subtitle, 15, 21); }
-      doc.setTextColor(15, 23, 42);
+      doc.text(title, 15, 14);
+      if(subtitle){ doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200); doc.text(subtitle, 15, 22); }
+      doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]);
+      // Footer
+      doc.setFontSize(8); doc.setTextColor(150,150,150);
+      doc.text('Zacky Executive Pro · Confidencial', 15, H-10);
+      doc.text('Página '+pageNum, W-15, H-10, {align:'right'});
     }
-    function addFooter(page) {
-      doc.setDrawColor(212, 175, 55); doc.setLineWidth(0.5); doc.line(15,H-15,W-15,H-15); // Línea Dorada
-      doc.setTextColor(100, 116, 139); doc.setFontSize(8); doc.setFont('helvetica','normal');
-      doc.text('Zacky Executive Pro · Confidencial · '+new Date().toLocaleDateString('es-ES'),15,H-8);
-      doc.text('Página '+page,W-15,H-8,{align:'right'});
+    function addKPI(x, y, label, value, color) {
+      doc.setFillColor(255,255,255); doc.setDrawColor(226,232,240); doc.roundedRect(x, y, 42, 20, 2, 2, 'FD');
+      doc.setFillColor(color[0], color[1], color[2]); doc.rect(x, y, 1.5, 20, 'F'); // Barra lateral de color
+      doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.text(label, x+4, y+6);
+      doc.setTextColor(color[0], color[1], color[2]); doc.setFontSize(14); doc.text(String(value), x+4, y+15);
     }
 
     // ═══ PORTADA ═══
-    doc.setFillColor(15, 23, 42); doc.rect(0,0,W,H,'F');
-    doc.setFillColor(212, 175, 55); doc.rect(0,0,W,5,'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(28); doc.setFont('helvetica','bold');
-    doc.text('EXECUTIVE REPORT', 15, 80);
-    doc.setTextColor(212, 175, 55); doc.setFontSize(16);
-    doc.text('C-Suite Command Center', 15, 95);
-    doc.setTextColor(200,200,200); doc.setFontSize(12); doc.setFont('helvetica','normal');
-    doc.text('Fecha: '+new Date().toLocaleDateString('es-ES'), 15, 130);
-    doc.text('Proyectos Analizados: '+t.count, 15, 140);
-    doc.text('Presupuesto Total (BAC): '+fEur(t.budget), 15, 150);
-
-    // ═══ PÁGINA 1: RESUMEN CFO ═══
-    doc.addPage(); addHeader('Portafolio Financiero · CFO', 'Métricas EVM del PMI');
-    y=35;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('1. Indicadores Clave', 15, y); y+=10;
+    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,0,W,4,'F'); // Top bar gold
+    doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text('CONFIDENTIAL EXECUTIVE REPORT', 15, 40);
     
-    function kpiBox(x,yPos,w,h,label,value,color) {
-      doc.setFillColor(255,255,255); doc.roundedRect(x,yPos,w,h,2,2,'F');
-      doc.setDrawColor(226,232,240); doc.roundedRect(x,yPos,w,h,2,2,'S');
-      doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.text(label,x+3,yPos+6);
-      doc.setTextColor(color[0],color[1],color[2]); doc.setFontSize(14); doc.text(String(value),x+3,yPos+h-4);
-    }
-
-    kpiBox(15,y,44,22,'PROYECTOS',t.count,[15,23,42]); kpiBox(61,y,44,22,'BAC',fEur(t.budget),[212,175,55]);
-    kpiBox(107,y,44,22,'CPI',e.CPI.toFixed(2),[16,185,129]); kpiBox(153,y,42,22,'SPI',e.SPI.toFixed(2),[139,92,246]);
-    y+=30;
-    kpiBox(15,y,44,22,'EV',fEur(e.EV),[16,185,129]); kpiBox(61,y,44,22,'AC',fEur(e.AC),[239,68,68]);
-    kpiBox(107,y,44,22,'EAC',fEur(e.EAC),[139,92,246]); kpiBox(153,y,42,22,'VAC',(e.VAC>=0?'+':'')+fEur(e.VAC),e.VAC>=0?[16,185,129]:[239,68,68]);
+    doc.setTextColor(255,255,255); doc.setFontSize(36); doc.text('Portfolio', 15, 100);
+    doc.text('Performance Review', 15, 120);
     
+    doc.setDrawColor(gold[0], gold[1], gold[2]); doc.setLineWidth(1); doc.line(15, 130, 60, 130);
+    
+    doc.setTextColor(200,200,200); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text('Generado: ' + new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'}), 15, 145);
+    doc.text('Proyectos: ' + t.count + ' activos', 15, 152);
+    doc.text('Presupuesto Total (BAC): ' + fEur(t.budget), 15, 159);
+
+    // ═══ PÁGINA 1: RESUMEN EJECUTIVO ═══
+    doc.addPage(); addBg(); addHeader('Executive Summary', 'Indicadores Clave de Rendimiento (PMI)', 2);
+    y=40;
+    
+    addKPI(15, y, 'PROYECTOS', t.count, navy);
+    addKPI(61, y, 'BAC TOTAL', fEur(t.budget), gold);
+    addKPI(107, y, 'CPI GLOBAL', e.CPI.toFixed(2), e.CPI >= 0.9 ? [16,185,129] : [239,68,68]);
+    addKPI(153, y, 'SPI GLOBAL', e.SPI.toFixed(2), e.SPI >= 0.9 ? [16,185,129] : [239,68,68]);
+    
+    y+=28;
+    addKPI(15, y, 'EARNED VALUE (EV)', fEur(e.EV), [16,185,129]);
+    addKPI(61, y, 'ACTUAL COST (AC)', fEur(e.AC), [239,68,68]);
+    addKPI(107, y, 'ESTIMATE AT COMPLETION', fEur(e.EAC), [139,92,246]);
+    addKPI(153, y, 'VARIANCE AT COMPLETION', (e.VAC>=0?'+':'')+fEur(e.VAC), e.VAC>=0?[16,185,129]:[239,68,68]);
+
     y+=35;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('2. Curva S · Valor Ganado', 15, y); y+=10;
-    if(sCurveImg){doc.addImage(sCurveImg,'PNG',15,y,W-30,60);y+=65;}
+    doc.setTextColor(navy[0], navy[1], navy[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text('Curva S · Valor Planificado vs Ganado vs Real', 15, y); y+=8;
+    doc.setDrawColor(gold[0], gold[1], gold[2]); doc.line(15, y, 50, y); y+=5;
     
-    doc.setFontSize(9); doc.setTextColor(80,80,80);
-    doc.text('El CPI global de '+e.CPI.toFixed(2)+' indica una eficiencia del '+(e.CPI*100).toFixed(0)+'% en costes. El SPI refleja un cumplimiento del '+(e.SPI*100).toFixed(0)+'% en cronograma.', 15, y);
-    addFooter(2);
+    if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 65); y+=70; }
+    
+    doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    var text = 'El portafolio registra una eficiencia en costes (CPI) del ' + (e.CPI*100).toFixed(0) + '% y un cumplimiento de cronograma (SPI) del ' + (e.SPI*100).toFixed(0) + '%. ';
+    text += e.VAC >= 0 ? 'El proyecto se encuentra dentro del presupuesto.' : 'Se proyecta un sobrecosto al cierre, requiere intervención.';
+    doc.text(doc.splitTextToSize(text, W-30), 15, y);
 
-    // ═══ PÁGINA 2: OPERACIONES ═══
-    doc.addPage(); addHeader('Operación Real · COO', 'EVM en Horas y Gantt');
-    y=35;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('3. Resumen de Horas', 15, y); y+=10;
-    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-    doc.text('Horas Totales Planificadas: ' + totalHours + 'h', 15, y); y+=6;
-    doc.text('Eficiencia Horas (CPI_h): ' + (totalHours > 0 ? (e.EV/ (e.AC || 1)).toFixed(2) : '1.00'), 15, y); y+=15;
-
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('4. Estado del Portafolio', 15, y); y+=10;
-    if(healthImg){doc.addImage(healthImg,'PNG',15,y,80,60); y+=65;}
-    addFooter(3);
-
-    // ═══ PÁGINA 3: FINANZAS ═══
-    doc.addPage(); addHeader('Advanced Finance · FIN', 'P&L · EBITDA · Márgenes');
-    y=35;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('5. Estado de Resultados (P&L)', 15, y); y+=10;
+    // ═══ PÁGINA 2: FINANZAS Y P&L ═══
+    doc.addPage(); addBg(); addHeader('Advanced Finance · CFO', 'Estado de Resultados (P&L) y Márgenes', 3);
+    y=40;
+    
+    doc.setTextColor(navy[0], navy[1], navy[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text('Desglose Financiero del Portafolio', 15, y); y+=8;
     
     var rows = [
-      ['Concepto', 'Valor (€)'],
-      ['Ingresos Facturables', fEur(revenue)],
-      ['Costes Directos', fEur(costs)],
-      ['Beneficio Bruto', fEur(gp)],
+      ['Ingresos Facturables (Rev)', fEur(revenue)],
+      ['Costes Directos (Cost)', fEur(costs)],
+      ['Beneficio Bruto (GP)', fEur(gp)],
       ['Margen Bruto (%)', fPct(gm)],
+      ['Gastos Operativos (OpEx)', fEur(revenue * 0.12)],
       ['EBITDA Estimado', fEur(gp - (revenue*0.12))]
     ];
     
-    doc.setFontSize(10);
-    rows.forEach(function(row, i) {
-      if (i === 0) {
-        doc.setFillColor(15,23,42); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
-      } else {
-        doc.setFillColor(i % 2 === 0 ? 248 : 255, i % 2 === 0 ? 250 : 255, i % 2 === 0 ? 252 : 255);
-        doc.setTextColor(50,50,50); doc.setFont('helvetica','normal');
-      }
-      doc.rect(15, y, W-30, 8, 'F');
-      doc.text(row[0], 20, y+5.5);
-      doc.text(row[1], W-25, y+5.5, {align:'right'});
-      y+=8;
-    });
-    addFooter(4);
-
-    // ═══ PÁGINA 4: CONCLUSIONES ═══
-    doc.addPage(); addHeader('Conclusiones Ejecutivas', 'Recomendaciones Estratégicas');
-    y=35;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(15,23,42); doc.text('Recomendaciones de la Dirección', 15, y); y+=15;
+    // Dibujar tabla premium
+    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(15, y, W-30, 10, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('CONCEPTO', 20, y+6.5); doc.text('VALOR (€)', W-25, y+6.5, {align:'right'});
+    y+=10;
     
-    var recs = [
-      '1. Auditoría de horas y renegociación en proyectos con CPI < 0.90.',
-      '2. Desbloqueo urgente de proyectos con status CRÍTICO.',
-      '3. Aplicar Fast-tracking para recuperar cronograma.',
-      '4. Documentar casos de éxito para replicar en nuevos clientes.'
-    ];
-    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
-    recs.forEach(function(r){ doc.text(r,15,y); y+=10; });
+    rows.forEach(function(row, i) {
+      if (i % 2 === 0) { doc.setFillColor(241,245,249); doc.rect(15, y, W-30, 10, 'F'); }
+      doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]); doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text(row[0], 20, y+6.5); doc.text(row[1], W-25, y+6.5, {align:'right'});
+      doc.setDrawColor(226,232,240); doc.line(15, y+10, W-15, y+10); // Separador
+      y+=10;
+    });
+    
+    y+=15;
+    doc.setTextColor(navy[0], navy[1], navy[2]); doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('Conclusión Financiera:', 15, y); y+=6;
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]);
+    doc.text('La empresa genera un margen bruto del ' + fPct(gm) + '. Un margen superior al 25% se considera altamente rentable en consultoría.', 15, y);
 
-    doc.save('Zacky_Executive_Report_'+new Date().toISOString().split('T')[0]+'.pdf');
+    // ═══ PÁGINA 3: DETALLE DE PROYECTOS ═══
+    doc.addPage(); addBg(); addHeader('Project Health Matrix', 'Rendimiento Individual por Proyecto', 4);
+    y=40;
+    
+    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(15, y, W-30, 10, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('PROYECTO', 17, y+6.5); doc.text('BAC', 75, y+6.5); doc.text('CPI', 95, y+6.5); doc.text('SPI', 110, y+6.5); doc.text('EAC', 125, y+6.5); doc.text('SALUD', 160, y+6.5);
+    y+=10;
+    
+    exportProjects.forEach(function(p, i){
+      var m = evmFor(p);
+      if (i % 2 === 0) { doc.setFillColor(241,245,249); doc.rect(15, y, W-30, 10, 'F'); }
+      doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]); doc.setFontSize(8); doc.setFont('helvetica','bold');
+      doc.text(p.name.substring(0,25), 17, y+6.5);
+      doc.setFont('helvetica','normal');
+      doc.text(fEur(m.BAC), 75, y+6.5); 
+      doc.setTextColor(m.CPI>=1?16:m.CPI>=0.9?212:239, m.CPI>=1?185:m.CPI>=0.9?175:68, m.CPI>=1?129:m.CPI>=0.9?55:68);
+      doc.text(m.CPI.toFixed(2), 95, y+6.5);
+      doc.setTextColor(m.SPI>=1?16:m.SPI>=0.9?212:239, m.SPI>=1?185:m.SPI>=0.9?175:68, m.SPI>=1?129:m.SPI>=0.9?55:68);
+      doc.text(m.SPI.toFixed(2), 110, y+6.5);
+      doc.setTextColor(txtDark[0], txtDark[1], txtDark[2]); doc.text(fEur(m.EAC), 125, y+6.5); 
+      doc.setFontSize(7); doc.setFont('helvetica','bold');
+      var color = p.health==='saludable'?'#10B981':p.health==='critico'?'#EF4444':'#F59E0B';
+      doc.text(p.health.toUpperCase(), 160, y+6.5);
+      doc.setDrawColor(226,232,240); doc.line(15, y+10, W-15, y+10);
+      y+=10;
+    });
+
+    doc.save('Executive_Report_'+new Date().toISOString().split('T')[0]+'.pdf');
   }catch(err){
-    console.error(err);
-    alert('Error PDF: '+err.message);
+    console.error(err); alert('Error PDF: '+err.message);
   }
 }
-
 
 
 
@@ -3090,98 +3118,96 @@ async function exportPDF(){
 function exportPPTX(){
   try{
     if(typeof PptxGenJS==='undefined'){alert('PptxGenJS no cargado');return;}
-    var t=TOTALS,e=t.evm;
     
-    // Cálculos corregidos
-    var revenue=0,costs=0,totalHours=0;
-    PROJECTS.forEach(function(p){
-      var eh = evmHoursFor(p);
-      var log = eh.totalLogged || 0;
-      revenue += log * 50 * 1.45;
-      costs += log * 50;
-      totalHours += log;
+    // 🔥 FORZAR EXPORTACIÓN DE TODOS LOS PROYECTOS
+    var exportProjects = window._ORIGINAL_PROJECTS || PROJECTS;
+    var t = { count: exportProjects.length, budget: 0, actualCost: 0, earnedValue: 0, plannedValue: 0 };
+    exportProjects.forEach(function(p){
+      var m = evmFor(p);
+      t.budget += m.BAC; t.actualCost += m.AC; t.earnedValue += m.EV; t.plannedValue += m.PV;
+    });
+    var e = evmFor({budget:t.budget, actualCost:t.actualCost, earnedValue:t.earnedValue, plannedValue:t.plannedValue});
+
+    var revenue=0,costs=0;
+    exportProjects.forEach(function(p){
+      var log = evmHoursFor(p).totalLogged || 0;
+      revenue += log * 50 * 1.45; costs += log * 50;
     });
     var gp=revenue-costs,gm=revenue>0?(gp/revenue)*100:0;
 
     var pptx=new PptxGenJS();
     pptx.layout='LAYOUT_WIDE';
-    var dark='0F172A', violet='8B5CF6', gold='D4AF37', green='10B981', red='EF4444', white='FFFFFF', gray='94A3B8';
+    var bgDark='0F172A', cardDark='1E293B', textWhite='FFFFFF', textGray='94A3B8';
+    var cGold='D4AF37', cGreen='10B981', cRed='EF4444', cViolet='8B5CF6', cBlue='38BDF8';
 
-    function newSlide(title, color, subtitle) {
+    function newSlide(title, subtitle, accentColor) {
       var s=pptx.addSlide();
-      s.background={color:dark};
-      s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.1,fill:{color:color||gold}});
-      s.addText(title,{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:white});
-      if(subtitle) s.addText(subtitle,{x:0.5,y:0.8,w:12.3,h:0.3,fontSize:12,color:gray});
+      s.background={color:bgDark};
+      s.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.08,fill:{color:accentColor}});
+      s.addText(title,{x:0.5,y:0.3,w:12.3,h:0.5,fontSize:24,bold:true,color:textWhite});
+      if(subtitle) s.addText(subtitle,{x:0.5,y:0.75,w:12.3,h:0.3,fontSize:11,color:textGray});
       return s;
     }
 
     // ═══ PORTADA ═══
-    var s1=pptx.addSlide();
-    s1.background={color:dark};
-    s1.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:gold}});
-    s1.addText('EXECUTIVE PORTFOLIO',{x:0.5,y:2,w:12.3,h:1,fontSize:44,bold:true,color:white,align:'center'});
-    s1.addText('REPORT 2026',{x:0.5,y:3,w:12.3,h:1,fontSize:44,bold:true,color:gold,align:'center'});
-    s1.addText('C-Suite Command Center · '+t.count+' proyectos · '+fEur(t.budget),{x:0.5,y:4.5,w:12.3,h:0.4,fontSize:16,color:gray,align:'center'});
+    var s1=pptx.addSlide(); s1.background={color:bgDark};
+    s1.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:0.15,fill:{color:cGold}});
+    s1.addText('EXECUTIVE PORTFOLIO',{x:0.5,y:2.2,w:12.3,h:1,fontSize:48,bold:true,color:textWhite,align:'center'});
+    s1.addText('PERFORMANCE REVIEW',{x:0.5,y:3.2,w:12.3,h:1,fontSize:32,bold:true,color:cGold,align:'center'});
+    s1.addText('C-Suite Command Center · '+t.count+' Proyectos',{x:0.5,y:4.5,w:12.3,h:0.4,fontSize:14,color:textGray,align:'center'});
 
-    // ═══ DIAPOSITIVA 2: KPIs ═══
-    var s2=newSlide('Resumen Ejecutivo · EVM', gold, 'Métricas principales de rendimiento');
-    [{l:'PROYECTOS',v:String(t.count),c:violet},{l:'BAC',v:fEur(t.budget),c:gold},{l:'CPI',v:e.CPI.toFixed(2),c:green},{l:'SPI',v:e.SPI.toFixed(2),c:'38BDF8'}].forEach(function(k,i){
+    // ═══ SLIDE 2: KPIs ═══
+    var s2=newSlide('Portfolio Summary', 'Key Performance Indicators (PMI)', cGold);
+    [{l:'PROYECTOS',v:String(t.count),c:cViolet},{l:'BAC TOTAL',v:fEur(t.budget),c:cGold},{l:'CPI GLOBAL',v:e.CPI.toFixed(2),c:e.CPI>=0.9?cGreen:cRed},{l:'SPI GLOBAL',v:e.SPI.toFixed(2),c:e.SPI>=0.9?cGreen:cRed}].forEach(function(k,i){
       var x=0.5+i*3.1;
-      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:1.5,w:2.9,h:1.4,fill:{color:'1E293B'},line:{color:k.c,width:1.5},rectRadius:0.1});
-      s2.addText(k.l,{x:x+0.1,y:1.7,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
-      s2.addText(k.v,{x:x+0.1,y:2.0,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
+      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:1.5,w:2.9,h:1.4,fill:{color:cardDark},line:{color:k.c,width:1.5},rectRadius:0.1});
+      s2.addText(k.l,{x:x+0.2,y:1.7,w:2.7,h:0.3,fontSize:10,bold:true,color:textGray});
+      s2.addText(k.v,{x:x+0.2,y:2.0,w:2.7,h:0.6,fontSize:24,bold:true,color:k.c});
     });
-    [{l:'EV',v:fEur(e.EV),c:green},{l:'AC',v:fEur(e.AC),c:red},{l:'EAC',v:fEur(e.EAC),c:violet},{l:'VAC',v:(e.VAC>=0?'+':'')+fEur(e.VAC),c:e.VAC>=0?green:red}].forEach(function(k,i){
+    [{l:'EARNED VALUE',v:fEur(e.EV),c:cGreen},{l:'ACTUAL COST',v:fEur(e.AC),c:cRed},{l:'EAC (ESTIMADO)',v:fEur(e.EAC),c:cViolet},{l:'VAC (VARIANZA)',v:(e.VAC>=0?'+':'')+fEur(e.VAC),c:e.VAC>=0?cGreen:cRed}].forEach(function(k,i){
       var x=0.5+i*3.1;
-      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:3.2,w:2.9,h:1.4,fill:{color:'1E293B'},line:{color:k.c,width:1.5},rectRadius:0.1});
-      s2.addText(k.l,{x:x+0.1,y:3.4,w:2.7,h:0.3,fontSize:10,bold:true,color:gray});
-      s2.addText(k.v,{x:x+0.1,y:3.7,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
+      s2.addShape(pptx.ShapeType.roundRect,{x:x,y:3.2,w:2.9,h:1.4,fill:{color:cardDark},line:{color:k.c,width:1.5},rectRadius:0.1});
+      s2.addText(k.l,{x:x+0.2,y:3.4,w:2.7,h:0.3,fontSize:10,bold:true,color:textGray});
+      s2.addText(k.v,{x:x+0.2,y:3.7,w:2.7,h:0.6,fontSize:22,bold:true,color:k.c});
     });
 
-    // ═══ DIAPOSITIVA 3: OPERACIONES ═══
-    var s3=newSlide('Operación Real · Horas', '38BDF8', 'EVM en horas y estado del portafolio');
-    s3.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:5.5,h:2,fill:{color:'1E293B'},line:{color:'334155',width:1},rectRadius:0.1});
-    s3.addText('Horas Totales Planificadas',{x:0.8,y:1.7,w:5,h:0.3,fontSize:12,bold:true,color:gray});
-    s3.addText(totalHours + 'h',{x:0.8,y:2.0,w:5,h:0.8,fontSize:32,bold:true,color:white});
+    // ═══ SLIDE 3: FINANZAS ═══
+    var s3=newSlide('Advanced Finance', 'P&L y Márgenes', cGold);
+    var finRows=[['CONCEPTO','VALOR (€)']];
+    finRows.push(['Ingresos Facturables', fEur(revenue)]);
+    finRows.push(['Costes Directos', fEur(costs)]);
+    finRows.push(['Beneficio Bruto', fEur(gp)]);
+    finRows.push(['Margen Bruto (%)', fPct(gm)]);
+    finRows.push(['EBITDA', fEur(gp-(revenue*0.12))]);
     
-    s3.addShape(pptx.ShapeType.roundRect,{x:6.5,y:1.5,w:6,h:2,fill:{color:'1E293B'},line:{color:'334155',width:1},rectRadius:0.1});
-    s3.addText('Eficiencia de Horas (CPI_h)',{x:6.8,y:1.7,w:5.5,h:0.3,fontSize:12,bold:true,color:gray});
-    s3.addText('1.00',{x:6.8,y:2.0,w:5.5,h:0.8,fontSize:32,bold:true,color:green});
+    s3.addTable(finRows,{x:0.5,y:1.5,w:12.3,fontSize:12,color:textWhite,border:{type:'solid',color:'334155',pt:1},fill:{color:cardDark},align:'center'});
 
-    // ═══ DIAPOSITIVA 4: FINANZAS ═══
-    var s4=newSlide('Advanced Finance · P&L', gold, 'Estado de resultados y márgenes');
-    var finRows=[['Concepto','Valor (€)']];
-    finRows.push(['Ingresos Facturables',fEur(revenue)]);
-    finRows.push(['Costes Directos',fEur(costs)]);
-    finRows.push(['Beneficio Bruto',fEur(gp)]);
-    finRows.push(['Margen Bruto',fPct(gm)]);
-    finRows.push(['EBITDA',fEur(gp-revenue*0.12)]);
-    
-    s4.addTable(finRows,{x:0.5,y:1.5,w:8,fontSize:12,color:white,border:{type:'solid',color:'334155',pt:1},fill:{color:'1E293B'},align:'left'});
+    // ═══ SLIDE 4: DETALLE PROYECTOS ═══
+    var s4=newSlide('Project Health Matrix', 'Desglose Individual', cBlue);
+    var pRows=[['PROYECTO','BAC','CPI','SPI','EAC','SALUD']];
+    exportProjects.forEach(function(p){
+      var m=evmFor(p);
+      pRows.push([p.name.substring(0,20),fEur(m.BAC),m.CPI.toFixed(2),m.SPI.toFixed(2),fEur(m.EAC),p.health.toUpperCase()]);
+    });
+    s4.addTable(pRows,{x:0.5,y:1.5,w:12.3,fontSize:10,color:textWhite,border:{type:'solid',color:'334155',pt:0.5},fill:{color:cardDark},align:'center'});
 
-    // ═══ DIAPOSITIVA 5: DETALLE ═══
-    var s5=newSlide('Detalle de Proyectos', violet, 'Análisis individual del portafolio');
-    var pRows=[['PROYECTO','BAC','CPI','SPI','EAC','VAC','SALUD']];
-    PROJECTS.forEach(function(p){var m=evmFor(p);pRows.push([p.name.substring(0,25),fEur(m.BAC),m.CPI.toFixed(2),m.SPI.toFixed(2),fEur(m.EAC),(m.VAC>=0?'+':'')+fEur(m.VAC),healthLabel(p.health)]);});
-    
-    s5.addTable(pRows,{x:0.5,y:1.5,w:12.3,fontSize:10,color:white,border:{type:'solid',color:'334155',pt:0.5},fill:{color:'1E293B'},align:'left'});
+    // ═══ SLIDE 5: CONCLUSIONES ═══
+    var s5=newSlide('Strategic Recommendations', 'Next Steps', cGreen);
+    s5.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:12.3,h:4,fill:{color:cardDark},line:{color:cGreen,width:1.5},rectRadius:0.1});
+    s5.addText('El portafolio cierra con '+t.count+' proyectos activos, '+fEur(t.budget)+' en fees, CPI '+e.CPI.toFixed(2)+' y SPI '+e.SPI.toFixed(2)+'.',{x:0.8,y:1.8,w:11.8,h:0.6,fontSize:14,color:textWhite});
+    s5.addText('ACCIONES CLAVE:',{x:0.8,y:2.8,w:11.8,h:0.3,fontSize:14,bold:true,color:cGold});
+    s5.addText('1. Auditoría de costes en proyectos con CPI < 0.90.',{x:0.8,y:3.3,w:11.8,h:0.3,fontSize:12,color:textWhite});
+    s5.addText('2. Desbloqueo operativo inmediato de proyectos en estado crítico.',{x:0.8,y:3.7,w:11.8,h:0.3,fontSize:12,color:textWhite});
+    s5.addText('3. Implementar Fast-tracking para recuperar cronograma.',{x:0.8,y:4.1,w:11.8,h:0.3,fontSize:12,color:textWhite});
 
-    // ═══ DIAPOSITIVA 6: CONCLUSIONES ═══
-    var s6=newSlide('Conclusiones Ejecutivas', green, 'Recomendaciones del PMO');
-    s6.addShape(pptx.ShapeType.roundRect,{x:0.5,y:1.5,w:12.3,h:4,fill:{color:'1E293B'},line:{color:green,width:1.5},rectRadius:0.1});
-    s6.addText('El portafolio cierra con '+t.count+' proyectos, '+fEur(t.budget)+' en fees, CPI '+e.CPI.toFixed(2)+' y SPI '+e.SPI.toFixed(2)+'.',{x:0.8,y:1.8,w:11.8,h:0.8,fontSize:14,color:white});
-    s6.addText('RECOMENDACIONES:',{x:0.8,y:2.8,w:11.8,h:0.4,fontSize:14,bold:true,color:gold});
-    s6.addText('1. Auditoría de horas y renegociación de contratos.',{x:0.8,y:3.3,w:11.8,h:0.4,fontSize:12,color:white});
-    s6.addText('2. Desbloqueo urgente de proyectos críticos.',{x:0.8,y:3.7,w:11.8,h:0.4,fontSize:12,color:white});
-    s6.addText('3. Fast-tracking en ruta crítica + refuerzo de recursos.',{x:0.8,y:4.1,w:11.8,h:0.4,fontSize:12,color:white});
-
-    pptx.writeFile({fileName:'Zacky_Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
+    pptx.writeFile({fileName:'Executive_Report_'+new Date().toISOString().split('T')[0]+'.pptx'});
   }catch(err){
-    console.error(err);
-    alert('Error PPTX: '+err.message);
+    console.error(err); alert('Error PPTX: '+err.message);
   }
 }
+
+
+
 /* ═══════════════════════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════════════════════ */
