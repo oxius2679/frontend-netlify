@@ -2006,18 +2006,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="t" id="mTitle">Portafolio Financiero · CFO</div>
         <div class="s" id="mSub">EVM completo · Consolidado de todos los proyectos</div>
       </div>
-      <div class="r">
-        <div class="tabs" id="tabs">
-          <button class="tab on" data-tab="cfo">💰 CFO</button>
-          <button class="tab" data-tab="ceo">🎯 CEO</button>
-          <button class="tab" data-tab="coo">⚙️ COO</button>
-          <button class="tab" data-tab="bi">📊 BI</button>
-          <button class="tab" data-tab="grc">🛡️ GRC</button>
-          <button class="tab" data-tab="api">🔌 API</button>
-          <button class="tab" data-tab="fin">💎 FIN</button>
-          <button class="tab" data-tab="vip">👑 VIP</button>
-        </div>
-
             <div class="r">
         <div class="tabs" id="tabs">
           <button class="tab on" data-tab="cfo">💰 CFO</button>
@@ -2177,75 +2165,50 @@ function kpi(l,v,s,c,f){return '<div class="kpi" style="--c:'+c+'"><div class="l
 function renderCFO(){
   var t=TOTALS,e=t.evm;
   var el=document.getElementById('v-cfo');
-  
-  // 🔥 DETECCIÓN DE IDIOMA
-  var isEn = window.currentDashboardLang === 'en';
-  
-  // Helper para salud
-  var getHealthLabel = function(h) {
-    if (isEn) return {saludable:'Healthy', aceptable:'Acceptable', riesgo:'At Risk', critico:'Critical'}[h] || h;
-    return {saludable:'Saludable', aceptable:'Aceptable', riesgo:'Riesgo', critico:'Crítico'}[h] || h;
-  };
-
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "Financial Portfolio · Full PMI EVM (€)" : "Portafolio Financiero · EVM Completo PMI (€)")+'</h2><p>'+(isEn ? "The 14 PMI EVM metrics in euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 methods), ETC, VAC, TCPI and % Completed." : "Las 14 métricas EVM del PMI en euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 métodos), ETC, VAC, TCPI y % Completado.")+'</p></div><div class="hero-stats">'+statCard(t.count,isEn ? "Projects" : "Proyectos")+statCard(fEur(t.budget),isEn ? "Total BAC" : "BAC Total",'g')+statCard(e.CPI.toFixed(2),isEn ? "Global CPI" : "CPI Global",'gr')+statCard(e.SPI.toFixed(2),isEn ? "Global SPI" : "SPI Global")+'</div></div></div>'+
-    
+    '<div class="hero"><div class="hero-grid"><div><h2>Portafolio Financiero · EVM Completo PMI (€)</h2><p>Las 14 métricas EVM del PMI en euros: PV, EV, AC, BAC, CV, SV, CPI, SPI, EAC (3 métodos), ETC, VAC, TCPI y % Completado.</p></div><div class="hero-stats">'+statCard(t.count,'Proyectos')+statCard(fEur(t.budget),'BAC Total','g')+statCard(e.CPI.toFixed(2),'CPI Global','gr')+statCard(e.SPI.toFixed(2),'SPI Global')+'</div></div></div>'+
     '<div class="kpi-6">'+
-      kpi('PV · Planned Value',fEur(e.PV),isEn ? 'Planned Value' : 'Valor planificado','#94a3b8','PV = Σ plan')+
-      kpi('EV · Earned Value',fEur(e.EV),isEn ? 'Earned Value' : 'Valor ganado','#34d399','EV = Σ EV')+
-      kpi('AC · Actual Cost',fEur(e.AC),isEn ? 'Actual Cost' : 'Costo real','#ef4444','AC = Σ real')+
-      kpi('BAC',fEur(e.BAC),isEn ? 'Budget' : 'Presupuesto','#fbbf24','BAC = Σ budget')+
-      kpi('CV · Cost Variance',(e.CV>=0?'+':'')+fEur(e.CV),e.CV>=0?(isEn?'Under budget':'Bajo presupuesto'):(isEn?'Over budget':'Sobre presupuesto'),e.CV>=0?'#34d399':'#ef4444','CV = EV − AC')+
-      kpi('SV · Schedule Variance',(e.SV>=0?'+':'')+fEur(e.SV),e.SV>=0?(isEn?'Ahead':'Adelantado'):(isEn?'Behind':'Retrasado'),e.SV>=0?'#34d399':'#ef4444','SV = EV − PV')+
+      kpi('PV · Planned Value',fEur(e.PV),'Valor planificado','#94a3b8','PV = Σ plan')+
+      kpi('EV · Earned Value',fEur(e.EV),'Valor ganado','#34d399','EV = Σ EV')+
+      kpi('AC · Actual Cost',fEur(e.AC),'Costo real','#ef4444','AC = Σ real')+
+      kpi('BAC',fEur(e.BAC),'Presupuesto','#fbbf24','BAC = Σ budget')+
+      kpi('CV · Cost Variance',(e.CV>=0?'+':'')+fEur(e.CV),e.CV>=0?'Bajo presupuesto':'Sobre presupuesto',e.CV>=0?'#34d399':'#ef4444','CV = EV − AC')+
+      kpi('SV · Schedule Variance',(e.SV>=0?'+':'')+fEur(e.SV),e.SV>=0?'Adelantado':'Retrasado',e.SV>=0?'#34d399':'#ef4444','SV = EV − PV')+
     '</div>'+
-    
     '<div class="kpi-6">'+
-      kpi('CPI',e.CPI.toFixed(2),e.CPI>=1?(isEn?'Efficient':'Eficiente'):e.CPI>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Over cost':'Sobrecosto'),e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444','CPI = EV / AC')+
-      kpi('SPI',e.SPI.toFixed(2),e.SPI>=1?(isEn?'Ahead':'Adelantado'):e.SPI>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Behind':'Retrasado'),e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444','SPI = EV / PV')+
-      kpi('EAC (CPI)',fEur(e.EAC_tipico),isEn ? 'Estimate at completion' : 'Estimación al cierre','#a78bfa','EAC = BAC / CPI')+
-      kpi('ETC',fEur(e.ETC),isEn ? 'Left to spend' : 'Falta por gastar','#67e8f9','ETC = EAC − AC')+
-      kpi('VAC',(e.VAC>=0?'+':'')+fEur(e.VAC),e.VAC>=0?(isEn?'Saving':'Ahorro'):(isEn?'Over cost':'Sobrecosto'),e.VAC>=0?'#34d399':'#ef4444','VAC = BAC − EAC')+
-      kpi('TCPI',e.TCPI.toFixed(2),e.TCPI<=1?(isEn?'Achievable':'Alcanzable'):(isEn?'Difficult':'Difícil'),e.TCPI<=1?'#34d399':e.TCPI<=1.1?'#fbbf24':'#ef4444','TCPI = (BAC−EV)/(BAC−AC)')+
+      kpi('CPI',e.CPI.toFixed(2),e.CPI>=1?'Eficiente':e.CPI>=0.9?'Tolerancia':'Sobrecosto',e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444','CPI = EV / AC')+
+      kpi('SPI',e.SPI.toFixed(2),e.SPI>=1?'Adelantado':e.SPI>=0.9?'Tolerancia':'Retrasado',e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444','SPI = EV / PV')+
+      kpi('EAC (CPI)',fEur(e.EAC_tipico),'Estimación al cierre','#a78bfa','EAC = BAC / CPI')+
+      kpi('ETC',fEur(e.ETC),'Falta por gastar','#67e8f9','ETC = EAC − AC')+
+      kpi('VAC',(e.VAC>=0?'+':'')+fEur(e.VAC),e.VAC>=0?'Ahorro':'Sobrecosto',e.VAC>=0?'#34d399':'#ef4444','VAC = BAC − EAC')+
+      kpi('TCPI',e.TCPI.toFixed(2),e.TCPI<=1?'Alcanzable':'Difícil',e.TCPI<=1?'#34d399':e.TCPI<=1.1?'#fbbf24':'#ef4444','TCPI = (BAC−EV)/(BAC−AC)')+
     '</div>'+
-    
     '<div class="kpi-4">'+
-      kpi('EAC Atípico',fEur(e.EAC_atipico),isEn ? 'Remaining work at plan' : 'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
-      kpi('EAC Típico (CPI)',fEur(e.EAC_tipico),isEn ? 'Efficiency remains' : 'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
-      kpi('EAC Mixto',fEur(e.EAC_mixto),isEn ? 'CPI and SPI considered' : 'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
+      kpi('EAC Atípico',fEur(e.EAC_atipico),'Trabajo restante al plan','#a78bfa','AC + (BAC − EV)')+
+      kpi('EAC Típico (CPI)',fEur(e.EAC_tipico),'Eficiencia se mantiene','#fbbf24','BAC / CPI')+
+      kpi('EAC Mixto',fEur(e.EAC_mixto),'CPI y SPI considerados','#67e8f9','AC + (BAC−EV)/(CPI×SPI)')+
       kpi('% Completado (PC)',e.PC.toFixed(1)+'%','EV / BAC','#34d399','PC = EV / BAC')+
     '</div>'+
-    
     '<div class="chart-2">'+
-      '<div class="chart-card"><div class="t"><span>📊</span> '+(isEn ? "S-Curve · PV vs EV vs AC" : "Curva S · PV vs EV vs AC")+'</div><canvas id="cS"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>💶</span> '+(isEn ? "EAC vs BAC by Project" : "EAC vs BAC por Proyecto")+'</div><canvas id="cEac"></canvas></div>'+
+      '<div class="chart-card"><div class="t"><span>📊</span> Curva S · PV vs EV vs AC</div><canvas id="cS"></canvas></div>'+
+      '<div class="chart-card"><div class="t"><span>💶</span> EAC vs BAC por Proyecto</div><canvas id="cEac"></canvas></div>'+
     '</div>'+
-    
-    '<div class="box"><div class="box-t"><span>📋</span> '+(isEn ? "EVM Detail (€) by Project" : "Detalle EVM (€) por Proyecto")+'</div><div style="overflow-x:auto;"><table class="tbl">'+
-      '<thead><tr><th>'+(isEn ? "Project" : "Proyecto")+'</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">EAC</th><th class="n">VAC</th><th class="n">TCPI</th><th>'+(isEn ? "Health" : "Salud")+'</th></tr></thead>'+
-      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
-      '</tbody><tfoot><tr><td>'+(isEn ? "TOTAL" : "TOTAL")+'</td><td class="n">'+fEur(t.budget)+'</td><td class="n">'+fEur(t.earnedValue)+'</td><td class="n">'+fEur(t.actualCost)+'</td><td class="n">'+e.CPI.toFixed(2)+'</td><td class="n">'+e.SPI.toFixed(2)+'</td><td class="n">'+fEur(e.EAC)+'</td><td class="n">'+(e.VAC>=0?'+':'')+fEur(e.VAC)+'</td><td class="n">'+e.TCPI.toFixed(2)+'</td><td></td></tr></tfoot>'+
+    '<div class="box"><div class="box-t"><span>📋</span> Detalle EVM (€) por Proyecto</div><div style="overflow-x:auto;"><table class="tbl">'+
+      '<thead><tr><th>Proyecto</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">EAC</th><th class="n">VAC</th><th class="n">TCPI</th><th>Salud</th></tr></thead>'+
+      '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td>'+statusBadge(p.health)+'</td></tr>';}).join('')+
+      '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fEur(t.budget)+'</td><td class="n">'+fEur(t.earnedValue)+'</td><td class="n">'+fEur(t.actualCost)+'</td><td class="n">'+e.CPI.toFixed(2)+'</td><td class="n">'+e.SPI.toFixed(2)+'</td><td class="n">'+fEur(e.EAC)+'</td><td class="n">'+(e.VAC>=0?'+':'')+fEur(e.VAC)+'</td><td class="n">'+e.TCPI.toFixed(2)+'</td><td></td></tr></tfoot>'+
     '</table></div></div>';
-
   setTimeout(function(){
     if(charts.s)charts.s.destroy();
     var c1=document.getElementById('cS');
-    if(c1){
-      var months = isEn ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] : ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      var pv=[],ev=[],ac=[];
-      for(var i=0;i<12;i++){
-        pv.push(Math.round(t.plannedValue*((i+1)/12)));
-        ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));
-        ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));
-      }
-      charts.s=new Chart(c1.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'PV',data:pv,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:ev,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:ac,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:10,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}});
-    }
+    if(c1){var months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];var pv=[],ev=[],ac=[];for(var i=0;i<12;i++){pv.push(Math.round(t.plannedValue*((i+1)/12)));ev.push(Math.round(t.earnedValue*Math.min(1,(i+1)/11)));ac.push(Math.round(t.actualCost*Math.min(1.05,(i+1)/11)));}
+      charts.s=new Chart(c1.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'PV',data:pv,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:ev,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},{label:'AC',data:ac,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:10,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return fEur(v);}}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}}});}
     if(charts.eac)charts.eac.destroy();
     var c2=document.getElementById('cEac');
-    if(c2){
-      charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});
-    }
+    if(c2){charts.eac=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:PROJECTS.map(function(p){return p.client;}),datasets:[{label:'BAC',data:PROJECTS.map(function(p){return p.budget/1000;}),backgroundColor:'rgba(6,182,212,0.6)',borderRadius:5},{label:'EAC',data:PROJECTS.map(function(p){return Math.round(evmFor(p).EAC)/1000;}),backgroundColor:PROJECTS.map(function(p){return evmFor(p).CPI>=1?'rgba(52,211,153,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return '€'+v+'K';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}});}
   },100);
 }
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 2 · CEO
    ═══════════════════════════════════════════════════════════ */
