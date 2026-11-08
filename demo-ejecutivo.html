@@ -2420,7 +2420,6 @@ function renderCOO(){
 
 
 
-
 function drawGantt(){
   var container=document.getElementById('ganttChart');
   if(!container)return;
@@ -2477,7 +2476,6 @@ function drawGantt(){
   });
   container.innerHTML=html;
 }
-
 function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('on');});document.querySelectorAll('.toggle-btn').forEach(function(b){if(b.textContent.trim()===(v==='hours'?'Horas':'%'))b.classList.add('on');});drawBurndown();}
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
