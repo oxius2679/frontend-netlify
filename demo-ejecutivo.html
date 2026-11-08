@@ -2494,10 +2494,7 @@ function renderFIN(){
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Advanced Finance · Nivel CFO</h2><p>P&L completo, EBITDA, Break-even, VAN, TIR, Payback, Flujo de Caja. Multi-moneda y proyecciones.</p></div><div class="hero-stats">'+statCard(fEur(revenue),'Ingresos','gr')+statCard(fEur(grossProfit),'Beneficio','g')+statCard(fPct(grossMarginPct),'Margen')+statCard(fEur(ebitda),'EBITDA','r')+'</div></div></div>'+
     '<div class="kpi-4">'+kpi('Ingresos Facturables',fEur(revenue),fN(totalHours)+'h','#34d399','Rev = Σ(h × rate)')+kpi('Costes Directos',fEur(costs),'Tarifas internas','#ef4444','Cost = Σ(h × cost)')+kpi('Beneficio Bruto',fEur(grossProfit),fPct(grossMarginPct)+' margen','#fbbf24','GP = Rev − Cost')+kpi('EBITDA',fEur(ebitda),fPct(ebitdaPct)+' margen',ebitda>0?'#34d399':'#ef4444','EBITDA = GP − OpEx')+'</div>'+
-    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+// Si el TIR es 0 (porque no hay costos), mostramos un guion elegante
-var displayIRR = irr > 0 ? fPct(irr * 100) : '—';
-var irrColor = irr > wacc ? '#34d399' : (irr > 0 ? '#fbbf24' : '#94a3b8');
-kpi('TIR (IRR)', displayIRR, irr > wacc ? 'Excelente' : 'Retorno', irrColor, 'IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
+    '<div class="kpi-4">'+kpi('VAN (NPV)',(npv>=0?'+':'')+fEur(npv),'WACC 12% · 4 años',npv>=0?'#34d399':'#ef4444','NPV = Σ CF/(1+r)^t')+kpi('TIR (IRR)',fPct(irr*100),'Retorno',irr>wacc?'#34d399':'#fbbf24','IRR > WACC')+kpi('Payback',payback>0?payback.toFixed(1)+' años':'—','Recuperación','#a78bfa','Tiempo recuperación')+kpi('Break-even',breakEven>0?fEur(breakEven):'—','Equilibrio','#67e8f9','BE = OpEx / GM%')+'</div>'+
     '<div class="kpi-4">'+kpi('Tarifa Cliente',fEur(avgClientRate)+'/h','Facturado','#34d399')+kpi('Coste Interno',fEur(avgCostRate)+'/h','Real','#ef4444')+kpi('Margen/hora',fEur(avgClientRate-avgCostRate)+'/h',fPct(grossMarginPct)+' margen','#fbbf24')+kpi('Horas Totales',fN(totalHours)+'h','Portafolio','#a78bfa')+'</div>'+
     
     // 🔥 TABLA CORREGIDA
