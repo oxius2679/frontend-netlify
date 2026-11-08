@@ -2325,149 +2325,131 @@ var currentBurnView='hours';
 
 function renderCOO(){
   var el=document.getElementById('v-coo');
+  var isEn = window.currentDashboardLang === 'en';
+  
   var totalEst=0,totalLog=0,totalEarnedH=0,totalPlannedH=0;
   PROJECTS.forEach(function(p){var eh=evmHoursFor(p);totalEst+=eh.totalEstimated;totalLog+=eh.totalLogged;totalEarnedH+=eh.earnedHours;totalPlannedH+=eh.plannedHours;});
   var cpiH=totalLog>0?totalEarnedH/totalLog:1;
   var spiH=totalPlannedH>0?totalEarnedH/totalPlannedH:1;
   var eacH=cpiH>0?totalEst/cpiH:totalEst;
   var vacH=totalEst-eacH;
-    var team={};
-  PROJECTS.forEach(function(p){
-    // Si tu sistema principal ya envía un equipo, lo usamos
-    if (p.team && p.team.length > 0) {
-      p.team.forEach(function(m){
-        if(!team[m.name]) team[m.name]={name:m.name,role:m.role||'Miembro',hours:0,logged:0,projects:[]};
-        team[m.name].hours+=(m.hours||0);
-        team[m.name].logged+=(m.logged||0);
-        if(team[m.name].projects.indexOf(p.name)===-1) team[m.name].projects.push(p.name);
-      });
-    } else {
-      // 🔥 SI NO HAY EQUIPO, LO EXTRAEMOS DE LAS TAREAS
-      (p.tasks||[]).forEach(function(t){
-        var assignee = t.assignee && t.assignee.trim() !== '' ? t.assignee : 'Sin asignar';
-        if(!team[assignee]) {
-          team[assignee] = {name: assignee, role: 'Recurso Asignado', hours: 0, logged: 0, projects: []};
-        }
-        team[assignee].hours += (Number(t.estimatedTime) || 0);
-        team[assignee].logged += (Number(t.timeLogged) || 0);
-        if(team[assignee].projects.indexOf(p.name) === -1) {
-          team[assignee].projects.push(p.name);
-        }
-      });
-    }
-  });
-
-  // Calcular utilización
-  var list=Object.values(team).map(function(m){
-    m.util = m.hours > 0 ? (m.logged / m.hours) * 100 : 0;
-    return m;
-  }).sort(function(a,b){ return b.util - a.util; });
+  var team={};
+  PROJECTS.forEach(function(p){(p.team||[]).forEach(function(m){if(!team[m.name])team[m.name]={name:m.name,role:m.role,hours:0,logged:0,projects:[],cost:0};team[m.name].hours+=m.hours;team[m.name].logged+=m.logged;team[m.name].cost=m.cost;if(team[m.name].projects.indexOf(p.client)===-1)team[m.name].projects.push(p.client);});});
+  var list=Object.values(team).map(function(m){m.util=m.hours>0?(m.logged/m.hours)*100:0;return m;}).sort(function(a,b){return b.util-a.util;});
   var statuses={activo:0,bloqueado:0,pausa:0};
   PROJECTS.forEach(function(p){statuses[p.opStatus]++;});
+
+  // Helper traducciones
+  var tr = {
+    active: isEn ? 'Active' : 'Activos', blocked: isEn ? 'Blocked' : 'Bloqueados', paused: isEn ? 'On Pause' : 'En pausa', hours: isEn ? 'Hours' : 'Horas',
+    title: isEn ? "Capacity Planning · Real Operation + Hours EVM + Gantt" : "Capacity Planning · Operación Real + EVM en Horas + Gantt",
+    sub: isEn ? "Operational view with <strong>status, phase, milestones, blockers, visual Gantt</strong> and <strong>Hours EVM</strong>. Project burndown." : "Visión operativa con <strong>status, fase, hitos, bloqueos, Gantt visual</strong> y <strong>EVM en horas</strong>. Burndown por proyecto.",
+    gantt: isEn ? "Gantt Chart · Full Portfolio" : "Diagrama de Gantt · Portafolio Completo",
+    opStatus: isEn ? "Operational Status by Project" : "Status Operativo por Proyecto",
+    phase: isEn ? "Phase:" : "Fase:", plan: isEn ? "Plan Hours" : "Horas Plan", real: isEn ? "Actual Hours" : "Horas Reales", earned: isEn ? "Earned Hours" : "Horas Ganadas",
+    milestones: isEn ? "Milestones" : "Hitos", blockers: isEn ? "Blockers" : "Bloqueos", burndown: isEn ? "Burndown by Project · Remaining Hours vs Time" : "Burndown por Proyecto · Horas Restantes vs Tiempo",
+    project: isEn ? "Project:" : "Proyecto:", evmHours: isEn ? "Hours EVM · Detail" : "EVM en Horas · Detalle", teamLoad: isEn ? "Member Load" : "Carga por Miembro",
+    member: isEn ? "Member" : "Miembro", role: isEn ? "Role" : "Rol", assigned: isEn ? "Assigned" : "Asignadas", logged: isEn ? "Logged" : "Registradas", utilization: isEn ? "Utilization" : "Utilización", projects: isEn ? "Projects" : "Proyectos", status: isEn ? "Status" : "Estado"
+  };
+
+  var getOpLabel = function(s) { return s==='bloqueado' ? (isEn?'CRITICAL':'BLOQUEADO') : s==='pausa' ? (isEn?'AT RISK':'EN PAUSA') : (isEn?'IN PROGRESS':'ACTIVO'); };
+  var getOpColor = function(s) { return s==='bloqueado' ? '#ef4444' : s==='pausa' ? '#fbbf24' : '#34d399'; };
+  
   el.innerHTML=
-       '<div class="hero"><div class="hero-grid"><div><h2>Capacity Planning · Operación Real + EVM en Horas + Gantt</h2><p>Visión operativa con <strong>status, fase, hitos, bloqueos, Gantt visual</strong> y <strong>EVM en horas</strong>. Burndown por proyecto, no por sprint.</p></div><div class="hero-stats">'+statCard(statuses.activo,'En Curso','gr')+statCard(statuses.bloqueado,'Críticos','r')+statCard(statuses.pausa,'En Riesgo','g')+statCard(fH(totalEst),'Horas','g')+'</div></div></div>'+
-    '<h3 style="font-size:13px;color:var(--violet-l);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;font-weight:900;">⏱️ EVM en Horas · Portfolio</h3>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+tr.title+'</h2><p>'+tr.sub+'</p></div><div class="hero-stats">'+statCard(statuses.activo,tr.active,'gr')+statCard(statuses.bloqueado,tr.blocked,'r')+statCard(statuses.pausa,tr.paused,'g')+statCard(fH(totalEst),tr.hours,'g')+'</div></div></div>'+
+    '<h3 style="font-size:13px;color:var(--violet-l);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;font-weight:900;">⏱️ '+ (isEn ? 'Hours EVM · Portfolio' : 'EVM en Horas · Portfolio') +'</h3>'+
     '<div class="kpi-6">'+
-      kpi('PV_h · Horas Planificadas',fH(totalPlannedH),'A la fecha','#94a3b8','PV_h = plan × time%')+
-      kpi('EV_h · Horas Ganadas',fH(totalEarnedH),'Valor ganado','#34d399','EV_h = Σ(est × prog)')+
-      kpi('AC_h · Horas Reales',fH(totalLog),'Registradas','#ef4444','AC_h = Σ logged')+
-      kpi('CPI_h',cpiH.toFixed(2),cpiH>=1?'Eficiente':cpiH>=0.9?'Tolerancia':'Sobrecosto',cpiH>=1?'#34d399':cpiH>=0.9?'#fbbf24':'#ef4444','CPI_h = EV_h / AC_h')+
-      kpi('SPI_h',spiH.toFixed(2),spiH>=1?'Adelantado':spiH>=0.9?'Tolerancia':'Retrasado',spiH>=1?'#34d399':spiH>=0.9?'#fbbf24':'#ef4444','SPI_h = EV_h / PV_h')+
-      kpi('VAC_h',(vacH>=0?'+':'')+fH(vacH),vacH>=0?'Ahorro':'Exceso',vacH>=0?'#34d399':'#ef4444','VAC_h = Est − EAC_h')+
+      kpi((isEn?'PV_h · Planned Hours':'PV_h · Horas Planificadas'),fH(totalPlannedH),(isEn?'To date':'A la fecha'),'#94a3b8','PV_h = plan × time%')+
+      kpi((isEn?'EV_h · Earned Hours':'EV_h · Horas Ganadas'),fH(totalEarnedH),(isEn?'Earned value':'Valor ganado'),'#34d399','EV_h = Σ(est × prog)')+
+      kpi((isEn?'AC_h · Actual Hours':'AC_h · Horas Reales'),fH(totalLog),(isEn?'Logged':'Registradas'),'#ef4444','AC_h = Σ logged')+
+      kpi('CPI_h',cpiH.toFixed(2),cpiH>=1?(isEn?'Efficient':'Eficiente'):cpiH>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Over cost':'Sobrecosto'),cpiH>=1?'#34d399':cpiH>=0.9?'#fbbf24':'#ef4444','CPI_h = EV_h / AC_h')+
+      kpi('SPI_h',spiH.toFixed(2),spiH>=1?(isEn?'Ahead':'Adelantado'):spiH>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Behind':'Retrasado'),spiH>=1?'#34d399':spiH>=0.9?'#fbbf24':'#ef4444','SPI_h = EV_h / PV_h')+
+      kpi('VAC_h',(vacH>=0?'+':'')+fH(vacH),vacH>=0?(isEn?'Saving':'Ahorro'):(isEn?'Over cost':'Exceso'),vacH>=0?'#34d399':'#ef4444','VAC_h = Est − EAC_h')+
     '</div>'+
-    // GANTT
-    '<div class="box"><div class="box-t"><span>📅</span> Diagrama de Gantt · Portafolio Completo</div><div class="gantt-wrapper"><div class="gantt-chart" id="ganttChart"></div><div class="gantt-legend">'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#34d399;"></div>Activo</div>'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#fbbf24;"></div>En pausa</div>'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#ef4444;"></div>Bloqueado</div>'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#8b5cf6;"></div>Ruta crítica</div>'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#fbbf24;border:2px solid #ef4444;border-radius:50%;"></div>Hito</div>'+
-      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(180deg,#fbbf24,#ef4444);"></div>Hoy</div>'+
+    
+    '<div class="box"><div class="box-t"><span>📅</span> '+tr.gantt+'</div><div class="gantt-wrapper"><div class="gantt-chart" id="ganttChart"></div><div class="gantt-legend">'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#34d399;"></div>'+(isEn?'Active':'Activo')+'</div>'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#fbbf24;"></div>'+(isEn?'On Pause':'En pausa')+'</div>'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#ef4444;"></div>'+(isEn?'Blocked':'Bloqueado')+'</div>'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#8b5cf6;"></div>'+(isEn?'Critical Path':'Ruta crítica')+'</div>'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#fbbf24;border:2px solid #ef4444;border-radius:50%;"></div>'+(isEn?'Milestone':'Hito')+'</div>'+
+      '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(180deg,#fbbf24,#ef4444);"></div>'+(isEn?'Today':'Hoy')+'</div>'+
     '</div></div></div>'+
-    // STATUS OPERATIVO
-    '<div class="box"><div class="box-t"><span>📡</span> Status Operativo por Proyecto</div>'+
+    
+    '<div class="box"><div class="box-t"><span>📡</span> '+tr.opStatus+'</div>'+
       PROJECTS.map(function(p){
         var eh=evmHoursFor(p);
-                        var opColor=p.opStatus==='bloqueado'?'#ef4444':p.opStatus==='pausa'?'#fbbf24':'#34d399';
+        var opColor=getOpColor(p.opStatus);
         var opIcon=p.opStatus==='bloqueado'?'🔴':p.opStatus==='pausa'?'🟡':'🟢';
-        var opLabel=p.opStatus==='bloqueado'?'CRÍTICO':p.opStatus==='pausa'?'EN RIESGO':'EN CURSO';
+        var opLabel=getOpLabel(p.opStatus);
         var doneM=p.milestones.filter(function(m){return m.status==='done';}).length;
         return '<div class="op-card '+p.opStatus+'"><div class="op-head"><div><div class="op-title">'+p.name+'</div><div class="op-client">'+p.client+' · '+fDate(p.startDate)+' → '+fDate(p.endDate)+'</div></div><div class="op-badges"><span class="op-fase">📌 '+p.phase+'</span><span class="badge" style="background:'+opColor+'22;color:'+opColor+';border:1px solid '+opColor+'66;">'+opIcon+' '+opLabel+'</span>'+statusBadge(p.operHealth)+'</div></div>'+
-          '<div class="op-progress"><span class="op-progress-lbl">Fase: '+p.phase+'</span><div class="op-progress-track"><div class="op-progress-fill" style="width:'+p.phaseProgress+'%;background:'+opColor+';"></div></div><span class="op-progress-val" style="color:'+opColor+';">'+p.phaseProgress+'%</span></div>'+
+          '<div class="op-progress"><span class="op-progress-lbl">'+tr.phase+' '+p.phase+'</span><div class="op-progress-track"><div class="op-progress-fill" style="width:'+p.phaseProgress+'%;background:'+opColor+';"></div></div><span class="op-progress-val" style="color:'+opColor+';">'+p.phaseProgress+'%</span></div>'+
           '<div class="op-grid">'+
-            '<div class="op-metric"><div class="l">Horas Plan</div><div class="v">'+fH(eh.totalEstimated)+'</div><div class="s">'+fH(eh.plannedHours)+' a la fecha</div></div>'+
-            '<div class="op-metric"><div class="l">Horas Reales</div><div class="v" style="color:#ef4444;">'+fH(eh.totalLogged)+'</div><div class="s">'+fH(eh.totalLogged-eh.earnedHours)+' sobre-ganadas</div></div>'+
-            '<div class="op-metric"><div class="l">Horas Ganadas</div><div class="v" style="color:#34d399;">'+fH(eh.earnedHours)+'</div><div class="s">'+eh.PCH.toFixed(0)+'% completado</div></div>'+
-            '<div class="op-metric"><div class="l">CPI_h / SPI_h</div><div class="v" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';">'+eh.CPIH.toFixed(2)+' / '+eh.SPIH.toFixed(2)+'</div><div class="s">Eficiencia horas</div></div>'+
-            '<div class="op-metric"><div class="l">Hitos</div><div class="v">'+doneM+'/'+p.milestones.length+'</div><div class="s">'+Math.round((doneM/p.milestones.length)*100)+'% completados</div></div>'+
+            '<div class="op-metric"><div class="l">'+tr.plan+'</div><div class="v">'+fH(eh.totalEstimated)+'</div><div class="s">'+fH(eh.plannedHours)+' '+(isEn?'to date':'a la fecha')+'</div></div>'+
+            '<div class="op-metric"><div class="l">'+tr.real+'</div><div class="v" style="color:#ef4444;">'+fH(eh.totalLogged)+'</div><div class="s">'+fH(eh.totalLogged-eh.earnedHours)+' '+(isEn?'over-earned':'sobre-ganadas')+'</div></div>'+
+            '<div class="op-metric"><div class="l">'+tr.earned+'</div><div class="v" style="color:#34d399;">'+fH(eh.earnedHours)+'</div><div class="s">'+eh.PCH.toFixed(0)+'% '+(isEn?'completed':'completado')+'</div></div>'+
+            '<div class="op-metric"><div class="l">CPI_h / SPI_h</div><div class="v" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';">'+eh.CPIH.toFixed(2)+' / '+eh.SPIH.toFixed(2)+'</div><div class="s">'+(isEn?'Hours efficiency':'Eficiencia horas')+'</div></div>'+
+            '<div class="op-metric"><div class="l">'+tr.milestones+'</div><div class="v">'+doneM+'/'+p.milestones.length+'</div><div class="s">'+Math.round((doneM/(p.milestones.length||1))*100)+'% '+(isEn?'completed':'completados')+'</div></div>'+
             '<div class="op-metric"><div class="l">EAC_h</div><div class="v" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';">'+fH(eh.EACH)+'</div><div class="s">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+' vs plan</div></div>'+
           '</div>'+
-          (p.blockers.length>0?'<div style="margin-top:14px;"><div style="font-size:10px;color:#fca5a5;letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">⚠️ Bloqueos</div>'+p.blockers.map(function(b){return '<div class="bloqueo"><div class="t">'+b.title+'</div><div class="d">'+b.desc+'</div></div>';}).join('')+'</div>':'')+
-          '<div style="margin-top:14px;"><div style="font-size:10px;color:var(--cyan-l);letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:6px;">🎯 Hitos</div><div class="milestone-tl">'+p.milestones.map(function(m){return '<div class="milestone '+m.status+'"><div class="milestone-title">'+m.name+'</div><div class="milestone-date">'+fDate(m.date)+'</div></div>';}).join('')+'</div></div>'+
+          (p.blockers.length>0?'<div style="margin-top:14px;"><div style="font-size:10px;color:#fca5a5;letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">⚠️ '+tr.blockers+'</div>'+p.blockers.map(function(b){return '<div class="bloqueo"><div class="t">'+b.title+'</div><div class="d">'+b.desc+'</div></div>';}).join('')+'</div>':'')+
+          '<div style="margin-top:14px;"><div style="font-size:10px;color:var(--cyan-l);letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:6px;">🎯 '+tr.milestones+'</div><div class="milestone-tl">'+p.milestones.map(function(m){return '<div class="milestone '+m.status+'"><div class="milestone-title">'+m.name+'</div><div class="milestone-date">'+fDate(m.date)+'</div></div>';}).join('')+'</div></div>'+
         '</div>';
       }).join('')+
     '</div>'+
-    // BURNDOWN
-    '<div class="box"><div class="box-t"><span>🔥</span> Burndown por Proyecto · Horas Restantes vs Tiempo</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">Proyecto:</label><select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+p.client+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">Horas</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
-    // TABLA EVM HORAS
-    '<div class="box"><div class="box-t"><span>⏱️</span> EVM en Horas · Detalle</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Proyecto</th><th class="n">Est.</th><th class="n">PV_h</th><th class="n">EV_h</th><th class="n">AC_h</th><th class="n">CPI_h</th><th class="n">SPI_h</th><th class="n">EAC_h</th><th class="n">VAC_h</th><th>Status</th></tr></thead><tbody>'+
-               PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=p.opStatus==='bloqueado'?'Crítico':p.opStatus==='pausa'?'En Riesgo':'En Curso';return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
+    
+    '<div class="box"><div class="box-t"><span>🔥</span> '+tr.burndown+'</div><div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">'+tr.project+'</label><select id="burnProjSelect" onchange="updateBurndown()">'+PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===currentBurndownProject?' selected':'')+'>'+p.client+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(currentBurnView==='hours'?'on':'')+'" onclick="setBurnView(\'hours\')">'+(isEn?'Hours':'Horas')+'</button><button class="toggle-btn '+(currentBurnView==='pct'?'on':'')+'" onclick="setBurnView(\'pct\')">%</button></div></div><div id="burndownChartWrap" style="height:320px;"><canvas id="cBurn"></canvas></div><div id="burndownInfo" style="margin-top:14px;padding:14px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;"></div></div>'+
+    
+    '<div class="box"><div class="box-t"><span>⏱️</span> '+tr.evmHours+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+tr.project.replace(':','')+'</th><th class="n">Est.</th><th class="n">PV_h</th><th class="n">EV_h</th><th class="n">AC_h</th><th class="n">CPI_h</th><th class="n">SPI_h</th><th class="n">EAC_h</th><th class="n">VAC_h</th><th>'+tr.status+'</th></tr></thead><tbody>'+
+      PROJECTS.map(function(p){var eh=evmHoursFor(p);var opColor=p.opStatus==='bloqueado'?'critico':p.opStatus==='pausa'?'riesgo':'saludable';var opLabel=getOpLabel(p.opStatus);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+fH(eh.totalEstimated)+'</td><td class="n" style="color:#94a3b8;">'+fH(eh.plannedHours)+'</td><td class="n" style="color:#34d399;">'+fH(eh.earnedHours)+'</td><td class="n" style="color:#ef4444;">'+fH(eh.totalLogged)+'</td><td class="n" style="color:'+(eh.CPIH>=1?'#34d399':eh.CPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.CPIH.toFixed(2)+'</td><td class="n" style="color:'+(eh.SPIH>=1?'#34d399':eh.SPIH>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+eh.SPIH.toFixed(2)+'</td><td class="n" style="color:#a78bfa;">'+fH(eh.EACH)+'</td><td class="n" style="color:'+(eh.VACH>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(eh.VACH>=0?'+':'')+fH(eh.VACH)+'</td><td><span class="badge '+opColor+'">'+opLabel+'</span></td></tr>';}).join('')+
       '</tbody><tfoot><tr><td>TOTAL</td><td class="n">'+fH(totalEst)+'</td><td class="n">'+fH(totalPlannedH)+'</td><td class="n">'+fH(totalEarnedH)+'</td><td class="n">'+fH(totalLog)+'</td><td class="n">'+cpiH.toFixed(2)+'</td><td class="n">'+spiH.toFixed(2)+'</td><td class="n">'+fH(eacH)+'</td><td class="n">'+(vacH>=0?'+':'')+fH(vacH)+'</td><td></td></tr></tfoot></table></div></div>'+
-    // EQUIPO
-    '<div class="box"><div class="box-t"><span>👥</span> Carga por Miembro</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Miembro</th><th>Rol</th><th class="n">Asignadas</th><th class="n">Registradas</th><th class="n">Utilización</th><th>Proyectos</th><th>Estado</th></tr></thead><tbody>'+
-      list.map(function(m){var cls=m.util>95?'critico':m.util>85?'riesgo':m.util>50?'saludable':'aceptable';var label=m.util>95?'Sobrecargado':m.util>85?'Alto':m.util>50?'Óptimo':'Disponible';return '<tr><td><strong style="color:#fff;">'+m.name+'</strong></td><td style="font-size:11px;color:#94a3b8;">'+m.role+'</td><td class="n">'+m.hours+'h</td><td class="n">'+m.logged+'h</td><td class="n" style="color:'+healthColor(cls)+';font-weight:900;">'+m.util.toFixed(0)+'%</td><td style="font-size:11px;">'+m.projects.join(', ')+'</td><td><span class="badge '+cls+'">'+label+'</span></td></tr>';}).join('')+
+    
+    '<div class="box"><div class="box-t"><span>👥</span> '+tr.teamLoad+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+tr.member+'</th><th>'+tr.role+'</th><th class="n">'+tr.assigned+'</th><th class="n">'+tr.logged+'</th><th class="n">'+tr.utilization+'</th><th>'+tr.projects+'</th><th>'+tr.status+'</th></tr></thead><tbody>'+
+      list.map(function(m){var cls=m.util>95?'critico':m.util>85?'riesgo':m.util>50?'saludable':'aceptable';var label=m.util>95?(isEn?'Overloaded':'Sobrecargado'):m.util>85?(isEn?'High':'Alto'):m.util>50?(isEn?'Optimal':'Óptimo'):(isEn?'Available':'Disponible');return '<tr><td><strong style="color:#fff;">'+m.name+'</strong></td><td style="font-size:11px;color:#94a3b8;">'+m.role+'</td><td class="n">'+m.hours+'h</td><td class="n">'+m.logged+'h</td><td class="n" style="color:'+healthColor(cls)+';font-weight:900;">'+m.util.toFixed(0)+'%</td><td style="font-size:11px;">'+m.projects.join(', ')+'</td><td><span class="badge '+cls+'">'+label+'</span></td></tr>';}).join('')+
     '</tbody></table></div></div>';
   setTimeout(function(){drawGantt();drawBurndown();},100);
 }
 
+
+
+
+
 function drawGantt(){
   var container=document.getElementById('ganttChart');
-  if(!container || PROJECTS.length === 0) return;
+  if(!container)return;
+  var isEn = window.currentDashboardLang === 'en';
   
   var globalStart=new Date(Math.min.apply(null,PROJECTS.map(function(p){return new Date(p.startDate).getTime();})));
   var globalEnd=new Date(Math.max.apply(null,PROJECTS.map(function(p){return new Date(p.endDate).getTime();})));
-  var totalDays=Math.max(1, (globalEnd-globalStart)/(1000*60*60*24));
+  var totalDays=(globalEnd-globalStart)/(1000*60*60*24);
   var today=Date.now();
 
-  // Calcular posición de HOY
-  var todayPct=((today-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
-
-  // Header de meses
   var months=[];
   var cur=new Date(globalStart);
   cur.setDate(1);
   var endMonth=new Date(globalEnd);
   while(cur<=endMonth){
-    months.push({label:cur.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}),start:new Date(cur)});
+    months.push({label:cur.toLocaleDateString(isEn?'en-US':'es-ES',{month:'short',year:'2-digit'}),start:new Date(cur)});
     cur.setMonth(cur.getMonth()+1);
   }
 
-  var html='<div class="gantt-header"><div class="gantt-label-col">Proyecto</div><div class="gantt-timeline">';
+  var html='<div class="gantt-header"><div class="gantt-label-col">'+(isEn?'Project':'Proyecto')+'</div><div class="gantt-timeline">';
   months.forEach(function(m){html+='<div class="gantt-month">'+m.label+'</div>';});
   html+='</div></div>';
 
-  // Filas
-  PROJECTS.forEach(function(p, index){
+  PROJECTS.forEach(function(p){
     var pStart=new Date(p.startDate).getTime();
     var pEnd=new Date(p.endDate).getTime();
     var leftPct=((pStart-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
     var widthPct=((pEnd-pStart)/(1000*60*60*24))/totalDays*100;
-    
-    // 🔥 Forzar ancho mínimo para que las tareas cortas se vean como barras
-    if (widthPct < 3) widthPct = 3;
-
     var color=p.opStatus==='bloqueado'?'#ef4444':p.opStatus==='pausa'?'#fbbf24':'#34d399';
     var borderColor=p.criticalPath?'#8b5cf6':color;
     var progress=Math.round(evmHoursFor(p).PCH);
 
     html+='<div class="gantt-row"><div class="gantt-row-label">'+p.name.substring(0,25)+'<div class="sub">'+p.client+' · '+progress+'%</div></div><div class="gantt-row-track">';
+    html+='<div class="gantt-bar" style="left:'+leftPct+'%;width:'+widthPct+'%;background:linear-gradient(135deg,'+color+','+color+'cc);border:1px solid '+borderColor+';">'+p.phase+' ('+p.phaseProgress+'%)</div>';
     
-    // 🔥 Barra con brillo superior para indicar progreso
-    html+='<div class="gantt-bar" style="left:'+leftPct+'%;width:'+widthPct+'%;background:linear-gradient(135deg,'+color+','+color+'cc);border:1px solid '+borderColor+';overflow:hidden;" title="'+p.name+' ('+progress+'%)">';
-    html+='<div style="position:absolute; bottom:0; left:0; height:3px; width:'+progress+'%; background:rgba(255,255,255,0.8);"></div>'; // Línea de progreso
-    html+='</div>';
-
-    // Hitos
     p.milestones.forEach(function(m){
       var mDate=new Date(m.date).getTime();
       var mPct=((mDate-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
@@ -2475,105 +2457,41 @@ function drawGantt(){
       html+='<div class="gantt-milestone" style="left:'+mPct+'%;background:'+mColor+';color:'+mColor+';" title="'+m.name+' ('+fDate(m.date)+')"></div>';
     });
     
-    // 🔥 Línea HOY (solo dibujamos el texto en la primera fila para no saturar)
-    if(todayPct>=0 && todayPct<=100){
-      html+='<div class="gantt-today-line" style="left:'+todayPct+'%;"></div>';
-      if (index === 0) {
-        html+='<div class="gantt-today-label" style="left:'+todayPct+'%;">HOY</div>';
-      }
+    var todayPct=((today-globalStart.getTime())/(1000*60*60*24))/totalDays*100;
+    if(todayPct>=0&&todayPct<=100){
+      html+='<div class="gantt-today-line" style="left:'+todayPct+'%;"><div class="gantt-today-label">'+(isEn?'TODAY':'HOY')+'</div></div>';
     }
-    
     html+='</div></div>';
   });
-  
   container.innerHTML=html;
 }
-
 function setBurnView(v){currentBurnView=v;document.querySelectorAll('.toggle-btn').forEach(function(b){b.classList.remove('on');});document.querySelectorAll('.toggle-btn').forEach(function(b){if(b.textContent.trim()===(v==='hours'?'Horas':'%'))b.classList.add('on');});drawBurndown();}
 function updateBurndown(){currentBurndownProject=document.getElementById('burnProjSelect').value;drawBurndown();}
 
 function drawBurndown(){
-  var p = PROJECTS.find(function(x){ return String(x.id) === String(currentBurndownProject); });
-  if (!p && PROJECTS.length > 0) { p = PROJECTS[0]; currentBurndownProject = p.id; }
-  if(!p) return;
-  
-  var eh = evmHoursFor(p);
-  var totalH = eh.totalEstimated;
-  if (totalH === 0) return;
-
-  var startDate = new Date(p.startDate).getTime();
-  var endDate = new Date(p.endDate).getTime();
-  var daysTotal = Math.max(1, Math.ceil((endDate - startDate) / (1000*60*60*24)));
-  
-  // 🔥 CÁLCULO MAESTRO DEL TIEMPO (Basado en el progreso real, no en la fecha de hoy)
-  var timeProgress = eh.earnedHours / totalH; 
-  var daysElapsed = Math.floor(daysTotal * timeProgress);
-  
-  // Si el proyecto ya empezó en la vida real, usamos el tiempo real
-  var today = Date.now();
-  var realDaysElapsed = Math.ceil((today - startDate) / (1000*60*60*24));
-  if (realDaysElapsed > 0) {
-      daysElapsed = Math.min(daysTotal, realDaysElapsed);
+  var isEn = window.currentDashboardLang === 'en';
+  var p=PROJECTS.find(function(x){return x.id===currentBurndownProject;});
+  if(!p)return;
+  var eh=evmHoursFor(p);
+  var totalH=eh.totalEstimated;
+  var daysTotal=Math.max(1,Math.ceil((new Date(p.endDate)-new Date(p.startDate))/(1000*60*60*24)));
+  var daysElapsed=Math.max(0,Math.min(daysTotal,Math.ceil((Date.now()-new Date(p.startDate))/(1000*60*60*24))));
+  var step=Math.max(1,Math.ceil(daysTotal/20));
+  var labels=[],ideal=[],real=[];
+  for(var d=0;d<=daysTotal;d+=step){
+    labels.push((isEn?'D':'D')+d);
+    ideal.push(Math.max(0,totalH*(1-d/daysTotal)));
+    if(d<=daysElapsed){var progress=Math.min(1,d/Math.max(1,daysElapsed));var burnt=eh.earnedHours*progress;real.push(Math.max(0,totalH-burnt));}else{real.push(null);}
   }
-  
-  // Forzamos al menos 1 día si hay trabajo hecho
-  if (eh.earnedHours > 0) {
-      daysElapsed = Math.max(1, daysElapsed);
-  }
-  
-  // 🔥 SI EL PROYECTO DURA MENOS DE 14 DÍAS, GRAFICAMOS POR DÍAS EN LUGAR DE SEMANAS
-  var step = daysTotal <= 14 ? 1 : 7; 
-  var numSteps = Math.ceil(daysTotal / step);
-  if (numSteps < 5) numSteps = 5; // Mostrar al menos 5 puntos
-  
-  var labels=[], ideal=[], real=[];
-  
-  for(var i = 0; i <= numSteps; i++){
-    var d = i * step;
-    labels.push(step === 1 ? 'D' + i : 'Sem ' + i);
-    
-    var percentTime = Math.min(1, d / daysTotal);
-    ideal.push(Math.max(0, totalH * (1 - percentTime)));
-    
-    if (d <= daysElapsed) {
-      var progress = Math.min(1, d / Math.max(1, daysElapsed));
-      var burnt = eh.earnedHours * progress;
-      real.push(Math.max(0, totalH - burnt));
-    } else if (i === Math.ceil(daysElapsed / step)) {
-      real.push(Math.max(0, totalH - eh.earnedHours));
-    } else {
-      real.push(null);
-    }
-  }
-  
-  var dataIdeal = currentBurnView==='hours' ? ideal : ideal.map(function(v){return totalH>0?(v/totalH)*100:0;});
-  var dataReal = currentBurnView==='hours' ? real : real.map(function(v){return v!==null&&totalH>0?(v/totalH)*100:null;});
-  var yLabel = currentBurnView==='hours'?'Horas restantes':'% restante';
+  var dataIdeal=currentBurnView==='hours'?ideal:ideal.map(function(v){return totalH>0?(v/totalH)*100:0;});
+  var dataReal=currentBurnView==='hours'?real:real.map(function(v){return v!==null&&totalH>0?(v/totalH)*100:null;});
+  var yLabel=currentBurnView==='hours'?(isEn?'Remaining hours':'Horas restantes'):(isEn?'Remaining %':'% restante');
   
   if(charts.burn)charts.burn.destroy();
   var ctx=document.getElementById('cBurn');
   if(!ctx)return;
+  charts.burn=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:labels,datasets:[{label:(isEn?'Ideal':'Ideal')+' ('+yLabel+')',data:dataIdeal,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0,spanGaps:true},{label:(isEn?'Real':'Real')+' ('+yLabel+')',data:dataReal,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3,pointBackgroundColor:'#34d399',spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return currentBurnView==='hours'?v+'h':v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:9,weight:'700'},maxRotation:0,autoSkip:true,maxTicksLimit:12}}}}});
   
-  charts.burn=new Chart(ctx.getContext('2d'),{
-    type:'line',
-    data:{
-      labels:labels,
-      datasets:[
-        {label:'Ideal ('+yLabel+')',data:dataIdeal,borderColor:'#94a3b8',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0.3,spanGaps:true},
-        {label:'Real ('+yLabel+')',data:dataReal,borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#ec4899',spanGaps:true}
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},
-      scales:{
-        y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return currentBurnView==='hours'?v+'h':v+'%';}}},
-        x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}
-      }
-    }
-  });
-  
-  // Panel de información inferior (Ahora usa los días calculados correctamente)
   var info=document.getElementById('burndownInfo');
   if(info){
     var remaining=totalH-eh.earnedHours;
@@ -2584,17 +2502,15 @@ function drawBurndown(){
     var projectedEnd=daysElapsed+daysToComplete;
     var isOnTrack=projectedEnd<=daysTotal;
     var color=isOnTrack?'#34d399':'#ef4444';
-    
     info.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:10px;">'+
-      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Progreso</div><div style="font-size:16px;font-weight:900;color:#34d399;margin-top:4px;">'+progressPct.toFixed(1)+'%</div></div>'+
-      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Tiempo</div><div style="font-size:16px;font-weight:900;color:#fbbf24;margin-top:4px;">'+timePct.toFixed(1)+'%</div></div>'+
-      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Restantes</div><div style="font-size:16px;font-weight:900;color:#67e8f9;margin-top:4px;">'+remaining.toFixed(0)+'h</div></div>'+
-      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Velocidad</div><div style="font-size:16px;font-weight:900;color:#a78bfa;margin-top:4px;">'+burnRate.toFixed(1)+'h/día</div></div>'+
-      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">Cierre</div><div style="font-size:16px;font-weight:900;color:'+color+';margin-top:4px;">'+(isOnTrack?'✅ En tiempo':'⚠️ +'+(projectedEnd-daysTotal)+'d')+'</div></div>'+
-    '</div><div style="font-size:11.5px;color:'+color+';">'+(isOnTrack?'✓ Al ritmo actual ('+burnRate.toFixed(1)+'h/día) cerrará en '+projectedEnd+' días (plan: '+daysTotal+').':'⚠ En riesgo. Cierre proyectado: '+projectedEnd+' días, '+(projectedEnd-daysTotal)+' días tarde.')+'</div>';
+      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+(isEn?'Progress':'Progreso')+'</div><div style="font-size:16px;font-weight:900;color:#34d399;margin-top:4px;">'+progressPct.toFixed(1)+'%</div></div>'+
+      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+(isEn?'Time':'Tiempo')+'</div><div style="font-size:16px;font-weight:900;color:#fbbf24;margin-top:4px;">'+timePct.toFixed(1)+'%</div></div>'+
+      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+(isEn?'Remaining':'Restantes')+'</div><div style="font-size:16px;font-weight:900;color:#67e8f9;margin-top:4px;">'+remaining.toFixed(0)+'h</div></div>'+
+      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+(isEn?'Speed':'Velocidad')+'</div><div style="font-size:16px;font-weight:900;color:#a78bfa;margin-top:4px;">'+burnRate.toFixed(1)+(isEn?'h/day':'h/día')+'</div></div>'+
+      '<div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+(isEn?'Closing':'Cierre')+'</div><div style="font-size:16px;font-weight:900;color:'+color+';margin-top:4px;">'+(isOnTrack?(isEn?'✅ On time':'✅ En tiempo'):(isEn?'⚠️ +':'⚠️ +')+(projectedEnd-daysTotal)+'d')+'</div></div>'+
+    '</div><div style="font-size:11.5px;color:'+color+';">'+(isOnTrack?(isEn?'✓ At current pace ('+burnRate.toFixed(1)+'h/day) will close in '+projectedEnd+' days (plan: '+daysTotal+').':'✓ Al ritmo actual ('+burnRate.toFixed(1)+'h/día) cerrará en '+projectedEnd+' días (plan: '+daysTotal+').'):(isEn?'⚠ At risk. Projected closure: '+projectedEnd+' days, '+(projectedEnd-daysTotal)+' days late.':'⚠ En riesgo. Cierre proyectado: '+projectedEnd+' días, '+(projectedEnd-daysTotal)+' días tarde.'))+'</div>';
   }
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 4 · BI
    ═══════════════════════════════════════════════════════════ */
