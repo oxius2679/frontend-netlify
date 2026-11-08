@@ -3805,37 +3805,53 @@ window.TAB_TITLES = {
 window.currentDashboardLang = localStorage.getItem('dashboardLang') || 'es';
 
 window.toggleDashboardLang = function() {
+    // 1. Cambiar el idioma global y guardarlo
     window.currentDashboardLang = window.currentDashboardLang === 'es' ? 'en' : 'es';
     localStorage.setItem('dashboardLang', window.currentDashboardLang);
     
-    // 1. Traducir textos estáticos (data-i18n)
+    // 2. Traducir textos estáticos (los que tienen data-i18n en el HTML)
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const translation = window.DASHBOARD_I18N[window.currentDashboardLang][key];
         if (translation) el.innerHTML = translation;
     });
 
-    // 2. Traducir títulos del modal si está abierto
-    const activeTab = document.querySelector('.tab.on');
-    if (activeTab) {
-        const tabId = activeTab.dataset.tab;
-        const titleData = window.TAB_TITLES[window.currentDashboardLang][tabId];
-        if (titleData) {
-            document.getElementById('mTitle').textContent = titleData.t;
-            document.getElementById('mSub').textContent = titleData.s;
-        }
-    }
-
-    // 3. Traducir Chips
-    if (document.getElementById('modal').classList.contains('on') && typeof TOTALS !== 'undefined') {
-        document.getElementById('chipP').textContent = '📋 ' + TOTALS.count + ' ' + window.DASHBOARD_I18N[window.currentDashboardLang].chip_projects;
-        document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' ' + window.DASHBOARD_I18N[window.currentDashboardLang].chip_alerts;
-    }
-
-    // 4. Actualizar todos los botones de idioma
+    // 3. Actualizar todos los botones de idioma (portada y modal)
     document.querySelectorAll('.lang-toggle-btn').forEach(btn => {
         btn.textContent = window.DASHBOARD_I18N[window.currentDashboardLang].btn_lang;
     });
+
+    // 4. Si el modal está abierto, traducir títulos, chips y redibujar la pestaña activa
+    if (document.getElementById('modal').classList.contains('on')) {
+        const activeTabElement = document.querySelector('.tab.on');
+        
+        if (activeTabElement) {
+            const tabId = activeTabElement.dataset.tab;
+
+            // 4.1. Traducir título y subtítulo del modal
+            const titleData = window.TAB_TITLES[window.currentDashboardLang][tabId];
+            if (titleData) {
+                document.getElementById('mTitle').textContent = titleData.t;
+                document.getElementById('mSub').textContent = titleData.s;
+            }
+
+            // 4.2. Traducir los chips (proyectos, alertas)
+            if (typeof TOTALS !== 'undefined') {
+                document.getElementById('chipP').textContent = '📋 ' + TOTALS.count + ' ' + window.DASHBOARD_I18N[window.currentDashboardLang].chip_projects;
+                document.getElementById('chipA').textContent = '⚠️ ' + TOTALS.alerts + ' ' + window.DASHBOARD_I18N[window.currentDashboardLang].chip_alerts;
+            }
+
+            // 4.3. 🔥 REDIBUJAR LA PESTAÑA ACTIVA (Para que el contenido interno cambie de idioma)
+            if (tabId === 'cfo' && typeof renderCFO === 'function') renderCFO();
+            else if (tabId === 'ceo' && typeof renderCEO === 'function') renderCEO();
+            else if (tabId === 'coo' && typeof renderCOO === 'function') renderCOO();
+            else if (tabId === 'bi' && typeof renderBI === 'function') renderBI();
+            else if (tabId === 'grc' && typeof renderGRC === 'function') renderGRC();
+            else if (tabId === 'api' && typeof renderAPI === 'function') renderAPI();
+            else if (tabId === 'fin' && typeof renderFIN === 'function') renderFIN();
+            else if (tabId === 'vip' && typeof renderVIP === 'function') renderVIP();
+        }
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
