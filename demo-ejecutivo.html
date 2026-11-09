@@ -2744,7 +2744,7 @@ async function renderGRC(){
   
   var totalExp = risks.reduce(function(s,r){return s+r.exp;},0);
 
-  // 3. CONTROLES EN TIEMPO REAL
+  // 3. CONTROLES EN TIEMPO REAL (Backend)
   let systemControls = [];
   try {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -2775,34 +2775,70 @@ async function renderGRC(){
 
   // 4. GENERAR LA CUADRÍCULA DEL HEATMAP 5x5
   var heatmapHtml = '';
-  for (var row = 5; row >= 1; row--) { // Impacto (Y)
+  for (var row = 5; row >= 1; row--) { 
     heatmapHtml += '<div style="display:flex; height:38px;">';
-    for (var col = 1; col <= 5; col++) { // Probabilidad (X)
+    for (var col = 1; col <= 5; col++) { 
       var riskHere = risks.filter(function(r){ return r.p === col && r.i === row; });
       var bgColor = 'rgba(15,23,42,0.4)';
       var borderColor = 'rgba(255,255,255,0.05)';
       
-      // Colores del Heatmap (Verde, Amarillo, Naranja, Rojo)
       var score = col * row;
-      if (score >= 15) { bgColor = 'rgba(239,68,68,0.15)'; borderColor = 'rgba(239,68,68,0.3)'; } // Crítico
-      else if (score >= 9) { bgColor = 'rgba(249,115,22,0.15)'; borderColor = 'rgba(249,115,22,0.3)'; } // Alto
-      else if (score >= 5) { bgColor = 'rgba(251,191,36,0.1)'; borderColor = 'rgba(251,191,36,0.2)'; } // Medio
-      else if (score >= 2) { bgColor = 'rgba(52,211,153,0.1)'; borderColor = 'rgba(52,211,153,0.2)'; } // Bajo
+      if (score >= 15) { bgColor = 'rgba(239,68,68,0.15)'; borderColor = 'rgba(239,68,68,0.3)'; } 
+      else if (score >= 9) { bgColor = 'rgba(249,115,22,0.15)'; borderColor = 'rgba(249,115,22,0.3)'; } 
+      else if (score >= 5) { bgColor = 'rgba(251,191,36,0.1)'; borderColor = 'rgba(251,191,36,0.2)'; } 
+      else if (score >= 2) { bgColor = 'rgba(52,211,153,0.1)'; borderColor = 'rgba(52,211,153,0.2)'; } 
 
       heatmapHtml += '<div style="flex:1; background:'+bgColor+'; border:1px solid '+borderColor+'; margin:1px; border-radius:4px; display:flex; align-items:center; justify-content:center; position:relative;">';
-      
-      // Pintar los puntos de riesgo
       riskHere.forEach(function(r) {
         var dotColor = r.sev === 'critico' ? '#ef4444' : r.sev === 'alto' ? '#f97316' : '#fbbf24';
         heatmapHtml += '<div title="'+r.n+'" style="width:16px; height:16px; border-radius:50%; background:'+dotColor+'; box-shadow:0 0 10px '+dotColor+'; border:2px solid #fff; cursor:help;"></div>';
       });
-      
       heatmapHtml += '</div>';
     }
     heatmapHtml += '</div>';
   }
 
-  // 5. RENDERIZADO FINAL
+  // 5. GENERAR EL AUDIT LOG REAL (Basado en tareas reales)
+  var auditEvents = [];
+  PROJECTS.forEach(function(p) {
+    (p.tasks || []).forEach(function(tk) {
+      // Evento 1: Tareas completadas
+      if (tk.status === 'completed') {
+        auditEvents.push({
+          user: 'Sistema / ' + (tk.assignee || 'Sistema'),
+          action: (isEn?'Completed task "':'Completó tarea "') + tk.name + '"',
+          time: tk.deadline ? fDate(tk.deadline) : (isEn?'Recently':'Reciente'),
+          color: '#34d399'
+        });
+      }
+      // Evento 2: Tareas con sobrecarga o retraso
+      else if (tk.status === 'overdue') {
+        auditEvents.push({
+          user: tk.assignee || (isEn?'Unassigned':'Sin asignar'),
+          action: (isEn?'Task "':'Tarea "') + tk.name + (isEn?'" is overdue':' está retrasada'),
+          time: tk.deadline ? fDate(tk.deadline) : (isEn?'Overdue':'Retrasada'),
+          color: '#ef4444'
+        });
+      }
+      // Evento 3: Tareas en progreso con asignado
+      else if (tk.status === 'inProgress' && tk.assignee) {
+        auditEvents.push({
+          user: tk.assignee,
+          action: (isEn?'Updated progress of "':'Actualizó progreso de "') + tk.name + '" (' + tk.progress + '%)',
+          time: (isEn?'Active':'Activa'),
+          color: '#fbbf24'
+        });
+      }
+    });
+  });
+  // Si no hay eventos, mostrar un mensaje de sistema
+  if (auditEvents.length === 0) {
+    auditEvents.push({user: 'Sistema', action: (isEn?'No recent activity':'Sin actividad reciente'), time: '—', color: '#64748b'});
+  }
+  // Tomar solo los primeros 4 eventos para no saturar
+  var displayEvents = auditEvents.slice(0, 4);
+
+  // 6. RENDERIZADO FINAL
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>'+(isEn?'Regulatory compliance, 5x5 heat map, internal controls and financial exposure in real time.':'Compliance normativo, mapa de calor 5×5, controles internos y exposición financiera en tiempo real.')+'</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'Critical':'Críticos'),'r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'Controls':'Controles'),'g')+statCard(fEur(totalExp),(isEn?'Exposure':'Exposición'),'r')+'</div></div></div>'+
     
@@ -2815,20 +2851,15 @@ async function renderGRC(){
       }).join('')+
     '</div></div>'+
     
-    // NUEVO: MAPA DE CALOR 5x5 Y MATRIZ
+    // MAPA DE CALOR 5x5 Y MATRIZ
     '<div style="display:grid; grid-template-columns: 350px 1fr; gap:20px; margin-bottom:20px;">'+
-      
-      // HEATMAP 5x5
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔥</span> '+(isEn?'5x5 Risk Heat Map':'Mapa de Calor 5x5')+'</div>'+
         '<div style="display:flex; height: 100%; align-items: center;">'+
-          // Eje Y (Impacto)
           '<div style="display:flex; flex-direction:column; justify-content:space-around; height:190px; padding-right:10px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; text-align:right;">'+
             '<span>'+(isEn?'High':'Alto')+'</span><span>'+(isEn?'Med':'Medio')+'</span><span>'+(isEn?'Low':'Bajo')+'</span>'+
           '</div>'+
-          // Cuadrícula
           '<div style="flex:1;">'+
             heatmapHtml+
-            // Eje X (Probabilidad)
             '<div style="display:flex; justify-content:space-around; margin-top:8px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase;">'+
               '<span>'+(isEn?'Low':'Baja')+'</span><span>'+(isEn?'Med':'Media')+'</span><span>'+(isEn?'High':'Alta')+'</span>'+
             '</div>'+
@@ -2836,7 +2867,6 @@ async function renderGRC(){
         '</div>'+
       '</div>'+
 
-      // MATRIZ DETALLADA
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚠️</span> '+(isEn?'Risk Matrix Detail':'Detalle de la Matriz de Riesgos')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Owner':'Responsable')+'</th><th>'+(isEn?'Deadline':'Plazo')+'</th><th>'+(isEn?'Mitigation':'Mitigación')+'</th></tr></thead><tbody>'+
       risks.map(function(r){
         var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];
@@ -2845,7 +2875,7 @@ async function renderGRC(){
       '</tbody></table></div></div>'+
     '</div>'+
 
-    // CONTROLES Y AUDITORÍA ACTIVA
+    // CONTROLES Y AUDITORÍA ACTIVA (AHORA REAL)
     '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">'+
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔒</span> '+(isEn?'Platform Security Controls (Real-Time)':'Controles de Seguridad (Real-Time)')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
         systemControls.map(function(c){
@@ -2855,32 +2885,28 @@ async function renderGRC(){
         }).join('')+
       '</div></div>'+
       
-      // NUEVO: AMENAZAS BLOQUEADAS Y FEED DE AUDITORÍA
+      // ALERTAS OPERATIVAS REALES + AUDIT LOG REAL
       '<div style="display:flex; flex-direction:column; gap:20px;">'+
         
-        // AMENAZAS BLOQUEADAS (ACTIVE DEFENSE)
-        '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🛡️</span> '+(isEn?'Blocked Threats (Last 24h)':'Amenazas Bloqueadas (Últimas 24h)')+'</div>'+
+        // ALERTAS OPERATIVAS (Reemplaza "Amenazas")
+        '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🛡️</span> '+(isEn?'Operational Alerts':'Alertas Operativas Reales')+'</div>'+
           '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">'+
-            '<div style="text-align:center; padding:12px; background:rgba(239,68,68,0.1); border-radius:10px; border:1px solid rgba(239,68,68,0.2);"><div style="font-size:24px; font-weight:900; color:#ef4444;">14</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Failed Logins':'Logins Fallidos')+'</div></div>'+
-            '<div style="text-align:center; padding:12px; background:rgba(251,191,36,0.1); border-radius:10px; border:1px solid rgba(251,191,36,0.2);"><div style="font-size:24px; font-weight:900; color:#fbbf24;">3</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'IPs Blocked':'IPs Bloqueadas')+'</div></div>'+
-            '<div style="text-align:center; padding:12px; background:rgba(52,211,153,0.1); border-radius:10px; border:1px solid rgba(52,211,153,0.2);"><div style="font-size:24px; font-weight:900; color:#34d399;">0</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Breaches':'Brechas')+'</div></div>'+
+            '<div style="text-align:center; padding:12px; background:rgba(239,68,68,0.1); border-radius:10px; border:1px solid rgba(239,68,68,0.2);"><div style="font-size:24px; font-weight:900; color:#ef4444;">'+overdueTasks+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Overdue Tasks':'Tareas Vencidas')+'</div></div>'+
+            '<div style="text-align:center; padding:12px; background:rgba(251,191,36,0.1); border-radius:10px; border:1px solid rgba(251,191,36,0.2);"><div style="font-size:24px; font-weight:900; color:#fbbf24;">'+(totalTareas - trazabilidad)+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Unassigned':'Sin Asignar')+'</div></div>'+
+            '<div style="text-align:center; padding:12px; background:rgba(52,211,153,0.1); border-radius:10px; border:1px solid rgba(52,211,153,0.2);"><div style="font-size:24px; font-weight:900; color:#34d399;">'+PROJECTS.filter(function(p){return p.opStatus==='bloqueado';}).length+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Blocked Projects':'Proyectos Bloqueados')+'</div></div>'+
           '</div>'+
         '</div>'+
 
-        // FEED DE AUDITORÍA
+        // AUDIT LOG REAL (Basado en tareas reales)
         '<div class="box" style="margin-bottom:0; flex:1;"><div class="box-t"><span>📝</span> '+(isEn?'Recent Audit Events':'Últimos Eventos de Auditoría')+'</div><div style="display:flex;flex-direction:column;gap:8px;">'+
-          [
-            {user:'Ana García', action:(isEn?'Deleted task "QA Testing"':'Eliminó tarea "QA Testing"'), time:'10 min', color:'#ef4444'},
-            {user:'Carlos Méndez', action:(isEn?'Updated Budget of CONSULTORIA':'Actualizó Presupuesto de CONSULTORIA'), time:'2 hrs', color:'#fbbf24'},
-            {user:'System', action:(isEn?'Automated Snapshot executed':'Snapshot automático ejecutado'), time:'5 hrs', color:'#34d399'},
-            {user:'Laura Ruiz', action:(isEn?'Added 3 new team members':'Añadió 3 miembros al equipo'), time:'1 day', color:'#67e8f9'}
-          ].map(function(a){
+          displayEvents.map(function(a){
             return '<div style="padding:8px 12px;border-radius:8px;background:rgba(0,0,0,0.2);border-left:3px solid '+a.color+';"><div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-size:10.5px;font-weight:800;color:'+a.color+';">'+a.user+'</span><span style="font-size:8.5px;color:#64748b;">'+a.time+'</span></div><div style="font-size:10.5px;color:#cbd5e1;">'+a.action+'</div></div>';
           }).join('')+
         '</div></div>'+
       '</div>'+
     '</div>';
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
