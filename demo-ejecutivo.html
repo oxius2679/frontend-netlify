@@ -2271,16 +2271,16 @@ function renderCEO(){
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "OKRs & Strategy · CEO" : "OKRs & Estrategia · CEO")+'</h2><p>'+(isEn ? "Balanced Scorecard with 4 perspectives derived from real data. Strategic objectives, project alignment and 12-month forecast." : "Cuadro de Mando Integral con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.")+'</p></div><div class="hero-stats">'+statCard(totalScore,(isEn?'Strategic Score':'Score Estratégico'),'g')+statCard(5,(isEn?'Objectives':'Objetivos'))+statCard(4,(isEn?'Perspectives':'Perspectivas'),'gr')+statCard(3,(isEn?'Decisions':'Decisiones'),'r')+'</div></div></div>'+
     
-    // 🔥 CONTENEDOR DEL RADAR Y EL SCORE (Altura fija garantizada)
     '<div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px; margin-bottom:20px; align-items: stretch;">'+
       
-      // Columna Izquierda: El Radar (¡Con altura de 450px en el contenedor!)
-      '<div class="chart-card" style="display:flex; flex-direction:column;">'+
-        '<div class="t"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div>'+
-        '<div style="position:relative; width:100%; height: 450px;"><canvas id="cRadar"></canvas></div>'+
+      // 🔥 EL TRUCO: Forzamos el canvas a 450px de altura con !important
+      '<div class="chart-card" style="display:flex; flex-direction:column; padding:15px;">'+
+        '<div class="t" style="margin-bottom:10px;"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div>'+
+        '<div style="position:relative; width:100%; flex:1;">'+
+            '<canvas id="cRadar" style="width: 100% !important; height: 450px !important;"></canvas>'+
+        '</div>'+
       '</div>'+
       
-      // Columna Derecha: Score Estratégico
       '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">'+
         '<div class="box-t"><span>🎯</span> '+(isEn?'Strategic Score':'Score Estratégico')+'</div>'+
         
@@ -2302,7 +2302,6 @@ function renderCEO(){
       '</div>'+
     '</div>'+
     
-    // OBJETIVOS ESTRATÉGICOS
     '<div class="box"><div class="box-t"><span>🎯</span> '+(isEn?'Strategic Objectives':'Objetivos Estratégicos')+'</div><div style="display:flex;flex-direction:column;gap:12px;">'+
       [
         {t:(isEn?'Optimize cost efficiency (CPI ≥ 1.00)':'Optimizar eficiencia de costos (CPI ≥ 1.00)'),d:(isEn?'Current CPI: ':'CPI actual: ')+e.CPI.toFixed(2)+' (Target: 1.00)',p:Math.min(100,Math.round(e.CPI*100)),c:e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444',est:e.CPI>=1?(isEn?'Achieved':'Logrado'):e.CPI>=0.9?(isEn?'In progress':'En curso'):(isEn?'Risk':'Riesgo')},
@@ -2313,14 +2312,12 @@ function renderCEO(){
       ].map(function(o){return '<div style="padding:16px 20px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:4px solid '+o.c+';"><div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:14px;font-weight:900;color:#fff;">'+o.t+'</span><span class="badge" style="background:'+o.c+'22;color:'+o.c+';">'+o.est+'</span></div><div style="font-size:12px;color:#94a3b8;">'+o.d+'</div></div><div style="font-size:22px;font-weight:900;color:'+o.c+';text-align:right;">'+o.p+'%</div></div><div class="bar"><div class="bar-f" style="width:'+o.p+'%;background:'+o.c+';"></div></div></div>';}).join('')+
     '</div></div>'+
     
-    // DECISIONES
     '<div class="box"><div class="box-t"><span>⚡</span> '+(isEn?'Executive Decisions Today':'Decisiones Ejecutivas de Hoy')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">'+decisions.map(function(d,i){return '<div style="padding:18px;border-radius:14px;background:rgba(0,0,0,0.3);border:1px solid '+d.c+'55;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:32px;height:32px;border-radius:10px;background:'+d.c+';color:#0b0e17;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:13px;font-weight:900;color:#fff;">'+d.t+'</span></div><div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;">'+d.d+'</div></div>';}).join('')+'</div></div>'+
     
-    // GRÁFICAS INFERIORES
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> '+(isEn?'Alignment by Project':'Alineación por Proyecto')+'</div><canvas id="cAlign"></canvas></div><div class="chart-card"><div class="t"><span>📈</span> '+(isEn?'4-Quarter Forecast':'Forecast 4 Trimestres')+'</div><canvas id="cFc"></canvas></div></div>';
 
   setTimeout(function(){
-    // RENDERIZAR EL RADAR
+    // 🔥 FORZAR EL RENDERIZADO DEL RADAR
     if(charts.radar)charts.radar.destroy();
     var cRadar = document.getElementById('cRadar');
     if(cRadar) {
@@ -2343,8 +2340,7 @@ function renderCEO(){
               pointBackgroundColor: '#D4AF37',
               pointBorderColor: '#fff',
               pointBorderWidth: 2,
-              pointRadius: 6,
-              pointHoverRadius: 9
+              pointRadius: 6
             },
             {
               label: (isEn?'Benchmark (75%)':'Benchmark (75%)'),
@@ -2360,7 +2356,7 @@ function renderCEO(){
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: 20 }, // Espacio para que las letras no se corten
+          layout: { padding: 10 }, 
           plugins: { 
             legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 12, weight: 'bold' }, usePointStyle: true, padding: 20 } } 
           },
@@ -2373,8 +2369,8 @@ function renderCEO(){
               angleLines: { color: 'rgba(255,255,255,0.12)' },
               pointLabels: { 
                 color: '#F8FAFC', 
-                font: { size: 14, weight: '900' },
-                padding: 10
+                font: { size: 16, weight: '900' }, // Letras GIGANTES
+                padding: 15
               }
             }
           }
