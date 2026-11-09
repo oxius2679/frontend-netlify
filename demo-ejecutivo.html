@@ -2733,14 +2733,48 @@ async function renderGRC(){
   ];
   var compliance=Math.round(areas.reduce(function(s,a){return s+a.s;},0)/areas.length);
 
-  // 2. MATRIZ DE RIESGOS Y HEATMAP 5x5 (CON ESTADO)
+  // 2. MATRIZ DE RIESGOS (AHORA CON NOMBRES REALES DE PROYECTOS)
   var risks = [];
-  if (e.CPI < 0.95) risks.push({n:(isEn?'Cost deviation':'Desviación de costos'), p:4, i:4, sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:(isEn?'Hours audit':'Auditoría de horas'), owner: 'CFO / PMO', deadline: '48h', status:(isEn?'Open':'Abierto')});
-  if (e.SPI < 0.95) risks.push({n:(isEn?'Schedule delay':'Retraso en cronograma'), p:4, i:3, sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:(isEn?'Fast-tracking':'Fast-tracking'), owner: 'COO / PMs', deadline: '7d', status:(isEn?'In Mitigation':'En Mitigación')});
   
-  var overdueTasks = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.status === 'overdue';}).length;}, 0);
-  if (overdueTasks > 0) risks.push({n:(isEn?'Overdue tasks':'Tareas rezagadas'), p:3, i:3, sev:'medio', exp: overdueTasks * 500, mit:(isEn?'Reassignment':'Reasignación'), owner: 'PMs', deadline: '24h', status:(isEn?'In Mitigation':'En Mitigación')});
-  if (risks.length === 0) risks.push({n:(isEn?'Budget concentration':'Concentración de presupuesto'), p:2, i:5, sev:'alto', exp: t.budget * 0.1, mit:(isEn?'Diversification':'Diversificación'), owner: 'CEO', deadline: '30d', status:(isEn?'Open':'Abierto')});
+  // Buscamos proyectos con problemas reales
+  PROJECTS.forEach(function(p) {
+    var m = evmFor(p);
+    
+    // Si el proyecto tiene mal CPI (Costos)
+    if (m.CPI < 0.95) {
+      risks.push({
+        n: (isEn?'Cost deviation in ':'Desviación de costos en ') + p.name,
+        p: m.CPI < 0.8 ? 5 : 4, 
+        i: 4, 
+        sev: m.CPI < 0.8 ? 'critico' : 'alto', 
+        exp: Math.abs(m.VAC), 
+        mit: (isEn?'Audit hours & renegotiate':'Auditoría de horas + renegociar'),
+        owner: p.client || 'PM del Proyecto', 
+        deadline: '48h', 
+        status: m.CPI < 0.8 ? 'Abierto' : 'En Mitigación'
+      });
+    }
+    
+    // Si el proyecto tiene mal SPI (Cronograma)
+    if (m.SPI < 0.95) {
+      risks.push({
+        n: (isEn?'Schedule delay in ':'Retraso en cronograma de ') + p.name,
+        p: m.SPI < 0.8 ? 5 : 4,
+        i: 3,
+        sev: m.SPI < 0.8 ? 'critico' : 'alto',
+        exp: p.budget * (1 - m.SPI),
+        mit: (isEn?'Fast-tracking + resources':'Fast-tracking + recursos'),
+        owner: p.client || 'PM del Proyecto',
+        deadline: '7d',
+        status: m.SPI < 0.8 ? 'Abierto' : 'En Mitigación'
+      });
+    }
+  });
+
+  // Si no hay proyectos con problemas, mostramos un riesgo de concentración
+  if (risks.length === 0) {
+    risks.push({n:(isEn?'Budget concentration':'Concentración de presupuesto'), p:2, i:5, sev:'alto', exp: t.budget * 0.1, mit:(isEn?'Diversification':'Diversificación'), owner: 'CEO', deadline: '30d', status:'Abierto'});
+  }
   
   var totalExp = risks.reduce(function(s,r){return s+r.exp;},0);
 
@@ -2791,6 +2825,7 @@ async function renderGRC(){
       heatmapHtml += '<div style="flex:1; background:'+bgColor+'; border:1px solid '+borderColor+'; margin:1px; border-radius:4px; display:flex; align-items:center; justify-content:center; position:relative;">';
       riskHere.forEach(function(r) {
         var dotColor = r.sev === 'critico' ? '#ef4444' : r.sev === 'alto' ? '#f97316' : '#fbbf24';
+        // El tooltip ahora muestra el nombre del riesgo
         heatmapHtml += '<div title="'+r.n+'" style="width:16px; height:16px; border-radius:50%; background:'+dotColor+'; box-shadow:0 0 10px '+dotColor+'; border:2px solid #fff; cursor:help;"></div>';
       });
       heatmapHtml += '</div>';
@@ -2814,7 +2849,7 @@ async function renderGRC(){
   if (auditEvents.length === 0) auditEvents.push({user: 'Sistema', action: (isEn?'No recent activity':'Sin actividad reciente'), time: '—', color: '#64748b'});
   var displayEvents = auditEvents.slice(0, 4);
 
-  // 6. RENDERIZADO FINAL
+  // 6. RENDERIZADO FINAL (Con leyenda en el Mapa de Calor)
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>'+(isEn?'Regulatory compliance, 5x5 heat map, internal controls and financial exposure in real time.':'Compliance normativo, mapa de calor 5×5, controles internos y exposición financiera en tiempo real.')+'</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'Critical':'Críticos'),'r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'Controls':'Controles'),'g')+statCard(fEur(totalExp),(isEn?'Exposure':'Exposición'),'r')+'</div></div></div>'+
     
@@ -2827,21 +2862,35 @@ async function renderGRC(){
     '</div></div>'+
     
     '<div style="display:grid; grid-template-columns: 350px 1fr; gap:20px; margin-bottom:20px;">'+
+      
+      // MAPA DE CALOR CON LEYENDA
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔥</span> '+(isEn?'5x5 Risk Heat Map':'Mapa de Calor 5x5')+'</div>'+
-        '<div style="display:flex; height: 100%; align-items: center;">'+
-          '<div style="display:flex; flex-direction:column; justify-content:space-around; height:190px; padding-right:10px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; text-align:right;">'+
-            '<span>'+(isEn?'High':'Alto')+'</span><span>'+(isEn?'Med':'Medio')+'</span><span>'+(isEn?'Low':'Bajo')+'</span>'+
-          '</div>'+
-          '<div style="flex:1;">'+
-            heatmapHtml+
-            '<div style="display:flex; justify-content:space-around; margin-top:8px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase;">'+
-              '<span>'+(isEn?'Low':'Baja')+'</span><span>'+(isEn?'Med':'Media')+'</span><span>'+(isEn?'High':'Alta')+'</span>'+
+        '<div style="display:flex; height: 100%; flex-direction: column; justify-content: center;">'+
+          '<div style="display:flex; align-items: center;">'+
+            '<div style="display:flex; flex-direction:column; justify-content:space-around; height:190px; padding-right:10px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; text-align:right;">'+
+              '<span>'+(isEn?'High':'Alto')+'</span><span>'+(isEn?'Med':'Medio')+'</span><span>'+(isEn?'Low':'Bajo')+'</span>'+
             '</div>'+
+            '<div style="flex:1;">'+
+              heatmapHtml+
+              '<div style="display:flex; justify-content:space-around; margin-top:8px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase;">'+
+                '<span>'+(isEn?'Low':'Baja')+'</span><span>'+(isEn?'Med':'Media')+'</span><span>'+(isEn?'High':'Alta')+'</span>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          // 🔥 NUEVA LEYENDA
+          '<div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:10px;">'+
+            '<div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#ef4444;"></span> '+(isEn?'Critical Risk':'Riesgo Crítico')+'</div>'+
+            '<div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#f97316;"></span> '+(isEn?'High Risk':'Riesgo Alto')+'</div>'+
+            '<div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#fbbf24;"></span> '+(isEn?'Medium Risk':'Riesgo Medio')+'</div>'+
+            '<div style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:50%; background:#34d399;"></span> '+(isEn?'Low Risk':'Riesgo Bajo')+'</div>'+
+          '</div>'+
+          '<div style="margin-top:15px; text-align:center; font-size:11px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">'+
+             '📍 ' + (risks.filter(function(r){return r.sev==='critico';}).length) + ' ' + (isEn?'risks in critical zone':'riesgos en zona crítica') +
           '</div>'+
         '</div>'+
       '</div>'+
 
-      // MATRIZ CON COLUMNA DE ESTADO
+      // MATRIZ CON NOMBRES REALES
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚠️</span> '+(isEn?'Risk Matrix Detail':'Detalle de la Matriz de Riesgos')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Owner':'Responsable')+'</th><th>'+(isEn?'Deadline':'Plazo')+'</th><th>'+(isEn?'Status':'Estado')+'</th></tr></thead><tbody>'+
       risks.map(function(r){
         var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];
@@ -2851,6 +2900,7 @@ async function renderGRC(){
       '</tbody></table></div></div>'+
     '</div>'+
 
+    // CONTROLES Y AUDITORÍA
     '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">'+
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔒</span> '+(isEn?'Platform Security Controls (Real-Time)':'Controles de Seguridad (Real-Time)')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
         systemControls.map(function(c){
@@ -2860,18 +2910,14 @@ async function renderGRC(){
         }).join('')+
       '</div></div>'+
       
-      '<div style="display:flex; flex-direction:column; gap:20px;">'+
-        // ALERTAS OPERATIVAS (CAMBIO DE NOMBRE)
+      '<div style="display:flex; flex-direction: column; gap:20px;">'+
         '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🛡️</span> '+(isEn?'Operational Alerts':'Alertas Operativas Reales')+'</div>'+
           '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">'+
             '<div style="text-align:center; padding:12px; background:rgba(239,68,68,0.1); border-radius:10px; border:1px solid rgba(239,68,68,0.2);"><div style="font-size:24px; font-weight:900; color:#ef4444;">'+overdueTasks+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Overdue Tasks':'Tareas Vencidas')+'</div></div>'+
             '<div style="text-align:center; padding:12px; background:rgba(251,191,36,0.1); border-radius:10px; border:1px solid rgba(251,191,36,0.2);"><div style="font-size:24px; font-weight:900; color:#fbbf24;">'+(totalTareas - trazabilidad)+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Unassigned':'Sin Asignar')+'</div></div>'+
-            // CAMBIO: PROYECTOS CRÍTICOS (en lugar de Bloqueados)
             '<div style="text-align:center; padding:12px; background:rgba(52,211,153,0.1); border-radius:10px; border:1px solid rgba(52,211,153,0.2);"><div style="font-size:24px; font-weight:900; color:#34d399;">'+PROJECTS.filter(function(p){return p.health==='critico';}).length+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Critical Projects':'Proyectos Críticos')+'</div></div>'+
           '</div>'+
         '</div>'+
-
-        // AUDIT LOG
         '<div class="box" style="margin-bottom:0; flex:1;"><div class="box-t"><span>📝</span> '+(isEn?'Recent Audit Events':'Últimos Eventos de Auditoría')+'</div><div style="display:flex;flex-direction:column;gap:8px;">'+
           displayEvents.map(function(a){
             return '<div style="padding:8px 12px;border-radius:8px;background:rgba(0,0,0,0.2);border-left:3px solid '+a.color+';"><div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-size:10.5px;font-weight:800;color:'+a.color+';">'+a.user+'</span><span style="font-size:8.5px;color:#64748b;">'+a.time+'</span></div><div style="font-size:10.5px;color:#cbd5e1;">'+a.action+'</div></div>';
@@ -2880,7 +2926,6 @@ async function renderGRC(){
       '</div>'+
     '</div>';
 }
-
 
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
