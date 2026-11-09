@@ -2243,7 +2243,7 @@ function renderCEO(){
   
   var transClient = function(c) { return (isEn && c === 'Cliente') ? 'Client' : c; };
   
-  // Cálculos
+  // Cálculos de perspectivas
   var scoreFin=Math.round(Math.min(100,(e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
   var scoreCli=Math.round((e.EV/e.BAC)*100);
   var scoreProc=Math.round(e.SPI*100);
@@ -2251,6 +2251,12 @@ function renderCEO(){
   PROJECTS.forEach(function(p){(p.tasks||[]).forEach(function(tk){totalEstTasks += (tk.estimatedTime || 0); totalLogTasks += (tk.timeLogged || 0);});});
   var scoreApr = totalEstTasks > 0 ? Math.min(100, Math.round((totalLogTasks / totalEstTasks) * 100)) : 0;
   var totalScore=Math.round((scoreFin+scoreCli+scoreProc+scoreApr)/4);
+
+  // 🔥 FIX 1: Contar rezagos reales y calcular score dinámico
+  var overdueCount = PROJECTS.reduce(function(s,p){return s+(p.tasks||[]).filter(function(tk){return tk.status==='overdue';}).length;},0);
+  var overdueScore = overdueCount === 0 ? 100 : Math.max(10, 100 - (overdueCount * 15));
+  var overdueStatus = overdueCount === 0 ? (isEn?'Achieved':'Logrado') : overdueCount <= 2 ? (isEn?'In progress':'En curso') : (isEn?'At risk':'En riesgo');
+  var overdueColor = overdueCount === 0 ? '#34d399' : overdueCount <= 2 ? '#fbbf24' : '#ef4444';
 
   // Decisiones
   var bloqueados = PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
@@ -2266,7 +2272,6 @@ function renderCEO(){
     '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "OKRs & Strategy · CEO" : "OKRs & Estrategia · CEO")+'</h2><p>'+(isEn ? "Balanced Scorecard with 4 perspectives derived from real data. Strategic objectives, project alignment and 12-month forecast." : "Cuadro de Mando Integral con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.")+'</p></div><div class="hero-stats">'+statCard(totalScore,(isEn?'Strategic Score':'Score Estratégico'),'g')+statCard(5,(isEn?'Objectives':'Objetivos'))+statCard(4,(isEn?'Perspectives':'Perspectivas'),'gr')+statCard(3,(isEn?'Decisions':'Decisiones'),'r')+'</div></div></div>'+
     
     '<div class="chart-2">'+
-      // 🔥 NUEVO: GRÁFICO DE RADAR PARA EL BALANCED SCORECARD
       '<div class="chart-card" style="display:flex; flex-direction:column; justify-content:center;"><div class="t"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div><canvas id="cRadar" style="max-height: 250px;"></canvas></div>'+
       
       '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:center;">'+
@@ -2279,18 +2284,18 @@ function renderCEO(){
           '</div>'+
         '</div>'+
         '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">'+
-          [{icon:'💰',l:(isEn?'Financial':'Financiera'),v:scoreFin,c:'#34d399'},{icon:'🎯',l:(isEn?'Client':'Cliente'),v:scoreCli,c:'#a78bfa'},{icon:'⚙️',l:(isEn?'Processes':'Procesos'),v:scoreProc,c:'#fbbf24'},{icon:'🧠',l:(isEn?'Learning':'Aprendizaje'),v:scoreApr,c:'#67e8f9'}].map(function(p){return '<div style="padding:10px; border-radius:8px; background:rgba(0,0,0,0.3); border-left:2px solid '+p.c+';"><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800;">'+p.l+'</div><div style="font-size:18px; font-weight:900; color:'+p.c+';">'+p.v+'</div></div>';}).join('')+
+          [{icon:'💰',l:(isEn?'Financial':'Financiera'),v:scoreFin,c:'#34d399',d:(isEn?'CPI + Margin + VAC':'CPI + Margen + VAC')},{icon:'🎯',l:(isEn?'Client':'Cliente'),v:scoreCli,c:'#a78bfa',d:(isEn?'Value delivered':'Valor entregado')},{icon:'⚙️',l:(isEn?'Processes':'Procesos'),v:scoreProc,c:'#fbbf24',d:(isEn?'Schedule compliance':'Cumplimiento cronograma')},{icon:'📊',l:(isEn?'Data Maturity':'Madurez de Datos'),v:scoreApr,c:'#67e8f9',d:(isEn?'Hours logged vs estimated':'Horas reg. vs estimadas')}].map(function(p){return '<div style="padding:10px; border-radius:8px; background:rgba(0,0,0,0.3); border-left:2px solid '+p.c+';"><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800;">'+p.l+'</div><div style="font-size:18px; font-weight:900; color:'+p.c+';">'+p.v+'</div><div style="font-size:8px; color:#64748b; margin-top:2px;">'+p.d+'</div></div>';}).join('')+
         '</div>'+
       '</div>'+
     '</div>'+
     
     '<div class="box"><div class="box-t"><span>🎯</span> '+(isEn?'Strategic Objectives':'Objetivos Estratégicos')+'</div><div style="display:flex;flex-direction:column;gap:12px;">'+
       [
-        {t:(isEn?'Optimize cost efficiency (CPI ≥ 1.00)':'Optimizar eficiencia de costos (CPI ≥ 1.00)'),d:(isEn?'Current CPI: ':'CPI actual: ')+e.CPI.toFixed(2),p:Math.min(100,Math.round(e.CPI*100)),c:e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444',est:e.CPI>=1?(isEn?'Achieved':'Logrado'):e.CPI>=0.9?(isEn?'In progress':'En curso'):(isEn?'Risk':'Riesgo')},
-        {t:(isEn?'Align schedule (SPI ≥ 1.00)':'Alinear cronograma (SPI ≥ 1.00)'),d:(isEn?'Current SPI: ':'SPI actual: ')+e.SPI.toFixed(2),p:Math.min(100,Math.round(e.SPI*100)),c:e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444',est:e.SPI>=1?(isEn?'Achieved':'Logrado'):e.SPI>=0.9?(isEn?'In progress':'En curso'):(isEn?'Risk':'Riesgo')},
-        {t:(isEn?'Achieve positive margin':'Alcanzar margen positivo'),d:(isEn?'Average margin: ':'Margen promedio: ')+fPct(t.marginAvg),p:Math.round(Math.min(100,t.marginAvg*3)),c:t.marginAvg>=25?'#34d399':'#fbbf24',est:t.marginAvg>=25?(isEn?'Achieved':'Logrado'):(isEn?'In progress':'En curso')},
-        {t:(isEn?'Reduce overdue tasks':'Reducir tareas rezagadas'),d:(isEn?'Overdue: ':'Rezagos: ')+PROJECTS.reduce(function(s,p){return s+(p.tasks||[]).filter(function(tk){return tk.status==='overdue';}).length;},0),p:65,c:'#fbbf24',est:(isEn?'In progress':'En curso')},
-        {t:(isEn?'Scale portfolio':'Escalar portafolio'),d:(isEn?'Active: ':'Activos: ')+PROJECTS.length+' · Target: 8',p:Math.round((PROJECTS.length/8)*100),c:'#a78bfa',est:(isEn?'In progress':'En curso')}
+        {t:(isEn?'Optimize cost efficiency (CPI ≥ 1.00)':'Optimizar eficiencia de costos (CPI ≥ 1.00)'),d:(isEn?'Current CPI: ':'CPI actual: ')+e.CPI.toFixed(2)+' (Target: 1.00)',p:Math.min(100,Math.round(e.CPI*100)),c:e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444',est:e.CPI>=1?(isEn?'Achieved':'Logrado'):e.CPI>=0.9?(isEn?'In progress':'En curso'):(isEn?'Risk':'Riesgo')},
+        {t:(isEn?'Align schedule (SPI ≥ 1.00)':'Alinear cronograma (SPI ≥ 1.00)'),d:(isEn?'Current SPI: ':'SPI actual: ')+e.SPI.toFixed(2)+' (Target: 1.00)',p:Math.min(100,Math.round(e.SPI*100)),c:e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444',est:e.SPI>=1?(isEn?'Achieved':'Logrado'):e.SPI>=0.9?(isEn?'In progress':'En curso'):(isEn?'Risk':'Riesgo')},
+        {t:(isEn?'Achieve positive margin (≥ 25%)':'Alcanzar margen positivo (≥ 25%)'),d:(isEn?'Average margin: ':'Margen promedio: ')+fPct(t.marginAvg),p:Math.min(100,Math.round(t.marginAvg*3)),c:t.marginAvg>=25?'#34d399':'#fbbf24',est:t.marginAvg>=25?(isEn?'Achieved':'Logrado'):(isEn?'In progress':'En curso')},
+        {t:(isEn?'Reduce overdue tasks':'Reducir tareas rezagadas'),d:(isEn?'Overdue tasks: ':'Tareas rezagadas: ')+overdueCount,p:overdueScore,c:overdueColor,est:overdueStatus},
+        {t:(isEn?'Scale portfolio (Target: 8)':'Escalar portafolio (Meta: 8)'),d:(isEn?'Active projects: ':'Proyectos activos: ')+PROJECTS.length,p:Math.round((PROJECTS.length/8)*100),c:'#a78bfa',est:(isEn?'In progress':'En curso')}
       ].map(function(o){return '<div style="padding:16px 20px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:4px solid '+o.c+';"><div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:14px;font-weight:900;color:#fff;">'+o.t+'</span><span class="badge" style="background:'+o.c+'22;color:'+o.c+';">'+o.est+'</span></div><div style="font-size:12px;color:#94a3b8;">'+o.d+'</div></div><div style="font-size:22px;font-weight:900;color:'+o.c+';text-align:right;">'+o.p+'%</div></div><div class="bar"><div class="bar-f" style="width:'+o.p+'%;background:'+o.c+';"></div></div></div>';}).join('')+
     '</div></div>'+
     
@@ -2299,7 +2304,6 @@ function renderCEO(){
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> '+(isEn?'Alignment by Project':'Alineación por Proyecto')+'</div><canvas id="cAlign"></canvas></div><div class="chart-card"><div class="t"><span>📈</span> '+(isEn?'4-Quarter Forecast':'Forecast 4 Trimestres')+'</div><canvas id="cFc"></canvas></div></div>';
 
   setTimeout(function(){
-    // 🔥 RENDERIZAR EL RADAR CHART
     if(charts.radar)charts.radar.destroy();
     var cRadar = document.getElementById('cRadar');
     if(cRadar) {
@@ -2310,23 +2314,34 @@ function renderCEO(){
             (isEn?'Financial':'Financiera'), 
             (isEn?'Client':'Cliente'), 
             (isEn?'Processes':'Procesos'), 
-            (isEn?'Learning':'Aprendizaje')
+            (isEn?'Data Maturity':'Madurez Datos')
           ],
-          datasets: [{
-            label: (isEn?'Score':'Score'),
-            data: [scoreFin, scoreCli, scoreProc, scoreApr],
-            backgroundColor: 'rgba(212,175,55,0.2)',
-            borderColor: '#D4AF37',
-            borderWidth: 2,
-            pointBackgroundColor: '#D4AF37',
-            pointBorderColor: '#fff',
-            pointRadius: 4
-          }]
+          datasets: [
+            {
+              label: (isEn?'Actual':'Actual'),
+              data: [scoreFin, scoreCli, scoreProc, scoreApr],
+              backgroundColor: 'rgba(212,175,55,0.2)',
+              borderColor: '#D4AF37',
+              borderWidth: 2,
+              pointBackgroundColor: '#D4AF37',
+              pointBorderColor: '#fff',
+              pointRadius: 4
+            },
+            {
+              label: (isEn?'Benchmark (75%)':'Benchmark (75%)'),
+              data: [75, 75, 75, 75],
+              backgroundColor: 'transparent',
+              borderColor: 'rgba(52,211,153,0.6)',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 0
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: { legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, weight: 'bold' }, usePointStyle: true, padding: 10 } } },
           scales: {
             r: {
               beginAtZero: true,
