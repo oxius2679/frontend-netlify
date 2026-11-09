@@ -2915,73 +2915,152 @@ function renderVIP(){
   var el=document.getElementById('v-vip');
   var isEn = window.currentDashboardLang === 'en';
   
-  // 1. CÁLCULO DE SCORE Y ESTADO
+  // ═══════ SCORE EJECUTIVO ═══════
   var score=Math.round((Math.min(1.5,e.CPI)/1.5*30)+(Math.min(1.5,e.SPI)/1.5*30)+(t.marginAvg>0?20:Math.max(0,20+t.marginAvg*0.5))+(PROJECTS.length>0?20:10));
   var scoreC=score>=80?'#34d399':score>=60?'#fbbf24':score>=40?'#f97316':'#ef4444';
   var estado=score>=80
-    ? {t:(isEn?'🏆 Executive Excellence':'🏆 Excelencia Ejecutiva'),m:(isEn?'The portfolio operates with positive profitability, efficiency and compliance.':'El portafolio opera con rentabilidad positiva, eficiencia y cumplimiento.'),e:(isEn?'OPTIMAL':'ÓPTIMO')}
+    ? {t:(isEn?'🏆 Executive Excellence':'🏆 Excelencia Ejecutiva'),m:(isEn?'Portfolio operating with positive profitability, efficiency and compliance.':'Portafolio operando con rentabilidad positiva, eficiencia y cumplimiento.'),e:(isEn?'OPTIMAL':'ÓPTIMO')}
     : score>=60
     ? {t:(isEn?'✅ Stable Operation':'✅ Operación Estable'),m:(isEn?'Indicators within tolerance zone.':'Indicadores en zona de tolerancia.'),e:(isEn?'STABLE':'ESTABLE')}
     : score>=40
     ? {t:(isEn?'⚠️ Requires Attention':'⚠️ Requiere Atención'),m:(isEn?'Indicators outside optimal range.':'Indicadores fuera de rango óptimo.'),e:(isEn?'ATTENTION':'ATENCIÓN')}
     : {t:(isEn?'🚨 Intervention Necessary':'🚨 Intervención Necesaria'),m:(isEn?'Significant deviations detected.':'Desviaciones significativas.'),e:(isEn?'CRITICAL':'CRÍTICO')};
-
-  // 2. ALERTAS PRIORIZADAS
-  var alerts=[];
-  if(t.criticos.length>0)alerts.push({n:(isEn?'CRITICAL':'CRÍTICO'),c:'#ef4444',ico:'🚨',t:t.criticos.length+(isEn?' critical(s)':' crítico(s)'),d:t.criticos.map(function(p){return p.name;}).join(', '),a:(isEn?'Urgent meeting + 48h plan':'Reunión urgente + plan 48h')});
-  if(e.VAC<0)alerts.push({n:(isEn?'HIGH':'ALTO'),c:'#f97316',ico:'💰',t:(isEn?'Overcost ':'Sobrecosto ')+fEur(Math.abs(e.VAC)),d:(isEn?'EAC exceeds BAC.':'EAC supera BAC.'),a:(isEn?'Audit + renegotiation':'Auditoría + renegociación')});
-  var bloqueados=PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
-  if(bloqueados.length>0)alerts.push({n:(isEn?'HIGH':'ALTO'),c:'#f97316',ico:'🔴',t:bloqueados.length+(isEn?' blocked':' bloqueado(s)'),d:bloqueados.map(function(p){return p.name;}).join(', '),a:(isEn?'Urgent unblocking':'Desbloqueo urgente')});
-  if(t.riesgos.length>0)alerts.push({n:(isEn?'MEDIUM':'MEDIO'),c:'#fbbf24',ico:'⚠️',t:t.riesgos.length+(isEn?' at risk':' en riesgo'),d:t.riesgos.map(function(p){return p.name;}).join(', '),a:(isEn?'Action plan':'Plan de choque')});
-
-  // 3. DECISIONES EJECUTIVAS
-  var decisions=[];
-  if(e.CPI<0.95)decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'),d:'CPI '+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'),c:'#ef4444'});
-  else decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'),d:(isEn?'Approve expansion with 2 projects.':'Aprobar expansión con 2 proyectos.'),c:'#34d399'});
   
-  if(bloqueados.length>0)decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'),d:bloqueados.length+(isEn?' projects require intervention.':' proyectos requieren intervención.'),c:'#f97316'});
-  else if(e.SPI<0.95)decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'),d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Fast-tracking.':'. Fast-tracking.'),c:'#f97316'});
-  else decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'),d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'),c:'#34d399'});
+  // ═══════ PILAR 1 · FINANZAS ═══════
+  var revenue=0, costs=0, totalHours=0;
+  PROJECTS.forEach(function(p){
+    var eh = evmHoursFor(p); var logged = eh.totalLogged || 0;
+    revenue += logged * 50 * 1.45; costs += logged * 50; totalHours += logged;
+  });
+  var grossProfit = revenue - costs;
+  var opex = revenue * 0.12;
+  var ebitda = grossProfit - opex;
+  var ebitdaMargin = revenue > 0 ? (ebitda / revenue) * 100 : 0;
+  var finColor = ebitda > 0 ? '#34d399' : '#ef4444';
   
-  decisions.push({t:(isEn?'Invest in team':'Invertir en equipo'),d:(isEn?'EVM and PMI training for PMs.':'Capacitación EVM y PMI para PMs.'),c:'#a78bfa'});
-
-  // 4. CONCENTRACIÓN Y BURNOUT
+  // ═══════ PILAR 2 · ESTRATEGIA ═══════
+  var sFin = Math.round(Math.min(100, (e.CPI*40)+(t.marginAvg>0?30:10)+(e.VAC>=0?30:5)));
+  var sCli = Math.round((e.EV/e.BAC)*100);
+  var sProc = Math.round(e.SPI*100);
+  var totEst=0, totLog=0;
+  PROJECTS.forEach(function(p){(p.tasks||[]).forEach(function(tk){totEst += (tk.estimatedTime || 0); totLog += (tk.timeLogged || 0);});});
+  var sApr = totEst > 0 ? Math.min(100, Math.round((totLog / totEst) * 100)) : 0;
+  var strategicScore = Math.round((sFin + sCli + sProc + sApr) / 4);
+  var strColor = strategicScore>=75?'#34d399':strategicScore>=50?'#fbbf24':'#ef4444';
+  
+  // ═══════ PILAR 3 · OPERACIÓN ═══════
+  var teamStats = {};
+  var totEstAll=0, totLogAll=0, overloadedCount=0;
+  PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(tk){
+      var assignee = tk.assignee && tk.assignee.trim() !== '' ? tk.assignee : (isEn?'Unassigned':'Sin asignar');
+      if(!teamStats[assignee]) teamStats[assignee] = { hours: 0, logged: 0 };
+      teamStats[assignee].hours += (Number(tk.estimatedTime) || 0);
+      teamStats[assignee].logged += (Number(tk.timeLogged) || 0);
+      totEstAll += (Number(tk.estimatedTime) || 0);
+      totLogAll += (Number(tk.timeLogged) || 0);
+    });
+  });
+  var teamUtil = totEstAll > 0 ? Math.round((totLogAll / totEstAll) * 100) : 0;
+  Object.values(teamStats).forEach(function(m){
+    if (m.hours > 0 && (m.logged / m.hours) * 100 > 90) overloadedCount++;
+  });
+  var teamColor = overloadedCount > 0 ? '#ef4444' : (teamUtil > 80 ? '#34d399' : '#fbbf24');
+  
+  // ═══════ PILAR 4 · RIESGOS ═══════
+  var riskExposure = 0;
+  if (e.CPI < 0.95) riskExposure += Math.abs(e.VAC);
+  if (e.SPI < 0.95) riskExposure += t.budget * (1 - e.SPI);
+  var criticalCount = t.criticos.length;
+  var riskColor = riskExposure > 5000 ? '#ef4444' : (riskExposure > 0 ? '#fbbf24' : '#34d399');
+  
+  // ═══════ PILAR 5 · TALENTO ═══════
+  var talentColor = overloadedCount > 0 ? '#ef4444' : '#34d399';
+  
+  // ═══════ PILAR 6 · CLIENTES ═══════
   var revenueByClient = {};
   PROJECTS.forEach(function(p){
-    var eh = evmHoursFor(p); var logged = eh.totalLogged || 0; var rev = logged * 50 * 1.45; 
-    var label = (p.client && p.client !== 'Cliente' && p.client.trim() !== '') ? p.client : (p.name || (isEn?'Unnamed Project':'Proyecto sin nombre'));
+    var eh = evmHoursFor(p); var logged = eh.totalLogged || 0; var rev = logged * 50 * 1.45;
+    var label = (p.client && p.client !== 'Cliente' && p.client.trim() !== '') ? p.client : (p.name || (isEn?'Unnamed':'Sin nombre'));
     if (!revenueByClient[label]) revenueByClient[label] = 0;
     revenueByClient[label] += rev;
   });
   var clientLabels = Object.keys(revenueByClient);
   var clientData = Object.values(revenueByClient);
-
-  var teamStats = {};
-  PROJECTS.forEach(function(p){
-    (p.tasks || []).forEach(function(tk){
-      var assignee = tk.assignee && tk.assignee.trim() !== '' ? tk.assignee : (isEn?'Unassigned':'Sin asignar');
-      if(!teamStats[assignee]) teamStats[assignee] = { name: assignee, hours: 0, logged: 0 };
-      teamStats[assignee].hours += (Number(tk.estimatedTime) || 0);
-      teamStats[assignee].logged += (Number(tk.timeLogged) || 0);
-    });
-  });
-  var overloadedCount = 0;
-  Object.values(teamStats).forEach(function(m){
-    if (m.name !== 'Sin asignar' && m.name !== 'Unassigned' && m.hours > 0) {
-      if ((m.logged / m.hours) * 100 > 90) overloadedCount++;
-    }
-  });
-
-  // 5. RENDERIZADO
+  var totalRevClient = clientData.reduce(function(a,b){return a+b;},0);
+  var maxConc = totalRevClient > 0 ? Math.max.apply(null, clientData) / totalRevClient * 100 : 0;
+  var clientColor = maxConc > 60 ? '#ef4444' : (maxConc > 40 ? '#fbbf24' : '#34d399');
+  var topClient = clientLabels.length > 0 ? clientLabels[clientData.indexOf(Math.max.apply(null, clientData))] : '—';
+  
+  // ═══════ ALERTAS ═══════
+  var alerts=[];
+  if(t.criticos.length>0)alerts.push({n:(isEn?'CRITICAL':'CRÍTICO'),c:'#ef4444',ico:'🚨',t:t.criticos.length+(isEn?' critical(s)':' crítico(s)'),d:t.criticos.map(function(p){return p.name;}).join(', ')});
+  if(e.VAC<0)alerts.push({n:(isEn?'HIGH':'ALTO'),c:'#f97316',ico:'💰',t:(isEn?'Overcost ':'Sobrecosto ')+fEur(Math.abs(e.VAC)),d:(isEn?'EAC exceeds BAC.':'EAC supera BAC.')});
+  var bloqueados=PROJECTS.filter(function(p){return p.opStatus==='bloqueado';});
+  if(bloqueados.length>0)alerts.push({n:(isEn?'HIGH':'ALTO'),c:'#f97316',ico:'🔴',t:bloqueados.length+(isEn?' blocked':' bloqueado(s)'),d:bloqueados.map(function(p){return p.name;}).join(', ')});
+  if(t.riesgos.length>0)alerts.push({n:(isEn?'MEDIUM':'MEDIO'),c:'#fbbf24',ico:'⚠️',t:t.riesgos.length+(isEn?' at risk':' en riesgo'),d:t.riesgos.map(function(p){return p.name;}).join(', ')});
+  
+  // ═══════ DECISIONES ═══════
+  var decisions=[];
+  if(e.CPI<0.95)decisions.push({t:(isEn?'Restructure costs':'Reestructurar costes'),d:(isEn?'CPI ':'CPI ')+e.CPI.toFixed(2)+(isEn?'. Hours audit and renegotiation.':'. Auditoría de horas y renegociación.'),c:'#ef4444'});
+  else decisions.push({t:(isEn?'Accelerate growth':'Acelerar crecimiento'),d:(isEn?'Approve expansion with new projects.':'Aprobar expansión con nuevos proyectos.'),c:'#34d399'});
+  if(bloqueados.length>0)decisions.push({t:(isEn?'Unblock projects':'Desbloquear proyectos'),d:bloqueados.length+(isEn?' projects require intervention.':' proyectos requieren intervención.'),c:'#f97316'});
+  else if(e.SPI<0.95)decisions.push({t:(isEn?'Recover schedule':'Recuperar cronograma'),d:'SPI '+e.SPI.toFixed(2)+(isEn?'. Apply Fast-tracking.':'. Aplicar Fast-tracking.'),c:'#f97316'});
+  else decisions.push({t:(isEn?'Consolidate contracts':'Consolidar contratos'),d:(isEn?'Renegotiate with key clients.':'Renegociar con clientes clave.'),c:'#34d399'});
+  decisions.push({t:(isEn?'Invest in team':'Invertir en equipo'),d:(isEn?'EVM/PMI training for PMs.':'Capacitación EVM/PMI para PMs.'),c:'#a78bfa'});
+  
   el.innerHTML=
-    '<div class="box" style="background:linear-gradient(135deg,'+scoreC+'15,rgba(12,6,30,0.95));border:1px solid '+scoreC+'55;padding:34px;"><div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap;"><div style="text-align:center;"><div style="font-size:96px;font-weight:900;color:'+scoreC+';line-height:1;">'+score+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">'+(isEn?'Executive Score':'Score Ejecutivo')+'</div></div><div style="flex:1;min-width:280px;"><div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">'+estado.t+'</div><div style="font-size:14px;color:#cbd5e1;line-height:1.7;">'+estado.m+'</div><div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge" style="background:'+scoreC+'22;color:'+scoreC+';">'+estado.e+'</span><span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;">'+(isEn?'UPDATED ':'ACTUALIZADO ')+new Date().toLocaleTimeString(isEn?'en-US':'es-ES',{hour:'2-digit',minute:'2-digit'})+'</span></div></div></div></div>'+
+    // ═══ HERO SCORE ═══
+    '<div class="box" style="background:linear-gradient(135deg,'+scoreC+'15,rgba(12,6,30,0.95));border:1px solid '+scoreC+'55;padding:30px 34px;"><div style="display:flex;align-items:center;gap:36px;flex-wrap:wrap;"><div style="text-align:center;"><div style="font-size:86px;font-weight:900;color:'+scoreC+';line-height:1;">'+score+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">'+(isEn?'Executive Score':'Score Ejecutivo')+'</div></div><div style="flex:1;min-width:280px;"><div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">'+estado.t+'</div><div style="font-size:14px;color:#cbd5e1;line-height:1.7;">'+estado.m+'</div><div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge" style="background:'+scoreC+'22;color:'+scoreC+';">'+estado.e+'</span><span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;">'+(isEn?'UPDATED ':'ACTUALIZADO ')+new Date().toLocaleTimeString(isEn?'en-US':'es-ES',{hour:'2-digit',minute:'2-digit'})+'</span></div></div></div></div>'+
     
-    '<div class="kpi-4">'+kpi((isEn?'Financial Status':'Estado Financiero'),e.CPI.toFixed(2),e.CPI>=1?(isEn?'Optimal':'Óptimo'):e.CPI>=0.9?(isEn?'Tolerance':'Tolerancia'):(isEn?'Attention':'Atención'),e.CPI>=1?'#34d399':e.CPI>=0.9?'#fbbf24':'#ef4444')+kpi((isEn?'Schedule':'Cronograma'),e.SPI.toFixed(2),e.SPI>=1?(isEn?'On time':'En tiempo'):e.SPI>=0.9?(isEn?'Tolerance':'Tolerancia'):(isEn?'Delayed':'Retrasado'),e.SPI>=1?'#34d399':e.SPI>=0.9?'#fbbf24':'#ef4444')+kpi((isEn?'Portfolio':'Portafolio'),PROJECTS.length,(isEn?'projects':'proyectos'),'#a78bfa')+kpi((isEn?'Value':'Valor'),fEur(t.budget),(isEn?'budget':'presupuesto'),'#67e8f9')+'</div>'+
+    // ═══ LOS 6 PILARES DEL C-SUITE ═══
+    '<h3 style="font-size:13px;color:var(--violet-l);letter-spacing:1.5px;text-transform:uppercase;margin:24px 0 14px;font-weight:900;">🏛️ '+(isEn?'The 6 Pillars of C-Suite Decision':'Los 6 Pilares del C-Suite')+'</h3>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;">'+
+      // PILAR 1: FINANZAS
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+finColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">💰</span><span style="font-size:9px;color:'+finColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Finance':'Finanzas')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+finColor+';margin-bottom:4px;">'+fEur(ebitda)+'</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'EBITDA Margin':'Margen EBITDA')+'<br><strong style="color:#fff;">'+ebitdaMargin.toFixed(1)+'%</strong></div>'+
+      '</div>'+
+      // PILAR 2: ESTRATEGIA
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+strColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🎯</span><span style="font-size:9px;color:'+strColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Strategy':'Estrategia')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+strColor+';margin-bottom:4px;">'+strategicScore+'/100</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'OKR Strategic Score':'Score Estratégico OKR')+'<br><strong style="color:#fff;">'+(strategicScore>=75?(isEn?'On track':'En curso'):strategicScore>=50?(isEn?'Warning':'Alerta'):(isEn?'Critical':'Crítico'))+'</strong></div>'+
+      '</div>'+
+      // PILAR 3: OPERACIÓN
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+teamColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">⚙️</span><span style="font-size:9px;color:'+teamColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Operation':'Operación')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+teamColor+';margin-bottom:4px;">'+teamUtil+'%</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Team Utilization':'Utilización del Equipo')+'<br><strong style="color:#fff;">'+totalHours+'h '+(isEn?'total':'total')+'</strong></div>'+
+      '</div>'+
+      // PILAR 4: RIESGOS
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+riskColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🛡️</span><span style="font-size:9px;color:'+riskColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Risk':'Riesgos')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+riskColor+';margin-bottom:4px;">'+fEur(riskExposure)+'</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Risk Exposure':'Exposición al Riesgo')+'<br><strong style="color:#fff;">'+criticalCount+(isEn?' critical':' críticos')+'</strong></div>'+
+      '</div>'+
+      // PILAR 5: TALENTO
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+talentColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">👥</span><span style="font-size:9px;color:'+talentColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Talent':'Talento')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+talentColor+';margin-bottom:4px;">'+overloadedCount+'</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Overloaded members':'Miembros sobrecargados')+'<br><strong style="color:#fff;">'+(overloadedCount===0?(isEn?'Healthy Team':'Equipo Sano'):(isEn?'Burnout Risk':'Riesgo Burnout'))+'</strong></div>'+
+      '</div>'+
+      // PILAR 6: CLIENTES
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border-top:3px solid '+clientColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🤝</span><span style="font-size:9px;color:'+clientColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Clients':'Clientes')+'</span></div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+clientColor+';margin-bottom:4px;">'+maxConc.toFixed(0)+'%</div>'+
+        '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Max Concentration':'Máx. Concentración')+'<br><strong style="color:#fff;">'+topClient.substring(0,15)+'</strong></div>'+
+      '</div>'+
+    '</div>'+
     
-    '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Prioritized Alerts':'Alertas Priorizadas')+'</div>'+(alerts.length===0?'<div style="text-align:center;padding:30px;color:#34d399;">'+(isEn?'✅ No critical alerts.':'✅ Sin alertas críticas.')+'</div>':'<div style="display:flex;flex-direction:column;gap:12px;">'+alerts.map(function(a){return '<div style="padding:16px 20px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:4px solid '+a.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:20px;">'+a.ico+'</span><span class="badge" style="background:'+a.c+'22;color:'+a.c+';">'+a.n+'</span><span style="font-size:13.5px;font-weight:900;color:#fff;">'+a.t+'</span></div><div style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">'+a.d+'</div><div style="font-size:11.5px;color:'+a.c+';font-weight:700;">→ '+a.a+'</div></div>';}).join('')+'</div>')+'</div>'+
+    // ═══ ALERTAS + DECISIONES (2 columnas) ═══
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">'+
+      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🚨</span> '+(isEn?'Prioritized Alerts':'Alertas Priorizadas')+'</div>'+(alerts.length===0?'<div style="text-align:center;padding:30px;color:#34d399;">'+(isEn?'✅ No critical alerts.':'✅ Sin alertas críticas.')+'</div>':'<div style="display:flex;flex-direction:column;gap:12px;">'+alerts.slice(0,3).map(function(a){return '<div style="padding:14px 16px;border-radius:10px;background:rgba(0,0,0,0.3);border-left:4px solid '+a.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:18px;">'+a.ico+'</span><span class="badge" style="background:'+a.c+'22;color:'+a.c+';">'+a.n+'</span><span style="font-size:12.5px;font-weight:900;color:#fff;">'+a.t+'</span></div><div style="font-size:11px;color:#cbd5e1;">'+a.d+'</div></div>';}).join('')+'</div>')+'</div>'+
+      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚡</span> '+(isEn?'Executive Decisions Today':'Decisiones Ejecutivas de Hoy')+'</div><div style="display:flex;flex-direction:column;gap:12px;">'+decisions.map(function(d,i){return '<div style="padding:14px 16px;border-radius:10px;background:rgba(0,0,0,0.3);border-left:4px solid '+d.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="width:26px;height:26px;border-radius:8px;background:'+d.c+';color:#0b0e17;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:12.5px;font-weight:900;color:#fff;">'+d.t+'</span></div><div style="font-size:11px;color:#cbd5e1;line-height:1.5;">'+d.d+'</div></div>';}).join('')+'</div></div>'+
+    '</div>'+
     
-    '<div class="box"><div class="box-t"><span>⚡</span> '+(isEn?'Executive Decisions Today':'Decisiones Ejecutivas de Hoy')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">'+decisions.map(function(d,i){return '<div style="padding:18px;border-radius:14px;background:rgba(0,0,0,0.3);border:1px solid '+d.c+'55;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:32px;height:32px;border-radius:10px;background:'+d.c+';color:#0b0e17;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:13px;font-weight:900;color:#fff;">'+d.t+'</span></div><div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;">'+d.d+'</div></div>';}).join('')+'</div></div>'+
-    
+    // ═══ 15 SEGUNDOS ═══
     '<div class="box"><div class="box-t"><span>📌</span> '+(isEn?'15-Second Summary':'Resumen 15 Segundos')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+
       [
         {l:(isEn?'Where are we':'Dónde estamos'),v:e.PC.toFixed(0)+'%',s:(isEn?'progress':'avance'),c:'#fbbf24'},
@@ -2991,19 +3070,14 @@ function renderVIP(){
       ].map(function(k){return '<div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(0,0,0,0.3);"><div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">'+k.l+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v+'</div><div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">'+k.s+'</div></div>';}).join('')+
     '</div></div>'+
     
+    // ═══ CHART: CONCENTRACIÓN + FINANCIAL SNAPSHOT ═══
     '<div class="chart-2">'+
       '<div class="chart-card"><div class="t"><span>🏢</span> '+(isEn?'Revenue Concentration':'Concentración de Ingresos')+'</div><canvas id="cVIPClient"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>🔥</span> '+(isEn?'Team Pulse (Burnout)':'Pulso del Equipo (Burnout)')+'</div>'+
-        '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:180px;">'+
-          '<div style="font-size:64px; font-weight:900; color:'+(overloadedCount>0?'#ef4444':'#34d399')+'; line-height:1;">'+overloadedCount+'</div>'+
-          '<div style="font-size:14px; font-weight:800; color:#fff; margin-top:10px;">'+(isEn?'Overloaded Members':'Miembros Sobrecargados')+'</div>'+
-          '<div style="font-size:11px; color:#94a3b8; margin-top:4px;">'+(isEn?'(Utilization > 90%)':'(Utilización > 90%)')+'</div>'+
-          '<div style="margin-top:15px; padding:8px 16px; border-radius:8px; background:rgba(0,0,0,0.3); font-size:11px; color:'+(overloadedCount>0?'#fca5a5':'#6ee7b7')+';">'+(overloadedCount>0?(isEn?'⚠️ Risk of burnout in team':'⚠️ Riesgo de burnout en el equipo'):(isEn?'✅ Balanced team':'✅ Equipo balanceado'))+'</div>'+
-        '</div>'+
-      '</div>'+
+      '<div class="chart-card"><div class="t"><span>💵</span> '+(isEn?'Financial Snapshot':'Snapshot Financiero')+'</div><canvas id="cVIPFinance"></canvas></div>'+
     '</div>';
 
   setTimeout(function(){
+    // Chart: Concentración de clientes
     if(charts.vipClient)charts.vipClient.destroy();
     var cVip = document.getElementById('cVIPClient');
     if(cVip && clientLabels.length > 0){
@@ -3011,26 +3085,43 @@ function renderVIP(){
         type: 'doughnut',
         data: {
           labels: clientLabels,
-          datasets: [{
-            data: clientData,
-            backgroundColor: ['#34d399', '#a78bfa', '#fbbf24', '#67e8f9', '#ef4444', '#ec4899'],
-            borderWidth: 0,
-            hoverOffset: 10
+          datasets: [{ data: clientData, backgroundColor: ['#34d399', '#a78bfa', '#fbbf24', '#67e8f9', '#ef4444', '#ec4899'], borderWidth: 0, hoverOffset: 10 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: '#e8edf5', font: { size: 11, weight: '700' }, usePointStyle: true, padding: 14 } } },
+          cutout: '60%'
+        }
+      });
+    }
+    
+    // Chart: Financial Snapshot (NUEVO)
+    if(charts.vipFinance)charts.vipFinance.destroy();
+    var cFin = document.getElementById('cVIPFinance');
+    if(cFin){
+      charts.vipFinance = new Chart(cFin.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: [(isEn?'Revenue':'Ingresos'), (isEn?'Costs':'Costes'), 'OpEx', 'EBITDA'],
+          datasets: [{ 
+            label: '€', 
+            data: [revenue, costs, opex, ebitda], 
+            backgroundColor: ['#34d399', '#ef4444', '#fbbf24', ebitda >= 0 ? '#67e8f9' : '#ef4444'], 
+            borderRadius: 6, barPercentage: 0.6 
           }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'right', labels: { color: '#e8edf5', font: { size: 11, weight: '700' }, usePointStyle: true, padding: 14 } }
-          },
-          cutout: '60%'
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#94a3b8', callback: function(v){ return fEur(v); } } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10, weight: '700' } } }
+          }
         }
       });
     }
   }, 100);
 }
-
 /* ═══════════════════════════════════════════════════════════
    IA CHAT
    ═══════════════════════════════════════════════════════════ */
