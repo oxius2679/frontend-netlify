@@ -2271,16 +2271,18 @@ function renderCEO(){
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "OKRs & Strategy · CEO" : "OKRs & Estrategia · CEO")+'</h2><p>'+(isEn ? "Balanced Scorecard with 4 perspectives derived from real data. Strategic objectives, project alignment and 12-month forecast." : "Cuadro de Mando Integral con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.")+'</p></div><div class="hero-stats">'+statCard(totalScore,(isEn?'Strategic Score':'Score Estratégico'),'g')+statCard(5,(isEn?'Objectives':'Objetivos'))+statCard(4,(isEn?'Perspectives':'Perspectivas'),'gr')+statCard(3,(isEn?'Decisions':'Decisiones'),'r')+'</div></div></div>'+
     
-    '<div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px; margin-bottom:20px; align-items: stretch;">'+
+    // 🔥 GRID SIMÉTRICO AL 50% PARA QUE EL RADAR TENGA UN CUADRADO PERFECTO
+    '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">'+
       
-      // 🔥 EL TRUCO: Forzamos el canvas a 450px de altura con !important
-      '<div class="chart-card" style="display:flex; flex-direction:column; padding:15px;">'+
-        '<div class="t" style="margin-bottom:10px;"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div>'+
-        '<div style="position:relative; width:100%; flex:1;">'+
-            '<canvas id="cRadar" style="width: 100% !important; height: 450px !important;"></canvas>'+
+      // 🔥 CONTENEDOR DEL RADAR CON ALTURA FIJA ABSOLUTA (SIN FLEXBOX)
+      '<div style="background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95)); border-radius:18px; padding:15px; border:1px solid rgba(6,182,212,0.2); display:flex; flex-direction:column;">'+
+        '<div style="font-size:12.5px; font-weight:700; color:#c4b5fd; margin-bottom:10px; display:flex; align-items:center; gap:8px;"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div>'+
+        '<div style="position:relative; width:100%; height:420px;">'+
+            '<canvas id="cRadar"></canvas>'+
         '</div>'+
       '</div>'+
       
+      // COLUMNA DERECHA: SCORE ESTRATÉGICO
       '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">'+
         '<div class="box-t"><span>🎯</span> '+(isEn?'Strategic Score':'Score Estratégico')+'</div>'+
         
@@ -2317,7 +2319,7 @@ function renderCEO(){
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> '+(isEn?'Alignment by Project':'Alineación por Proyecto')+'</div><canvas id="cAlign"></canvas></div><div class="chart-card"><div class="t"><span>📈</span> '+(isEn?'4-Quarter Forecast':'Forecast 4 Trimestres')+'</div><canvas id="cFc"></canvas></div></div>';
 
   setTimeout(function(){
-    // 🔥 FORZAR EL RENDERIZADO DEL RADAR
+    // 🔥 RENDERIZAR EL RADAR Y FORZAR EL RESIZE
     if(charts.radar)charts.radar.destroy();
     var cRadar = document.getElementById('cRadar');
     if(cRadar) {
@@ -2356,9 +2358,9 @@ function renderCEO(){
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: 10 }, 
+          resizeDelay: 0, // 🔥 Fuerza a redimensionar inmediatamente
           plugins: { 
-            legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 12, weight: 'bold' }, usePointStyle: true, padding: 20 } } 
+            legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 12, weight: 'bold' }, usePointStyle: true, padding: 15 } } 
           },
           scales: {
             r: {
@@ -2369,13 +2371,16 @@ function renderCEO(){
               angleLines: { color: 'rgba(255,255,255,0.12)' },
               pointLabels: { 
                 color: '#F8FAFC', 
-                font: { size: 16, weight: '900' }, // Letras GIGANTES
-                padding: 15
+                font: { size: 14, weight: '900' }, // Letras grandes
+                padding: 10
               }
             }
           }
         }
       });
+
+      // 🔥 ESTA ES LA MAGIA: Forzamos al gráfico a recalcular su tamaño después de 100ms
+      setTimeout(function() { if (charts.radar) charts.radar.resize(); }, 100);
     }
 
     if(charts.align)charts.align.destroy();
