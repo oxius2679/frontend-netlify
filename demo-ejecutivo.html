@@ -2733,7 +2733,7 @@ async function renderGRC(){
   ];
   var compliance=Math.round(areas.reduce(function(s,a){return s+a.s;},0)/areas.length);
 
-  // 2. MATRIZ DE RIESGOS Y HEATMAP 5x5 (CON ESTADO)
+  // 2. MATRIZ DE RIESGOS Y HEATMAP 5x5 (CON ESTADO Y MITIGACIÓN)
   var risks = [];
   if (e.CPI < 0.95) risks.push({n:(isEn?'Cost deviation':'Desviación de costos'), p:4, i:4, sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:(isEn?'Hours audit':'Auditoría de horas'), owner: 'CFO / PMO', deadline: '48h', status:(isEn?'Open':'Abierto')});
   if (e.SPI < 0.95) risks.push({n:(isEn?'Schedule delay':'Retraso en cronograma'), p:4, i:3, sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:(isEn?'Fast-tracking':'Fast-tracking'), owner: 'COO / PMs', deadline: '7d', status:(isEn?'In Mitigation':'En Mitigación')});
@@ -2773,10 +2773,19 @@ async function renderGRC(){
     ];
   }
 
-  // 4. GENERAR LA CUADRÍCULA DEL HEATMAP 5x5
+  // 4. GENERAR LA CUADRÍCULA DEL HEATMAP 5x5 CON CONTEXTO VISUAL
   var heatmapHtml = '';
+  
+  // Eje Y (Impacto)
+  heatmapHtml += '<div style="display:flex; height:100%;">';
+  heatmapHtml += '<div style="display:flex; flex-direction:column; justify-content:space-between; padding-right:8px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; text-align:right; padding-top:2px; padding-bottom:2px;">';
+  heatmapHtml += '<span>Alto</span><span>Medio</span><span>Bajo</span>';
+  heatmapHtml += '</div>';
+  
+  heatmapHtml += '<div style="flex:1; display:flex; flex-direction:column;">';
+  
   for (var row = 5; row >= 1; row--) { 
-    heatmapHtml += '<div style="display:flex; height:38px;">';
+    heatmapHtml += '<div style="display:flex; height:36px; margin-bottom:2px;">';
     for (var col = 1; col <= 5; col++) { 
       var riskHere = risks.filter(function(r){ return r.p === col && r.i === row; });
       var bgColor = 'rgba(15,23,42,0.4)';
@@ -2788,15 +2797,32 @@ async function renderGRC(){
       else if (score >= 5) { bgColor = 'rgba(251,191,36,0.1)'; borderColor = 'rgba(251,191,36,0.2)'; } 
       else if (score >= 2) { bgColor = 'rgba(52,211,153,0.1)'; borderColor = 'rgba(52,211,153,0.2)'; } 
 
-      heatmapHtml += '<div style="flex:1; background:'+bgColor+'; border:1px solid '+borderColor+'; margin:1px; border-radius:4px; display:flex; align-items:center; justify-content:center; position:relative;">';
-      riskHere.forEach(function(r) {
-        var dotColor = r.sev === 'critico' ? '#ef4444' : r.sev === 'alto' ? '#f97316' : '#fbbf24';
-        heatmapHtml += '<div title="'+r.n+'" style="width:16px; height:16px; border-radius:50%; background:'+dotColor+'; box-shadow:0 0 10px '+dotColor+'; border:2px solid #fff; cursor:help;"></div>';
-      });
+      heatmapHtml += '<div style="flex:1; background:'+bgColor+'; border:1px solid '+borderColor+'; margin:1px; border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative;">';
+      
+      // Si hay riesgos, mostrar un badge con la cantidad y color
+      if (riskHere.length > 0) {
+        var dotColor = riskHere[0].sev === 'critico' ? '#ef4444' : riskHere[0].sev === 'alto' ? '#f97316' : '#fbbf24';
+        heatmapHtml += '<div title="'+riskHere.map(function(r){return r.n;}).join(', ')+'" style="width:20px; height:20px; border-radius:50%; background:'+dotColor+'; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:900; box-shadow:0 0 8px '+dotColor+'80; border:2px solid #fff; cursor:help;">'+riskHere.length+'</div>';
+      }
       heatmapHtml += '</div>';
     }
     heatmapHtml += '</div>';
   }
+  
+  // Eje X (Probabilidad)
+  heatmapHtml += '<div style="display:flex; justify-content:space-around; margin-top:4px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; padding-left:20px;">';
+  heatmapHtml += '<span>Baja</span><span>Media</span><span>Alta</span>';
+  heatmapHtml += '</div>';
+  
+  heatmapHtml += '</div></div>';
+
+  // Leyenda del Heatmap
+  var legendHtml = '<div style="display:flex; justify-content:center; gap:12px; margin-top:12px; font-size:9px; color:#94a3b8;">'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:#34d399;border-radius:50%;margin-right:4px;"></span>Bajo</span>'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:#fbbf24;border-radius:50%;margin-right:4px;"></span>Medio</span>'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:#f97316;border-radius:50%;margin-right:4px;"></span>Alto</span>'+
+    '<span><span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:4px;"></span>Crítico</span>'+
+  '</div>';
 
   // 5. GENERAR EL AUDIT LOG REAL
   var auditEvents = [];
@@ -2827,26 +2853,22 @@ async function renderGRC(){
     '</div></div>'+
     
     '<div style="display:grid; grid-template-columns: 350px 1fr; gap:20px; margin-bottom:20px;">'+
-      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔥</span> '+(isEn?'5x5 Risk Heat Map':'Mapa de Calor 5x5')+'</div>'+
-        '<div style="display:flex; height: 100%; align-items: center;">'+
-          '<div style="display:flex; flex-direction:column; justify-content:space-around; height:190px; padding-right:10px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; text-align:right;">'+
-            '<span>'+(isEn?'High':'Alto')+'</span><span>'+(isEn?'Med':'Medio')+'</span><span>'+(isEn?'Low':'Bajo')+'</span>'+
-          '</div>'+
-          '<div style="flex:1;">'+
-            heatmapHtml+
-            '<div style="display:flex; justify-content:space-around; margin-top:8px; font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase;">'+
-              '<span>'+(isEn?'Low':'Baja')+'</span><span>'+(isEn?'Med':'Media')+'</span><span>'+(isEn?'High':'Alta')+'</span>'+
-            '</div>'+
-          '</div>'+
+      
+      // MAPA DE CALOR REDISEÑADO
+      '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column;"><div class="box-t"><span>🔥</span> '+(isEn?'5x5 Risk Heat Map':'Mapa de Calor 5x5')+'</div>'+
+        '<div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:10px 0;">'+
+          heatmapHtml +
+          legendHtml +
         '</div>'+
       '</div>'+
 
-      // MATRIZ CON COLUMNA DE ESTADO
-      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚠️</span> '+(isEn?'Risk Matrix Detail':'Detalle de la Matriz de Riesgos')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Owner':'Responsable')+'</th><th>'+(isEn?'Deadline':'Plazo')+'</th><th>'+(isEn?'Status':'Estado')+'</th></tr></thead><tbody>'+
+      // MATRIZ CON COLUMNA DE MITIGACIÓN Y SCORE
+      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚠️</span> '+(isEn?'Risk Matrix Detail':'Detalle de la Matriz de Riesgos')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">Score</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Mitigation':'Mitigación')+'</th><th>'+(isEn?'Owner':'Responsable')+'</th><th>'+(isEn?'Deadline':'Plazo')+'</th><th>'+(isEn?'Status':'Estado')+'</th></tr></thead><tbody>'+
       risks.map(function(r){
         var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];
         var statusColor = r.status === 'Abierto' || r.status === 'Open' ? '#ef4444' : '#fbbf24';
-        return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#fff;font-weight:700;">'+r.owner+'</td><td style="font-size:11px;color:'+(r.deadline==='48h'||r.deadline==='24h'?'#ef4444':'#fbbf24')+';font-weight:900;">'+r.deadline+'</td><td><span class="badge" style="background:'+statusColor+'22;color:'+statusColor+';">'+r.status+'</span></td></tr>';
+        var riskScore = r.p * r.i; // Score = Probabilidad x Impacto
+        return '<tr><td><strong style="color:#fff; font-size:11.5px;">'+r.n+'</strong></td><td class="n"><span class="badge" style="background:#64748b22; color:#cbd5e1; font-size:10px;">'+riskScore+'</span></td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+'; font-size:10px;">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900; font-size:11.5px;">'+fEur(r.exp)+'</td><td style="font-size:10.5px;color:#94a3b8; font-style:italic;">'+r.mit+'</td><td style="font-size:10.5px;color:#fff;font-weight:700;">'+r.owner+'</td><td style="font-size:10.5px;color:'+(r.deadline==='48h'||r.deadline==='24h'?'#ef4444':'#fbbf24')+';font-weight:900;">'+r.deadline+'</td><td><span class="badge" style="background:'+statusColor+'22;color:'+statusColor+'; font-size:10px;">'+r.status+'</span></td></tr>';
       }).join('')+
       '</tbody></table></div></div>'+
     '</div>'+
@@ -2861,12 +2883,11 @@ async function renderGRC(){
       '</div></div>'+
       
       '<div style="display:flex; flex-direction:column; gap:20px;">'+
-        // ALERTAS OPERATIVAS (CAMBIO DE NOMBRE)
+        // ALERTAS OPERATIVAS
         '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🛡️</span> '+(isEn?'Operational Alerts':'Alertas Operativas Reales')+'</div>'+
           '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">'+
             '<div style="text-align:center; padding:12px; background:rgba(239,68,68,0.1); border-radius:10px; border:1px solid rgba(239,68,68,0.2);"><div style="font-size:24px; font-weight:900; color:#ef4444;">'+overdueTasks+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Overdue Tasks':'Tareas Vencidas')+'</div></div>'+
             '<div style="text-align:center; padding:12px; background:rgba(251,191,36,0.1); border-radius:10px; border:1px solid rgba(251,191,36,0.2);"><div style="font-size:24px; font-weight:900; color:#fbbf24;">'+(totalTareas - trazabilidad)+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Unassigned':'Sin Asignar')+'</div></div>'+
-            // CAMBIO: PROYECTOS CRÍTICOS (en lugar de Bloqueados)
             '<div style="text-align:center; padding:12px; background:rgba(52,211,153,0.1); border-radius:10px; border:1px solid rgba(52,211,153,0.2);"><div style="font-size:24px; font-weight:900; color:#34d399;">'+PROJECTS.filter(function(p){return p.health==='critico';}).length+'</div><div style="font-size:9px; color:#94a3b8; text-transform:uppercase; font-weight:800; margin-top:4px;">'+(isEn?'Critical Projects':'Proyectos Críticos')+'</div></div>'+
           '</div>'+
         '</div>'+
@@ -2880,7 +2901,6 @@ async function renderGRC(){
       '</div>'+
     '</div>';
 }
-
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
    ═══════════════════════════════════════════════════════════ */
