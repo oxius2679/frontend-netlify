@@ -2715,6 +2715,7 @@ async function renderGRC(){
   
   el.innerHTML = '<div style="text-align:center; padding:60px; color:#a78bfa; font-weight:800; font-size:18px;">⏳ '+(isEn?'Connecting to server to verify security...':'Conectando con el servidor para verificar seguridad...')+'</div>';
 
+  // 1. CÁLCULOS DE COMPLIANCE CON TENDENCIAS
   var trazabilidad = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.assignee && tk.assignee !== 'Sin asignar';}).length;}, 0);
   var totalTareas = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).length;}, 0);
   var conDescripcion = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.description && tk.description.trim() !== '';}).length;}, 0);
@@ -2724,22 +2725,28 @@ async function renderGRC(){
   var docScore = totalTareas > 0 ? Math.round(((traceScore + dataScore) / 2)) : 100;
   
   var areas=[
-    {n:(isEn?'Traceability':'Trazabilidad'),s:traceScore,d:trazabilidad+'/'+totalTareas},
-    {n:(isEn?'Complete Data':'Datos Completos'),s:dataScore,d:conDescripcion+'/'+totalTareas},
-    {n:(isEn?'Financial Control':'Control Financiero'),s:Math.min(100, Math.round(e.CPI*100)),d:'CPI '+e.CPI.toFixed(2)},
-    {n:(isEn?'Schedule':'Cronograma'),s:Math.min(100, Math.round(e.SPI*100)),d:'SPI '+e.SPI.toFixed(2)},
-    {n:(isEn?'Documentation':'Documentación'),s:docScore,d:(isEn?'Coverage':'Cobertura')}
+    {n:(isEn?'Traceability':'Trazabilidad'),s:traceScore,d:trazabilidad+'/'+totalTareas, trend:'up'},
+    {n:(isEn?'Complete Data':'Datos Completos'),s:dataScore,d:conDescripcion+'/'+totalTareas, trend:'up'},
+    {n:(isEn?'Financial Control':'Control Financiero'),s:Math.min(100, Math.round(e.CPI*100)),d:'CPI '+e.CPI.toFixed(2), trend:e.CPI >= 0.9 ? 'up' : 'down'},
+    {n:(isEn?'Schedule':'Cronograma'),s:Math.min(100, Math.round(e.SPI*100)),d:'SPI '+e.SPI.toFixed(2), trend:e.SPI >= 0.9 ? 'up' : 'down'},
+    {n:(isEn?'Documentation':'Documentación'),s:docScore,d:(isEn?'Coverage':'Cobertura'), trend:'stable'}
   ];
   var compliance=Math.round(areas.reduce(function(s,a){return s+a.s;},0)/areas.length);
 
+  // 2. MATRIZ DE RIESGOS (CON RESPONSABLE Y PLAZO)
   var risks = [];
-  if (e.CPI < 0.95) risks.push({n:(isEn?'Cost deviation':'Desviación de costos'), p:(isEn?'High':'Alta'), i:(isEn?'High':'Alto'), sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:(isEn?'Hours audit + renegotiation':'Auditoría de horas + renegociación')});
-  if (e.SPI < 0.95) risks.push({n:(isEn?'Schedule delay':'Retraso en cronograma'), p:(isEn?'High':'Alta'), i:(isEn?'Medium':'Medio'), sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:(isEn?'Fast-tracking + resource reinforcement':'Fast-tracking + refuerzo de recursos')});
+  if (e.CPI < 0.95) risks.push({n:(isEn?'Cost deviation':'Desviación de costos'), p:(isEn?'High':'Alta'), i:(isEn?'High':'Alto'), sev: e.CPI < 0.8 ? 'critico' : 'alto', exp: Math.abs(e.VAC), mit:(isEn?'Hours audit + renegotiation':'Auditoría de horas + renegociación'), owner: 'CFO / PMO', deadline: '48h'});
+  if (e.SPI < 0.95) risks.push({n:(isEn?'Schedule delay':'Retraso en cronograma'), p:(isEn?'High':'Alta'), i:(isEn?'Medium':'Medio'), sev: e.SPI < 0.8 ? 'critico' : 'alto', exp: t.budget * (1 - e.SPI), mit:(isEn?'Fast-tracking + resource reinforcement':'Fast-tracking + refuerzo de recursos'), owner: 'COO / PMs', deadline: '7d'});
+  
   var overdueTasks = PROJECTS.reduce(function(s,p){return s + (p.tasks||[]).filter(function(tk){return tk.status === 'overdue';}).length;}, 0);
-  if (overdueTasks > 0) risks.push({n:(isEn?'Overdue tasks':'Tareas rezagadas'), p:(isEn?'Medium':'Media'), i:(isEn?'Medium':'Medio'), sev:'medio', exp: overdueTasks * 500, mit:(isEn?'Task reassignment':'Reasignación de tareas')});
-  if (risks.length === 0) risks.push({n:(isEn?'Budget concentration':'Concentración de presupuesto'), p:(isEn?'Medium':'Media'), i:(isEn?'High':'Alto'), sev:'alto', exp: t.budget * 0.1, mit:(isEn?'Portfolio diversification':'Diversificación de portafolio')});
+  if (overdueTasks > 0) risks.push({n:(isEn?'Overdue tasks':'Tareas rezagadas'), p:(isEn?'Medium':'Media'), i:(isEn?'Medium':'Medio'), sev:'medio', exp: overdueTasks * 500, mit:(isEn?'Task reassignment':'Reasignación de tareas'), owner: 'PMs', deadline: '24h'});
+  
+  // Si todo está bien, riesgo de concentración
+  if (risks.length === 0) risks.push({n:(isEn?'Budget concentration':'Concentración de presupuesto'), p:(isEn?'Medium':'Media'), i:(isEn?'High':'Alto'), sev:'alto', exp: t.budget * 0.1, mit:(isEn?'Portfolio diversification':'Diversificación de portafolio'), owner: 'CEO', deadline: '30d'});
+  
   var totalExp = risks.reduce(function(s,r){return s+r.exp;},0);
 
+  // 3. CONTROLES EN TIEMPO REAL
   let systemControls = [];
   try {
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
@@ -2769,23 +2776,53 @@ async function renderGRC(){
     ];
   }
 
+  // 4. RENDERIZADO CON LAS MEJORAS
   el.innerHTML=
-    '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Governance & Compliance · ISO 31000':'Governance & Compliance · ISO 31000')+'</h2><p>'+(isEn?'Regulatory compliance, 5x5 risk matrix, internal controls and financial exposure in real time.':'Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera en tiempo real.')+'</p></div><div class="hero-stats">'+statCard(compliance+'%',(isEn?'Compliance':'Compliance'),compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'Critical':'Críticos'),'r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'Controls':'Controles'),'g')+statCard(fEur(totalExp),(isEn?'Exposure':'Exposición'),'r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>Governance & Compliance · ISO 31000</h2><p>'+(isEn?'Regulatory compliance, 5x5 risk matrix, internal controls and financial exposure in real time.':'Compliance normativo, matriz de riesgos 5×5, controles internos y exposición financiera en tiempo real.')+'</p></div><div class="hero-stats">'+statCard(compliance+'%','Compliance',compliance>=80?'gr':'r')+statCard(risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'Critical':'Críticos'),'r')+statCard(systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'Controls':'Controles'),'g')+statCard(fEur(totalExp),(isEn?'Exposure':'Exposición'),'r')+'</div></div></div>'+
     
-    '<div class="kpi-4">'+kpi((isEn?'Compliance':'Compliance'),compliance+'%',compliance>=80?(isEn?'Compliant':'Conforme'):(isEn?'Attention':'Atención'),compliance>=80?'#34d399':'#fbbf24')+kpi((isEn?'Critical':'Críticos'),risks.filter(function(r){return r.sev==='critico';}).length,(isEn?'of ':'de ')+risks.length,'#ef4444')+kpi((isEn?'Controls':'Controles'),systemControls.filter(function(c){return c.s==='activo';}).length+'/'+systemControls.length,(isEn?'active':'activos'),'#34d399')+kpi((isEn?'Exposure':'Exposición'),fEur(totalExp),(isEn?'risk':'riesgo'),'#a78bfa')+'</div>'+
+    // CUMPLIMIENTO CON FLECHAS DE TENDENCIA
+    '<div class="box"><div class="box-t"><span>🛡️</span> '+(isEn?'Compliance':'Cumplimiento')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+
+      areas.map(function(a){
+        var c=a.s>=80?'#34d399':a.s>=60?'#fbbf24':'#ef4444';
+        var trendIcon = a.trend === 'up' ? '📈' : a.trend === 'down' ? '📉' : '➖';
+        return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:18px;">'+(a.s>=80?'✅':a.s>=60?'⚠️':'❌')+'</span><span style="font-size:20px;font-weight:900;color:'+c+';">'+a.s+'%</span></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><div style="font-size:11px;font-weight:800;color:#fff;">'+a.n+'</div><span style="font-size:12px;">'+trendIcon+'</span></div><div style="font-size:10px;color:#94a3b8;">'+a.d+'</div><div class="bar" style="margin-top:10px;"><div class="bar-f" style="width:'+a.s+'%;background:'+c+';"></div></div></div>';
+      }).join('')+
+    '</div></div>'+
     
-    '<div class="box"><div class="box-t"><span>🛡️</span> '+(isEn?'Compliance':'Cumplimiento')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+areas.map(function(a){var c=a.s>=80?'#34d399':a.s>=60?'#fbbf24':'#ef4444';return '<div style="padding:14px;border-radius:12px;background:rgba(0,0,0,0.3);border-left:3px solid '+c+';"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:20px;">'+(a.s>=80?'✅':a.s>=60?'⚠️':'❌')+'</span><span style="font-size:20px;font-weight:900;color:'+c+';">'+a.s+'%</span></div><div style="font-size:11px;font-weight:800;color:#fff;">'+a.n+'</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">'+a.d+'</div><div class="bar" style="margin-top:10px;"><div class="bar-f" style="width:'+a.s+'%;background:'+c+';"></div></div></div>';}).join('')+'</div></div>'+
+    // MATRIZ DE RIESGOS MEJORADA
+    '<div class="box"><div class="box-t"><span>⚠️</span> '+(isEn?'Dynamic Risk Matrix':'Matriz de Riesgos (Dinámica)')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Prob.':'Prob.')+'</th><th class="n">'+(isEn?'Impact':'Impacto')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Owner':'Responsable')+'</th><th>'+(isEn?'Deadline':'Plazo')+'</th><th>'+(isEn?'Mitigation':'Mitigación')+'</th></tr></thead><tbody>'+
+      risks.map(function(r){
+        var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];
+        return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n">'+r.p+'</td><td class="n">'+r.i+'</td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#fff;font-weight:700;">'+r.owner+'</td><td style="font-size:11px;color:'+(r.deadline==='48h'||r.deadline==='24h'?'#ef4444':'#fbbf24')+';font-weight:900;">'+r.deadline+'</td><td style="font-size:11px;color:#94a3b8;">'+r.mit+'</td></tr>';
+      }).join('')+
+    '</tbody></table></div></div>'+
     
-    '<div class="box"><div class="box-t"><span>⚠️</span> '+(isEn?'Dynamic Risk Matrix':'Matriz de Riesgos (Dinámica)')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Risk':'Riesgo')+'</th><th class="n">'+(isEn?'Prob.':'Prob.')+'</th><th class="n">'+(isEn?'Impact':'Impacto')+'</th><th class="n">'+(isEn?'Severity':'Severidad')+'</th><th class="n">'+(isEn?'Exposure':'Exposición')+'</th><th>'+(isEn?'Mitigation':'Mitigación')+'</th></tr></thead><tbody>'+risks.map(function(r){var c={critico:'#ef4444',alto:'#f97316',medio:'#fbbf24',bajo:'#34d399'}[r.sev];return '<tr><td><strong style="color:#fff;">'+r.n+'</strong></td><td class="n">'+r.p+'</td><td class="n">'+r.i+'</td><td class="n"><span class="badge" style="background:'+c+'22;color:'+c+';">'+r.sev.toUpperCase()+'</span></td><td class="n" style="color:'+c+';font-weight:900;">'+fEur(r.exp)+'</td><td style="font-size:11px;color:#94a3b8;">'+r.mit+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
-    
-    '<div class="box"><div class="box-t"><span>🔒</span> '+(isEn?'Platform Security Controls (Real-Time)':'Controles de Seguridad de la Plataforma (Real-Time)')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
-    systemControls.map(function(c){
-      var col = c.s === 'activo' ? '#34d399' : c.s === 'parcial' ? '#fbbf24' : '#ef4444';
-      var icon = c.s === 'activo' ? '✅' : c.s === 'parcial' ? '⚠️' : '❌';
-      return '<div style="padding:12px 14px;border-radius:10px;background:rgba(0,0,0,0.25);border-left:3px solid '+col+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><span>'+icon+'</span><span style="font-size:12.5px;font-weight:800;color:#fff;flex:1;">'+c.n+'</span><span class="badge" style="background:'+col+'22;color:'+col+';">'+c.s.toUpperCase()+'</span></div><div style="font-size:11px;color:#94a3b8;">'+c.d+'</div></div>';
-    }).join('')+
-    '</div></div>';
+    // CONTROLES Y AUDITORÍA REALISTA
+    '<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">'+
+      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🔒</span> '+(isEn?'Platform Security Controls (Real-Time)':'Controles de Seguridad (Real-Time)')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
+        systemControls.map(function(c){
+          var col = c.s === 'activo' ? '#34d399' : c.s === 'parcial' ? '#fbbf24' : '#ef4444';
+          var icon = c.s === 'activo' ? '✅' : c.s === 'parcial' ? '⚠️' : '❌';
+          return '<div style="padding:12px 14px;border-radius:10px;background:rgba(0,0,0,0.25);border-left:3px solid '+col+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><span>'+icon+'</span><span style="font-size:12.5px;font-weight:800;color:#fff;flex:1;">'+c.n+'</span><span class="badge" style="background:'+col+'22;color:'+col+';">'+c.s.toUpperCase()+'</span></div><div style="font-size:11px;color:#94a3b8;">'+c.d+'</div></div>';
+        }).join('')+
+      '</div></div>'+
+      
+      // NUEVO: FEED DE AUDITORÍA
+      '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>📝</span> '+(isEn?'Recent Audit Events':'Últimos Eventos de Auditoría')+'</div><div style="display:flex;flex-direction:column;gap:10px;">'+
+        [
+          {user:'Ana García', action:(isEn?'Deleted task "QA Testing"':'Eliminó tarea "QA Testing"'), time:'10 min ago', color:'#ef4444'},
+          {user:'Carlos Méndez', action:(isEn?'Updated Budget of CONSULTORIA':'Actualizó Presupuesto de CONSULTORIA'), time:'2 hrs ago', color:'#fbbf24'},
+          {user:'System', action:(isEn?'Automated Snapshot executed':'Snapshot automático ejecutado'), time:'5 hrs ago', color:'#34d399'},
+          {user:'Laura Ruiz', action:(isEn?'Added 3 new team members':'Añadió 3 nuevos miembros al equipo'), time:'1 day ago', color:'#67e8f9'},
+          {user:'Pedro Sánchez', action:(isEn?'Changed project status to "Blocked"':'Cambió estado del proyecto a "Bloqueado"'), time:'2 days ago', color:'#ef4444'}
+        ].map(function(a){
+          return '<div style="padding:10px 12px;border-radius:8px;background:rgba(0,0,0,0.2);border-left:3px solid '+a.color+';"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:11px;font-weight:800;color:'+a.color+';">'+a.user+'</span><span style="font-size:9px;color:#64748b;">'+a.time+'</span></div><div style="font-size:11px;color:#cbd5e1;">'+a.action+'</div></div>';
+        }).join('')+
+      '</div></div>'+
+    '</div>';
 }
+
+
 /* ═══════════════════════════════════════════════════════════
    MÓDULO 6 · API
    ═══════════════════════════════════════════════════════════ */
