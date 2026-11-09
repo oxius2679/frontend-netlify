@@ -2271,17 +2271,17 @@ function renderCEO(){
   el.innerHTML=
     '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn ? "OKRs & Strategy · CEO" : "OKRs & Estrategia · CEO")+'</h2><p>'+(isEn ? "Balanced Scorecard with 4 perspectives derived from real data. Strategic objectives, project alignment and 12-month forecast." : "Cuadro de Mando Integral con 4 perspectivas derivado de datos reales. Objetivos estratégicos, alineación por proyecto y forecast a 12 meses.")+'</p></div><div class="hero-stats">'+statCard(totalScore,(isEn?'Strategic Score':'Score Estratégico'),'g')+statCard(5,(isEn?'Objectives':'Objetivos'))+statCard(4,(isEn?'Perspectives':'Perspectivas'),'gr')+statCard(3,(isEn?'Decisions':'Decisiones'),'r')+'</div></div></div>'+
     
-    // 🔥 REDISEÑO: El Radar ocupa más ancho (1.5fr) y el Score menos (1fr)
+    // 🔥 CONTENEDOR DEL RADAR Y EL SCORE (Altura fija garantizada)
     '<div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px; margin-bottom:20px; align-items: stretch;">'+
       
-      // Columna Izquierda: El Radar (Altura fija de 500px para que sea gigante)
-      '<div class="chart-card" style="display:flex; flex-direction:column; min-height: 500px;">'+
+      // Columna Izquierda: El Radar (¡Con altura de 450px en el contenedor!)
+      '<div class="chart-card" style="display:flex; flex-direction:column;">'+
         '<div class="t"><span>🕸️</span> '+(isEn?'Balanced Scorecard Radar':'Radar del Cuadro de Mando')+'</div>'+
-        '<div style="flex:1; position:relative; width:100%; height:100%;"><canvas id="cRadar"></canvas></div>'+
+        '<div style="position:relative; width:100%; height: 450px;"><canvas id="cRadar"></canvas></div>'+
       '</div>'+
       
       // Columna Derecha: Score Estratégico
-      '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between; min-height: 500px;">'+
+      '<div class="box" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">'+
         '<div class="box-t"><span>🎯</span> '+(isEn?'Strategic Score':'Score Estratégico')+'</div>'+
         
         '<div style="display:flex; align-items:center; gap:20px; padding:10px 0;">'+
@@ -2320,7 +2320,7 @@ function renderCEO(){
     '<div class="chart-2"><div class="chart-card"><div class="t"><span>📊</span> '+(isEn?'Alignment by Project':'Alineación por Proyecto')+'</div><canvas id="cAlign"></canvas></div><div class="chart-card"><div class="t"><span>📈</span> '+(isEn?'4-Quarter Forecast':'Forecast 4 Trimestres')+'</div><canvas id="cFc"></canvas></div></div>';
 
   setTimeout(function(){
-    // RENDERIZAR EL RADAR (¡GIGANTE!)
+    // RENDERIZAR EL RADAR
     if(charts.radar)charts.radar.destroy();
     var cRadar = document.getElementById('cRadar');
     if(cRadar) {
@@ -2343,7 +2343,7 @@ function renderCEO(){
               pointBackgroundColor: '#D4AF37',
               pointBorderColor: '#fff',
               pointBorderWidth: 2,
-              pointRadius: 7, // Puntos más grandes
+              pointRadius: 6,
               pointHoverRadius: 9
             },
             {
@@ -2360,7 +2360,7 @@ function renderCEO(){
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: 25 }, // Espacio extra para las etiquetas
+          layout: { padding: 20 }, // Espacio para que las letras no se corten
           plugins: { 
             legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 12, weight: 'bold' }, usePointStyle: true, padding: 20 } } 
           },
@@ -2373,8 +2373,8 @@ function renderCEO(){
               angleLines: { color: 'rgba(255,255,255,0.12)' },
               pointLabels: { 
                 color: '#F8FAFC', 
-                font: { size: 15, weight: '900' }, // Letras del radar más grandes
-                padding: 15
+                font: { size: 14, weight: '900' },
+                padding: 10
               }
             }
           }
