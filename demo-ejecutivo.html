@@ -1,5 +1,3 @@
-<!-- =============================================.txt
-[file content begin]
 <!-- ============================================================
      ZACKY GANTT EXECUTIVE PRO · SALA EJECUTIVA
      CAPA 0 + CAPA 1 · Apertura cinematográfica + Auth ES/EN
@@ -2037,7 +2035,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <span class="chip r" id="chipA">⚠️ 0 alertas</span>
     </div>
     
-    <!-- CUERPO DEL MODAL CON LAS 9 VISTAS -->
+    <!-- CUERPO DEL MODAL CON LAS 8 VISTAS -->
     <div class="modal-body" id="body">
       <div class="view on" id="v-cfo"></div>
       <div class="view" id="v-ceo"></div>
@@ -3216,11 +3214,13 @@ function renderVIP(){
   
   // ═══════ RENDERIZADO ═══════
   el.innerHTML=
+    // ═══ HERO SCORE CON AI INSIGHT ═══
     '<div style="background:linear-gradient(135deg,'+scoreC+'15,rgba(12,6,30,0.95));border:1px solid '+scoreC+'55;padding:30px 34px;border-radius:20px;margin-bottom:20px;display:flex;align-items:center;gap:36px;flex-wrap:wrap;">'+
         '<div style="text-align:center;min-width:160px;"><div style="font-size:86px;font-weight:900;color:'+scoreC+';line-height:1;">'+score+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">'+(isEn?'Executive Score':'Score Ejecutivo')+'</div></div>'+
         '<div style="flex:1;min-width:280px;">'+
             '<div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">'+estado.t+'</div>'+
             '<div style="font-size:14px;color:#cbd5e1;line-height:1.7;margin-bottom:15px;">'+estado.m+'</div>'+
+            // 🔥 NUEVO: AI INSIGHT BOX
             '<div style="background:rgba(0,0,0,0.3);border-left:3px solid #a78bfa;padding:12px 16px;border-radius:8px;">'+
                 '<div style="font-size:10px;color:#a78bfa;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🤖 '+(isEn?'AI Recommendation':'Recomendación de IA')+'</div>'+
                 '<div style="font-size:12.5px;color:#e2e8f0;line-height:1.5;">'+aiInsight+'</div>'+
@@ -3229,34 +3229,41 @@ function renderVIP(){
         '</div>'+
     '</div>'+
     
+    // ═══ LOS 6 PILARES (Con efecto Hover) ═══
     '<style>.vip-pillar:hover{transform:translateY(-4px);box-shadow:0 15px 35px rgba(0,0,0,0.6), 0 0 20px -5px var(--hover-color) !important;border-color:var(--hover-color) !important;}</style>'+
     '<h3 style="font-size:13px;color:var(--violet-l);letter-spacing:1.5px;text-transform:uppercase;margin:24px 0 14px;font-weight:900;">🏛️ '+(isEn?'The 6 Pillars of C-Suite Decision':'Los 6 Pilares del C-Suite')+'</h3>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;">'+
+      // PILAR 1
       '<div class="vip-pillar" style="--hover-color:'+finColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+finColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">💰</span><span style="font-size:9px;color:'+finColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Finance':'Finanzas')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+finColor+';margin-bottom:4px;">'+fEur(ebitda)+'</div>'+
         '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'EBITDA Margin':'Margen EBITDA')+'<br><strong style="color:#fff;">'+ebitdaMargin.toFixed(1)+'%</strong></div>'+
       '</div>'+
+      // PILAR 2
       '<div class="vip-pillar" style="--hover-color:'+strColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+strColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🎯</span><span style="font-size:9px;color:'+strColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Strategy':'Estrategia')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+strColor+';margin-bottom:4px;">'+strategicScore+'/100</div>'+
         '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'OKR Strategic Score':'Score Estratégico OKR')+'<br><strong style="color:#fff;">'+(strategicScore>=75?(isEn?'On track':'En curso'):strategicScore>=50?(isEn?'Warning':'Alerta'):(isEn?'Critical':'Crítico'))+'</strong></div>'+
       '</div>'+
+      // PILAR 3
       '<div class="vip-pillar" style="--hover-color:'+teamColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+teamColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">⚙️</span><span style="font-size:9px;color:'+teamColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Operation':'Operación')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+teamColor+';margin-bottom:4px;">'+teamUtil+'%</div>'+
         '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Team Utilization':'Utilización del Equipo')+'<br><strong style="color:#fff;">'+totalHours+'h '+(isEn?'total':'total')+'</strong></div>'+
       '</div>'+
+      // PILAR 4
       '<div class="vip-pillar" style="--hover-color:'+riskColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+riskColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🛡️</span><span style="font-size:9px;color:'+riskColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Risk':'Riesgos')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+riskColor+';margin-bottom:4px;">'+fEur(riskExposure)+'</div>'+
         '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Risk Exposure':'Exposición al Riesgo')+'<br><strong style="color:#fff;">'+criticalCount+(isEn?' critical':' críticos')+'</strong></div>'+
       '</div>'+
+      // PILAR 5
       '<div class="vip-pillar" style="--hover-color:'+talentColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+talentColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">👥</span><span style="font-size:9px;color:'+talentColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Talent':'Talento')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+talentColor+';margin-bottom:4px;">'+overloadedCount+'</div>'+
         '<div style="font-size:10px;color:#94a3b8;line-height:1.4;">'+(isEn?'Overloaded members':'Miembros sobrecargados')+'<br><strong style="color:#fff;">'+(overloadedCount===0?(isEn?'Healthy Team':'Equipo Sano'):(isEn?'Burnout Risk':'Riesgo Burnout'))+'</strong></div>'+
       '</div>'+
+      // PILAR 6
       '<div class="vip-pillar" style="--hover-color:'+clientColor+';background:linear-gradient(160deg,rgba(45,25,90,0.5),rgba(10,5,25,0.95));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.05);border-top:3px solid '+clientColor+';box-shadow:0 8px 20px rgba(0,0,0,0.4);transition:all 0.3s ease;">'+
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:22px;">🤝</span><span style="font-size:9px;color:'+clientColor+';font-weight:900;text-transform:uppercase;letter-spacing:1px;">'+(isEn?'Clients':'Clientes')+'</span></div>'+
         '<div style="font-size:22px;font-weight:900;color:'+clientColor+';margin-bottom:4px;">'+maxConc.toFixed(0)+'%</div>'+
@@ -3264,11 +3271,13 @@ function renderVIP(){
       '</div>'+
     '</div>'+
     
+    // ═══ ALERTAS + DECISIONES ═══
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">'+
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>🚨</span> '+(isEn?'Prioritized Alerts':'Alertas Priorizadas')+'</div>'+(alerts.length===0?'<div style="text-align:center;padding:30px;color:#34d399;">'+(isEn?'✅ No critical alerts.':'✅ Sin alertas críticas.')+'</div>':'<div style="display:flex;flex-direction:column;gap:12px;">'+alerts.slice(0,3).map(function(a){return '<div style="padding:14px 16px;border-radius:10px;background:rgba(0,0,0,0.3);border-left:4px solid '+a.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:18px;">'+a.ico+'</span><span class="badge" style="background:'+a.c+'22;color:'+a.c+';">'+a.n+'</span><span style="font-size:12.5px;font-weight:900;color:#fff;">'+a.t+'</span></div><div style="font-size:11px;color:#cbd5e1;">'+a.d+'</div></div>';}).join('')+'</div>')+'</div>'+
       '<div class="box" style="margin-bottom:0;"><div class="box-t"><span>⚡</span> '+(isEn?'Executive Decisions Today':'Decisiones Ejecutivas de Hoy')+'</div><div style="display:flex;flex-direction:column;gap:12px;">'+decisions.map(function(d,i){return '<div style="padding:14px 16px;border-radius:10px;background:rgba(0,0,0,0.3);border-left:4px solid '+d.c+';"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="width:26px;height:26px;border-radius:8px;background:'+d.c+';color:#0b0e17;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;">'+(i+1)+'</span><span style="font-size:12.5px;font-weight:900;color:#fff;">'+d.t+'</span></div><div style="font-size:11px;color:#cbd5e1;line-height:1.5;">'+d.d+'</div></div>';}).join('')+'</div></div>'+
     '</div>'+
     
+    // ═══ 15 SEGUNDOS ═══
     '<div class="box"><div class="box-t"><span>📌</span> '+(isEn?'15-Second Summary':'Resumen 15 Segundos')+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">'+
       [
         {l:(isEn?'Where are we':'Dónde estamos'),v:e.PC.toFixed(0)+'%',s:(isEn?'progress':'avance'),c:'#fbbf24'},
@@ -3278,6 +3287,7 @@ function renderVIP(){
       ].map(function(k){return '<div style="text-align:center;padding:18px 12px;border-radius:12px;background:rgba(0,0,0,0.3);"><div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">'+k.l+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v+'</div><div style="font-size:10.5px;color:#94a3b8;margin-top:6px;">'+k.s+'</div></div>';}).join('')+
     '</div></div>'+
     
+    // ═══ CHART: CONCENTRACIÓN + FINANCIAL SNAPSHOT ═══
     '<div class="chart-2">'+
       '<div class="chart-card"><div class="t"><span>🏢</span> '+(isEn?'Revenue Concentration':'Concentración de Ingresos')+'</div><canvas id="cVIPClient"></canvas></div>'+
       '<div class="chart-card"><div class="t"><span>💵</span> '+(isEn?'Financial Snapshot':'Snapshot Financiero')+'</div><canvas id="cVIPFinance"></canvas></div>'+
@@ -4039,7 +4049,6 @@ document.addEventListener('DOMContentLoaded',function(){
       else if (tabId === 'grc' && typeof window.renderGRC === 'function') window.renderGRC();
       else if (tabId === 'api' && typeof window.renderAPI === 'function') window.renderAPI();
       else if (tabId === 'fin' && typeof window.renderFIN === 'function') window.renderFIN();
-     
       else if (tabId === 'vip' && typeof window.renderVIP === 'function') window.renderVIP();
     }
     
@@ -4055,18 +4064,18 @@ document.addEventListener('DOMContentLoaded',function(){
 window.DASHBOARD_I18N = {
     es: {
         header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
-        header_subtitle: "9 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D",
+        header_subtitle: "8 módulos · EVM € y horas · Gantt · Operación real · IA analítica · PDF/PPTX con gráficos · 3D",
         story_title: "La suite ejecutiva con operación real, Gantt y reportes con gráficos",
-        story_text: "<strong>9 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.",
+        story_text: "<strong>8 módulos</strong> · EVM € (CFO) y horas (COO) · <strong>Gantt interactivo con hitos y ruta crítica</strong> · Burndown por proyecto · IA conversacional · <strong>PDF y PPTX con gráficos, tablas e imágenes</strong> · Efectos 3D en cada tarjeta.",
         chip_projects: "proyectos",
         chip_alerts: "alertas",
         btn_lang: "🌐 EN"
     },
     en: {
         header_title: "ZACKY GANTT EXECUTIVE PRO · C-SUITE COMMAND CENTER",
-        header_subtitle: "9 modules · EVM € and hours · Gantt · Real operation · AI analytics · PDF/PPTX with charts · 3D",
+        header_subtitle: "8 modules · EVM € and hours · Gantt · Real operation · AI analytics · PDF/PPTX with charts · 3D",
         story_title: "The executive suite with real operation, Gantt, and reports with charts",
-        story_text: "<strong>9 modules</strong> · EVM € (CFO) and hours (COO) · <strong>Interactive Gantt with milestones and critical path</strong> · Project burndown · Conversational AI · <strong>PDF and PPTX with charts, tables, and images</strong> · 3D effects on every card.",
+        story_text: "<strong>8 modules</strong> · EVM € (CFO) and hours (COO) · <strong>Interactive Gantt with milestones and critical path</strong> · Project burndown · Conversational AI · <strong>PDF and PPTX with charts, tables, and images</strong> · 3D effects on every card.",
         chip_projects: "projects",
         chip_alerts: "alerts",
         btn_lang: "🌐 ES"
@@ -4074,8 +4083,8 @@ window.DASHBOARD_I18N = {
 };
 
 window.TAB_TITLES = {
-    es: { cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado'}, ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral'}, coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown'}, bi:{t:'Business Intelligence · BI',s:'IA analítica · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR'}, 
-    en: { cfo:{t:'Financial Portfolio · CFO',s:'Full EVM in € · Consolidated'}, ceo:{t:'OKRs & Strategy · CEO',s:'Balanced Scorecard'}, coo:{t:'Capacity Planning · COO',s:'Operations + Gantt + EVM hours + Burndown'}, bi:{t:'Business Intelligence · BI',s:'AI Analytics · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Risks · Audit'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · NPV · IRR'}, 
+    es: { cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado'}, ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral'}, coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown'}, bi:{t:'Business Intelligence · BI',s:'IA analítica · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR'}, vip:{t:'Executive Experience · VIP',s:'Vista C-Suite'} },
+    en: { cfo:{t:'Financial Portfolio · CFO',s:'Full EVM in € · Consolidated'}, ceo:{t:'OKRs & Strategy · CEO',s:'Balanced Scorecard'}, coo:{t:'Capacity Planning · COO',s:'Operations + Gantt + EVM hours + Burndown'}, bi:{t:'Business Intelligence · BI',s:'AI Analytics · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Risks · Audit'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · NPV · IRR'}, vip:{t:'Executive Experience · VIP',s:'C-Suite View'} }
 };
 
 window.currentDashboardLang = localStorage.getItem('dashboardLang') || 'es';
@@ -4139,7 +4148,6 @@ window.toggleDashboardLang = function() {
             else if (tabId === 'grc' && typeof renderGRC === 'function') renderGRC();
             else if (tabId === 'api' && typeof renderAPI === 'function') renderAPI();
             else if (tabId === 'fin' && typeof renderFIN === 'function') renderFIN();
-          
             else if (tabId === 'vip' && typeof renderVIP === 'function') renderVIP();
         }
     }
