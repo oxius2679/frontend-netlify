@@ -4109,7 +4109,7 @@ function renderChartToImage(config, width, height) {
 
 
 /* ═══════════════════════════════════════════════════════════
-   EXPORT PDF · THE ULTIMATE C-SUITE REPORT (8 PÁGINAS)
+   EXPORT PDF · ULTIMATE C-SUITE REPORT (V3 - CORREGIDO)
    ═══════════════════════════════════════════════════════════ */
 async function exportPDF(){
   try{
@@ -4122,6 +4122,12 @@ async function exportPDF(){
     var safeCurr = function(val) {
       if (isNaN(val) || val === null || val === undefined) return '€0';
       return new Intl.NumberFormat(isEn?'en-US':'es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+    };
+    var safeShort = function(val) {
+      if (isNaN(val) || val === null || val === undefined) return '€0';
+      if (Math.abs(val) >= 1000000) return '€' + (val/1000000).toFixed(1) + 'M';
+      if (Math.abs(val) >= 1000) return '€' + (val/1000).toFixed(0) + 'K';
+      return '€' + val;
     };
 
     // --- CÁLCULOS GLOBALES ---
@@ -4147,32 +4153,58 @@ async function exportPDF(){
     var irr = (safeCPi > 0.5) ? (safeCPi * 100) : 120; 
     var payback = (revenue > 0) ? (directCosts / (revenue * 0.8)) : 1.2;
 
-    // --- GRÁFICOS ---
+    // Texto de IA Dinámico
+    var aiText = '';
+    if (safeCPi < 0.8) {
+      aiText = 'CRITICAL: Cost efficiency (CPI ' + safeCPi.toFixed(2) + ') is severely below target. Immediate action required: 1) Halt non-essential spending. 2) Audit all active projects. 3) Renegotiate supplier contracts in the top 3 cost centers.';
+    } else if (safeSPi < 0.8) {
+      aiText = 'WARNING: Schedule performance (SPI ' + safeSPi.toFixed(2) + ') indicates significant delays. Recommended actions: 1) Apply fast-tracking on critical path. 2) Reallocate resources from low-priority tasks. 3) Review dependencies with suppliers.';
+    } else {
+      aiText = 'STABLE: Portfolio is performing within acceptable parameters. CPI is ' + safeCPi.toFixed(2) + ' and SPI is ' + safeSPi.toFixed(2) + '. Maintain current strategy and focus on margin optimization.';
+    }
+
+    // --- GRÁFICOS CORREGIDOS ---
     var sCurveImg = await renderChartToImage({
       type:'line', data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
-        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:0.3},
-        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3},
-        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}
-      ]}, options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},datalabels:{display:false}},scales:{y:{grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}}
+        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:3,tension:0.3},
+        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4},
+        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4}
+      ]}, 
+      options:{
+        responsive:false,animation:false,
+        plugins:{
+          legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},
+          datalabels:{
+            color:function(c){return c.dataset.borderColor;},
+            font:{size:10,weight:'bold'},
+            align:'top',offset:6,
+            formatter:function(v){return safeShort(v);}
+          }
+        },
+        scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#64748b'}}}
+      }
     }, 1000, 400);
 
     var radarImg = await renderChartToImage({
       type: 'radar', data: {
         labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'],
-        datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 3 }]
-      }, options: { responsive: false, animation: false, plugins: { legend: { display: false } }, scales: { r: { beginAtZero: true, max: 100, grid: { color: '#E2E8F0' }, pointLabels: { color: '#333', font: { size: 12 } } } } }
+        datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 4 }]
+      }, options: { responsive: false, animation: false, plugins: { legend: { display: false }, datalabels:{display:false} }, scales: { r: { beginAtZero: true, max: 100, grid: { color: '#E2E8F0' }, pointLabels: { color: '#333', font: { size: 12, weight:'bold' } } } } }
     }, 600, 400);
 
     var wbsImg = await renderChartToImage({
       type:'bar', data:{labels:['WBS 1','WBS 2','WBS 3','WBS 4','WBS 5'],datasets:[
         {label:'Budget',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
         {label:'Actual',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
-      ]}, options:{responsive:false,animation:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}}
-    }, 800, 300);
-
-    var cashFlowImg = await renderChartToImage({
-      type:'line', data:{labels:['W1','W2','W3','W4','W5','W6'],datasets:[{data:[120,95,110,80,130,150].map(v=>v*1000),borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.2)',borderWidth:3,fill:true,tension:0.4,pointRadius:0}]},
-      options:{responsive:false,animation:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#E2E8F0'}},x:{grid:{display:false}}}}
+      ]}, 
+      options:{
+        responsive:false,animation:false,
+        plugins:{
+          legend:{display:false},
+          datalabels:{color:'#333',font:{size:10,weight:'bold'},anchor:'end',align:'top',formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{beginAtZero:true,grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#64748b'}}}
+      }
     }, 800, 300);
 
     // --- CONSTRUCCIÓN DEL DOCUMENTO ---
@@ -4214,27 +4246,29 @@ async function exportPDF(){
     doc.text('Prepared by: AI Analytics & C-Suite Module', 15, 193);
     doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(10); doc.text('CONFIDENTIAL · BOARD OF DIRECTORS ONLY', 15, H-30);
 
-    // PÁGINA 2: RESUMEN EJECUTIVO (VIP/CEO)
+    // PÁGINA 2: RESUMEN EJECUTIVO Y BENCHMARKING
     doc.addPage(); addBg(); addHeader('Executive Summary', 'The Bottom Line for the Board', 2);
-    y = 35; y = addSectionTitle('1. Strategic KPIs', y);
+    y = 35; y = addSectionTitle('1. Strategic KPIs vs Industry Benchmark', y);
     
-    var kpiBox = function(x, yPos, label, value, color) {
-      doc.setFillColor(255,255,255); doc.setDrawColor(226,232,240); doc.roundedRect(x, yPos, 42, 22, 2, 2, 'FD');
-      doc.setFillColor(color[0], color[1], color[2]); doc.rect(x, yPos, 2, 22, 'F');
+    var kpiBox = function(x, yPos, label, value, benchmark, color) {
+      doc.setFillColor(255,255,255); doc.setDrawColor(226,232,240); doc.roundedRect(x, yPos, 42, 28, 2, 2, 'FD');
+      doc.setFillColor(color[0], color[1], color[2]); doc.rect(x, yPos, 2, 28, 'F');
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]); doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.text(label, x+5, yPos+7);
       doc.setTextColor(color[0], color[1], color[2]); doc.setFontSize(14); doc.text(String(value), x+5, yPos+16);
+      doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]); doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.text('Industry: ' + benchmark, x+5, yPos+24);
     };
-    kpiBox(15, y, 'PROJECTS', t.count, navy); kpiBox(61, y, 'TOTAL BAC', safeCurr(t.budget), gold);
-    kpiBox(107, y, 'CPI', safeCPi.toFixed(2), safeCPi>=0.9?[16,185,129]:[239,68,68]); kpiBox(153, y, 'SPI', safeSPi.toFixed(2), safeSPi>=0.9?[16,185,129]:[239,68,68]);
-    y += 32;
+    kpiBox(15, y, 'PROJECTS', t.count, '—', navy); 
+    kpiBox(61, y, 'TOTAL BAC', safeShort(t.budget), '—', gold);
+    kpiBox(107, y, 'CPI', safeCPi.toFixed(2), '0.92', safeCPi>=0.92?[16,185,129]:[239,68,68]); 
+    kpiBox(153, y, 'SPI', safeSPi.toFixed(2), '1.00', safeSPi>=1.0?[16,185,129]:[239,68,68]);
+    y += 38;
     
-    doc.setFillColor(245, 243, 255); doc.setDrawColor(139, 92, 246); doc.roundedRect(15, y, W-30, 45, 3, 3, 'FD');
-    doc.setFillColor(139, 92, 246); doc.rect(15, y, 3, 45, 'F');
-    doc.setTextColor(139, 92, 246); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text('AI EXECUTIVE INSIGHT', 22, y+9);
+    doc.setFillColor(245, 243, 255); doc.setDrawColor(139, 92, 246); doc.roundedRect(15, y, W-30, 50, 3, 3, 'FD');
+    doc.setFillColor(139, 92, 246); doc.rect(15, y, 3, 50, 'F');
+    doc.setTextColor(139, 92, 246); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text('AI EXECUTIVE INSIGHT (DYNAMIC)', 22, y+9);
     doc.setTextColor(textMain[0], textMain[1], textMain[2]); doc.setFontSize(9.5); doc.setFont('helvetica','normal');
-    var aiText = 'Our predictive models indicate a portfolio requiring immediate attention. With a CPI of ' + safeCPi.toFixed(2) + ', efficiency is below target. The system recommends: 1) Accelerating accounts receivable to cover the liquidity valley in Week 3. 2) Renegotiating supplier contracts in the Superstructure phase to protect EBITDA. 3) Applying fast-tracking to recover the ' + (100 - safeSPi*100).toFixed(0) + '% schedule delay.';
-    doc.text(doc.splitTextToSize(aiText, W-45), 22, y+18); 
-    y += 60;
+    doc.text(doc.splitTextToSize(aiText, W-45), 22, y+20); 
+    y += 65;
 
     y = addSectionTitle('2. Balanced Scorecard & Alignment', y);
     if(radarImg) { doc.addImage(radarImg,'PNG', 15, y, 70, 50); }
@@ -4245,8 +4279,8 @@ async function exportPDF(){
     doc.text('Data Maturity: 80/100', 95, y+40);
     doc.text('Overall Alignment: ' + score + '/100', 95, y+50);
 
-    // PÁGINA 3: CFO & FINANZAS
-    doc.addPage(); addBg(); addHeader('Financial Performance', 'CFO & FIN Modules (P&L, NPV, IRR)', 3);
+    // PÁGINA 3: FINANZAS
+    doc.addPage(); addBg(); addHeader('Financial Performance', 'P&L, NPV, IRR and EBITDA', 3);
     y = 35; y = addSectionTitle('3. Profit & Loss (P&L)', y);
     var rows = [
       ['Revenue (Budget)', safeCurr(revenue)],
@@ -4275,8 +4309,8 @@ async function exportPDF(){
     y += 50; y = addSectionTitle('5. S-Curve (EVM)', y);
     if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 55); }
 
-    // PÁGINA 4: COO & OPERACIONES
-    doc.addPage(); addBg(); doc.rect(0,0,W,25,'F'); // Header
+    // PÁGINA 4: COO Y TECKIO
+    doc.addPage(); addBg(); doc.rect(0,0,W,25,'F');
     doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.text('Operations & Capacity', 15, 12);
     doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200); doc.text('COO Module (Team Load & Gantt)', 15, 19);
@@ -4290,10 +4324,31 @@ async function exportPDF(){
     doc.text('Alert: Resource overallocation detected in "Superstructure" phase.', 20, y+34);
     
     y += 65; y = addSectionTitle('7. Construction WBS (Teckio Synergy)', y);
-    if(wbsImg) { doc.addImage(wbsImg,'PNG', 15, y, 90, 40); }
-    if(cashFlowImg) { doc.addImage(cashFlowImg,'PNG', 110, y, 85, 40); }
+    if(wbsImg) { doc.addImage(wbsImg,'PNG', 15, y, W-30, 45); }
     
-    y += 55; y = addSectionTitle('8. Risk & Compliance (GRC)', y);
+    y += 55; y = addSectionTitle('8. Top Projects Status', y);
+    var pRows = [['Project', 'Budget', 'CPI', 'Status']];
+    exportProjects.slice(0,3).forEach(function(p){
+      var m = evmFor(p);
+      pRows.push([p.name.substring(0,20), safeShort(m.BAC), m.CPI.toFixed(2), p.health.toUpperCase()]);
+    });
+    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(15, y, W-30, 8, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold'); 
+    doc.text(pRows[0][0], 20, y+5); doc.text(pRows[0][1], 100, y+5); doc.text(pRows[0][2], 130, y+5); doc.text(pRows[0][3], 160, y+5);
+    y += 8;
+    for(var i=1; i<pRows.length; i++){
+      if (i % 2 === 0) { doc.setFillColor(241,245,249); doc.rect(15, y, W-30, 8, 'F'); }
+      doc.setTextColor(textMain[0], textMain[1], textMain[2]); doc.setFontSize(8); doc.setFont('helvetica','normal'); 
+      doc.text(pRows[i][0], 20, y+5); doc.text(pRows[i][1], 100, y+5); doc.text(pRows[i][2], 130, y+5); doc.text(pRows[i][3], 160, y+5);
+      doc.setDrawColor(226,232,240); doc.line(15, y+8, W-15, y+8); y+=8;
+    }
+
+    // PÁGINA 5: RIESGOS Y OKRs
+    doc.addPage(); addBg(); 
+    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,25,'F');
+    doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.text('Risk & Strategy', 15, 12);
+    y = 35; y = addSectionTitle('9. Risk & Compliance (GRC)', y);
     var riskRows = [
       ['Risk Factor', 'Exposure', 'Mitigation'],
       ['Cost Deviation', safeCurr(Math.abs(e.VAC)), 'Audit expenses (CPI < 0.9)'],
@@ -4312,13 +4367,7 @@ async function exportPDF(){
       doc.setDrawColor(226,232,240); doc.line(15, y+8, W-15, y+8); y+=8;
     }
 
-    // PÁGINA 5: ESTRATEGIA Y TECNOLOGÍA
-    doc.addPage(); addBg(); 
-    doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,25,'F');
-    doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.text('Strategy & Technology Ecosystem', 15, 12);
-    y = 35; y = addSectionTitle('9. CEO Strategic Objectives (OKRs)', y);
-    
+    y += 15; y = addSectionTitle('10. CEO Strategic Objectives (OKRs)', y);
     var okrRows = [
       ['Objective', 'Progress', 'Status'],
       ['Optimize Cost Efficiency (CPI > 1)', Math.min(100, Math.round(safeCPi*100)) + '%', safeCPi>=0.9?'On Track':'At Risk'],
@@ -4335,12 +4384,6 @@ async function exportPDF(){
       doc.text(okrRows[i][0], 20, y+6.5); doc.text(okrRows[i][1], 110, y+6.5); doc.text(okrRows[i][2], 160, y+6.5);
       doc.setDrawColor(226,232,240); doc.line(15, y+10, W-15, y+10); y+=10;
     }
-
-    y += 20; y = addSectionTitle('10. API & Enterprise Integrations', y);
-    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(textMain[0], textMain[1], textMain[2]);
-    doc.text('Active Integrations: Google SSO, Slack, Microsoft Teams, Jira, Power BI.', 15, y);
-    doc.text('ERP Connectivity: Teckio Synergy (Connected), SAP (Roadmap), NetSuite (Roadmap).', 15, y+8);
-    doc.text('Webhooks: Active for task.created, project.at-risk, and budget.exceeded.', 15, y+16);
 
     // PÁGINA 6: PLAN DE ACCIÓN
     doc.addPage(); addBg(); 
@@ -4370,7 +4413,7 @@ async function exportPDF(){
 
 
 /* ═══════════════════════════════════════════════════════════
-   EXPORT PPTX · ULTIMATE EXECUTIVE DECK (12 SLIDES)
+   EXPORT PPTX · ULTIMATE EXECUTIVE DECK (V3 - CORREGIDO)
    ═══════════════════════════════════════════════════════════ */
 async function exportPPTX(){
   try{
@@ -4382,6 +4425,12 @@ async function exportPPTX(){
     var safeCurr = function(val) {
       if (isNaN(val) || val === null || val === undefined) return '€0';
       return new Intl.NumberFormat(isEn?'en-US':'es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+    };
+    var safeShort = function(val) {
+      if (isNaN(val) || val === null || val === undefined) return '€0';
+      if (Math.abs(val) >= 1000000) return '€' + (val/1000000).toFixed(1) + 'M';
+      if (Math.abs(val) >= 1000) return '€' + (val/1000).toFixed(0) + 'K';
+      return '€' + val;
     };
 
     var t = { count: exportProjects.length, budget: 0, actualCost: 0, earnedValue: 0, plannedValue: 0 };
@@ -4403,6 +4452,11 @@ async function exportPPTX(){
     var opex = revenue * 0.12;
     var ebitda = grossProfit - opex;
 
+    var aiTextPPT = '';
+    if (safeCPi < 0.8) aiTextPPT = 'CRITICAL: Cost efficiency (CPI ' + safeCPi.toFixed(2) + ') is severely below target. Immediate action: Halt non-essential spending and audit all active projects.';
+    else if (safeSPi < 0.8) aiTextPPT = 'WARNING: Schedule performance (SPI ' + safeSPi.toFixed(2) + ') indicates delays. Apply fast-tracking on critical path and reallocate resources.';
+    else aiTextPPT = 'STABLE: Portfolio is performing within acceptable parameters. CPI is ' + safeCPi.toFixed(2) + '. Maintain current strategy.';
+
     var pptx = new PptxGenJS();
     pptx.layout='LAYOUT_WIDE';
     
@@ -4420,9 +4474,44 @@ async function exportPPTX(){
     }
 
     // --- GRÁFICOS PARA PPTX ---
-    var sCurveImg = await renderChartToImage({ type:'line', data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:0.3},{label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:3}]}, options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#94A3B8',font:{size:12}}},datalabels:{display:false}},scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8'}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}}} , 800, 400);
-    var radarImg = await renderChartToImage({ type: 'radar', data: { labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'], datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 3 }] }, options: { responsive: false, animation: false, plugins: { legend: { display: false } }, scales: { r: { beginAtZero: true, max: 100, grid: { color: '#334155' }, pointLabels: { color: '#F8FAFC', font: { size: 12 } } } } } }, 800, 400);
-    var wbsImg = await renderChartToImage({ type:'bar', data:{labels:['WBS 1','WBS 2','WBS 3','WBS 4','WBS 5'],datasets:[{label:'Budget',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},{label:'Actual',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}]}, options:{responsive:false,animation:false,plugins:{legend:{position:'top',labels:{color:'#94A3B8',font:{size:12}}}},scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:v=>'€'+v/1000+'K'}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}}} , 800, 300);
+    var sCurveImg = await renderChartToImage({ 
+      type:'line', 
+      data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
+        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:3,tension:0.3},
+        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4},
+        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4}
+      ]}, 
+      options:{
+        responsive:false,animation:false,
+        plugins:{
+          legend:{labels:{color:'#94A3B8',font:{size:12}}},
+          datalabels:{color:function(c){return c.dataset.borderColor;},font:{size:10,weight:'bold'},align:'top',offset:6,formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}
+      } 
+    }, 800, 400);
+
+    var radarImg = await renderChartToImage({ 
+      type: 'radar', 
+      data: { labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'], datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 4 }] }, 
+      options: { responsive: false, animation: false, plugins: { legend: { display: false }, datalabels:{display:false} }, scales: { r: { beginAtZero: true, max: 100, grid: { color: '#334155' }, pointLabels: { color: '#F8FAFC', font: { size: 12 } } } } } 
+    }, 800, 400);
+
+    var wbsImg = await renderChartToImage({ 
+      type:'bar', 
+      data:{labels:['WBS 1','WBS 2','WBS 3','WBS 4','WBS 5'],datasets:[
+        {label:'Budget',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
+        {label:'Actual',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
+      ]}, 
+      options:{
+        responsive:false,animation:false,
+        plugins:{
+          legend:{position:'top',labels:{color:'#94A3B8',font:{size:12}}},
+          datalabels:{color:'#fff',font:{size:10,weight:'bold'},anchor:'end',align:'top',formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}
+      } 
+    }, 800, 300);
 
     // SLIDE 1: PORTADA
     var s1=pptx.addSlide(); s1.background={color:bgDark};
@@ -4438,7 +4527,7 @@ async function exportPPTX(){
     s2.addText(String(score),{x:0.5,y:2.2,w:3,h:0.8,fontSize:48,bold:true,color:scoreColorHex,align:'center'});
     s2.addText('/ 100',{x:0.5,y:3.1,w:3,h:0.3,fontSize:14,color:textGray,align:'center'});
 
-    var kpiList = [{l:'PROJECTS', v:String(t.count), c:cViolet},{l:'TOTAL BAC', v:safeCurr(t.budget), c:cGold},{l:'CPI', v:safeCPi.toFixed(2), c:safeCPi>=0.9?cGreen:cRed},{l:'SPI', v:safeSPi.toFixed(2), c:safeSPi>=0.9?cGreen:cRed}];
+    var kpiList = [{l:'PROJECTS', v:String(t.count), c:cViolet},{l:'TOTAL BAC', v:safeShort(t.budget), c:cGold},{l:'CPI', v:safeCPi.toFixed(2), c:safeCPi>=0.9?cGreen:cRed},{l:'SPI', v:safeSPi.toFixed(2), c:safeSPi>=0.9?cGreen:cRed}];
     kpiList.forEach(function(k,i){
       var x=4+i*2.2;
       s2.addShape(pptx.ShapeType.roundRect,{x:x,y:1.5,w:2,h:2,fill:{color:cardDark},line:{color:'334155',width:1},rectRadius:0.1});
@@ -4448,7 +4537,7 @@ async function exportPPTX(){
 
     s2.addShape(pptx.ShapeType.roundRect,{x:0.5,y:4,w:12.3,h:2.5,fill:{color:'1E1B4B'},line:{color:cViolet,width:1.5},rectRadius:0.1});
     s2.addText('🤖 AI EXECUTIVE INSIGHT',{x:0.8,y:4.2,w:11.8,h:0.3,fontSize:12,bold:true,color:'C4B5FD'});
-    s2.addText('Strategic recommendation: Freeze non-critical purchases in projects with SPI < 0.9. Cash flow projects a liquidity valley in week 3. Renegotiate supplier contracts to protect EBITDA.',{x:0.8,y:4.6,w:11.8,h:1.5,fontSize:12,color:textWhite,lineSpacing:18});
+    s2.addText(aiTextPPT,{x:0.8,y:4.6,w:11.8,h:1.5,fontSize:12,color:textWhite,lineSpacing:18});
 
     // SLIDE 3: FINANZAS
     var s3=newSlide('Financial Performance', 'P&L, NPV, IRR and EBITDA', cGreen);
