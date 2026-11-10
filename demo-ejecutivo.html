@@ -2016,7 +2016,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
           <button class="tab" data-tab="grc">🛡️ GRC</button>
           <button class="tab" data-tab="api">🔌 API</button>
           <button class="tab" data-tab="fin">💎 FIN</button>
-          <button class="tab" data-tab="teckio">🔗 TECKIO SYNERGY</button> <!-- NUEVA PESTAÑA -->
           <button class="tab" data-tab="vip">👑 VIP</button>
         </div>
         
@@ -2047,7 +2046,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="view" id="v-grc"></div>
       <div class="view" id="v-api"></div>
       <div class="view" id="v-fin"></div>
-      <div class="view" id="v-teckio"></div> <!-- NUEVA VISTA TECKIO -->
       <div class="view" id="v-vip"></div>
     </div>
   </div>
@@ -3491,7 +3489,6 @@ var TABS={
   grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría',r:renderGRC},
   api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks',r:renderAPI},
   fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR',r:renderFIN},
-  teckio:{t:'Teckio Synergy · Inteligencia Financiera',s:'Control predictivo · Cash Flow · Consolidación · IA',r:renderTeckio},
   vip:{t:'Executive Experience · VIP',s:'Vista C-Suite',r:renderVIP}
 };
 
@@ -4042,7 +4039,7 @@ document.addEventListener('DOMContentLoaded',function(){
       else if (tabId === 'grc' && typeof window.renderGRC === 'function') window.renderGRC();
       else if (tabId === 'api' && typeof window.renderAPI === 'function') window.renderAPI();
       else if (tabId === 'fin' && typeof window.renderFIN === 'function') window.renderFIN();
-      else if (tabId === 'teckio' && typeof window.renderTeckio === 'function') window.renderTeckio();
+     
       else if (tabId === 'vip' && typeof window.renderVIP === 'function') window.renderVIP();
     }
     
@@ -4077,8 +4074,8 @@ window.DASHBOARD_I18N = {
 };
 
 window.TAB_TITLES = {
-    es: { cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado'}, ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral'}, coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown'}, bi:{t:'Business Intelligence · BI',s:'IA analítica · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR'}, teckio:{t:'Teckio Synergy · Inteligencia Financiera',s:'Control predictivo · Cash Flow · Consolidación · IA'}, vip:{t:'Executive Experience · VIP',s:'Vista C-Suite'} },
-    en: { cfo:{t:'Financial Portfolio · CFO',s:'Full EVM in € · Consolidated'}, ceo:{t:'OKRs & Strategy · CEO',s:'Balanced Scorecard'}, coo:{t:'Capacity Planning · COO',s:'Operations + Gantt + EVM hours + Burndown'}, bi:{t:'Business Intelligence · BI',s:'AI Analytics · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Risks · Audit'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · NPV · IRR'}, teckio:{t:'Teckio Synergy · Financial Intelligence',s:'Predictive Control · Cash Flow · Consolidation · AI'}, vip:{t:'Executive Experience · VIP',s:'C-Suite View'} }
+    es: { cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado'}, ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral'}, coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown'}, bi:{t:'Business Intelligence · BI',s:'IA analítica · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Riesgos · Auditoría'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · VAN · TIR'}, 
+    en: { cfo:{t:'Financial Portfolio · CFO',s:'Full EVM in € · Consolidated'}, ceo:{t:'OKRs & Strategy · CEO',s:'Balanced Scorecard'}, coo:{t:'Capacity Planning · COO',s:'Operations + Gantt + EVM hours + Burndown'}, bi:{t:'Business Intelligence · BI',s:'AI Analytics · Insights'}, grc:{t:'Governance & Compliance · GRC',s:'Risks · Audit'}, api:{t:'Enterprise Integrations · API',s:'SSO · API · Webhooks'}, fin:{t:'Advanced Finance · FIN',s:'P&L · EBITDA · NPV · IRR'}, 
 };
 
 window.currentDashboardLang = localStorage.getItem('dashboardLang') || 'es';
@@ -4142,7 +4139,7 @@ window.toggleDashboardLang = function() {
             else if (tabId === 'grc' && typeof renderGRC === 'function') renderGRC();
             else if (tabId === 'api' && typeof renderAPI === 'function') renderAPI();
             else if (tabId === 'fin' && typeof renderFIN === 'function') renderFIN();
-            else if (tabId === 'teckio' && typeof renderTeckio === 'function') renderTeckio();
+          
             else if (tabId === 'vip' && typeof renderVIP === 'function') renderVIP();
         }
     }
@@ -4154,4 +4151,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-[file content end]
