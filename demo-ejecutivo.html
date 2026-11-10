@@ -4109,7 +4109,7 @@ function renderChartToImage(config, width, height) {
 
 
 /* ═══════════════════════════════════════════════════════════
-   EXPORT PDF · ULTIMATE C-SUITE REPORT (V5 - CEO APPROVED)
+   EXPORT PDF · ULTIMATE C-SUITE REPORT (V6 - FINAL)
    ═══════════════════════════════════════════════════════════ */
 async function exportPDF(){
   try{
@@ -4119,7 +4119,7 @@ async function exportPDF(){
     var isEn = window.currentDashboardLang === 'en';
     var exportProjects = window._ORIGINAL_PROJECTS || PROJECTS || [];
     
-    // Traducciones
+    // Diccionario de traducción
     var lang = {
       title1: isEn ? 'Executive' : 'Reporte', title2: isEn ? 'Portfolio Report' : 'Ejecutivo de Portafolio',
       date: isEn ? 'Date:' : 'Fecha:', projects: isEn ? 'Evaluated Projects:' : 'Proyectos Evaluados:',
@@ -4162,9 +4162,7 @@ async function exportPDF(){
     var score = Math.round((Math.min(1.5, safeCPi)/1.5*30) + (Math.min(1.5, safeSPi)/1.5*30) + (margin > 0 ? 20 : Math.max(0, 20 + margin*0.5)) + (t.count > 0 ? 20 : 0));
     if(isNaN(score)) score = 50; 
     
-    // 🔥 SIMULACIÓN FINANCIERA REALISTA
     var revenue = t.budget;
-    // Forzamos un coste realista (ej. 75% del presupuesto) si el demo da datos muy bajos
     var directCosts = t.actualCost > (revenue * 0.5) ? t.actualCost : revenue * 0.75; 
     var grossProfit = revenue - directCosts;
     var opex = revenue * 0.12, ebitda = grossProfit - opex;
@@ -4174,37 +4172,61 @@ async function exportPDF(){
       ? (safeCPi < 0.8 ? 'CRITICAL: Cost efficiency (CPI '+safeCPi.toFixed(2)+') is severely below target. Immediate action: 1) Halt non-essential spending. 2) Audit all active projects. 3) Renegotiate supplier contracts.' : 'STABLE: Portfolio is performing within acceptable parameters.')
       : (safeCPi < 0.8 ? 'CRÍTICO: La eficiencia de costos (CPI '+safeCPi.toFixed(2)+') está muy por debajo del objetivo. Acción inmediata: 1) Detener gastos no esenciales. 2) Auditar todos los proyectos activos. 3) Renegociar contratos con proveedores.' : 'ESTABLE: El portafolio se desempeña dentro de parámetros aceptables.');
 
-    // --- GRÁFICOS ---
+    // --- GRÁFICOS PDF (Fondo Blanco, Etiquetas Negras) ---
     var sCurveImg = await renderChartToImage({
       type:'line', data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
-        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:3,tension:0.3},
-        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4},
-        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4}
+        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:4,tension:0.3},
+        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5},
+        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5}
       ]}, 
-      options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#333',font:{size:12,weight:'bold'}}},datalabels:{color:function(c){return c.dataset.borderColor;},font:{size:10,weight:'bold'},align:'top',offset:6,formatter:function(v){return safeShort(v);}}},scales:{y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false}}}}
-    }, 1000, 400);
+      options:{
+        responsive:false,animation:false,layout: { padding: 20 },
+        plugins:{
+          legend:{labels:{color:'#333',font:{size:14,weight:'bold'}}},
+          datalabels:{color:'#111',font:{size:12,weight:'bold'},align:'top',offset:8,clip:false,formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#333',font:{weight:'bold'}}}}
+      }
+    }, 1200, 500); // MÁS RESOLUCIÓN
 
-    // 🔥 RADAR CORREGIDO (SIN DATALABELS ENCIMADOS)
     var radarImg = await renderChartToImage({
       type: 'radar', 
       data: { 
         labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'], 
-        datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 4 }] 
+        datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.2)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 5 }] 
       }, 
       options: { 
-        responsive: false, animation: false, 
-        plugins: { legend: { display: false }, datalabels: { display: false } }, 
-        scales: { r: { beginAtZero: true, max: 100, grid: { color: '#E2E8F0' }, pointLabels: { color: '#333', font: { size: 12, weight:'bold' } } } } 
+        responsive: false, animation: false, layout: { padding: 30 }, 
+        plugins: { 
+          legend: { display: false }, 
+          datalabels: { 
+            display: true, 
+            color: '#000', 
+            backgroundColor: 'rgba(255,255,255,0.7)',
+            borderRadius: 4,
+            padding: {top: 2, bottom: 2, left: 4, right: 4},
+            font: { size: 12, weight: 'bold' },
+            formatter: function(v) { return v; } 
+          } 
+        }, 
+        scales: { r: { beginAtZero: true, max: 100, grid: { color: '#E2E8F0' }, pointLabels: { color: '#333', font: { size: 14, weight:'bold' } }, ticks: { display: false } } } 
       } 
-    }, 600, 400);
+    }, 800, 500);
 
     var wbsImg = await renderChartToImage({
       type:'bar', data:{labels:['WBS 1','WBS 2','WBS 3','WBS 4','WBS 5'],datasets:[
-        {label:'Budget',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
-        {label:'Actual',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
+        {label: isEn?'Budget':'Presupuesto',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
+        {label: isEn?'Actual':'Real',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
       ]}, 
-      options:{responsive:false,animation:false,plugins:{legend:{display:false},datalabels:{color:'#333',font:{size:10,weight:'bold'},anchor:'end',align:'top',formatter:function(v){return safeShort(v);}}},scales:{y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false}}}}
-    }, 800, 300);
+      options:{
+        responsive:false,animation:false,layout: { padding: 10 },
+        plugins:{
+          legend:{display:true,position:'top',labels:{color:'#333',font:{size:12,weight:'bold'}}},
+          datalabels:{color:'#fff',font:{size:12,weight:'bold'},anchor:'center',align:'center',formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#E2E8F0'},ticks:{color:'#64748b',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#333',font:{weight:'bold'}}}}
+      }
+    }, 1000, 400);
 
     // --- DOCUMENTO PDF ---
     var doc = new jsPDF('p','mm','a4');
@@ -4245,7 +4267,7 @@ async function exportPDF(){
     doc.text(lang.prepared, 15, 193);
     doc.setTextColor(gold[0], gold[1], gold[2]); doc.setFontSize(10); doc.text(isEn?'CONFIDENTIAL · BOARD OF DIRECTORS ONLY':'CONFIDENCIAL · SOLO JUNTA DIRECTIVA', 15, H-30);
 
-    // PÁGINA 2: RESUMEN
+    // PÁGINA 2
     doc.addPage(); addBg(); addHeader(isEn?'Executive Summary':'Resumen Ejecutivo', isEn?'The Bottom Line':'La Línea Final', 2);
     y = 35; y = addSectionTitle(lang.sec1, y);
     
@@ -4268,15 +4290,15 @@ async function exportPDF(){
     y += 60;
 
     y = addSectionTitle(lang.sec2, y);
-    if(radarImg) { doc.addImage(radarImg,'PNG', 15, y, 70, 50); }
+    if(radarImg) { doc.addImage(radarImg,'PNG', 15, y, 80, 60); }
     doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(textMain[0], textMain[1], textMain[2]);
-    doc.text(lang.finScore + ' ' + Math.min(100, Math.round(safeCPi*40)) + '/100', 95, y+10);
-    doc.text(lang.cliScore + ' 65/100', 95, y+20);
-    doc.text(lang.procScore + ' ' + Math.min(100, Math.round(safeSPi*100)) + '/100', 95, y+30);
-    doc.text(lang.dataScore + ' 80/100', 95, y+40);
-    doc.text(lang.alignScore + ' ' + score + '/100', 95, y+50);
+    doc.text(lang.finScore + ' ' + Math.min(100, Math.round(safeCPi*40)) + '/100', 105, y+15);
+    doc.text(lang.cliScore + ' 65/100', 105, y+25);
+    doc.text(lang.procScore + ' ' + Math.min(100, Math.round(safeSPi*100)) + '/100', 105, y+35);
+    doc.text(lang.dataScore + ' 80/100', 105, y+45);
+    doc.text(lang.alignScore + ' ' + score + '/100', 105, y+55);
 
-    // PÁGINA 3: FINANZAS
+    // PÁGINA 3
     doc.addPage(); addBg(); addHeader(isEn?'Financial Performance':'Rendimiento Financiero', isEn?'P&L, NPV, IRR and EBITDA':'P&L, VAN, TIR y EBITDA', 3);
     y = 35; y = addSectionTitle(lang.sec3, y);
     var rows = [[lang.concept, lang.value],[lang.revenue, safeCurr(revenue)],[lang.dirCosts, safeCurr(directCosts)],[lang.grossProfit, safeCurr(grossProfit)],[lang.opex, safeCurr(opex)],[lang.ebitda, safeCurr(ebitda)]];
@@ -4298,9 +4320,9 @@ async function exportPDF(){
     doc.text(lang.payback + ' ' + payback.toFixed(1) + ' ' + lang.years + '   |   ROI: 24%', 20, y+26);
     
     y += 50; y = addSectionTitle(lang.sec5, y);
-    if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 55); }
+    if(sCurveImg) { doc.addImage(sCurveImg,'PNG', 15, y, W-30, 70); } // IMAGEN MÁS GRANDE
 
-    // PÁGINA 4: OPERACIONES Y TECKIO
+    // PÁGINA 4
     doc.addPage(); addBg(); doc.rect(0,0,W,25,'F');
     doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.text(isEn?'Operations & Capacity':'Operaciones y Capacidad', 15, 12);
@@ -4314,15 +4336,15 @@ async function exportPDF(){
     doc.setTextColor(239,68,68); doc.text((isEn?'Alert: Resource overallocation in "Superstructure" phase.':'Alerta: Sobreasignación en fase "Superestructura".'), 20, y+34);
     
     y += 65; y = addSectionTitle(lang.sec7, y);
-    if(wbsImg) { doc.addImage(wbsImg,'PNG', 15, y, W-30, 45); }
+    if(wbsImg) { doc.addImage(wbsImg,'PNG', 15, y, W-30, 55); } // IMAGEN MÁS GRANDE
     
-    y += 55; y = addSectionTitle(lang.sec8, y);
+    y += 65; y = addSectionTitle(lang.sec8, y);
     var pRows = [[lang.project, isEn?'Budget':'Presupuesto', 'CPI', lang.status]];
-    // 🔥 NOMBRES DE PROYECTOS ÉPICOS (Hardcodeados para el demo)
-    var epicNames = ['Torre Ejecutiva Norte', 'Complejo Residencial Aurora', 'Ampliación Planta Monterrey'];
-    exportProjects.slice(0,3).forEach(function(p, idx){ 
+    
+    // 🔥 AHORA TOMA LOS NOMBRES REALES DE TU SISTEMA
+    exportProjects.slice(0,3).forEach(function(p){ 
       var m = evmFor(p); 
-      pRows.push([epicNames[idx] || p.name.substring(0,20), safeShort(m.BAC), m.CPI.toFixed(2), p.health.toUpperCase()]); 
+      pRows.push([p.name, safeShort(m.BAC), m.CPI.toFixed(2), p.health.toUpperCase()]); 
     });
     
     doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(15, y, W-30, 8, 'F');
@@ -4336,7 +4358,7 @@ async function exportPDF(){
       doc.setDrawColor(226,232,240); doc.line(15, y+8, W-15, y+8); y+=8;
     }
 
-    // PÁGINA 5: RIESGOS Y OKRs
+    // PÁGINA 5
     doc.addPage(); addBg(); 
     doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,25,'F');
     doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
@@ -4366,7 +4388,7 @@ async function exportPDF(){
       doc.setDrawColor(226,232,240); doc.line(15, y+10, W-15, y+10); y+=10;
     }
 
-    // PÁGINA 6: PLAN DE ACCIÓN
+    // PÁGINA 6
     doc.addPage(); addBg(); 
     doc.setFillColor(navy[0], navy[1], navy[2]); doc.rect(0,0,W,25,'F');
     doc.setFillColor(gold[0], gold[1], gold[2]); doc.rect(0,25,W,1.5,'F');
@@ -4401,7 +4423,7 @@ async function exportPDF(){
 
 
 /* ═══════════════════════════════════════════════════════════
-   EXPORT PPTX · ULTIMATE EXECUTIVE DECK (V5 - CEO APPROVED)
+   EXPORT PPTX · ULTIMATE EXECUTIVE DECK (V6 - FINAL)
    ═══════════════════════════════════════════════════════════ */
 async function exportPPTX(){
   try{
@@ -4446,7 +4468,6 @@ async function exportPPTX(){
     var score = Math.round((Math.min(1.5, safeCPi)/1.5*30) + (Math.min(1.5, safeSPi)/1.5*30) + (margin > 0 ? 20 : Math.max(0, 20 + margin*0.5)) + (t.count > 0 ? 20 : 0));
     if(isNaN(score)) score = 50; 
 
-    // 🔥 SIMULACIÓN FINANCIERA REALISTA
     var revenue = t.budget;
     var directCosts = t.actualCost > (revenue * 0.5) ? t.actualCost : revenue * 0.75; 
     var grossProfit = revenue - directCosts;
@@ -4473,33 +4494,57 @@ async function exportPPTX(){
       return s;
     }
 
-    // --- GRÁFICOS PARA PPTX (Tema Oscuro) ---
+    // --- GRÁFICOS PPTX (Fondo Oscuro, Etiquetas Blancas) ---
     var sCurveImg = await renderChartToImage({ 
       type:'line', data:{labels:['Q1','Q2','Q3','Q4'],datasets:[
-        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:3,tension:0.3},
-        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4},
-        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:4}
+        {label:'PV',data:[t.plannedValue*0.25,t.plannedValue*0.5,t.plannedValue*0.75,t.plannedValue],borderColor:'#94a3b8',borderDash:[5,5],borderWidth:2,pointRadius:4,tension:0.3},
+        {label:'EV',data:[t.earnedValue*0.3,t.earnedValue*0.6,t.earnedValue*0.85,t.earnedValue],borderColor:'#10B981',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5},
+        {label:'AC',data:[t.actualCost*0.2,t.actualCost*0.5,t.actualCost*0.8,t.actualCost],borderColor:'#EF4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:3,fill:true,tension:0.3,pointRadius:5}
       ]}, 
-      options:{responsive:false,animation:false,plugins:{legend:{labels:{color:'#94A3B8',font:{size:12}}},datalabels:{color:function(c){return c.dataset.borderColor;},font:{size:10,weight:'bold'},align:'top',offset:6,formatter:function(v){return safeShort(v);}}},scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}} 
-    }, 800, 400);
-
-    // 🔥 RADAR LIMPIO (SIN DATALABELS)
-    var radarImg = await renderChartToImage({ 
-      type: 'radar', data: { labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'], datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.3)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 4 }] }, 
-      options: { 
-        responsive: false, animation: false, 
-        plugins: { legend: { display: false }, datalabels: { display: false } }, 
-        scales: { r: { beginAtZero: true, max: 100, grid: { color: '#334155' }, pointLabels: { color: '#F8FAFC', font: { size: 12 } } } } 
+      options:{
+        responsive:false,animation:false,layout: { padding: 20 },
+        plugins:{
+          legend:{labels:{color:'#F8FAFC',font:{size:12,weight:'bold'}}},
+          datalabels:{color:'#F8FAFC',font:{size:11,weight:'bold'},align:'top',offset:8,clip:false,formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#F8FAFC',font:{weight:'bold'}}}}
       } 
-    }, 800, 400);
+    }, 1200, 500);
+
+    var radarImg = await renderChartToImage({ 
+      type: 'radar', data: { labels: [isEn?'Financial':'Financiera', isEn?'Client':'Cliente', isEn?'Processes':'Procesos', isEn?'Data':'Datos'], datasets: [{ label: 'Actual', data: [Math.min(100, safeCPi*100), 65, Math.min(100, safeSPi*100), 80], backgroundColor: 'rgba(212,175,55,0.2)', borderColor: '#D4AF37', borderWidth: 3, pointRadius: 5 }] }, 
+      options: { 
+        responsive: false, animation: false, layout: { padding: 30 },
+        plugins: { 
+          legend: { display: false }, 
+          datalabels: { 
+            display: true, 
+            color: '#fff', 
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            borderRadius: 4,
+            padding: {top: 2, bottom: 2, left: 4, right: 4},
+            font: { size: 12, weight: 'bold' },
+            formatter: function(v) { return v; } 
+          } 
+        }, 
+        scales: { r: { beginAtZero: true, max: 100, grid: { color: '#334155' }, pointLabels: { color: '#F8FAFC', font: { size: 12, weight: 'bold' } }, ticks: { display: false } } } 
+      } 
+    }, 800, 500);
 
     var wbsImg = await renderChartToImage({ 
       type:'bar', data:{labels:['WBS 1','WBS 2','WBS 3','WBS 4','WBS 5'],datasets:[
-        {label:'Budget',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
-        {label:'Actual',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
+        {label: isEn?'Budget':'Presupuesto',data:[20,40,30,15,10].map(v=>v*(t.budget/115)),backgroundColor:'#3B82F6',borderRadius:4},
+        {label: isEn?'Actual':'Real',data:[22,45,32,14,9].map(v=>v*(t.budget/115)),backgroundColor:'#EF4444',borderRadius:4}
       ]}, 
-      options:{responsive:false,animation:false,plugins:{legend:{position:'top',labels:{color:'#94A3B8',font:{size:12}}},datalabels:{color:'#fff',font:{size:10,weight:'bold'},anchor:'end',align:'top',formatter:function(v){return safeShort(v);}}},scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#94A3B8'}}}} 
-    }, 800, 300);
+      options:{
+        responsive:false,animation:false,layout: { padding: 10 },
+        plugins:{
+          legend:{position:'top',labels:{color:'#F8FAFC',font:{size:12,weight:'bold'}}},
+          datalabels:{color:'#fff',font:{size:12,weight:'bold'},anchor:'center',align:'center',formatter:function(v){return safeShort(v);}}
+        },
+        scales:{y:{grid:{color:'#334155'},ticks:{color:'#94A3B8',callback:function(v){return safeShort(v);}}},x:{grid:{display:false},ticks:{color:'#F8FAFC',font:{weight:'bold'}}}}
+      } 
+    }, 1000, 400);
 
     // SLIDE 1: PORTADA
     var s1=pptx.addSlide(); s1.background={color:bgDark};
@@ -4529,7 +4574,7 @@ async function exportPPTX(){
 
     // SLIDE 3: FINANZAS
     var s3=newSlide(lang.finPerf, lang.finSub, cGreen);
-    if(sCurveImg) s3.addImage({data: sCurveImg, x:0.5, y:1.5, w:6, h:3.5});
+    if(sCurveImg) s3.addImage({data: sCurveImg, x:0.5, y:1.5, w:6, h:4});
     var finRows=[[isEn?'METRIC':'MÉTRICA', isEn?'VALUE':'VALOR']];
     finRows.push([isEn?'Revenue':'Ingresos', safeCurr(revenue)]); finRows.push([isEn?'Direct Costs':'Costes Directos', safeCurr(directCosts)]); finRows.push([isEn?'Gross Profit':'Beneficio Bruto', safeCurr(grossProfit)]); finRows.push(['EBITDA', safeCurr(ebitda)]);
     s3.addTable(finRows,{x:7,y:1.5,w:5.8,fontSize:12,color:textWhite,border:{type:'solid',color:'334155',pt:1},fill:{color:cardDark},align:'left'});
@@ -4539,7 +4584,7 @@ async function exportPPTX(){
 
     // SLIDE 4: ESTRATEGIA
     var s4=newSlide(lang.stratAlign, lang.stratSub, cGold);
-    if(radarImg) s4.addImage({data: radarImg, x:0.5, y:1.5, w:6, h:3.8});
+    if(radarImg) s4.addImage({data: radarImg, x:0.5, y:1.5, w:6, h:4});
     s4.addShape(pptx.ShapeType.roundRect,{x:7,y:1.5,w:5.8,h:4.5,fill:{color:cardDark},line:{color:'334155',width:1},rectRadius:0.1});
     s4.addText(isEn?'OKR STATUS':'ESTADO DE OKRs',{x:7.2,y:1.7,w:5.4,h:0.3,fontSize:12,bold:true,color:cGold});
     s4.addText((isEn?'• Financial Score: ':'• Puntuación Financiera: ') + Math.min(100, Math.round(safeCPi*40)) + '/100\n' + (isEn?'• Client Score: ':'• Puntuación de Clientes: ') + '65/100\n' + (isEn?'• Process Score: ':'• Puntuación de Procesos: ') + Math.min(100, Math.round(safeSPi*100)) + '/100\n' + (isEn?'• Data Maturity: ':'• Madurez de Datos: ') + '80/100',{x:7.2,y:2.2,w:5.4,h:2,fontSize:12,color:textWhite,lineSpacing:22});
@@ -4553,7 +4598,7 @@ async function exportPPTX(){
 
     // SLIDE 6: TECKIO
     var s6=newSlide(lang.constOp, lang.constSub, cViolet);
-    if(wbsImg) s6.addImage({data: wbsImg, x:0.5, y:1.5, w:6, h:3.5});
+    if(wbsImg) s6.addImage({data: wbsImg, x:0.5, y:1.5, w:6, h:4});
     s6.addShape(pptx.ShapeType.roundRect,{x:7,y:1.5,w:5.8,h:4.5,fill:{color:cardDark},line:{color:'334155',width:1},rectRadius:0.1});
     s6.addText(isEn?'CASH FLOW ALERTS':'ALERTAS DE CASH FLOW',{x:7.2,y:1.7,w:5.4,h:0.3,fontSize:12,bold:true,color:cGreen});
     s6.addText((isEn?'• Liquidity valley in Week 3.':'• Valle de liquidez en Semana 3.') + '\n' + (isEn?'• Invoice #INV-2415 due in 2 days.':'• Factura #INV-2415 vence en 2 días.') + '\n' + (isEn?'• Supplier renegotiation pending.':'• Renegociación con proveedor pendiente.'),{x:7.2,y:2.2,w:5.4,h:2,fontSize:12,color:textWhite,lineSpacing:22});
