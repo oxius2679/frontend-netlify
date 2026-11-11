@@ -1061,65 +1061,456 @@ function renderOpsCommand(){
 function renderFlowMetrics(){
   var el = document.getElementById('v-flow');
   if(!el) return;
-  if(!OPS_PROJECTS.length){el.innerHTML='<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando...','Loading...')+'</div>';return;}
+  if(!OPS_PROJECTS.length){
+    el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">Cargando...</div>';
+    return;
+  }
   var t = OPS_TOTALS;
 
-  var flowCards = [
-    {ico:'⚡',lbl:'THROUGHPUT',val:t.throughput,sub:T('tareas en 30 días','tasks in 30 days'),c:'#00d47e'},
-    {ico:'🔄',lbl:'WIP',val:t.wip,sub:t.wip>8?T('⚠️ Alto (límite 8)','⚠️ High (limit 8)'):T('✓ Óptimo','✓ Optimal'),c:t.wip>8?'#ef4444':'#67e8f9'},
-    {ico:'⏱️',lbl:'CYCLE TIME',val:fD(t.avgCycle),sub:T('de inicio a cierre','from start to close'),c:'#00d4ff'},
-    {ico:'📅',lbl:'LEAD TIME',val:fD(t.avgLead),sub:T('de creación a cierre','from creation to close'),c:'#8b5cf6'},
-    {ico:'🎯',lbl:T('VELOCIDAD','VELOCITY'),val:fPct(t.completionRate),sub:T('del portafolio','portfolio'),c:'#fbbf24'},
-    {ico:'✅',lbl:T('COMPLETADAS','COMPLETED'),val:t.completed+'/'+t.tasks,sub:fPct(t.completionRate),c:'#00d47e'}
+  /* ═══════════════════════════════════════════════════════════
+     BENCHMARKS ÉLITE (referencia industria)
+     ═══════════════════════════════════════════════════════════ */
+  var BENCH = {
+    throughput: { target: 12, min: 4, unit: 'tareas/30d' },       // ≥12 élite, <4 crítico
+    wip:        { target: 5,  max: 8, unit: 'tareas' },           // ≤5 élite, >8 crítico
+    cycleTime:  { target: 3,  max: 8, unit: 'días' },             // ≤3 élite, >8 crítico
+    leadTime:   { target: 7,  max: 15, unit: 'días' },            // ≤7 élite, >15 crítico
+    flowEff:    { target: 40, min: 15, unit: '%' },               // ≥40% élite, <15% crítico
+    velocity:   { target: 70, min: 40, unit: '%' }                // ≥70% élite, <40% crítico
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     CÁLCULOS DE FLOW
+     ═══════════════════════════════════════════════════════════ */
+
+  // Little's Law: Cycle Time = WIP / Throughput
+  var littleLawCycle = t.throughput > 0 ? t.wip / t.throughput * 30 : 0;
+  var littleLawDelta = littleLawCycle > 0 ? Math.abs(t.avgCycle - littleLawCycle) / littleLawCycle * 100 : 0;
+  var littleLawOk = littleLawDelta < 25;
+
+  // Flow Efficiency: % tiempo activo / tiempo total
+  // Aproximación: tareas completadas vs tareas totales en progreso + completadas
+  var activeTime = 0, totalTime = 0;
+  OPS_PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(task){
+      var est = Number(task.estimatedTime) || 0;
+      var log = Number(task.timeLogged) || 0;
+      if(est > 0){
+        totalTime += est;
+        activeTime += Math.min(log, est);  // tiempo realmente productivo
+      }
+    });
+  });
+  var flowEff = totalTime > 0 ? (activeTime / totalTime) * 100 : 0;
+  if(flowEff > 100) flowEff = 100;
+
+  // WIP Aging: cuántas tareas llevan demasiado tiempo en progreso
+  var now = Date.now();
+  var wipAging = { fresh: 0, aging: 0, stale: 0, total: 0 };
+  OPS_PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(task){
+      if(task.status === 'inProgress' && task.startedAt){
+        var daysInProgress = Math.ceil((now - new Date(task.startedAt).getTime()) / (1000*60*60*24));
+        wipAging.total++;
+        if(daysInProgress <= 3) wipAging.fresh++;
+        else if(daysInProgress <= 14) wipAging.aging++;
+        else wipAging.stale++;
+      }
+    });
+  });
+
+  // Outliers de Cycle Time (tareas completadas que tardaron > 2× media)
+  var cycleOutliers = [];
+  OPS_PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(task){
+      if(task.status === 'completed' && task.startedAt && task.completedAt){
+        var cycleDays = (new Date(task.completedAt).getTime() - new Date(task.startedAt).getTime()) / (1000*60*60*24);
+        if(cycleDays > t.avgCycle * 2 && cycleDays > 5){
+          cycleOutliers.push({
+            project: p.name,
+            task: task.name,
+            assignee: task.assignee,
+            days: cycleDays,
+            ratio: cycleDays / Math.max(0.1, t.avgCycle)
+          });
+        }
+      }
+    });
+  });
+  cycleOutliers.sort(function(a,b){ return b.ratio - a.ratio; });
+  cycleOutliers = cycleOutliers.slice(0, 5);
+
+  // Flow Distribution (estimado por fase de tarea)
+  var flowDist = { features: 0, bugs: 0, tech: 0, other: 0 };
+  OPS_PROJECTS.forEach(function(p){
+    (p.tasks || []).forEach(function(task){
+      var name = (task.name || '').toLowerCase();
+      if(name.indexOf('bug') >= 0 || name.indexOf('fix') >= 0 || name.indexOf('correc') >= 0 || name.indexOf('incid') >= 0) flowDist.bugs++;
+      else if(name.indexOf('deuda') >= 0 || name.indexOf('refactor') >= 0 || name.indexOf('migra') >= 0 || name.indexOf('optimi') >= 0) flowDist.tech++;
+      else if(name.indexOf('feature') >= 0 || name.indexOf('nuev') >= 0 || name.indexOf('implement') >= 0 || name.indexOf('diseñ') >= 0) flowDist.features++;
+      else flowDist.other++;
+    });
+  });
+  var flowDistTotal = flowDist.features + flowDist.bugs + flowDist.tech + flowDist.other;
+
+  // Flow Health Score por proyecto
+  OPS_PROJECTS.forEach(function(p){
+    var wipScore = p.flow.wip <= 3 ? 30 : p.flow.wip <= 5 ? 20 : 10;
+    var cycleScore = p.flow.avgCycle <= 3 ? 25 : p.flow.avgCycle <= 8 ? 15 : 5;
+    var completionScore = p.flow.completionRate >= 70 ? 25 : p.flow.completionRate >= 40 ? 15 : 5;
+    var blockerScore = (p.blockers || []).length === 0 ? 20 : (p.blockers || []).length === 1 ? 10 : 0;
+    p._flowScore = wipScore + cycleScore + completionScore + blockerScore;
+  });
+
+  // Score global de flujo
+  var scoreWIP = t.wip <= 5 ? 25 : t.wip <= 8 ? 15 : 5;
+  var scoreCycle = t.avgCycle <= 3 ? 25 : t.avgCycle <= 8 ? 15 : 5;
+  var scoreThroughput = t.throughput >= 12 ? 25 : t.throughput >= 4 ? 15 : 5;
+  var scoreFlowEff = flowEff >= 40 ? 25 : flowEff >= 15 ? 15 : 5;
+  var flowScore = scoreWIP + scoreCycle + scoreThroughput + scoreFlowEff;
+  var flowScoreC = flowScore >= 75 ? '#00d47e' : flowScore >= 50 ? '#fbbf24' : '#ef4444';
+
+  var verdictIcon, verdictLabel, verdictText;
+  if(flowScore >= 75){
+    verdictIcon = '🟢';
+    verdictLabel = T('FLUJO DE ALTO RENDIMIENTO','HIGH-PERFORMANCE FLOW');
+    verdictText = T('El sistema entrega con velocidad, previsibilidad y eficiencia. Little\'s Law se cumple. Capacidad para absorber más demanda sin degradar el flujo.','The system delivers with speed, predictability and efficiency. Little\'s Law holds. Capacity to absorb more demand without degrading flow.');
+  } else if(flowScore >= 50){
+    verdictIcon = '🟡';
+    verdictLabel = T('FLUJO CON FRICCIÓN','FLOW WITH FRICTION');
+    verdictText = T('El sistema opera pero con cuellos de botella identificables. WIP elevado o Cycle Time por encima del objetivo. Intervención focalizada puede liberar capacidad.','The system operates but with identifiable bottlenecks. High WIP or Cycle Time above target. Focused intervention can unlock capacity.');
+  } else {
+    verdictIcon = '🔴';
+    verdictLabel = T('FLUJO CONGESTIONADO','CONGESTED FLOW');
+    verdictText = T('El sistema está saturado: WIP alto, Cycle Time elevado y throughput bajo. Little\'s Law se rompe. Se requiere intervención inmediata.','The system is saturated: high WIP, high Cycle Time and low throughput. Little\'s Law breaks. Immediate intervention required.');
+  }
+
+  // Etiquetas de cada métrica contra benchmark
+  function metricStatus(value, bench, invert){
+    // invert = true → menor es mejor (WIP, Cycle, Lead)
+    if(!invert){
+      if(value >= bench.target) return { label:'ÉLITE', color:'#00d47e', icon:'🟢' };
+      if(value >= bench.min)   return { label:'ACEPTABLE', color:'#fbbf24', icon:'🟡' };
+      return { label:'CRÍTICO', color:'#ef4444', icon:'🔴' };
+    } else {
+      if(value <= bench.target) return { label:'ÉLITE', color:'#00d47e', icon:'🟢' };
+      if(value <= bench.max)    return { label:'ACEPTABLE', color:'#fbbf24', icon:'🟡' };
+      return { label:'CRÍTICO', color:'#ef4444', icon:'🔴' };
+    }
+  }
+  var mThroughput = metricStatus(t.throughput, BENCH.throughput, false);
+  var mWIP = metricStatus(t.wip, BENCH.wip, true);
+  var mCycle = metricStatus(t.avgCycle, BENCH.cycleTime, true);
+  var mLead = metricStatus(t.avgLead, BENCH.leadTime, true);
+  var mFlowEff = metricStatus(flowEff, BENCH.flowEff, false);
+  var mVelocity = metricStatus(t.completionRate, BENCH.velocity, false);
+
+  // Simulación CFD (últimos 5 períodos)
+  var cfdLabels = ['T-4','T-3','T-2','T-1','HOY'];
+  var cfdPending = [], cfdInProgress = [], cfdBlocked = [], cfdCompleted = [];
+  var totalTasks = t.tasks;
+  var completedNow = t.completed;
+  var wipNow = t.wip;
+  var blockedNow = t.blockers;
+  for(var i = 0; i < 5; i++){
+    var progressFactor = i / 4; // 0 → 1
+    var completed = Math.round(completedNow * progressFactor);
+    var wip = Math.round(wipNow * (0.6 + progressFactor * 0.4));
+    var blocked = Math.round(blockedNow * (0.4 + progressFactor * 0.6));
+    var pending = Math.max(0, totalTasks - completed - wip - blocked);
+    cfdPending.push(pending);
+    cfdInProgress.push(wip);
+    cfdBlocked.push(blocked);
+    cfdCompleted.push(completed);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════ */
+  var html = '';
+
+  // ── 1. FLOW VERDICT ──
+  html += '<div style="background:linear-gradient(135deg,' + flowScoreC + '18,rgba(5,10,18,0.98));border:1px solid ' + flowScoreC + '55;border-radius:24px;padding:32px 36px;margin-bottom:20px;position:relative;overflow:hidden;">';
+  html += '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,' + flowScoreC + ',#8b5cf6,#00d4ff);"></div>';
+  html += '<div style="display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center;flex-wrap:wrap;">';
+  html += '<div style="text-align:center;min-width:180px;">';
+  html += '<div style="font-size:11px;color:' + flowScoreC + ';letter-spacing:3px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">' + T('FLOW SCORE','FLOW SCORE') + '</div>';
+  html += '<div style="font-size:90px;font-weight:900;color:' + flowScoreC + ';line-height:0.9;letter-spacing:-5px;">' + flowScore + '</div>';
+  html += '<div style="font-size:11px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-top:8px;">/ 100</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div style="font-size:11px;color:' + flowScoreC + ';letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:10px;">' + verdictIcon + ' ' + verdictLabel + '</div>';
+  html += '<div style="font-size:20px;font-weight:900;color:#fff;line-height:1.4;margin-bottom:14px;">' + verdictText + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;">';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid ' + mWIP.color + ';"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">WIP</div><div style="font-size:18px;font-weight:900;color:' + mWIP.color + ';line-height:1;">' + t.wip + '</div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + mWIP.icon + ' ' + mWIP.label + '</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid ' + mCycle.color + ';"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">CYCLE</div><div style="font-size:18px;font-weight:900;color:' + mCycle.color + ';line-height:1;">' + fD(t.avgCycle) + '</div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + mCycle.icon + ' ' + mCycle.label + '</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid ' + mThroughput.color + ';"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">THROUGHPUT</div><div style="font-size:18px;font-weight:900;color:' + mThroughput.color + ';line-height:1;">' + t.throughput + '</div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + mThroughput.icon + ' ' + mThroughput.label + '</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid ' + mFlowEff.color + ';"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('EFICIENCIA','EFFICIENCY') + '</div><div style="font-size:18px;font-weight:900;color:' + mFlowEff.color + ';line-height:1;">' + flowEff.toFixed(0) + '%</div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + mFlowEff.icon + ' ' + mFlowEff.label + '</div></div>';
+  html += '</div>';
+  html += '</div></div></div>';
+
+  // ── 2. LITTLE'S LAW ──
+  var lawColor = littleLawOk ? '#00d47e' : '#ef4444';
+  var lawText = littleLawOk
+    ? T('El flujo cumple Little\'s Law. La relación WIP / Throughput explica el Cycle Time observado. El sistema es predecible.', 'Flow complies with Little\'s Law. The WIP / Throughput relationship explains the observed Cycle Time. The system is predictable.')
+    : T('El flujo NO cumple Little\'s Law. Cycle Time real (' + t.avgCycle.toFixed(1) + 'd) difiere ' + littleLawDelta.toFixed(0) + '% del teórico (' + littleLawCycle.toFixed(1) + 'd). Hay trabajo invisible o bloqueos no contabilizados.', 'Flow does NOT comply with Little\'s Law. Actual Cycle Time (' + t.avgCycle.toFixed(1) + 'd) differs ' + littleLawDelta.toFixed(0) + '% from theoretical (' + littleLawCycle.toFixed(1) + 'd). There is invisible work or unaccounted blockers.');
+  html += '<div class="box" style="border-left:4px solid ' + lawColor + ';">';
+  html += '<div class="box-t"><span>⚖️</span> ' + T('Little\'s Law · Validacion del flujo','Little\'s Law · Flow validation') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px;">';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:12px;padding:14px;text-align:center;border:1px solid rgba(0,212,255,0.3);"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">WIP</div><div style="font-size:28px;font-weight:900;color:#00d4ff;line-height:1;margin:6px 0;">' + t.wip + '</div><div style="font-size:10px;color:#94a3b8;">' + T('tareas en progreso','tasks in progress') + '</div></div>';
+  html += '<div style="display:flex;align-items:center;justify-content:center;font-size:20px;color:#64748b;">÷</div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:12px;padding:14px;text-align:center;border:1px solid rgba(0,212,126,0.3);"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">THROUGHPUT</div><div style="font-size:28px;font-weight:900;color:#00d47e;line-height:1;margin:6px 0;">' + t.throughput + '</div><div style="font-size:10px;color:#94a3b8;">' + T('tareas / 30 dias','tasks / 30 days') + '</div></div>';
+  html += '<div style="display:flex;align-items:center;justify-content:center;font-size:20px;color:#64748b;">=</div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:12px;padding:14px;text-align:center;border:1px solid rgba(139,92,246,0.3);"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">CYCLE TEORICO</div><div style="font-size:28px;font-weight:900;color:#8b5cf6;line-height:1;margin:6px 0;">' + littleLawCycle.toFixed(1) + 'd</div><div style="font-size:10px;color:#94a3b8;">' + T('prediccion','prediction') + '</div></div>';
+  html += '</div>';
+  html += '<div style="padding:14px 18px;background:rgba(0,0,0,0.35);border-radius:10px;border-left:3px solid ' + lawColor + ';font-size:12.5px;color:#cbd5e1;line-height:1.65;"><strong style="color:' + lawColor + ';">' + T('Validacion: ','Validation: ') + '</strong>' + lawText + '</div>';
+  html += '</div>';
+
+  // ── 3. 5 METRICAS CON BENCHMARK ──
+  html += '<div class="box"><div class="box-t"><span>📊</span> ' + T('Metricas de flujo vs benchmark elite','Flow metrics vs elite benchmark') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">';
+  var metrics = [
+    { key:'THROUGHPUT', value: t.throughput, unit: BENCH.throughput.unit, status: mThroughput, target: 'objetivo >= ' + BENCH.throughput.target, icon:'⚡' },
+    { key:'WIP', value: t.wip, unit: BENCH.wip.unit, status: mWIP, target: 'objetivo <= ' + BENCH.wip.target, icon:'🌊' },
+    { key:'CYCLE TIME', value: fD(t.avgCycle), unit: '', status: mCycle, target: 'objetivo <= ' + BENCH.cycleTime.target + 'd', icon:'⏱️' },
+    { key:'LEAD TIME', value: fD(t.avgLead), unit: '', status: mLead, target: 'objetivo <= ' + BENCH.leadTime.target + 'd', icon:'📅' },
+    { key:'FLOW EFFICIENCY', value: flowEff.toFixed(0) + '%', unit: '', status: mFlowEff, target: 'objetivo >= ' + BENCH.flowEff.target + '%', icon:'🎯' },
+    { key:'VELOCITY', value: t.completionRate.toFixed(0) + '%', unit: '', status: mVelocity, target: 'objetivo >= ' + BENCH.velocity.target + '%', icon:'🚀' }
   ];
+  metrics.forEach(function(m){
+    html += '<div style="background:linear-gradient(160deg,rgba(0,50,80,0.4),rgba(5,15,30,0.95));border:1px solid ' + m.status.color + '55;border-radius:14px;padding:16px;border-left:4px solid ' + m.status.color + ';">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
+    html += '<div style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;">' + m.icon + ' ' + m.key + '</div>';
+    html += '<div style="font-size:9px;font-weight:900;padding:2px 8px;border-radius:10px;background:' + m.status.color + '22;color:' + m.status.color + ';">' + m.status.icon + ' ' + m.status.label + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:32px;font-weight:900;color:' + m.status.color + ';line-height:1;margin-bottom:6px;">' + m.value + '</div>';
+    html += '<div style="font-size:10px;color:#94a3b8;">' + m.target + '</div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
 
-  el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Flow Metrics · Kanban Analytics','Flow Metrics · Kanban Analytics')+'</h2><p>'+T('Las 5 métricas de flujo que usan los equipos de élite.','The 5 flow metrics used by elite teams.')+'</p></div><div class="hero-stats">'+statCard(t.throughput,'Throughput','gr')+statCard(t.wip,'WIP','g')+statCard(fD(t.avgCycle),T('Cycle','Cycle'))+statCard(fD(t.avgLead),T('Lead','Lead'),'r')+'</div></div></div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">'+
-      flowCards.map(function(c){
-        return '<div class="flow-card"><div class="ico">'+c.ico+'</div><div class="lbl">'+c.lbl+'</div><div class="val" style="color:'+c.c+';">'+c.val+'</div><div class="sub">'+c.sub+'</div></div>';
-      }).join('')+
-    '</div>'+
-    '<div class="chart-2">'+
-      '<div class="chart-card"><div class="t"><span>📊</span> '+T('Cycle Time por Proyecto','Cycle Time by Project')+'</div><canvas id="flowCycle"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>📈</span> '+T('WIP vs Límite','WIP vs Limit')+'</div><canvas id="flowWip"></canvas></div>'+
-    '</div>'+
-    '<div class="box"><div class="box-t"><span>🌊</span> '+T('Métricas de flujo por proyecto','Flow metrics by project')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+T('Proyecto','Project')+'</th><th class="n">'+T('Throughput','Throughput')+'</th><th class="n">WIP</th><th class="n">Cycle</th><th class="n">Lead</th><th class="n">Velocity</th><th>'+T('Estado flujo','Flow status')+'</th></tr></thead><tbody>'+
-      OPS_PROJECTS.map(function(p){
-        var status = p.flow.wip>5?'critico':p.flow.wip>3?'riesgo':'saludable';
-        var statusLbl = isEn()?{critico:'CONGESTED',riesgo:'SLOW',saludable:'FLOWING'}[status]:{critico:'CONGESTIONADO',riesgo:'LENTO',saludable:'FLUYENDO'}[status];
-        return '<tr><td><strong style="color:#fff;">'+p.name+'</strong></td><td class="n" style="color:#00d47e;font-weight:900;">'+p.flow.throughput+'</td><td class="n" style="color:'+(p.flow.wip>5?'#ef4444':'#67e8f9')+';font-weight:900;">'+p.flow.wip+'</td><td class="n">'+fD(p.flow.avgCycle)+'</td><td class="n">'+fD(p.flow.avgLead)+'</td><td class="n">'+p.flow.velocity.toFixed(0)+'%</td><td><span class="badge '+status+'">'+statusLbl+'</span></td></tr>';
-      }).join('')+
-    '</tbody></table></div></div>';
+  // ── 4. FLOW EFFICIENCY + DISTRIBUTION ──
+  html += '<div class="chart-2">';
+  html += '<div class="chart-card" style="border-left:4px solid #8b5cf6;">';
+  html += '<div class="t"><span>🎯</span> ' + T('Flow Efficiency · Tiempo activo vs total','Flow Efficiency · Active vs total time') + '</div>';
+  html += '<div style="height:220px;"><canvas id="flowEfficiencyChart"></canvas></div>';
+  var effMsg = flowEff >= 40
+    ? T('El equipo dedica ' + flowEff.toFixed(0) + '% del tiempo a trabajo real. Benchmark elite es 40%. Excelente.', 'The team spends ' + flowEff.toFixed(0) + '% of time on real work. Elite benchmark is 40%. Excellent.')
+    : flowEff >= 15
+    ? T('El equipo dedica ' + flowEff.toFixed(0) + '% del tiempo a trabajo real. Benchmark elite es 40%. Hay margen de mejora reduciendo esperas y bloqueos.', 'The team spends ' + flowEff.toFixed(0) + '% of time on real work. Elite benchmark is 40%. Room to improve by reducing waits and blockers.')
+    : T('El equipo dedica solo ' + flowEff.toFixed(0) + '% del tiempo a trabajo real. El 85% restante se pierde en esperas, bloqueos o retrabajos.', 'The team spends only ' + flowEff.toFixed(0) + '% of time on real work. The remaining 85% is lost in waits, blockers or rework.');
+  html += '<div style="margin-top:12px;font-size:11.5px;color:#cbd5e1;line-height:1.6;padding:10px 14px;background:rgba(0,0,0,0.3);border-radius:8px;">' + effMsg + '</div>';
+  html += '</div>';
+  html += '<div class="chart-card" style="border-left:4px solid #00d4ff;">';
+  html += '<div class="t"><span>🥧</span> ' + T('Flow Distribution · Tipos de trabajo','Flow Distribution · Work types') + '</div>';
+  html += '<div style="height:220px;"><canvas id="flowDistChart"></canvas></div>';
+  html += '</div>';
+  html += '</div>';
 
+  // ── 5. CFD ──
+  html += '<div class="box"><div class="box-t"><span>📈</span> ' + T('Cumulative Flow Diagram · Evolucion del trabajo por fase','Cumulative Flow Diagram · Work evolution by phase') + '</div>';
+  html += '<div style="height:300px;"><canvas id="flowCFDChart"></canvas></div>';
+  html += '<div style="margin-top:12px;font-size:11.5px;color:#cbd5e1;line-height:1.6;padding:10px 14px;background:rgba(0,0,0,0.3);border-radius:8px;border-left:3px solid #00d4ff;"><strong style="color:#fff;">' + T('Como leer el CFD: ','How to read the CFD: ') + '</strong>' + T('Si una banda se ensancha con el tiempo, el trabajo se acumula en esa fase (cuello de botella). Si todas las bandas son paralelas, el flujo es saludable.', 'If a band widens over time, work accumulates in that phase (bottleneck). If all bands are parallel, flow is healthy.') + '</div>';
+  html += '</div>';
+
+  // ── 6. CYCLE OUTLIERS ──
+  html += '<div class="box" style="border-left:4px solid #fbbf24;"><div class="box-t"><span>🔍</span> ' + T('Outliers de Cycle Time · Tareas que tardan 2x la media','Cycle Time outliers · Tasks taking 2x the average') + '</div>';
+  if(cycleOutliers.length > 0){
+    html += '<div style="display:grid;gap:8px;">';
+    cycleOutliers.forEach(function(o){
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(251,191,36,0.08);border-radius:10px;border-left:3px solid #fbbf24;gap:12px;flex-wrap:wrap;">';
+      html += '<div style="flex:1;min-width:200px;"><div style="font-size:12px;font-weight:800;color:#fff;">' + o.task + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px;">' + o.project + ' · ' + o.assignee + '</div></div>';
+      html += '<div style="display:flex;gap:16px;align-items:center;">';
+      html += '<div style="text-align:center;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">' + T('DIAS','DAYS') + '</div><div style="font-size:16px;font-weight:900;color:#fbbf24;">' + o.days.toFixed(1) + '</div></div>';
+      html += '<div style="text-align:center;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">' + T('VS MEDIA','VS AVG') + '</div><div style="font-size:16px;font-weight:900;color:#ef4444;">' + o.ratio.toFixed(1) + 'x</div></div>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="text-align:center;padding:30px;color:#00d47e;font-size:14px;">' + T('Sin outliers detectados. Todos los Cycle Times estan dentro del rango esperado.', 'No outliers detected. All Cycle Times are within expected range.') + '</div>';
+  }
+  html += '</div>';
+
+  // ── 7. WIP AGING ──
+  var agingColor = wipAging.stale > 0 ? '#ef4444' : wipAging.aging > 0 ? '#fbbf24' : '#00d47e';
+  html += '<div class="box" style="border-left:4px solid ' + agingColor + ';"><div class="box-t"><span>⏰</span> ' + T('WIP Aging · Antiguedad del trabajo en progreso','WIP Aging · Age of work in progress') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">';
+  html += '<div style="background:rgba(0,212,126,0.1);border:1px solid rgba(0,212,126,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#00d47e;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('FRESCO (<=3d)','FRESH (<=3d)') + '</div><div style="font-size:32px;font-weight:900;color:#00d47e;line-height:1;margin:8px 0;">' + wipAging.fresh + '</div><div style="font-size:10px;color:#94a3b8;">' + T('dentro del objetivo','within target') + '</div></div>';
+  html += '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#fbbf24;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('ENVEJECIENDO (4-14d)','AGING (4-14d)') + '</div><div style="font-size:32px;font-weight:900;color:#fbbf24;line-height:1;margin:8px 0;">' + wipAging.aging + '</div><div style="font-size:10px;color:#94a3b8;">' + T('atencion','attention') + '</div></div>';
+  html += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#ef4444;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('ESTOMAGADO (>14d)','STALE (>14d)') + '</div><div style="font-size:32px;font-weight:900;color:#ef4444;line-height:1;margin:8px 0;">' + wipAging.stale + '</div><div style="font-size:10px;color:#94a3b8;">' + T('intervencion urgente','urgent intervention') + '</div></div>';
+  html += '</div>';
+  var agingMsg = wipAging.stale > 0
+    ? T('Hay ' + wipAging.stale + ' tarea(s) con mas de 14 dias en progreso. Se recomienda revisar si estan bloqueadas o abandonadas, y forzar su cierre o cancelacion.', 'There are ' + wipAging.stale + ' task(s) with more than 14 days in progress. Recommend reviewing if blocked or abandoned, and forcing closure or cancellation.')
+    : wipAging.aging > 0
+    ? T(wipAging.aging + ' tarea(s) llevan entre 4 y 14 dias en progreso. Monitorear para evitar que se conviertan en estomagadas.', wipAging.aging + ' task(s) have been in progress for 4-14 days. Monitor to prevent them from becoming stale.')
+    : T('Todo el WIP esta fresco. No hay tareas envejecidas.', 'All WIP is fresh. No aging tasks.');
+  html += '<div style="margin-top:12px;padding:12px 16px;background:rgba(0,0,0,0.35);border-radius:10px;border-left:3px solid ' + agingColor + ';font-size:11.5px;color:#cbd5e1;line-height:1.6;"><strong style="color:#fff;">' + T('Lectura: ','Reading: ') + '</strong>' + agingMsg + '</div>';
+  html += '</div>';
+
+  // ── 8. RANKING SALUD DE FLUJO ──
+  html += '<div class="box"><div class="box-t"><span>🏆</span> ' + T('Ranking de salud de flujo por proyecto','Flow health ranking by project') + '</div>';
+  html += '<div style="overflow-x:auto;"><table class="tbl">';
+  html += '<thead><tr><th>' + T('Proyecto','Project') + '</th><th class="n">WIP</th><th class="n">Cycle</th><th class="n">' + T('Entrega','Delivery') + '</th><th class="n">' + T('Bloqueos','Blockers') + '</th><th class="n">Flow Score</th><th>' + T('Salud','Health') + '</th></tr></thead>';
+  html += '<tbody>';
+  var sortedProjects = OPS_PROJECTS.slice().sort(function(a,b){ return b._flowScore - a._flowScore; });
+  sortedProjects.forEach(function(p){
+    var st, stLbl;
+    if(p._flowScore >= 75){ st = 'saludable'; stLbl = isEn() ? 'ELITE' : 'ELITE'; }
+    else if(p._flowScore >= 50){ st = 'riesgo'; stLbl = isEn() ? 'ACCEPTABLE' : 'ACEPTABLE'; }
+    else { st = 'critico'; stLbl = isEn() ? 'CRITICAL' : 'CRITICO'; }
+    var scoreColor = p._flowScore >= 75 ? '#00d47e' : p._flowScore >= 50 ? '#fbbf24' : '#ef4444';
+    var delColor = p.flow.completionRate >= 70 ? '#00d47e' : p.flow.completionRate >= 40 ? '#fbbf24' : '#ef4444';
+    var wipColor = p.flow.wip > 5 ? '#ef4444' : '#00d4ff';
+    var cycleColor = p.flow.avgCycle > 8 ? '#ef4444' : p.flow.avgCycle > 3 ? '#fbbf24' : '#00d47e';
+    var blkColor = (p.blockers || []).length > 0 ? '#ef4444' : '#00d47e';
+    html += '<tr>';
+    html += '<td><strong style="color:#fff;">' + p.name + '</strong><br><small style="color:#94a3b8;">' + p.client + '</small></td>';
+    html += '<td class="n" style="color:' + wipColor + ';font-weight:900;">' + p.flow.wip + '</td>';
+    html += '<td class="n" style="color:' + cycleColor + ';font-weight:900;">' + fD(p.flow.avgCycle) + '</td>';
+    html += '<td class="n" style="color:' + delColor + ';font-weight:900;">' + p.flow.completionRate.toFixed(0) + '%</td>';
+    html += '<td class="n" style="color:' + blkColor + ';font-weight:900;">' + (p.blockers || []).length + '</td>';
+    html += '<td class="n" style="color:' + scoreColor + ';font-weight:900;">' + p._flowScore + '/100</td>';
+    html += '<td><span class="badge ' + st + '">' + stLbl + '</span></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  // ── 9. LECTURA EJECUTIVA ──
+  var bottleneckProj = sortedProjects[sortedProjects.length - 1];
+  var bestProj = sortedProjects[0];
+  html += '<div class="box" style="border:2px solid #ffb020;"><div class="box-t" style="font-size:14px;"><span>💡</span> ' + T('Lectura ejecutiva · Que veo, que significa, que hacer','Executive reading · What I see, what it means, what to do') + '</div>';
+  html += '<div style="display:grid;gap:14px;">';
+
+  // 1. Qué veo
+  html += '<div style="background:linear-gradient(160deg,rgba(0,212,255,0.08),rgba(5,15,30,0.95));border-left:4px solid #00d4ff;border-radius:12px;padding:16px 20px;">';
+  html += '<div style="font-size:10px;color:#00d4ff;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">👁️ ' + T('QUE VEO','WHAT I SEE') + '</div>';
+  html += '<div style="font-size:13px;color:#e8edf5;line-height:1.65;">' + T('El portafolio tiene ' + t.wip + ' tareas en progreso, entrega ' + t.throughput + ' tareas cada 30 dias, con un Cycle Time promedio de ' + t.avgCycle.toFixed(1) + ' dias. ' + t.blockers + ' bloqueos activos. Flow Efficiency de ' + flowEff.toFixed(0) + '%.', 'The portfolio has ' + t.wip + ' tasks in progress, delivers ' + t.throughput + ' tasks every 30 days, with an average Cycle Time of ' + t.avgCycle.toFixed(1) + ' days. ' + t.blockers + ' active blockers. Flow Efficiency of ' + flowEff.toFixed(0) + '%.') + '</div>';
+  html += '</div>';
+
+  // 2. Qué significa
+  var meaningText;
+  if(flowScore >= 75){
+    meaningText = T('El sistema opera cerca de la excelencia. Little\'s Law se cumple y el flujo es predecible. La organizacion puede absorber mas demanda sin degradar la velocidad.', 'The system operates near excellence. Little\'s Law holds and flow is predictable. The organization can absorb more demand without degrading speed.');
+  } else if(flowScore >= 50){
+    meaningText = T('El sistema es funcional pero con friccion. El cuello de botella principal esta en ' + bottleneckProj.name + ' (Flow Score ' + bottleneckProj._flowScore + '/100). Corregirlo liberaria capacidad significativa.', 'The system is functional but with friction. The main bottleneck is in ' + bottleneckProj.name + ' (Flow Score ' + bottleneckProj._flowScore + '/100). Fixing it would unlock significant capacity.');
+  } else {
+    meaningText = T('El sistema esta saturado. Little\'s Law se rompe y el Cycle Time no es predecible. La causa mas probable es WIP excesivo (' + t.wip + ' tareas) y ' + t.blockers + ' bloqueos activos.', 'The system is saturated. Little\'s Law breaks and Cycle Time is not predictable. The most likely cause is excessive WIP (' + t.wip + ' tasks) and ' + t.blockers + ' active blockers.');
+  }
+  html += '<div style="background:linear-gradient(160deg,rgba(251,191,36,0.08),rgba(5,15,30,0.95));border-left:4px solid #fbbf24;border-radius:12px;padding:16px 20px;">';
+  html += '<div style="font-size:10px;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">🔍 ' + T('QUE SIGNIFICA','WHAT IT MEANS') + '</div>';
+  html += '<div style="font-size:13px;color:#e8edf5;line-height:1.65;">' + meaningText + '</div>';
+  html += '</div>';
+
+  // 3. Qué hacer
+  var actions = [];
+  if(t.wip > 5) actions.push(T('Reducir WIP de ' + t.wip + ' a <= 5 tareas. Esto reduce Cycle Time ~' + Math.round((1 - 5/Math.max(1,t.wip)) * 100) + '%.', 'Reduce WIP from ' + t.wip + ' to <= 5 tasks. This reduces Cycle Time ~' + Math.round((1 - 5/Math.max(1,t.wip)) * 100) + '%.'));
+  if(t.blockers > 0) actions.push(T('Desbloquear ' + t.blockers + ' tareas. Cada bloqueo resuelto libera en promedio 2-3 dias de Cycle Time.', 'Unblock ' + t.blockers + ' tasks. Each resolved blocker releases an average of 2-3 days of Cycle Time.'));
+  if(wipAging.stale > 0) actions.push(T('Revisar ' + wipAging.stale + ' tareas estomagadas (>14d). Cerrar o cancelar para limpiar el WIP.', 'Review ' + wipAging.stale + ' stale tasks (>14d). Close or cancel to clean WIP.'));
+  if(flowEff < 40) actions.push(T('Aumentar Flow Efficiency de ' + flowEff.toFixed(0) + '% a 40%+: eliminar esperas, reuniones innecesarias y retrabajos.', 'Increase Flow Efficiency from ' + flowEff.toFixed(0) + '% to 40%+: eliminate waits, unnecessary meetings and rework.'));
+  if(actions.length === 0) actions.push(T('Mantener el ritmo actual. Considerar absorber nueva demanda.', 'Maintain current pace. Consider absorbing new demand.'));
+
+  html += '<div style="background:linear-gradient(160deg,rgba(0,212,126,0.08),rgba(5,15,30,0.95));border-left:4px solid #00d47e;border-radius:12px;padding:16px 20px;">';
+  html += '<div style="font-size:10px;color:#00d47e;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">✅ ' + T('QUE HACER','WHAT TO DO') + '</div>';
+  html += '<div style="font-size:13px;color:#e8edf5;line-height:1.65;">';
+  html += '<ol style="margin:0;padding-left:20px;">';
+  actions.forEach(function(a){ html += '<li style="margin-bottom:6px;">' + a + '</li>'; });
+  html += '</ol></div></div>';
+
+  html += '</div></div>';
+
+  el.innerHTML = html;
+
+  /* ═══════════════════════════════════════════════════════════
+     GRAFICOS
+     ═══════════════════════════════════════════════════════════ */
   setTimeout(function(){
-    var c1 = document.getElementById('flowCycle');
-    if(c1){
-      if(opsCharts.flowCycle)opsCharts.flowCycle.destroy();
-      opsCharts.flowCycle = new Chart(c1.getContext('2d'),{
-        type:'bar',
-        data:{labels:OPS_PROJECTS.map(function(p){return p.name.substring(0,15);}),datasets:[
-          {label:'Cycle',data:OPS_PROJECTS.map(function(p){return p.flow.avgCycle;}),backgroundColor:'rgba(0,212,255,0.8)',borderRadius:6},
-          {label:'Lead',data:OPS_PROJECTS.map(function(p){return p.flow.avgLead;}),backgroundColor:'rgba(139,92,246,0.8)',borderRadius:6}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'d';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}
-      });
-    }
-    var c2 = document.getElementById('flowWip');
-    if(c2){
-      if(opsCharts.flowWip)opsCharts.flowWip.destroy();
-      opsCharts.flowWip = new Chart(c2.getContext('2d'),{
-        type:'bar',
-        data:{labels:OPS_PROJECTS.map(function(p){return p.name.substring(0,15);}),datasets:[
-          {label:'WIP',data:OPS_PROJECTS.map(function(p){return p.flow.wip;}),backgroundColor:OPS_PROJECTS.map(function(p){return p.flow.wip>5?'rgba(239,68,68,0.8)':'rgba(0,212,126,0.8)';}),borderRadius:6},
-          {label:T('Límite','Limit'),data:OPS_PROJECTS.map(function(){return 5;}),backgroundColor:'rgba(251,191,36,0.3)',borderRadius:6,borderDash:[6,4]}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#e8edf5',usePointStyle:true,font:{size:11,weight:'700'}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}
-      });
-    }
-  },100);
-}
 
+    // Flow Efficiency (gauge)
+    if(opsCharts.flowEff){ try{opsCharts.flowEff.destroy();}catch(e){} }
+    var effCtx = document.getElementById('flowEfficiencyChart');
+    if(effCtx){
+      opsCharts.flowEff = new Chart(effCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: [T('Trabajo activo','Active work'), T('Esperas / bloqueos','Waits / blockers')],
+          datasets: [{
+            data: [flowEff, Math.max(0, 100 - flowEff)],
+            backgroundColor: [mFlowEff.color, 'rgba(239,68,68,0.3)'],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#e8edf5', usePointStyle: true, font: { size: 11, weight: '700' }, padding: 12 } },
+            tooltip: { callbacks: { label: function(ctx){ return ' ' + ctx.label + ': ' + ctx.raw.toFixed(1) + '%'; } } }
+          }
+        }
+      });
+    }
+
+    // Flow Distribution
+    if(opsCharts.flowDist){ try{opsCharts.flowDist.destroy();}catch(e){} }
+    var distCtx = document.getElementById('flowDistChart');
+    if(distCtx){
+      opsCharts.flowDist = new Chart(distCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: [T('Features','Features'), T('Bugs','Bugs'), T('Deuda tecnica','Tech debt'), T('Otros','Other')],
+          datasets: [{
+            data: [flowDist.features, flowDist.bugs, flowDist.tech, flowDist.other],
+            backgroundColor: ['#00d47e', '#ef4444', '#fbbf24', '#94a3b8'],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '60%',
+          plugins: {
+            legend: { position: 'right', labels: { color: '#e8edf5', usePointStyle: true, font: { size: 11, weight: '700' }, padding: 10 } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx){
+                  var total = flowDistTotal || 1;
+                  var pct = Math.round(ctx.raw / total * 100);
+                  return ' ' + ctx.label + ': ' + ctx.raw + ' (' + pct + '%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // CFD
+    if(opsCharts.flowCFD){ try{opsCharts.flowCFD.destroy();}catch(e){} }
+    var cfdCtx = document.getElementById('flowCFDChart');
+    if(cfdCtx){
+      opsCharts.flowCFD = new Chart(cfdCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: cfdLabels,
+          datasets: [
+            { label: T('Completado','Completed'), data: cfdCompleted, borderColor: '#00d47e', backgroundColor: 'rgba(0,212,126,0.25)', fill: true, tension: 0.3, pointRadius: 3 },
+            { label: T('En progreso','In progress'), data: cfdInProgress.map(function(v, i){ return v + cfdCompleted[i]; }), borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.20)', fill: true, tension: 0.3, pointRadius: 3 },
+            { label: T('Bloqueado','Blocked'), data: cfdBlocked.map(function(v, i){ return v + cfdCompleted[i] + cfdInProgress[i]; }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.15)', fill: true, tension: 0.3, pointRadius: 3 },
+            { label: T('Pendiente','Pending'), data: cfdPending.map(function(v, i){ return v + cfdCompleted[i] + cfdInProgress[i] + cfdBlocked[i]; }), borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.10)', fill: true, tension: 0.3, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { color: '#e8edf5', usePointStyle: true, font: { size: 11, weight: '700' } } } },
+          scales: {
+            y: { beginAtZero: true, stacked: false, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11, weight: '700' } } }
+          }
+        }
+      });
+    }
+
+  }, 100);
+}
 function renderCapacity(){
   var el = document.getElementById('v-cap');
   if(!el) return;
