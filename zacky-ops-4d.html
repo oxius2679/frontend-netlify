@@ -788,92 +788,276 @@ function renderOpsCommand(){
   if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando datos operativos...','Loading operational data...')+'</div>'; return; }
   var t = OPS_TOTALS;
 
-  // Análisis para el CEO
-  var criticalProjs = OPS_PROJECTS.filter(p => p.flow.completionRate < 40 || p.blockers.length > 0);
-  var topBlocker = OPS_PROJECTS.reduce((max, p) => p.blockers.length > (max ? max.blockers.length : 0) ? p : max, null);
+  // ── CÁLCULOS EJECUTIVOS SEGUROS (sin nulls) ──
+  var criticalProjs = OPS_PROJECTS.filter(function(p){ return p.flow.completionRate < 40 || (p.blockers && p.blockers.length > 0); });
+  var topBlocker = null;
+  OPS_PROJECTS.forEach(function(p){
+    if(!topBlocker || (p.blockers||[]).length > (topBlocker.blockers||[]).length) topBlocker = p;
+  });
+  var hasRealBlocker = topBlocker && topBlocker.blockers && topBlocker.blockers.length > 0;
+
+  // Score ejecutivo global (0-100)
+  var healthScore = Math.round(
+    Math.min(40, t.completionRate * 0.4) +
+    Math.min(25, (t.evm.CPI || 0) * 25) +
+    Math.min(20, (t.evm.SPI || 0) * 20) +
+    (t.blockers === 0 ? 15 : Math.max(0, 15 - t.blockers * 3))
+  );
+  var healthC = healthScore >= 75 ? '#00d47e' : healthScore >= 50 ? '#fbbf24' : '#ef4444';
+  var healthLabel = healthScore >= 75 ? T('SALUDABLE','HEALTHY') : healthScore >= 50 ? T('EN RIESGO','AT RISK') : T('CRÍTICO','CRITICAL');
+
+  // Proyectos por semáforo
+  var green = OPS_PROJECTS.filter(function(p){ return p.flow.completionRate >= 70 && (p.blockers||[]).length === 0; });
+  var yellow = OPS_PROJECTS.filter(function(p){ return (p.flow.completionRate >= 40 && p.flow.completionRate < 70) || ((p.blockers||[]).length > 0 && p.flow.completionRate >= 40); });
+  var red = OPS_PROJECTS.filter(function(p){ return p.flow.completionRate < 40 || ((p.blockers||[]).length > 2); });
+
+  // Top 3 riesgos ejecutivos
+  var topRisks = OPS_PROJECTS.map(function(p){
+    var risk = 0;
+    if(p.evm.CPI < 0.9) risk += (0.9 - p.evm.CPI) * 100;
+    if(p.evm.SPI < 0.9) risk += (0.9 - p.evm.SPI) * 100;
+    risk += (p.blockers||[]).length * 15;
+    risk += Math.max(0, 40 - p.flow.completionRate) * 0.5;
+    return { p: p, risk: Math.round(risk) };
+  }).sort(function(a,b){ return b.risk - a.risk; }).slice(0,3);
+
+  // Decisiones para el Consejo
+  var boardDecisions = [];
+  if(t.evm.CPI < 0.9){
+    boardDecisions.push({
+      icon:'💰', color:'#ef4444',
+      title: T('Aprobar plan de contención de costes','Approve cost containment plan'),
+      desc: T('El portafolio gasta '+(1/t.evm.CPI).toFixed(2)+'€ por cada 1€ de valor. Sobrecoste proyectado: '+fEur(Math.abs(t.evm.VAC))+'.','Portfolio spends €'+(1/t.evm.CPI).toFixed(2)+' per €1 of value. Projected overcost: '+fEur(Math.abs(t.evm.VAC))+'.'),
+      impact: fEur(Math.abs(t.evm.VAC))
+    });
+  }
+  if(t.blockers > 0){
+    boardDecisions.push({
+      icon:'🚧', color:'#fbbf24',
+      title: T('Autorizar reasignación de recursos','Authorize resource reallocation'),
+      desc: T(t.blockers+' bloqueos activos amenazan '+criticalProjs.length+' proyectos.',' '+t.blockers+' active blockers threaten '+criticalProjs.length+' projects.'),
+      impact: t.blockers+' '+T('bloqueos','blockers')
+    });
+  }
+  if(t.evm.SPI < 0.95){
+    boardDecisions.push({
+      icon:'⏱️', color:'#8b5cf6',
+      title: T('Revisar compromisos de cronograma con clientes','Review client schedule commitments'),
+      desc: T('SPI global de '+t.evm.SPI.toFixed(2)+' indica desviación de '+((1-t.evm.SPI)*100).toFixed(0)+'% en plazos.','Global SPI of '+t.evm.SPI.toFixed(2)+' indicates '+((1-t.evm.SPI)*100).toFixed(0)+'% schedule deviation.'),
+      impact: 'SPI '+t.evm.SPI.toFixed(2)
+    });
+  }
+  if(boardDecisions.length === 0){
+    boardDecisions.push({
+      icon:'✅', color:'#00d47e',
+      title: T('Aprobar aceleración de inversión','Approve investment acceleration'),
+      desc: T('Todos los indicadores están en verde. Es momento de escalar.','All indicators are green. Time to scale.'),
+      impact: T('Oportunidad','Opportunity')
+    });
+  }
 
   el.innerHTML = `
-    <div class="hero"><div class="hero-grid">
-      <div><h2>${T('Resumen Ejecutivo · Boardroom View','Executive Summary · Boardroom View')}</h2><p>${T('Narrativa operativa para la junta directiva. ¿Qué está pasando y qué necesitamos?','Operational narrative for the board. What is happening and what do we need?')}</p></div>
-      <div class="hero-stats">
-        <div class="h-stat"><div class="v">${t.completionRate.toFixed(1)}%</div><div class="l">${T('Completado','Completed')}</div></div>
-        <div class="h-stat"><div class="v" style="color:#ef4444">${criticalProjs.length}</div><div class="l">${T('En Riesgo','At Risk')}</div></div>
-        <div class="h-stat"><div class="v" style="color:#00d4ff">${t.throughput}</div><div class="l">Throughput</div></div>
-        <div class="h-stat"><div class="v" style="color:#8b5cf6">${t.avgCycle.toFixed(1)}d</div><div class="l">Cycle</div></div>
+    <!-- ══════ EXECUTIVE HEADER ══════ -->
+    <div style="background:linear-gradient(135deg,rgba(15,23,42,0.98),rgba(10,15,30,0.98));border:1px solid ${healthC}55;border-radius:24px;padding:28px 32px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${healthC},#8b5cf6,#ffb020);"></div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:center;flex-wrap:wrap;">
+        <div style="text-align:center;min-width:140px;">
+          <div style="font-size:72px;font-weight:900;color:${healthC};line-height:1;letter-spacing:-3px;">${healthScore}</div>
+          <div style="font-size:10px;color:${healthC};letter-spacing:3px;text-transform:uppercase;font-weight:900;margin-top:6px;">${T('OPS SCORE','OPS SCORE')}</div>
+          <div style="font-size:11px;color:${healthC};font-weight:800;margin-top:8px;padding:4px 10px;border-radius:20px;background:${healthC}22;display:inline-block;">${healthLabel}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">${T('BOARD BRIEFING · RESUMEN EJECUTIVO','BOARD BRIEFING · EXECUTIVE SUMMARY')}</div>
+          <h2 style="font-size:24px;font-weight:900;color:#fff;margin:0 0 10px 0;line-height:1.3;">
+            ${healthScore >= 75 
+              ? T('El portafolio opera con excelencia. Listos para escalar.','The portfolio operates with excellence. Ready to scale.')
+              : healthScore >= 50 
+              ? T('El portafolio está estable pero requiere atención focalizada.','The portfolio is stable but requires focused attention.')
+              : T('El portafolio presenta desviaciones críticas que requieren intervención inmediata.','The portfolio presents critical deviations requiring immediate intervention.')}
+          </h2>
+          <p style="font-size:13px;color:#cbd5e1;line-height:1.7;margin:0;">
+            <strong style="color:#fff;">${OPS_PROJECTS.length} ${T('proyectos','projects')}</strong> · 
+            <strong style="color:#00d47e;">${t.completed}/${t.tasks} ${T('tareas completadas','tasks completed')}</strong> · 
+            <strong style="color:#67e8f9;">CPI ${t.evm.CPI.toFixed(2)}</strong> · 
+            <strong style="color:#fbbf24;">SPI ${t.evm.SPI.toFixed(2)}</strong> · 
+            <strong style="color:${t.blockers>0?'#ef4444':'#00d47e'};">${t.blockers} ${T('bloqueos','blockers')}</strong>
+          </p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:6px;">${T('IMPACTO FINANCIERO','FINANCIAL IMPACT')}</div>
+          <div style="font-size:28px;font-weight:900;color:${t.evm.VAC>=0?'#00d47e':'#ef4444'};line-height:1;">${t.evm.VAC>=0?'+':''}${fEur(t.evm.VAC)}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${T('VAC · Variación al cierre','VAC · Variance at Completion')}</div>
+        </div>
       </div>
-    </div></div>
+    </div>
 
-    <!-- TRES PILARES CLAVE PARA EL CEO -->
-    <div class="chart-2">
-      <div class="chart-card" style="border-left:4px solid ${criticalProjs.length > 0 ? '#ef4444' : '#00d47e'};">
-        <div class="t"><span>🚨</span> ${T('Lo que requiere tu atención','What requires your attention')}</div>
-        <p style="font-size:13px; color:#cbd5e1; line-height:1.6;">
+    <!-- ══════ 3 MENSAJES CLAVE PARA EL CONSEJO ══════ -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px;">
+      <div style="background:linear-gradient(160deg,rgba(0,50,80,0.5),rgba(5,15,30,0.95));border:1px solid rgba(0,212,126,0.3);border-left:4px solid #00d47e;border-radius:16px;padding:18px 20px;">
+        <div style="font-size:10px;color:#00d47e;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">✓ ${T('LO QUE VA BIEN','WHAT IS GOING WELL')}</div>
+        <div style="font-size:13px;color:#e8edf5;line-height:1.6;">
+          ${green.length > 0 
+            ? T('<strong>'+green.length+' proyectos</strong> en verde entregando valor. Throughput de <strong>'+t.throughput+' tareas/30d</strong>.','<strong>'+green.length+' projects</strong> in green delivering value. Throughput of <strong>'+t.throughput+' tasks/30d</strong>.')
+            : T('El equipo mantiene una velocidad de <strong>'+t.throughput+' tareas/30d</strong>.','The team maintains a velocity of <strong>'+t.throughput+' tasks/30d</strong>.')}
+        </div>
+      </div>
+      <div style="background:linear-gradient(160deg,rgba(0,50,80,0.5),rgba(5,15,30,0.95));border:1px solid rgba(251,191,36,0.3);border-left:4px solid #fbbf24;border-radius:16px;padding:18px 20px;">
+        <div style="font-size:10px;color:#fbbf24;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">⚠ ${T('LO QUE REQUIERE ATENCIÓN','WHAT REQUIRES ATTENTION')}</div>
+        <div style="font-size:13px;color:#e8edf5;line-height:1.6;">
           ${criticalProjs.length > 0 
-            ? T('Tenemos <strong>'+criticalProjs.length+' proyectos</strong> con desviaciones. El mayor cuello de botella es <strong>'+topBlocker.name+'</strong> con <strong>'+topBlocker.blockers.length+' tareas vencidas</strong>. Recomendación: desbloqueo inmediato.', 
-                'We have <strong>'+criticalProjs.length+' projects</strong> with deviations. The biggest bottleneck is <strong>'+topBlocker.name+'</strong> with <strong>'+topBlocker.blockers.length+' overdue tasks</strong>. Recommendation: immediate unblocking.')
-            : T('Todos los proyectos están fluyendo sin bloqueos críticos. Podemos acelerar la inversión.', 'All projects are flowing without critical blockers. We can accelerate investment.')}
-        </p>
+            ? T('<strong>'+criticalProjs.length+' proyectos</strong> con desviaciones'+(hasRealBlocker?'. Mayor cuello: <strong>'+topBlocker.name+'</strong> ('+topBlocker.blockers.length+' bloqueos).':'.'),'<strong>'+criticalProjs.length+' projects</strong> with deviations'+(hasRealBlocker?'. Biggest bottleneck: <strong>'+topBlocker.name+'</strong> ('+topBlocker.blockers.length+' blockers).':'.'))
+            : T('Sin desviaciones críticas detectadas.','No critical deviations detected.')}
+        </div>
       </div>
-      <div class="chart-card" style="border-left:4px solid #00d4ff;">
-        <div class="t"><span>⚡</span> ${T('Nuestra velocidad de ejecución','Our execution speed')}</div>
-        <p style="font-size:13px; color:#cbd5e1; line-height:1.6;">
-          ${T('El equipo está entregando <strong>'+t.throughput+' tareas por mes</strong>. Con un WIP actual de <strong>'+t.wip+' tareas</strong> y un Cycle Time de <strong>'+t.avgCycle.toFixed(1)+' días</strong>.', 
-              'The team is delivering <strong>'+t.throughput+' tasks per month</strong>. With a current WIP of <strong>'+t.wip+' tasks</strong> and a Cycle Time of <strong>'+t.avgCycle.toFixed(1)+' days</strong>.')}
-        </p>
+      <div style="background:linear-gradient(160deg,rgba(0,50,80,0.5),rgba(5,15,30,0.95));border:1px solid rgba(0,212,255,0.3);border-left:4px solid #00d4ff;border-radius:16px;padding:18px 20px;">
+        <div style="font-size:10px;color:#00d4ff;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">→ ${T('LO QUE PROPONEMOS','WHAT WE PROPOSE')}</div>
+        <div style="font-size:13px;color:#e8edf5;line-height:1.6;">
+          ${boardDecisions[0] ? boardDecisions[0].desc : T('Mantener el rumbo actual.','Maintain current course.')}
+        </div>
       </div>
     </div>
 
+    <!-- ══════ KPIs FINANCIEROS + OPERATIVOS ══════ -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+      <div class="kpi" style="--c:#00d47e"><div class="l">${T('CPI GLOBAL','GLOBAL CPI')}</div><div class="v">${t.evm.CPI.toFixed(2)}</div><div class="s">${t.evm.CPI>=1?T('Eficiente','Efficient'):T('Desviación','Deviation')}</div></div>
+      <div class="kpi" style="--c:#fbbf24"><div class="l">${T('SPI GLOBAL','GLOBAL SPI')}</div><div class="v">${t.evm.SPI.toFixed(2)}</div><div class="s">${t.evm.SPI>=1?T('Adelantado','Ahead'):T('Retrasado','Delayed')}</div></div>
+      <div class="kpi" style="--c:${t.evm.VAC>=0?'#00d47e':'#ef4444'}"><div class="l">VAC</div><div class="v">${t.evm.VAC>=0?'+':''}${fEur(t.evm.VAC)}</div><div class="s">${T('Var. al cierre','Var. at completion')}</div></div>
+      <div class="kpi" style="--c:#67e8f9"><div class="l">${T('PROGRESO','PROGRESS')}</div><div class="v">${t.completionRate.toFixed(0)}%</div><div class="s">${t.completed}/${t.tasks} ${T('tareas','tasks')}</div></div>
+      <div class="kpi" style="--c:#8b5cf6"><div class="l">THROUGHPUT</div><div class="v">${t.throughput}</div><div class="s">${T('tareas/30d','tasks/30d')}</div></div>
+      <div class="kpi" style="--c:${t.wip>8?'#ef4444':'#00d4ff'}"><div class="l">WIP</div><div class="v">${t.wip}</div><div class="s">${t.wip>8?T('Alto','High'):T('Óptimo','Optimal')}</div></div>
+      <div class="kpi" style="--c:${t.blockers>0?'#ef4444':'#00d47e'}"><div class="l">${T('BLOQUEOS','BLOCKERS')}</div><div class="v">${t.blockers}</div><div class="s">${T('activos','active')}</div></div>
+      <div class="kpi" style="--c:#fbbf24"><div class="l">CYCLE TIME</div><div class="v">${fD(t.avgCycle)}</div><div class="s">${T('promedio','average')}</div></div>
+    </div>
+
+    <!-- ══════ GRÁFICOS EJECUTIVOS ══════ -->
     <div class="chart-2">
-      <div class="chart-card"><div class="t"><span>📊</span> ${T('Progreso de Proyectos','Project Progress')}</div><canvas id="opsCmdProgress"></canvas></div>
-      <div class="chart-card"><div class="t"><span>⚠️</span> ${T('Semáforo Operativo','Operational Traffic Light')}</div><canvas id="opsCmdTraffic"></canvas></div>
+      <div class="chart-card"><div class="t"><span>🎯</span> ${T('Salud del Portafolio (Semáforo)','Portfolio Health (Traffic Light)')}</div><canvas id="opsCmdTraffic"></canvas></div>
+      <div class="chart-card"><div class="t"><span>📊</span> ${T('Progreso vs Salud Financiera','Progress vs Financial Health')}</div><canvas id="opsCmdProgress"></canvas></div>
     </div>
 
+    <!-- ══════ DECISIONES PARA EL CONSEJO ══════ -->
+    <div class="box" style="border-left:4px solid #ffb020;">
+      <div class="box-t"><span>👑</span> ${T('Decisiones que requieren aprobación del Consejo','Decisions requiring Board approval')}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+        ${boardDecisions.map(function(d,i){
+          return '<div style="background:rgba(0,0,0,0.35);border-left:4px solid '+d.color+';border-radius:12px;padding:16px 18px;">'+
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+
+              '<span style="font-size:22px;">'+d.icon+'</span>'+
+              '<span style="font-size:10px;color:'+d.color+';letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">'+T('DECISIÓN','DECISION')+' '+(i+1)+'</span>'+
+            '</div>'+
+            '<div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;line-height:1.3;">'+d.title+'</div>'+
+            '<div style="font-size:12px;color:#cbd5e1;line-height:1.6;margin-bottom:10px;">'+d.desc+'</div>'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">'+
+              '<span style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:800;">'+T('IMPACTO','IMPACT')+'</span>'+
+              '<span style="font-size:13px;font-weight:900;color:'+d.color+';">'+d.impact+'</span>'+
+            '</div>'+
+          '</div>';
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- ══════ TOP 3 RIESGOS ══════ -->
+    <div class="box" style="border-left:4px solid #ef4444;">
+      <div class="box-t"><span>🚨</span> ${T('Top 3 riesgos que requieren intervención','Top 3 risks requiring intervention')}</div>
+      <table class="tbl">
+        <thead><tr>
+          <th>${T('Proyecto','Project')}</th>
+          <th>${T('Cliente','Client')}</th>
+          <th class="n">${T('Progreso','Progress')}</th>
+          <th class="n">CPI</th>
+          <th class="n">SPI</th>
+          <th class="n">${T('Bloqueos','Blockers')}</th>
+          <th>${T('Nivel de Riesgo','Risk Level')}</th>
+        </tr></thead>
+        <tbody>
+          ${topRisks.map(function(r){
+            var p = r.p;
+            var riskLevel = r.risk > 60 ? 'critico' : r.risk > 30 ? 'riesgo' : 'aceptable';
+            var riskLabel = isEn() ? {critico:'CRITICAL',riesgo:'HIGH',aceptable:'MEDIUM'}[riskLevel] : {critico:'CRÍTICO',riesgo:'ALTO',aceptable:'MEDIO'}[riskLevel];
+            return '<tr>'+
+              '<td><strong style="color:#fff;">'+p.name+'</strong></td>'+
+              '<td>'+p.client+'</td>'+
+              '<td class="n" style="color:'+(p.flow.completionRate>=70?'#00d47e':p.flow.completionRate>=40?'#fbbf24':'#ef4444')+';font-weight:900;">'+p.flow.completionRate.toFixed(0)+'%</td>'+
+              '<td class="n" style="color:'+(p.evm.CPI>=1?'#00d47e':'#ef4444')+';font-weight:900;">'+p.evm.CPI.toFixed(2)+'</td>'+
+              '<td class="n" style="color:'+(p.evm.SPI>=1?'#00d47e':'#fbbf24')+';font-weight:900;">'+p.evm.SPI.toFixed(2)+'</td>'+
+              '<td class="n" style="color:'+((p.blockers||[]).length>0?'#ef4444':'#00d47e')+';font-weight:900;">'+(p.blockers||[]).length+'</td>'+
+              '<td><span class="badge '+riskLevel+'">'+riskLabel+'</span></td>'+
+            '</tr>';
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══════ RESUMEN POR PROYECTO ══════ -->
     <div class="box">
-      <div class="box-t"><span>💡</span> ${T('Recomendaciones para el CEO','Recommendations for the CEO')}</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px;">
-        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #fbbf24;">
-          <div style="font-size:11px; font-weight:900; color:#fbbf24; margin-bottom:6px;">${T('ACCIÓN 1','ACTION 1')}</div>
-          <div style="font-size:12px; color:#cbd5e1;">${T('Reasignar recursos de proyectos con CPI > 1.0 para rescatar los que tienen CPI < 0.9.', 'Reallocate resources from projects with CPI > 1.0 to rescue those with CPI < 0.9.')}</div>
-        </div>
-        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #ef4444;">
-          <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:6px;">${T('ACCIÓN 2','ACTION 2')}</div>
-          <div style="font-size:12px; color:#cbd5e1;">${T('Auditar las horas registradas en el proyecto con mayor desviación.', 'Audit logged hours in the project with the highest deviation.')}</div>
-        </div>
-        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #00d47e;">
-          <div style="font-size:11px; font-weight:900; color:#00d47e; margin-bottom:6px;">${T('ACCIÓN 3','ACTION 3')}</div>
-          <div style="font-size:12px; color:#cbd5e1;">${T('Aprobar el plan de recuperación presentado por el COO.', 'Approve the recovery plan presented by the COO.')}</div>
-        </div>
+      <div class="box-t"><span>📋</span> ${T('Detalle ejecutivo por proyecto','Executive detail by project')}</div>
+      <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th>${T('Proyecto / Cliente','Project / Client')}</th>
+            <th>${T('Fase','Phase')}</th>
+            <th class="n">${T('Progreso','Progress')}</th>
+            <th class="n">BAC</th>
+            <th class="n">VAC</th>
+            <th>${T('Estado','Status')}</th>
+            <th>${T('Próxima acción','Next action')}</th>
+          </tr></thead>
+          <tbody>
+            ${OPS_PROJECTS.map(function(p){
+              var st = p.flow.completionRate >= 70 && (p.blockers||[]).length === 0 ? 'saludable' : (p.flow.completionRate < 40 || (p.blockers||[]).length > 2) ? 'critico' : 'riesgo';
+              var stLabel = isEn() ? {saludable:'ON TRACK',riesgo:'AT RISK',critico:'CRITICAL'}[st] : {saludable:'EN CURSO',riesgo:'EN RIESGO',critico:'CRÍTICO'}[st];
+              var action = (p.blockers||[]).length > 0 
+                ? T('Desbloquear '+(p.blockers||[]).length+' tarea(s)','Unblock '+(p.blockers||[]).length+' task(s)')
+                : p.evm.CPI < 0.9 
+                ? T('Auditar costes','Audit costs')
+                : p.flow.completionRate < 50 
+                ? T('Acelerar ejecución','Accelerate execution')
+                : T('Mantener ritmo','Maintain pace');
+              return '<tr>'+
+                '<td><strong style="color:#fff;">'+p.name+'</strong><br><small style="color:#94a3b8;">'+p.client+'</small></td>'+
+                '<td><span style="font-size:10px;padding:3px 8px;border-radius:10px;background:rgba(0,212,255,0.15);color:#67e8f9;font-weight:800;">'+p.phase+'</span></td>'+
+                '<td class="n" style="color:'+(p.flow.completionRate>=70?'#00d47e':p.flow.completionRate>=40?'#fbbf24':'#ef4444')+';font-weight:900;">'+p.flow.completionRate.toFixed(0)+'%</td>'+
+                '<td class="n">'+fEur(p.evm.BAC)+'</td>'+
+                '<td class="n" style="color:'+(p.evm.VAC>=0?'#00d47e':'#ef4444')+';font-weight:900;">'+(p.evm.VAC>=0?'+':'')+fEur(p.evm.VAC)+'</td>'+
+                '<td><span class="badge '+st+'">'+stLabel+'</span></td>'+
+                '<td style="font-size:11px;color:#cbd5e1;">'+action+'</td>'+
+              '</tr>';
+            }).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
   `;
 
-  setTimeout(() => {
-    if(opsCharts.cmdProgress) opsCharts.cmdProgress.destroy();
+  // ── GRÁFICOS ──
+  setTimeout(function(){
+    if(opsCharts.cmdProgress) { try{opsCharts.cmdProgress.destroy();}catch(e){} }
     var c1 = document.getElementById('opsCmdProgress');
     if(c1){
       opsCharts.cmdProgress = new Chart(c1.getContext('2d'), {
         type: 'bar',
         data: {
-          labels: OPS_PROJECTS.map(p => p.name.substring(0,10)),
-          datasets: [{ label: '% Completado', data: OPS_PROJECTS.map(p => p.flow.completionRate), backgroundColor: OPS_PROJECTS.map(p => p.flow.completionRate >= 70 ? '#00d47e' : p.flow.completionRate >= 40 ? '#fbbf24' : '#ef4444'), borderRadius: 6 }]
+          labels: OPS_PROJECTS.map(function(p){ return p.name.substring(0,12); }),
+          datasets: [
+            { label: T('Progreso %','Progress %'), data: OPS_PROJECTS.map(function(p){ return p.flow.completionRate; }), backgroundColor: OPS_PROJECTS.map(function(p){ return p.flow.completionRate >= 70 ? 'rgba(0,212,126,0.85)' : p.flow.completionRate >= 40 ? 'rgba(251,191,36,0.85)' : 'rgba(239,68,68,0.85)'; }), borderRadius: 6, barPercentage: 0.6 },
+            { label: 'CPI × 100', data: OPS_PROJECTS.map(function(p){ return Math.min(100, p.evm.CPI * 100); }), backgroundColor: 'rgba(139,92,246,0.5)', borderRadius: 6, barPercentage: 0.6 }
+          ]
         },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, max:100 } } }
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{ color:'#e8edf5', usePointStyle:true, font:{size:11,weight:'700'} } } }, scales:{ y:{ beginAtZero:true, max:100, grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#94a3b8', callback:function(v){return v+'%';}} }, x:{ grid:{display:false}, ticks:{color:'#94a3b8', font:{size:9,weight:'700'}} } } }
       });
     }
-    if(opsCharts.cmdTraffic) opsCharts.cmdTraffic.destroy();
+    if(opsCharts.cmdTraffic) { try{opsCharts.cmdTraffic.destroy();}catch(e){} }
     var c2 = document.getElementById('opsCmdTraffic');
     if(c2){
-      var green = OPS_PROJECTS.filter(p => p.flow.completionRate >= 70).length;
-      var yellow = OPS_PROJECTS.filter(p => p.flow.completionRate >= 40 && p.flow.completionRate < 70).length;
-      var red = OPS_PROJECTS.filter(p => p.flow.completionRate < 40).length;
       opsCharts.cmdTraffic = new Chart(c2.getContext('2d'), {
         type: 'doughnut',
-        data: { labels: [T('Saludable','Healthy'), T('Riesgo','At Risk'), T('Crítico','Critical')], datasets: [{ data: [green, yellow, red], backgroundColor: ['#00d47e', '#fbbf24', '#ef4444'], borderWidth:0 }] },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'right', labels:{ color:'#e8edf5' } } } }
+        data: { labels: [T('En curso','On Track'), T('En riesgo','At Risk'), T('Crítico','Critical')], datasets: [{ data: [green.length, yellow.length, red.length], backgroundColor: ['#00d47e', '#fbbf24', '#ef4444'], borderWidth: 0, hoverOffset: 12 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'right', labels:{ color:'#e8edf5', usePointStyle:true, font:{size:12,weight:'700'}, padding:16 } }, tooltip:{ callbacks:{ label:function(ctx){ var total = green.length + yellow.length + red.length; return ' '+ctx.label+': '+ctx.raw+' ('+Math.round(ctx.raw/total*100)+'%)'; } } } } }
       });
     }
-  }, 100);
+  }, 150);
 }
+
 function renderFlowMetrics(){
   var el = document.getElementById('v-flow');
   if(!el) return;
@@ -1385,61 +1569,319 @@ function opsAddChatMsg(text,who,customId){
 function renderCSuite(){
   var el = document.getElementById('v-vip');
   if(!el) return;
-  if(!OPS_PROJECTS.length){el.innerHTML='<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando...','Loading...')+'</div>';return;}
+  if(!OPS_PROJECTS.length){ 
+    el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">Cargando...</div>'; 
+    return; 
+  }
 
   var t = OPS_TOTALS;
-  var score = Math.round(
-    Math.min(100, (t.completionRate * 0.4)) +
-    Math.min(30, t.throughput > 10 ? 30 : t.throughput * 3) +
-    (t.wip <= 5 ? 20 : 5) +
-    (t.blockers === 0 ? 10 : Math.max(0, 10 - t.blockers*2))
-  );
+
+  // ══ CÁLCULOS 100% OPERATIVOS ══
+  var scoreVel = Math.max(0, Math.min(25, t.throughput * 2.5));
+  var scoreFlo = Math.max(0, Math.min(25, t.wip <= 8 ? 25 : Math.max(0, 25 - (t.wip - 8) * 3)));
+  var scoreCon = Math.max(0, 25 - (t.blockers * 4) - (t.overdue * 2));
+  var scoreCap = (function(){
+    var over = 0, total = 0;
+    OPS_PROJECTS.forEach(function(p){ (p.capacity||[]).forEach(function(m){ total++; if(m.utilization > 100) over++; }); });
+    return total === 0 ? 25 : Math.max(0, Math.round(25 - (over / total) * 25));
+  })();
+  var score = Math.round(scoreVel + scoreFlo + scoreCon + scoreCap);
   var scoreC = score >= 75 ? '#00d47e' : score >= 50 ? '#fbbf24' : '#ef4444';
-  var estado = score >= 75
-    ? {t:T('🏆 Excelencia Operativa','🏆 Operational Excellence'),m:T('El portafolio opera con velocidad, bajo WIP y sin bloqueos críticos.','The portfolio operates with speed, low WIP and no critical blockers.')}
-    : score >= 50
-    ? {t:T('✅ Operación Estable','✅ Stable Operation'),m:T('Indicadores operativos dentro de la zona de tolerancia.','Operational indicators within tolerance.')}
-    : {t:T('⚠️ Requiere Atención','⚠️ Requires Attention'),m:T('WIP alto o bloqueos detectados. Requiere intervención.','High WIP or blockers detected. Needs intervention.')};
 
-  el.innerHTML =
-    '<div style="background:linear-gradient(135deg,'+scoreC+'15,rgba(5,10,18,0.95));border:1px solid '+scoreC+'55;padding:30px 34px;border-radius:20px;margin-bottom:20px;display:flex;align-items:center;gap:36px;flex-wrap:wrap;">'+
-      '<div style="text-align:center;min-width:160px;"><div style="font-size:86px;font-weight:900;color:'+scoreC+';line-height:1;">'+score+'</div><div style="font-size:11px;color:#fbbf24;letter-spacing:4px;text-transform:uppercase;margin-top:8px;font-weight:900;">'+T('OPS Score','OPS Score')+'</div></div>'+
-      '<div style="flex:1;min-width:280px;"><div style="font-size:26px;font-weight:900;color:#fff;margin-bottom:6px;">'+estado.t+'</div><div style="font-size:14px;color:#cbd5e1;line-height:1.7;">'+estado.m+'</div><div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;"><span class="badge" style="background:'+scoreC+'22;color:'+scoreC+';">'+T('ACTUALIZADO','UPDATED')+' '+new Date().toLocaleTimeString(isEn()?'en-US':'es-ES',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'+
-    '</div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;">'+
-      '<div class="flow-card"><div class="ico">⚡</div><div class="lbl">THROUGHPUT</div><div class="val" style="color:#00d47e;">'+t.throughput+'</div><div class="sub">'+T('tareas/30d','tasks/30d')+'</div></div>'+
-      '<div class="flow-card"><div class="ico">🔄</div><div class="lbl">WIP</div><div class="val" style="color:'+(t.wip>8?'#ef4444':'#67e8f9')+';">'+t.wip+'</div><div class="sub">'+(t.wip>8?T('⚠️ Alto','⚠️ High'):T('✓ Óptimo','✓ Optimal'))+'</div></div>'+
-      '<div class="flow-card"><div class="ico">⏱️</div><div class="lbl">CYCLE</div><div class="val" style="color:#00d4ff;">'+fD(t.avgCycle)+'</div><div class="sub">'+T('promedio','average')+'</div></div>'+
-      '<div class="flow-card"><div class="ico">🚧</div><div class="lbl">BLOCKERS</div><div class="val" style="color:'+(t.blockers>0?'#ef4444':'#00d47e')+';">'+t.blockers+'</div><div class="sub">'+T('activos','active')+'</div></div>'+
-      '<div class="flow-card"><div class="ico">✅</div><div class="lbl">'+T('COMPLETITUD','COMPLETION')+'</div><div class="val" style="color:#8b5cf6;">'+fPct(t.completionRate)+'</div><div class="sub">'+t.completed+'/'+t.tasks+'</div></div>'+
-    '</div>'+
-    '<div class="chart-2">'+
-      '<div class="chart-card"><div class="t"><span>📊</span> '+T('Resumen operativo por proyecto','Ops summary by project')+'</div><canvas id="vipOpsChart"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>🎯</span> '+T('Score operativo','Ops score')+'</div><canvas id="vipScoreChart"></canvas></div>'+
-    '</div>';
+  var verdictIcon, verdictLabel, verdictText;
+  if(score >= 75){
+    verdictIcon = '🟢';
+    verdictLabel = T('ORGANIZACIÓN DE ALTO RENDIMIENTO','HIGH-PERFORMING ORGANIZATION');
+    verdictText = T('Flujo saludable, capacidad equilibrada y entregas confiables. La organización puede absorber más demanda.','Healthy flow, balanced capacity and reliable delivery. The organization can absorb more demand.');
+  } else if(score >= 50){
+    verdictIcon = '🟡';
+    verdictLabel = T('ORGANIZACIÓN ESTABLE CON FRICCIÓN','STABLE ORGANIZATION WITH FRICTION');
+    verdictText = T('El flujo opera pero hay cuellos de botella que limitan la velocidad. Requiere intervención focalizada.','Flow operates but bottlenecks limit velocity. Requires focused intervention.');
+  } else {
+    verdictIcon = '🔴';
+    verdictLabel = T('ORGANIZACIÓN CONGESTIONADA','CONGESTED ORGANIZATION');
+    verdictText = T('WIP elevado, bloqueos activos y capacidad saturada. El sistema no puede entregar al ritmo requerido.','High WIP, active blockers and saturated capacity. The system cannot deliver at the required pace.');
+  }
 
+  // Clasificación por salud de flujo
+  var flowing = [], constipated = [], critical = [];
+  OPS_PROJECTS.forEach(function(p){
+    var flowHealth = (p.flow.wip <= 3 ? 40 : p.flow.wip <= 5 ? 25 : 10)
+                   + (p.flow.completionRate >= 70 ? 40 : p.flow.completionRate >= 40 ? 25 : 10)
+                   + ((p.blockers||[]).length === 0 ? 20 : (p.blockers||[]).length === 1 ? 10 : 0);
+    p._flowHealth = flowHealth;
+    if(flowHealth >= 70) flowing.push(p);
+    else if(flowHealth >= 45) constipated.push(p);
+    else critical.push(p);
+  });
+
+  // Team capacity
+  var allMembers = {};
+  OPS_PROJECTS.forEach(function(p){
+    (p.capacity||[]).forEach(function(m){
+      if(!allMembers[m.name]) allMembers[m.name] = { name: m.name, hours: 0, logged: 0, tasks: 0 };
+      allMembers[m.name].hours += m.hours;
+      allMembers[m.name].logged += m.logged;
+      allMembers[m.name].tasks += m.tasks;
+    });
+  });
+  var teamList = Object.keys(allMembers).map(function(k){
+    var m = allMembers[k];
+    m.utilization = m.hours > 0 ? (m.logged / m.hours) * 100 : 0;
+    m.overloaded = m.utilization > 100;
+    return m;
+  }).sort(function(a,b){ return b.utilization - a.utilization; });
+  var overloadedCount = teamList.filter(function(m){ return m.overloaded; }).length;
+  var availableCount = teamList.filter(function(m){ return m.utilization < 60; }).length;
+  var optimalCount = teamList.length - overloadedCount - availableCount;
+
+  // Top blockers
+  var topBlockers = [];
+  OPS_PROJECTS.forEach(function(p){
+    (p.blockers||[]).forEach(function(b){
+      topBlockers.push({ project: p.name, name: b.name, assignee: b.assignee, daysLate: b.daysLate, progress: b.progress });
+    });
+  });
+  topBlockers.sort(function(a,b){ return b.daysLate - a.daysLate; });
+  topBlockers = topBlockers.slice(0, 5);
+
+  // Top performers
+  var topPerformers = OPS_PROJECTS.map(function(p){
+    return { name: p.name, client: p.client, rate: p.flow.completionRate, throughput: p.flow.throughput, cycle: p.flow.avgCycle };
+  }).sort(function(a,b){ return b.rate - a.rate; }).slice(0,3);
+
+  // Momentum
+  var accelerating = OPS_PROJECTS.filter(function(p){ return p.flow.wip <= 3 && p.flow.completionRate >= 60; }).length;
+  var decelerating = OPS_PROJECTS.filter(function(p){ return p.flow.wip > 5 || p.flow.completionRate < 40; }).length;
+
+  // Resoluciones
+  var resolutions = [];
+  if(overloadedCount > 0){
+    resolutions.push({
+      n:'R1', color:'#ef4444', icon:'👥',
+      title: T('Aprobar reequilibrio de capacidad del equipo','Approve team capacity rebalance'),
+      desc: T(overloadedCount + ' de ' + teamList.length + ' personas estan sobrecargadas (>100%). Se propone redistribuir carga hacia ' + availableCount + ' personas con capacidad disponible.', overloadedCount + ' of ' + teamList.length + ' people are overloaded (>100%). Propose redistributing load to ' + availableCount + ' people with available capacity.'),
+      ask: T('Autorizacion operativa','Operational authorization'),
+      impact: overloadedCount + ' ' + T('sobrecargados','overloaded')
+    });
+  }
+  if(t.blockers > 0){
+    resolutions.push({
+      n:'R'+(resolutions.length+1), color:'#fbbf24', icon:'🚧',
+      title: T('Autorizar comite de desbloqueo semanal','Authorize weekly unblocking committee'),
+      desc: T(t.blockers + ' bloqueos activos frenan ' + critical.length + ' proyectos. Se propone comite semanal con COO + PMs para desbloqueo en <48h.', t.blockers + ' active blockers slow ' + critical.length + ' projects. Propose weekly committee with COO + PMs for <48h unblocking.'),
+      ask: T('Autorizacion de gobernanza','Governance authorization'),
+      impact: t.blockers + ' ' + T('bloqueos','blockers')
+    });
+  }
+  if(t.wip > 8){
+    resolutions.push({
+      n:'R'+(resolutions.length+1), color:'#8b5cf6', icon:'🌊',
+      title: T('Aplicar limite WIP por proyecto','Enforce WIP limit per project'),
+      desc: T('WIP actual de ' + t.wip + ' supera el limite recomendado de 8. Se propone limite duro de 5 tareas en progreso por proyecto.', 'Current WIP of ' + t.wip + ' exceeds recommended limit of 8. Propose hard limit of 5 tasks in progress per project.'),
+      ask: T('Decision operativa','Operational decision'),
+      impact: 'WIP ' + t.wip + ' -> 8'
+    });
+  }
+  if(resolutions.length === 0){
+    resolutions.push({
+      n:'R1', color:'#00d47e', icon:'🚀',
+      title: T('Aprobar escalado de capacidad','Approve capacity scaling'),
+      desc: T('Flujo saludable y capacidad disponible. Ventana optima para absorber nuevos proyectos.','Healthy flow and available capacity. Optimal window to absorb new projects.'),
+      ask: T('Aprobacion estrategica','Strategic approval'),
+      impact: T('Oportunidad','Opportunity')
+    });
+  }
+
+  // ══ RENDER ══
+  var html = '';
+
+  // ── 1. VEREDICTO ──
+  html += '<div style="background:linear-gradient(135deg,' + scoreC + '18,rgba(5,10,18,0.98));border:1px solid ' + scoreC + '55;border-radius:24px;padding:32px 36px;margin-bottom:20px;position:relative;overflow:hidden;">';
+  html += '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,' + scoreC + ',#8b5cf6,#00d4ff);"></div>';
+  html += '<div style="display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center;flex-wrap:wrap;">';
+  html += '<div style="text-align:center;min-width:200px;">';
+  html += '<div style="font-size:11px;color:' + scoreC + ';letter-spacing:3px;text-transform:uppercase;font-weight:900;margin-bottom:8px;">' + T('VEREDICTO OPERATIVO','OPERATIONAL VERDICT') + '</div>';
+  html += '<div style="font-size:96px;font-weight:900;color:' + scoreC + ';line-height:0.9;letter-spacing:-5px;">' + score + '</div>';
+  html += '<div style="font-size:11px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-top:8px;">/ 100</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div style="font-size:11px;color:' + scoreC + ';letter-spacing:2px;text-transform:uppercase;font-weight:900;margin-bottom:10px;">' + verdictIcon + ' ' + verdictLabel + '</div>';
+  html += '<div style="font-size:22px;font-weight:900;color:#fff;line-height:1.35;margin-bottom:14px;">' + verdictText + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;">';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid #00d47e;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('VELOCIDAD','VELOCITY') + '</div><div style="font-size:18px;font-weight:900;color:#00d47e;line-height:1;">' + Math.round(scoreVel) + '<span style="font-size:11px;color:#94a3b8;">/25</span></div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + t.throughput + ' t/30d</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid #00d4ff;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('FLUJO','FLOW') + '</div><div style="font-size:18px;font-weight:900;color:#00d4ff;line-height:1;">' + Math.round(scoreFlo) + '<span style="font-size:11px;color:#94a3b8;">/25</span></div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">WIP ' + t.wip + '</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid #fbbf24;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('CONFIABILIDAD','RELIABILITY') + '</div><div style="font-size:18px;font-weight:900;color:#fbbf24;line-height:1;">' + Math.round(scoreCon) + '<span style="font-size:11px;color:#94a3b8;">/25</span></div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + t.blockers + ' ' + T('bloqueos','blockers') + '</div></div>';
+  html += '<div style="background:rgba(0,0,0,0.35);border-radius:10px;padding:10px 12px;border-left:3px solid #8b5cf6;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('CAPACIDAD','CAPACITY') + '</div><div style="font-size:18px;font-weight:900;color:#8b5cf6;line-height:1;">' + Math.round(scoreCap) + '<span style="font-size:11px;color:#94a3b8;">/25</span></div><div style="font-size:9px;color:#94a3b8;margin-top:2px;">' + overloadedCount + ' ' + T('sobrecargados','overloaded') + '</div></div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // ── 2. KPIs ──
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;">';
+  html += '<div class="flow-card" style="border-left:4px solid #00d47e;"><div class="ico">⚡</div><div class="lbl">THROUGHPUT</div><div class="val" style="color:#00d47e;">' + t.throughput + '</div><div class="sub">' + T('tareas entregadas / 30d','tasks delivered / 30d') + '</div></div>';
+  html += '<div class="flow-card" style="border-left:4px solid ' + (t.wip > 8 ? '#ef4444' : '#00d4ff') + ';"><div class="ico">🌊</div><div class="lbl">WIP</div><div class="val" style="color:' + (t.wip > 8 ? '#ef4444' : '#00d4ff') + ';">' + t.wip + '</div><div class="sub">' + (t.wip > 8 ? T('supera limite 8','exceeds limit 8') : T('dentro de limite','within limit')) + '</div></div>';
+  html += '<div class="flow-card" style="border-left:4px solid #8b5cf6;"><div class="ico">⏱️</div><div class="lbl">CYCLE TIME</div><div class="val" style="color:#8b5cf6;">' + fD(t.avgCycle) + '</div><div class="sub">' + T('inicio a cierre','start to close') + '</div></div>';
+  html += '<div class="flow-card" style="border-left:4px solid ' + (t.blockers > 0 ? '#ef4444' : '#00d47e') + ';"><div class="ico">🚧</div><div class="lbl">' + T('BLOQUEOS','BLOCKERS') + '</div><div class="val" style="color:' + (t.blockers > 0 ? '#ef4444' : '#00d47e') + ';">' + t.blockers + '</div><div class="sub">' + T('activos hoy','active today') + '</div></div>';
+  html += '<div class="flow-card" style="border-left:4px solid #fbbf24;"><div class="ico">🎯</div><div class="lbl">' + T('ENTREGA','DELIVERY') + '</div><div class="val" style="color:#fbbf24;">' + t.completionRate.toFixed(0) + '%</div><div class="sub">' + t.completed + '/' + t.tasks + ' ' + T('tareas','tasks') + '</div></div>';
+  html += '</div>';
+
+  // ── 3. KANBAN ──
+  var pendingTotal = OPS_PROJECTS.reduce(function(s,p){ return s + p.flow.pending; }, 0);
+  html += '<div class="box"><div class="box-t"><span>📊</span> ' + T('Flujo de trabajo · Donde esta el trabajo hoy','Workflow · Where work is today') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">';
+  html += '<div style="background:linear-gradient(160deg,rgba(0,50,80,0.4),rgba(5,15,30,0.95));border:1px solid #94a3b844;border-radius:14px;padding:18px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">📋</div><div style="font-size:32px;font-weight:900;color:#94a3b8;line-height:1;">' + pendingTotal + '</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:8px;">' + T('PENDIENTE','PENDING') + '</div></div>';
+  html += '<div style="background:linear-gradient(160deg,rgba(0,50,80,0.4),rgba(5,15,30,0.95));border:1px solid #00d4ff44;border-radius:14px;padding:18px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">⚙️</div><div style="font-size:32px;font-weight:900;color:#00d4ff;line-height:1;">' + t.wip + '</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:8px;">' + T('EN PROGRESO','IN PROGRESS') + '</div></div>';
+  html += '<div style="background:linear-gradient(160deg,rgba(0,50,80,0.4),rgba(5,15,30,0.95));border:1px solid #ef444444;border-radius:14px;padding:18px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">🚧</div><div style="font-size:32px;font-weight:900;color:#ef4444;line-height:1;">' + t.blockers + '</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:8px;">' + T('BLOQUEADO','BLOCKED') + '</div></div>';
+  html += '<div style="background:linear-gradient(160deg,rgba(0,50,80,0.4),rgba(5,15,30,0.95));border:1px solid #00d47e44;border-radius:14px;padding:18px;text-align:center;"><div style="font-size:28px;margin-bottom:8px;">✅</div><div style="font-size:32px;font-weight:900;color:#00d47e;line-height:1;">' + t.completed + '</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:8px;">' + T('COMPLETADO','COMPLETED') + '</div></div>';
+  html += '</div>';
+  var kanbanMsg = t.wip > 8 
+    ? T('El WIP de ' + t.wip + ' supera el limite recomendado de 8. Esto genera multitarea, aumenta el Cycle Time y reduce el Throughput. Se recomienda limite duro por proyecto.', 'The WIP of ' + t.wip + ' exceeds the recommended limit of 8. This causes multitasking, increases Cycle Time and reduces Throughput. Recommend hard limit per project.')
+    : T('El flujo opera dentro de parametros saludables. WIP controlado y entrega sostenida.', 'Flow operates within healthy parameters. Controlled WIP and sustained delivery.');
+  html += '<div style="margin-top:16px;padding:14px 18px;background:rgba(0,0,0,0.35);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.6;border-left:3px solid ' + (t.wip > 8 ? '#ef4444' : '#00d47e') + ';"><strong style="color:#fff;">' + T('Lectura ejecutiva: ','Executive reading: ') + '</strong>' + kanbanMsg + '</div>';
+  html += '</div>';
+
+  // ── 4. MOMENTUM + FLOW HEALTH ──
+  var momentumMsg = accelerating >= decelerating
+    ? T('El portafolio esta en modo de aceleracion. Recomendamos sostener el ritmo y considerar absorber nueva demanda.', 'The portfolio is in acceleration mode. We recommend sustaining the pace and considering absorbing new demand.')
+    : T('El portafolio esta en modo de desaceleracion. Se requiere intervencion inmediata para evitar deterioro adicional.', 'The portfolio is in deceleration mode. Immediate intervention is required to prevent further deterioration.');
+  html += '<div class="chart-2">';
+  html += '<div class="chart-card" style="border-left:4px solid #00d47e;"><div class="t"><span>🚀</span> ' + T('Momentum operativo','Operational momentum') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">';
+  html += '<div style="background:rgba(0,212,126,0.1);border:1px solid rgba(0,212,126,0.3);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:26px;">📈</div><div style="font-size:28px;font-weight:900;color:#00d47e;line-height:1;">' + accelerating + '</div><div style="font-size:9px;color:#00d47e;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:6px;">' + T('ACELERANDO','ACCELERATING') + '</div></div>';
+  html += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;text-align:center;"><div style="font-size:26px;">📉</div><div style="font-size:28px;font-weight:900;color:#ef4444;line-height:1;">' + decelerating + '</div><div style="font-size:9px;color:#ef4444;text-transform:uppercase;letter-spacing:1.5px;font-weight:900;margin-top:6px;">' + T('DESACELERANDO','DECELERATING') + '</div></div>';
+  html += '</div>';
+  html += '<div style="margin-top:14px;font-size:11.5px;color:#cbd5e1;line-height:1.6;">' + momentumMsg + '</div>';
+  html += '</div>';
+  html += '<div class="chart-card" style="border-left:4px solid #00d4ff;"><div class="t"><span>🎯</span> ' + T('Salud de flujo por proyecto','Flow health by project') + '</div><div style="height:200px;margin-top:12px;"><canvas id="vipFlowHealth"></canvas></div></div>';
+  html += '</div>';
+
+  // ── 5. CAPACIDAD ──
+  var capMsg = overloadedCount > 0
+    ? T('El equipo tiene ' + overloadedCount + ' personas sobrecargadas y ' + availableCount + ' con capacidad disponible. Rebalancear carga permitiria +' + Math.round(availableCount * 15) + ' por ciento de throughput sin contratar.', 'The team has ' + overloadedCount + ' overloaded people and ' + availableCount + ' with available capacity. Rebalancing load would allow +' + Math.round(availableCount * 15) + ' percent throughput without hiring.')
+    : T('La capacidad del equipo esta equilibrada. No hay sobrecarga critica.', 'Team capacity is balanced. No critical overload.');
+  html += '<div class="box" style="border-left:4px solid #8b5cf6;"><div class="box-t"><span>👥</span> ' + T('Estado de capacidad del equipo','Team capacity status') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px;">';
+  html += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#ef4444;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('SOBRECARGADOS','OVERLOADED') + '</div><div style="font-size:32px;font-weight:900;color:#ef4444;line-height:1;margin:8px 0;">' + overloadedCount + '</div><div style="font-size:10px;color:#94a3b8;">' + T('mas de 100 por ciento','over 100 percent') + '</div></div>';
+  html += '<div style="background:rgba(0,212,126,0.1);border:1px solid rgba(0,212,126,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#00d47e;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('CON CAPACIDAD','WITH CAPACITY') + '</div><div style="font-size:32px;font-weight:900;color:#00d47e;line-height:1;margin:8px 0;">' + availableCount + '</div><div style="font-size:10px;color:#94a3b8;">' + T('menos de 60 por ciento','less than 60 percent') + '</div></div>';
+  html += '<div style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:9px;color:#00d4ff;letter-spacing:1.5px;font-weight:900;text-transform:uppercase;">' + T('OPTIMOS','OPTIMAL') + '</div><div style="font-size:32px;font-weight:900;color:#00d4ff;line-height:1;margin:8px 0;">' + optimalCount + '</div><div style="font-size:10px;color:#94a3b8;">' + T('entre 60 y 100 por ciento','between 60 and 100 percent') + '</div></div>';
+  html += '</div>';
+  html += '<div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;padding:12px 16px;background:rgba(0,0,0,0.35);border-radius:10px;border-left:3px solid #8b5cf6;"><strong style="color:#fff;">' + T('Lectura ejecutiva: ','Executive reading: ') + '</strong>' + capMsg + '</div>';
+  html += '</div>';
+
+  // ── 6. TOP BLOCKERS ──
+  html += '<div class="box" style="border-left:4px solid #ef4444;"><div class="box-t"><span>🚧</span> ' + T('Top bloqueos que frenan la operacion','Top blockers slowing operations') + '</div>';
+  if(topBlockers.length > 0){
+    html += '<div style="display:grid;gap:8px;">';
+    topBlockers.forEach(function(b){
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(239,68,68,0.08);border-radius:10px;border-left:3px solid #ef4444;gap:12px;flex-wrap:wrap;">';
+      html += '<div style="flex:1;min-width:200px;"><div style="font-size:12px;font-weight:800;color:#fff;">' + b.name + '</div><div style="font-size:10px;color:#94a3b8;margin-top:2px;">' + b.project + ' · ' + b.assignee + '</div></div>';
+      html += '<div style="display:flex;gap:16px;align-items:center;">';
+      html += '<div style="text-align:center;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">' + T('DIAS TARDE','DAYS LATE') + '</div><div style="font-size:16px;font-weight:900;color:#ef4444;">' + b.daysLate + 'd</div></div>';
+      html += '<div style="text-align:center;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;">' + T('PROGRESO','PROGRESS') + '</div><div style="font-size:16px;font-weight:900;color:#fbbf24;">' + b.progress + '%</div></div>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="text-align:center;padding:30px;color:#00d47e;font-size:14px;">' + T('No hay bloqueos activos. La operacion fluye.','No active blockers. Operations flowing.') + '</div>';
+  }
+  html += '</div>';
+
+  // ── 7. TOP PERFORMERS ──
+  html += '<div class="box" style="border-left:4px solid #00d47e;"><div class="box-t"><span>🏆</span> ' + T('Proyectos de mayor rendimiento operativo','Highest operational performance projects') + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">';
+  topPerformers.forEach(function(p, i){
+    var medalColor = i===0 ? '#ffb020' : i===1 ? '#c0c0c0' : '#cd7f32';
+    html += '<div style="background:linear-gradient(160deg,rgba(0,212,126,0.08),rgba(5,15,30,0.95));border:1px solid rgba(0,212,126,0.3);border-radius:14px;padding:16px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">';
+    html += '<div style="width:32px;height:32px;border-radius:50%;background:' + medalColor + '33;display:flex;align-items:center;justify-content:center;font-weight:900;color:' + medalColor + ';">' + (i+1) + '</div>';
+    html += '<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('TOP PERFORMER','TOP PERFORMER') + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:4px;line-height:1.3;">' + p.name + '</div>';
+    html += '<div style="font-size:10px;color:#94a3b8;margin-bottom:10px;">' + p.client + '</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:10px;">';
+    html += '<div><span style="color:#94a3b8;">' + T('Entrega','Delivery') + ':</span> <strong style="color:#00d47e;">' + p.rate.toFixed(0) + '%</strong></div>';
+    html += '<div><span style="color:#94a3b8;">Cycle:</span> <strong style="color:#8b5cf6;">' + fD(p.cycle) + '</strong></div>';
+    html += '</div></div>';
+  });
+  html += '</div></div>';
+
+  // ── 8. RESOLUCIONES ──
+  html += '<div class="box" style="border:2px solid #ffb020;"><div class="box-t" style="font-size:14px;"><span>👑</span> ' + T('Resoluciones operativas propuestas al Consejo','Proposed operational resolutions to the Board') + '</div>';
+  html += '<div style="display:grid;gap:14px;">';
+  resolutions.forEach(function(r){
+    html += '<div style="background:linear-gradient(160deg,rgba(15,23,42,0.95),rgba(5,10,18,0.95));border-left:5px solid ' + r.color + ';border-radius:14px;padding:20px 24px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:start;gap:16px;flex-wrap:wrap;margin-bottom:12px;">';
+    html += '<div style="display:flex;align-items:center;gap:14px;">';
+    html += '<div style="width:44px;height:44px;border-radius:12px;background:' + r.color + '22;border:1px solid ' + r.color + '55;display:flex;align-items:center;justify-content:center;font-size:22px;">' + r.icon + '</div>';
+    html += '<div><div style="font-size:9px;color:' + r.color + ';letter-spacing:2px;font-weight:900;text-transform:uppercase;">' + r.n + ' · ' + r.ask + '</div><div style="font-size:16px;font-weight:900;color:#fff;margin-top:2px;">' + r.title + '</div></div>';
+    html += '</div>';
+    html += '<div style="text-align:right;"><div style="font-size:9px;color:#94a3b8;text-transform:uppercase;font-weight:900;letter-spacing:1px;">' + T('IMPACTO OPERATIVO','OPERATIONAL IMPACT') + '</div><div style="font-size:15px;font-weight:900;color:' + r.color + ';margin-top:2px;">' + r.impact + '</div></div>';
+    html += '</div>';
+    html += '<div style="font-size:12.5px;color:#cbd5e1;line-height:1.65;">' + r.desc + '</div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // ── 9. SCORECARD ──
+  html += '<div class="box"><div class="box-t"><span>📋</span> ' + T('Scorecard operativo por proyecto','Operational scorecard by project') + '</div>';
+  html += '<div style="overflow-x:auto;"><table class="tbl">';
+  html += '<thead><tr><th>' + T('Proyecto','Project') + '</th><th>' + T('Cliente','Client') + '</th><th class="n">' + T('Entrega','Delivery') + '</th><th class="n">WIP</th><th class="n">Cycle</th><th class="n">' + T('Bloqueos','Blockers') + '</th><th>' + T('Salud de flujo','Flow health') + '</th></tr></thead>';
+  html += '<tbody>';
+  OPS_PROJECTS.forEach(function(p){
+    var st, stLbl;
+    if(p._flowHealth >= 70){ st = 'saludable'; stLbl = isEn() ? 'FLOWING' : 'FLUYENDO'; }
+    else if(p._flowHealth >= 45){ st = 'riesgo'; stLbl = isEn() ? 'CONSTIPATED' : 'CONSTIPADO'; }
+    else { st = 'critico'; stLbl = isEn() ? 'CRITICAL' : 'CRITICO'; }
+    var delColor = p.flow.completionRate >= 70 ? '#00d47e' : p.flow.completionRate >= 40 ? '#fbbf24' : '#ef4444';
+    var wipColor = p.flow.wip > 5 ? '#ef4444' : '#00d4ff';
+    var blkColor = (p.blockers||[]).length > 0 ? '#ef4444' : '#00d47e';
+    html += '<tr>';
+    html += '<td><strong style="color:#fff;">' + p.name + '</strong></td>';
+    html += '<td style="color:#94a3b8;">' + p.client + '</td>';
+    html += '<td class="n" style="color:' + delColor + ';font-weight:900;">' + p.flow.completionRate.toFixed(0) + '%</td>';
+    html += '<td class="n" style="color:' + wipColor + ';font-weight:900;">' + p.flow.wip + '</td>';
+    html += '<td class="n" style="color:#8b5cf6;font-weight:900;">' + fD(p.flow.avgCycle) + '</td>';
+    html += '<td class="n" style="color:' + blkColor + ';font-weight:900;">' + (p.blockers||[]).length + '</td>';
+    html += '<td><span class="badge ' + st + '">' + stLbl + '</span></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  el.innerHTML = html;
+
+  // ══ GRÁFICO ══
   setTimeout(function(){
-    var c1 = document.getElementById('vipOpsChart');
-    if(c1){
-      if(opsCharts.vipOps)opsCharts.vipOps.destroy();
-      opsCharts.vipOps = new Chart(c1.getContext('2d'),{
-        type:'bar',
-        data:{labels:OPS_PROJECTS.map(function(p){return p.name.substring(0,15);}),datasets:[{label:T('Completitud %','Completion %'),data:OPS_PROJECTS.map(function(p){return p.flow.completionRate;}),backgroundColor:OPS_PROJECTS.map(function(p){return p.flow.completionRate>=70?'rgba(0,212,126,0.8)':p.flow.completionRate>=40?'rgba(251,191,36,0.8)':'rgba(239,68,68,0.8)';}),borderRadius:6,barPercentage:0.6}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}
+    if(opsCharts.vipFlowHealth){ try{opsCharts.vipFlowHealth.destroy();}catch(e){} }
+    var c = document.getElementById('vipFlowHealth');
+    if(c){
+      opsCharts.vipFlowHealth = new Chart(c.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: OPS_PROJECTS.map(function(p){ return p.name.substring(0,10); }),
+          datasets: [{
+            label: T('Flow Health','Flow Health'),
+            data: OPS_PROJECTS.map(function(p){ return p._flowHealth; }),
+            backgroundColor: OPS_PROJECTS.map(function(p){ return p._flowHealth >= 70 ? 'rgba(0,212,126,0.85)' : p._flowHealth >= 45 ? 'rgba(251,191,36,0.85)' : 'rgba(239,68,68,0.85)'; }),
+            borderRadius: 6,
+            barPercentage: 0.65
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { display: false }, ticks: { color: '#e8edf5', font: { size: 10, weight: '700' } } }
+          }
+        }
       });
     }
-    var c2 = document.getElementById('vipScoreChart');
-    if(c2){
-      if(opsCharts.vipScore)opsCharts.vipScore.destroy();
-      opsCharts.vipScore = new Chart(c2.getContext('2d'),{
-        type:'doughnut',
-        data:{labels:[T('Score','Score'),T('Restante','Remaining')],datasets:[{data:[score,100-score],backgroundColor:[scoreC,'rgba(255,255,255,0.08)'],borderWidth:0}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'75%'}
-      });
-    }
-  },100);
+  }, 100);
 }
-
 /* ═══════════════════════════════════════════════════════════
    NAVEGACIÓN Y BOOT
    ═══════════════════════════════════════════════════════════ */
