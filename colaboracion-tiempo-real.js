@@ -1,17 +1,18 @@
 // ═══════════════════════════════════════════════════════════════
-// 🏛️ COLABORACIÓN EN TIEMPO REAL v5 — DEFINITIVA
-// Reemplaza TODOS los sistemas anteriores de colaboración
+// 🏛️ COLABORACIÓN EN TIEMPO REAL v5.1 — CORREGIDA
+// Cambio ÚNICO: sección 2 (el "portero" ahora filtra, no bloquea todo)
+// Todo lo demás (secciones 1,3,4,5,6,7) queda IDÉNTICO al original.
 // ═══════════════════════════════════════════════════════════════
 (function ColaboracionTiempoRealV5() {
   'use strict';
-  
+
   if (window.__COLAB_V5_FINAL) {
     console.log('⚠️ Colab v5 ya está activa.');
     return;
   }
   window.__COLAB_V5_FINAL = true;
 
-  console.log('%c🏛️ Colab v5 DEFINITIVA Iniciada', 'color:#10b981;font-weight:bold;background:#000;padding:6px 12px;font-size:14px;');
+  console.log('%c🏛️ Colab v5.1 CORREGIDA Iniciada', 'color:#10b981;font-weight:bold;background:#000;padding:6px 12px;font-size:14px;');
 
   // ─────────────────────────────────────────────
   // 1. HELPERS
@@ -19,7 +20,7 @@
   const getClientId   = () => localStorage.getItem('clienteId') || 'default';
   const getUserEmail  = () => localStorage.getItem('userEmail') || 'Usuario';
   const getSocket     = () => window.tiempoRealSocket;
-  
+
   const getCanonicalProjectId = () => {
     const p = window.projects?.[window.currentProjectIndex];
     return p?.id ? String(p.id) : null;
@@ -29,62 +30,96 @@
   const cloneDeep  = o => JSON.parse(JSON.stringify(o));
 
   // ─────────────────────────────────────────────
-  // 2. DESACTIVAR SISTEMAS CONFLICTIVOS (La clave del éxito)
+  // 2. PROTEGER PROYECTOS COLABORATIVOS (v5.1)
+  //    ANTES: bloqueaba TODO si el proyecto actual era ajeno.
+  //    AHORA: solo filtra lo ajeno del guardado; lo propio SÍ se guarda.
   // ─────────────────────────────────────────────
+  const getGlobalProjects = () => {
+    try {
+      return (typeof projects !== 'undefined' && Array.isArray(projects)) ? projects : null;
+    } catch (e) { return null; }
+  };
+
+  // Une window.projects + el array global 'projects' (evita el desync Kanban/menú)
+  const unifyProjects = () => {
+    const wp = Array.isArray(window.projects) ? window.projects : [];
+    const gp = getGlobalProjects();
+    if (!gp || gp === wp) return wp;
+    const ids = new Set(wp.map(p => String(p && p.id)));
+    const merged = wp.slice();
+    gp.forEach(p => {
+      if (p && !ids.has(String(p.id))) { merged.push(p); ids.add(String(p.id)); }
+    });
+    return merged;
+  };
+
+  const syncArrays = (arr) => {
+    try { window.projects = arr; } catch (e) {}
+    const gp = getGlobalProjects();
+    if (gp && gp !== arr) { gp.length = 0; gp.push(...arr); }
+    try { localStorage.setItem('projects', JSON.stringify(arr)); } catch (e) {}
+  };
+
+  const esMio = (p) => {
+    if (!p) return false;
+    if (p.esColaborativo || p.isCollaborative) return false;
+    const yo = String(localStorage.getItem('clienteId') || '');
+    return String(p.clienteId || p.clienteIdOrigen || yo) === yo;
+  };
+
   const disableConflictingSystems = () => {
-    // 2.1. Bloquear safeSave para proyectos colaborativos
-    const origSafeSave = window.safeSave;
-    window.safeSave = async function(clienteId) {
-      const currentClienteId = localStorage.getItem('clienteId');
-      const proj = getProject();
-      
-      // Si el proyecto NO es mío (es colaborativo), NO guardar en backend
-      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
-        console.log('🛡️ [v5] safeSave bloqueado: proyecto colaborativo, solo Socket.IO');
-        // Solo guardar en localStorage, NO en backend
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        return true;
+    // 2.1. safeSave: guarda local TODO; al backend SOLO lo propio
+    window.safeSave = async function (clienteId) {
+      const yo = String(localStorage.getItem('clienteId') || '');
+      const all = unifyProjects();
+
+      // Sellar clienteId en proyectos propios nuevos que no lo tengan
+      all.forEach(p => {
+        if (p && !p.clienteId && !p.esColaborativo && !p.isCollaborative) p.clienteId = yo;
+      });
+
+      syncArrays(all);
+
+      const mios = all.filter(esMio);
+      const token = localStorage.getItem('authToken');
+      if (token && yo) {
+        try {
+          const res = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({
+              projects: mios,
+              currentProjectIndex: window.currentProjectIndex || 0,
+              clienteId: yo
+            })
+          });
+          if (res.ok) console.log('✅ [v5.1] Guardado en backend: ' + mios.length + ' proyecto(s) propio(s)');
+          else console.warn('⚠️ [v5.1] Backend respondió ' + res.status);
+        } catch (e) {
+          console.warn('⚠️ [v5.1] Sin conexión — guardado local OK');
+        }
       }
-      
-      // Si es mi proyecto, usar la función original
-      return origSafeSave?.apply(this, arguments);
+      return true;
     };
 
-    // 2.2. Bloquear forceRefreshFromBackend para proyectos colaborativos
+    // 2.2. forceRefreshFromBackend: NUNCA se bloquea (un GET solo lee).
+    //      Tras refrescar, sincroniza window.projects con el array del polling.
     const origForceRefresh = window.forceRefreshFromBackend;
-    window.forceRefreshFromBackend = async function() {
-      const currentClienteId = localStorage.getItem('clienteId');
-      const proj = getProject();
-      
-      // Si el proyecto NO es mío, NO consultar al backend
-      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
-        console.log('🛡️ [v5] forceRefreshFromBackend bloqueado: proyecto colaborativo');
-        // Solo refrescar la vista local
-        if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
-        if (typeof window.renderProjects === 'function') window.renderProjects();
-        return;
+    window.forceRefreshFromBackend = async function () {
+      const r = await origForceRefresh?.apply(this, arguments);
+      const gp = getGlobalProjects();
+      if (gp && Array.isArray(gp)) {
+        const wp = Array.isArray(window.projects) ? window.projects : [];
+        const ids = new Set(gp.map(p => String(p && p.id)));
+        const pendientes = wp.filter(p => p && !ids.has(String(p.id)) && esMio(p));
+        syncArrays([...gp, ...pendientes]);
       }
-      
-      // Si es mi proyecto, usar la función original
-      return origForceRefresh?.apply(this, arguments);
+      return r;
     };
 
-    // 2.3. Bloquear updateLocalStorage para proyectos colaborativos
-    const origUpdateLS = window.updateLocalStorage;
-    window.updateLocalStorage = function() {
-      const currentClienteId = localStorage.getItem('clienteId');
-      const proj = getProject();
-      
-      if (proj && String(proj.clienteId) !== String(currentClienteId)) {
-        console.log('🛡️ [v5] updateLocalStorage bloqueado: proyecto colaborativo');
-        localStorage.setItem('projects', JSON.stringify(window.projects));
-        return;
-      }
-      
-      return origUpdateLS?.apply(this, arguments);
-    };
+    // 2.3. updateLocalStorage: lo local NUNCA se bloquea (ya no se envuelve).
 
-    console.log('✅ [v5] Sistemas conflictivos desactivados para proyectos colaborativos');
+    console.log('✅ [v5.1] Protección colaborativa: filtro por dueño (no bloqueo total)');
   };
 
   disableConflictingSystems();
@@ -104,8 +139,8 @@
 
     const payload = {
       ...data,
-      projectId: canonicalId,      
-      projectDbId: canonicalId,    
+      projectId: canonicalId,
+      projectDbId: canonicalId,
       clienteId: getClientId(),
       userName: getUserEmail(),
       timestamp: new Date().toISOString()
@@ -124,7 +159,7 @@
   const joinCanonicalRoom = () => {
     const s = getSocket();
     if (!s || !s.connected) return;
-    
+
     const canonicalId = getCanonicalProjectId();
     if (!canonicalId) return;
 
@@ -137,7 +172,7 @@
     s.on('connect', () => {
       setTimeout(joinCanonicalRoom, 300);
     });
-    
+
     if (s.connected) joinCanonicalRoom();
     setInterval(joinCanonicalRoom, 5000);
   }
@@ -171,7 +206,6 @@
   // 6. LISTENERS DE EVENTOS
   // ─────────────────────────────────────────────
   if (s) {
-    // ELIMINAR listeners antiguos para evitar duplicados
     s.off('task-created');
     s.off('task-updated');
     s.off('task-moved');
@@ -184,7 +218,7 @@
       const proj = getProject();
       if (!proj) return;
       if (proj.tasks.some(t => String(t.id) === String(data.task.id))) return;
-      
+
       proj.tasks.push(data.task);
       localStorage.setItem('projects', JSON.stringify(window.projects));
       reloadUI();
@@ -195,14 +229,14 @@
       if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
-      
+
       const taskId = String(data.taskId || data.task?.id);
       const idx = proj.tasks.findIndex(t => String(t.id) === taskId);
-      
+
       if (idx !== -1) {
         if (data.task) proj.tasks[idx] = data.task;
         else if (data.changes) Object.assign(proj.tasks[idx], data.changes);
-        
+
         localStorage.setItem('projects', JSON.stringify(window.projects));
         reloadUI();
         console.log(`✅ [v5] Tarea actualizada remotamente: ID ${taskId}`);
@@ -213,13 +247,13 @@
       if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
-      
+
       const task = proj.tasks.find(t => String(t.id) === String(data.taskId));
       if (task && task.status !== data.newStatus) {
         task.status = data.newStatus;
         if (data.newStatus === 'completed') task.progress = 100;
         else if (data.newStatus === 'pending') task.progress = 0;
-        
+
         localStorage.setItem('projects', JSON.stringify(window.projects));
         reloadUI();
         console.log(`✅ [v5] Tarea movida remotamente: ${data.taskId} -> ${data.newStatus}`);
@@ -230,7 +264,7 @@
       if (!isSameProject(data)) return;
       const proj = getProject();
       if (!proj) return;
-      
+
       const idx = proj.tasks.findIndex(t => String(t.id) === String(data.taskId));
       if (idx !== -1) {
         proj.tasks.splice(idx, 1);
@@ -244,7 +278,7 @@
       if (!data.project) return;
       if (data.clienteId && data.clienteId !== getClientId()) return;
       if (window.projects.some(p => String(p.id) === String(data.project.id))) return;
-      
+
       window.projects.push(data.project);
       localStorage.setItem('projects', JSON.stringify(window.projects));
       if (typeof window.renderProjects === 'function') window.renderProjects();
@@ -253,7 +287,7 @@
     s.on('project-updated', (data) => {
       if (!data.project) return;
       if (data.clienteId && data.clienteId !== getClientId()) return;
-      
+
       const idx = window.projects.findIndex(p => String(p.id) === String(data.project.id));
       if (idx !== -1) {
         window.projects[idx] = data.project;
@@ -266,7 +300,7 @@
   // ─────────────────────────────────────────────
   // 7. INTERCEPTORES DE ACCIONES LOCALES
   // ─────────────────────────────────────────────
-  
+
   // 7.1. Drag & Drop (Kanban)
   window.handleDrop = function (e) {
     e.preventDefault();
@@ -276,7 +310,7 @@
     const map = { pendingList: 'pending', inProgressList: 'inProgress', completedList: 'completed', overdueList: 'overdue' };
     const newStatus = map[e.currentTarget.id];
     const proj = getProject();
-    
+
     if (!proj || !newStatus) return;
 
     const task = proj.tasks.find(t => String(t.id) === String(taskId));
@@ -285,7 +319,6 @@
     const oldStatus = task.status;
     if (oldStatus === newStatus) return;
 
-    // Actualización local
     task.status = newStatus;
     task.history = task.history || [];
     task.history.push({ from: oldStatus, to: newStatus, date: new Date().toISOString() });
@@ -295,7 +328,6 @@
     localStorage.setItem('projects', JSON.stringify(window.projects));
     if (typeof window.renderKanbanTasks === 'function') window.renderKanbanTasks();
 
-    // Emisión a la red
     emitSafe('task-moved', {
         taskId: task.id,
         taskName: task.name,
@@ -326,7 +358,7 @@
   const patchGlobalFunction = (funcName, emitEvent, payloadBuilder) => {
     const orig = window[funcName];
     if (typeof orig !== 'function' || orig.__patchedV5) return;
-    
+
     window[funcName] = function (...args) {
       const result = orig.apply(this, args);
       setTimeout(() => {
@@ -363,5 +395,5 @@
     return proj ? { project: cloneDeep(proj), projectName: proj.name } : {};
   });
 
-  console.log('%c✅ COLABORACIÓN v5 DEFINITIVA ACTIVA', 'color:#10b981;font-weight:bold;font-size:14px;background:#000;padding:6px 12px;');
+  console.log('%c✅ COLABORACIÓN v5.1 CORREGIDA ACTIVA', 'color:#10b981;font-weight:bold;font-size:14px;background:#000;padding:6px 12px;');
 })();
