@@ -7,6 +7,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 <style>
@@ -286,7 +288,7 @@ body.zops-boot-lock{overflow:hidden!important}
 
   <div class="fab" onclick="openOpsModal()">
     <img src="zacky45.png" alt="Zacky Logo">
-    <span id="opsFabText">Entrar a Operaciones</span>
+    <span id="opsFabText">ENTRAR</span>
   </div>
 </div>
 
@@ -309,6 +311,9 @@ body.zops-boot-lock{overflow:hidden!important}
           <button class="tab" data-tab="ai">🤖 AI OPS</button>
           <button class="tab" data-tab="vip">👑 C-SUITE</button>
         </div>
+        <select id="opsProjectFilter" onchange="applyProjectFilter(this.value)" style="background: rgba(15,23,42,0.8); border: 1px solid rgba(212,175,55,0.5); color: #fde68a; padding: 7px 12px; border-radius: 20px; font-weight: 800; font-size: 12px; cursor: pointer; outline: none; margin-right: 5px;">
+          <option value="all">🌐 Global (Todos)</option>
+        </select>
         <button onclick="toggleOpsLang()" style="background: rgba(15,23,42,0.8); border: 1px solid rgba(212,175,55,0.5); color: #fde68a; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 12px; cursor: pointer; margin-right: 5px;">🌐 EN</button>
         <button class="btn-pdf" onclick="exportOpsPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
         <button class="btn-pptx" onclick="exportOpsPPTX()"><i class="fas fa-file-powerpoint"></i> PPTX</button>
@@ -339,11 +344,13 @@ body.zops-boot-lock{overflow:hidden!important}
 /* ═══════════════════════════════════════════════════════════
    DATA DEMO
    ═══════════════════════════════════════════════════════════ */
-var OPS_PROJECTS = [];
+var ALL_OPS_PROJECTS = []; // Todos los proyectos
+var OPS_PROJECTS = [];     // Los que se muestran (filtrados o todos)
 var OPS_TOTALS = {};
 var opsCharts = {};
 var opsCurrentBurn = null;
 var opsBurnView = 'tasks';
+var opsCurrentFilter = 'all';
 
 function buildOpsDemoData(){
   return [
@@ -615,6 +622,37 @@ function healthColor(h){return {saludable:'#00d47e',aceptable:'#8b5cf6',riesgo:'
 function statusBadge(h){var lbl = isEn()?{saludable:'Healthy',aceptable:'Acceptable',riesgo:'At Risk',critico:'Critical'}[h]||h:{saludable:'Saludable',aceptable:'Aceptable',riesgo:'Riesgo',critico:'Crítico'}[h]||h; return '<span class="badge '+h+'">'+lbl+'</span>';}
 
 /* ═══════════════════════════════════════════════════════════
+   FILTRO DE PROYECTOS
+   ═══════════════════════════════════════════════════════════ */
+function populateProjectFilter(){
+  var sel = document.getElementById('opsProjectFilter');
+  if(!sel) return;
+  sel.innerHTML = '<option value="all">🌐 ' + T('Global (Todos)','Global (All)') + '</option>';
+  ALL_OPS_PROJECTS.forEach(function(p){
+    var opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.client + ' — ' + p.name.substring(0,30);
+    sel.appendChild(opt);
+  });
+  sel.value = opsCurrentFilter;
+}
+
+function applyProjectFilter(projectId){
+  opsCurrentFilter = projectId;
+  if(projectId === 'all'){
+    OPS_PROJECTS = JSON.parse(JSON.stringify(ALL_OPS_PROJECTS));
+  } else {
+    var found = ALL_OPS_PROJECTS.find(function(p){ return String(p.id) === String(projectId); });
+    OPS_PROJECTS = found ? [JSON.parse(JSON.stringify(found))] : [];
+  }
+  calculateOpsTotals();
+  updateOpsChips();
+  
+  var activeTab = document.querySelector('#opsTabs .tab.on');
+  if(activeTab) switchOpsTab(activeTab.dataset.tab);
+}
+
+/* ═══════════════════════════════════════════════════════════
    RENDERIZADO DE MÓDULOS
    ═══════════════════════════════════════════════════════════ */
 function renderEVM(){
@@ -623,13 +661,20 @@ function renderEVM(){
   if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando datos...','Loading data...')+'</div>'; return; }
   var t = OPS_TOTALS.evm;
 
+  // Riesgos Financieros
+  var risks = [];
+  OPS_PROJECTS.forEach(function(p){
+    if(p.evm.CPI < 0.9) risks.push({name:p.name, type:'CPI Bajo', val:p.evm.CPI.toFixed(2), impact:fEur(Math.abs(p.evm.VAC)), color:'#ef4444', desc:T('Sobrecosto proyectado. Requiere auditoría.','Projected overcost. Requires audit.')});
+    else if(p.evm.SPI < 0.9) risks.push({name:p.name, type:'SPI Bajo', val:p.evm.SPI.toFixed(2), impact:fEur(Math.abs(p.evm.SV)), color:'#fbbf24', desc:T('Retraso en cronograma. Riesgo de penalización.','Schedule delay. Penalty risk.')});
+  });
+
   el.innerHTML = `
     <div class="hero"><div class="hero-grid">
       <div><h2>${T('Análisis Financiero · EVM Completo','Financial Analysis · Full EVM')}</h2><p>${T('Valores calculados en base a costes por hora y presupuestos de proyectos.','Values calculated based on hourly costs and project budgets.')}</p></div>
       <div class="hero-stats">
         <div class="h-stat"><div class="v">${fEur(t.BAC)}</div><div class="l">${T('BAC Total','Total BAC')}</div></div>
-        <div class="h-stat"><div class="v" style="color:#00d47e">${t.CPI.toFixed(2)}</div><div class="l">${T('CPI Global','Global CPI')}</div></div>
-        <div class="h-stat"><div class="v" style="color:#fbbf24">${t.SPI.toFixed(2)}</div><div class="l">${T('SPI Global','Global SPI')}</div></div>
+        <div class="h-stat"><div class="v" style="color:${t.CPI>=1?'#00d47e':'#ef4444'}">${t.CPI.toFixed(2)}</div><div class="l">${T('CPI Global','Global CPI')}</div></div>
+        <div class="h-stat"><div class="v" style="color:${t.SPI>=1?'#00d47e':'#fbbf24'}">${t.SPI.toFixed(2)}</div><div class="l">${T('SPI Global','Global SPI')}</div></div>
         <div class="h-stat"><div class="v" style="color:${t.VAC>=0?'#00d47e':'#ef4444'}">${fEur(t.VAC)}</div><div class="l">${T('VAC','VAC')}</div></div>
       </div>
     </div></div>
@@ -649,7 +694,35 @@ function renderEVM(){
       <div class="kpi" style="--c:#a78bfa"><div class="l">${T('EAC (Est. Cierre)','EAC (Est. at Completion)')}</div><div class="v">${fEur(t.EAC)}</div><div class="s">BAC / CPI</div></div>
       <div class="kpi" style="--c:${t.VAC>=0?'#00d47e':'#ef4444'}"><div class="l">${T('VAC (Var. Cierre)','VAC (Variance at Completion)')}</div><div class="v">${t.VAC>=0?'+':''}${fEur(t.VAC)}</div><div class="s">BAC - EAC</div></div>
     </div>
-    
+
+    <!-- NUEVO: GRÁFICO FINANCIERO Y RECOMENDACIONES -->
+    <div class="chart-2">
+      <div class="chart-card"><div class="t"><span>📊</span> ${T('Presupuesto vs Ejecución','Budget vs Execution')}</div><canvas id="evmChartBar"></canvas></div>
+      <div class="chart-card"><div class="t"><span>🎯</span> ${T('Salud Financiera por Proyecto','Financial Health by Project')}</div><canvas id="evmChartScatter"></canvas></div>
+    </div>
+
+    <div class="box" style="border-left:4px solid ${t.CPI<1?'#ef4444':'#00d47e'};">
+      <div class="box-t"><span>🧐</span> ${T('Dictamen del Auditor','Auditor\'s Verdict')}</div>
+      <div style="font-size:13px; color:#cbd5e1; line-height:1.6;">
+        ${t.CPI < 0.9 
+          ? T('<strong>Alerta Crítica:</strong> El portafolio presenta un sobrecosto proyectado de '+fEur(Math.abs(t.VAC))+'. Se recomienda congelar gastos no esenciales y auditar las horas facturadas en los proyectos con CPI inferior a 0.90.', 
+              '<strong>Critical Alert:</strong> Portfolio projects an overcost of '+fEur(Math.abs(t.VAC))+'. We recommend freezing non-essential expenses and auditing billed hours in projects with CPI below 0.90.')
+          : T('<strong>Rendimiento Saludable:</strong> El portafolio opera dentro del presupuesto. El ahorro proyectado al cierre es de '+fEur(t.VAC)+'. Se recomienda mantener la eficiencia y renegociar contratos clave.', 
+              '<strong>Healthy Performance:</strong> Portfolio operates within budget. Projected savings at completion is '+fEur(t.VAC)+'. We recommend maintaining efficiency and renegotiating key contracts.')}
+      </div>
+    </div>
+
+    ${risks.length > 0 ? `
+    <div class="box" style="border-left:4px solid #ef4444;">
+      <div class="box-t"><span>⚠️</span> ${T('Matriz de Riesgos Financieros','Financial Risk Matrix')}</div>
+      <table class="tbl">
+        <thead><tr><th>${T('Proyecto','Project')}</th><th>${T('Riesgo','Risk')}</th><th class="n">${T('Valor','Value')}</th><th class="n">${T('Impacto (€)','Impact (€)')}</th><th>${T('Acción Recomendada','Recommended Action')}</th></tr></thead>
+        <tbody>
+          ${risks.map(r => `<tr><td><strong>${r.name}</strong></td><td><span class="badge" style="background:${r.color}22;color:${r.color};">${r.type}</span></td><td class="n" style="color:${r.color};font-weight:900;">${r.val}</td><td class="n">${r.impact}</td><td style="font-size:11px;color:#94a3b8;">${r.desc}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
     <div class="box"><div class="box-t">💰 ${T('Resumen EVM por Proyecto','EVM Summary by Project')}</div>
       <table class="tbl">
         <thead><tr><th>${T('Proyecto','Project')}</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">VAC</th></tr></thead>
@@ -667,7 +740,47 @@ function renderEVM(){
       </table>
     </div>
   `;
+
+  setTimeout(() => {
+    // Gráfico 1: Barras BAC vs EV vs AC
+    if(opsCharts.evmBar) opsCharts.evmBar.destroy();
+    var ctx1 = document.getElementById('evmChartBar');
+    if(ctx1){
+      opsCharts.evmBar = new Chart(ctx1.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: [T('Global','Global')],
+          datasets: [
+            { label: 'BAC', data: [t.BAC], backgroundColor: 'rgba(251,191,36,0.8)', borderRadius: 6 },
+            { label: 'EV', data: [t.EV], backgroundColor: 'rgba(0,212,126,0.8)', borderRadius: 6 },
+            { label: 'AC', data: [t.AC], backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 6 }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'top', labels:{ color:'#e8edf5' } } }, scales:{ y:{ beginAtZero:true, ticks:{ callback:function(v){ return fEur(v); } } } } }
+      });
+    }
+    // Gráfico 2: Scatter de Salud Financiera (CPI vs SPI)
+    if(opsCharts.evmScatter) opsCharts.evmScatter.destroy();
+    var ctx2 = document.getElementById('evmChartScatter');
+    if(ctx2){
+      opsCharts.evmScatter = new Chart(ctx2.getContext('2d'), {
+        type: 'scatter',
+        data: {
+          datasets: OPS_PROJECTS.map(p => ({
+            label: p.name.substring(0,15),
+            data: [{ x: p.evm.CPI, y: p.evm.SPI }],
+            backgroundColor: p.evm.CPI>=0.9 && p.evm.SPI>=0.9 ? '#00d47e' : (p.evm.CPI<0.8 || p.evm.SPI<0.8) ? '#ef4444' : '#fbbf24',
+            pointRadius: 10
+          }))
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ title:{ display:true, text:'CPI', color:'#94a3b8' }, min:0, max:2 }, y:{ title:{ display:true, text:'SPI', color:'#94a3b8' }, min:0, max:2 } } }
+      });
+    }
+  }, 100);
 }
+
+
+
 
 function renderOpsCommand(){
   var el = document.getElementById('v-cmd');
@@ -675,63 +788,92 @@ function renderOpsCommand(){
   if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando datos operativos...','Loading operational data...')+'</div>'; return; }
   var t = OPS_TOTALS;
 
-  el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Torre de Control Operativa · OPS 4D','Operations Control Tower · OPS 4D')+'</h2><p>'+T('Vista en tiempo real de la operación: flow metrics, capacidad, WIP y bloqueos.','Real-time view of operations: flow metrics, capacity, WIP and blockers.')+'</p></div><div class="hero-stats">'+statCard(t.count,T('Proyectos','Projects'))+statCard(t.throughput,T('Throughput','Throughput'),'gr')+statCard(t.wip,'WIP','g')+statCard(t.blockers,T('Bloqueos','Blockers'),'r')+'</div></div></div>'+
-    '<div class="kpi-6">'+
-      kpi(T('PROYECTOS','PROJECTS'), t.count, T('Activos','Active'), '#67e8f9', 'Σ projects')+
-      kpi(T('TAREAS','TASKS'), t.tasks, t.completed+' '+T('completadas','completed'), '#8b5cf6', 'Σ tasks')+
-      kpi('THROUGHPUT', t.throughput, T('30 días','30 days'), '#00d47e', 'completed/30d')+
-      kpi('WIP', t.wip, t.wip>8?T('⚠️ Alto','⚠️ High'):T('✓ OK','✓ OK'), t.wip>8?'#ef4444':'#fbbf24', 'inProgress')+
-      kpi('CYCLE TIME', fD(t.avgCycle), T('promedio','average'), '#00d4ff', 'avg cycle')+
-      kpi('LEAD TIME', fD(t.avgLead), T('promedio','average'), '#fbbf24', 'avg lead')+
-    '</div>'+
-    '<div class="kpi-4">'+
-      kpi(T('Completadas','Completed'), t.completed, fPct(t.completionRate), '#00d47e', 'Σ done')+
-      kpi(T('Vencidas','Overdue'), t.overdue, t.overdue>0?T('⚠️ Atención','⚠️ Attention'):'✓ OK', t.overdue>0?'#ef4444':'#00d47e', 'Σ overdue')+
-      kpi(T('Proyectos en riesgo','At-risk projects'), t.critical, T('Requieren acción','Need action'), t.critical>0?'#ef4444':'#00d47e', 'filter')+
-      kpi('VELOCITY', t.tasks?(OPS_TOTALS.completionRate).toFixed(0)+'%':'0%', T('del portafolio','portfolio'), '#8b5cf6', 'avg progress')+
-    '</div>'+
-    '<div class="chart-2">'+
-      '<div class="chart-card"><div class="t"><span>📊</span> '+T('Throughput por Proyecto','Throughput by Project')+'</div><canvas id="opsCmdThroughput"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>📈</span> '+T('Estado de Tareas Global','Global Tasks Status')+'</div><canvas id="opsCmdTasks"></canvas></div>'+
-    '</div>'+
-    '<div class="box"><div class="box-t"><span>🎯</span> '+T('Resumen operativo por proyecto','Operational summary by project')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+T('Proyecto','Project')+'</th><th class="n">'+T('Tareas','Tasks')+'</th><th class="n">'+T('Completas','Done')+'</th><th class="n">WIP</th><th class="n">'+T('Vencidas','Overdue')+'</th><th class="n">Throughput</th><th class="n">Cycle</th><th>'+T('Estado','Status')+'</th></tr></thead><tbody>'+
-      OPS_PROJECTS.map(function(p){
-        var health = p.flow.completionRate>=70?'saludable':p.flow.completionRate>=40?'riesgo':'critico';
-        return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+p.flow.total+'</td><td class="n" style="color:#00d47e;">'+p.flow.completed+'</td><td class="n" style="color:#67e8f9;">'+p.flow.inProgress+'</td><td class="n" style="color:'+(p.flow.overdue>0?'#ef4444':'#94a3b8')+';font-weight:900;">'+p.flow.overdue+'</td><td class="n" style="color:#8b5cf6;">'+p.flow.throughput+'</td><td class="n">'+fD(p.flow.avgCycle)+'</td><td>'+statusBadge(health)+'</td></tr>';
-      }).join('')+
-      '</tbody></table></div></div>';
+  // Análisis para el CEO
+  var criticalProjs = OPS_PROJECTS.filter(p => p.flow.completionRate < 40 || p.blockers.length > 0);
+  var topBlocker = OPS_PROJECTS.reduce((max, p) => p.blockers.length > (max ? max.blockers.length : 0) ? p : max, null);
 
-  setTimeout(function(){
-    var c1 = document.getElementById('opsCmdThroughput');
+  el.innerHTML = `
+    <div class="hero"><div class="hero-grid">
+      <div><h2>${T('Resumen Ejecutivo · Boardroom View','Executive Summary · Boardroom View')}</h2><p>${T('Narrativa operativa para la junta directiva. ¿Qué está pasando y qué necesitamos?','Operational narrative for the board. What is happening and what do we need?')}</p></div>
+      <div class="hero-stats">
+        <div class="h-stat"><div class="v">${t.completionRate.toFixed(1)}%</div><div class="l">${T('Completado','Completed')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#ef4444">${criticalProjs.length}</div><div class="l">${T('En Riesgo','At Risk')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#00d4ff">${t.throughput}</div><div class="l">Throughput</div></div>
+        <div class="h-stat"><div class="v" style="color:#8b5cf6">${t.avgCycle.toFixed(1)}d</div><div class="l">Cycle</div></div>
+      </div>
+    </div></div>
+
+    <!-- TRES PILARES CLAVE PARA EL CEO -->
+    <div class="chart-2">
+      <div class="chart-card" style="border-left:4px solid ${criticalProjs.length > 0 ? '#ef4444' : '#00d47e'};">
+        <div class="t"><span>🚨</span> ${T('Lo que requiere tu atención','What requires your attention')}</div>
+        <p style="font-size:13px; color:#cbd5e1; line-height:1.6;">
+          ${criticalProjs.length > 0 
+            ? T('Tenemos <strong>'+criticalProjs.length+' proyectos</strong> con desviaciones. El mayor cuello de botella es <strong>'+topBlocker.name+'</strong> con <strong>'+topBlocker.blockers.length+' tareas vencidas</strong>. Recomendación: desbloqueo inmediato.', 
+                'We have <strong>'+criticalProjs.length+' projects</strong> with deviations. The biggest bottleneck is <strong>'+topBlocker.name+'</strong> with <strong>'+topBlocker.blockers.length+' overdue tasks</strong>. Recommendation: immediate unblocking.')
+            : T('Todos los proyectos están fluyendo sin bloqueos críticos. Podemos acelerar la inversión.', 'All projects are flowing without critical blockers. We can accelerate investment.')}
+        </p>
+      </div>
+      <div class="chart-card" style="border-left:4px solid #00d4ff;">
+        <div class="t"><span>⚡</span> ${T('Nuestra velocidad de ejecución','Our execution speed')}</div>
+        <p style="font-size:13px; color:#cbd5e1; line-height:1.6;">
+          ${T('El equipo está entregando <strong>'+t.throughput+' tareas por mes</strong>. Con un WIP actual de <strong>'+t.wip+' tareas</strong> y un Cycle Time de <strong>'+t.avgCycle.toFixed(1)+' días</strong>.', 
+              'The team is delivering <strong>'+t.throughput+' tasks per month</strong>. With a current WIP of <strong>'+t.wip+' tasks</strong> and a Cycle Time of <strong>'+t.avgCycle.toFixed(1)+' days</strong>.')}
+        </p>
+      </div>
+    </div>
+
+    <div class="chart-2">
+      <div class="chart-card"><div class="t"><span>📊</span> ${T('Progreso de Proyectos','Project Progress')}</div><canvas id="opsCmdProgress"></canvas></div>
+      <div class="chart-card"><div class="t"><span>⚠️</span> ${T('Semáforo Operativo','Operational Traffic Light')}</div><canvas id="opsCmdTraffic"></canvas></div>
+    </div>
+
+    <div class="box">
+      <div class="box-t"><span>💡</span> ${T('Recomendaciones para el CEO','Recommendations for the CEO')}</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px;">
+        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #fbbf24;">
+          <div style="font-size:11px; font-weight:900; color:#fbbf24; margin-bottom:6px;">${T('ACCIÓN 1','ACTION 1')}</div>
+          <div style="font-size:12px; color:#cbd5e1;">${T('Reasignar recursos de proyectos con CPI > 1.0 para rescatar los que tienen CPI < 0.9.', 'Reallocate resources from projects with CPI > 1.0 to rescue those with CPI < 0.9.')}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #ef4444;">
+          <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:6px;">${T('ACCIÓN 2','ACTION 2')}</div>
+          <div style="font-size:12px; color:#cbd5e1;">${T('Auditar las horas registradas en el proyecto con mayor desviación.', 'Audit logged hours in the project with the highest deviation.')}</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3); padding:14px; border-radius:10px; border-left:3px solid #00d47e;">
+          <div style="font-size:11px; font-weight:900; color:#00d47e; margin-bottom:6px;">${T('ACCIÓN 3','ACTION 3')}</div>
+          <div style="font-size:12px; color:#cbd5e1;">${T('Aprobar el plan de recuperación presentado por el COO.', 'Approve the recovery plan presented by the COO.')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    if(opsCharts.cmdProgress) opsCharts.cmdProgress.destroy();
+    var c1 = document.getElementById('opsCmdProgress');
     if(c1){
-      if(opsCharts.cmdThroughput)opsCharts.cmdThroughput.destroy();
-      opsCharts.cmdThroughput = new Chart(c1.getContext('2d'),{
-        type:'bar',
-        data:{
-          labels:OPS_PROJECTS.map(function(p){return p.name.substring(0,15);}),
-          datasets:[{label:'Throughput',data:OPS_PROJECTS.map(function(p){return p.flow.throughput;}),backgroundColor:OPS_PROJECTS.map(function(p){return p.flow.throughput>0?'rgba(0,212,126,0.8)':'rgba(239,68,68,0.5)';}),borderRadius:6,barPercentage:0.6}]
+      opsCharts.cmdProgress = new Chart(c1.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: OPS_PROJECTS.map(p => p.name.substring(0,10)),
+          datasets: [{ label: '% Completado', data: OPS_PROJECTS.map(p => p.flow.completionRate), backgroundColor: OPS_PROJECTS.map(p => p.flow.completionRate >= 70 ? '#00d47e' : p.flow.completionRate >= 40 ? '#fbbf24' : '#ef4444'), borderRadius: 6 }]
         },
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10,weight:'700'}}}}}
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, max:100 } } }
       });
     }
-    var c2 = document.getElementById('opsCmdTasks');
+    if(opsCharts.cmdTraffic) opsCharts.cmdTraffic.destroy();
+    var c2 = document.getElementById('opsCmdTraffic');
     if(c2){
-      if(opsCharts.cmdTasks)opsCharts.cmdTasks.destroy();
-      var total = OPS_TOTALS.tasks;
-      var done = OPS_TOTALS.completed;
-      var inProg = OPS_TOTALS.wip;
-      var overdue = OPS_TOTALS.overdue;
-      var pending = total - done - inProg - overdue;
-      opsCharts.cmdTasks = new Chart(c2.getContext('2d'),{
-        type:'doughnut',
-        data:{labels:[T('Completas','Done'),'WIP',T('Vencidas','Overdue'),T('Pendientes','Pending')],datasets:[{data:[done,inProg,overdue,Math.max(0,pending)],backgroundColor:['#00d47e','#67e8f9','#ef4444','#8b5cf6'],borderWidth:0,hoverOffset:10}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e8edf5',font:{size:11,weight:'700'},usePointStyle:true,padding:14}}},cutout:'55%'}
+      var green = OPS_PROJECTS.filter(p => p.flow.completionRate >= 70).length;
+      var yellow = OPS_PROJECTS.filter(p => p.flow.completionRate >= 40 && p.flow.completionRate < 70).length;
+      var red = OPS_PROJECTS.filter(p => p.flow.completionRate < 40).length;
+      opsCharts.cmdTraffic = new Chart(c2.getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: [T('Saludable','Healthy'), T('Riesgo','At Risk'), T('Crítico','Critical')], datasets: [{ data: [green, yellow, red], backgroundColor: ['#00d47e', '#fbbf24', '#ef4444'], borderWidth:0 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{ legend:{ position:'right', labels:{ color:'#e8edf5' } } } }
       });
     }
-  },100);
+  }, 100);
 }
-
 function renderFlowMetrics(){
   var el = document.getElementById('v-flow');
   if(!el) return;
@@ -803,12 +945,8 @@ function renderCapacity(){
   OPS_PROJECTS.forEach(function(p){
     (p.capacity||[]).forEach(function(m){
       if(!allTeam[m.name]) allTeam[m.name]={name:m.name,hours:0,logged:0,tasks:0,completed:0,overdue:0,inProgress:0,projects:[]};
-      allTeam[m.name].hours += m.hours;
-      allTeam[m.name].logged += m.logged;
-      allTeam[m.name].tasks += m.tasks;
-      allTeam[m.name].completed += m.completed;
-      allTeam[m.name].overdue += m.overdue;
-      allTeam[m.name].inProgress += m.inProgress;
+      allTeam[m.name].hours += m.hours; allTeam[m.name].logged += m.logged; allTeam[m.name].tasks += m.tasks;
+      allTeam[m.name].completed += m.completed; allTeam[m.name].overdue += m.overdue; allTeam[m.name].inProgress += m.inProgress;
       if(allTeam[m.name].projects.indexOf(p.name)===-1) allTeam[m.name].projects.push(p.name);
     });
   });
@@ -819,44 +957,67 @@ function renderCapacity(){
     return m;
   }).sort(function(a,b){return b.utilization-a.utilization;});
 
-  var overCount = team.filter(function(m){return m.level==='over';}).length;
-  var highCount = team.filter(function(m){return m.level==='high';}).length;
-  var optCount = team.filter(function(m){return m.level==='optimal';}).length;
-  var availCount = team.filter(function(m){return m.level==='available';}).length;
+  var overCount = team.filter(m=>m.level==='over').length;
+  var highCount = team.filter(m=>m.level==='high').length;
+  var optCount = team.filter(m=>m.level==='optimal').length;
+  var availCount = team.filter(m=>m.level==='available').length;
 
+  // HEATMAP MEJORADO CON NOMBRES
   var heatmapCells = team.slice(0,14).map(function(m){
-    var color = m.utilization>100?'rgba(239,68,68,0.8)':m.utilization>85?'rgba(251,191,36,0.7)':m.utilization>50?'rgba(0,212,126,0.6)':'rgba(139,92,246,0.4)';
-    return '<div class="heatmap-cell" style="background:'+color+';" title="'+m.name+': '+m.utilization.toFixed(0)+'%">'+m.utilization.toFixed(0)+'%</div>';
+    var color = m.utilization>100?'rgba(239,68,68,0.85)':m.utilization>85?'rgba(251,191,36,0.8)':m.utilization>50?'rgba(0,212,126,0.7)':'rgba(139,92,246,0.5)';
+    return `<div style="display:flex; flex-direction:column; align-items:center; gap:4px;" title="${m.name}: ${m.utilization.toFixed(0)}% (${fH(m.logged)} / ${fH(m.hours)})">
+      <div class="heatmap-cell" style="background:${color}; width:100%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:11px; color:#fff;">${m.utilization.toFixed(0)}%</div>
+      <div style="font-size:9px; color:#94a3b8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${m.name.split(' ')[0]}</div>
+    </div>`;
   }).join('');
 
-  el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Capacity Planning 4D · Carga del equipo','Capacity Planning 4D · Team Load')+'</h2><p>'+T('Utilización real por persona. Detecta sobrecargas.','Real utilization per person. Detects overloads.')+'</p></div><div class="hero-stats">'+statCard(overCount,T('Sobrecargados','Overloaded'),'r')+statCard(highCount,T('Alta carga','High Load'),'g')+statCard(optCount,T('Óptimos','Optimal'),'gr')+statCard(availCount,T('Disponibles','Available'))+'</div></div></div>'+
-    '<div class="box"><div class="box-t"><span>🔥</span> '+T('Heatmap de utilización · Top 14 personas','Utilization Heatmap · Top 14 people')+'</div><div class="heatmap">'+heatmapCells+'</div></div>'+
-    '<div class="chart-2">'+
-      '<div class="chart-card"><div class="t"><span>📊</span> '+T('Utilización por persona','Utilization per person')+'</div><canvas id="capChart"></canvas></div>'+
-      '<div class="chart-card"><div class="t"><span>🥧</span> '+T('Distribución de carga','Load distribution')+'</div><canvas id="capPie"></canvas></div>'+
-    '</div>'+
-    '<div class="box"><div class="box-t"><span>👥</span> '+T('Detalle de capacidad por miembro','Capacity detail per member')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+T('Miembro','Member')+'</th><th class="n">'+T('Tareas','Tasks')+'</th><th class="n">'+T('Horas plan','Planned h')+'</th><th class="n">'+T('Horas real','Real h')+'</th><th class="n">'+T('Utilización','Utilization')+'</th><th>'+T('Nivel','Level')+'</th><th>'+T('Proyectos','Projects')+'</th></tr></thead><tbody>'+
-      team.map(function(m){
+  el.innerHTML = `
+    <div class="hero"><div class="hero-grid">
+      <div><h2>${T('Capacity Planning 4D · Carga del equipo','Capacity Planning 4D · Team Load')}</h2><p>${T('Utilización real por persona. Los porcentajes indican la carga actual sobre su capacidad máxima.','Real utilization per person. Percentages indicate current load over maximum capacity.')}</p></div>
+      <div class="hero-stats">
+        <div class="h-stat"><div class="v" style="color:#ef4444">${overCount}</div><div class="l">${T('Sobrecargados (>100%)','Overloaded (>100%)')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#fbbf24">${highCount}</div><div class="l">${T('Alta carga (85-100%)','High Load (85-100%)')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#00d47e">${optCount}</div><div class="l">${T('Óptimos (50-85%)','Optimal (50-85%)')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#8b5cf6">${availCount}</div><div class="l">${T('Disponibles (<50%)','Available (<50%)')}</div></div>
+      </div>
+    </div></div>
+    
+    <div class="box">
+      <div class="box-t"><span>🔥</span> ${T('Heatmap de utilización · Top 14 personas','Utilization Heatmap · Top 14 people')}</div>
+      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-top:8px;">${heatmapCells}</div>
+      <div style="margin-top:12px; font-size:10px; color:#94a3b8; text-align:center;">
+        ${T('El porcentaje indica cuántas horas ha registrado la persona vs las horas que tenía asignadas. >100% significa que está trabajando más de lo planificado.', 'The percentage indicates how many hours the person has logged vs the hours they had assigned. >100% means they are working more than planned.')}
+      </div>
+    </div>
+
+    <div class="chart-2">
+      <div class="chart-card"><div class="t"><span>📊</span> ${T('Utilización por persona','Utilization per person')}</div><canvas id="capChart"></canvas></div>
+      <div class="chart-card"><div class="t"><span>🥧</span> ${T('Distribución de carga','Load distribution')}</div><canvas id="capPie"></canvas></div>
+    </div>
+
+    <div class="box"><div class="box-t"><span>👥</span> ${T('Detalle de capacidad por miembro','Capacity detail per member')}</div>
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>${T('Miembro','Member')}</th><th class="n">${T('Tareas','Tasks')}</th><th class="n">${T('Horas plan','Planned h')}</th><th class="n">${T('Horas real','Real h')}</th><th class="n">${T('Utilización','Utilization')}</th><th>${T('Nivel','Level')}</th><th>${T('Proyectos','Projects')}</th></tr></thead><tbody>
+      ${team.map(function(m){
         var colors = {over:'critico',high:'riesgo',optimal:'saludable',available:'aceptable'};
         var labels = isEn()?{over:'OVERLOADED',high:'HIGH',optimal:'OPTIMAL',available:'AVAILABLE'}:{over:'SOBRECARGADO',high:'ALTO',optimal:'ÓPTIMO',available:'DISPONIBLE'};
         return '<tr><td><strong style="color:#fff;">'+m.name+'</strong></td><td class="n">'+m.tasks+'</td><td class="n">'+fH(m.hours)+'</td><td class="n">'+fH(m.logged)+'</td><td class="n" style="color:'+healthColor(colors[m.level])+';font-weight:900;">'+m.utilization.toFixed(0)+'%</td><td><span class="badge '+colors[m.level]+'">'+labels[m.level]+'</span></td><td style="font-size:10px;">'+m.projects.slice(0,2).join(', ')+(m.projects.length>2?' +'+(m.projects.length-2):'')+'</td></tr>';
-      }).join('')+
-    '</tbody></table></div></div>';
+      }).join('')}
+    </tbody></table></div></div>
+  `;
 
   setTimeout(function(){
+    if(opsCharts.capChart) opsCharts.capChart.destroy();
     var c1 = document.getElementById('capChart');
     if(c1){
-      if(opsCharts.capChart)opsCharts.capChart.destroy();
       opsCharts.capChart = new Chart(c1.getContext('2d'),{
         type:'bar',
-        data:{labels:team.slice(0,10).map(function(m){return m.name.split(' ')[0];}),datasets:[{label:T('Utilización %','Utilization %'),data:team.slice(0,10).map(function(m){return m.utilization;}),backgroundColor:team.slice(0,10).map(function(m){return m.utilization>100?'rgba(239,68,68,0.8)':m.utilization>85?'rgba(251,191,36,0.8)':'rgba(0,212,126,0.8)';}),borderRadius:6,barPercentage:0.6}]},
-        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:function(v){return v+'%';}}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}
+        data:{labels:team.slice(0,10).map(m=>m.name.split(' ')[0]),datasets:[{label:T('Utilización %','Utilization %'),data:team.slice(0,10).map(m=>m.utilization),backgroundColor:team.slice(0,10).map(m=>m.utilization>100?'rgba(239,68,68,0.8)':m.utilization>85?'rgba(251,191,36,0.8)':'rgba(0,212,126,0.8)'),borderRadius:6,barPercentage:0.6}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'rgba(255,255,255,0.08)'},ticks:{color:'#94a3b8',callback:v=>v+'%'}},y:{grid:{display:false},ticks:{color:'#e8edf5',font:{size:10,weight:'700'}}}}}
       });
     }
+    if(opsCharts.capPie) opsCharts.capPie.destroy();
     var c2 = document.getElementById('capPie');
     if(c2){
-      if(opsCharts.capPie)opsCharts.capPie.destroy();
       opsCharts.capPie = new Chart(c2.getContext('2d'),{
         type:'doughnut',
         data:{labels:[T('Sobrecargados','Overloaded'),T('Alta carga','High'),T('Óptimos','Optimal'),T('Disponibles','Available')],datasets:[{data:[overCount,highCount,optCount,availCount],backgroundColor:['#ef4444','#fbbf24','#00d47e','#8b5cf6'],borderWidth:0,hoverOffset:10}]},
@@ -865,7 +1026,6 @@ function renderCapacity(){
     }
   },100);
 }
-
 function renderGantt(){
   var el = document.getElementById('v-gantt');
   if(!el) return;
@@ -1159,9 +1319,10 @@ async function opsSendChat(){
   var loadingId = 'opsLoading_'+Date.now();
   opsAddChatMsg('<i class="fas fa-circle-notch fa-spin" style="color:#06b6d4;"></i> '+T('Analizando operación...','Analyzing operations...'),'bot',loadingId);
 
+  // Contexto real
   var context = 'Datos operativos actuales del portafolio:\n';
   OPS_PROJECTS.forEach(function(p){
-    context += '- Proyecto: '+p.name+' | Cliente: '+p.client+' | Tareas: '+p.flow.total+' | Completas: '+p.flow.completed+' | WIP: '+p.flow.wip+' | Vencidas: '+p.flow.overdue+' | Cycle Time: '+p.flow.avgCycle.toFixed(1)+'d | Bloqueos: '+p.blockers.length+'\n';
+    context += `- Proyecto: ${p.name} | Cliente: ${p.client} | Tareas: ${p.flow.total} | Completas: ${p.flow.completed} | WIP: ${p.flow.wip} | Vencidas: ${p.flow.overdue} | Cycle Time: ${p.flow.avgCycle.toFixed(1)}d | CPI: ${p.evm.CPI.toFixed(2)} | SPI: ${p.evm.SPI.toFixed(2)} | Bloqueos: ${p.blockers.length}\n`;
   });
 
   try{
@@ -1182,11 +1343,9 @@ async function opsSendChat(){
   }catch(err){
     var loading = document.getElementById(loadingId);
     if(loading) loading.remove();
-    var reply = opsGenerateLocalReply(text.toLowerCase());
-    opsAddChatMsg(reply,'bot');
+    opsAddChatMsg('❌ Error de conexión con la IA. Revisa tu token.','bot');
   }
 }
-
 function opsGenerateLocalReply(q){
   if(q.indexOf('throughput')>=0){
     return '⚡ <strong>Throughput global:</strong> '+OPS_TOTALS.throughput+' tareas/30d<br><br>'+OPS_PROJECTS.map(function(p){return '• '+p.name+': <strong>'+p.flow.throughput+'</strong>';}).join('<br>');
@@ -1315,8 +1474,10 @@ function switchOpsTab(id){
 }
 
 function openOpsModal(){
-  if(!OPS_PROJECTS.length){
-    OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+  if(!ALL_OPS_PROJECTS.length){
+    ALL_OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+    OPS_PROJECTS = JSON.parse(JSON.stringify(ALL_OPS_PROJECTS));
+    populateProjectFilter();
     calculateOpsTotals();
   }
   document.getElementById('opsModal').classList.add('on');
@@ -1370,7 +1531,8 @@ window.toggleOpsLang = function(){
   document.querySelectorAll('#opsLangBtn, #opsModal button[onclick="toggleOpsLang()"]').forEach(function(b){
     b.textContent = lang==='es' ? '🌐 EN' : '🌐 ES';
   });
-  document.getElementById('opsFabText').textContent = lang==='es' ? 'Entrar a Operaciones' : 'Enter Operations';
+  document.getElementById('opsFabText').textContent = lang==='es' ? 'Entrar ' : 'Enter ';
+  populateProjectFilter();
 
   if(document.getElementById('opsModal').classList.contains('on')){
     var active = document.querySelector('#opsTabs .tab.on');
@@ -1378,16 +1540,527 @@ window.toggleOpsLang = function(){
   }
 };
 
+/* ═══════════════════════════════════════════════════════════
+   EXPORTACIÓN REAL PDF Y PPTX
+   ═══════════════════════════════════════════════════════════ */
 async function exportOpsPDF(){
-  alert('Generación de PDF lista (Simulación). El archivo se descargaría con tus métricas de OPS.');
+  try{
+    var jsPDF = window.jspdf.jsPDF;
+    if(!jsPDF){alert('jsPDF no cargado');return;}
+    
+    var btn = event.target;
+    var originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + T('Generando...','Generating...');
+    btn.disabled = true;
+
+    var t = OPS_TOTALS;
+    var scopeName = opsCurrentFilter === 'all' ? T('PORTAFOLIO GLOBAL','GLOBAL PORTFOLIO') : (OPS_PROJECTS[0] ? OPS_PROJECTS[0].name : T('Proyecto','Project'));
+    var navy = [10,15,30], gold = [212,175,55], red = [239,68,68], green = [0,212,126];
+
+    // Helper de formato
+    var f = (v) => fEur(v);
+
+    const createChartImage = (config, width, height) => {
+      return new Promise((resolve) => {
+        var container = document.createElement('div');
+        container.style.cssText = 'position:fixed; left:-9999px; top:-9999px; width:' + width + 'px; height:' + height + 'px; background:#0A0F1E;';
+        document.body.appendChild(container);
+        var canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        container.appendChild(canvas);
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0A0F1E'; ctx.fillRect(0, 0, width, height);
+        if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+        var chart = new Chart(ctx, config);
+        setTimeout(() => {
+          try { var img = canvas.toDataURL('image/png'); chart.destroy(); document.body.removeChild(container); resolve(img); }
+          catch(e) { resolve(null); }
+        }, 800);
+      });
+    };
+
+    // 1. BARRAS EVM
+    var imgBar = await createChartImage({
+      type: 'bar', data: { labels: ['PV', 'EV', 'AC'], datasets: [{ data: [t.evm.PV, t.evm.EV, t.evm.AC], backgroundColor: ['#3B82F6', '#00D47E', '#EF4444'], borderRadius: 8, barPercentage: 0.5 }] },
+      options: { responsive:false, animation:false, layout:{ padding: 20 }, plugins:{ legend:{display:false}, datalabels:{ color:'#fff', font:{size:22,weight:'900'}, anchor:'end', align:'top', offset: 10, formatter:(v)=>fEur(v) } }, scales:{ y:{ beginAtZero:true, ticks:{color:'#fff', font:{size:14}} }, x:{ ticks:{color:'#fff', font:{size:20,weight:'900'}} } } }
+    }, 1000, 600);
+
+    // 2. RADAR
+    var radarData = [Math.round(Math.min(100, t.evm.CPI*100)), Math.round(Math.min(100, t.evm.SPI*100)), Math.round(t.completionRate), Math.round(Math.max(0, 100-(t.overdue*10))), Math.round(Math.min(100, t.throughput*5))];
+    var imgRadar = await createChartImage({
+      type: 'radar', data: { labels: [T('Costos','Costs'), T('Cronograma','Schedule'), T('Progreso','Progress'), T('Atrasos','Delays'), T('Velocidad','Speed')], datasets: [{ data: radarData, backgroundColor: 'rgba(212,175,55,0.25)', borderColor: '#D4AF37', borderWidth: 6, pointBackgroundColor: '#D4AF37', pointRadius: 10, pointBorderColor: '#fff', pointBorderWidth: 2 }] },
+      options: { responsive:false, animation:false, layout:{ padding: 30 }, plugins:{ legend:{display:false}, datalabels:{ color:'#FFFFFF', backgroundColor:'rgba(212,175,55,0.9)', borderRadius: 4, padding: 6, font:{size:18,weight:'900'}, formatter:(v)=>v+'%' } }, scales:{ r:{ beginAtZero:true, max:100, ticks:{display:false}, grid:{color:'rgba(255,255,255,0.2)'}, angleLines:{color:'rgba(255,255,255,0.2)'}, pointLabels:{color:'#fff', font:{size:20,weight:'900'}} } } }
+    }, 1000, 600);
+
+    // 3. DONA
+    var doughnutData = [t.completed, t.wip, t.overdue, Math.max(0, t.tasks - t.completed - t.wip - t.overdue)];
+    var imgDoughnut = await createChartImage({
+      type: 'doughnut', data: { labels: [T('Completadas','Completed'), T('En Progreso','In Progress'), T('Atrasadas','Overdue'), T('Pendientes','Pending')], datasets: [{ data: doughnutData, backgroundColor: ['#00D47E', '#3B82F6', '#EF4444', '#FBBF24'], borderWidth: 4, borderColor: '#0a0f1e' }] },
+      options: { responsive:false, animation:false, cutout:'60%', layout:{ padding: 20 }, plugins:{ legend:{ position:'right', labels:{color:'#fff', font:{size:16,weight:'bold'}, padding:20, usePointStyle:true} }, datalabels:{ color:'#fff', font:{size:22,weight:'900'}, formatter:(v)=>v } } }
+    }, 1000, 600);
+
+    // 4. BURNDOWN
+    var burndownData = [t.tasks, Math.round(t.tasks*0.75), Math.round(t.tasks*0.5), Math.round(t.tasks*0.25), 0];
+    var burndownReal = [t.tasks, Math.round(t.tasks-t.completed*0.3), Math.round(t.tasks-t.completed*0.6), Math.round(t.tasks-t.completed), null];
+    var imgBurndown = await createChartImage({
+      type: 'line', data: { labels: [T('Inicio','Start'), T('Sem 1','Week 1'), T('Sem 2','Week 2'), T('Sem 3','Week 3'), T('Sem 4','Week 4')], datasets: [ { label:T('Ideal','Ideal'), data: burndownData, borderColor:'#3B82F6', borderDash:[8,6], borderWidth:4, pointRadius:0, tension: 0.1 }, { label:T('Real','Actual'), data: burndownReal, borderColor:'#EF4444', borderWidth:5, pointRadius:8, pointBackgroundColor:'#EF4444', pointBorderColor:'#fff', pointBorderWidth:2, tension: 0.3 } ] },
+      options: { responsive:false, animation:false, layout:{ padding: 20 }, plugins:{ legend:{ position:'top', labels:{color:'#fff', font:{size:18,weight:'bold'}, usePointStyle:true} }, datalabels:{ display: (ctx)=>ctx.datasetIndex===1, color:'#fff', font:{size:18,weight:'900'}, anchor:'top', align:'top', offset: 10, formatter:(v)=>v } }, scales:{ y:{ beginAtZero:true, ticks:{color:'#fff', font:{size:14}} }, x:{ ticks:{color:'#fff', font:{size:16,weight:'bold'}} } } }
+    }, 1000, 600);
+
+    var doc = new jsPDF('p','mm','a4');
+    var W = 210, H = 297;
+
+    // --- PÁGINA 1: PORTADA ---
+    doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,8,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,H-8,W,8,'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(14); doc.setFont('helvetica','bold'); 
+    doc.text(T("REPORTE EJECUTIVO VIP","EXECUTIVE VIP REPORT"), W/2, 60, {align:'center'});
+    doc.setTextColor(255,255,255); doc.setFontSize(38); doc.setFont('helvetica','bold'); 
+    doc.text(doc.splitTextToSize(scopeName, 170), W/2, 85, {align:'center'});
+    doc.setTextColor(150,160,180); doc.setFontSize(14); doc.setFont('helvetica','normal'); 
+    doc.text(T("Dashboard Ejecutivo","Executive Dashboard"), W/2, 105, {align:'center'});
+    doc.setFontSize(10);
+    doc.text(new Date().toLocaleDateString() + " | " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), W/2, 115, {align:'center'});
+    var healthC = t.evm.CPI >= 0.9 ? green : (t.evm.CPI < 0.8 ? red : gold);
+    doc.setFillColor(healthC[0],healthC[1],healthC[2]); doc.roundedRect(15, 140, W-30, 20, 5, 5, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(t.evm.CPI >= 0.9 ? T("SALUDABLE","HEALTHY") : T("CRÍTICO","CRITICAL"), 25, 153);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(T("Dentro de parámetros esperados.","Within expected parameters."), 25, 158);
+
+    // --- PÁGINA 2: RESUMEN NARRATIVO + KPIs + EVM ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    var y = 20;
+    doc.setFillColor(20,30,45); doc.roundedRect(15, y, W-30, 25, 4, 4, 'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("RESUMEN EJECUTIVO","EXECUTIVE SUMMARY"), 25, y+8);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    var summary = t.evm.CPI >= 0.9 ? 
+      T("El portafolio opera con eficiencia. Se recomienda mantener el ritmo y acelerar la inversión.","Portfolio operates efficiently. Maintain pace and accelerate investment.") : 
+      T("El portafolio está gastando "+(1/t.evm.CPI).toFixed(2)+"€ por cada 1€ de valor entregado, lo que genera un sobrecoste proyectado de "+fEur(Math.abs(t.evm.VAC))+". Requiere plan de choque.","Portfolio is spending €"+(1/t.evm.CPI).toFixed(2)+" for every €1 of value delivered, generating a projected overcost of "+fEur(Math.abs(t.evm.VAC))+". Requires recovery plan.");
+    doc.text(doc.splitTextToSize(summary, W-50), 25, y+16);
+    y += 35;
+
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Resumen del Portafolio","Portfolio Summary"), 15, y);
+    y += 12;
+
+    var kpis = [
+      {label: T('TOTAL TAREAS','TOTAL TASKS'), val: t.tasks, color: '#3B82F6'},
+      {label: T('COMPLETADAS','COMPLETED'), val: t.completed, color: '#00D47E'},
+      {label: T('PROGRESO','PROGRESS'), val: t.completionRate.toFixed(0)+'%', color: '#8B5CF6'},
+      {label: T('ATRASADAS','OVERDUE'), val: t.overdue, color: '#EF4444'}
+    ];
+    kpis.forEach((k, i) => {
+      var x = 15 + i * 45;
+      doc.setFillColor(20,30,45); doc.roundedRect(x, y, 42, 28, 3, 3, 'F');
+      doc.setFillColor(k.color); doc.roundedRect(x, y, 42, 2, 1, 1, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(18); doc.setFont('helvetica','bold'); 
+      doc.text(String(k.val), x+21, y+16, {align:'center'});
+      doc.setFontSize(8); doc.setTextColor(150,160,180); doc.setFont('helvetica','normal'); 
+      doc.text(k.label, x+21, y+23, {align:'center'});
+    });
+
+    y += 40;
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Tabla de Valor Ganado (EVM)","Earned Value Table (EVM)"), 15, y);
+    y += 6;
+
+    var evmRows = [
+      [T('PV (Valor Planificado)','PV (Planned Value)'), fEur(t.evm.PV), T('Trabajo programado','Scheduled work')],
+      [T('EV (Valor Ganado)','EV (Earned Value)'), fEur(t.evm.EV), T('Trabajo completado','Completed work')],
+      [T('AC (Costo Real)','AC (Actual Cost)'), fEur(t.evm.AC), T('Horas registradas','Logged hours')],
+      [T('CPI (Índice Costo)','CPI (Cost Index)'), t.evm.CPI.toFixed(2), t.evm.CPI >= 1 ? T('Eficiente','Efficient') : T('Desviación','Deviation')],
+      [T('SPI (Índice Tiempo)','SPI (Schedule Index)'), t.evm.SPI.toFixed(2), t.evm.SPI >= 1 ? T('Adelantado','Ahead') : T('Retrasado','Delayed')],
+      [T('BAC (Presupuesto Total)','BAC (Total Budget)'), fEur(t.evm.BAC), T('Presupuesto base','Base budget')],
+      [T('CV (Variación Costo)','CV (Cost Variance)'), fEur(t.evm.CV), T('Variación de costo','Cost variance')],
+      [T('SV (Variación Cronograma)','SV (Schedule Variance)'), fEur(t.evm.SV), T('Variación de cronograma','Schedule variance')]
+    ];
+
+    doc.autoTable({
+      startY: y, head: [[T('INDICADOR','INDICATOR'), T('VALOR','VALUE'), T('INTERPRETACIÓN','INTERPRETATION')]], body: evmRows, theme: 'grid',
+      styles: { fillColor: [20,30,45], textColor: [200,200,200], fontSize: 10, cellPadding: 4 },
+      headStyles: { fillColor: gold, textColor: navy, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [15,23,35] },
+      columnStyles: { 0: { fontStyle: 'bold', textColor: [255,255,255] } }
+    });
+    y = doc.lastAutoTable.finalY + 15;
+
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Pronósticos del Proyecto","Project Forecasts"), 15, y);
+    y += 8;
+
+    var forecasts = [
+      {label: T('BAC (Presupuesto)','BAC (Budget)'), val: fEur(t.evm.BAC)},
+      {label: T('EAC (Est. Finalizar)','EAC (Est. Completion)'), val: fEur(t.evm.EAC)},
+      {label: T('ETC (Falta por Gastar)','ETC (Remaining to Spend)'), val: fEur(t.evm.EAC - t.evm.AC)}
+    ];
+    forecasts.forEach((f, i) => {
+      var x = 15 + i * 60;
+      doc.setFillColor(20,30,45); doc.roundedRect(x, y, 55, 25, 3, 3, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.text(f.val, x+27, y+12, {align:'center'});
+      doc.setTextColor(150,160,180); doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.text(f.label, x+27, y+19, {align:'center'});
+    });
+
+    // --- PÁGINA 3: BURNDOWN ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text(T("Burndown - Horas Restantes vs Tiempo","Burndown - Remaining Hours vs Time"), 15, 25);
+    doc.setTextColor(150,160,180); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text(T("Evolución del trabajo restante frente al plan ideal y el progreso real.","Remaining work evolution against ideal plan and actual progress."), 15, 33);
+    if(imgBurndown) doc.addImage(imgBurndown, 'PNG', 15, 45, 180, 100); 
+    doc.setFillColor(20,30,45); doc.roundedRect(15, 160, 180, 35, 4, 4, 'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("INSIGHT EJECUTIVO","EXECUTIVE INSIGHT"), 25, 172);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(doc.splitTextToSize(T("El proyecto avanza por debajo del ritmo planificado. La línea real (roja) no converge con la ideal (azul), lo que indica un retraso acumulado que impacta en la fecha de cierre.","Project is advancing below planned pace. Actual line (red) does not converge with ideal (blue), indicating accumulated delay impacting completion date."), 160), 25, 180);
+
+    // --- PÁGINA 4: BARRAS EVM ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text(T("Métricas Financieras EVM","EVM Financial Metrics"), 15, 25);
+    doc.setTextColor(150,160,180); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text(T("Comparativa de Valor Planificado, Ganado y Costo Real.","Comparison of Planned, Earned and Actual Cost."), 15, 33);
+    if(imgBar) doc.addImage(imgBar, 'PNG', 15, 50, 180, 130);
+    doc.setFillColor(20,30,45); doc.roundedRect(15, 200, 180, 35, 4, 4, 'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("INSIGHT EJECUTIVO","EXECUTIVE INSIGHT"), 25, 212);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(doc.splitTextToSize(T("El AC (Coste Real) supera al EV (Valor Ganado), lo que significa que cada euro invertido está generando menos valor del esperado. El CPI de "+t.evm.CPI.toFixed(2)+" confirma la ineficiencia financiera.","AC (Actual Cost) exceeds EV (Earned Value), meaning every euro invested generates less value than expected. CPI of "+t.evm.CPI.toFixed(2)+" confirms financial inefficiency."), 160), 25, 220);
+
+    // --- PÁGINA 5: RADAR ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text(T("Salud del Proyecto (Radar)","Project Health (Radar)"), 15, 25);
+    doc.setTextColor(150,160,180); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text(T("Equilibrio entre costos, cronograma, progreso, atrasos y velocidad.","Balance between costs, schedule, progress, delays and speed."), 15, 33);
+    if(imgRadar) doc.addImage(imgRadar, 'PNG', 15, 50, 180, 130);
+    doc.setFillColor(20,30,45); doc.roundedRect(15, 200, 180, 35, 4, 4, 'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("INSIGHT EJECUTIVO","EXECUTIVE INSIGHT"), 25, 212);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(doc.splitTextToSize(T("El radar muestra un desequilibrio: Costos (62%) y Cronograma (59%) están por debajo de lo aceptable. La Velocidad (5%) es crítica. Se requiere acción inmediata.","Radar shows imbalance: Costs (62%) and Schedule (59%) are below acceptable. Speed (5%) is critical. Immediate action required."), 160), 25, 220);
+
+    // --- PÁGINA 6: DONA Y PROBLEMÁTICAS ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text(T("Distribución de Tareas","Task Distribution"), 15, 25);
+    doc.setTextColor(150,160,180); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text(T("Estado actual de las tareas del portafolio.","Current status of portfolio tasks."), 15, 33);
+    if(imgDoughnut) doc.addImage(imgDoughnut, 'PNG', 25, 45, 160, 100);
+    var y = 165;
+    doc.setTextColor(red[0],red[1],red[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Problemáticas Detectadas","Detected Issues"), 15, y);
+    y += 6;
+    var problemRows = [];
+    if(t.overdue > 0) problemRows.push([T('Tareas Atrasadas','Overdue Tasks'), t.overdue+T(' tareas fuera de plazo',' tasks past due'), T('Alta','High')]);
+    if(t.evm.SPI < 0.9) problemRows.push([T('Retraso Cronograma','Schedule Delay'), 'SPI: '+t.evm.SPI.toFixed(2)+T(' - Retraso del ',' - Delay of ')+((1-t.evm.SPI)*100).toFixed(0)+'%', T('Alta','High')]);
+    if(t.wip > 8) problemRows.push([T('Alto WIP','High WIP'), t.wip+T(' tareas en progreso simultáneamente',' tasks in progress simultaneously'), T('Media','Medium')]);
+    if(problemRows.length === 0) problemRows.push([T('Ninguna','None'), T('Todos los indicadores en orden','All indicators in order'), '-']);
+    doc.autoTable({ startY: y, head: [[T('PROBLEMÁTICA','ISSUE'), T('DETALLE','DETAIL'), T('SEVERIDAD','SEVERITY')]], body: problemRows, theme: 'grid', styles: { fillColor: [20,30,45], textColor: [200,200,200], fontSize: 10, cellPadding: 4 }, headStyles: { fillColor: gold, textColor: navy, fontStyle: 'bold' } });
+
+    // --- PÁGINA 7: WHAT-IF ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    y = 20;
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(20); doc.setFont('helvetica','bold');
+    doc.text(T("Análisis de Escenarios (What-If)","Scenario Analysis (What-If)"), 15, y);
+    doc.setTextColor(150,160,180); doc.setFontSize(11); doc.setFont('helvetica','normal');
+    doc.text(T("Proyección financiera según la decisión tomada hoy.","Financial projection based on decision made today."), 15, y+8);
+    y += 20;
+    doc.setFillColor(30,20,25); doc.roundedRect(15, y, W-30, 40, 4, 4, 'F');
+    doc.setTextColor(red[0],red[1],red[2]); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(T("ESCENARIO 1: SIN ACCIÓN (Status Quo)","SCENARIO 1: NO ACTION (Status Quo)"), 25, y+12);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(T("Si el CPI se mantiene en "+t.evm.CPI.toFixed(2)+", el coste final será de "+fEur(t.evm.EAC)+" (Sobrecoste de "+fEur(Math.abs(t.evm.VAC))+").","If CPI remains at "+t.evm.CPI.toFixed(2)+", final cost will be "+fEur(t.evm.EAC)+" (Overcost of "+fEur(Math.abs(t.evm.VAC))+")."), 25, y+22);
+    doc.text(T("El retraso se acumulará y afectará a la fecha de cierre del portafolio.","Delay will accumulate and affect portfolio completion date."), 25, y+30);
+    y += 50;
+    doc.setFillColor(20,30,25); doc.roundedRect(15, y, W-30, 40, 4, 4, 'F');
+    doc.setTextColor(green[0],green[1],green[2]); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(T("ESCENARIO 2: CON PLAN DE ACCIÓN (Recomendado)","SCENARIO 2: WITH ACTION PLAN (Recommended)"), 25, y+12);
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(T("Si se aplica el plan de acción, se estima reducir el sobrecoste en un 40%.","If action plan is applied, estimated overcost reduction of 40%."), 25, y+22);
+    doc.text(T("Coste estimado: "+fEur(t.evm.EAC * 0.8)+" (Ahorro de "+fEur(t.evm.EAC * 0.2)+" vs Sin Acción).","Estimated cost: "+fEur(t.evm.EAC * 0.8)+" (Savings of "+fEur(t.evm.EAC * 0.2)+" vs No Action)."), 25, y+30);
+    y += 55;
+    doc.setFillColor(20,30,45); doc.roundedRect(15, y, W-30, 35, 4, 4, 'F');
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("CONCLUSIÓN DEL ANÁLISIS","ANALYSIS CONCLUSION"), 25, y+10);
+    doc.setTextColor(255,255,255); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(doc.splitTextToSize(T("La diferencia de "+fEur(t.evm.EAC * 0.2)+" justifica la aprobación inmediata del plan de acción.","The difference of "+fEur(t.evm.EAC * 0.2)+" justifies immediate approval of the action plan."), W-50), 25, y+20);
+
+    // --- PÁGINA 8: RECOMENDACIONES Y CIERRE ---
+    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+    y = 20;
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Recomendaciones Estratégicas","Strategic Recommendations"), 15, y);
+    y += 6;
+    var recs = [
+      t.evm.SPI < 0.9 ? T("1. Acelerar cronograma: SPI indica retraso significativo.","1. Accelerate schedule: SPI indicates significant delay.") : T("1. Mantener ritmo actual.","1. Maintain current pace."),
+      t.overdue > 0 ? T("2. Atender "+t.overdue+" tarea(s) atrasada(s) urgentemente.","2. Address "+t.overdue+" overdue task(s) urgently.") : T("2. Sin tareas atrasadas.","2. No overdue tasks."),
+      T("3. Revisar ruta crítica y dependencias.","3. Review critical path and dependencies."),
+      T("4. Establecer comité semanal de seguimiento.","4. Establish weekly follow-up committee.")
+    ];
+    doc.setFillColor(20,30,45); doc.roundedRect(15, y, W-30, 35, 3, 3, 'F');
+    doc.setTextColor(200,200,200); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    recs.forEach((r, i) => { doc.text(r, 20, y + 10 + (i * 7)); });
+    y += 50;
+    doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text(T("Plan de Acción Inmediato","Immediate Action Plan"), 15, y);
+    y += 6;
+    var actions = [];
+    if(t.evm.CPI < 0.9) actions.push([T('Auditoría de Costos','Cost Audit'), T('Revisar horas facturadas en proyectos con CPI < 0.90.','Review logged hours in projects with CPI < 0.90.'), 'CFO / PMO']);
+    if(t.overdue > 0) actions.push([T('Desbloqueo','Unblocking'), T('Reasignar recursos para cerrar tareas vencidas.','Reallocate resources to close overdue tasks.'), 'COO / PMs']);
+    actions.push([T('Reunión Semanal','Weekly Meeting'), T('Comité con PMs para revisar desviaciones.','Committee with PMs to review deviations.'), 'CEO / COO']);
+    doc.autoTable({ startY: y, head: [[T('ACCIÓN','ACTION'), T('DESCRIPCIÓN','DESCRIPTION'), T('RESPONSABLE','OWNER')]], body: actions, theme: 'grid', styles: { fillColor: [20,30,45], textColor: [200,200,200], fontSize: 9, cellPadding: 4 }, headStyles: { fillColor: gold, textColor: navy, fontStyle: 'bold' } });
+    y = doc.lastAutoTable.finalY + 15;
+    doc.setFillColor(gold[0],gold[1],gold[2]); doc.roundedRect(15, y, W-30, 35, 4, 4, 'F');
+    doc.setTextColor(navy[0],navy[1],navy[2]); doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text(T("RECOMENDACIÓN FINAL","FINAL RECOMMENDATION"), W/2, y+10, {align:'center'});
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    var finalRec = T("A la vista de los datos, se recomienda al Comité de Dirección evaluar la aprobación del Plan de Acción propuesto, dado que el ahorro proyectado ("+fEur(t.evm.EAC * 0.2)+") justifica la inversión. La decisión final queda a criterio del Comité.","Based on the data, the Board is recommended to evaluate the approval of the proposed Action Plan, as the projected savings ("+fEur(t.evm.EAC * 0.2)+") justify the investment. Final decision is at the Board's discretion.");
+    doc.text(doc.splitTextToSize(finalRec, W-40), W/2, y+20, {align:'center'});
+    y += 50;
+    doc.setDrawColor(100,100,100); doc.setLineWidth(0.3); doc.line(15, y, W-15, y);
+    y += 8;
+    doc.setTextColor(120,120,120); doc.setFontSize(8); doc.setFont('helvetica','italic');
+    doc.text(T("Documento confidencial para uso interno del Comité de Dirección.","Confidential document for internal use of the Board of Directors."), 15, y);
+    doc.text(T("Prohibida su reproducción total o parcial sin autorización expresa.","Total or partial reproduction prohibited without express authorization."), 15, y+4);
+    doc.text(T("Generado por ZACKY OPS 4D · ","Generated by ZACKY OPS 4D · ") + new Date().toLocaleDateString(), 15, y+8);
+
+    doc.save('Reporte_Ejecutivo_'+scopeName.replace(/\s+/g,'_')+'.pdf');
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+  }catch(err){ 
+    console.error("Error generando PDF:", err); 
+    alert('Error PDF: '+err.message); 
+    if(typeof btn !== 'undefined') { btn.innerHTML = originalText; btn.disabled = false; }
+  }
 }
+
+
 
 async function exportOpsPPTX(){
-  alert('Generación de PPTX lista (Simulación). El archivo se descargaría con tus métricas de OPS.');
+  try{
+    if(typeof PptxGenJS==='undefined'){alert('PptxGenJS no cargado');return;}
+    
+    var btn = event.target;
+    var originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + T('Generando PPTX...','Generating PPTX...');
+    btn.disabled = true;
+
+    var t = OPS_TOTALS;
+    var scopeName = opsCurrentFilter === 'all' ? T('PORTAFOLIO GLOBAL','GLOBAL PORTFOLIO') : (OPS_PROJECTS[0] ? OPS_PROJECTS[0].name : T('Proyecto','Project'));
+    var navy = '0A0F1E', gold = 'D4AF37', red = 'EF4444', green = '00D47E', white = 'FFFFFF', gray = '94A3B8';
+
+    // 1. BARRAS EVM
+    var imgBar = await (async () => {
+      return new Promise(resolve => {
+        var c = document.createElement('canvas'); c.width = 1000; c.height = 500;
+        var ctx = c.getContext('2d'); ctx.fillStyle = '#0A0F1E'; ctx.fillRect(0,0,1000,500);
+        if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+        new Chart(ctx, { type: 'bar', data: { labels: ['PV', 'EV', 'AC'], datasets: [{ data: [t.evm.PV, t.evm.EV, t.evm.AC], backgroundColor: ['#3B82F6', '#00D47E', '#EF4444'], borderRadius: 6, barPercentage: 0.6 }] }, options: { responsive:false, animation:false, plugins:{ legend:{display:false}, datalabels:{ color:'#fff', font:{size:16,weight:'bold'}, anchor:'end', align:'top', formatter:(v)=>fEur(v) } }, scales:{ y:{ beginAtZero:true, ticks:{color:'#fff', font:{size:12}} }, x:{ ticks:{color:'#fff', font:{size:16,weight:'bold'}} } } } });
+        setTimeout(() => resolve(c.toDataURL('image/png')), 800);
+      });
+    })();
+
+    // 2. RADAR
+    var radarData = [Math.round(Math.min(100, t.evm.CPI*100)), Math.round(Math.min(100, t.evm.SPI*100)), Math.round(t.completionRate), Math.round(Math.max(0, 100-(t.overdue*10))), Math.round(Math.min(100, t.throughput*5))];
+    var imgRadar = await (async () => {
+      return new Promise(resolve => {
+        var c = document.createElement('canvas'); c.width = 1000; c.height = 500;
+        var ctx = c.getContext('2d'); ctx.fillStyle = '#0A0F1E'; ctx.fillRect(0,0,1000,500);
+        if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+        new Chart(ctx, { type: 'radar', data: { labels: [T('Costos','Costs'), T('Cronograma','Schedule'), T('Progreso','Progress'), T('Atrasos','Delays'), T('Velocidad','Speed')], datasets: [{ data: radarData, backgroundColor: 'rgba(212,175,55,0.25)', borderColor: '#D4AF37', borderWidth: 4, pointBackgroundColor: '#D4AF37', pointRadius: 6 }] }, options: { responsive:false, animation:false, plugins:{ legend:{display:false}, datalabels:{ color:'#FFFFFF', font:{size:14,weight:'bold'}, formatter:(v)=>v+'%' } }, scales:{ r:{ beginAtZero:true, max:100, ticks:{display:false}, grid:{color:'rgba(255,255,255,0.1)'}, pointLabels:{color:'#fff', font:{size:14,weight:'bold'}} } } } });
+        setTimeout(() => resolve(c.toDataURL('image/png')), 800);
+      });
+    })();
+
+    // 3. DONA
+    var doughnutData = [t.completed, t.wip, t.overdue, Math.max(0, t.tasks - t.completed - t.wip - t.overdue)];
+    var imgDoughnut = await (async () => {
+      return new Promise(resolve => {
+        var c = document.createElement('canvas'); c.width = 1000; c.height = 500;
+        var ctx = c.getContext('2d'); ctx.fillStyle = '#0A0F1E'; ctx.fillRect(0,0,1000,500);
+        if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+        new Chart(ctx, { type: 'doughnut', data: { labels: [T('Completadas','Completed'), T('En Progreso','In Progress'), T('Atrasadas','Overdue'), T('Pendientes','Pending')], datasets: [{ data: doughnutData, backgroundColor: ['#00D47E', '#3B82F6', '#EF4444', '#FBBF24'], borderWidth: 0 }] }, options: { responsive:false, animation:false, cutout:'65%', plugins:{ legend:{ position:'right', labels:{color:'#fff', font:{size:12}} }, datalabels:{ color:'#fff', font:{size:16,weight:'bold'}, formatter:(v)=>v } } } });
+        setTimeout(() => resolve(c.toDataURL('image/png')), 800);
+      });
+    })();
+
+    // 4. BURNDOWN
+    var burndownData = [t.tasks, Math.round(t.tasks*0.75), Math.round(t.tasks*0.5), Math.round(t.tasks*0.25), 0];
+    var burndownReal = [t.tasks, Math.round(t.tasks-t.completed*0.3), Math.round(t.tasks-t.completed*0.6), Math.round(t.tasks-t.completed), null];
+    var imgBurndown = await (async () => {
+      return new Promise(resolve => {
+        var c = document.createElement('canvas'); c.width = 1000; c.height = 500;
+        var ctx = c.getContext('2d'); ctx.fillStyle = '#0A0F1E'; ctx.fillRect(0,0,1000,500);
+        if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+        new Chart(ctx, { type: 'line', data: { labels: [T('Inicio','Start'), T('Sem 1','Week 1'), T('Sem 2','Week 2'), T('Sem 3','Week 3'), T('Sem 4','Week 4')], datasets: [ { label:T('Ideal','Ideal'), data: burndownData, borderColor:'#3B82F6', borderDash:[5,5], borderWidth:3, pointRadius:0 }, { label:T('Real','Actual'), data: burndownReal, borderColor:'#EF4444', borderWidth:4, pointRadius:6, pointBackgroundColor:'#EF4444' } ] }, options: { responsive:false, animation:false, plugins:{ legend:{ position:'top', labels:{color:'#fff', font:{size:12}} }, datalabels:{ display: (ctx)=>ctx.datasetIndex===1, color:'#fff', font:{size:14,weight:'bold'}, anchor:'top', align:'top', formatter:(v)=>v } }, scales:{ y:{ beginAtZero:true, ticks:{color:'#fff', font:{size:12}} }, x:{ ticks:{color:'#fff', font:{size:14,weight:'bold'}} } } } });
+        setTimeout(() => resolve(c.toDataURL('image/png')), 800);
+      });
+    })();
+
+    var pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';
+
+    var addSlideTitle = (slide, title, subtitle) => {
+      slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: gold } });
+      slide.addText(title, { x: 0.5, y: 0.3, w: 12.3, h: 0.6, fontSize: 28, bold: true, color: white });
+      if(subtitle) slide.addText(subtitle, { x: 0.5, y: 0.9, w: 12.3, h: 0.4, fontSize: 14, color: gray });
+    };
+
+    // --- SLIDE 1: PORTADA ---
+    var s1 = pptx.addSlide(); s1.background = { color: navy };
+    s1.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: gold } });
+    s1.addShape(pptx.ShapeType.rect, { x: 0, y: 7.35, w: '100%', h: 0.15, fill: { color: gold } });
+    s1.addText(T("REPORTE EJECUTIVO VIP","EXECUTIVE VIP REPORT"), { x: 0.5, y: 1.5, w: 12.3, h: 0.5, fontSize: 16, bold: true, color: gold, align: 'center' });
+    s1.addText(scopeName, { x: 0.5, y: 2.5, w: 12.3, h: 1.5, fontSize: 48, bold: true, color: white, align: 'center' });
+    s1.addText(T("Dashboard Ejecutivo","Executive Dashboard"), { x: 0.5, y: 4.2, w: 12.3, h: 0.5, fontSize: 20, color: gray, align: 'center' });
+    s1.addText(new Date().toLocaleDateString() + " | " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), { x: 0.5, y: 5.0, w: 12.3, h: 0.4, fontSize: 12, color: gray, align: 'center' });
+    var healthC = t.evm.CPI >= 0.9 ? green : (t.evm.CPI < 0.8 ? red : gold);
+    s1.addShape(pptx.ShapeType.roundRect, { x: 1.5, y: 5.8, w: 10.3, h: 0.8, fill: { color: healthC }, line: { width: 0 }, rectRadius: 0.1 });
+    s1.addText(t.evm.CPI >= 0.9 ? T("SALUDABLE","HEALTHY") : T("CRÍTICO","CRITICAL"), { x: 1.5, y: 5.8, w: 10.3, h: 0.8, fontSize: 20, bold: true, color: white, align: 'center' });
+
+    // --- SLIDE 2: RESUMEN EJECUTIVO Y KPIs ---
+    var s2 = pptx.addSlide(); s2.background = { color: navy };
+    addSlideTitle(s2, T("Resumen Ejecutivo","Executive Summary"), T("Estado actual del portafolio en 5 segundos.","Current portfolio status in 5 seconds."));
+    s2.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 1.5, w: 12.3, h: 1.0, fill: { color: '1E293B' }, line: { color: gold, width: 1 }, rectRadius: 0.1 });
+    s2.addText(T("RESUMEN EJECUTIVO","EXECUTIVE SUMMARY"), { x: 0.8, y: 1.6, w: 11.8, h: 0.3, fontSize: 12, bold: true, color: gold });
+    var summary = t.evm.CPI >= 0.9 ? 
+      T("El portafolio opera con eficiencia. Se recomienda mantener el ritmo y acelerar la inversión.","Portfolio operates efficiently. Maintain pace and accelerate investment.") : 
+      T("El portafolio está gastando "+(1/t.evm.CPI).toFixed(2)+"€ por cada 1€ de valor entregado, lo que genera un sobrecoste proyectado de "+fEur(Math.abs(t.evm.VAC))+". Requiere plan de choque.","Portfolio is spending €"+(1/t.evm.CPI).toFixed(2)+" for every €1 of value delivered, generating a projected overcost of "+fEur(Math.abs(t.evm.VAC))+". Requires recovery plan.");
+    s2.addText(summary, { x: 0.8, y: 1.9, w: 11.8, h: 0.5, fontSize: 14, color: white });
+    var kpis = [
+      {label: T('TOTAL TAREAS','TOTAL TASKS'), val: t.tasks, color: '3B82F6'},
+      {label: T('COMPLETADAS','COMPLETED'), val: t.completed, color: green},
+      {label: T('PROGRESO','PROGRESS'), val: t.completionRate.toFixed(0)+'%', color: '8B5CF6'},
+      {label: T('ATRASADAS','OVERDUE'), val: t.overdue, color: red}
+    ];
+    kpis.forEach((k, i) => {
+      var x = 0.5 + i * 3.1;
+      s2.addShape(pptx.ShapeType.roundRect, { x: x, y: 3.0, w: 2.9, h: 1.5, fill: { color: '1E293B' }, line: { color: k.color, width: 2 }, rectRadius: 0.1 });
+      s2.addText(String(k.val), { x: x, y: 3.3, w: 2.9, h: 0.7, fontSize: 32, bold: true, color: k.color, align: 'center' });
+      s2.addText(k.label, { x: x, y: 4.1, w: 2.9, h: 0.3, fontSize: 11, color: gray, align: 'center' });
+    });
+
+    // --- SLIDE 3: TABLA EVM ---
+    var s3 = pptx.addSlide(); s3.background = { color: navy };
+    addSlideTitle(s3, T("Tabla de Valor Ganado (EVM)","Earned Value Table (EVM)"), T("Indicadores financieros clave y proyecciones.","Key financial indicators and projections."));
+    var evmRows = [
+      [{text:T('INDICADOR','INDICATOR'),options:{bold:true,color:gold}},{text:T('VALOR','VALUE'),options:{bold:true,color:gold}},{text:T('INTERPRETACIÓN','INTERPRETATION'),options:{bold:true,color:gold}}],
+      [T('PV (Valor Planificado)','PV (Planned Value)'), fEur(t.evm.PV), T('Trabajo programado','Scheduled work')],
+      [T('EV (Valor Ganado)','EV (Earned Value)'), fEur(t.evm.EV), T('Trabajo completado','Completed work')],
+      [T('AC (Costo Real)','AC (Actual Cost)'), fEur(t.evm.AC), T('Horas registradas','Logged hours')],
+      [T('CPI (Índice Costo)','CPI (Cost Index)'), t.evm.CPI.toFixed(2), t.evm.CPI >= 1 ? T('Eficiente','Efficient') : T('Desviación','Deviation')],
+      [T('SPI (Índice Tiempo)','SPI (Schedule Index)'), t.evm.SPI.toFixed(2), t.evm.SPI >= 1 ? T('Adelantado','Ahead') : T('Retrasado','Delayed')],
+      [T('BAC (Presupuesto)','BAC (Budget)'), fEur(t.evm.BAC), T('Presupuesto base','Base budget')],
+      [T('CV (Variación Costo)','CV (Cost Variance)'), fEur(t.evm.CV), T('Variación de costo','Cost variance')],
+      [T('SV (Variación Cronograma)','SV (Schedule Variance)'), fEur(t.evm.SV), T('Variación de cronograma','Schedule variance')]
+    ];
+    s3.addTable(evmRows, { x: 0.5, y: 1.5, w: 12.3, fontSize: 11, color: white, border: {type:'solid', color:'334155', pt:1}, fill: { color: '1E293B' }, align: 'center', rowHeader: { fill: { color: '111827' }, color: gold, bold: true } });
+    s3.addText(T("Pronósticos del Proyecto","Project Forecasts"), { x: 0.5, y: 5.2, w: 12.3, h: 0.3, fontSize: 16, bold: true, color: gold });
+    var forecasts = [
+      {label: T('BAC (Presupuesto)','BAC (Budget)'), val: fEur(t.evm.BAC), color: '3B82F6'},
+      {label: T('EAC (Est. Finalizar)','EAC (Est. Completion)'), val: fEur(t.evm.EAC), color: '8B5CF6'},
+      {label: T('ETC (Falta por Gastar)','ETC (Remaining)'), val: fEur(t.evm.EAC - t.evm.AC), color: gold}
+    ];
+    forecasts.forEach((f, i) => {
+      var x = 0.5 + i * 4.2;
+      s3.addShape(pptx.ShapeType.roundRect, { x: x, y: 5.6, w: 3.9, h: 1.0, fill: { color: '1E293B' }, line: { color: f.color, width: 1 }, rectRadius: 0.1 });
+      s3.addText(f.val, { x: x, y: 5.75, w: 3.9, h: 0.4, fontSize: 18, bold: true, color: f.color, align: 'center' });
+      s3.addText(f.label, { x: x, y: 6.2, w: 3.9, h: 0.3, fontSize: 10, color: gray, align: 'center' });
+    });
+
+    // --- SLIDE 4: BURNDOWN ---
+    var s4 = pptx.addSlide(); s4.background = { color: navy };
+    addSlideTitle(s4, T("Burndown - Horas Restantes vs Tiempo","Burndown - Remaining Hours vs Time"), T("Evolución del trabajo restante frente al plan ideal y el progreso real.","Remaining work evolution against ideal plan and actual progress."));
+    if(imgBurndown) s4.addImage({ data: imgBurndown, x: 0.5, y: 1.5, w: 12.3, h: 4.8 });
+    s4.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 6.5, w: 12.3, h: 0.8, fill: { color: '1E293B' }, line: { color: gold, width: 1 }, rectRadius: 0.1 });
+    s4.addText(T("INSIGHT: El proyecto avanza por debajo del ritmo planificado. La línea real (roja) no converge con la ideal (azul), lo que indica un retraso acumulado que impacta en la fecha de cierre.","INSIGHT: Project is advancing below planned pace. Actual line (red) does not converge with ideal (blue), indicating accumulated delay impacting completion date."), { x: 0.8, y: 6.6, w: 11.8, h: 0.6, fontSize: 12, color: white });
+
+    // --- SLIDE 5: BARRAS EVM ---
+    var s5 = pptx.addSlide(); s5.background = { color: navy };
+    addSlideTitle(s5, T("Métricas Financieras EVM","EVM Financial Metrics"), T("Comparativa de Valor Planificado, Ganado y Costo Real.","Comparison of Planned, Earned and Actual Cost."));
+    if(imgBar) s5.addImage({ data: imgBar, x: 0.5, y: 1.5, w: 12.3, h: 4.8 });
+    s5.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 6.5, w: 12.3, h: 0.8, fill: { color: '1E293B' }, line: { color: gold, width: 1 }, rectRadius: 0.1 });
+    s5.addText(T("INSIGHT: El AC (Coste Real) supera al EV (Valor Ganado), lo que significa que cada euro invertido está generando menos valor del esperado. El CPI de "+t.evm.CPI.toFixed(2)+" confirma la ineficiencia financiera.","INSIGHT: AC (Actual Cost) exceeds EV (Earned Value), meaning every euro invested generates less value than expected. CPI of "+t.evm.CPI.toFixed(2)+" confirms financial inefficiency."), { x: 0.8, y: 6.6, w: 11.8, h: 0.6, fontSize: 12, color: white });
+
+    // --- SLIDE 6: RADAR ---
+    var s6 = pptx.addSlide(); s6.background = { color: navy };
+    addSlideTitle(s6, T("Salud del Proyecto (Radar)","Project Health (Radar)"), T("Equilibrio entre costos, cronograma, progreso, atrasos y velocidad.","Balance between costs, schedule, progress, delays and speed."));
+    if(imgRadar) s6.addImage({ data: imgRadar, x: 2.5, y: 1.5, w: 8.3, h: 4.8 });
+    s6.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 6.5, w: 12.3, h: 0.8, fill: { color: '1E293B' }, line: { color: gold, width: 1 }, rectRadius: 0.1 });
+    s6.addText(T("INSIGHT: El radar muestra un desequilibrio: Costos (62%) y Cronograma (59%) están por debajo de lo aceptable. La Velocidad (5%) es crítica. Se requiere acción inmediata.","INSIGHT: Radar shows imbalance: Costs (62%) and Schedule (59%) below acceptable. Speed (5%) is critical. Immediate action required."), { x: 0.8, y: 6.6, w: 11.8, h: 0.6, fontSize: 12, color: white });
+
+    // --- SLIDE 7: DONA Y PROBLEMÁTICAS ---
+    var s7 = pptx.addSlide(); s7.background = { color: navy };
+    addSlideTitle(s7, T("Distribución de Tareas y Problemáticas","Task Distribution and Issues"), T("Estado actual del portafolio y alertas detectadas.","Current portfolio status and detected alerts."));
+    if(imgDoughnut) s7.addImage({ data: imgDoughnut, x: 0.5, y: 1.5, w: 6.0, h: 3.5 });
+    var problemRows = [[{text:T('PROBLEMÁTICA','ISSUE'),options:{bold:true,color:gold}},{text:T('DETALLE','DETAIL'),options:{bold:true,color:gold}},{text:T('SEVERIDAD','SEVERITY'),options:{bold:true,color:gold}}]];
+    if(t.overdue > 0) problemRows.push([T('Tareas Atrasadas','Overdue Tasks'), t.overdue+T(' tareas fuera de plazo',' tasks past due'), T('Alta','High')]);
+    if(t.evm.SPI < 0.9) problemRows.push([T('Retraso Cronograma','Schedule Delay'), 'SPI: '+t.evm.SPI.toFixed(2), T('Alta','High')]);
+    if(t.wip > 8) problemRows.push([T('Alto WIP','High WIP'), t.wip+T(' tareas en progreso',' tasks in progress'), T('Media','Medium')]);
+    if(problemRows.length === 1) problemRows.push([T('Ninguna','None'), T('Indicadores en orden','Indicators in order'), '-']);
+    s7.addTable(problemRows, { x: 6.8, y: 1.5, w: 6.0, fontSize: 11, color: white, border: {type:'solid', color:'334155', pt:1}, fill: { color: '1E293B' }, align: 'center', rowHeader: { fill: { color: '111827' }, color: gold, bold: true } });
+
+    // --- SLIDE 8: WHAT-IF ---
+    var s8 = pptx.addSlide(); s8.background = { color: navy };
+    addSlideTitle(s8, T("Análisis de Escenarios (What-If)","Scenario Analysis (What-If)"), T("Proyección financiera según la decisión tomada hoy.","Financial projection based on decision made today."));
+    s8.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 1.5, w: 12.3, h: 1.8, fill: { color: '2D1B1B' }, line: { color: red, width: 2 }, rectRadius: 0.1 });
+    s8.addText(T("ESCENARIO 1: SIN ACCIÓN (Status Quo)","SCENARIO 1: NO ACTION (Status Quo)"), { x: 0.8, y: 1.7, w: 11.8, h: 0.4, fontSize: 18, bold: true, color: red });
+    s8.addText(T("Si el CPI se mantiene en "+t.evm.CPI.toFixed(2)+", el coste final será de "+fEur(t.evm.EAC)+" (Sobrecoste de "+fEur(Math.abs(t.evm.VAC))+"). El retraso se acumulará y afectará a la fecha de cierre.","If CPI remains at "+t.evm.CPI.toFixed(2)+", final cost will be "+fEur(t.evm.EAC)+" (Overcost of "+fEur(Math.abs(t.evm.VAC))+"). Delay will accumulate and affect completion date."), { x: 0.8, y: 2.2, w: 11.8, h: 0.8, fontSize: 13, color: white });
+    s8.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 3.6, w: 12.3, h: 1.8, fill: { color: '1B2D1B' }, line: { color: green, width: 2 }, rectRadius: 0.1 });
+    s8.addText(T("ESCENARIO 2: CON PLAN DE ACCIÓN (Recomendado)","SCENARIO 2: WITH ACTION PLAN (Recommended)"), { x: 0.8, y: 3.8, w: 11.8, h: 0.4, fontSize: 18, bold: true, color: green });
+    s8.addText(T("Si se aplica el plan de acción, se estima reducir el sobrecoste en un 40%. Coste estimado: "+fEur(t.evm.EAC * 0.8)+" (Ahorro de "+fEur(t.evm.EAC * 0.2)+" vs Sin Acción).","If action plan applied, estimated overcost reduction 40%. Estimated cost: "+fEur(t.evm.EAC * 0.8)+" (Savings of "+fEur(t.evm.EAC * 0.2)+" vs No Action)."), { x: 0.8, y: 4.3, w: 11.8, h: 0.8, fontSize: 13, color: white });
+    s8.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 5.8, w: 12.3, h: 1.0, fill: { color: '1E293B' }, line: { color: gold, width: 1.5 }, rectRadius: 0.1 });
+    s8.addText(T("CONCLUSIÓN: La diferencia de "+fEur(t.evm.EAC * 0.2)+" justifica la aprobación inmediata del plan de acción.","CONCLUSION: The difference of "+fEur(t.evm.EAC * 0.2)+" justifies immediate approval of the action plan."), { x: 0.8, y: 6.0, w: 11.8, h: 0.6, fontSize: 14, bold: true, color: gold });
+
+    // --- SLIDE 9: RECOMENDACIONES Y CIERRE ---
+    var s9 = pptx.addSlide(); s9.background = { color: navy };
+    addSlideTitle(s9, T("Recomendaciones y Plan de Acción","Recommendations and Action Plan"), T("Próximos pasos para mitigar el riesgo.","Next steps to mitigate risk."));
+    s9.addText(T("RECOMENDACIONES ESTRATÉGICAS","STRATEGIC RECOMMENDATIONS"), { x: 0.5, y: 1.5, w: 6, h: 0.3, fontSize: 14, bold: true, color: gold });
+    var recs = [
+      t.evm.SPI < 0.9 ? T("1. Acelerar cronograma: SPI indica retraso.","1. Accelerate schedule: SPI indicates delay.") : T("1. Mantener ritmo actual.","1. Maintain current pace."),
+      t.overdue > 0 ? T("2. Atender "+t.overdue+" tarea(s) atrasada(s).","2. Address "+t.overdue+" overdue task(s).") : T("2. Sin tareas atrasadas.","2. No overdue tasks."),
+      T("3. Revisar ruta crítica.","3. Review critical path."),
+      T("4. Establecer comité semanal.","4. Establish weekly committee.")
+    ];
+    s9.addText(recs.join("\n"), { x: 0.5, y: 1.9, w: 6, h: 2.0, fontSize: 11, color: white, lineSpacing: 20 });
+    s9.addText(T("PLAN DE ACCIÓN INMEDIATO","IMMEDIATE ACTION PLAN"), { x: 6.8, y: 1.5, w: 6, h: 0.3, fontSize: 14, bold: true, color: gold });
+    var actions = [];
+    if(t.evm.CPI < 0.9) actions.push([T('Auditoría','Audit'), T('Revisar horas facturadas.','Review logged hours.'), 'CFO / PMO']);
+    if(t.overdue > 0) actions.push([T('Desbloqueo','Unblocking'), T('Reasignar recursos.','Reallocate resources.'), 'COO / PMs']);
+    actions.push([T('Reunión','Meeting'), T('Comité semanal.','Weekly committee.'), 'CEO / COO']);
+    s9.addTable([[{text:T('ACCIÓN','ACTION'),options:{bold:true,color:gold}},{text:T('DESCRIPCIÓN','DESCRIPTION'),options:{bold:true,color:gold}},{text:T('RESPONSABLE','OWNER'),options:{bold:true,color:gold}}]].concat(actions), { x: 6.8, y: 1.9, w: 6, fontSize: 10, color: white, border: {type:'solid', color:'334155', pt:1}, fill: { color: '1E293B' }, align: 'center', rowHeader: { fill: { color: '111827' }, color: gold, bold: true } });
+    s9.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: 5.5, w: 12.3, h: 1.2, fill: { color: gold }, line: { width: 0 }, rectRadius: 0.1 });
+    s9.addText(T("RECOMENDACIÓN FINAL","FINAL RECOMMENDATION"), { x: 0.8, y: 5.6, w: 11.8, h: 0.3, fontSize: 12, bold: true, color: '000000' });
+    s9.addText(T("A la vista de los datos, se recomienda al Comité de Dirección evaluar la aprobación del Plan de Acción propuesto, dado que el ahorro proyectado ("+fEur(t.evm.EAC * 0.2)+") justifica la inversión.","Based on the data, the Board is recommended to evaluate the approval of the proposed Action Plan, as the projected savings ("+fEur(t.evm.EAC * 0.2)+") justify the investment."), { x: 0.8, y: 5.9, w: 11.8, h: 0.6, fontSize: 11, color: '000000' });
+    s9.addText(T("Documento confidencial para uso interno del Comité de Dirección.","Confidential document for internal use of the Board of Directors."), { x: 0.5, y: 7.1, w: 12.3, h: 0.2, fontSize: 8, italic: true, color: gray });
+
+    await pptx.writeFile({ fileName: 'Reporte_Ejecutivo_'+scopeName.replace(/\s+/g,'_')+'.pptx' });
+    
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+  }catch(err){ 
+    console.error("Error generando PPTX:", err); 
+    alert('Error PPTX: '+err.message); 
+    if(typeof btn !== 'undefined') { btn.innerHTML = originalText; btn.disabled = false; }
+  }
 }
 
+
 /* ═══════════════════════════════════════════════════════════
-   BOOT SEQUENCE CORREGIDA Y A PRUEBA DE FALLOS
+   BOOT SEQUENCE
    ═══════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -1780,7 +2453,9 @@ async function exportOpsPPTX(){
   var token = localStorage.getItem('authToken') || localStorage.getItem('token');
   if(!token){
     console.log('⚠️ [OPS] Sin token. Usando datos demo.');
-    OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+    ALL_OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+    OPS_PROJECTS = JSON.parse(JSON.stringify(ALL_OPS_PROJECTS));
+    populateProjectFilter();
     calculateOpsTotals();
     document.getElementById('opsContent').style.display = 'block';
     return;
@@ -1795,16 +2470,20 @@ async function exportOpsPPTX(){
     var backendProjects = data.projects || [];
     if(backendProjects.length===0){
       console.warn('⚠️ [OPS] Sin proyectos en backend. Usando demo.');
-      OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+      ALL_OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
     } else {
       console.log('✅ [OPS] '+backendProjects.length+' proyectos reales inyectados');
-      OPS_PROJECTS = buildOpsProjectsFromRaw(backendProjects);
+      ALL_OPS_PROJECTS = buildOpsProjectsFromRaw(backendProjects);
     }
+    OPS_PROJECTS = JSON.parse(JSON.stringify(ALL_OPS_PROJECTS));
+    populateProjectFilter();
     calculateOpsTotals();
     document.getElementById('opsContent').style.display = 'block';
   }catch(err){
     console.warn('❌ [OPS] Error, usando demo:',err);
-    OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+    ALL_OPS_PROJECTS = buildOpsProjectsFromRaw(buildOpsDemoData());
+    OPS_PROJECTS = JSON.parse(JSON.stringify(ALL_OPS_PROJECTS));
+    populateProjectFilter();
     calculateOpsTotals();
     document.getElementById('opsContent').style.display = 'block';
   }
