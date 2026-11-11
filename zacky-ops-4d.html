@@ -337,7 +337,7 @@ body.zops-boot-lock{overflow:hidden!important}
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   DATA DEMO (fallback cuando no hay token o backend falla)
+   DATA DEMO
    ═══════════════════════════════════════════════════════════ */
 var OPS_PROJECTS = [];
 var OPS_TOTALS = {};
@@ -385,7 +385,7 @@ function buildOpsDemoData(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CÁLCULOS: EVM (FINANCIERO) Y FLOW (OPERATIVO)
+   CÁLCULOS: EVM Y FLOW
    ═══════════════════════════════════════════════════════════ */
 function calcEVM(tasks, budget) {
   var PV = 0, EV = 0, AC = 0;
@@ -400,7 +400,7 @@ function calcEVM(tasks, budget) {
     else if(t.status === 'inProgress') EV += est * prog;
   });
 
-  var costPerHour = 50; // Tarifa por defecto
+  var costPerHour = 50;
   var BAC = budget || (PV * costPerHour);
   if (BAC === 0 && PV > 0) BAC = PV * costPerHour;
 
@@ -593,7 +593,7 @@ function calculateOpsTotals(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   HELPERS
+   HELPERS BILINGÜES
    ═══════════════════════════════════════════════════════════ */
 function fN(n){return (n||0).toLocaleString('es-ES');}
 function fH(n){return (n||0).toFixed(0)+'h';}
@@ -604,7 +604,7 @@ function fEur(n){
   if(Math.abs(n)>=10000)return '€'+(n/1000).toFixed(1)+'K';
   return '€'+(n||0).toLocaleString('es-ES',{maximumFractionDigits:0});
 }
-function fDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});}
+function fDate(d){if(!d)return '—';return new Date(d).toLocaleDateString(isEn()?'en-US':'es-ES',{day:'2-digit',month:'short',year:'numeric'});}
 function isEn(){return (window.OPS_LANG||'es')==='en';}
 function T(es,en){return isEn()?en:es;}
 
@@ -615,44 +615,44 @@ function healthColor(h){return {saludable:'#00d47e',aceptable:'#8b5cf6',riesgo:'
 function statusBadge(h){var lbl = isEn()?{saludable:'Healthy',aceptable:'Acceptable',riesgo:'At Risk',critico:'Critical'}[h]||h:{saludable:'Saludable',aceptable:'Aceptable',riesgo:'Riesgo',critico:'Crítico'}[h]||h; return '<span class="badge '+h+'">'+lbl+'</span>';}
 
 /* ═══════════════════════════════════════════════════════════
-   RENDERIZADO DE MÓDULOS (AÑADIDO EVM)
+   RENDERIZADO DE MÓDULOS
    ═══════════════════════════════════════════════════════════ */
 function renderEVM(){
   var el = document.getElementById('v-evm');
   if(!el) return;
-  if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ Cargando datos...</div>'; return; }
+  if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando datos...','Loading data...')+'</div>'; return; }
   var t = OPS_TOTALS.evm;
 
   el.innerHTML = `
     <div class="hero"><div class="hero-grid">
-      <div><h2>Análisis Financiero · EVM Completo</h2><p>Valores calculados en base a costes por hora y presupuestos de proyectos.</p></div>
+      <div><h2>${T('Análisis Financiero · EVM Completo','Financial Analysis · Full EVM')}</h2><p>${T('Valores calculados en base a costes por hora y presupuestos de proyectos.','Values calculated based on hourly costs and project budgets.')}</p></div>
       <div class="hero-stats">
-        <div class="h-stat"><div class="v">${fEur(t.BAC)}</div><div class="l">BAC Total</div></div>
-        <div class="h-stat"><div class="v" style="color:#00d47e">${t.CPI.toFixed(2)}</div><div class="l">CPI Global</div></div>
-        <div class="h-stat"><div class="v" style="color:#fbbf24">${t.SPI.toFixed(2)}</div><div class="l">SPI Global</div></div>
-        <div class="h-stat"><div class="v" style="color:${t.VAC>=0?'#00d47e':'#ef4444'}">${fEur(t.VAC)}</div><div class="l">VAC</div></div>
+        <div class="h-stat"><div class="v">${fEur(t.BAC)}</div><div class="l">${T('BAC Total','Total BAC')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#00d47e">${t.CPI.toFixed(2)}</div><div class="l">${T('CPI Global','Global CPI')}</div></div>
+        <div class="h-stat"><div class="v" style="color:#fbbf24">${t.SPI.toFixed(2)}</div><div class="l">${T('SPI Global','Global SPI')}</div></div>
+        <div class="h-stat"><div class="v" style="color:${t.VAC>=0?'#00d47e':'#ef4444'}">${fEur(t.VAC)}</div><div class="l">${T('VAC','VAC')}</div></div>
       </div>
     </div></div>
     
     <div class="kpi-6">
-      <div class="kpi" style="--c:#94a3b8"><div class="l">PV (Valor Plan)</div><div class="v">${fEur(t.PV)}</div></div>
-      <div class="kpi" style="--c:#00d47e"><div class="l">EV (Valor Ganado)</div><div class="v">${fEur(t.EV)}</div></div>
-      <div class="kpi" style="--c:#ef4444"><div class="l">AC (Coste Real)</div><div class="v">${fEur(t.AC)}</div></div>
-      <div class="kpi" style="--c:#fbbf24"><div class="l">BAC (Presupuesto)</div><div class="v">${fEur(t.BAC)}</div></div>
-      <div class="kpi" style="--c:${t.CV>=0?'#00d47e':'#ef4444'}"><div class="l">CV (Var. Coste)</div><div class="v">${t.CV>=0?'+':''}${fEur(t.CV)}</div></div>
-      <div class="kpi" style="--c:${t.SV>=0?'#00d47e':'#ef4444'}"><div class="l">SV (Var. Tiempo)</div><div class="v">${t.SV>=0?'+':''}${fEur(t.SV)}</div></div>
+      <div class="kpi" style="--c:#94a3b8"><div class="l">${T('PV (Valor Plan)','PV (Planned Value)')}</div><div class="v">${fEur(t.PV)}</div></div>
+      <div class="kpi" style="--c:#00d47e"><div class="l">${T('EV (Valor Ganado)','EV (Earned Value)')}</div><div class="v">${fEur(t.EV)}</div></div>
+      <div class="kpi" style="--c:#ef4444"><div class="l">${T('AC (Coste Real)','AC (Actual Cost)')}</div><div class="v">${fEur(t.AC)}</div></div>
+      <div class="kpi" style="--c:#fbbf24"><div class="l">${T('BAC (Presupuesto)','BAC (Budget)')}</div><div class="v">${fEur(t.BAC)}</div></div>
+      <div class="kpi" style="--c:${t.CV>=0?'#00d47e':'#ef4444'}"><div class="l">${T('CV (Var. Coste)','CV (Cost Var.)')}</div><div class="v">${t.CV>=0?'+':''}${fEur(t.CV)}</div></div>
+      <div class="kpi" style="--c:${t.SV>=0?'#00d47e':'#ef4444'}"><div class="l">${T('SV (Var. Tiempo)','SV (Schedule Var.)')}</div><div class="v">${t.SV>=0?'+':''}${fEur(t.SV)}</div></div>
     </div>
     
     <div class="kpi-4">
-      <div class="kpi" style="--c:${t.CPI>=1?'#00d47e':t.CPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">CPI (Eficiencia Coste)</div><div class="v">${t.CPI.toFixed(2)}</div><div class="s">EV / AC</div></div>
-      <div class="kpi" style="--c:${t.SPI>=1?'#00d47e':t.SPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">SPI (Eficiencia Tiempo)</div><div class="v">${t.SPI.toFixed(2)}</div><div class="s">EV / PV</div></div>
-      <div class="kpi" style="--c:#a78bfa"><div class="l">EAC (Est. Cierre)</div><div class="v">${fEur(t.EAC)}</div><div class="s">BAC / CPI</div></div>
-      <div class="kpi" style="--c:${t.VAC>=0?'#00d47e':'#ef4444'}"><div class="l">VAC (Var. Cierre)</div><div class="v">${t.VAC>=0?'+':''}${fEur(t.VAC)}</div><div class="s">BAC - EAC</div></div>
+      <div class="kpi" style="--c:${t.CPI>=1?'#00d47e':t.CPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">${T('CPI (Eficiencia Coste)','CPI (Cost Efficiency)')}</div><div class="v">${t.CPI.toFixed(2)}</div><div class="s">EV / AC</div></div>
+      <div class="kpi" style="--c:${t.SPI>=1?'#00d47e':t.SPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">${T('SPI (Eficiencia Tiempo)','SPI (Schedule Efficiency)')}</div><div class="v">${t.SPI.toFixed(2)}</div><div class="s">EV / PV</div></div>
+      <div class="kpi" style="--c:#a78bfa"><div class="l">${T('EAC (Est. Cierre)','EAC (Est. at Completion)')}</div><div class="v">${fEur(t.EAC)}</div><div class="s">BAC / CPI</div></div>
+      <div class="kpi" style="--c:${t.VAC>=0?'#00d47e':'#ef4444'}"><div class="l">${T('VAC (Var. Cierre)','VAC (Variance at Completion)')}</div><div class="v">${t.VAC>=0?'+':''}${fEur(t.VAC)}</div><div class="s">BAC - EAC</div></div>
     </div>
     
-    <div class="box"><div class="box-t">💰 Resumen EVM por Proyecto</div>
+    <div class="box"><div class="box-t">💰 ${T('Resumen EVM por Proyecto','EVM Summary by Project')}</div>
       <table class="tbl">
-        <thead><tr><th>Proyecto</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">VAC</th></tr></thead>
+        <thead><tr><th>${T('Proyecto','Project')}</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">VAC</th></tr></thead>
         <tbody>${OPS_PROJECTS.map(p=>`
           <tr>
             <td><strong>${p.name}</strong><br><small>${p.client}</small></td>
@@ -672,7 +672,7 @@ function renderEVM(){
 function renderOpsCommand(){
   var el = document.getElementById('v-cmd');
   if(!el) return;
-  if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ Cargando datos operativos...</div>'; return; }
+  if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando datos operativos...','Loading operational data...')+'</div>'; return; }
   var t = OPS_TOTALS;
 
   el.innerHTML =
@@ -695,7 +695,7 @@ function renderOpsCommand(){
       '<div class="chart-card"><div class="t"><span>📊</span> '+T('Throughput por Proyecto','Throughput by Project')+'</div><canvas id="opsCmdThroughput"></canvas></div>'+
       '<div class="chart-card"><div class="t"><span>📈</span> '+T('Estado de Tareas Global','Global Tasks Status')+'</div><canvas id="opsCmdTasks"></canvas></div>'+
     '</div>'+
-    '<div class="box"><div class="box-t"><span>🎯</span> '+T('Resumen operativo por proyecto','Operational summary by project')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+T('Proyecto','Project')+'</th><th class="n">'+T('Tareas','Tasks')+'</th><th class="n">'+T('Completas','Done')+'</th><th class="n">WIP</th><th class="n">'+T('Vencidas','Overdue')+'</th><th class="n">Throughput</th><th class="n">Cycle</th><th>Estado</th></tr></thead><tbody>'+
+    '<div class="box"><div class="box-t"><span>🎯</span> '+T('Resumen operativo por proyecto','Operational summary by project')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+T('Proyecto','Project')+'</th><th class="n">'+T('Tareas','Tasks')+'</th><th class="n">'+T('Completas','Done')+'</th><th class="n">WIP</th><th class="n">'+T('Vencidas','Overdue')+'</th><th class="n">Throughput</th><th class="n">Cycle</th><th>'+T('Estado','Status')+'</th></tr></thead><tbody>'+
       OPS_PROJECTS.map(function(p){
         var health = p.flow.completionRate>=70?'saludable':p.flow.completionRate>=40?'riesgo':'critico';
         return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+p.client+' · '+p.phase+'</span></td><td class="n">'+p.flow.total+'</td><td class="n" style="color:#00d47e;">'+p.flow.completed+'</td><td class="n" style="color:#67e8f9;">'+p.flow.inProgress+'</td><td class="n" style="color:'+(p.flow.overdue>0?'#ef4444':'#94a3b8')+';font-weight:900;">'+p.flow.overdue+'</td><td class="n" style="color:#8b5cf6;">'+p.flow.throughput+'</td><td class="n">'+fD(p.flow.avgCycle)+'</td><td>'+statusBadge(health)+'</td></tr>';
@@ -1131,10 +1131,10 @@ function renderAIOps(){
   if(!el) return;
 
   var insights = [
-    {icon:'⚡',c:'#00d47e',t:'Throughput',x:'Portafolio: '+OPS_TOTALS.throughput+' '+T('tareas en 30 días.','tasks in 30 days.')},
-    {icon:'🔄',c:OPS_TOTALS.wip>8?'#ef4444':'#67e8f9',t:'WIP',x:'WIP actual: '+OPS_TOTALS.wip+' '+T('tareas en progreso.','tasks in progress.')},
+    {icon:'⚡',c:'#00d47e',t:'Throughput',x:T('Portafolio: ','Portfolio: ')+OPS_TOTALS.throughput+' '+T('tareas en 30 días.','tasks in 30 days.')},
+    {icon:'🔄',c:OPS_TOTALS.wip>8?'#ef4444':'#67e8f9',t:'WIP',x:T('WIP actual: ','Current WIP: ')+OPS_TOTALS.wip+' '+T('tareas en progreso.','tasks in progress.')},
     {icon:'⏱️',c:'#00d4ff',t:'Cycle Time',x:T('Promedio: ','Average: ')+fD(OPS_TOTALS.avgCycle)+T('. Objetivo: <3d.','. Target: <3d.')},
-    {icon:'🚧',c:'#ef4444',t:'Bloqueos',x:OPS_TOTALS.blockers+' '+T('bloqueos activos en todo el portafolio.','active blockers across the portfolio.')},
+    {icon:'🚧',c:'#ef4444',t:T('Bloqueos','Blockers'),x:OPS_TOTALS.blockers+' '+T('bloqueos activos en todo el portafolio.','active blockers across the portfolio.')},
     {icon:'👥',c:'#8b5cf6',t:'Capacity',x:OPS_TOTALS.critical+' '+T('proyectos requieren atención.','projects need attention.')}
   ];
 
@@ -1218,7 +1218,7 @@ function opsAddChatMsg(text,who,customId){
   var d = document.createElement('div');
   d.className = 'msg '+who;
   if(customId) d.id = customId;
-  d.innerHTML = text+'<div class="m">'+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'</div>';
+  d.innerHTML = text+'<div class="m">'+new Date().toLocaleTimeString(isEn()?'en-US':'es-ES',{hour:'2-digit',minute:'2-digit'})+'</div>';
   m.appendChild(d);
   m.scrollTop = m.scrollHeight;
 }
