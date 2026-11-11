@@ -50004,7 +50004,7 @@ function generatePieChart(data) {
   
   const pieChartCanvas = document.getElementById('pieChart');
   if (!pieChartCanvas) {
-    console.error("❌ No se encuentra el canvas pieChart");
+    // canvas no presente en esta vista (silencioso, no es un error)
     return;
   }
 
