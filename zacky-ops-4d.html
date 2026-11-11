@@ -266,7 +266,7 @@ body.zops-boot-lock{overflow:hidden!important}
           </div>
           <div>
             <h1 id="opsHeaderTitle">ZACKY OPS COMMAND CENTER · OPS 4D</h1>
-            <p id="opsHeaderSub">8 módulos operativos · Flow metrics · Capacity 4D · Gantt live · IA · PDF/PPTX</p>
+            <p id="opsHeaderSub">8 módulos operativos y financieros · EVM · Flow · Capacity · Gantt · IA</p>
           </div>
         </div>
         <div class="landing-right">
@@ -275,8 +275,8 @@ body.zops-boot-lock{overflow:hidden!important}
         </div>
       </div>
       <div class="story-box">
-        <div class="story-title"><span style="font-size:24px;">⚙️</span> <span id="opsStoryTitle">Torre de control operativa: flow, capacidad y ejecución en vivo</span></div>
-        <p id="opsStoryText"><strong>Flow Metrics</strong> (Throughput, Cycle Time, Lead Time, WIP) · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt con camino crítico</strong> · <strong>Burndown + Velocity</strong> · <strong>Radar de bloqueos</strong> · <strong>IA OPS Copilot</strong> · Reportes ejecutivos.</p>
+        <div class="story-title"><span style="font-size:24px;">⚙️</span> <span id="opsStoryTitle">Torre de control operativa y financiera: EVM, Flow y ejecución</span></div>
+        <p id="opsStoryText"><strong>EVM Completo</strong> (CPI, SPI, EAC, VAC) · <strong>Flow Metrics</strong> · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt con camino crítico</strong> · <strong>Burndown + Velocity</strong> · <strong>IA OPS</strong> · Reportes ejecutivos.</p>
       </div>
     </div>
     <div class="hero-image-container">
@@ -286,7 +286,7 @@ body.zops-boot-lock{overflow:hidden!important}
 
   <div class="fab" onclick="openOpsModal()">
     <img src="zacky45.png" alt="Zacky Logo">
-    <span id="opsFabText">Entrar</span>
+    <span id="opsFabText">Entrar a Operaciones</span>
   </div>
 </div>
 
@@ -295,11 +295,12 @@ body.zops-boot-lock{overflow:hidden!important}
     <div class="modal-h">
       <div>
         <div class="t" id="opsMTitle">OPS Command Center</div>
-        <div class="s" id="opsMSub">Torre de control operativa · Portfolio completo</div>
+        <div class="s" id="opsMSub">Torre de control · Portfolio completo</div>
       </div>
       <div class="r">
         <div class="tabs" id="opsTabs">
-          <button class="tab on" data-tab="cmd">⚙️ OPS</button>
+          <button class="tab on" data-tab="evm">💰 EVM</button>
+          <button class="tab" data-tab="cmd">⚙️ OPS</button>
           <button class="tab" data-tab="flow">🌊 FLOW</button>
           <button class="tab" data-tab="cap">👥 CAPACITY</button>
           <button class="tab" data-tab="gantt">📅 GANTT</button>
@@ -316,12 +317,13 @@ body.zops-boot-lock{overflow:hidden!important}
     </div>
     <div class="chips-bar">
       <span class="chip c" id="opsChipP">📋 0 proyectos</span>
-      <span class="chip g" id="opsChipT">⚡ 0 throughput</span>
-      <span class="chip y" id="opsChipW">🔄 0 WIP</span>
+      <span class="chip g" id="opsChipT">📊 CPI 0.00</span>
+      <span class="chip y" id="opsChipW">⏱️ 0 WIP</span>
       <span class="chip r" id="opsChipB">⚠️ 0 bloqueos</span>
     </div>
     <div class="modal-body" id="opsBody">
-      <div class="view on" id="v-cmd"></div>
+      <div class="view on" id="v-evm"></div>
+      <div class="view" id="v-cmd"></div>
       <div class="view" id="v-flow"></div>
       <div class="view" id="v-cap"></div>
       <div class="view" id="v-gantt"></div>
@@ -345,36 +347,36 @@ var opsBurnView = 'tasks';
 
 function buildOpsDemoData(){
   return [
-    {id:'p1',name:'Transformación Digital Core Banking',client:'BBVA',status:'active',startDate:'2026-01-15',endDate:'2026-12-20',phase:'Desarrollo',phaseProgress:82,
+    {id:'p1',name:'Transformación Digital Core Banking',client:'BBVA',status:'active',startDate:'2026-01-15',endDate:'2026-12-20',phase:'Desarrollo',phaseProgress:82,budget:850000,
      tasks:[
        {name:'Kickoff y discovery',assignee:'Ana García',estimatedTime:120,timeLogged:110,progress:100,status:'completed',phase:'Cierre',createdAt:'2026-01-15',startedAt:'2026-01-16',completedAt:'2026-01-30',deadline:'2026-02-01'},
        {name:'Diseño arquitectura',assignee:'Carlos Méndez',estimatedTime:80,timeLogged:75,progress:100,status:'completed',phase:'Diseño',createdAt:'2026-01-20',startedAt:'2026-01-25',completedAt:'2026-02-15',deadline:'2026-02-20'},
        {name:'MVP Core Banking',assignee:'Laura Ruiz',estimatedTime:100,timeLogged:85,progress:82,status:'inProgress',phase:'Desarrollo',createdAt:'2026-02-01',startedAt:'2026-02-10',deadline:'2026-06-15'},
        {name:'Integración legacy',assignee:'Pedro Sánchez',estimatedTime:60,timeLogged:55,progress:88,status:'inProgress',phase:'Desarrollo',createdAt:'2026-03-01',startedAt:'2026-03-15',deadline:'2026-09-01'}
      ]},
-    {id:'p2',name:'Migración Multi-Cloud Retail',client:'FEMSA',status:'active',startDate:'2026-02-01',endDate:'2026-11-30',phase:'Migración',phaseProgress:60,
+    {id:'p2',name:'Migración Multi-Cloud Retail',client:'FEMSA',status:'active',startDate:'2026-02-01',endDate:'2026-11-30',phase:'Migración',phaseProgress:60,budget:420000,
      tasks:[
        {name:'Assessment multi-cloud',assignee:'Laura Ruiz',estimatedTime:90,timeLogged:95,progress:60,status:'inProgress',phase:'Migración',createdAt:'2026-02-01',startedAt:'2026-02-05',deadline:'2026-07-01'},
        {name:'Migración workloads',assignee:'Javier Torres',estimatedTime:70,timeLogged:72,progress:55,status:'inProgress',phase:'Migración',createdAt:'2026-03-01',startedAt:'2026-03-10',deadline:'2026-10-15'},
        {name:'Cutover plan',assignee:'Marta López',estimatedTime:50,timeLogged:48,progress:40,status:'overdue',phase:'Testing',createdAt:'2026-04-01',startedAt:'2026-04-15',deadline:'2026-09-30'}
      ]},
-    {id:'p3',name:'AI Center of Excellence',client:'CEMEX',status:'blocked',startDate:'2026-03-10',endDate:'2026-10-15',phase:'Diseño del CoE',phaseProgress:35,
+    {id:'p3',name:'AI Center of Excellence',client:'CEMEX',status:'blocked',startDate:'2026-03-10',endDate:'2026-10-15',phase:'Diseño del CoE',phaseProgress:35,budget:380000,
      tasks:[
        {name:'Selección plataforma LLM',assignee:'Pedro Sánchez',estimatedTime:110,timeLogged:125,progress:35,status:'overdue',phase:'Diseño',createdAt:'2026-03-10',startedAt:'2026-03-15',deadline:'2026-05-15'},
        {name:'Diseño casos de uso',assignee:'Ana García',estimatedTime:80,timeLogged:88,progress:45,status:'inProgress',phase:'Diseño',createdAt:'2026-04-01',startedAt:'2026-04-10',deadline:'2026-07-01'},
        {name:'Training y transferencia',assignee:'Javier Torres',estimatedTime:60,timeLogged:60,progress:30,status:'overdue',phase:'Diseño',createdAt:'2026-04-15',startedAt:'2026-05-01',deadline:'2026-10-15'}
      ]},
-    {id:'p4',name:'Gobierno de Datos Empresarial',client:'América Móvil',status:'active',startDate:'2026-01-20',endDate:'2026-09-30',phase:'Implementación',phaseProgress:78,
+    {id:'p4',name:'Gobierno de Datos Empresarial',client:'América Móvil',status:'active',startDate:'2026-01-20',endDate:'2026-09-30',phase:'Implementación',phaseProgress:78,budget:220000,
      tasks:[
        {name:'Discovery dominios',assignee:'Carlos Méndez',estimatedTime:70,timeLogged:60,progress:85,status:'inProgress',phase:'Implementación',createdAt:'2026-01-20',startedAt:'2026-02-01',deadline:'2026-07-01'},
        {name:'Catálogo DGO',assignee:'Marta López',estimatedTime:50,timeLogged:45,progress:78,status:'inProgress',phase:'Implementación',createdAt:'2026-02-01',startedAt:'2026-02-15',deadline:'2026-09-15'}
      ]},
-    {id:'p5',name:'Modernización ERP S/4HANA',client:'PEMEX',status:'active',startDate:'2026-04-01',endDate:'2026-12-31',phase:'Rollout',phaseProgress:65,
+    {id:'p5',name:'Modernización ERP S/4HANA',client:'PEMEX',status:'active',startDate:'2026-04-01',endDate:'2026-12-31',phase:'Rollout',phaseProgress:65,budget:350000,
      tasks:[
        {name:'Blueprint financiero',assignee:'Laura Ruiz',estimatedTime:100,timeLogged:85,progress:65,status:'inProgress',phase:'Rollout',createdAt:'2026-04-01',startedAt:'2026-04-10',deadline:'2026-09-30'},
        {name:'Configuración core',assignee:'Javier Torres',estimatedTime:80,timeLogged:70,progress:60,status:'inProgress',phase:'Rollout',createdAt:'2026-04-15',startedAt:'2026-05-01',deadline:'2026-11-15'}
      ]},
-    {id:'p6',name:'Zero Trust Cybersecurity',client:'DHL',status:'paused',startDate:'2026-05-01',endDate:'2026-11-15',phase:'Assessment',phaseProgress:45,
+    {id:'p6',name:'Zero Trust Cybersecurity',client:'DHL',status:'paused',startDate:'2026-05-01',endDate:'2026-11-15',phase:'Assessment',phaseProgress:45,budget:180000,
      tasks:[
        {name:'Assessment madurez',assignee:'Ana García',estimatedTime:60,timeLogged:55,progress:50,status:'inProgress',phase:'Assessment',createdAt:'2026-05-01',startedAt:'2026-05-05',deadline:'2026-08-01'},
        {name:'Diseño ZT',assignee:'Pedro Sánchez',estimatedTime:40,timeLogged:38,progress:45,status:'inProgress',phase:'Assessment',createdAt:'2026-05-15',startedAt:'2026-06-01',deadline:'2026-10-15'}
@@ -383,8 +385,45 @@ function buildOpsDemoData(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CÁLCULO DE MÉTRICAS DE FLOW
+   CÁLCULOS: EVM (FINANCIERO) Y FLOW (OPERATIVO)
    ═══════════════════════════════════════════════════════════ */
+function calcEVM(tasks, budget) {
+  var PV = 0, EV = 0, AC = 0;
+  tasks.forEach(t => {
+    var est = Number(t.estimatedTime) || 0;
+    var log = Number(t.timeLogged) || 0;
+    var prog = (Number(t.progress) || 0) / 100;
+    
+    PV += est;
+    AC += log;
+    if(t.status === 'completed') EV += est;
+    else if(t.status === 'inProgress') EV += est * prog;
+  });
+
+  var costPerHour = 50; // Tarifa por defecto
+  var BAC = budget || (PV * costPerHour);
+  if (BAC === 0 && PV > 0) BAC = PV * costPerHour;
+
+  var realPV = PV * costPerHour;
+  var realEV = EV * costPerHour;
+  var realAC = AC * costPerHour;
+
+  var CPI = realAC > 0 ? realEV / realAC : 1;
+  var SPI = realPV > 0 ? realEV / realPV : 1;
+  var CV = realEV - realAC;
+  var SV = realEV - realPV;
+  var EAC = CPI > 0 ? BAC / CPI : BAC;
+  var VAC = BAC - EAC;
+  var TCPI = (BAC - realEV) > 0 ? (BAC - realEV) / (BAC - realAC) : 1;
+
+  return {
+    PV: realPV, EV: realEV, AC: realAC, BAC: BAC,
+    CPI: CPI, SPI: SPI, CV: CV, SV: SV,
+    EAC: EAC, VAC: VAC, TCPI: TCPI,
+    completionRate: PV > 0 ? (EV / PV) * 100 : 0
+  };
+}
+
 function calcFlow(tasks){
   var now = Date.now();
   var completed = tasks.filter(function(t){return t.status==='completed';});
@@ -476,6 +515,7 @@ function buildOpsProjectsFromRaw(rawProjects){
       };
     });
     var flow = calcFlow(tasks);
+    var evm = calcEVM(tasks, p.budget || 0);
     var capacity = calcCapacity(tasks);
     var blockers = calcBlockers(tasks);
 
@@ -499,6 +539,7 @@ function buildOpsProjectsFromRaw(rawProjects){
       phaseProgress: flow.completionRate,
       tasks: tasks,
       flow: flow,
+      evm: evm,
       capacity: capacity,
       blockers: blockers,
       milestones: p.milestones||[],
@@ -511,6 +552,8 @@ function calculateOpsTotals(){
   if(!OPS_PROJECTS.length){ OPS_TOTALS = {}; return; }
   var totalThroughput=0, totalWip=0, totalBlockers=0, totalCycle=0, totalLead=0, totalTasks=0, totalCompleted=0, totalOverdue=0;
   var criticalCount=0;
+  var evmTotals = {PV:0,EV:0,AC:0,BAC:0,CPI:0,SPI:0,CV:0,SV:0,EAC:0,VAC:0,TCPI:0};
+  
   OPS_PROJECTS.forEach(function(p){
     totalThroughput += p.flow.throughput;
     totalWip += p.flow.wip;
@@ -521,7 +564,18 @@ function calculateOpsTotals(){
     totalCompleted += p.flow.completed;
     totalOverdue += p.flow.overdue;
     if(p.flow.completionRate<40 || p.blockers.length>0) criticalCount++;
+    
+    evmTotals.PV += p.evm.PV; evmTotals.EV += p.evm.EV; evmTotals.AC += p.evm.AC; evmTotals.BAC += p.evm.BAC;
   });
+  
+  evmTotals.CPI = evmTotals.AC > 0 ? evmTotals.EV / evmTotals.AC : 1;
+  evmTotals.SPI = evmTotals.PV > 0 ? evmTotals.EV / evmTotals.PV : 1;
+  evmTotals.CV = evmTotals.EV - evmTotals.AC;
+  evmTotals.SV = evmTotals.EV - evmTotals.PV;
+  evmTotals.EAC = evmTotals.CPI > 0 ? evmTotals.BAC / evmTotals.CPI : evmTotals.BAC;
+  evmTotals.VAC = evmTotals.BAC - evmTotals.EAC;
+  evmTotals.TCPI = (evmTotals.BAC - evmTotals.EV) > 0 ? (evmTotals.BAC - evmTotals.EV) / (evmTotals.BAC - evmTotals.AC) : 1;
+
   OPS_TOTALS = {
     count: OPS_PROJECTS.length,
     throughput: totalThroughput,
@@ -533,7 +587,8 @@ function calculateOpsTotals(){
     completed: totalCompleted,
     overdue: totalOverdue,
     critical: criticalCount,
-    completionRate: totalTasks?(totalCompleted/totalTasks)*100:0
+    completionRate: totalTasks?(totalCompleted/totalTasks)*100:0,
+    evm: evmTotals
   };
 }
 
@@ -544,6 +599,11 @@ function fN(n){return (n||0).toLocaleString('es-ES');}
 function fH(n){return (n||0).toFixed(0)+'h';}
 function fD(n){return (n||0).toFixed(1)+'d';}
 function fPct(n){return (n||0).toFixed(1)+'%';}
+function fEur(n){
+  if(Math.abs(n)>=1000000)return '€'+(n/1000000).toFixed(2)+'M';
+  if(Math.abs(n)>=10000)return '€'+(n/1000).toFixed(1)+'K';
+  return '€'+(n||0).toLocaleString('es-ES',{maximumFractionDigits:0});
+}
 function fDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});}
 function isEn(){return (window.OPS_LANG||'es')==='en';}
 function T(es,en){return isEn()?en:es;}
@@ -555,8 +615,60 @@ function healthColor(h){return {saludable:'#00d47e',aceptable:'#8b5cf6',riesgo:'
 function statusBadge(h){var lbl = isEn()?{saludable:'Healthy',aceptable:'Acceptable',riesgo:'At Risk',critico:'Critical'}[h]||h:{saludable:'Saludable',aceptable:'Aceptable',riesgo:'Riesgo',critico:'Crítico'}[h]||h; return '<span class="badge '+h+'">'+lbl+'</span>';}
 
 /* ═══════════════════════════════════════════════════════════
-   RENDERIZADO DE MÓDULOS
+   RENDERIZADO DE MÓDULOS (AÑADIDO EVM)
    ═══════════════════════════════════════════════════════════ */
+function renderEVM(){
+  var el = document.getElementById('v-evm');
+  if(!el) return;
+  if(!OPS_PROJECTS.length){ el.innerHTML = '<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ Cargando datos...</div>'; return; }
+  var t = OPS_TOTALS.evm;
+
+  el.innerHTML = `
+    <div class="hero"><div class="hero-grid">
+      <div><h2>Análisis Financiero · EVM Completo</h2><p>Valores calculados en base a costes por hora y presupuestos de proyectos.</p></div>
+      <div class="hero-stats">
+        <div class="h-stat"><div class="v">${fEur(t.BAC)}</div><div class="l">BAC Total</div></div>
+        <div class="h-stat"><div class="v" style="color:#00d47e">${t.CPI.toFixed(2)}</div><div class="l">CPI Global</div></div>
+        <div class="h-stat"><div class="v" style="color:#fbbf24">${t.SPI.toFixed(2)}</div><div class="l">SPI Global</div></div>
+        <div class="h-stat"><div class="v" style="color:${t.VAC>=0?'#00d47e':'#ef4444'}">${fEur(t.VAC)}</div><div class="l">VAC</div></div>
+      </div>
+    </div></div>
+    
+    <div class="kpi-6">
+      <div class="kpi" style="--c:#94a3b8"><div class="l">PV (Valor Plan)</div><div class="v">${fEur(t.PV)}</div></div>
+      <div class="kpi" style="--c:#00d47e"><div class="l">EV (Valor Ganado)</div><div class="v">${fEur(t.EV)}</div></div>
+      <div class="kpi" style="--c:#ef4444"><div class="l">AC (Coste Real)</div><div class="v">${fEur(t.AC)}</div></div>
+      <div class="kpi" style="--c:#fbbf24"><div class="l">BAC (Presupuesto)</div><div class="v">${fEur(t.BAC)}</div></div>
+      <div class="kpi" style="--c:${t.CV>=0?'#00d47e':'#ef4444'}"><div class="l">CV (Var. Coste)</div><div class="v">${t.CV>=0?'+':''}${fEur(t.CV)}</div></div>
+      <div class="kpi" style="--c:${t.SV>=0?'#00d47e':'#ef4444'}"><div class="l">SV (Var. Tiempo)</div><div class="v">${t.SV>=0?'+':''}${fEur(t.SV)}</div></div>
+    </div>
+    
+    <div class="kpi-4">
+      <div class="kpi" style="--c:${t.CPI>=1?'#00d47e':t.CPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">CPI (Eficiencia Coste)</div><div class="v">${t.CPI.toFixed(2)}</div><div class="s">EV / AC</div></div>
+      <div class="kpi" style="--c:${t.SPI>=1?'#00d47e':t.SPI>=0.9?'#fbbf24':'#ef4444'}"><div class="l">SPI (Eficiencia Tiempo)</div><div class="v">${t.SPI.toFixed(2)}</div><div class="s">EV / PV</div></div>
+      <div class="kpi" style="--c:#a78bfa"><div class="l">EAC (Est. Cierre)</div><div class="v">${fEur(t.EAC)}</div><div class="s">BAC / CPI</div></div>
+      <div class="kpi" style="--c:${t.VAC>=0?'#00d47e':'#ef4444'}"><div class="l">VAC (Var. Cierre)</div><div class="v">${t.VAC>=0?'+':''}${fEur(t.VAC)}</div><div class="s">BAC - EAC</div></div>
+    </div>
+    
+    <div class="box"><div class="box-t">💰 Resumen EVM por Proyecto</div>
+      <table class="tbl">
+        <thead><tr><th>Proyecto</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">VAC</th></tr></thead>
+        <tbody>${OPS_PROJECTS.map(p=>`
+          <tr>
+            <td><strong>${p.name}</strong><br><small>${p.client}</small></td>
+            <td class="n">${fEur(p.evm.BAC)}</td>
+            <td class="n" style="color:#00d47e">${fEur(p.evm.EV)}</td>
+            <td class="n" style="color:#ef4444">${fEur(p.evm.AC)}</td>
+            <td class="n" style="color:${p.evm.CPI>=1?'#00d47e':'#ef4444'}">${p.evm.CPI.toFixed(2)}</td>
+            <td class="n" style="color:${p.evm.SPI>=1?'#00d47e':'#ef4444'}">${p.evm.SPI.toFixed(2)}</td>
+            <td class="n" style="color:${p.evm.VAC>=0?'#00d47e':'#ef4444'}">${p.evm.VAC>=0?'+':''}${fEur(p.evm.VAC)}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
 function renderOpsCommand(){
   var el = document.getElementById('v-cmd');
   if(!el) return;
@@ -564,7 +676,7 @@ function renderOpsCommand(){
   var t = OPS_TOTALS;
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Torre de Control Operativa · OPS 4D','Operations Control Tower · OPS 4D')+'</h2><p>'+T('Vista en tiempo real de la operación: flow metrics, capacidad, WIP y bloqueos. Todo lo que el COO necesita en una pantalla.','Real-time view of operations: flow metrics, capacity, WIP and blockers. Everything the COO needs on one screen.')+'</p></div><div class="hero-stats">'+statCard(t.count,T('Proyectos','Projects'))+statCard(t.throughput,T('Throughput','Throughput'),'gr')+statCard(t.wip,'WIP','g')+statCard(t.blockers,T('Bloqueos','Blockers'),'r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Torre de Control Operativa · OPS 4D','Operations Control Tower · OPS 4D')+'</h2><p>'+T('Vista en tiempo real de la operación: flow metrics, capacidad, WIP y bloqueos.','Real-time view of operations: flow metrics, capacity, WIP and blockers.')+'</p></div><div class="hero-stats">'+statCard(t.count,T('Proyectos','Projects'))+statCard(t.throughput,T('Throughput','Throughput'),'gr')+statCard(t.wip,'WIP','g')+statCard(t.blockers,T('Bloqueos','Blockers'),'r')+'</div></div></div>'+
     '<div class="kpi-6">'+
       kpi(T('PROYECTOS','PROJECTS'), t.count, T('Activos','Active'), '#67e8f9', 'Σ projects')+
       kpi(T('TAREAS','TASKS'), t.tasks, t.completed+' '+T('completadas','completed'), '#8b5cf6', 'Σ tasks')+
@@ -636,7 +748,7 @@ function renderFlowMetrics(){
   ];
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Flow Metrics · Kanban Analytics','Flow Metrics · Kanban Analytics')+'</h2><p>'+T('Las 5 métricas de flujo que usan los equipos de élite (Google, Spotify, Amazon) para medir velocidad real de entrega.','The 5 flow metrics used by elite teams (Google, Spotify, Amazon) to measure real delivery speed.')+'</p></div><div class="hero-stats">'+statCard(t.throughput,'Throughput','gr')+statCard(t.wip,'WIP','g')+statCard(fD(t.avgCycle),T('Cycle','Cycle'))+statCard(fD(t.avgLead),T('Lead','Lead'),'r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Flow Metrics · Kanban Analytics','Flow Metrics · Kanban Analytics')+'</h2><p>'+T('Las 5 métricas de flujo que usan los equipos de élite.','The 5 flow metrics used by elite teams.')+'</p></div><div class="hero-stats">'+statCard(t.throughput,'Throughput','gr')+statCard(t.wip,'WIP','g')+statCard(fD(t.avgCycle),T('Cycle','Cycle'))+statCard(fD(t.avgLead),T('Lead','Lead'),'r')+'</div></div></div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">'+
       flowCards.map(function(c){
         return '<div class="flow-card"><div class="ico">'+c.ico+'</div><div class="lbl">'+c.lbl+'</div><div class="val" style="color:'+c.c+';">'+c.val+'</div><div class="sub">'+c.sub+'</div></div>';
@@ -718,7 +830,7 @@ function renderCapacity(){
   }).join('');
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Capacity Planning 4D · Carga del equipo','Capacity Planning 4D · Team Load')+'</h2><p>'+T('Utilización real por persona. Detecta sobrecargas, cuellos de botella y capacidad disponible en tiempo real.','Real utilization per person. Detects overloads, bottlenecks and available capacity in real-time.')+'</p></div><div class="hero-stats">'+statCard(overCount,T('Sobrecargados','Overloaded'),'r')+statCard(highCount,T('Alta carga','High Load'),'g')+statCard(optCount,T('Óptimos','Optimal'),'gr')+statCard(availCount,T('Disponibles','Available'))+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Capacity Planning 4D · Carga del equipo','Capacity Planning 4D · Team Load')+'</h2><p>'+T('Utilización real por persona. Detecta sobrecargas.','Real utilization per person. Detects overloads.')+'</p></div><div class="hero-stats">'+statCard(overCount,T('Sobrecargados','Overloaded'),'r')+statCard(highCount,T('Alta carga','High Load'),'g')+statCard(optCount,T('Óptimos','Optimal'),'gr')+statCard(availCount,T('Disponibles','Available'))+'</div></div></div>'+
     '<div class="box"><div class="box-t"><span>🔥</span> '+T('Heatmap de utilización · Top 14 personas','Utilization Heatmap · Top 14 people')+'</div><div class="heatmap">'+heatmapCells+'</div></div>'+
     '<div class="chart-2">'+
       '<div class="chart-card"><div class="t"><span>📊</span> '+T('Utilización por persona','Utilization per person')+'</div><canvas id="capChart"></canvas></div>'+
@@ -760,7 +872,7 @@ function renderGantt(){
   if(!OPS_PROJECTS.length){el.innerHTML='<div style="text-align:center;padding:60px;color:#fbbf24;">⏳ '+T('Cargando...','Loading...')+'</div>';return;}
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Gantt Live · Camino Crítico','Gantt Live · Critical Path')+'</h2><p>'+T('Timeline visual con hitos, dependencias y línea de "hoy" en tiempo real.','Visual timeline with milestones, dependencies and live "today" line.')+'</p></div><div class="hero-stats">'+statCard(OPS_PROJECTS.length,T('Proyectos','Projects'))+statCard(OPS_PROJECTS.reduce(function(s,p){return s+p.tasks.length;},0),T('Tareas','Tasks'),'g')+statCard(OPS_TOTALS.completed,T('Completas','Done'),'gr')+statCard(OPS_TOTALS.overdue,T('Vencidas','Overdue'),'r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Gantt Live · Camino Crítico','Gantt Live · Critical Path')+'</h2><p>'+T('Timeline visual con hitos, dependencias y línea de "hoy".','Visual timeline with milestones, dependencies and live "today" line.')+'</p></div><div class="hero-stats">'+statCard(OPS_PROJECTS.length,T('Proyectos','Projects'))+statCard(OPS_PROJECTS.reduce(function(s,p){return s+p.tasks.length;},0),T('Tareas','Tasks'),'g')+statCard(OPS_TOTALS.completed,T('Completas','Done'),'gr')+statCard(OPS_TOTALS.overdue,T('Vencidas','Overdue'),'r')+'</div></div></div>'+
     '<div class="box"><div class="box-t"><span>📅</span> '+T('Timeline · Portafolio completo','Timeline · Full portfolio')+'</div><div class="gantt-wrapper"><div class="gantt-chart" id="opsGanttChart"></div><div class="gantt-legend">'+
       '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#00d47e;"></div>'+T('Activo','Active')+'</div>'+
       '<div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#fbbf24;"></div>'+T('En pausa','Paused')+'</div>'+
@@ -842,7 +954,7 @@ function renderBurndown(){
   if(!opsCurrentBurn) opsCurrentBurn = OPS_PROJECTS[0].id;
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Burndown & Velocity · Análisis de ritmo','Burndown & Velocity · Pace Analysis')+'</h2><p>'+T('Curva de quema de tareas y velocidad del equipo. Predicción de cierre con IA.','Task burn curve and team velocity. AI closure prediction.')+'</p></div><div class="hero-stats">'+statCard(fD(OPS_TOTALS.avgCycle),'Cycle','g')+statCard(OPS_TOTALS.throughput,T('Throughput','Throughput'),'gr')+statCard(OPS_TOTALS.wip,'WIP')+statCard(OPS_TOTALS.overdue,T('Vencidas','Overdue'),'r')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Burndown & Velocity · Análisis de ritmo','Burndown & Velocity · Pace Analysis')+'</h2><p>'+T('Curva de quema de tareas y velocidad del equipo.','Task burn curve and team velocity.')+'</p></div><div class="hero-stats">'+statCard(fD(OPS_TOTALS.avgCycle),'Cycle','g')+statCard(OPS_TOTALS.throughput,T('Throughput','Throughput'),'gr')+statCard(OPS_TOTALS.wip,'WIP')+statCard(OPS_TOTALS.overdue,T('Vencidas','Overdue'),'r')+'</div></div></div>'+
     '<div class="box"><div class="box-t"><span>🔥</span> '+T('Burndown · Tareas restantes vs tiempo','Burndown · Remaining tasks vs time')+'</div>'+
       '<div class="selector-bar"><label style="font-size:11px;color:#94a3b8;font-weight:700;">'+T('Proyecto','Project')+':</label><select id="opsBurnSelect" onchange="opsUpdateBurn()">'+OPS_PROJECTS.map(function(p){return '<option value="'+p.id+'"'+(p.id===opsCurrentBurn?' selected':'')+'>'+p.client+' — '+p.name.substring(0,40)+'</option>';}).join('')+'</select><div style="margin-left:auto;display:flex;gap:6px;"><button class="toggle-btn '+(opsBurnView==='tasks'?'on':'')+'" onclick="opsSetBurnView(\'tasks\')">'+T('Tareas','Tasks')+'</button><button class="toggle-btn '+(opsBurnView==='pct'?'on':'')+'" onclick="opsSetBurnView(\'pct\')">%</button></div></div>'+
       '<div style="height:320px;"><canvas id="opsBurnChart"></canvas></div>'+
@@ -976,7 +1088,7 @@ function renderBlockers(){
   var medium = allBlockers.filter(function(b){return b.daysLate>0&&b.daysLate<=3;}).length;
 
   el.innerHTML =
-    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Blockers Radar · Cuellos de botella','Blockers Radar · Bottlenecks')+'</h2><p>'+T('Todas las tareas vencidas o en riesgo, con días de retraso y responsable. Prioriza el desbloqueo.','All overdue or at-risk tasks, with days late and owner. Prioritize unblocking.')+'</p></div><div class="hero-stats">'+statCard(allBlockers.length,T('Total','Total'),'r')+statCard(critical,T('Críticos','Critical'),'r')+statCard(high,T('Altos','High'),'g')+statCard(medium,T('Medios','Medium'),'gr')+'</div></div></div>'+
+    '<div class="hero"><div class="hero-grid"><div><h2>'+T('Blockers Radar · Cuellos de botella','Blockers Radar · Bottlenecks')+'</h2><p>'+T('Todas las tareas vencidas o en riesgo, con días de retraso y responsable.','All overdue or at-risk tasks, with days late and owner.')+'</p></div><div class="hero-stats">'+statCard(allBlockers.length,T('Total','Total'),'r')+statCard(critical,T('Críticos','Critical'),'r')+statCard(high,T('Altos','High'),'g')+statCard(medium,T('Medios','Medium'),'gr')+'</div></div></div>'+
     '<div class="box"><div class="box-t"><span>🚧</span> '+T('Lista de bloqueos activos','Active blockers list')+'</div>'+
       (allBlockers.length===0?'<div style="text-align:center;padding:40px;color:#00d47e;font-size:16px;">✅ '+T('No hay bloqueos activos. ¡Todo fluyendo!','No active blockers. Everything flowing!')+'</div>':
       allBlockers.map(function(b){
@@ -1181,8 +1293,8 @@ function switchOpsTab(id){
   if(view) view.classList.add('on');
 
   var titles = {
-    es:{cmd:{t:'OPS Command Center',s:'Torre de control · Flow · Capacidad · Bloqueos'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Carga del equipo en vivo'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline con hitos'},burn:{t:'Burndown & Velocity',s:'Análisis de ritmo'},blk:{t:'Blockers Radar',s:'Cuellos de botella'},ai:{t:'AI OPS Copilot',s:'Análisis operativo con IA'},vip:{t:'C-Suite OPS View',s:'Vista ejecutiva 15 segundos'}},
-    en:{cmd:{t:'OPS Command Center',s:'Control Tower · Flow · Capacity · Blockers'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Live team load'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline with milestones'},burn:{t:'Burndown & Velocity',s:'Pace analysis'},blk:{t:'Blockers Radar',s:'Bottlenecks'},ai:{t:'AI OPS Copilot',s:'AI operational analysis'},vip:{t:'C-Suite OPS View',s:'15-second executive view'}}
+    es:{evm:{t:'Análisis Financiero · EVM',s:'Earned Value Management completo'},cmd:{t:'OPS Command Center',s:'Torre de control · Flow · Capacidad · Bloqueos'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Carga del equipo en vivo'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline con hitos'},burn:{t:'Burndown & Velocity',s:'Análisis de ritmo'},blk:{t:'Blockers Radar',s:'Cuellos de botella'},ai:{t:'AI OPS Copilot',s:'Análisis operativo con IA'},vip:{t:'C-Suite OPS View',s:'Vista ejecutiva 15 segundos'}},
+    en:{evm:{t:'Financial Analysis · EVM',s:'Full Earned Value Management'},cmd:{t:'OPS Command Center',s:'Control Tower · Flow · Capacity · Blockers'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Live team load'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline with milestones'},burn:{t:'Burndown & Velocity',s:'Pace analysis'},blk:{t:'Blockers Radar',s:'Bottlenecks'},ai:{t:'AI OPS Copilot',s:'AI operational analysis'},vip:{t:'C-Suite OPS View',s:'15-second executive view'}}
   };
   var lang = window.OPS_LANG||'es';
   var title = titles[lang][id];
@@ -1191,7 +1303,8 @@ function switchOpsTab(id){
     document.getElementById('opsMSub').textContent = title.s;
   }
 
-  if(id==='cmd') renderOpsCommand();
+  if(id==='evm') renderEVM();
+  else if(id==='cmd') renderOpsCommand();
   else if(id==='flow') renderFlowMetrics();
   else if(id==='cap') renderCapacity();
   else if(id==='gantt') renderGantt();
@@ -1209,7 +1322,7 @@ function openOpsModal(){
   document.getElementById('opsModal').classList.add('on');
   document.body.style.overflow = 'hidden';
   updateOpsChips();
-  renderOpsCommand();
+  renderEVM();
 }
 
 function closeOpsModal(){
@@ -1225,8 +1338,8 @@ function updateOpsChips(){
   var w = document.getElementById('opsChipW');
   var b = document.getElementById('opsChipB');
   if(p) p.textContent = '📋 '+t.count+' '+T('proyectos','projects');
-  if(thr) thr.textContent = '⚡ '+t.throughput+' throughput';
-  if(w) w.textContent = '🔄 '+t.wip+' WIP';
+  if(thr) thr.textContent = '📊 CPI '+t.evm.CPI.toFixed(2);
+  if(w) w.textContent = '⏱️ '+t.wip+' WIP';
   if(b) b.textContent = '⚠️ '+t.blockers+' '+T('bloqueos','blockers');
 }
 
@@ -1250,14 +1363,14 @@ window.toggleOpsLang = function(){
 
   var lang = window.OPS_LANG;
   document.getElementById('opsHeaderTitle').textContent = lang==='es' ? 'ZACKY OPS COMMAND CENTER · OPS 4D' : 'ZACKY OPS COMMAND CENTER · OPS 4D';
-  document.getElementById('opsHeaderSub').textContent = lang==='es' ? '8 módulos operativos · Flow metrics · Capacity 4D · Gantt live · IA · PDF/PPTX' : '8 operational modules · Flow metrics · Capacity 4D · Gantt live · AI · PDF/PPTX';
-  document.getElementById('opsStoryTitle').textContent = lang==='es' ? 'Torre de control operativa: flow, capacidad y ejecución en vivo' : 'Operations control tower: flow, capacity and live execution';
-  document.getElementById('opsStoryText').innerHTML = lang==='es' ? '<strong>Flow Metrics</strong> (Throughput, Cycle Time, Lead Time, WIP) · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt con camino crítico</strong> · <strong>Burndown + Velocity</strong> · <strong>Radar de bloqueos</strong> · <strong>IA OPS Copilot</strong> · Reportes ejecutivos.' : '<strong>Flow Metrics</strong> (Throughput, Cycle Time, Lead Time, WIP) · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt with critical path</strong> · <strong>Burndown + Velocity</strong> · <strong>Blockers Radar</strong> · <strong>AI OPS Copilot</strong> · Executive reports.';
+  document.getElementById('opsHeaderSub').textContent = lang==='es' ? '8 módulos operativos y financieros · EVM · Flow · Capacity · Gantt · IA' : '8 operational & financial modules · EVM · Flow · Capacity · Gantt · AI';
+  document.getElementById('opsStoryTitle').textContent = lang==='es' ? 'Torre de control operativa y financiera: EVM, Flow y ejecución' : 'Operations & financial control tower: EVM, Flow and execution';
+  document.getElementById('opsStoryText').innerHTML = lang==='es' ? '<strong>EVM Completo</strong> (CPI, SPI, EAC, VAC) · <strong>Flow Metrics</strong> · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt con camino crítico</strong> · <strong>Burndown + Velocity</strong> · <strong>IA OPS</strong> · Reportes ejecutivos.' : '<strong>Full EVM</strong> (CPI, SPI, EAC, VAC) · <strong>Flow Metrics</strong> · <strong>Capacity Heatmap 4D</strong> · <strong>Gantt with critical path</strong> · <strong>Burndown + Velocity</strong> · <strong>AI OPS</strong> · Executive reports.';
 
   document.querySelectorAll('#opsLangBtn, #opsModal button[onclick="toggleOpsLang()"]').forEach(function(b){
     b.textContent = lang==='es' ? '🌐 EN' : '🌐 ES';
   });
-  document.getElementById('opsFabText').textContent = lang==='es' ? 'Entrar' : 'Enter';
+  document.getElementById('opsFabText').textContent = lang==='es' ? 'Entrar a Operaciones' : 'Enter Operations';
 
   if(document.getElementById('opsModal').classList.contains('on')){
     var active = document.querySelector('#opsTabs .tab.on');
@@ -1265,7 +1378,6 @@ window.toggleOpsLang = function(){
   }
 };
 
-/* EXPORT PDF / PPTX SIMPLE */
 async function exportOpsPDF(){
   alert('Generación de PDF lista (Simulación). El archivo se descargaría con tus métricas de OPS.');
 }
@@ -1433,7 +1545,6 @@ async function exportOpsPPTX(){
       const returnTo=encodeURIComponent(location.pathname+location.search+location.hash);
       location.href=CONFIG.LOGIN_URL+'?returnTo='+returnTo;
     });
-    // 🔥 BOTÓN DEMO ARREGLADO PARA QUE FUNCIONE AL INSTANTE
     document.getElementById('zopsDemoBtn').addEventListener('click', enterDemoMode);
     document.getElementById('zopsRetryBtn').addEventListener('click',bootSequence);
 
@@ -1534,7 +1645,6 @@ async function exportOpsPPTX(){
     window.dispatchEvent(new CustomEvent('zackyOpsReady',{detail:window.ZackyOpsSession||null}));
   }
 
-  // 🔥 FUNCIÓN DEMO CORREGIDA: ENTRA AL INSTANTE
   function enterDemoMode(){
     const s=getUserFromStorage();
     window.ZackyOpsSession={mode:'demo',authenticated:false,apiUrl:CONFIG.API_BASE_URL,lang:state.lang,user:{email:s.email||t('guest'),plan:s.plan||'demo'},validatedAt:null,note:'Demo mode'};
@@ -1544,17 +1654,15 @@ async function exportOpsPPTX(){
     setSystem('demo','systemOnline');
     setMessage('demoGranted','warning');
     console.log(t('demoConsole'),window.ZackyOpsSession.user.email);
-    unlockOpsRoom('demo'); // Sin setTimeout
+    unlockOpsRoom('demo');
   }
 
-  // 🔥 BOOT SEQUENCE MEJORADA: BUSCA EL TOKEN EN LA URL Y EN TODAS LAS LLAVES
   async function bootSequence(){
     resetVisualState();
     await wait(450);
     setStep('identity','active');
     setMessage('checkingIdentity','info');
 
-    // Buscar token en la URL (por si el sistema principal lo envía al redirigir)
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
     if(urlToken) {
@@ -1563,7 +1671,6 @@ async function exportOpsPPTX(){
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // Buscar en TODAS las llaves posibles
     const token = getStoredToken() || 
                   localStorage.getItem('token') || 
                   localStorage.getItem('authToken') || 
@@ -1577,7 +1684,7 @@ async function exportOpsPPTX(){
       setStep('identity','warn');
       setSystem('demo','systemOffline');
       setMessage('noToken','warning');
-      showGate();
+      document.getElementById('zopsActions').hidden = false;
       return;
     }
 
@@ -1586,7 +1693,7 @@ async function exportOpsPPTX(){
       setStep('identity','error');
       setSystem('offline','systemOffline');
       setMessage('invalidToken','error');
-      showGate();
+      document.getElementById('zopsActions').hidden = false;
       return;
     }
 
@@ -1599,7 +1706,7 @@ async function exportOpsPPTX(){
       setStep('identity','warn');
       setSystem('offline','systemOffline');
       setMessage('expiredToken','warning');
-      showGate();
+      document.getElementById('zopsActions').hidden = false;
       return;
     }
     setStep('identity','ok');
@@ -1627,7 +1734,7 @@ async function exportOpsPPTX(){
         setStep('access','error');
         setSystem('offline','systemOffline');
         setMessage('rejectedToken','error');
-        showGate();
+        document.getElementById('zopsActions').hidden = false;
         return;
       }
       if(!accessRes.ok)throw new Error('Access validation failed: HTTP '+accessRes.status);
@@ -1654,7 +1761,7 @@ async function exportOpsPPTX(){
       setStep('access','warn');
       setSystem('offline','systemOffline');
       setMessage('backendOffline','error');
-      showGate();
+      document.getElementById('zopsActions').hidden = false;
     }
   }
 
