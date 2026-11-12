@@ -2016,6 +2016,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
           <button class="tab" data-tab="api">🔌 API</button>
           <button class="tab" data-tab="fin">💎 FIN</button>
           <button class="tab" data-tab="vip">👑 VIP</button>
+          <button class="tab" data-tab="alerts">🚨 Alertas</button>
         </div>
         
         <!-- ÚNICO BOTÓN DE IDIOMA -->
@@ -2046,6 +2047,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="view" id="v-api"></div>
       <div class="view" id="v-fin"></div>
       <div class="view" id="v-vip"></div>
+      <div class="view" id="v-alerts"></div>
     </div>
   </div>
 </div>
@@ -3322,6 +3324,79 @@ function renderVIP(){
     }
   }, 100);
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   MÓDULO 9 · ALERTAS DEL AGENTE
+   ═══════════════════════════════════════════════════════════ */
+async function renderAlerts(){
+  var el = document.getElementById('v-alerts');
+  var isEn = window.currentDashboardLang === 'en';
+  
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#a78bfa;font-weight:800;">⏳ '+(isEn?'Loading alerts from agent...':'Cargando alertas del agente...')+'</div>';
+  
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+  if (!token) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'You must log in to view alerts.':'Debes iniciar sesión para ver las alertas.')+'</div>';
+    return;
+  }
+  
+  try {
+    // Por defecto, pedimos las activas
+    const r = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts?estado=activa&limit=100', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await r.json();
+    
+    if (!data.success) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error loading alerts.':'Error cargando alertas.')+'</div>';
+      return;
+    }
+    
+    const alertas = data.alertas || [];
+    
+    if (alertas.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:60px;color:#34d399;font-weight:800;font-size:16px;">✅ '+(isEn?'No active alerts. Everything in order!':'No hay alertas activas. ¡Todo en orden!')+'</div>';
+      return;
+    }
+    
+    // Contadores por prioridad
+    const altas = alertas.filter(a => a.prioridad === 'ALTA').length;
+    const medias = alertas.filter(a => a.prioridad === 'MEDIA').length;
+    
+    let html = '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Agent Alerts · Real-time':'Alertas del Agente · Tiempo Real')+'</h2><p>'+(isEn?'Active alerts detected by the autonomous agent. Filters: 12h window for repeat alerts.':'Alertas activas detectadas por el agente autónomo. Ventana de 12h para recordatorios.')+'</p></div><div class="hero-stats">'+statCard(alertas.length,(isEn?'Total':'Total'))+statCard(altas,(isEn?'High':'Altas'),'r')+statCard(medias,(isEn?'Medium':'Medias'),'g')+statCard(12,(isEn?'h Window':'Ventana h'))+'</div></div></div>';
+    
+    // Tabla de alertas
+    html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th></tr></thead><tbody>';
+    
+    alertas.forEach(function(a){
+      const color = a.prioridad === 'ALTA' ? '#ef4444' : a.prioridad === 'MEDIA' ? '#fbbf24' : '#34d399';
+      const fecha = a.creadaEn ? new Date(a.creadaEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+      
+      html += '<tr>';
+      html += '<td><span class="badge" style="background:'+color+'22;color:'+color+';">'+a.prioridad+'</span></td>';
+      html += '<td><strong style="color:#fff;">'+a.proyectoNombre+'</strong></td>';
+      html += '<td style="font-size:11px;color:#cbd5e1;">'+a.regla+'</td>';
+      html += '<td style="font-family:monospace;color:#fbbf24;font-weight:800;font-size:11px;">'+a.metrica+'</td>';
+      html += '<td style="font-size:11px;color:#a78bfa;">'+a.accionSugerida+'</td>';
+      html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table></div></div>';
+    
+    // Nota sobre la memoria
+    html += '<div class="box" style="border-left:4px solid #34d399;"><div style="font-size:12.5px;color:#cbd5e1;line-height:1.7;"><strong style="color:#34d399;">'+(isEn?'💡 About memory:':'💡 Sobre la memoria:')+'</strong> '+(isEn?'The agent avoids sending the same alert more than once in 12h. If an alert is still active after 12h, it will be sent again as a reminder. When the problem is resolved, the alert will automatically disappear from this list.':'El agente evita enviar la misma alerta más de una vez en 12h. Si una alerta sigue activa después de 12h, se enviará de nuevo como recordatorio. Cuando el problema se resuelva, la alerta desaparecerá automáticamente de esta lista.')+'</div></div>';
+    
+    el.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error:', error);
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
+  }
+}
+
+
 /* ═══════════════════════════════════════════════════════════
    IA CHAT
    ═══════════════════════════════════════════════════════════ */
@@ -3496,6 +3571,10 @@ function handleFile(input){
    NAV
    ═══════════════════════════════════════════════════════════ */
 var TABS={
+
+  alerts:{t:'Alertas del Agente',s:'Historial de alertas detectadas por el agente autónomo',r:renderAlerts},
+
+
   cfo:{t:'Portafolio Financiero · CFO',s:'EVM completo en € · Consolidado',r:renderCFO},
   ceo:{t:'OKRs & Estrategia · CEO',s:'Cuadro de mando integral',r:renderCEO},
   coo:{t:'Capacity Planning · COO',s:'Operación + Gantt + EVM horas + Burndown',r:renderCOO},
