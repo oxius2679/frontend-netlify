@@ -2321,7 +2321,7 @@ async function renderOpsAlerts(){
       '<div class="h-stat"><div class="v">12</div><div class="l">'+(isEn?'H WINDOW':'VENTANA H')+'</div></div>'+
     '</div></div></div>';
     
-    html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th></tr></thead><tbody>';
+       html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th><th>'+(isEn?'Resolve':'Resolver')+'</th></tr></thead><tbody>';
     
     alertas.forEach(function(a){
       // Usamos los colores de OPS (cyan, red, yellow)
@@ -2334,7 +2334,8 @@ async function renderOpsAlerts(){
       html += '<td style="font-size:11px;color:#cbd5e1;">'+a.regla+'</td>';
       html += '<td style="font-family:monospace;color:#67e8f9;font-weight:800;font-size:11px;">'+a.metrica+'</td>';
       html += '<td style="font-size:11px;color:#c4b5fd;">'+a.accionSugerida+'</td>';
-      html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
+            html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
+      html += '<td><button onclick="resolverOpsAlerta(\''+a._id+'\', this)" style="background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid #06b6d4;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
       html += '</tr>';
     });
     
@@ -2343,11 +2344,42 @@ async function renderOpsAlerts(){
     
     el.innerHTML = html;
     
-  } catch (error) {
+   } catch (error) {
     console.error('Error:', error);
     el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
   }
 }
+
+// ✅ PEGA LA NUEVA FUNCIÓN JUSTO AQUÍ
+window.resolverOpsAlerta = async function(id, btn) {
+  if (!confirm('¿Marcar esta alerta como resuelta?')) return;
+  
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+  
+  try {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const res = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts/${id}/resolve`, {
+      method: 'POST', 
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (res.ok) {
+      btn.closest('tr').style.opacity = '0.3';
+      setTimeout(() => btn.closest('tr').remove(), 500);
+    } else { 
+      alert('Error al resolver la alerta'); 
+      btn.innerHTML = originalText; 
+      btn.disabled = false; 
+    }
+  } catch(e) { 
+    alert(e.message); 
+    btn.innerHTML = originalText; 
+    btn.disabled = false; 
+  }
+};
+// ✅ FIN DE LA NUEVA FUNCIÓN
 
 
 /* ═══════════════════════════════════════════════════════════
