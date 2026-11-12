@@ -2409,7 +2409,7 @@ function switchOpsTab(id){
     document.getElementById('opsMSub').textContent = title.s;
   }
 
-  if(id==='evm') renderEVM();
+    if(id==='evm') renderEVM();
   else if(id==='cmd') renderOpsCommand();
   else if(id==='flow') renderFlowMetrics();
   else if(id==='cap') renderCapacity();
@@ -2418,7 +2418,7 @@ function switchOpsTab(id){
   else if(id==='blk') renderBlockers();
   else if(id==='ai') renderAIOps();
   else if(id==='vip') renderCSuite();
-  else if(id==='alerts') renderOpsAlerts();
+  else if(id==='alerts') renderOpsAlerts(); // <-- NUEVA LÍNEA
 }
 
 function openOpsModal(){

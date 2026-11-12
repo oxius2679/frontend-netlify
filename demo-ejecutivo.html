@@ -3925,6 +3925,7 @@ window.toggleDashboardLang = function() {
             else if (tabId === 'api' && typeof renderAPI === 'function') renderAPI();
             else if (tabId === 'fin' && typeof renderFIN === 'function') renderFIN();
             else if (tabId === 'vip' && typeof renderVIP === 'function') renderVIP();
+            else if (tabId === 'alerts' && typeof renderAlerts === 'function') renderAlerts(); // <-- NUEVA LÍNEA
         }
     }
 };
