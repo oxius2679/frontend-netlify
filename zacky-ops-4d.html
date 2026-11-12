@@ -2282,7 +2282,7 @@ function renderCSuite(){
    ═══════════════════════════════════════════════════════════ */
 async function renderOpsAlerts(){
   var el = document.getElementById('v-alerts');
-  var isEn = window.currentDashboardLang === 'en';
+  var isEn = (window.OPS_LANG === 'en') || (window.currentDashboardLang === 'en');
   
   el.innerHTML = '<div style="text-align:center;padding:40px;color:#67e8f9;font-weight:800;">⏳ '+(isEn?'Loading alerts...':'Cargando alertas...')+'</div>';
   
@@ -2486,6 +2486,11 @@ window.toggleOpsLang = function(){
     var active = document.querySelector('#opsTabs .tab.on');
     if(active) switchOpsTab(active.dataset.tab);
   }
+
+  if(active && active.dataset.tab === 'alerts' && typeof renderOpsAlerts === 'function') {
+      renderOpsAlerts();
+  }
+
 };
 
 /* ═══════════════════════════════════════════════════════════

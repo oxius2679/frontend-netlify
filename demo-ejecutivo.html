@@ -3399,8 +3399,13 @@ async function renderAlerts(){
 
 
 // ✅ PEGA LA NUEVA FUNCIÓN JUSTO AQUÍ
+// FINANZAS
 window.resolverAlerta = async function(id, btn) {
-  const isEn = window.currentDashboardLang === 'en';
+  // 🔥 LEEMOS EL IDIOMA DIRECTAMENTE DEL BOTÓN DE LA ESQUINA
+  const langBtn = document.querySelector('.lang-toggle-btn') || document.getElementById('zepLangBtn') || document.getElementById('zopsLangBtn');
+  const isEn = langBtn ? langBtn.textContent.includes('ES') : false; 
+  // (Si el botón dice "ES", significa que estamos en inglés y quiere cambiar a español)
+
   const msgConfirm = isEn ? 'Mark this alert as resolved?' : '¿Marcar esta alerta como resuelta?';
   const msgError = isEn ? 'Error resolving alert' : 'Error al resolver la alerta';
 
@@ -3426,6 +3431,12 @@ window.resolverAlerta = async function(id, btn) {
       btn.disabled = false; 
     }
   } catch(e) { 
+    alert(e.message); 
+    btn.innerHTML = originalText; 
+    btn.disabled = false; 
+  }
+};
+ catch(e) { 
     alert(e.message); 
     btn.innerHTML = originalText; 
     btn.disabled = false; 
