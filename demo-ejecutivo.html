@@ -3367,7 +3367,7 @@ async function renderAlerts(){
     let html = '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Agent Alerts · Real-time':'Alertas del Agente · Tiempo Real')+'</h2><p>'+(isEn?'Active alerts detected by the autonomous agent. Filters: 12h window for repeat alerts.':'Alertas activas detectadas por el agente autónomo. Ventana de 12h para recordatorios.')+'</p></div><div class="hero-stats">'+statCard(alertas.length,(isEn?'Total':'Total'))+statCard(altas,(isEn?'High':'Altas'),'r')+statCard(medias,(isEn?'Medium':'Medias'),'g')+statCard(12,(isEn?'h Window':'Ventana h'))+'</div></div></div>';
     
     // Tabla de alertas
-    html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th></tr></thead><tbody>';
+          html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th><th>'+(isEn?'Resolve':'Resolver')+'</th></tr></thead><tbody>';
     
     alertas.forEach(function(a){
       const color = a.prioridad === 'ALTA' ? '#ef4444' : a.prioridad === 'MEDIA' ? '#fbbf24' : '#34d399';
@@ -3380,6 +3380,7 @@ async function renderAlerts(){
       html += '<td style="font-family:monospace;color:#fbbf24;font-weight:800;font-size:11px;">'+a.metrica+'</td>';
       html += '<td style="font-size:11px;color:#a78bfa;">'+a.accionSugerida+'</td>';
       html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
+      html += '<td><button onclick="resolverAlerta(\''+a._id+'\', this)" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid #34d399;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
       html += '</tr>';
     });
     
@@ -3396,6 +3397,37 @@ async function renderAlerts(){
   }
 }
 
+
+// ✅ PEGA LA NUEVA FUNCIÓN JUSTO AQUÍ
+window.resolverAlerta = async function(id, btn) {
+  if (!confirm('¿Marcar esta alerta como resuelta?')) return;
+  
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+  
+  try {
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const res = await fetch(`https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts/${id}/resolve`, {
+      method: 'POST', 
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (res.ok) {
+      btn.closest('tr').style.opacity = '0.3';
+      setTimeout(() => btn.closest('tr').remove(), 500);
+    } else { 
+      alert('Error al resolver la alerta'); 
+      btn.innerHTML = originalText; 
+      btn.disabled = false; 
+    }
+  } catch(e) { 
+    alert(e.message); 
+    btn.innerHTML = originalText; 
+    btn.disabled = false; 
+  }
+};
+// ✅ FIN DE LA NUEVA FUNCIÓN
 
 /* ═══════════════════════════════════════════════════════════
    IA CHAT
