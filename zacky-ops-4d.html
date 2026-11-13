@@ -2282,7 +2282,9 @@ function renderCSuite(){
    ═══════════════════════════════════════════════════════════ */
 async function renderOpsAlerts(){
   var el = document.getElementById('v-alerts');
-  var isEn = (window.OPS_LANG === 'en') || (window.currentDashboardLang === 'en');
+  // 🔥 DETECCIÓN DE IDIOMA SEGURA PARA OPS
+  var langBtn = document.querySelector('#opsLangBtn') || document.querySelector('button[onclick="toggleOpsLang()"]');
+  var isEn = langBtn ? langBtn.textContent.includes('ES') : false;
   
   el.innerHTML = '<div style="text-align:center;padding:40px;color:#67e8f9;font-weight:800;">⏳ '+(isEn?'Loading alerts...':'Cargando alertas...')+'</div>';
   
@@ -2313,7 +2315,6 @@ async function renderOpsAlerts(){
     const altas = alertas.filter(a => a.prioridad === 'ALTA').length;
     const medias = alertas.filter(a => a.prioridad === 'MEDIA').length;
     
-    // Reutilizamos las clases de estilo de OPS (hero, h-stat, tbl)
     let html = '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Agent Alerts · Real-time':'Alertas del Agente · Tiempo Real')+'</h2><p>'+(isEn?'Active alerts detected by the autonomous agent.':'Alertas activas detectadas por el agente autónomo.')+'</p></div><div class="hero-stats">'+
       '<div class="h-stat"><div class="v">'+alertas.length+'</div><div class="l">'+(isEn?'TOTAL':'TOTAL')+'</div></div>'+
       '<div class="h-stat r"><div class="v">'+altas+'</div><div class="l">'+(isEn?'HIGH':'ALTAS')+'</div></div>'+
@@ -2321,10 +2322,9 @@ async function renderOpsAlerts(){
       '<div class="h-stat"><div class="v">12</div><div class="l">'+(isEn?'H WINDOW':'VENTANA H')+'</div></div>'+
     '</div></div></div>';
     
-       html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th><th>'+(isEn?'Resolve':'Resolver')+'</th></tr></thead><tbody>';
+    html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th><th>'+(isEn?'Resolve':'Resolver')+'</th></tr></thead><tbody>';
     
     alertas.forEach(function(a){
-      // Usamos los colores de OPS (cyan, red, yellow)
       const color = a.prioridad === 'ALTA' ? '#ef4444' : a.prioridad === 'MEDIA' ? '#fbbf24' : '#00d47e';
       const fecha = a.creadaEn ? new Date(a.creadaEn).toLocaleString(isEn?'en-US':'es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '—';
       
@@ -2334,8 +2334,8 @@ async function renderOpsAlerts(){
       html += '<td style="font-size:11px;color:#cbd5e1;">'+a.regla+'</td>';
       html += '<td style="font-family:monospace;color:#67e8f9;font-weight:800;font-size:11px;">'+a.metrica+'</td>';
       html += '<td style="font-size:11px;color:#c4b5fd;">'+a.accionSugerida+'</td>';
-            html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
-     html += '<td><button onclick="resolverOpsAlerta(\''+a._id+'\', this)" style="background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid #06b6d4;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
+      html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
+      html += '<td><button onclick="resolverOpsAlerta(\''+a._id+'\', this)" style="background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid #06b6d4;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
       html += '</tr>';
     });
     
@@ -2344,12 +2344,11 @@ async function renderOpsAlerts(){
     
     el.innerHTML = html;
     
-   } catch (error) {
+  } catch (error) {
     console.error('Error:', error);
     el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
   }
 }
-
 // ✅ PEGA LA NUEVA FUNCIÓN JUSTO AQUÍ
 window.resolverOpsAlerta = async function(id, btn) {
   const isEn = window.currentDashboardLang === 'en';
@@ -2398,9 +2397,9 @@ function switchOpsTab(id){
   var view = document.getElementById('v-'+id);
   if(view) view.classList.add('on');
 
-  var titles = {
-    es:{evm:{t:'Análisis Financiero · EVM',s:'Earned Value Management completo'},cmd:{t:'OPS Command Center',s:'Torre de control · Flow · Capacidad · Bloqueos'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Carga del equipo en vivo'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline con hitos'},burn:{t:'Burndown & Velocity',s:'Análisis de ritmo'},blk:{t:'Blockers Radar',s:'Cuellos de botella'},    ai:{t:'AI OPS Copilot',s:'Análisis operativo con IA'},vip:{t:'C-Suite OPS View',s:'Vista ejecutiva 15 segundos'},alerts:{t:'Alertas del Agente',s:'Historial de alertas'}},
-    en:{evm:{t:'Financial Analysis · EVM',s:'Full Earned Value Management'},cmd:{t:'OPS Command Center',s:'Control Tower · Flow · Capacity · Blockers'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Live team load'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline with milestones'},burn:{t:'Burndown & Velocity',s:'Pace analysis'},blk:{t:'Blockers Radar',s:'Bottlenecks'},ai:{t:'AI OPS Copilot',s:'AI operational analysis'},vip:{t:'C-Suite OPS View',s:'15-second executive view'}}
+    var titles = {
+    es:{evm:{t:'Análisis Financiero · EVM',s:'Earned Value Management completo'},cmd:{t:'OPS Command Center',s:'Torre de control · Flow · Capacidad · Bloqueos'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Carga del equipo en vivo'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline con hitos'},burn:{t:'Burndown & Velocity',s:'Análisis de ritmo'},blk:{t:'Blockers Radar',s:'Cuellos de botella'},ai:{t:'AI OPS Copilot',s:'Análisis operativo con IA'},vip:{t:'C-Suite OPS View',s:'Vista ejecutiva 15 segundos'},alerts:{t:'Alertas del Agente',s:'Historial de alertas'}},
+    en:{evm:{t:'Financial Analysis · EVM',s:'Full Earned Value Management'},cmd:{t:'OPS Command Center',s:'Control Tower · Flow · Capacity · Blockers'},flow:{t:'Flow Metrics · Kanban Analytics',s:'Throughput · Cycle · Lead · WIP'},cap:{t:'Capacity Planning 4D',s:'Live team load'},gantt:{t:'Gantt Live · Critical Path',s:'Timeline with milestones'},burn:{t:'Burndown & Velocity',s:'Pace analysis'},blk:{t:'Blockers Radar',s:'Bottlenecks'},ai:{t:'AI OPS Copilot',s:'AI operational analysis'},vip:{t:'C-Suite OPS View',s:'15-second executive view'},alerts:{t:'Agent Alerts',s:'Alert history'}}
   };
   var lang = window.OPS_LANG||'es';
   var title = titles[lang][id];
@@ -2487,9 +2486,17 @@ window.toggleOpsLang = function(){
     if(active) switchOpsTab(active.dataset.tab);
   }
 
+
+  var btnAlerts = document.querySelector('#opsTabs .tab[data-tab="alerts"]');
+  if(btnAlerts) btnAlerts.textContent = lang==='en' ? '🚨 ALERTS' : '🚨 ALERTAS';
+
+
   if(active && active.dataset.tab === 'alerts' && typeof renderOpsAlerts === 'function') {
       renderOpsAlerts();
   }
+
+var btnAlerts = document.querySelector('#opsTabs .tab[data-tab="alerts"]');
+if(btnAlerts) btnAlerts.textContent = lang==='en' ? '🚨 ALERTS' : '🚨 ALERTAS';
 
 };
 
