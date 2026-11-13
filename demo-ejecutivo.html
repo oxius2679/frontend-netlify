@@ -3391,21 +3391,16 @@ async function renderAlerts(){
     
     el.innerHTML = html;
     
-  } catch (error) {
+   } catch (error) {
     console.error('Error:', error);
     el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
   }
 }
 
-
-// ✅ PEGA LA NUEVA FUNCIÓN JUSTO AQUÍ
-// FINANZAS
+// ✅ FUNCIÓN PARA RESOLVER ALERTAS (CORREGIDA)
 window.resolverAlerta = async function(id, btn) {
-  // 🔥 LEEMOS EL IDIOMA DIRECTAMENTE DEL BOTÓN DE LA ESQUINA
-  const langBtn = document.querySelector('.lang-toggle-btn') || document.getElementById('zepLangBtn') || document.getElementById('zopsLangBtn');
+  const langBtn = document.querySelector('.lang-toggle-btn');
   const isEn = langBtn ? langBtn.textContent.includes('ES') : false; 
-  // (Si el botón dice "ES", significa que estamos en inglés y quiere cambiar a español)
-
   const msgConfirm = isEn ? 'Mark this alert as resolved?' : '¿Marcar esta alerta como resuelta?';
   const msgError = isEn ? 'Error resolving alert' : 'Error al resolver la alerta';
 
@@ -3436,13 +3431,6 @@ window.resolverAlerta = async function(id, btn) {
     btn.disabled = false; 
   }
 };
- catch(e) { 
-    alert(e.message); 
-    btn.innerHTML = originalText; 
-    btn.disabled = false; 
-  }
-};// ✅ FIN DE LA NUEVA FUNCIÓN
-
 /* ═══════════════════════════════════════════════════════════
    IA CHAT
    ═══════════════════════════════════════════════════════════ */
