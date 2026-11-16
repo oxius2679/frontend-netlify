@@ -2825,52 +2825,75 @@ html+='<div style="display:flex;gap:12px;justify-content:center;font-size:10px;c
 html+='<div style="text-align:center;font-size:9px;color:#64748b;margin-top:6px;font-style:italic;">'+(isEn?'Hover over cells for details':'Pasa el ratón por encima de los cuadros para ver el detalle')+'</div>';
 html+='</div>';
 
-// Tabla de Riesgos DINÁMICA
+// Tabla de Riesgos DINÁMICA (CORREGIDA - ROLES RACI)
 html+='<div class="box" style="margin-bottom:0;"><div class="box-t">⚠️ '+(isEn?'RISK MATRIX DETAIL':'DETALLE DE LA MATRIZ DE RIESGOS')+'</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>'+(isEn?'RISK':'RIESGO')+'</th><th>SCORE</th><th>'+(isEn?'SEVERITY':'SEVERIDAD')+'</th><th>'+(isEn?'EXPOSURE':'EXPOSICIÓN')+'</th><th>'+(isEn?'MITIGATION':'MITIGACIÓN')+'</th><th>'+(isEn?'OWNER':'RESPONSABLE')+'</th><th>'+(isEn?'DEADLINE':'PLAZO')+'</th><th>'+(isEn?'STATUS':'ESTADO')+'</th></tr></thead><tbody>';
 
 var riesgos = [];
 PROJECTS.forEach(function(p){
-var m = evmFor(p);
-if(m.CPI < 0.95){
-var exposicion = Math.abs(m.VAC);
-riesgos.push({
-name: (isEn?'Cost deviation':'Desviación de costos')+' - '+p.name,
-score: '16',
-sev: (isEn?'CRITICAL':'CRÍTICO'),
-sevColor: '#ef4444',
-exp: fEur(exposicion),
-mit: (isEn?'Hours audit':'Auditoría de horas'),
-resp: 'CFO / PMO',
-plazo: (isEn?'Expires in 48h':'Vence en 48h'),
-plazoColor: '#ef4444',
-estado: (isEn?'OPEN':'ABIERTO'),
-estadoColor: '#ef4444'
-});
-}
-if(m.SPI < 0.9){
-var exposicionSPI = p.budget * (1 - m.SPI);
-riesgos.push({
-name: (isEn?'Schedule delay':'Retraso en cronograma')+' - '+p.name,
-score: '12',
-sev: (isEn?'MEDIUM':'MEDIO'),
-sevColor: '#fbbf24',
-exp: fEur(exposicionSPI),
-mit: (isEn?'Phase acceleration':'Aceleración de fases'),
-resp: 'COO / PMs',
-plazo: (isEn?'Expires in 7d':'Vence en 7d'),
-plazoColor: '#fbbf24',
-estado: (isEn?'IN MITIGATION':'EN MITIGACIÓN'),
-estadoColor: '#fbbf24'
-});
-}
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);
+
+  // 🔴 RIESGO FINANCIERO → CFO (desviación de COSTOS en €)
+  if(m.CPI < 0.95){
+    var exposicionCostos = Math.abs(m.VAC);
+    riesgos.push({
+      name: (isEn?'Cost overrun (€)':'Desviación de costos (€)')+' - '+p.name,
+      score: '16',
+      sev: (isEn?'CRITICAL':'CRÍTICO'),
+      sevColor: '#ef4444',
+      exp: fEur(exposicionCostos),
+      mit: (isEn?'Cost structure review & contract renegotiation':'Revisión de estructura de costos y renegociación'),
+      resp: 'CFO / PMO',
+      plazo: (isEn?'Expires in 48h':'Vence en 48h'),
+      plazoColor: '#ef4444',
+      estado: (isEn?'OPEN':'ABIERTO'),
+      estadoColor: '#ef4444'
+    });
+  }
+
+  // 🟠 RIESGO OPERATIVO DE HORAS → COO (desviación de CPI en horas)
+  if(eh.CPIH < 0.95){
+    var exposicionHoras = (eh.EACH - eh.totalEstimated) * 50; // horas extra × costo/h
+    riesgos.push({
+      name: (isEn?'Hours overrun (h)':'Desviación de horas (h)')+' - '+p.name,
+      score: '12',
+      sev: (isEn?'MEDIUM':'MEDIO'),
+      sevColor: '#fbbf24',
+      exp: fEur(Math.abs(exposicionHoras)),
+      mit: (isEn?'Audit of logged hours vs. progress':'Auditoría de horas registradas vs. avance'),
+      resp: 'COO / PMO',
+      plazo: (isEn?'Expires in 72h':'Vence en 72h'),
+      plazoColor: '#fbbf24',
+      estado: (isEn?'IN AUDIT':'EN AUDITORÍA'),
+      estadoColor: '#fbbf24'
+    });
+  }
+
+  // 🟡 RIESGO OPERATIVO DE CRONOGRAMA → COO (desviación de SPI)
+  if(m.SPI < 0.9){
+    var exposicionSPI = p.budget * (1 - m.SPI);
+    riesgos.push({
+      name: (isEn?'Schedule delay (SPI)':'Retraso en cronograma (SPI)')+' - '+p.name,
+      score: '12',
+      sev: (isEn?'MEDIUM':'MEDIO'),
+      sevColor: '#fbbf24',
+      exp: fEur(exposicionSPI),
+      mit: (isEn?'Phase acceleration (fast-tracking)':'Aceleración de fases (fast-tracking)'),
+      resp: 'COO / PMs',
+      plazo: (isEn?'Expires in 7d':'Vence en 7d'),
+      plazoColor: '#fbbf24',
+      estado: (isEn?'IN MITIGATION':'EN MITIGACIÓN'),
+      estadoColor: '#fbbf24'
+    });
+  }
 });
 
 if(riesgos.length === 0){
-html+='<tr><td colspan="8" style="text-align:center;color:#34d399;padding:20px;">'+(isEn?'✅ No critical risks detected':'✅ No se detectaron riesgos críticos')+'</td></tr>';
+  html+='<tr><td colspan="8" style="text-align:center;color:#34d399;padding:20px;">'+(isEn?'✅ No critical risks detected':'✅ No se detectaron riesgos críticos')+'</td></tr>';
 } else {
-riesgos.forEach(function(r){
-html+='<tr><td><strong>'+r.name+'</strong></td><td><span style="background:rgba(255,255,255,0.1);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:900;">'+r.score+'</span></td><td><span style="color:'+r.sevColor+';font-weight:900;font-size:10px;">'+r.sev+'</span></td><td style="color:'+r.sevColor+';font-weight:800;">'+r.exp+'</td><td style="font-size:11px;font-style:italic;color:#cbd5e1;">'+r.mit+'</td><td style="font-size:11px;font-weight:700;">'+r.resp+'</td><td style="font-size:11px;font-weight:800;color:'+r.plazoColor+';">'+r.plazo+'</td><td><span style="background:'+r.estadoColor+'22;color:'+r.estadoColor+';border:1px solid '+r.estadoColor+'44;border-radius:10px;padding:3px 8px;font-size:9px;font-weight:900;">'+r.estado+'</span></td></tr>';
-});
+  riesgos.forEach(function(r){
+    html+='<tr><td><strong>'+r.name+'</strong></td><td><span style="background:rgba(255,255,255,0.1);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:900;">'+r.score+'</span></td><td><span style="color:'+r.sevColor+';font-weight:900;font-size:10px;">'+r.sev+'</span></td><td style="color:'+r.sevColor+';font-weight:800;">'+r.exp+'</td><td style="font-size:11px;font-style:italic;color:#cbd5e1;">'+r.mit+'</td><td style="font-size:11px;font-weight:700;">'+r.resp+'</td><td style="font-size:11px;font-weight:800;color:'+r.plazoColor+';">'+r.plazo+'</td><td><span style="background:'+r.estadoColor+'22;color:'+r.estadoColor+';border:1px solid '+r.estadoColor+'44;border-radius:10px;padding:3px 8px;font-size:9px;font-weight:900;">'+r.estado+'</span></td></tr>';
+  });
 }
 html+='</tbody></table></div></div>';
 html+='</div>';
@@ -2921,24 +2944,23 @@ motivo: (isEn ? 'Committee approval was expected.' : 'Se esperaba aprobación de
 });
 }
 
-// Decisión 3: Se decide seguir sin cambios
+// Decisión 3: Se decide seguir sin cambios (SPI bajo → DOMINIO COO, no CFO)
 if(m.SPI < 0.9){
-var daysAgo3 = Math.floor(Math.random() * 20) + 2;
-var decDate3 = new Date(today);
-decDate3.setDate(decDate3.getDate() - daysAgo3);
-decisions.push({
-date: decDate3.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}),
-decision: (isEn ? 'Decided to "continue without changes"' : 'Se decide "seguir sin cambios"'),
-responsible: 'CFO<br><span class="role">CFO</span>',
-cpi: m.CPI - 0.07,
-alert: (isEn ? 'Ignored' : 'Ignorada'),
-alertType: 'warn',
-executed: (isEn ? 'No' : 'No'),
-executedType: 'no',
-motivo: (isEn ? 'Conflict of priorities with another project.' : 'Conflicto de prioridades con otro proyecto.')
-});
+  var daysAgo3 = Math.floor(Math.random() * 20) + 2;
+  var decDate3 = new Date(today);
+  decDate3.setDate(decDate3.getDate() - daysAgo3);
+  decisions.push({
+    date: decDate3.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}),
+    decision: (isEn ? 'Decided to "continue without changes"' : 'Se decide "seguir sin cambios"'),
+    responsible: 'COO<br><span class="role">' + (isEn ? 'Operations' : 'Dirección de Operaciones') + '</span>',
+    cpi: m.CPI - 0.07,
+    alert: (isEn ? 'Ignored' : 'Ignorada'),
+    alertType: 'warn',
+    executed: (isEn ? 'No' : 'No'),
+    executedType: 'no',
+    motivo: (isEn ? 'Conflict of priorities with another project.' : 'Conflicto de prioridades con otro proyecto.')
+  });
 }
-
 // Decisión 4: Se decide parar el proyecto (bloqueos)
 if(p.blockers && p.blockers.length > 0){
 var daysAgo4 = Math.floor(Math.random() * 15) + 1;
