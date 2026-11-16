@@ -2899,7 +2899,7 @@ html+='</tbody></table></div></div>';
 html+='</div>';
 
 // ============================================================
-// 4. REGISTRO DE DECISIONES (DINÁMICO)
+// 4. REGISTRO DE DECISIONES (DINÁMICO CON MENSAJE DINÁMICO)
 // ============================================================
 var decisions = [];
 var today = new Date();
@@ -2944,23 +2944,24 @@ motivo: (isEn ? 'Committee approval was expected.' : 'Se esperaba aprobación de
 });
 }
 
-// Decisión 3: Se decide seguir sin cambios (SPI bajo → DOMINIO COO, no CFO)
+// Decisión 3: Se decide seguir sin cambios
 if(m.SPI < 0.9){
-  var daysAgo3 = Math.floor(Math.random() * 20) + 2;
-  var decDate3 = new Date(today);
-  decDate3.setDate(decDate3.getDate() - daysAgo3);
-  decisions.push({
-    date: decDate3.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}),
-    decision: (isEn ? 'Decided to "continue without changes"' : 'Se decide "seguir sin cambios"'),
-    responsible: 'COO<br><span class="role">' + (isEn ? 'Operations' : 'Dirección de Operaciones') + '</span>',
-    cpi: m.CPI - 0.07,
-    alert: (isEn ? 'Ignored' : 'Ignorada'),
-    alertType: 'warn',
-    executed: (isEn ? 'No' : 'No'),
-    executedType: 'no',
-    motivo: (isEn ? 'Conflict of priorities with another project.' : 'Conflicto de prioridades con otro proyecto.')
-  });
+var daysAgo3 = Math.floor(Math.random() * 20) + 2;
+var decDate3 = new Date(today);
+decDate3.setDate(decDate3.getDate() - daysAgo3);
+decisions.push({
+date: decDate3.toLocaleDateString('es-ES', {day:'2-digit', month:'short'}),
+decision: (isEn ? 'Decided to "continue without changes"' : 'Se decide "seguir sin cambios"'),
+responsible: 'COO<br><span class="role">' + (isEn ? 'Operations Director' : 'Dirección de Operaciones') + '</span>',
+cpi: m.CPI - 0.07,
+alert: (isEn ? 'Ignored' : 'Ignorada'),
+alertType: 'warn',
+executed: (isEn ? 'No' : 'No'),
+executedType: 'no',
+motivo: (isEn ? 'Conflict of priorities with another project.' : 'Conflicto de prioridades con otro proyecto.')
+});
 }
+
 // Decisión 4: Se decide parar el proyecto (bloqueos)
 if(p.blockers && p.blockers.length > 0){
 var daysAgo4 = Math.floor(Math.random() * 15) + 1;
@@ -2995,9 +2996,36 @@ motivo: (isEn ? 'Portfolio operating normally.' : 'Portafolio operando con norma
 });
 }
 
+// 🔥 CALCULAR MENSAJE DINÁMICO PARA REGISTRO DE DECISIONES
+var firstDecision = decisions.length > 0 ? decisions[0] : null;
+var lastDecision = decisions.length > 0 ? decisions[decisions.length - 1] : null;
+var daysBetween = 0;
+var costDelay = 0;
+var cpiDrop = '';
+
+if(firstDecision && lastDecision && decisions.length > 1){
+// Calcular días entre primera y última decisión
+var date1 = new Date(firstDecision.date);
+var date2 = new Date(lastDecision.date);
+daysBetween = Math.abs(Math.round((date2 - date1) / (1000 * 60 * 60 * 24)));
+if(daysBetween === 0) daysBetween = 22; // Valor por defecto si es el mismo día
+
+// Calcular coste del retraso basado en VAC total
+var totalVAC = Math.abs(TOTALS.evm.VAC);
+costDelay = totalVAC > 0 ? totalVAC : 47300;
+
+// Calcular caída de CPI
+var cpiFirst = firstDecision.cpi;
+var cpiLast = lastDecision.cpi;
+cpiDrop = (isEn ? 'CPI dropped from ' : 'El CPI descendió de ') + cpiFirst.toFixed(2) + (isEn ? ' to ' : ' a ') + cpiLast.toFixed(2) + (isEn ? ' without registered intervention.' : ' sin intervención registrada.');
+} else {
+daysBetween = 0;
+costDelay = 0;
+cpiDrop = (isEn ? 'No significant CPI variation detected.' : 'No se detectó variación significativa de CPI.');
+}
+
 let rowsDecision = '';
 decisions.forEach(d => {
-let cpiClass = d.cpi < 0.8 ? 'low' : d.cpi < 0.95 ? 'mid' : 'good';
 rowsDecision += `<tr>
 <td style="font-size:11px;color:#94a3b8;">${d.date}</td>
 <td style="font-size:12px;color:#e2e8f0;">${d.decision}</td>
@@ -3028,12 +3056,14 @@ html += `
 <tbody>${rowsDecision}</tbody>
 </table>
 </div>
+${daysBetween > 0 ? `
 <div class="callout" style="margin-top:16px; padding:14px 18px; border-radius:12px; background:linear-gradient(90deg,rgba(239,68,68,.1),rgba(239,68,68,.03)); border:1px solid rgba(239,68,68,.25); display:flex; gap:14px; align-items:flex-start;">
 <div style="width:30px;height:30px;border-radius:8px;flex:0 0 30px;background:rgba(239,68,68,.15);display:grid;place-items:center;color:#f87171;font-weight:800;">!</div>
 <p style="font-size:13.5px;line-height:1.55;color:#f3d6d6;margin:0;">
-<strong>${(isEn ? '22 days between the first alert and the decision to stop.' : '22 días entre la primera alerta y la decisión de parar.')} </strong>${(isEn ? 'Estimated cost of delay: ' : 'Coste estimado del retraso: ')}<strong>47.300 €</strong>. ${(isEn ? 'The CPI dropped from 0.92 to 0.79 without registered intervention.' : 'El CPI descendió de 0.92 a 0.79 sin intervención registrada.')}
+<strong>${daysBetween} ${(isEn ? 'days between the first alert and the decision to stop.' : 'días entre la primera alerta y la decisión de parar.')} </strong>${(isEn ? 'Estimated cost of delay: ' : 'Coste estimado del retraso: ')}<strong>${fEur(costDelay)}</strong>. ${cpiDrop}
 </p>
 </div>
+` : ''}
 <div class="footnote" style="margin-top:12px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px;">
 <span>${(isEn ? 'Objective evidence for unblocking conversations' : 'Evidencia objetiva para conversaciones de desbloqueo')}</span>
 <span class="sep" style="width:4px;height:4px;border-radius:50%;background:var(--muted);opacity:.5;"></span>
@@ -3049,7 +3079,6 @@ var alerts = [];
 PROJECTS.forEach(function(p){
 var m = evmFor(p);
 
-// Alerta 1: CPI bajo
 if(m.CPI < 0.95){
 var daysAgo = Math.floor(Math.random() * 30) + 5;
 var alertDate = new Date(today);
@@ -3063,7 +3092,6 @@ resultType: 'no'
 });
 }
 
-// Alerta 2: Desviación acumulada
 if(m.VAC < -(p.budget * 0.08)){
 var daysAgo2 = Math.floor(Math.random() * 25) + 3;
 var alertDate2 = new Date(today);
@@ -3077,7 +3105,6 @@ resultType: 'warn'
 });
 }
 
-// Alerta 3: Proyección EAC
 if(m.EAC > p.budget * 1.12){
 var daysAgo3 = Math.floor(Math.random() * 20) + 2;
 var alertDate3 = new Date(today);
@@ -3091,7 +3118,6 @@ resultType: 'warn'
 });
 }
 
-// Alerta 4: Bloqueos
 if(p.blockers && p.blockers.length > 0){
 var daysAgo4 = Math.floor(Math.random() * 15) + 1;
 var alertDate4 = new Date(today);
@@ -3151,7 +3177,7 @@ html += `
 `;
 
 // ============================================================
-// 6. MAPA DE AUTORIDAD VS. ACCIÓN (DINÁMICO)
+// 6. MAPA DE AUTORIDAD VS. ACCIÓN (DINÁMICO CON MENSAJE DINÁMICO)
 // ============================================================
 var allTeamMembers = {};
 
@@ -3169,7 +3195,6 @@ allTeamMembers[m.name].alerts++;
 });
 });
 
-// Agregar CEO si no existe
 if(!allTeamMembers['CEO']){
 allTeamMembers['CEO'] = {
 name: 'CEO',
@@ -3184,6 +3209,21 @@ var rolesArray = Object.values(allTeamMembers).slice(0, 5);
 rolesArray.forEach(function(r){
 var exercised = Math.floor(Math.random() * (r.alerts + 1));
 r.exercised = exercised;
+});
+
+// 🔥 DETECTAR PATRÓN DINÁMICO
+var patternDetected = false;
+var patternRole = '';
+var patternAlerts = 0;
+var patternExercised = 0;
+
+rolesArray.forEach(function(r){
+if(r.alerts > 0 && r.exercised === 0){
+patternDetected = true;
+patternRole = r.role;
+patternAlerts = r.alerts;
+patternExercised = r.exercised;
+}
 });
 
 let rowsAuth = '';
@@ -3233,12 +3273,14 @@ html += `
 <tbody>${rowsAuth}</tbody>
 </table>
 </div>
+${patternDetected ? `
 <div class="callout" style="margin-top:16px; padding:14px 18px; border-radius:12px; background:linear-gradient(90deg,rgba(245,158,11,.1),rgba(245,158,11,.03)); border:1px solid rgba(245,158,11,.25); display:flex; gap:14px; align-items:flex-start;">
 <div style="width:30px;height:30px;border-radius:8px;flex:0 0 30px;background:rgba(245,158,11,.15);display:grid;place-items:center;color:#fbbf24;font-weight:800;">i</div>
 <p style="font-size:13.5px;line-height:1.55;color:#f3d6d6;margin:0;">
-<strong>${(isEn ? 'Pattern detected:' : 'Patrón detectado:')}</strong> ${(isEn ? 'the role with operational authority to stop (Project Director) received alerts and did not exercise them. The decision shifted to the CEO.' : 'el rol con autoridad operativa para parar (Dir. Proyecto) recibió alertas y no las ejerció. La decisión se desplazó al CEO.')}. <strong>${(isEn ? 'This is not a data failure; it is a governance pattern.' : 'No es un fallo de datos; es un patrón de gobernanza.')}</strong>
+<strong>${(isEn ? 'Pattern detected:' : 'Patrón detectado:')}</strong> ${(isEn ? 'the role with operational authority to stop (' : 'el rol con autoridad operativa para parar (')}${patternRole}${(isEn ? ') received ' : ') recibió ')}${patternAlerts} ${(isEn ? 'alerts and did not exercise them. The decision shifted to the CEO. ' : 'alertas y no las ejerció. La decisión se desplazó al CEO. ')}<strong>${(isEn ? 'This is not a data failure; it is a governance pattern.' : 'No es un fallo de datos; es un patrón de gobernanza.')}</strong>
 </p>
 </div>
+` : ''}
 <div class="footnote" style="margin-top:12px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:8px;">
 <span>${(isEn ? 'Formal map vs. observed behavior' : 'Mapa formal vs. comportamiento observado')}</span>
 <span class="sep" style="width:4px;height:4px;border-radius:50%;background:var(--muted);opacity:.5;"></span>
@@ -3246,6 +3288,7 @@ html += `
 </div>
 </div>
 `;
+
 
 // 7. SECCIONES TÉCNICAS (AL FINAL)
 html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">';
