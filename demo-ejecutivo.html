@@ -1462,8 +1462,18 @@
           earnedValue: evmCosts.EV,
           plannedValue: evmCosts.PV,
           margin: evmCosts.CPI >= 1 ? 25 : 15,
-          roi: evmCosts.CPI >= 1 ? 30 : 10,
-                    health: evmHours.CPI >= 0.9 ? 'saludable' : evmHours.CPI >= 0.8 ? 'aceptable' : 'critico',
+roi: evmCosts.CPI >= 1 ? 30 : 10,
+// 🔥 SALUD DINÁMICA basada en métricas de EUROS (coherente con tabla CFO)
+health: (function(){
+  var cpiE = evmCosts.AC > 0 ? evmCosts.EV / evmCosts.AC : 1;
+  var spiE = evmCosts.PV > 0 ? evmCosts.EV / evmCosts.PV : 1;
+  var eacE = cpiE > 0 ? evmCosts.BAC / cpiE : evmCosts.BAC;
+  var vacE = evmCosts.BAC - eacE;
+  if(cpiE >= 0.95 && spiE >= 0.95) return 'saludable';
+  if(cpiE >= 0.90 && spiE >= 0.90) return 'aceptable';
+  if(cpiE < 0.80 || spiE < 0.80 || vacE < -(evmCosts.BAC * 0.10)) return 'critico';
+  return 'riesgo';
+})(),
           // 🔥 REGLA MEJORADA: Más tolerante y respeta el backend
           opStatus: p.status ? p.status : (
             (evmHours.CPI >= 0.9 && evmHours.SPI >= 0.8) ? 'activo' : 
@@ -2218,7 +2228,9 @@ function renderCFO(){
     
     '<div class="box"><div class="box-t"><span>📋</span> '+(isEn ? "EVM Detail (€) by Project" : "Detalle EVM (€) por Proyecto")+'</div><div style="overflow-x:auto;"><table class="tbl">'+
       '<thead><tr><th>'+(isEn ? "Project" : "Proyecto")+'</th><th class="n">BAC</th><th class="n">EV</th><th class="n">AC</th><th class="n">CPI</th><th class="n">SPI</th><th class="n">EAC</th><th class="n">VAC</th><th class="n">TCPI</th><th>'+(isEn ? "Health" : "Salud")+'</th></tr></thead>'+
+
       '<tbody>'+PROJECTS.map(function(p){var m=evmFor(p);return '<tr><td><strong style="color:#fff;">'+p.name+'</strong><br><span style="font-size:10px;color:#94a3b8;">'+transClient(p.client)+'</span></td><td class="n">'+fEur(m.BAC)+'</td><td class="n" style="color:#34d399;">'+fEur(m.EV)+'</td><td class="n" style="color:#ef4444;">'+fEur(m.AC)+'</td><td class="n" style="color:'+(m.CPI>=1?'#34d399':m.CPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.CPI.toFixed(2)+'</td><td class="n" style="color:'+(m.SPI>=1?'#34d399':m.SPI>=0.9?'#fbbf24':'#ef4444')+';font-weight:900;">'+m.SPI.toFixed(2)+'</td><td class="n">'+fEur(m.EAC)+'</td><td class="n" style="color:'+(m.VAC>=0?'#34d399':'#ef4444')+';font-weight:900;">'+(m.VAC>=0?'+':'')+fEur(m.VAC)+'</td><td class="n" style="color:'+(m.TCPI<=1?'#34d399':'#fbbf24')+';">'+m.TCPI.toFixed(2)+'</td><td><span class="badge '+p.health+'">'+getHealthLabel(p.health)+'</span></td></tr>';}).join('')+
+
       '</tbody><tfoot><tr><td>'+(isEn ? "TOTAL" : "TOTAL")+'</td><td class="n">'+fEur(t.budget)+'</td><td class="n">'+fEur(t.earnedValue)+'</td><td class="n">'+fEur(t.actualCost)+'</td><td class="n">'+e.CPI.toFixed(2)+'</td><td class="n">'+e.SPI.toFixed(2)+'</td><td class="n">'+fEur(e.EAC)+'</td><td class="n">'+(e.VAC>=0?'+':'')+fEur(e.VAC)+'</td><td class="n">'+e.TCPI.toFixed(2)+'</td><td></td></tr></tfoot>'+
     '</table></div></div>';
 
