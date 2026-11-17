@@ -4643,12 +4643,60 @@ async function buildPdf(exportProjects){
     doc.setTextColor(150,160,180); doc.setFontSize(9); doc.text(isEn?'4-year projection of the portfolio net cash flows.':'Proyección a 4 años de los flujos de caja netos del portafolio.',22,y-2); y+=4;
     if(imgCF) doc.addImage(imgCF,'PNG',15,y,180,82);
 
-    // --- PÁGINA 4 EVM (ahora con títulos y espacio) ---
-    doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F'); doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
-    y=sectionHead(isEn?'EARNED VALUE ANALYSIS':'ANÁLISIS DE VALOR GANADO',18);
-    if(imgEVM) doc.addImage(imgEVM,'PNG',15,y,180,90); y+=96;
-    if(imgRadar) doc.addImage(imgRadar,'PNG',15,y,180,90); y+=96;
-    if(imgBurndown) doc.addImage(imgBurndown,'PNG',15,y,180,90);
+   // --- PÁGINA 4 EVM (gráfica + tabla, gráfica + tabla) ---
+doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F'); doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+y=sectionHead(isEn?'EARNED VALUE ANALYSIS':'ANÁLISIS DE VALOR GANADO',18);
+if(imgEVM) doc.addImage(imgEVM,'PNG',15,y,180,88); y+=92;
+// Tabla de valores EVM debajo de la gráfica de barras
+var evmValRows=[
+  [isEn?'PV (Planned)':'PV (Planificado)', fEur(e.PV), isEn?'Baseline work':'Trabajo programado'],
+  [isEn?'EV (Earned)':'EV (Ganado)', fEur(e.EV), isEn?'Value delivered':'Valor entregado'],
+  [isEn?'AC (Actual)':'AC (Real)', fEur(e.AC), isEn?'Money spent':'Dinero gastado'],
+  [isEn?'CV (Cost Var.)':'CV (Var. Coste)', (e.CV>=0?'+':'')+fEur(e.CV), e.CV>=0?(isEn?'Under budget':'Bajo presupuesto'):(isEn?'Over budget':'Sobre presupuesto')],
+  [isEn?'SV (Sched Var.)':'SV (Var. Crono)', (e.SV>=0?'+':'')+fEur(e.SV), e.SV>=0?(isEn?'Ahead':'Adelantado'):(isEn?'Behind':'Retrasado')],
+  ['CPI', e.CPI.toFixed(2), e.CPI>=0.95?(isEn?'Efficient':'Eficiente'):e.CPI>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Overcost':'Sobrecosto')],
+  ['SPI', e.SPI.toFixed(2), e.SPI>=0.95?(isEn?'On track':'En tiempo'):e.SPI>=0.9?(isEn?'Warning':'Tolerancia'):(isEn?'Delayed':'Retrasado')]
+];
+doc.autoTable({startY:y,head:[[isEn?'INDICATOR':'INDICADOR',isEn?'VALUE':'VALOR',isEn?'INTERPRETATION':'LECTURA']],body:evmValRows,theme:'grid',styles:{fillColor:[20,30,45],textColor:[200,200,200],fontSize:8.5,cellPadding:2.5},headStyles:{fillColor:gold,textColor:navy,fontStyle:'bold',fontSize:8},alternateRowStyles:{fillColor:[15,23,35]},columnStyles:{0:{cellWidth:48,fontStyle:'bold',textColor:[255,255,255]},1:{cellWidth:26,halign:'right'},2:{cellWidth:'auto'}}});
+y=doc.lastAutoTable.finalY+8;
+if(imgRadar) doc.addImage(imgRadar,'PNG',15,y,180,88); y+=92;
+// Tabla del radar (5 dimensiones)
+var radarRows=[
+  [(isEn?'Costs':'Costos'), radarData[0]+'%', radarData[0]>=90?(isEn?'Good':'Bueno'):radarData[0]>=75?(isEn?'Fair':'Regular'):(isEn?'Weak':'Débil')],
+  [(isEn?'Schedule':'Cronograma'), radarData[1]+'%', radarData[1]>=90?(isEn?'Good':'Bueno'):radarData[1]>=75?(isEn?'Fair':'Regular'):(isEn?'Weak':'Débil')],
+  [(isEn?'Progress':'Progreso'), radarData[2]+'%', (isEn?'Physical completion':'Avance físico')],
+  [(isEn?'Delays':'Atrasos'), radarData[3]+'%', (isEn?'Risk exposure':'Exposición a riesgo')],
+  [(isEn?'Speed':'Velocidad'), radarData[4]+'%', (isEn?'Delivery velocity':'Velocidad de entrega')]
+];
+doc.autoTable({startY:y,head:[[isEn?'DIMENSION':'DIMENSIÓN',isEn?'SCORE':'PUNTOS',isEn?'ASSESSMENT':'VALORACIÓN']],body:radarRows,theme:'grid',styles:{fillColor:[20,30,45],textColor:[200,200,200],fontSize:8.5,cellPadding:2.5},headStyles:{fillColor:gold,textColor:navy,fontStyle:'bold',fontSize:8},alternateRowStyles:{fillColor:[15,23,35]},columnStyles:{0:{cellWidth:48,fontStyle:'bold',textColor:[255,255,255]},1:{cellWidth:26,halign:'right'},2:{cellWidth:'auto'}}});
+
+// --- PÁGINA 5 BURNDOWN (nueva, con su tabla) ---
+doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F'); doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
+y=sectionHead(isEn?'BURNDOWN · REMAINING WORK':'BURNDOWN · TRABAJO RESTANTE',18);
+doc.setTextColor(150,160,180); doc.setFontSize(9); doc.setFont('helvetica','normal');
+doc.text(isEn?'Ideal vs actual trajectory of remaining projects.':'Trayectoria ideal vs real de proyectos restantes.',22,y-2); y+=4;
+if(imgBurndown) doc.addImage(imgBurndown,'PNG',15,y,180,92); y+=96;
+// Tabla del burndown: semana / ideal / real / desviación
+var burndownLabels=[isEn?'Start':'Inicio',isEn?'W1':'S1',isEn?'W2':'S2',isEn?'W3':'S3',isEn?'W4':'S4'];
+var burndownRows=[];
+for(var bi=0;bi<burndownLabels.length;bi++){
+  var idealV=burndownData[bi];
+  var realV=burndownReal[bi];
+  var dev=(realV===null||realV===undefined)?'—':(realV-idealV);
+  var devTxt=(realV===null||realV===undefined)?(isEn?'Pending':'Pendiente'):((dev>=0?'+':'')+dev+(isEn?' proj.':' proy.'));
+  burndownRows.push([burndownLabels[bi], String(idealV), (realV===null||realV===undefined)?'—':String(realV), devTxt]);
+}
+doc.autoTable({startY:y,head:[[isEn?'WEEK':'SEMANA',isEn?'IDEAL':'IDEAL',isEn?'ACTUAL':'REAL',isEn?'DEVIATION':'DESVIACIÓN']],body:burndownRows,theme:'grid',styles:{fillColor:[20,30,45],textColor:[200,200,200],fontSize:9,cellPadding:3},headStyles:{fillColor:gold,textColor:navy,fontStyle:'bold',fontSize:8.5},alternateRowStyles:{fillColor:[15,23,35]},columnStyles:{0:{cellWidth:38,fontStyle:'bold',textColor:[255,255,255]},1:{cellWidth:34,halign:'right'},2:{cellWidth:34,halign:'right'},3:{cellWidth:'auto',halign:'right'}}});
+y=doc.lastAutoTable.finalY+10;
+// Nota interpretativa al pie (cierra la página con contexto ejecutivo)
+doc.setFillColor(20,30,45); doc.roundedRect(15,y,W-30,26,4,4,'F');
+doc.setTextColor(gold[0],gold[1],gold[2]); doc.setFontSize(10); doc.setFont('helvetica','bold');
+doc.text(isEn?'READ THIS AS:':'LEER COMO:',20,y+7);
+doc.setTextColor(200,200,200); doc.setFontSize(9); doc.setFont('helvetica','normal');
+var burnNote=(e.SPI<0.9)
+? (isEn?'The real line runs below the ideal: the portfolio is burning work slower than planned. Apply fast-tracking to critical milestones.':'La línea real corre por debajo de la ideal: el portafolio quema trabajo más lento de lo planificado. Aplicar fast-tracking en hitos críticos.')
+: (isEn?'The real line matches or exceeds the ideal: delivery pace is healthy. Maintain weekly committee cadence.':'La línea real iguala o supera la ideal: el ritmo de entrega es sano. Mantener cadencia semanal de comité.');
+doc.text(doc.splitTextToSize(burnNote,W-40),20,y+13);
 
     // --- PÁGINA 5 PROYECTOS ---
     doc.addPage(); doc.setFillColor(navy[0],navy[1],navy[2]); doc.rect(0,0,W,H,'F'); doc.setFillColor(gold[0],gold[1],gold[2]); doc.rect(0,0,W,4,'F');
