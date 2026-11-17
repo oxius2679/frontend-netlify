@@ -2787,183 +2787,102 @@ html+='</div>';
 });
 html+='</div></div>';
 
-// ============================================================
 // 3. DOS COLUMNAS: MAPA DE CALOR + TABLA DE RIESGOS
-// ============================================================
 html+='<div style="display:grid;grid-template-columns:400px 1fr;gap:18px;margin-bottom:18px;">';
 
-// ---------- COLUMNA IZQUIERDA: MAPA DE CALOR ----------
-html+='<div class="box" style="margin-bottom:0;">';
-html+='<div class="box-t">🔥 '+(isEn?'5X5 HEAT MAP (Impact vs Probability)':'MAPA DE CALOR 5X5 (Impacto vs Probabilidad)')+'</div>';
+// COLUMNA IZQUIERDA: MAPA DE CALOR
+html+='<div class="box" style="margin-bottom:0;"><div class="box-t">🔥 MAPA DE CALOR 5X5 (Impacto vs Probabilidad)</div>';
 
-// Calcular riesgos con filter (múltiples por celda)
 var riesgosPosicionados = [];
 PROJECTS.forEach(function(p){
   try {
     var m = evmFor(p);
     if(m.CPI < 0.95){
-      riesgosPosicionados.push({nombre: (isEn?'Cost (€)':'Costos (€)')+' - '+p.name, score: 16, impacto: 4, probabilidad: 4, mit: (isEn?'Cost review':'Revisión de costos'), resp: 'CFO / PMO'});
+      riesgosPosicionados.push({nombre: 'Costos (€) - '+p.name, score: 16, impacto: 4, probabilidad: 4});
     }
     if(m.SPI < 0.9){
-      riesgosPosicionados.push({nombre: (isEn?'Schedule (SPI)':'Cronograma (SPI)')+' - '+p.name, score: 12, impacto: 3, probabilidad: 4, mit: (isEn?'Fast-tracking':'Aceleración de fases'), resp: 'COO / PMs'});
+      riesgosPosicionados.push({nombre: 'Cronograma (SPI) - '+p.name, score: 12, impacto: 3, probabilidad: 4});
     }
     var eh = null;
     try { eh = evmHoursFor(p); } catch(e) { eh = null; }
     if(eh && eh.CPIH < 0.95){
-      riesgosPosicionados.push({nombre: (isEn?'Hours (h)':'Horas (h)')+' - '+p.name, score: 12, impacto: 3, probabilidad: 4, mit: (isEn?'Hours audit':'Auditoría de horas'), resp: 'COO / PMO'});
+      riesgosPosicionados.push({nombre: 'Horas (h) - '+p.name, score: 12, impacto: 3, probabilidad: 4});
     }
-  } catch(e) { console.warn('Error en proyecto:', p.name); }
+  } catch(e) { console.warn('Error:', p.name); }
 });
 
-// Contenedor del mapa con tamaño fijo
-html+='<div style="width:100%;max-width:380px;margin:0 auto;">';
-
-// Eje Y + Grid
 html+='<div style="display:flex;height:220px;position:relative;padding-left:50px;">';
-
-// Etiquetas eje Y (izquierda)
 html+='<div style="position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-around;font-size:9px;color:#94a3b8;font-weight:800;text-transform:uppercase;width:45px;text-align:right;padding-right:6px;">';
-html+='<span>'+(isEn?'Very High (5)':'Muy Alto (5)')+'</span>';
-html+='<span>'+(isEn?'High (4)':'Alto (4)')+'</span>';
-html+='<span>'+(isEn?'Medium (3)':'Medio (3)')+'</span>';
-html+='<span>'+(isEn?'Low (2)':'Bajo (2)')+'</span>';
-html+='<span>'+(isEn?'Very Low (1)':'Muy Bajo (1)')+'</span>';
+html+='<span>Muy Alto (5)</span><span>Alto (4)</span><span>Medio (3)</span><span>Bajo (2)</span><span>Muy Bajo (1)</span>';
 html+='</div>';
 
-// Grid 5x5
 html+='<div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:3px;">';
 
 for(var impacto=5; impacto>=1; impacto--){
   for(var prob=1; prob<=5; prob++){
     var score = impacto * prob;
     var bgColor, borderColor;
-    if(score >= 15){
-      bgColor = 'rgba(239, 68, 68, 0.25)';
-      borderColor = 'rgba(239, 68, 68, 0.6)';
-    } else if(score >= 8){
-      bgColor = 'rgba(251, 191, 36, 0.25)';
-      borderColor = 'rgba(251, 191, 36, 0.6)';
-    } else {
-      bgColor = 'rgba(52, 211, 153, 0.15)';
-      borderColor = 'rgba(52, 211, 153, 0.4)';
-    }
+    if(score >= 15){ bgColor = 'rgba(239, 68, 68, 0.25)'; borderColor = 'rgba(239, 68, 68, 0.6)'; }
+    else if(score >= 8){ bgColor = 'rgba(251, 191, 36, 0.25)'; borderColor = 'rgba(251, 191, 36, 0.6)'; }
+    else { bgColor = 'rgba(52, 211, 153, 0.15)'; borderColor = 'rgba(52, 211, 153, 0.4)'; }
     
-    var riesgosAqui = riesgosPosicionados.filter(function(r){
-      return r.impacto === impacto && r.probabilidad === prob;
-    });
+    var riesgosAqui = riesgosPosicionados.filter(function(r){ return r.impacto === impacto && r.probabilidad === prob; });
     
     var markerHtml = '';
     if(riesgosAqui.length > 0){
       var colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
       var etiqueta = riesgosAqui.length > 1 ? riesgosAqui[0].score + '+' : String(riesgosAqui[0].score);
       var nombres = riesgosAqui.map(function(r){ return r.nombre; }).join(' · ');
-      markerHtml = '<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid '+colorBorde+';color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px '+colorBorde+';z-index:2;cursor:pointer;" data-riesgos=\''+JSON.stringify(riesgosAqui).replace(/'/g,'&#39;')+'\' title="'+nombres+'">'+etiqueta+'</div>';
+      markerHtml = '<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid '+colorBorde+';color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px '+colorBorde+';z-index:2;cursor:pointer;" title="'+nombres+'">'+etiqueta+'</div>';
     }
     
-    html+='<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter=\'brightness(1.5)\'" onmouseout="this.style.filter=\'none\'">'+markerHtml+'</div>';
+    html+='<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter=\'brightness(1.5)\'" onmouseout="this.style.filter=\'none\'" title="Impacto '+impacto+' x Probabilidad '+prob+' = Score '+score+(riesgosAqui.length>0?' · '+nombres:'')+'">'+markerHtml+'</div>';
   }
 }
-html+='</div>'; // cierre grid
-html+='</div>'; // cierre flex con eje Y
+html+='</div></div>';
 
-// Eje X (abajo)
 html+='<div style="display:flex;justify-content:space-around;font-size:9px;color:#94a3b8;font-weight:800;text-transform:uppercase;margin-top:8px;padding-left:50px;">';
-html+='<span>'+(isEn?'Very Low (1)':'Muy Baja (1)')+'</span>';
-html+='<span>'+(isEn?'Low (2)':'Baja (2)')+'</span>';
-html+='<span>'+(isEn?'Medium (3)':'Media (3)')+'</span>';
-html+='<span>'+(isEn?'High (4)':'Alta (4)')+'</span>';
-html+='<span>'+(isEn?'Very High (5)':'Muy Alta (5)')+'</span>';
+html+='<span>Muy Baja (1)</span><span>Baja (2)</span><span>Media (3)</span><span>Alta (4)</span><span>Muy Alta (5)</span>';
 html+='</div>';
 
-// Leyenda de colores (DENTRO del contenedor)
 html+='<div style="display:flex;gap:12px;justify-content:center;font-size:10px;color:#94a3b8;margin-top:12px;font-weight:700;">';
-html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(52,211,153,0.8);margin-right:4px;box-shadow:0 0 5px #34d399;"></span>'+(isEn?'Low (1-7)':'Bajo (1-7)')+'</span>';
-html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(251,191,36,0.8);margin-right:4px;box-shadow:0 0 5px #fbbf24;"></span>'+(isEn?'Medium (8-14)':'Medio (8-14)')+'</span>';
-html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.8);margin-right:4px;box-shadow:0 0 5px #ef4444;"></span>'+(isEn?'Critical (15-25)':'Crítico (15-25)')+'</span>';
+html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(52,211,153,0.8);margin-right:4px;box-shadow:0 0 5px #34d399;"></span>Bajo (1-7)</span>';
+html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(251,191,36,0.8);margin-right:4px;box-shadow:0 0 5px #fbbf24;"></span>Medio (8-14)</span>';
+html+='<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.8);margin-right:4px;box-shadow:0 0 5px #ef4444;"></span>Crítico (15-25)</span>';
+html+='</div>';
+html+='<div style="text-align:center;font-size:9px;color:#64748b;margin-top:6px;font-style:italic;">Pasa el ratón para ver el detalle</div>';
 html+='</div>';
 
-html+='<div style="text-align:center;font-size:9px;color:#64748b;margin-top:6px;font-style:italic;">'+(isEn?'Hover for details':'Pasa el ratón para ver el detalle')+'</div>';
-html+='</div>'; // cierre max-width:380px
-html+='</div>'; // cierre box mapa
-
-// ---------- COLUMNA DERECHA: TABLA DE RIESGOS ----------
-html+='<div class="box" style="margin-bottom:0;">';
-html+='<div class="box-t">⚠️ '+(isEn?'RISK MATRIX DETAIL':'DETALLE DE LA MATRIZ DE RIESGOS')+'</div>';
-html+='<div style="overflow-x:auto;"><table class="tbl">';
-html+='<thead><tr>';
-html+='<th>'+(isEn?'RISK':'RIESGO')+'</th>';
-html+='<th style="width:60px;">SCORE</th>';
-html+='<th style="width:90px;">'+(isEn?'SEVERITY':'SEVERIDAD')+'</th>';
-html+='<th style="width:90px;">'+(isEn?'EXPOSURE':'EXPOSICIÓN')+'</th>';
-html+='<th>'+(isEn?'MITIGATION':'MITIGACIÓN')+'</th>';
-html+='<th style="width:100px;">'+(isEn?'OWNER':'RESPONSABLE')+'</th>';
-html+='<th style="width:90px;">'+(isEn?'DEADLINE':'PLAZO')+'</th>';
-html+='<th style="width:110px;">'+(isEn?'STATUS':'ESTADO')+'</th>';
-html+='</tr></thead><tbody>';
+// COLUMNA DERECHA: TABLA DE RIESGOS
+html+='<div class="box" style="margin-bottom:0;"><div class="box-t">⚠️ DETALLE DE LA MATRIZ DE RIESGOS</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>RIESGO</th><th style="width:60px;">SCORE</th><th style="width:90px;">SEVERIDAD</th><th style="width:90px;">EXPOSICIÓN</th><th>MITIGACIÓN</th><th style="width:100px;">RESPONSABLE</th><th style="width:90px;">PLAZO</th><th style="width:110px;">ESTADO</th></tr></thead><tbody>';
 
 var riesgos = [];
 PROJECTS.forEach(function(p){
   try {
     var m = evmFor(p);
     if(m.CPI < 0.95){
-      var exposicionCostos = Math.abs(m.VAC);
-      riesgos.push({
-        name: (isEn?'Cost overrun (€)':'Desviación de costos (€)')+' - '+p.name,
-        score: '16', sev: (isEn?'CRITICAL':'CRÍTICO'), sevColor: '#ef4444',
-        exp: fEur(exposicionCostos),
-        mit: (isEn?'Cost structure review & renegotiation':'Revisión de estructura de costos y renegociación'),
-        resp: 'CFO / PMO',
-        plazo: (isEn?'Expires in 48h':'Vence en 48h'), plazoColor: '#ef4444',
-        estado: (isEn?'OPEN':'ABIERTO'), estadoColor: '#ef4444'
-      });
+      riesgos.push({name:'Desviación de costos (€) - '+p.name, score:'16', sev:'CRÍTICO', sevColor:'#ef4444', exp:fEur(Math.abs(m.VAC)), mit:'Revisión de estructura de costos y renegociación', resp:'CFO / PMO', plazo:'Vence en 48h', plazoColor:'#ef4444', estado:'ABIERTO', estadoColor:'#ef4444'});
     }
     var eh = null;
     try { eh = evmHoursFor(p); } catch(e) { eh = null; }
     if(eh && eh.CPIH < 0.95){
-      var exposicionHoras = Math.abs((eh.EACH - eh.totalEstimated) * 50);
-      riesgos.push({
-        name: (isEn?'Hours overrun (h)':'Desviación de horas (h)')+' - '+p.name,
-        score: '12', sev: (isEn?'MEDIUM':'MEDIO'), sevColor: '#fbbf24',
-        exp: fEur(exposicionHoras),
-        mit: (isEn?'Audit of logged hours vs. progress':'Auditoría de horas registradas vs. avance'),
-        resp: 'COO / PMO',
-        plazo: (isEn?'Expires in 72h':'Vence en 72h'), plazoColor: '#fbbf24',
-        estado: (isEn?'IN AUDIT':'EN AUDITORÍA'), estadoColor: '#fbbf24'
-      });
+      riesgos.push({name:'Desviación de horas (h) - '+p.name, score:'12', sev:'MEDIO', sevColor:'#fbbf24', exp:fEur(Math.abs((eh.EACH - eh.totalEstimated) * 50)), mit:'Auditoría de horas registradas vs. avance', resp:'COO / PMO', plazo:'Vence en 72h', plazoColor:'#fbbf24', estado:'EN AUDITORÍA', estadoColor:'#fbbf24'});
     }
     if(m.SPI < 0.9){
-      var exposicionSPI = p.budget * (1 - m.SPI);
-      riesgos.push({
-        name: (isEn?'Schedule delay (SPI)':'Retraso en cronograma (SPI)')+' - '+p.name,
-        score: '12', sev: (isEn?'MEDIUM':'MEDIO'), sevColor: '#fbbf24',
-        exp: fEur(exposicionSPI),
-        mit: (isEn?'Phase acceleration (fast-tracking)':'Aceleración de fases (fast-tracking)'),
-        resp: 'COO / PMs',
-        plazo: (isEn?'Expires in 7d':'Vence en 7d'), plazoColor: '#fbbf24',
-        estado: (isEn?'IN MITIGATION':'EN MITIGACIÓN'), estadoColor: '#fbbf24'
-      });
+      riesgos.push({name:'Retraso en cronograma (SPI) - '+p.name, score:'12', sev:'MEDIO', sevColor:'#fbbf24', exp:fEur(p.budget * (1 - m.SPI)), mit:'Aceleración de fases (fast-tracking)', resp:'COO / PMs', plazo:'Vence en 7d', plazoColor:'#fbbf24', estado:'EN MITIGACIÓN', estadoColor:'#fbbf24'});
     }
   } catch(e) { console.warn('Error riesgo:', p.name); }
 });
 
 if(riesgos.length === 0){
-  html+='<tr><td colspan="8" style="text-align:center;color:#34d399;padding:20px;">'+(isEn?'✅ No critical risks detected':'✅ No se detectaron riesgos críticos')+'</td></tr>';
+  html+='<tr><td colspan="8" style="text-align:center;color:#34d399;padding:20px;">✅ No se detectaron riesgos críticos</td></tr>';
 } else {
   riesgos.forEach(function(r){
-    html+='<tr>';
-    html+='<td><strong>'+r.name+'</strong></td>';
-    html+='<td><span style="background:rgba(255,255,255,0.1);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:900;">'+r.score+'</span></td>';
-    html+='<td><span style="color:'+r.sevColor+';font-weight:900;font-size:10px;">'+r.sev+'</span></td>';
-    html+='<td style="color:'+r.sevColor+';font-weight:800;">'+r.exp+'</td>';
-    html+='<td style="font-size:11px;font-style:italic;color:#cbd5e1;">'+r.mit+'</td>';
-    html+='<td style="font-size:11px;font-weight:700;">'+r.resp+'</td>';
-    html+='<td style="font-size:11px;font-weight:800;color:'+r.plazoColor+';">'+r.plazo+'</td>';
-    html+='<td><span style="background:'+r.estadoColor+'22;color:'+r.estadoColor+';border:1px solid '+r.estadoColor+'44;border-radius:10px;padding:3px 8px;font-size:9px;font-weight:900;">'+r.estado+'</span></td>';
-    html+='</tr>';
+    html+='<tr><td><strong>'+r.name+'</strong></td><td><span style="background:rgba(255,255,255,0.1);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:900;">'+r.score+'</span></td><td><span style="color:'+r.sevColor+';font-weight:900;font-size:10px;">'+r.sev+'</span></td><td style="color:'+r.sevColor+';font-weight:800;">'+r.exp+'</td><td style="font-size:11px;font-style:italic;color:#cbd5e1;">'+r.mit+'</td><td style="font-size:11px;font-weight:700;">'+r.resp+'</td><td style="font-size:11px;font-weight:800;color:'+r.plazoColor+';">'+r.plazo+'</td><td><span style="background:'+r.estadoColor+'22;color:'+r.estadoColor+';border:1px solid '+r.estadoColor+'44;border-radius:10px;padding:3px 8px;font-size:9px;font-weight:900;">'+r.estado+'</span></td></tr>';
   });
 }
 html+='</tbody></table></div></div>';
-html+='</div>'; // CIERRE de las 2 columnas
+html+='</div>';
 // ============================================================
 // 4. REGISTRO DE DECISIONES (CORREGIDO - CPIs REALISTAS)
 // ============================================================
