@@ -1956,7 +1956,83 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     .landing-right { margin-top: 10px; }
 }
 
-
+/* Tooltip personalizado para mapa de calor */
+.heatmap-tooltip {
+  position: fixed;
+  z-index: 99999;
+  background: linear-gradient(145deg, rgba(15,23,42,0.98), rgba(10,15,30,0.98));
+  border: 1px solid rgba(212,175,55,0.4);
+  border-radius: 12px;
+  padding: 14px 16px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.2);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(12px);
+}
+.heatmap-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.heatmap-tooltip .tt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.heatmap-tooltip .tt-score {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.heatmap-tooltip .tt-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+}
+.heatmap-tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 4px 0;
+  font-size: 11px;
+}
+.heatmap-tooltip .tt-label {
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 9px;
+  min-width: 80px;
+}
+.heatmap-tooltip .tt-value {
+  color: #e2e8f0;
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+}
+.heatmap-tooltip .tt-mitigation {
+  font-style: italic;
+  color: #cbd5e1;
+  font-size: 10.5px;
+  line-height: 1.4;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
 
 </style>
 </head>
@@ -2791,6 +2867,7 @@ html+='</div></div>';
 html+='<div style="display:grid;grid-template-columns:400px 1fr;gap:18px;margin-bottom:18px;">';
 
 // COLUMNA IZQUIERDA: MAPA DE CALOR
+// Mapa de Calor con tooltip personalizado
 html+='<div class="box" style="margin-bottom:0;"><div class="box-t">🔥 MAPA DE CALOR 5X5 (Impacto vs Probabilidad)</div>';
 
 var riesgosPosicionados = [];
@@ -2798,17 +2875,17 @@ PROJECTS.forEach(function(p){
   try {
     var m = evmFor(p);
     if(m.CPI < 0.95){
-      riesgosPosicionados.push({nombre: 'Costos (€) - '+p.name, score: 16, impacto: 4, probabilidad: 4});
+      riesgosPosicionados.push({nombre: 'Costos (€) - '+p.name, score: 16, impacto: 4, probabilidad: 4, mit: 'Revisión de estructura de costos', resp: 'CFO / PMO', exp: fEur(Math.abs(m.VAC)), sev: 'CRÍTICO', sevColor: '#ef4444', plazo: 'Vence en 48h', estado: 'ABIERTO'});
     }
     if(m.SPI < 0.9){
-      riesgosPosicionados.push({nombre: 'Cronograma (SPI) - '+p.name, score: 12, impacto: 3, probabilidad: 4});
+      riesgosPosicionados.push({nombre: 'Cronograma (SPI) - '+p.name, score: 12, impacto: 3, probabilidad: 4, mit: 'Aceleración de fases', resp: 'COO / PMs', exp: fEur(p.budget * (1 - m.SPI)), sev: 'MEDIO', sevColor: '#fbbf24', plazo: 'Vence en 7d', estado: 'EN MITIGACIÓN'});
     }
     var eh = null;
     try { eh = evmHoursFor(p); } catch(e) { eh = null; }
     if(eh && eh.CPIH < 0.95){
-      riesgosPosicionados.push({nombre: 'Horas (h) - '+p.name, score: 12, impacto: 3, probabilidad: 4});
+      riesgosPosicionados.push({nombre: 'Horas (h) - '+p.name, score: 12, impacto: 3, probabilidad: 4, mit: 'Auditoría de horas', resp: 'COO / PMO', exp: fEur(Math.abs((eh.EACH - eh.totalEstimated) * 50)), sev: 'MEDIO', sevColor: '#fbbf24', plazo: 'Vence en 72h', estado: 'EN AUDITORÍA'});
     }
-  } catch(e) { console.warn('Error:', p.name); }
+  } catch(e) { console.warn('Error en proyecto:', p.name); }
 });
 
 html+='<div style="display:flex;height:220px;position:relative;padding-left:50px;">';
@@ -2832,11 +2909,10 @@ for(var impacto=5; impacto>=1; impacto--){
     if(riesgosAqui.length > 0){
       var colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
       var etiqueta = riesgosAqui.length > 1 ? riesgosAqui[0].score + '+' : String(riesgosAqui[0].score);
-      var nombres = riesgosAqui.map(function(r){ return r.nombre; }).join(' · ');
-      markerHtml = '<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid '+colorBorde+';color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px '+colorBorde+';z-index:2;cursor:pointer;" title="'+nombres+'">'+etiqueta+'</div>';
+      markerHtml = '<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid '+colorBorde+';color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px '+colorBorde+';z-index:2;cursor:pointer;" data-riesgos=\''+JSON.stringify(riesgosAqui).replace(/'/g,'&#39;')+'\'>'+etiqueta+'</div>';
     }
     
-    html+='<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter=\'brightness(1.5)\'" onmouseout="this.style.filter=\'none\'" title="Impacto '+impacto+' x Probabilidad '+prob+' = Score '+score+(riesgosAqui.length>0?' · '+nombres:'')+'">'+markerHtml+'</div>';
+    html+='<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter=\'brightness(1.5)\'" onmouseout="this.style.filter=\'none\'">'+markerHtml+'</div>';
   }
 }
 html+='</div></div>';
@@ -2852,7 +2928,6 @@ html+='<span><span style="display:inline-block;width:10px;height:10px;border-rad
 html+='</div>';
 html+='<div style="text-align:center;font-size:9px;color:#64748b;margin-top:6px;font-style:italic;">Pasa el ratón para ver el detalle</div>';
 html+='</div>';
-
 // COLUMNA DERECHA: TABLA DE RIESGOS
 html+='<div class="box" style="margin-bottom:0;"><div class="box-t">⚠️ DETALLE DE LA MATRIZ DE RIESGOS</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>RIESGO</th><th style="width:60px;">SCORE</th><th style="width:90px;">SEVERIDAD</th><th style="width:90px;">EXPOSICIÓN</th><th>MITIGACIÓN</th><th style="width:100px;">RESPONSABLE</th><th style="width:90px;">PLAZO</th><th style="width:110px;">ESTADO</th></tr></thead><tbody>';
 
@@ -3335,6 +3410,66 @@ html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;borde
 html+='</div>';
 html+='</div>';
 html+='</div>';
+
+// Tooltip personalizado
+setTimeout(function(){
+  var tooltip = document.getElementById('heatmapTooltip');
+  if(!tooltip) return;
+  
+  var marcadores = document.querySelectorAll('[data-riesgos]');
+  marcadores.forEach(function(marcador){
+    marcador.addEventListener('mouseenter', function(e){
+      try {
+        var riesgos = JSON.parse(marcador.getAttribute('data-riesgos'));
+        if(!riesgos || riesgos.length === 0) return;
+        
+        var html = '';
+        riesgos.forEach(function(r, idx){
+          var scoreColor = r.score >= 15 ? '#ef4444' : '#fbbf24';
+          html += '<div class="tt-header">';
+          html += '<div class="tt-score" style="background:'+scoreColor+';">'+r.score+'</div>';
+          html += '<div class="tt-title">'+r.nombre+'</div>';
+          html += '</div>';
+          html += '<div class="tt-row"><span class="tt-label">Score</span><span class="tt-value" style="color:'+scoreColor+';font-weight:900;">'+r.score+' · '+r.sev+'</span></div>';
+          html += '<div class="tt-row"><span class="tt-label">Exposición</span><span class="tt-value" style="color:'+scoreColor+';">'+r.exp+'</span></div>';
+          html += '<div class="tt-row"><span class="tt-label">Impacto</span><span class="tt-value">'+r.impacto+'/5</span></div>';
+          html += '<div class="tt-row"><span class="tt-label">Probabilidad</span><span class="tt-value">'+r.probabilidad+'/5</span></div>';
+          html += '<div class="tt-mitigation">🔧 '+r.mit+'</div>';
+          html += '<div class="tt-row" style="margin-top:6px;"><span class="tt-label">Responsable</span><span class="tt-value" style="color:#a78bfa;">'+r.resp+'</span></div>';
+          html += '<div class="tt-row"><span class="tt-label">Plazo</span><span class="tt-value" style="color:#fbbf24;">'+r.plazo+'</span></div>';
+          html += '<div class="tt-row"><span class="tt-label">Estado</span><span class="tt-value" style="color:'+r.sevColor+';font-weight:900;">'+r.estado+'</span></div>';
+          if(riesgos.length > 1 && idx < riesgos.length - 1){
+            html += '<div style="border-top:1px dashed rgba(255,255,255,0.1);margin:8px 0;"></div>';
+          }
+        });
+        
+        tooltip.innerHTML = html;
+        tooltip.classList.add('visible');
+      } catch(err){
+        console.warn('Error tooltip:', err);
+      }
+    });
+    
+    marcador.addEventListener('mousemove', function(e){
+      var x = e.clientX + 15;
+      var y = e.clientY + 15;
+      var rect = tooltip.getBoundingClientRect();
+      if(x + rect.width > window.innerWidth){
+        x = e.clientX - rect.width - 15;
+      }
+      if(y + rect.height > window.innerHeight){
+        y = e.clientY - rect.height - 15;
+      }
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    });
+    
+    marcador.addEventListener('mouseleave', function(){
+      tooltip.classList.remove('visible');
+    });
+  });
+}, 200);
+
 
 v.innerHTML=html;
 }
@@ -5133,5 +5268,6 @@ async function exportPPTX(){
 
 
 </script>
+<div id="heatmapTooltip" class="heatmap-tooltip"></div>
 </body>
 </html>
