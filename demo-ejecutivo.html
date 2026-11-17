@@ -2799,15 +2799,18 @@ html+='<div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-
 // Calcular riesgos reales desde proyectos
 var riesgosPosicionados = [];
 PROJECTS.forEach(function(p){
-var m = evmFor(p);
-if(m.CPI < 0.95){
-riesgosPosicionados.push({nombre: (isEn?'Cost deviation':'Desviación de costos')+' - '+p.name, score: 16, impacto: 4, probabilidad: 4});
-}
-if(m.SPI < 0.9){
-riesgosPosicionados.push({nombre: (isEn?'Schedule delay':'Retraso en cronograma')+' - '+p.name, score: 12, impacto: 3, probabilidad: 4});
-}
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);
+  if(m.CPI < 0.95){
+    riesgosPosicionados.push({nombre: 'Desviación de costos (€)', score: 16, impacto: 4, probabilidad: 4});
+  }
+  if(eh.CPIH < 0.95){
+    riesgosPosicionados.push({nombre: 'Desviación de horas (h)', score: 12, impacto: 3, probabilidad: 4});
+  }
+  if(m.SPI < 0.9){
+    riesgosPosicionados.push({nombre: 'Retraso en cronograma (SPI)', score: 12, impacto: 3, probabilidad: 4});
+  }
 });
-
 for(let impacto=5; impacto>=1; impacto--){
 for(let prob=1; prob<=5; prob++){
 let score = impacto * prob;
@@ -2821,9 +2824,13 @@ bgColor = 'rgba(251, 191, 36, 0.25)';
 borderColor = 'rgba(251, 191, 36, 0.6)';
 }
 let markerHtml = '';
-let riesgoAqui = riesgosPosicionados.find(r => r.impacto === impacto && r.probabilidad === prob);
-if (riesgoAqui) {
-let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
+let riesgosAqui = riesgosPosicionados.filter(r => r.impacto === impacto && r.probabilidad === prob);
+if (riesgosAqui.length > 0) {
+  let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
+  let etiqueta = riesgosAqui.length > 1 ? riesgosAqui[0].score + '+' : riesgosAqui[0].score;
+  let nombres = riesgosAqui.map(r => r.nombre).join(' · ');
+  markerHtml = `<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid ${colorBorde};color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px ${colorBorde};z-index:2;transform:scale(1.1);" title="${nombres}">${etiqueta}</div>`;
+}let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
 markerHtml = `<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid ${colorBorde};color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px ${colorBorde}; z-index:2; transform: scale(1.1);" title="${riesgoAqui.nombre} (Score: ${riesgoAqui.score})">${riesgoAqui.score}</div>`;
 }
 let tooltipText = `${isEn?'Impact':'Impacto'} ${impacto} x ${isEn?'Probability':'Probabilidad'} ${prob} = Score ${score}. ` + (riesgoAqui ? `⚠️ ${riesgoAqui.nombre}!` : (score >= 15 ? (isEn?'Critical Zone':'Zona Crítica') : score >= 8 ? (isEn?'Medium Zone':'Zona Media') : (isEn?'Low Zone':'Zona Baja')));
