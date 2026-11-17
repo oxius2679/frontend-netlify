@@ -2797,45 +2797,62 @@ html+='<div style="position:absolute;left:0;top:0;bottom:35px;display:flex;flex-
 html+='<div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:4px;">';
 
 // Calcular riesgos reales desde proyectos
+// 🔥 MAPA DE CALOR 5X5 - BLOQUE COMPLETO Y SEGURO
 var riesgosPosicionados = [];
 PROJECTS.forEach(function(p){
-  var m = evmFor(p);
-  var eh = evmHoursFor(p);
-  if(m.CPI < 0.95){
-    riesgosPosicionados.push({nombre: 'Desviación de costos (€)', score: 16, impacto: 4, probabilidad: 4});
-  }
-  if(eh.CPIH < 0.95){
-    riesgosPosicionados.push({nombre: 'Desviación de horas (h)', score: 12, impacto: 3, probabilidad: 4});
-  }
-  if(m.SPI < 0.9){
-    riesgosPosicionados.push({nombre: 'Retraso en cronograma (SPI)', score: 12, impacto: 3, probabilidad: 4});
+  try {
+    var m = evmFor(p);
+    if(m.CPI < 0.95){
+      riesgosPosicionados.push({nombre: (isEn?'Cost deviation (€)':'Desviación de costos (€)')+' - '+p.name, score: 16, impacto: 4, probabilidad: 4});
+    }
+    if(m.SPI < 0.9){
+      riesgosPosicionados.push({nombre: (isEn?'Schedule delay (SPI)':'Retraso en cronograma (SPI)')+' - '+p.name, score: 12, impacto: 3, probabilidad: 4});
+    }
+    // Riesgo de horas (COO) - con verificación defensiva
+    var eh = null;
+    try { eh = evmHoursFor(p); } catch(e) { eh = null; }
+    if(eh && eh.CPIH < 0.95){
+      riesgosPosicionados.push({nombre: (isEn?'Hours overrun (h)':'Desviación de horas (h)')+' - '+p.name, score: 12, impacto: 3, probabilidad: 4});
+    }
+  } catch(e) {
+    console.warn('Error procesando proyecto para mapa de calor:', p.name, e);
   }
 });
+
+html+='<div class="box" style="margin-bottom:0;"><div class="box-t">🔥 '+(isEn?'5X5 HEAT MAP (Impact vs Probability)':'MAPA DE CALOR 5X5 (Impacto vs Probabilidad)')+'</div>';
+html+='<div style="display:flex;height:240px;position:relative;padding-left:35px;padding-bottom:35px;">';
+html+='<div style="position:absolute;left:0;top:0;bottom:35px;display:flex;flex-direction:column;justify-content:space-between;font-size:9px;color:#94a3b8;font-weight:800;text-transform:uppercase;"><span>'+(isEn?'Very High (5)':'Muy Alto (5)')+'</span><span>'+(isEn?'High (4)':'Alto (4)')+'</span><span>'+(isEn?'Medium (3)':'Medio (3)')+'</span><span>'+(isEn?'Low (2)':'Bajo (2)')+'</span><span>'+(isEn?'Very Low (1)':'Muy Bajo (1)')+'</span></div>';
+html+='<div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:4px;">';
+
 for(let impacto=5; impacto>=1; impacto--){
-for(let prob=1; prob<=5; prob++){
-let score = impacto * prob;
-let bgColor = 'rgba(52, 211, 153, 0.15)';
-let borderColor = 'rgba(52, 211, 153, 0.4)';
-if (score >= 15) {
-bgColor = 'rgba(239, 68, 68, 0.25)';
-borderColor = 'rgba(239, 68, 68, 0.6)';
-} else if (score >= 8) {
-bgColor = 'rgba(251, 191, 36, 0.25)';
-borderColor = 'rgba(251, 191, 36, 0.6)';
-}
-let markerHtml = '';
-let riesgosAqui = riesgosPosicionados.filter(r => r.impacto === impacto && r.probabilidad === prob);
-if (riesgosAqui.length > 0) {
-  let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
-  let etiqueta = riesgosAqui.length > 1 ? riesgosAqui[0].score + '+' : riesgosAqui[0].score;
-  let nombres = riesgosAqui.map(r => r.nombre).join(' · ');
-  markerHtml = `<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid ${colorBorde};color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px ${colorBorde};z-index:2;transform:scale(1.1);" title="${nombres}">${etiqueta}</div>`;
-}let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
-markerHtml = `<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid ${colorBorde};color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px ${colorBorde}; z-index:2; transform: scale(1.1);" title="${riesgoAqui.nombre} (Score: ${riesgoAqui.score})">${riesgoAqui.score}</div>`;
-}
-let tooltipText = `${isEn?'Impact':'Impacto'} ${impacto} x ${isEn?'Probability':'Probabilidad'} ${prob} = Score ${score}. ` + (riesgoAqui ? `⚠️ ${riesgoAqui.nombre}!` : (score >= 15 ? (isEn?'Critical Zone':'Zona Crítica') : score >= 8 ? (isEn?'Medium Zone':'Zona Media') : (isEn?'Low Zone':'Zona Baja')));
-html+=`<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.5)'" onmouseout="this.style.filter='none'" title="${tooltipText}">${markerHtml}</div>`;
-}
+  for(let prob=1; prob<=5; prob++){
+    let score = impacto * prob;
+    let bgColor = 'rgba(52, 211, 153, 0.15)';
+    let borderColor = 'rgba(52, 211, 153, 0.4)';
+    if (score >= 15) {
+      bgColor = 'rgba(239, 68, 68, 0.25)';
+      borderColor = 'rgba(239, 68, 68, 0.6)';
+    } else if (score >= 8) {
+      bgColor = 'rgba(251, 191, 36, 0.25)';
+      borderColor = 'rgba(251, 191, 36, 0.6)';
+    }
+    let markerHtml = '';
+    // 🔥 BÚSQUEDA DE TODOS LOS RIESGOS EN ESTA CELDA
+    let riesgosAqui = riesgosPosicionados.filter(function(r){ return r.impacto === impacto && r.probabilidad === prob; });
+    if (riesgosAqui.length > 0) {
+      let colorBorde = score >= 15 ? '#ef4444' : '#fbbf24';
+      let etiqueta = riesgosAqui.length > 1 ? riesgosAqui[0].score + '+' : riesgosAqui[0].score;
+      let nombres = riesgosAqui.map(function(r){ return r.nombre; }).join(' · ');
+      markerHtml = '<div style="width:24px;height:24px;border-radius:50%;background:#0b1220;border:2px solid '+colorBorde+';color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px '+colorBorde+';z-index:2;transform:scale(1.1);" title="'+nombres+'">'+etiqueta+'</div>';
+    }
+    let tooltipText = (isEn?'Impact':'Impacto')+' '+impacto+' x '+(isEn?'Probability':'Probabilidad')+' '+prob+' = Score '+score+'. ';
+    if(riesgosAqui.length > 0){
+      tooltipText += '⚠️ ' + riesgosAqui.map(function(r){ return r.nombre; }).join(' · ');
+    } else {
+      tooltipText += (score >= 15 ? (isEn?'Critical Zone':'Zona Crítica') : score >= 8 ? (isEn?'Medium Zone':'Zona Media') : (isEn?'Low Zone':'Zona Baja'));
+    }
+    html+='<div style="background:'+bgColor+';border:1px solid '+borderColor+';border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center;cursor:crosshair;transition:all 0.2s;" onmouseover="this.style.filter=\'brightness(1.5)\'" onmouseout="this.style.filter=\'none\'" title="'+tooltipText+'">'+markerHtml+'</div>';
+  }
 }
 html+='</div>';
 html+='<div style="position:absolute;left:35px;right:0;bottom:0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;font-weight:800;text-transform:uppercase;"><span>'+(isEn?'Very Low (1)':'Muy Baja (1)')+'</span><span>'+(isEn?'Low (2)':'Baja (2)')+'</span><span>'+(isEn?'Medium (3)':'Media (3)')+'</span><span>'+(isEn?'High (4)':'Alta (4)')+'</span><span>'+(isEn?'Very High (5)':'Muy Alta (5)')+'</span></div>';
@@ -2843,7 +2860,6 @@ html+='</div>';
 html+='<div style="display:flex;gap:12px;justify-content:center;font-size:10px;color:#94a3b8;margin-top:10px;font-weight:700;"><span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(52,211,153,0.8);margin-right:4px;box-shadow:0 0 5px #34d399;"></span>'+(isEn?'Low (1-7)':'Bajo (1-7)')+'</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(251,191,36,0.8);margin-right:4px;box-shadow:0 0 5px #fbbf24;"></span>'+(isEn?'Medium (8-14)':'Medio (8-14)')+'</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.8);margin-right:4px;box-shadow:0 0 5px #ef4444;"></span>'+(isEn?'Critical (15-25)':'Crítico (15-25)')+'</span></div>';
 html+='<div style="text-align:center;font-size:9px;color:#64748b;margin-top:6px;font-style:italic;">'+(isEn?'Hover over cells for details':'Pasa el ratón por encima de los cuadros para ver el detalle')+'</div>';
 html+='</div>';
-
 // Tabla de Riesgos DINÁMICA (CORREGIDA - ROLES RACI)
 html+='<div class="box" style="margin-bottom:0;"><div class="box-t">⚠️ '+(isEn?'RISK MATRIX DETAIL':'DETALLE DE LA MATRIZ DE RIESGOS')+'</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>'+(isEn?'RISK':'RIESGO')+'</th><th>SCORE</th><th>'+(isEn?'SEVERITY':'SEVERIDAD')+'</th><th>'+(isEn?'EXPOSURE':'EXPOSICIÓN')+'</th><th>'+(isEn?'MITIGATION':'MITIGACIÓN')+'</th><th>'+(isEn?'OWNER':'RESPONSABLE')+'</th><th>'+(isEn?'DEADLINE':'PLAZO')+'</th><th>'+(isEn?'STATUS':'ESTADO')+'</th></tr></thead><tbody>';
 
