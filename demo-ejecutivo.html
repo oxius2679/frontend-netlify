@@ -3929,9 +3929,35 @@ async function renderAlerts(){
       return;
     }
     
-    // 🔥 FILTRAR backend: solo proyectos que aún existan
+    // 🔥 FILTRAR backend: solo proyectos que aún existan Y que tengan problemas reales
     var alertasBackend = (data.alertas || []).filter(function(a){
-      return activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) >= 0;
+      // 1. Solo proyectos activos
+      if (activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) < 0) return false;
+      
+      // 2. Buscar el proyecto en PROJECTS
+      var proyecto = window.PROJECTS.find(function(p){ return p.name.toLowerCase() === (a.proyectoNombre || '').toLowerCase(); });
+      if (!proyecto) return false;
+      
+      // 3. Validar según el tipo de regla
+      if (a.regla === 'RETRASO' || a.regla === 'TAREAS_VENCIDAS') {
+        // Verificar si realmente hay tareas vencidas NO completadas
+        var hoy = new Date();
+        var tareasVencidasReales = (proyecto.tasks || []).filter(function(t){
+          if (t.status === 'completed') return false; // ✅ Completadas NO cuentan
+          if (!t.deadline) return false;
+          return new Date(t.deadline) < hoy;
+        });
+        return tareasVencidasReales.length > 0; // Solo mostrar si hay tareas vencidas reales
+      }
+      
+      if (a.regla === 'SOBRECOSTE' || a.regla === 'DESVIACION_HORAS') {
+        // Verificar si el CPI realmente está bajo
+        var m = evmFor(proyecto);
+        return m.CPI < 0.9;
+      }
+      
+      // Para otras reglas, mostrar siempre
+      return true;
     });
     
     // 🔥 GENERAR alertas dinámicas SOLO si hay datos reales
