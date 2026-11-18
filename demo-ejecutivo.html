@@ -4436,13 +4436,14 @@ document.addEventListener('DOMContentLoaded',function(){
     if (activeTab) {
       const tabId = activeTab.dataset.tab;
       if (tabId === 'cfo' && typeof window.renderCFO === 'function') window.renderCFO();
-      else if (tabId === 'ceo' && typeof window.renderCEO === 'function') window.renderCEO();
-      else if (tabId === 'coo' && typeof window.renderCOO === 'function') window.renderCOO();
-      else if (tabId === 'bi' && typeof window.renderBI === 'function') window.renderBI();
-      else if (tabId === 'grc' && typeof window.renderGRC === 'function') window.renderGRC();
-      else if (tabId === 'api' && typeof window.renderAPI === 'function') window.renderAPI();
-      else if (tabId === 'fin' && typeof window.renderFIN === 'function') window.renderFIN();
-      else if (tabId === 'vip' && typeof window.renderVIP === 'function') window.renderVIP();
+else if (tabId === 'ceo' && typeof window.renderCEO === 'function') window.renderCEO();
+else if (tabId === 'coo' && typeof window.renderCOO === 'function') window.renderCOO();
+else if (tabId === 'bi' && typeof window.renderBI === 'function') window.renderBI();
+else if (tabId === 'grc' && typeof window.renderGRC === 'function') window.renderGRC();
+else if (tabId === 'api' && typeof window.renderAPI === 'function') window.renderAPI();
+else if (tabId === 'fin' && typeof window.renderFIN === 'function') window.renderFIN();
+else if (tabId === 'vip' && typeof window.renderVIP === 'function') window.renderVIP();
+else if (tabId === 'alerts' && typeof renderAlerts === 'function') renderAlerts(); // 🔥 NUEVA
     }
     
     console.log('✅ Datos filtrados y renderizados para el índice:', index);
