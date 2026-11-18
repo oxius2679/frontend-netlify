@@ -3929,86 +3929,47 @@ async function renderAlerts(){
       return;
     }
     
-    // 🔥 FILTRAR backend: solo proyectos que aún existan Y que tengan problemas reales
+    // 🔥 FILTRAR backend: SOLO proyectos que aún existan (sin validar reglas)
     var alertasBackend = (data.alertas || []).filter(function(a){
-      // 1. Solo proyectos activos
-      if (activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) < 0) return false;
-      
-      // 2. Buscar el proyecto en PROJECTS
-      var proyecto = window.PROJECTS.find(function(p){ return p.name.toLowerCase() === (a.proyectoNombre || '').toLowerCase(); });
-      if (!proyecto) return false;
-      
-      // 3. Validar según el tipo de regla
-      if (a.regla === 'RETRASO' || a.regla === 'TAREAS_VENCIDAS') {
-        // Verificar si realmente hay tareas vencidas NO completadas
-        var hoy = new Date();
-        var tareasVencidasReales = (proyecto.tasks || []).filter(function(t){
-          if (t.status === 'completed') return false; // ✅ Completadas NO cuentan
-          if (!t.deadline) return false;
-          return new Date(t.deadline) < hoy;
-        });
-        return tareasVencidasReales.length > 0; // Solo mostrar si hay tareas vencidas reales
-      }
-      
-      if (a.regla === 'SOBRECOSTE' || a.regla === 'DESVIACION_HORAS') {
-        // Verificar si el CPI realmente está bajo
-        var m = evmFor(proyecto);
-        return m.CPI < 0.9;
-      }
-      
-      // Para otras reglas, mostrar siempre
-      return true;
+      return activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) >= 0;
     });
     
-    // 🔥 GENERAR alertas dinámicas SOLO si hay datos reales
+    // 🔥 GENERAR alertas dinámicas SOLO si no hay duplicados con el backend
     var alertasDinamicas = [];
     var hoy = new Date();
     
     (window.PROJECTS || []).forEach(function(p){
-      // 🔥 REGLA 1: Tareas vencidas PERO NO COMPLETADAS
-      var tareasVencidasReales = (p.tasks || []).filter(function(t){
-        if(t.status === 'completed') return false; // ✅ Completadas NO cuentan
-        if(!t.deadline) return false;
-        return new Date(t.deadline) < hoy;
+      // Verificar si ya existe una alerta dinámica similar en el backend
+      var tieneAlertaBackend = alertasBackend.some(function(a){
+        return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
+               a.regla === 'PROYECTO_CRITICO';
       });
       
-      if(tareasVencidasReales.length > 0){
-        alertasDinamicas.push({
-          _id: 'dyn_' + p.id + '_overdue',
-          prioridad: 'MEDIA',
-          proyectoNombre: p.name,
-          regla: 'TAREAS_VENCIDAS',
-          metrica: 'overdue=' + tareasVencidasReales.length,
-          accionSugerida: 'REASIGNAR_TAREAS',
-          creadaEn: hoy.toISOString(),
-          esDinamica: true
-        });
-      }
-      
-      // 🔥 REGLA 2: Proyecto crítico SOLO si tiene tareas Y CPI/SPI reales
-      var m = evmFor(p);
-      var eh = evmHoursFor(p);
-      var tieneTareas = (p.tasks && p.tasks.length > 0);
-      var tieneHoras = eh.totalEstimated > 0;
-      
-      // Solo alertar si hay datos reales (no proyectos vacíos)
-      if(tieneTareas && tieneHoras){
-        if(m.CPI < 0.9 || m.SPI < 0.9){
-          alertasDinamicas.push({
-            _id: 'dyn_' + p.id + '_critical',
-            prioridad: 'ALTA',
-            proyectoNombre: p.name,
-            regla: 'PROYECTO_CRITICO',
-            metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + m.SPI.toFixed(2),
-            accionSugerida: 'PLAN_RECUPERACION',
-            creadaEn: hoy.toISOString(),
-            esDinamica: true
-          });
+      // Solo generar si no hay duplicado
+      if(!tieneAlertaBackend){
+        var m = evmFor(p);
+        var eh = evmHoursFor(p);
+        var tieneTareas = (p.tasks && p.tasks.length > 0);
+        var tieneHoras = eh.totalEstimated > 0;
+        
+        if(tieneTareas && tieneHoras){
+          if(m.CPI < 0.9 || m.SPI < 0.9){
+            alertasDinamicas.push({
+              _id: 'dyn_' + p.id + '_critical',
+              prioridad: 'ALTA',
+              proyectoNombre: p.name,
+              regla: 'PROYECTO_CRITICO',
+              metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + m.SPI.toFixed(2),
+              accionSugerida: 'PLAN_RECUPERACION',
+              creadaEn: hoy.toISOString(),
+              esDinamica: true
+            });
+          }
         }
       }
     });
     
-    // 🔥 COMBINAR sin duplicar: backend filtrado + dinámicas
+    // 🔥 COMBINAR: backend filtrado + dinámicas sin duplicar
     var todasLasAlertas = alertasBackend.concat(alertasDinamicas);
     
     if (todasLasAlertas.length === 0) {
@@ -4053,7 +4014,6 @@ async function renderAlerts(){
     el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
   }
 }
-
 
 // ✅ FUNCIÓN GLOBAL PARA RESOLVER ALERTAS
 window.resolverAlerta = async function(id, btn) {
