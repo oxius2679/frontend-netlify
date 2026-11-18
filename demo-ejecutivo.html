@@ -3909,18 +3909,15 @@ async function renderAlerts(){
   var el = document.getElementById('v-alerts');
   var langBtn = document.querySelector('.lang-toggle-btn');
   var isEn = langBtn ? langBtn.textContent.includes('ES') : false;
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:#a78bfa;font-weight:800;">⏳ '+(isEn?'Loading alerts from agent...':'Cargando alertas del agente...')+'</div>';
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#a78bfa;font-weight:800;">⏳ '+(isEn?'Loading alerts...':'Cargando alertas del agente...')+'</div>';
   const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   if (!token) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'You must log in to view alerts.':'Debes iniciar sesión para ver las alertas.')+'</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Log in required.':'Debes iniciar sesión.')+'</div>';
     return;
   }
 
-  // 🔥 LISTA BLANCA: proyectos que REALMENTE existen en TU cuenta
-  // Usamos _ORIGINAL_PROJECTS (la lista completa, sin filtro del selector)
   var myProjects = (window._ORIGINAL_PROJECTS && window._ORIGINAL_PROJECTS.length > 0)
-    ? window._ORIGINAL_PROJECTS
-    : (window.PROJECTS || []);
+    ? window._ORIGINAL_PROJECTS : (window.PROJECTS || []);
   var myNames = myProjects.map(function(p){ return String(p.name || '').toLowerCase().trim(); });
 
   try {
@@ -3933,29 +3930,60 @@ async function renderAlerts(){
       return;
     }
 
-    // 🔥 FILTRO ANTIFANTASMA: solo alertas del backend de proyectos de TU cuenta
+    // 🔥 AUDITORÍA: descartar alertas de RETRASO/TAREAS_VENCIDAS cuyo proyecto
+    //    NO tiene tareas vencidas reales (status !== 'completed')
+    var hoy = new Date();
     var alertasBackend = (data.alertas || []).filter(function(a){
-      return myNames.indexOf(String(a.proyectoNombre || '').toLowerCase().trim()) >= 0;
+      if (myNames.indexOf(String(a.proyectoNombre || '').toLowerCase().trim()) < 0) return false;
+      if (a.regla === 'RETRASO' || a.regla === 'TAREAS_VENCIDAS') {
+        var p = myProjects.find(function(x){
+          return String(x.name || '').toLowerCase().trim() === String(a.proyectoNombre || '').toLowerCase().trim();
+        });
+        if (!p) return false;
+        var vencidasReales = (p.tasks || []).filter(function(t){
+          return t.status !== 'completed' && t.deadline && new Date(t.deadline) < hoy;
+        });
+        return vencidasReales.length > 0; // ← solo si de verdad hay tareas vencidas
+      }
+      return true; // SOBRECOSTE, DESVIACION_HORAS, PROYECTO_CRITICO: pasan
     });
 
-    // 🔥 ALERTAS DINÁMICAS: generadas de tus proyectos actuales (respetan el selector)
+    // 🔥 ALERTAS DINÁMICAS (mismo criterio: solo tareas vencidas NO completadas)
     var alertasDinamicas = [];
-    var hoy = new Date();
     var scope = (window.PROJECTS && window.PROJECTS.length > 0) ? window.PROJECTS : myProjects;
-
     scope.forEach(function(p){
       var m = evmFor(p);
       var tieneTareas = (p.tasks && p.tasks.length > 0);
       var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
-      if(!tieneTareas || !tieneHoras) return; // ignora proyectos vacíos (CPI=0 falsos)
+      if(!tieneTareas || !tieneHoras) return;
 
-      var esCritico = m.CPI < 0.9 || m.SPI < 0.9;
-      if(esCritico){
-        // Dedup: si el backend ya tiene una alerta de este proyecto, no duplicar
+      var vencidasReales = (p.tasks || []).filter(function(t){
+        return t.status !== 'completed' && t.deadline && new Date(t.deadline) < hoy;
+      });
+
+      if (vencidasReales.length > 0) {
         var yaEnBackend = alertasBackend.some(function(a){
           return String(a.proyectoNombre || '').toLowerCase().trim() === String(p.name).toLowerCase().trim();
         });
-        if(!yaEnBackend){
+        if (!yaEnBackend) {
+          alertasDinamicas.push({
+            _id: 'dyn_' + p.id + '_overdue',
+            prioridad: 'MEDIA',
+            proyectoNombre: p.name,
+            regla: 'TAREAS_VENCIDAS',
+            metrica: 'overdue=' + vencidasReales.length,
+            accionSugerida: 'REASIGNAR_TAREAS',
+            creadaEn: hoy.toISOString(),
+            esDinamica: true
+          });
+        }
+      }
+
+      if (m.CPI < 0.9 || m.SPI < 0.9) {
+        var yaEnBackend2 = alertasBackend.some(function(a){
+          return String(a.proyectoNombre || '').toLowerCase().trim() === String(p.name).toLowerCase().trim();
+        });
+        if (!yaEnBackend2 && !alertasDinamicas.some(function(d){ return d.proyectoNombre === p.name; })) {
           alertasDinamicas.push({
             _id: 'dyn_' + p.id + '_critical',
             prioridad: 'ALTA',
@@ -4003,15 +4031,14 @@ async function renderAlerts(){
     });
 
     html += '</tbody></table></div></div>';
-    html += '<div class="box" style="border-left:4px solid #34d399;"><div style="font-size:12.5px;color:#cbd5e1;line-height:1.7;"><strong style="color:#34d399;">💡 '+(isEn?'About memory:':'Sobre la memoria:')+'</strong> '+(isEn?'Alerts marked "Auto" are computed live from your data and disappear when the problem is fixed. Alerts with "Resolve" come from the agent database.':'Las alertas "Auto" se calculan en vivo con tus datos y desaparecen al corregir el problema. Las que tienen "Resolver" vienen de la base de datos del agente.')+'</div></div>';
+    html += '<div class="box" style="border-left:4px solid #34d399;"><div style="font-size:12.5px;color:#cbd5e1;line-height:1.7;"><strong style="color:#34d399;">💡 '+(isEn?'About memory:':'Sobre la memoria:')+'</strong> '+(isEn?'Alerts marked "Auto" are computed live and vanish when the data is fixed. Alerts with "Resolve" come from the agent database.':'Las alertas "Auto" se calculan en vivo y desaparecen al corregir el dato. Las que tienen "Resolver" vienen de la base del agente.')+'</div></div>';
 
     el.innerHTML = html;
   } catch (error) {
     console.error('Error:', error);
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+(isEn?'Error: ':'Error: ')+error.message+'</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;">❌ '+error.message+'</div>';
   }
-}
-// ✅ FUNCIÓN PARA RESOLVER ALERTAS (CORREGIDA CON RE-RENDER)
+}// ✅ FUNCIÓN PARA RESOLVER ALERTAS (CORREGIDA CON RE-RENDER)
 window.resolverAlerta = async function(id, btn) {
   const langBtn = document.querySelector('.lang-toggle-btn');
   const isEn = langBtn ? langBtn.textContent.includes('ES') : false;
