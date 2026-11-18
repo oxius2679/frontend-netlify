@@ -4431,34 +4431,25 @@ document.addEventListener('DOMContentLoaded',function(){
     }
 
     // Actualizar las "chips" de la cabecera
-   // Actualizar las "chips" de la cabecera
-if (window.TOTALS) {
-  const countText = window.TOTALS.count === 1 ? '1 proyecto' : window.TOTALS.count + ' proyectos';
-  if (document.getElementById('chipP')) document.getElementById('chipP').textContent = '📋 ' + countText;
-  if (document.getElementById('chipB')) document.getElementById('chipB').textContent = '💶 ' + window.fEur(window.TOTALS.budget);
-  if (document.getElementById('chipC')) document.getElementById('chipC').textContent = '📈 CPI ' + window.TOTALS.cpiAvg.toFixed(2);
-  
-  // 🔥 FIX: Contar alertas REALES (igual que renderAlerts) en vez de proyectos en riesgo
-  var alertasReales = 0;
-  (window.PROJECTS || []).forEach(function(p) {
-    var m = window.evmFor(p);
-    var eh = window.evmHoursFor(p);
-    var tieneTareas = (p.tasks && p.tasks.length > 0);
-    var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
-    if (!tieneTareas || !tieneHoras) return;
-    if (m.CPI < 0.9 || eh.SPIH < 0.9) alertasReales++;
-  });
-// 🔥 Contar alertas REALES del agente (proyectos con CPI<0.9 o SPIH<0.9)
+    if (window.TOTALS) {
+      const countText = window.TOTALS.count === 1 ? '1 proyecto' : window.TOTALS.count + ' proyectos';
+      if (document.getElementById('chipP')) document.getElementById('chipP').textContent = '📋 ' + countText;
+      if (document.getElementById('chipB')) document.getElementById('chipB').textContent = '💶 ' + window.fEur(window.TOTALS.budget);
+      if (document.getElementById('chipC')) document.getElementById('chipC').textContent = '📈 CPI ' + window.TOTALS.cpiAvg.toFixed(2);
+      // 🔥 FIX: Contar alertas REALES (igual que renderAlerts) en vez de proyectos en riesgo
 var alertasReales = 0;
 (window.PROJECTS || []).forEach(function(p) {
-  var m = window.evmFor(p);
-  var eh = window.evmHoursFor(p);
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);
   var tieneTareas = (p.tasks && p.tasks.length > 0);
   var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
   if (!tieneTareas || !tieneHoras) return;
   if (m.CPI < 0.9 || eh.SPIH < 0.9) alertasReales++;
 });
-if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' alertas';}
+var lang = window.currentDashboardLang;
+var txtAlertas = (window.DASHBOARD_I18N[lang] && window.DASHBOARD_I18N[lang].chip_alerts) || 'alertas';
+if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' ' + txtAlertas;
+    }
 
     // Volver a renderizar la pestaña que esté activa en ese momento
     const activeTab = document.querySelector('.tab.on');
