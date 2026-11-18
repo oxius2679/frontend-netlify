@@ -4271,31 +4271,37 @@ function openModal(){
   document.getElementById('modal').classList.add('on');
   document.body.style.overflow='hidden';
   calcTotals();
-  
   var lang = window.currentDashboardLang;
   var i18n = window.DASHBOARD_I18N[lang];
   
   document.getElementById('chipP').textContent='📋 '+TOTALS.count+' '+i18n.chip_projects;
   document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);
   document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);
- // 🔥 Conteo REAL de alertas (proyectos con CPI<0.9 o SPIH<0.9)
-var alertasReales = (window.PROJECTS || []).filter(function(p){
-  var m = evmFor(p);
-  var eh = evmHoursFor(p);
-  return m.CPI < 0.9 || eh.SPIH < 0.9;
-}).length;
-document.getElementById('chipA').textContent='⚠️ '+alertasReales+' '+i18n.chip_alerts;
+  
+  // 🔥 FIX DEFINITIVO DEL CHIP: Contar solo proyectos con datos reales y métricas < 0.9
+  var alertasReales = (window.PROJECTS || []).filter(function(p) {
+    var m = evmFor(p);
+    var eh = evmHoursFor(p);
+    var tieneTareas = (p.tasks && p.tasks.length > 0);
+    var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
+    
+    // Ignorar proyectos vacíos (evita que CPI 0.00 cuente como alerta)
+    if (!tieneTareas || !tieneHoras) return false; 
+    
+    return m.CPI < 0.9 || eh.SPIH < 0.9;
+  }).length;
+  
+  document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' ' + i18n.chip_alerts;
   
   const activeTab = document.querySelector('.tab.on');
   if(activeTab) {
-      const tabId = activeTab.dataset.tab;
-      const titleData = window.TAB_TITLES[lang][tabId];
-      if(titleData) {
-          document.getElementById('mTitle').textContent = titleData.t;
-          document.getElementById('mSub').textContent = titleData.s;
-      }
+    const tabId = activeTab.dataset.tab;
+    const titleData = window.TAB_TITLES[lang][tabId];
+    if(titleData) {
+      document.getElementById('mTitle').textContent = titleData.t;
+      document.getElementById('mSub').textContent = titleData.s;
+    }
   }
-
   renderCFO();
   initVoice();
 }
