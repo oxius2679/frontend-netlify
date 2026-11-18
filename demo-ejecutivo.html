@@ -4268,7 +4268,16 @@ function openModal(){
   document.getElementById('chipP').textContent='📋 '+TOTALS.count+' '+i18n.chip_projects;
   document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);
   document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);
-  document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' '+i18n.chip_alerts;
+  // 🔥 Contar alertas REALES del agente (proyectos con CPI<0.9 o SPIH<0.9)
+var alertasReales = (window.PROJECTS || []).filter(function(p){
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);
+  var tieneTareas = (p.tasks && p.tasks.length > 0);
+  var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
+  if (!tieneTareas || !tieneHoras) return false; // Ignorar proyectos vacíos
+  return m.CPI < 0.9 || eh.SPIH < 0.9;
+}).length;
+document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' ' + i18n.chip_alerts;
   
   const activeTab = document.querySelector('.tab.on');
   if(activeTab) {
