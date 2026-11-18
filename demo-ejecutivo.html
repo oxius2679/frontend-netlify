@@ -3916,9 +3916,6 @@ async function renderAlerts(){
     return;
   }
   
-  // 🔥 Nombres de proyectos activos (para filtrar backend)
-  var activeProjectNames = (window.PROJECTS || []).map(function(p){ return p.name.toLowerCase(); });
-  
   try {
     const r = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts?estado=activa&limit=100', {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -3929,31 +3926,57 @@ async function renderAlerts(){
       return;
     }
     
-    // 🔥 FILTRAR backend: SOLO proyectos que aún existan (sin validar reglas)
-    var alertasBackend = (data.alertas || []).filter(function(a){
-      return activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) >= 0;
-    });
+    // 🔥 MOSTRAR TODAS las alertas del backend (sin filtrar)
+    var alertasBackend = data.alertas || [];
     
-    // 🔥 GENERAR alertas dinámicas SOLO si no hay duplicados con el backend
+    // 🔥 GENERAR alertas dinámicas SOLO para proyectos con datos reales
     var alertasDinamicas = [];
     var hoy = new Date();
     
     (window.PROJECTS || []).forEach(function(p){
-      // Verificar si ya existe una alerta dinámica similar en el backend
-      var tieneAlertaBackend = alertasBackend.some(function(a){
-        return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
-               a.regla === 'PROYECTO_CRITICO';
+      // 🔥 REGLA 1: Tareas vencidas PERO NO COMPLETADAS
+      var tareasVencidasReales = (p.tasks || []).filter(function(t){
+        if(t.status === 'completed') return false;
+        if(!t.deadline) return false;
+        return new Date(t.deadline) < hoy;
       });
       
-      // Solo generar si no hay duplicado
-      if(!tieneAlertaBackend){
-        var m = evmFor(p);
-        var eh = evmHoursFor(p);
-        var tieneTareas = (p.tasks && p.tasks.length > 0);
-        var tieneHoras = eh.totalEstimated > 0;
+      if(tareasVencidasReales.length > 0){
+        // Verificar si ya existe en backend
+        var existeEnBackend = alertasBackend.some(function(a){
+          return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
+                 (a.regla === 'TAREAS_VENCIDAS' || a.regla === 'RETRASO');
+        });
         
-        if(tieneTareas && tieneHoras){
-          if(m.CPI < 0.9 || m.SPI < 0.9){
+        if(!existeEnBackend){
+          alertasDinamicas.push({
+            _id: 'dyn_' + p.id + '_overdue',
+            prioridad: 'MEDIA',
+            proyectoNombre: p.name,
+            regla: 'TAREAS_VENCIDAS',
+            metrica: 'overdue=' + tareasVencidasReales.length,
+            accionSugerida: 'REASIGNAR_TAREAS',
+            creadaEn: hoy.toISOString(),
+            esDinamica: true
+          });
+        }
+      }
+      
+      // 🔥 REGLA 2: Proyecto crítico SOLO si tiene tareas Y horas reales
+      var m = evmFor(p);
+      var eh = evmHoursFor(p);
+      var tieneTareas = (p.tasks && p.tasks.length > 0);
+      var tieneHoras = eh.totalEstimated > 0;
+      
+      if(tieneTareas && tieneHoras){
+        if(m.CPI < 0.9 || m.SPI < 0.9){
+          // Verificar si ya existe en backend
+          var existeEnBackend = alertasBackend.some(function(a){
+            return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
+                   a.regla === 'PROYECTO_CRITICO';
+          });
+          
+          if(!existeEnBackend){
             alertasDinamicas.push({
               _id: 'dyn_' + p.id + '_critical',
               prioridad: 'ALTA',
@@ -3969,7 +3992,7 @@ async function renderAlerts(){
       }
     });
     
-    // 🔥 COMBINAR: backend filtrado + dinámicas sin duplicar
+    // 🔥 COMBINAR: backend + dinámicas
     var todasLasAlertas = alertasBackend.concat(alertasDinamicas);
     
     if (todasLasAlertas.length === 0) {
