@@ -3953,20 +3953,16 @@ async function renderAlerts(){
     var scope = (window.PROJECTS && window.PROJECTS.length > 0) ? window.PROJECTS : myProjects;
     scope.forEach(function(p){
   var m = evmFor(p);
-  var eh = evmHoursFor(p);   // 🔥 SPI por TIEMPO (igual que el backend corregido)
+  var eh = evmHoursFor(p); // 🔥 NUEVO: SPI por tiempo (igual que el backend)
   var tieneTareas = (p.tasks && p.tasks.length > 0);
   var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
   if(!tieneTareas || !tieneHoras) return;
 
-  var vencidasReales = (p.tasks || []).filter(function(t){
-    return t.status !== 'completed' && (Number(t.progress) || 0) < 100
-      && t.deadline && new Date(t.deadline) < new Date();
-  });
-
-  // 🔥 CRÍTICO = costo malo O cronograma por tiempo malo (no % de avance)
-  if(m.CPI < 0.9 || eh.SPIH < 0.9 || vencidasReales.length > 0){
+  // 🔥 CAMBIO: usar eh.SPIH en lugar de m.SPI
+  var esCritico = m.CPI < 0.9 || eh.SPIH < 0.9;
+  if(esCritico){
     var yaEnBackend = alertasBackend.some(function(a){
-      return String(a.proyectoNombre||'').toLowerCase().trim() === String(p.name).toLowerCase().trim();
+      return String(a.proyectoNombre || '').toLowerCase().trim() === String(p.name).toLowerCase().trim();
     });
     if(!yaEnBackend){
       alertasDinamicas.push({
@@ -3976,7 +3972,7 @@ async function renderAlerts(){
         regla: 'PROYECTO_CRITICO',
         metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + eh.SPIH.toFixed(2),
         accionSugerida: 'PLAN_RECUPERACION',
-        creadaEn: new Date().toISOString(),
+        creadaEn: hoy.toISOString(),
         esDinamica: true
       });
     }
