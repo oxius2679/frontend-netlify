@@ -3916,9 +3916,6 @@ async function renderAlerts(){
     return;
   }
   
-  // 🔥 NOMBRES DE PROYECTOS ACTIVOS (para filtrar backend)
-  var activeProjectNames = (window.PROJECTS || []).map(function(p){ return p.name.toLowerCase(); });
-  
   try {
     const r = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts?estado=activa&limit=100', {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -3929,76 +3926,23 @@ async function renderAlerts(){
       return;
     }
     
-    // 🔥 FILTRAR backend: SOLO proyectos que aún existan
-    var alertasBackend = (data.alertas || []).filter(function(a){
-      return activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) >= 0;
-    });
+    // 🔥 MOSTRAR TODAS las alertas activas del backend SIN FILTRAR
+    // Esto te permite ver y RESOLVER las alertas de proyectos antiguos
+    var alertas = data.alertas || [];
     
-    // 🔥 GENERAR alertas dinámicas SOLO para proyectos CON TAREAS Y HORAS REALES
-    var alertasDinamicas = [];
-    var hoy = new Date();
-    
-    (window.PROJECTS || []).forEach(function(p){
-      // 🔥 REGLA 1: Tareas vencidas PERO NO COMPLETADAS
-      var tareasVencidasReales = (p.tasks || []).filter(function(t){
-        if(t.status === 'completed') return false; // ✅ Completadas NO cuentan
-        if(!t.deadline) return false;
-        return new Date(t.deadline) < hoy;
-      });
-      
-      if(tareasVencidasReales.length > 0){
-        alertasDinamicas.push({
-          _id: 'dyn_' + p.id + '_overdue',
-          prioridad: 'MEDIA',
-          proyectoNombre: p.name,
-          regla: 'TAREAS_VENCIDAS',
-          metrica: 'overdue=' + tareasVencidasReales.length,
-          accionSugerida: 'REASIGNAR_TAREAS',
-          creadaEn: hoy.toISOString(),
-          esDinamica: true
-        });
-      }
-      
-      // 🔥 REGLA 2: Proyecto crítico SOLO si tiene tareas Y horas reales
-      var m = evmFor(p);
-      var eh = evmHoursFor(p);
-      var tieneTareas = (p.tasks && p.tasks.length > 0);
-      var tieneHoras = eh.totalEstimated > 0;
-      
-      // Solo alertar si hay datos reales (no proyectos vacíos)
-      if(tieneTareas && tieneHoras){
-        if(m.CPI < 0.9 || m.SPI < 0.9){
-          alertasDinamicas.push({
-            _id: 'dyn_' + p.id + '_critical',
-            prioridad: 'ALTA',
-            proyectoNombre: p.name,
-            regla: 'PROYECTO_CRITICO',
-            metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + m.SPI.toFixed(2),
-            accionSugerida: 'PLAN_RECUPERACION',
-            creadaEn: hoy.toISOString(),
-            esDinamica: true
-          });
-        }
-      }
-    });
-    
-    // 🔥 COMBINAR: backend filtrado + dinámicas
-    var todasLasAlertas = alertasBackend.concat(alertasDinamicas);
-    
-    if (todasLasAlertas.length === 0) {
+    if (alertas.length === 0) {
       el.innerHTML = '<div style="text-align:center;padding:60px;color:#34d399;font-weight:800;font-size:16px;">✅ '+(isEn?'No active alerts. Everything in order!':'No hay alertas activas. ¡Todo en orden!')+'</div>';
       return;
     }
     
-    // Contadores
-    const altas = todasLasAlertas.filter(a => a.prioridad === 'ALTA').length;
-    const medias = todasLasAlertas.filter(a => a.prioridad === 'MEDIA').length;
+    const altas = alertas.filter(a => a.prioridad === 'ALTA').length;
+    const medias = alertas.filter(a => a.prioridad === 'MEDIA').length;
     
-    let html = '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Agent Alerts · Real-time':'Alertas del Agente · Tiempo Real')+'</h2><p>'+(isEn?'Active alerts detected by the autonomous agent. Filters: 12h window for repeat alerts.':'Alertas activas detectadas por el agente autónomo. Ventana de 12h para recordatorios.')+'</p></div><div class="hero-stats">'+statCard(todasLasAlertas.length,(isEn?'Total':'Total'))+statCard(altas,(isEn?'High':'Altas'),'r')+statCard(medias,(isEn?'Medium':'Medias'),'g')+statCard(12,(isEn?'h Window':'Ventana h'))+'</div></div></div>';
+    let html = '<div class="hero"><div class="hero-grid"><div><h2>'+(isEn?'Agent Alerts · Real-time':'Alertas del Agente · Tiempo Real')+'</h2><p>'+(isEn?'Active alerts detected by the autonomous agent.':'Alertas activas detectadas por el agente autónomo.')+'</p></div><div class="hero-stats">'+statCard(alertas.length,(isEn?'Total':'Total'))+statCard(altas,(isEn?'High':'Altas'),'r')+statCard(medias,(isEn?'Medium':'Medias'),'g')+statCard(12,(isEn?'h Window':'Ventana h'))+'</div></div></div>';
     
     html += '<div class="box"><div class="box-t"><span>🚨</span> '+(isEn?'Active Alerts':'Alertas Activas')+'</div><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>'+(isEn?'Priority':'Prioridad')+'</th><th>'+(isEn?'Project':'Proyecto')+'</th><th>'+(isEn?'Rule':'Regla')+'</th><th>'+(isEn?'Metric':'Métrica')+'</th><th>'+(isEn?'Action':'Acción')+'</th><th>'+(isEn?'Detected':'Detectada')+'</th><th>'+(isEn?'Resolve':'Resolver')+'</th></tr></thead><tbody>';
     
-    todasLasAlertas.forEach(function(a){
+    alertas.forEach(function(a){
       const color = a.prioridad === 'ALTA' ? '#ef4444' : a.prioridad === 'MEDIA' ? '#fbbf24' : '#34d399';
       const fecha = a.creadaEn ? new Date(a.creadaEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : '—';
       html += '<tr>';
@@ -4009,17 +3953,14 @@ async function renderAlerts(){
       html += '<td style="font-size:11px;color:#a78bfa;">'+a.accionSugerida+'</td>';
       html += '<td style="font-size:11px;color:#94a3b8;">'+fecha+'</td>';
       
-      if(a.esDinamica){
-        html += '<td><span style="font-size:10px;color:#94a3b8;">'+(isEn?'Auto':'Auto')+'</span></td>';
-      } else {
-        html += '<td><button onclick="resolverAlerta(\''+a._id+'\', this)" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid #34d399;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
-      }
+      // 🔥 BOTÓN RESOLVER SIEMPRE VISIBLE PARA ALERTAS DEL BACKEND
+      html += '<td><button onclick="resolverAlerta(\''+a._id+'\', this)" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid #34d399;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-weight:900;transition:all 0.2s;">✅ '+(isEn?'Resolve':'Resolver')+'</button></td>';
       html += '</tr>';
     });
     
     html += '</tbody></table></div></div>';
     
-    html += '<div class="box" style="border-left:4px solid #34d399;"><div style="font-size:12.5px;color:#cbd5e1;line-height:1.7;"><strong style="color:#34d399;">'+(isEn?'💡 About memory:':'💡 Sobre la memoria:')+'</strong> '+(isEn?'The agent avoids sending the same alert more than once in 12h. If an alert is still active after 12h, it will be sent again as a reminder. When the problem is resolved, the alert will automatically disappear from this list.':'El agente evita enviar la misma alerta más de una vez en 12h. Si una alerta sigue activa después de 12h, se enviará de nuevo como recordatorio. Cuando el problema se resuelva, la alerta desaparecerá automáticamente de esta lista.')+'</div></div>';
+    html += '<div class="box" style="border-left:4px solid #34d399;"><div style="font-size:12.5px;color:#cbd5e1;line-height:1.7;"><strong style="color:#34d399;">'+(isEn?'💡 Tip:':'💡 Consejo:')+'</strong> '+(isEn?'Click "Resolve" to permanently delete old alerts from the database and clean up your dashboard.':'Haz clic en "Resolver" para eliminar permanentemente las alertas antiguas de la base de datos y limpiar tu panel.')+'</div></div>';
     
     el.innerHTML = html;
   } catch (error) {
