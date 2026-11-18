@@ -4278,7 +4278,13 @@ function openModal(){
   document.getElementById('chipP').textContent='📋 '+TOTALS.count+' '+i18n.chip_projects;
   document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);
   document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);
-  document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' '+i18n.chip_alerts;
+ // 🔥 Conteo REAL de alertas (respeta el selector y la fórmula SPIH)
+var alertasReales = (window.PROJECTS || []).filter(function(p){
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);
+  return m.CPI < 0.9 || eh.SPIH < 0.9;
+}).length;
+document.getElementById('chipA').textContent='⚠️ '+alertasReales+' '+i18n.chip_alerts;
   
   const activeTab = document.querySelector('.tab.on');
   if(activeTab) {
