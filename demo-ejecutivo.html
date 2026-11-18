@@ -3952,32 +3952,35 @@ async function renderAlerts(){
     var alertasDinamicas = [];
     var scope = (window.PROJECTS && window.PROJECTS.length > 0) ? window.PROJECTS : myProjects;
     scope.forEach(function(p){
-      var m = evmFor(p);
-      var tieneTareas = (p.tasks && p.tasks.length > 0);
-      var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
-      if(!tieneTareas || !tieneHoras) return;
+  var m = evmFor(p);
+  var eh = evmHoursFor(p);   // 🔥 SPI por TIEMPO (igual que el backend corregido)
+  var tieneTareas = (p.tasks && p.tasks.length > 0);
+  var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
+  if(!tieneTareas || !tieneHoras) return;
 
-      var vencidasReales = (p.tasks || []).filter(function(t){
-        return t.status !== 'completed' && t.deadline && new Date(t.deadline) < hoy;
+  var vencidasReales = (p.tasks || []).filter(function(t){
+    return t.status !== 'completed' && (Number(t.progress) || 0) < 100
+      && t.deadline && new Date(t.deadline) < new Date();
+  });
+
+  // 🔥 CRÍTICO = costo malo O cronograma por tiempo malo (no % de avance)
+  if(m.CPI < 0.9 || eh.SPIH < 0.9 || vencidasReales.length > 0){
+    var yaEnBackend = alertasBackend.some(function(a){
+      return String(a.proyectoNombre||'').toLowerCase().trim() === String(p.name).toLowerCase().trim();
+    });
+    if(!yaEnBackend){
+      alertasDinamicas.push({
+        _id: 'dyn_' + p.id + '_critical',
+        prioridad: 'ALTA',
+        proyectoNombre: p.name,
+        regla: 'PROYECTO_CRITICO',
+        metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + eh.SPIH.toFixed(2),
+        accionSugerida: 'PLAN_RECUPERACION',
+        creadaEn: new Date().toISOString(),
+        esDinamica: true
       });
-
-      if (vencidasReales.length > 0) {
-        var yaEnBackend = alertasBackend.some(function(a){
-          return String(a.proyectoNombre || '').toLowerCase().trim() === String(p.name).toLowerCase().trim();
-        });
-        if (!yaEnBackend) {
-          alertasDinamicas.push({
-            _id: 'dyn_' + p.id + '_overdue',
-            prioridad: 'MEDIA',
-            proyectoNombre: p.name,
-            regla: 'TAREAS_VENCIDAS',
-            metrica: 'overdue=' + vencidasReales.length,
-            accionSugerida: 'REASIGNAR_TAREAS',
-            creadaEn: hoy.toISOString(),
-            esDinamica: true
-          });
-        }
-      }
+    }
+  }
 
       if (m.CPI < 0.9 || m.SPI < 0.9) {
         var yaEnBackend2 = alertasBackend.some(function(a){
