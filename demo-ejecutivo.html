@@ -2120,7 +2120,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <span class="chip v" id="chipP">📋 0 proyectos</span>
       <span class="chip y" id="chipB">💶 €0</span>
       <span class="chip g" id="chipC">📈 CPI 0.00</span>
-      <span class="chip r" id="chipA">⚠️ 0 alertas</span>
+      <!-- <span class="chip r" id="chipA">⚠️ 0 alertas</span> -->
     </div>
     
     <!-- CUERPO DEL MODAL CON LAS 8 VISTAS -->
@@ -4436,19 +4436,7 @@ document.addEventListener('DOMContentLoaded',function(){
       if (document.getElementById('chipP')) document.getElementById('chipP').textContent = '📋 ' + countText;
       if (document.getElementById('chipB')) document.getElementById('chipB').textContent = '💶 ' + window.fEur(window.TOTALS.budget);
       if (document.getElementById('chipC')) document.getElementById('chipC').textContent = '📈 CPI ' + window.TOTALS.cpiAvg.toFixed(2);
-      // 🔥 FIX: Contar alertas REALES (igual que renderAlerts) en vez de proyectos en riesgo
-var alertasReales = 0;
-(window.PROJECTS || []).forEach(function(p) {
-  var m = evmFor(p);
-  var eh = evmHoursFor(p);
-  var tieneTareas = (p.tasks && p.tasks.length > 0);
-  var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
-  if (!tieneTareas || !tieneHoras) return;
-  if (m.CPI < 0.9 || eh.SPIH < 0.9) alertasReales++;
-});
-var lang = window.currentDashboardLang;
-var txtAlertas = (window.DASHBOARD_I18N[lang] && window.DASHBOARD_I18N[lang].chip_alerts) || 'alertas';
-if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' ' + txtAlertas;
+     // document.getElementById('chipA').textContent='⚠️ '+TOTALS.alerts+' '+i18n.chip_alerts;
     }
 
     // Volver a renderizar la pestaña que esté activa en ese momento
