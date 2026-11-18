@@ -3978,24 +3978,7 @@ async function renderAlerts(){
     }
   }
 
-      if (m.CPI < 0.9 || m.SPI < 0.9) {
-        var yaEnBackend2 = alertasBackend.some(function(a){
-          return String(a.proyectoNombre || '').toLowerCase().trim() === String(p.name).toLowerCase().trim();
-        });
-        if (!yaEnBackend2 && !alertasDinamicas.some(function(d){ return d.proyectoNombre === p.name; })) {
-          alertasDinamicas.push({
-            _id: 'dyn_' + p.id + '_critical',
-            prioridad: 'ALTA',
-            proyectoNombre: p.name,
-            regla: 'PROYECTO_CRITICO',
-            metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + eh.SPIH.toFixed(2),
-            accionSugerida: 'PLAN_RECUPERACION',
-            creadaEn: hoy.toISOString(),
-            esDinamica: true
           });
-        }
-      }
-    });
 
     var todas = alertasBackend.concat(alertasDinamicas);
 
