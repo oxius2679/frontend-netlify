@@ -4448,8 +4448,17 @@ if (window.TOTALS) {
     if (!tieneTareas || !tieneHoras) return;
     if (m.CPI < 0.9 || eh.SPIH < 0.9) alertasReales++;
   });
-  if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' alertas';
-}
+// 🔥 Contar alertas REALES del agente (proyectos con CPI<0.9 o SPIH<0.9)
+var alertasReales = 0;
+(window.PROJECTS || []).forEach(function(p) {
+  var m = window.evmFor(p);
+  var eh = window.evmHoursFor(p);
+  var tieneTareas = (p.tasks && p.tasks.length > 0);
+  var tieneHoras = (p.actualCost || 0) > 0 || (p.plannedValue || 0) > 0;
+  if (!tieneTareas || !tieneHoras) return;
+  if (m.CPI < 0.9 || eh.SPIH < 0.9) alertasReales++;
+});
+if (document.getElementById('chipA')) document.getElementById('chipA').textContent = '⚠️ ' + alertasReales + ' alertas';}
 
     // Volver a renderizar la pestaña que esté activa en ese momento
     const activeTab = document.querySelector('.tab.on');
