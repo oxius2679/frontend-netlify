@@ -3916,6 +3916,9 @@ async function renderAlerts(){
     return;
   }
   
+  // 🔥 OBTENER NOMBRES DE PROYECTOS ACTIVOS
+  var activeProjectNames = (window.PROJECTS || []).map(function(p){ return p.name.toLowerCase(); });
+  
   try {
     const r = await fetch('https://mi-sistema-proyectos-backend-4.onrender.com/api/agent/alerts?estado=activa&limit=100', {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -3926,73 +3929,53 @@ async function renderAlerts(){
       return;
     }
     
-    // 🔥 MOSTRAR TODAS las alertas del backend (sin filtrar)
-    var alertasBackend = data.alertas || [];
+    // 🔥 FILTRAR: Solo mostrar alertas de proyectos que aún existan
+    var alertasBackend = (data.alertas || []).filter(function(a){
+      return activeProjectNames.indexOf((a.proyectoNombre || '').toLowerCase()) >= 0;
+    });
     
-    // 🔥 GENERAR alertas dinámicas SOLO para proyectos con datos reales
+    // 🔥 GENERAR ALERTAS DINÁMICAS basadas en proyectos actuales
     var alertasDinamicas = [];
     var hoy = new Date();
     
     (window.PROJECTS || []).forEach(function(p){
-      // 🔥 REGLA 1: Tareas vencidas PERO NO COMPLETADAS
-      var tareasVencidasReales = (p.tasks || []).filter(function(t){
+      // Alerta por tareas vencidas
+      var tareasVencidas = (p.tasks || []).filter(function(t){
         if(t.status === 'completed') return false;
         if(!t.deadline) return false;
         return new Date(t.deadline) < hoy;
       });
       
-      if(tareasVencidasReales.length > 0){
-        // Verificar si ya existe en backend
-        var existeEnBackend = alertasBackend.some(function(a){
-          return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
-                 (a.regla === 'TAREAS_VENCIDAS' || a.regla === 'RETRASO');
+      if(tareasVencidas.length > 0){
+        alertasDinamicas.push({
+          _id: 'dyn_' + p.id + '_overdue',
+          prioridad: 'MEDIA',
+          proyectoNombre: p.name,
+          regla: 'TAREAS_VENCIDAS',
+          metrica: 'overdue=' + tareasVencidas.length,
+          accionSugerida: 'REASIGNAR_TAREAS',
+          creadaEn: hoy.toISOString(),
+          esDinamica: true
         });
-        
-        if(!existeEnBackend){
-          alertasDinamicas.push({
-            _id: 'dyn_' + p.id + '_overdue',
-            prioridad: 'MEDIA',
-            proyectoNombre: p.name,
-            regla: 'TAREAS_VENCIDAS',
-            metrica: 'overdue=' + tareasVencidasReales.length,
-            accionSugerida: 'REASIGNAR_TAREAS',
-            creadaEn: hoy.toISOString(),
-            esDinamica: true
-          });
-        }
       }
       
-      // 🔥 REGLA 2: Proyecto crítico SOLO si tiene tareas Y horas reales
+      // Alerta por proyectos críticos
       var m = evmFor(p);
-      var eh = evmHoursFor(p);
-      var tieneTareas = (p.tasks && p.tasks.length > 0);
-      var tieneHoras = eh.totalEstimated > 0;
-      
-      if(tieneTareas && tieneHoras){
-        if(m.CPI < 0.9 || m.SPI < 0.9){
-          // Verificar si ya existe en backend
-          var existeEnBackend = alertasBackend.some(function(a){
-            return a.proyectoNombre.toLowerCase() === p.name.toLowerCase() && 
-                   a.regla === 'PROYECTO_CRITICO';
-          });
-          
-          if(!existeEnBackend){
-            alertasDinamicas.push({
-              _id: 'dyn_' + p.id + '_critical',
-              prioridad: 'ALTA',
-              proyectoNombre: p.name,
-              regla: 'PROYECTO_CRITICO',
-              metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + m.SPI.toFixed(2),
-              accionSugerida: 'PLAN_RECUPERACION',
-              creadaEn: hoy.toISOString(),
-              esDinamica: true
-            });
-          }
-        }
+      if(m.CPI < 0.9 || m.SPI < 0.9){
+        alertasDinamicas.push({
+          _id: 'dyn_' + p.id + '_critical',
+          prioridad: 'ALTA',
+          proyectoNombre: p.name,
+          regla: 'PROYECTO_CRITICO',
+          metrica: 'CPI=' + m.CPI.toFixed(2) + ' SPI=' + m.SPI.toFixed(2),
+          accionSugerida: 'PLAN_RECUPERACION',
+          creadaEn: hoy.toISOString(),
+          esDinamica: true
+        });
       }
     });
     
-    // 🔥 COMBINAR: backend + dinámicas
+    // 🔥 COMBINAR: Backend filtrado + Dinámicas
     var todasLasAlertas = alertasBackend.concat(alertasDinamicas);
     
     if (todasLasAlertas.length === 0) {
@@ -4000,7 +3983,7 @@ async function renderAlerts(){
       return;
     }
     
-    // Contadores
+    // Contadores por prioridad
     const altas = todasLasAlertas.filter(a => a.prioridad === 'ALTA').length;
     const medias = todasLasAlertas.filter(a => a.prioridad === 'MEDIA').length;
     
