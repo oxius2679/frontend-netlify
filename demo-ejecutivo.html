@@ -4278,7 +4278,7 @@ function openModal(){
   document.getElementById('chipP').textContent='📋 '+TOTALS.count+' '+i18n.chip_projects;
   document.getElementById('chipB').textContent='💶 '+fEur(TOTALS.budget);
   document.getElementById('chipC').textContent='📈 CPI '+TOTALS.cpiAvg.toFixed(2);
- // 🔥 Conteo REAL de alertas (respeta el selector y la fórmula SPIH)
+ // 🔥 Conteo REAL de alertas (proyectos con CPI<0.9 o SPIH<0.9)
 var alertasReales = (window.PROJECTS || []).filter(function(p){
   var m = evmFor(p);
   var eh = evmHoursFor(p);
